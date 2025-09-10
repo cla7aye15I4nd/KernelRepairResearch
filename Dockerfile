@@ -54,3 +54,7 @@ RUN cd /tmp && \
     make install && \
     cd / && \
     rm -rf /tmp/universal-ctags-6.2.0*
+
+RUN pip install \
+    bs4 \
+    unidiff
