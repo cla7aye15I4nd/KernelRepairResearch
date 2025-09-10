@@ -14,8 +14,9 @@ for vuln_dir in VULN_DIR.iterdir():
         config_data = yaml.safe_load(config_yaml.read_text())
         hunk_count = config_data["hunk_count"]
         covered_count = config_data["covered_count"]
+        year = int(config_data["datetime"][:4])
 
-        if hunk_count == 1 and covered_count == 1:
+        if hunk_count == 1 and covered_count == 1 and year >= 2023:
             patch_diff = vuln_dir / "patch.diff"
             unidiff_patch = unidiff.PatchSet(patch_diff.read_text().splitlines())
 
@@ -34,20 +35,18 @@ for vuln_dir in VULN_DIR.iterdir():
             report = (vuln_dir / "report.txt").read_text()
 
             rc_distance = None
-            approx_root_cause = None
+            approx_root_cause = f"{file}:{middle_line}"
             for distance in range(DISTANCE_BOUND):
                 lower_bound = middle_line - distance
                 upper_bound = middle_line + distance
 
                 if f"{file}:{lower_bound}" in report:
                     rc_distance = distance
-                    approx_root_cause = f"{file}:{lower_bound}"
                     break
 
                 if f"{file}:{upper_bound}" in report:
                     rc_distance = distance
-                    approx_root_cause = f"{file}:{upper_bound}"
                     break
 
-            assert rc_distance is not None and approx_root_cause is not None
+            assert rc_distance is not None
             print(f"{vuln_dir.name}\t{rc_distance}\t{approx_root_cause}")
