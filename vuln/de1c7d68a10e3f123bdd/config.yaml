@@ -1,0 +1,41 @@
+id: de1c7d68a10e3f123bdd
+bug_link: https://syzkaller.appspot.com/bug?extid=de1c7d68a10e3f123bdd
+title: general protection fault in rtnl_create_link
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2a5970d5aaff8f3e33ce3bfaa403ae88c40de40d
+fix_commit: 4798cfa2097f0833d54d8f5ce20ef14631917839
+datetime: '2025-04-16T18:28:11-07:00'
+fix_commit_message: 'net: don''t try to ops lock uninitialized devs
+
+
+  We need to be careful when operating on dev while in rtnl_create_link().
+
+  Some devices (vxlan) initialize netdev_ops in ->newlink, so later on.
+
+  Avoid using netdev_lock_ops(), the device isn''t registered so we
+
+  cannot legally call its ops or generate any notifications for it.
+
+
+  netdev_ops_assert_locked_or_invisible() is safe to use, it checks
+
+  registration status first.
+
+
+  Reported-by: syzbot+de1c7d68a10e3f123bdd@syzkaller.appspotmail.com
+
+  Fixes: 04efcee6ef8d ("net: hold instance lock during NETDEV_CHANGE")
+
+  Acked-by: Stanislav Fomichev <sdf@fomichev.me>
+
+  Reviewed-by: Kuniyuki Iwashima <kuniyu@amazon.com>
+
+  Link: https://patch.msgid.link/20250415151552.768373-1-kuba@kernel.org
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/core
+hunk_count: 2
+covered_count: 1

@@ -1,0 +1,29 @@
+id: 5accb5c62faa1d346480
+bug_link: https://syzkaller.appspot.com/bug?extid=5accb5c62faa1d346480
+title: WARNING in compat_do_ebt_get_ctl
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d8bb9abe21071c64d077f9db3b403823a389464f
+fix_commit: 5c04da55c754c44937b3d19c6522f9023fd5c5d5
+datetime: '2020-08-14T11:59:08+02:00'
+fix_commit_message: "netfilter: ebtables: reject bogus getopt len value\n\nsyzkaller\
+  \ reports splat:\n------------[ cut here ]------------\nBuffer overflow detected\
+  \ (80 < 137)!\nCall Trace:\n do_ebt_get_ctl+0x2b4/0x790 net/bridge/netfilter/ebtables.c:2317\n\
+  \ nf_getsockopt+0x72/0xd0 net/netfilter/nf_sockopt.c:116\n ip_getsockopt net/ipv4/ip_sockglue.c:1778\
+  \ [inline]\n\ncaused by a copy-to-user with a too-large \"*len\" value.\nThis adds\
+  \ a argument check on *len just like in the non-compat version\nof the handler.\n\
+  \nBefore the \"Fixes\" commit, the reproducer fails with -EINVAL as\nexpected:\n\
+  1. core calls the \"compat\" getsockopt version\n2. compat getsockopt version detects\
+  \ the *len value is possibly\n   in 64-bit layout (*len != compat_len)\n3. compat\
+  \ getsockopt version delegates everything to native getsockopt\n   version\n4. native\
+  \ getsockopt rejects invalid *len\n\n-> compat handler only sees len == sizeof(compat_struct)\
+  \ for GET_ENTRIES.\n\nAfter the refactor, event sequence is:\n1. getsockopt calls\
+  \ \"compat\" version (len != native_len)\n2. compat version attempts to copy *len\
+  \ bytes, where *len is random\n   value from userspace\n\nFixes: fc66de8e16ec (\"\
+  netfilter/ebtables: clean up compat {get, set}sockopt handling\")\nReported-by:\
+  \ syzbot+5accb5c62faa1d346480@syzkaller.appspotmail.com\nSigned-off-by: Florian\
+  \ Westphal <fw@strlen.de>\nReviewed-by: Christoph Hellwig <hch@lst.de>\nSigned-off-by:\
+  \ Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/bridge
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,27 @@
+id: 3587cbbc6e1868796292
+bug_link: https://syzkaller.appspot.com/bug?extid=3587cbbc6e1868796292
+title: 'KASAN: use-after-free Write in io_submit_one'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 776b54e97a7d993ba23696e032426d5dea5bbe70
+fix_commit: 75feae73a28020e492fbad2323245455ef69d687
+datetime: '2021-12-07T15:07:40-07:00'
+fix_commit_message: "block: fix single bio async DIO error handling\n\nBUG: KASAN:\
+  \ use-after-free in io_submit_one+0x496/0x2fe0 fs/aio.c:1882\nCPU: 2 PID: 15100\
+  \ Comm: syz-executor873 Not tainted 5.16.0-rc1-syzk #1\nHardware name: Red Hat KVM,\
+  \ BIOS 1.13.0-2.module+el8.3.0+7860+a7792d29\n04/01/2014\nCall Trace:\n  [...]\n\
+  \  refcount_dec_and_test include/linux/refcount.h:333 [inline]\n  iocb_put fs/aio.c:1161\
+  \ [inline]\n  io_submit_one+0x496/0x2fe0 fs/aio.c:1882\n  __do_sys_io_submit fs/aio.c:1938\
+  \ [inline]\n  __se_sys_io_submit fs/aio.c:1908 [inline]\n  __x64_sys_io_submit+0x1c7/0x4a0\
+  \ fs/aio.c:1908\n  do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n  do_syscall_64+0x3a/0x80\
+  \ arch/x86/entry/common.c:80\n  entry_SYSCALL_64_after_hwframe+0x44/0xae\n\n__blkdev_direct_IO_async()\
+  \ returns errors from bio_iov_iter_get_pages()\ndirectly, in which case upper layers\
+  \ won't be expecting ->ki_complete\nto be called by the block layer and will terminate\
+  \ the request. However,\nthere is also bio_endio() leading to a second ->ki_complete\
+  \ and a double\nfree.\n\nFixes: 54a88eb838d37 (\"block: add single bio async direct\
+  \ IO helper\")\nReported-by: George Kennedy <george.kennedy@oracle.com>\nSigned-off-by:\
+  \ Pavel Begunkov <asml.silence@gmail.com>\nLink: https://lore.kernel.org/r/c9eb786f6cef041e159e6287de131bec0719ad5c.1638907997.git.asml.silence@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- block
+hunk_count: 1
+covered_count: 0

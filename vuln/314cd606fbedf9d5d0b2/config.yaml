@@ -1,0 +1,37 @@
+id: 314cd606fbedf9d5d0b2
+bug_link: https://syzkaller.appspot.com/bug?extid=314cd606fbedf9d5d0b2
+title: 'KASAN: vmalloc-out-of-bounds Read in __nla_validate_parse'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 33c568ba49e2b0ff7c3daead5d9427be797a4c43
+fix_commit: bf64ff4c2aac65d680dc639a511c781cf6b6ec08
+datetime: '2020-06-29T17:15:57-07:00'
+fix_commit_message: "genetlink: get rid of family->attrbuf\n\ngenl_family_rcv_msg_attrs_parse()\
+  \ reuses the global family->attrbuf\nwhen family->parallel_ops is false. However,\
+  \ family->attrbuf is not\nprotected by any lock on the genl_family_rcv_msg_doit()\
+  \ code path.\n\nThis leads to several different consequences, one of them is UAF,\n\
+  like the following:\n\ngenl_family_rcv_msg_doit():\t\tgenl_start():\n\t\t\t\t\t\
+  \  genl_family_rcv_msg_attrs_parse()\n\t\t\t\t\t    attrbuf = family->attrbuf\n\t\
+  \t\t\t\t    __nlmsg_parse(attrbuf);\n  genl_family_rcv_msg_attrs_parse()\n    attrbuf\
+  \ = family->attrbuf\n    __nlmsg_parse(attrbuf);\n\t\t\t\t\t  info->attrs = attrs;\n\
+  \t\t\t\t\t  cb->data = info;\n\nnetlink_unicast_kernel():\n consume_skb()\n\t\t\t\
+  \t\tgenl_lock_dumpit():\n\t\t\t\t\t  genl_dumpit_info(cb)->attrs\n\nNote family->attrbuf\
+  \ is an array of pointers to the skb data, once\nthe skb is freed, any dereference\
+  \ of family->attrbuf will be a UAF.\n\nMaybe we could serialize the family->attrbuf\
+  \ with genl_mutex too, but\nthat would make the locking more complicated. Instead,\
+  \ we can just get\nrid of family->attrbuf and always allocate attrbuf from heap\
+  \ like the\nfamily->parallel_ops==true code path. This may add some performance\n\
+  overhead but comparing with taking the global genl_mutex, it still\nlooks better.\n\
+  \nFixes: 75cdbdd08900 (\"net: ieee802154: have genetlink code to parse the attrs\
+  \ during dumpit\")\nFixes: 057af7071344 (\"net: tipc: have genetlink code to parse\
+  \ the attrs during dumpit\")\nReported-and-tested-by: syzbot+3039ddf6d7b13daf3787@syzkaller.appspotmail.com\n\
+  Reported-and-tested-by: syzbot+80cad1e3cb4c41cde6ff@syzkaller.appspotmail.com\n\
+  Reported-and-tested-by: syzbot+736bcbcb11b60d0c0792@syzkaller.appspotmail.com\n\
+  Reported-and-tested-by: syzbot+520f8704db2b68091d44@syzkaller.appspotmail.com\n\
+  Reported-and-tested-by: syzbot+c96e4dfb32f8987fdeed@syzkaller.appspotmail.com\n\
+  Cc: Jiri Pirko <jiri@mellanox.com>\nSigned-off-by: Cong Wang <xiyou.wangcong@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- include/net
+- net/netlink
+hunk_count: 11
+covered_count: 5

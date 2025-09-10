@@ -1,0 +1,32 @@
+=====================================================
+BUG: KMSAN: kernel-infoleak in instrument_copy_to_user include/linux/instrumented.h:114 [inline]
+BUG: KMSAN: kernel-infoleak in _inline_copy_to_user include/linux/uaccess.h:196 [inline]
+BUG: KMSAN: kernel-infoleak in _copy_to_user+0xcc/0x120 lib/usercopy.c:26
+ instrument_copy_to_user include/linux/instrumented.h:114 [inline]
+ _inline_copy_to_user include/linux/uaccess.h:196 [inline]
+ _copy_to_user+0xcc/0x120 lib/usercopy.c:26
+ copy_to_user include/linux/uaccess.h:225 [inline]
+ vmci_host_do_receive_datagram drivers/misc/vmw_vmci/vmci_host.c:438 [inline]
+ vmci_host_unlocked_ioctl+0x1e7e/0x5200 drivers/misc/vmw_vmci/vmci_host.c:932
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl+0x23c/0x400 fs/ioctl.c:893
+ __x64_sys_ioctl+0x97/0xe0 fs/ioctl.c:893
+ x64_sys_call+0x1ebe/0x3db0 arch/x86/include/generated/asm/syscalls_64.h:17
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xd9/0x210 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Local variable __x.i.i created at:
+ set_xfeature_in_sigframe arch/x86/kernel/fpu/xstate.h:81 [inline]
+ save_xstate_epilog arch/x86/kernel/fpu/signal.c:140 [inline]
+ copy_fpstate_to_sigframe+0x11f2/0x13d0 arch/x86/kernel/fpu/signal.c:232
+ get_sigframe+0xc6a/0x1020 arch/x86/kernel/signal.c:163
+
+Bytes 28-31 of 40 are uninitialized
+Memory access of size 40 starts at ffff888131f74080
+Data copied to user address 000000000000a4bf
+
+CPU: 1 UID: 0 PID: 5798 Comm: syz-executor419 Not tainted 6.16.0-rc1-syzkaller-00239-g08215f5486ec #0 PREEMPT(undef) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+=====================================================

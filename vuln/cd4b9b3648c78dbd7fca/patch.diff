@@ -1,0 +1,21 @@
+diff --git a/fs/fuse/dev.c b/fs/fuse/dev.c
+index 8564d91c7d41..c8b197e4af9a 100644
+--- a/fs/fuse/dev.c
++++ b/fs/fuse/dev.c
+@@ -2150,9 +2150,15 @@ int fuse_dev_release(struct inode *inode, struct file *file)
+ 	if (fud) {
+ 		struct fuse_conn *fc = fud->fc;
+ 		struct fuse_pqueue *fpq = &fud->pq;
++		LIST_HEAD(to_end);
+ 
++		spin_lock(&fpq->lock);
+ 		WARN_ON(!list_empty(&fpq->io));
+-		end_requests(fc, &fpq->processing);
++		list_splice_init(&fpq->processing, &to_end);
++		spin_unlock(&fpq->lock);
++
++		end_requests(fc, &to_end);
++
+ 		/* Are we the last open device? */
+ 		if (atomic_dec_and_test(&fc->dev_count)) {
+ 			WARN_ON(fc->iq.fasync != NULL);

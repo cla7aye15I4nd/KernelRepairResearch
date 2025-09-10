@@ -1,0 +1,32 @@
+id: 8cc27ace5f6972910b31
+bug_link: https://syzkaller.appspot.com/bug?extid=8cc27ace5f6972910b31
+title: WARNING in xfrm_policy_inexact_list_reinsert
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 22d6552f827ef76ade3edf6bbb3f05048a0a7d8b
+fix_commit: 769a807d0b41df4201dbeb01c22eaeb3e5905532
+datetime: '2019-08-20T08:09:42+02:00'
+fix_commit_message: "xfrm: policy: avoid warning splat when merging nodes\n\nsyzbot\
+  \ reported a splat:\n xfrm_policy_inexact_list_reinsert+0x625/0x6e0 net/xfrm/xfrm_policy.c:877\n\
+  \ CPU: 1 PID: 6756 Comm: syz-executor.1 Not tainted 5.3.0-rc2+ #57\n Call Trace:\n\
+  \  xfrm_policy_inexact_node_reinsert net/xfrm/xfrm_policy.c:922 [inline]\n  xfrm_policy_inexact_node_merge\
+  \ net/xfrm/xfrm_policy.c:958 [inline]\n  xfrm_policy_inexact_insert_node+0x537/0xb50\
+  \ net/xfrm/xfrm_policy.c:1023\n  xfrm_policy_inexact_alloc_chain+0x62b/0xbd0 net/xfrm/xfrm_policy.c:1139\n\
+  \  xfrm_policy_inexact_insert+0xe8/0x1540 net/xfrm/xfrm_policy.c:1182\n  xfrm_policy_insert+0xdf/0xce0\
+  \ net/xfrm/xfrm_policy.c:1574\n  xfrm_add_policy+0x4cf/0x9b0 net/xfrm/xfrm_user.c:1670\n\
+  \  xfrm_user_rcv_msg+0x46b/0x720 net/xfrm/xfrm_user.c:2676\n  netlink_rcv_skb+0x1f0/0x460\
+  \ net/netlink/af_netlink.c:2477\n  xfrm_netlink_rcv+0x74/0x90 net/xfrm/xfrm_user.c:2684\n\
+  \  netlink_unicast_kernel net/netlink/af_netlink.c:1302 [inline]\n  netlink_unicast+0x809/0x9a0\
+  \ net/netlink/af_netlink.c:1328\n  netlink_sendmsg+0xa70/0xd30 net/netlink/af_netlink.c:1917\n\
+  \  sock_sendmsg_nosec net/socket.c:637 [inline]\n  sock_sendmsg net/socket.c:657\
+  \ [inline]\n\nThere is no reproducer, however, the warning can be reproduced\nby\
+  \ adding rules with ever smaller prefixes.\n\nThe sanity check (\"does the policy\
+  \ match the node\") uses the prefix value\nof the node before its updated to the\
+  \ smaller value.\n\nTo fix this, update the prefix earlier.  The bug has no impact\
+  \ on tree\ncorrectness, this is only to prevent a false warning.\n\nReported-by:\
+  \ syzbot+8cc27ace5f6972910b31@syzkaller.appspotmail.com\nSigned-off-by: Florian\
+  \ Westphal <fw@strlen.de>\nSigned-off-by: Steffen Klassert <steffen.klassert@secunet.com>\n"
+submodule:
+- net/xfrm
+- tools/testing/selftests/net
+hunk_count: 4
+covered_count: 3

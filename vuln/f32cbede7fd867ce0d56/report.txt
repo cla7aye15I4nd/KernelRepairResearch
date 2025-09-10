@@ -1,0 +1,215 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.7.0-syzkaller-11091-g296455ade1fd #0 Not tainted
+------------------------------------------------------
+kworker/0:4/5100 is trying to acquire lock:
+ffff888016b81088 (&priv->active_session_list_lock){+.-.}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ffff888016b81088 (&priv->active_session_list_lock){+.-.}-{2:2}, at: j1939_session_list_lock net/can/j1939/transport.c:238 [inline]
+ffff888016b81088 (&priv->active_session_list_lock){+.-.}-{2:2}, at: j1939_session_activate+0x4b/0x4a0 net/can/j1939/transport.c:1564
+
+but task is already holding lock:
+ffff888077c985b8 (&jsk->sk_session_queue_lock){+.-.}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ffff888077c985b8 (&jsk->sk_session_queue_lock){+.-.}-{2:2}, at: j1939_sk_queue_activate_next+0x60/0x4d0 net/can/j1939/socket.c:207
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (&jsk->sk_session_queue_lock){+.-.}-{2:2}:
+       __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+       _raw_spin_lock_bh+0x33/0x40 kernel/locking/spinlock.c:178
+       spin_lock_bh include/linux/spinlock.h:356 [inline]
+       j1939_sk_queue_drop_all+0x3b/0x2f0 net/can/j1939/socket.c:139
+       j1939_sk_netdev_event_netdown+0x7f/0x160 net/can/j1939/socket.c:1282
+       j1939_netdev_notify+0x1a2/0x1d0 net/can/j1939/main.c:381
+       notifier_call_chain+0xb6/0x3b0 kernel/notifier.c:93
+       call_netdevice_notifiers_info+0xbe/0x130 net/core/dev.c:1966
+       call_netdevice_notifiers_extack net/core/dev.c:2004 [inline]
+       call_netdevice_notifiers net/core/dev.c:2018 [inline]
+       __dev_notify_flags+0x1f5/0x2e0 net/core/dev.c:8689
+       dev_change_flags+0x10c/0x160 net/core/dev.c:8725
+       do_setlink+0x1a73/0x4090 net/core/rtnetlink.c:2910
+       __rtnl_newlink+0xc28/0x1940 net/core/rtnetlink.c:3701
+       rtnl_newlink+0x67/0xa0 net/core/rtnetlink.c:3748
+       rtnetlink_rcv_msg+0x3c7/0xe00 net/core/rtnetlink.c:6615
+       netlink_rcv_skb+0x16b/0x440 net/netlink/af_netlink.c:2543
+       netlink_unicast_kernel net/netlink/af_netlink.c:1341 [inline]
+       netlink_unicast+0x53b/0x810 net/netlink/af_netlink.c:1367
+       netlink_sendmsg+0x8b7/0xd70 net/netlink/af_netlink.c:1908
+       sock_sendmsg_nosec net/socket.c:730 [inline]
+       __sock_sendmsg+0xd5/0x180 net/socket.c:745
+       ____sys_sendmsg+0x6ac/0x940 net/socket.c:2584
+       ___sys_sendmsg+0x135/0x1d0 net/socket.c:2638
+       __sys_sendmsg+0x117/0x1e0 net/socket.c:2667
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xd3/0x250 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+-> #1 (&priv->j1939_socks_lock){+.-.}-{2:2}:
+       __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+       _raw_spin_lock_bh+0x33/0x40 kernel/locking/spinlock.c:178
+       spin_lock_bh include/linux/spinlock.h:356 [inline]
+       j1939_sk_errqueue+0xaa/0x1a0 net/can/j1939/socket.c:1083
+       j1939_session_destroy+0x276/0x4f0 net/can/j1939/transport.c:271
+       __j1939_session_release net/can/j1939/transport.c:294 [inline]
+       kref_put include/linux/kref.h:65 [inline]
+       j1939_session_put net/can/j1939/transport.c:299 [inline]
+       j1939_session_deactivate_locked+0x28e/0x330 net/can/j1939/transport.c:1086
+       j1939_cancel_active_session+0x183/0x360 net/can/j1939/transport.c:2194
+       j1939_netdev_notify+0x19a/0x1d0 net/can/j1939/main.c:380
+       notifier_call_chain+0xb6/0x3b0 kernel/notifier.c:93
+       call_netdevice_notifiers_info+0xbe/0x130 net/core/dev.c:1966
+       call_netdevice_notifiers_extack net/core/dev.c:2004 [inline]
+       call_netdevice_notifiers net/core/dev.c:2018 [inline]
+       __dev_notify_flags+0x1f5/0x2e0 net/core/dev.c:8689
+       dev_change_flags+0x10c/0x160 net/core/dev.c:8725
+       do_setlink+0x1a73/0x4090 net/core/rtnetlink.c:2910
+       __rtnl_newlink+0xc28/0x1940 net/core/rtnetlink.c:3701
+       rtnl_newlink+0x67/0xa0 net/core/rtnetlink.c:3748
+       rtnetlink_rcv_msg+0x3c7/0xe00 net/core/rtnetlink.c:6615
+       netlink_rcv_skb+0x16b/0x440 net/netlink/af_netlink.c:2543
+       netlink_unicast_kernel net/netlink/af_netlink.c:1341 [inline]
+       netlink_unicast+0x53b/0x810 net/netlink/af_netlink.c:1367
+       netlink_sendmsg+0x8b7/0xd70 net/netlink/af_netlink.c:1908
+       sock_sendmsg_nosec net/socket.c:730 [inline]
+       __sock_sendmsg+0xd5/0x180 net/socket.c:745
+       ____sys_sendmsg+0x6ac/0x940 net/socket.c:2584
+       ___sys_sendmsg+0x135/0x1d0 net/socket.c:2638
+       __sys_sendmsg+0x117/0x1e0 net/socket.c:2667
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xd3/0x250 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+-> #0 (&priv->active_session_list_lock){+.-.}-{2:2}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain kernel/locking/lockdep.c:3869 [inline]
+       __lock_acquire+0x2445/0x3b30 kernel/locking/lockdep.c:5137
+       lock_acquire kernel/locking/lockdep.c:5754 [inline]
+       lock_acquire+0x1ae/0x520 kernel/locking/lockdep.c:5719
+       __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+       _raw_spin_lock_bh+0x33/0x40 kernel/locking/spinlock.c:178
+       spin_lock_bh include/linux/spinlock.h:356 [inline]
+       j1939_session_list_lock net/can/j1939/transport.c:238 [inline]
+       j1939_session_activate+0x4b/0x4a0 net/can/j1939/transport.c:1564
+       j1939_sk_queue_activate_next_locked net/can/j1939/socket.c:181 [inline]
+       j1939_sk_queue_activate_next+0x2bc/0x4d0 net/can/j1939/socket.c:208
+       j1939_session_deactivate_activate_next net/can/j1939/transport.c:1108 [inline]
+       j1939_session_completed+0xb7/0x170 net/can/j1939/transport.c:1222
+       j1939_xtp_rx_eoma_one net/can/j1939/transport.c:1395 [inline]
+       j1939_xtp_rx_eoma+0x293/0x600 net/can/j1939/transport.c:1410
+       j1939_tp_cmd_recv net/can/j1939/transport.c:2099 [inline]
+       j1939_tp_recv+0x718/0xf50 net/can/j1939/transport.c:2144
+       j1939_can_recv+0x78b/0xa70 net/can/j1939/main.c:112
+       deliver net/can/af_can.c:572 [inline]
+       can_rcv_filter+0x2a5/0x8e0 net/can/af_can.c:606
+       can_receive+0x320/0x5c0 net/can/af_can.c:663
+       can_rcv+0x1dc/0x270 net/can/af_can.c:687
+       __netif_receive_skb_one_core+0x115/0x180 net/core/dev.c:5534
+       __netif_receive_skb+0x1f/0x1b0 net/core/dev.c:5648
+       process_backlog+0x101/0x6b0 net/core/dev.c:5976
+       __napi_poll.constprop.0+0xb4/0x540 net/core/dev.c:6576
+       napi_poll net/core/dev.c:6645 [inline]
+       net_rx_action+0x956/0xe90 net/core/dev.c:6778
+       __do_softirq+0x21a/0x8de kernel/softirq.c:553
+       do_softirq kernel/softirq.c:454 [inline]
+       do_softirq+0xaa/0xe0 kernel/softirq.c:441
+       __local_bh_enable_ip+0xfc/0x120 kernel/softirq.c:381
+       spin_unlock_bh include/linux/spinlock.h:396 [inline]
+       nsim_dev_trap_report drivers/net/netdevsim/dev.c:820 [inline]
+       nsim_dev_trap_report_work+0x870/0xc80 drivers/net/netdevsim/dev.c:850
+       process_one_work+0x886/0x15d0 kernel/workqueue.c:2633
+       process_scheduled_works kernel/workqueue.c:2706 [inline]
+       worker_thread+0x8b9/0x1290 kernel/workqueue.c:2787
+       kthread+0x2c6/0x3a0 kernel/kthread.c:388
+       ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+
+other info that might help us debug this:
+
+Chain exists of:
+  &priv->active_session_list_lock --> &priv->j1939_socks_lock --> &jsk->sk_session_queue_lock
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&jsk->sk_session_queue_lock);
+                               lock(&priv->j1939_socks_lock);
+                               lock(&jsk->sk_session_queue_lock);
+  lock(&priv->active_session_list_lock);
+
+ *** DEADLOCK ***
+
+7 locks held by kworker/0:4/5100:
+ #0: ffff888013088d38 ((wq_completion)events){+.+.}-{0:0}, at: process_one_work+0x789/0x15d0 kernel/workqueue.c:2608
+ #1: ffffc90003c7fd80 ((work_completion)(&(&nsim_dev->trap_data->trap_report_dw)->work)){+.+.}-{0:0}, at: process_one_work+0x7eb/0x15d0 kernel/workqueue.c:2609
+ #2: ffff888013b16250 (&devlink->lock_key){+.+.}-{3:3}, at: nsim_dev_trap_report_work+0x53/0xc80 drivers/net/netdevsim/dev.c:841
+ #3: ffff88802c8020e0 (&nsim_trap_data->trap_lock){+.+.}-{2:2}, at: spin_lock include/linux/spinlock.h:351 [inline]
+ #3: ffff88802c8020e0 (&nsim_trap_data->trap_lock){+.+.}-{2:2}, at: nsim_dev_trap_report drivers/net/netdevsim/dev.c:791 [inline]
+ #3: ffff88802c8020e0 (&nsim_trap_data->trap_lock){+.+.}-{2:2}, at: nsim_dev_trap_report_work+0x1c5/0xc80 drivers/net/netdevsim/dev.c:850
+ #4: ffffffff8d1ace20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:298 [inline]
+ #4: ffffffff8d1ace20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:750 [inline]
+ #4: ffffffff8d1ace20 (rcu_read_lock){....}-{1:2}, at: process_backlog+0x25d/0x6b0 net/core/dev.c:5975
+ #5: ffffffff8d1ace20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:298 [inline]
+ #5: ffffffff8d1ace20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:750 [inline]
+ #5: ffffffff8d1ace20 (rcu_read_lock){....}-{1:2}, at: can_receive+0x21b/0x5c0 net/can/af_can.c:656
+ #6: ffff888077c985b8 (&jsk->sk_session_queue_lock){+.-.}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ #6: ffff888077c985b8 (&jsk->sk_session_queue_lock){+.-.}-{2:2}, at: j1939_sk_queue_activate_next+0x60/0x4d0 net/can/j1939/socket.c:207
+
+stack backtrace:
+CPU: 0 PID: 5100 Comm: kworker/0:4 Not tainted 6.7.0-syzkaller-11091-g296455ade1fd #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+Workqueue: events nsim_dev_trap_report_work
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ check_noncircular+0x317/0x400 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain kernel/locking/lockdep.c:3869 [inline]
+ __lock_acquire+0x2445/0x3b30 kernel/locking/lockdep.c:5137
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1ae/0x520 kernel/locking/lockdep.c:5719
+ __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+ _raw_spin_lock_bh+0x33/0x40 kernel/locking/spinlock.c:178
+ spin_lock_bh include/linux/spinlock.h:356 [inline]
+ j1939_session_list_lock net/can/j1939/transport.c:238 [inline]
+ j1939_session_activate+0x4b/0x4a0 net/can/j1939/transport.c:1564
+ j1939_sk_queue_activate_next_locked net/can/j1939/socket.c:181 [inline]
+ j1939_sk_queue_activate_next+0x2bc/0x4d0 net/can/j1939/socket.c:208
+ j1939_session_deactivate_activate_next net/can/j1939/transport.c:1108 [inline]
+ j1939_session_completed+0xb7/0x170 net/can/j1939/transport.c:1222
+ j1939_xtp_rx_eoma_one net/can/j1939/transport.c:1395 [inline]
+ j1939_xtp_rx_eoma+0x293/0x600 net/can/j1939/transport.c:1410
+ j1939_tp_cmd_recv net/can/j1939/transport.c:2099 [inline]
+ j1939_tp_recv+0x718/0xf50 net/can/j1939/transport.c:2144
+ j1939_can_recv+0x78b/0xa70 net/can/j1939/main.c:112
+ deliver net/can/af_can.c:572 [inline]
+ can_rcv_filter+0x2a5/0x8e0 net/can/af_can.c:606
+ can_receive+0x320/0x5c0 net/can/af_can.c:663
+ can_rcv+0x1dc/0x270 net/can/af_can.c:687
+ __netif_receive_skb_one_core+0x115/0x180 net/core/dev.c:5534
+ __netif_receive_skb+0x1f/0x1b0 net/core/dev.c:5648
+ process_backlog+0x101/0x6b0 net/core/dev.c:5976
+ __napi_poll.constprop.0+0xb4/0x540 net/core/dev.c:6576
+ napi_poll net/core/dev.c:6645 [inline]
+ net_rx_action+0x956/0xe90 net/core/dev.c:6778
+ __do_softirq+0x21a/0x8de kernel/softirq.c:553
+ do_softirq kernel/softirq.c:454 [inline]
+ do_softirq+0xaa/0xe0 kernel/softirq.c:441
+ </IRQ>
+ <TASK>
+ __local_bh_enable_ip+0xfc/0x120 kernel/softirq.c:381
+ spin_unlock_bh include/linux/spinlock.h:396 [inline]
+ nsim_dev_trap_report drivers/net/netdevsim/dev.c:820 [inline]
+ nsim_dev_trap_report_work+0x870/0xc80 drivers/net/netdevsim/dev.c:850
+ process_one_work+0x886/0x15d0 kernel/workqueue.c:2633
+ process_scheduled_works kernel/workqueue.c:2706 [inline]
+ worker_thread+0x8b9/0x1290 kernel/workqueue.c:2787
+ kthread+0x2c6/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+ </TASK>

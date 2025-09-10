@@ -1,0 +1,69 @@
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index d53b0d69dd73..6ed43fc0e6ab 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -65,19 +65,12 @@ static bool blkcg_policy_enabled(struct request_queue *q,
+ 	return pol && test_bit(pol->plid, q->blkcg_pols);
+ }
+ 
+-/**
+- * blkg_free - free a blkg
+- * @blkg: blkg to free
+- *
+- * Free @blkg which may be partially allocated.
+- */
+-static void blkg_free(struct blkcg_gq *blkg)
++static void blkg_free_workfn(struct work_struct *work)
+ {
++	struct blkcg_gq *blkg = container_of(work, struct blkcg_gq,
++					     free_work);
+ 	int i;
+ 
+-	if (!blkg)
+-		return;
+-
+ 	for (i = 0; i < BLKCG_MAX_POLS; i++)
+ 		if (blkg->pd[i])
+ 			blkcg_policy[i]->pd_free_fn(blkg->pd[i]);
+@@ -89,6 +82,25 @@ static void blkg_free(struct blkcg_gq *blkg)
+ 	kfree(blkg);
+ }
+ 
++/**
++ * blkg_free - free a blkg
++ * @blkg: blkg to free
++ *
++ * Free @blkg which may be partially allocated.
++ */
++static void blkg_free(struct blkcg_gq *blkg)
++{
++	if (!blkg)
++		return;
++
++	/*
++	 * Both ->pd_free_fn() and request queue's release handler may
++	 * sleep, so free us by scheduling one work func
++	 */
++	INIT_WORK(&blkg->free_work, blkg_free_workfn);
++	schedule_work(&blkg->free_work);
++}
++
+ static void __blkg_release(struct rcu_head *rcu)
+ {
+ 	struct blkcg_gq *blkg = container_of(rcu, struct blkcg_gq, rcu_head);
+diff --git a/include/linux/blk-cgroup.h b/include/linux/blk-cgroup.h
+index f2ad8ed8f777..652cd05b0924 100644
+--- a/include/linux/blk-cgroup.h
++++ b/include/linux/blk-cgroup.h
+@@ -95,7 +95,10 @@ struct blkcg_gq {
+ 
+ 	spinlock_t			async_bio_lock;
+ 	struct bio_list			async_bios;
+-	struct work_struct		async_bio_work;
++	union {
++		struct work_struct	async_bio_work;
++		struct work_struct	free_work;
++	};
+ 
+ 	atomic_t			use_delay;
+ 	atomic64_t			delay_nsec;

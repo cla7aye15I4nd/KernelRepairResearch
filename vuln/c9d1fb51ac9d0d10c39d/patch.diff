@@ -1,0 +1,121 @@
+diff --git a/arch/x86/kvm/mmu/mmu.c b/arch/x86/kvm/mmu/mmu.c
+index db597f57cdc2..7eb21a22cc13 100644
+--- a/arch/x86/kvm/mmu/mmu.c
++++ b/arch/x86/kvm/mmu/mmu.c
+@@ -3344,7 +3344,7 @@ static void transparent_hugepage_adjust(struct kvm_vcpu *vcpu,
+ 	 */
+ 	if (!is_error_noslot_pfn(pfn) && !kvm_is_reserved_pfn(pfn) &&
+ 	    !kvm_is_zone_device_pfn(pfn) && level == PT_PAGE_TABLE_LEVEL &&
+-	    PageTransCompoundMap(pfn_to_page(pfn))) {
++	    kvm_is_transparent_hugepage(pfn)) {
+ 		unsigned long mask;
+ 
+ 		/*
+@@ -5961,7 +5961,7 @@ static bool kvm_mmu_zap_collapsible_spte(struct kvm *kvm,
+ 		 */
+ 		if (sp->role.direct && !kvm_is_reserved_pfn(pfn) &&
+ 		    !kvm_is_zone_device_pfn(pfn) &&
+-		    PageTransCompoundMap(pfn_to_page(pfn))) {
++		    kvm_is_transparent_hugepage(pfn)) {
+ 			pte_list_remove(rmap_head, sptep);
+ 
+ 			if (kvm_available_flush_tlb_with_range())
+diff --git a/include/linux/huge_mm.h b/include/linux/huge_mm.h
+index 0b84e13e88e2..5aca3d1bdb32 100644
+--- a/include/linux/huge_mm.h
++++ b/include/linux/huge_mm.h
+@@ -160,6 +160,7 @@ extern unsigned long thp_get_unmapped_area(struct file *filp,
+ 
+ extern void prep_transhuge_page(struct page *page);
+ extern void free_transhuge_page(struct page *page);
++bool is_transparent_hugepage(struct page *page);
+ 
+ bool can_split_huge_page(struct page *page, int *pextra_pins);
+ int split_huge_page_to_list(struct page *page, struct list_head *list);
+@@ -308,6 +309,11 @@ static inline bool transhuge_vma_suitable(struct vm_area_struct *vma,
+ 
+ static inline void prep_transhuge_page(struct page *page) {}
+ 
++static inline bool is_transparent_hugepage(struct page *page)
++{
++	return false;
++}
++
+ #define transparent_hugepage_flags 0UL
+ 
+ #define thp_get_unmapped_area	NULL
+diff --git a/include/linux/kvm_host.h b/include/linux/kvm_host.h
+index 48e139c293c2..46fdb7533678 100644
+--- a/include/linux/kvm_host.h
++++ b/include/linux/kvm_host.h
+@@ -976,6 +976,7 @@ int kvm_cpu_has_pending_timer(struct kvm_vcpu *vcpu);
+ 
+ bool kvm_is_reserved_pfn(kvm_pfn_t pfn);
+ bool kvm_is_zone_device_pfn(kvm_pfn_t pfn);
++bool kvm_is_transparent_hugepage(kvm_pfn_t pfn);
+ 
+ struct kvm_irq_ack_notifier {
+ 	struct hlist_node link;
+diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+index 41a0fbddc96b..9b3ee79d0edf 100644
+--- a/mm/huge_memory.c
++++ b/mm/huge_memory.c
+@@ -527,6 +527,17 @@ void prep_transhuge_page(struct page *page)
+ 	set_compound_page_dtor(page, TRANSHUGE_PAGE_DTOR);
+ }
+ 
++bool is_transparent_hugepage(struct page *page)
++{
++	if (!PageCompound(page))
++		return 0;
++
++	page = compound_head(page);
++	return is_huge_zero_page(page) ||
++	       page[1].compound_dtor == TRANSHUGE_PAGE_DTOR;
++}
++EXPORT_SYMBOL_GPL(is_transparent_hugepage);
++
+ static unsigned long __thp_get_unmapped_area(struct file *filp, unsigned long len,
+ 		loff_t off, unsigned long flags, unsigned long size)
+ {
+diff --git a/virt/kvm/arm/mmu.c b/virt/kvm/arm/mmu.c
+index 0b32a904a1bb..dc8254bf30ea 100644
+--- a/virt/kvm/arm/mmu.c
++++ b/virt/kvm/arm/mmu.c
+@@ -1377,14 +1377,8 @@ static bool transparent_hugepage_adjust(kvm_pfn_t *pfnp, phys_addr_t *ipap)
+ {
+ 	kvm_pfn_t pfn = *pfnp;
+ 	gfn_t gfn = *ipap >> PAGE_SHIFT;
+-	struct page *page = pfn_to_page(pfn);
+ 
+-	/*
+-	 * PageTransCompoundMap() returns true for THP and
+-	 * hugetlbfs. Make sure the adjustment is done only for THP
+-	 * pages.
+-	 */
+-	if (!PageHuge(page) && PageTransCompoundMap(page)) {
++	if (kvm_is_transparent_hugepage(pfn)) {
+ 		unsigned long mask;
+ 		/*
+ 		 * The address we faulted on is backed by a transparent huge
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index ffec9f427b55..64e9e9d65ed4 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -191,6 +191,16 @@ bool kvm_is_reserved_pfn(kvm_pfn_t pfn)
+ 	return true;
+ }
+ 
++bool kvm_is_transparent_hugepage(kvm_pfn_t pfn)
++{
++	struct page *page = pfn_to_page(pfn);
++
++	if (!PageTransCompoundMap(page))
++		return false;
++
++	return is_transparent_hugepage(compound_head(page));
++}
++
+ /*
+  * Switches to specified vcpu, until a matching vcpu_put()
+  */

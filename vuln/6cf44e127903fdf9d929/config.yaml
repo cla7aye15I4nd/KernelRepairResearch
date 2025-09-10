@@ -1,0 +1,37 @@
+id: 6cf44e127903fdf9d929
+bug_link: https://syzkaller.appspot.com/bug?extid=6cf44e127903fdf9d929
+title: WARNING in __gup_longterm_locked
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d528014517f2b0531862c02865b9d4c908019dc4
+fix_commit: 6cd06ab12d1afdab3847e7981f301bd0404aaa5c
+datetime: '2023-07-05T09:33:31-07:00'
+fix_commit_message: "gup: make the stack expansion warning a bit more targeted\n\n\
+  I added a warning about about GUP no longer expanding the stack in\ncommit a425ac5365f6\
+  \ (\"gup: add warning if some caller would seem to want\nstack expansion\"), but\
+  \ didn't really expect anybody to hit it.\n\nAnd it's true that nobody seems to\
+  \ have hit a _real_ case yet, but we\ncertainly have a number of reports of false\
+  \ positives.  Which not only\ncauses extra noise in itself, but might also end up\
+  \ hiding any real\ncases if they do exist.\n\nSo let's tighten up the warning condition,\
+  \ and replace the simplistic\n\n\tvma = find_vma(mm, start);\n\tif (vma && (start\
+  \ < vma->vm_start)) {\n\t\tWARN_ON_ONCE(vma->vm_flags & VM_GROWSDOWN);\n\nwith a\n\
+  \n\tvma = gup_vma_lookup(mm, start);\n\nhelper function which works otherwise like\
+  \ just \"vma_lookup()\", but with\nsome heuristics for when to warn about gup no\
+  \ longer causing stack\nexpansion.\n\nIn particular, don't just warn for \"below\
+  \ the stack\", but warn if it's\n_just_ below the stack (with \"just below\" arbitrarily\
+  \ defined as 64kB,\nbecause why not?).  And rate-limit it to at most once per hour,\
+  \ which\nmeans that any false positives shouldn't completely hide subsequent\nreports,\
+  \ but we won't be flooding the logs about it either.\n\nThe previous code triggered\
+  \ when some GUP user (chromium crashpad)\naccessing past the end of the previous\
+  \ vma, for example.  That has never\nexpanded the stack, it just causes GUP to return\
+  \ early, and as such we\nshouldn't be warning about it.\n\nThis is still going trigger\
+  \ the randomized testers, but to mitigate the\nnoise from that, use \"dump_stack()\"\
+  \ instead of \"WARN_ON_ONCE()\" to get\nthe kernel call chain.  We'll get the relevant\
+  \ information, but syzbot\nshouldn't get too upset about it.\n\nAlso, don't even\
+  \ bother with the GROWSUP case, which would be using\ndifferent heuristics entirely,\
+  \ but only happens on parisc.\n\nReported-by: kernel test robot <oliver.sang@intel.com>\n\
+  Reported-by: John Hubbard <jhubbard@nvidia.com>\nReported-by: syzbot+6cf44e127903fdf9d929@syzkaller.appspotmail.com\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 3
+covered_count: 1

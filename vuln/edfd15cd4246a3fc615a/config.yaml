@@ -1,0 +1,41 @@
+id: edfd15cd4246a3fc615a
+bug_link: https://syzkaller.appspot.com/bug?extid=edfd15cd4246a3fc615a
+title: 'KASAN: invalid-free in io_clean_op'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aa1df3a360a0c50e0f0086a785d75c2785c29967
+fix_commit: 4c17a496a7a0730fdfc9e249b83cc58249111532
+datetime: '2022-09-26T08:36:50-06:00'
+fix_commit_message: 'io_uring/net: fix cleanup double free free_iov init
+
+
+  Having ->async_data doesn''t mean it''s initialised and previously we vere
+
+  relying on setting F_CLEANUP at the right moment. With zc sendmsg
+
+  though, we set F_CLEANUP early in prep when we alloc a notif and so we
+
+  may allocate async_data, fail in copy_msg_hdr() leaving
+
+  struct io_async_msghdr not initialised correctly but with F_CLEANUP
+
+  set, which causes a ->free_iov double free and probably other nastiness.
+
+
+  Always initialise ->free_iov. Also, now it might point to fast_iov when
+
+  fails, so avoid freeing it during cleanups.
+
+
+  Reported-by: syzbot+edfd15cd4246a3fc615a@syzkaller.appspotmail.com
+
+  Fixes: 493108d95f146 ("io_uring/net: zerocopy sendmsg")
+
+  Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 6
+covered_count: 4

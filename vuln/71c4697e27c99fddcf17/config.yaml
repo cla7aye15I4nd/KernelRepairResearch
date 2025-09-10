@@ -1,0 +1,31 @@
+id: 71c4697e27c99fddcf17
+bug_link: https://syzkaller.appspot.com/bug?extid=71c4697e27c99fddcf17
+title: memory leak in prepare_creds
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e8c954df234145c5765870382c2bc630a48beec9
+fix_commit: f26c08b444df833b19c00838a530d93963ce9cd0
+datetime: '2020-12-08T08:54:26-07:00'
+fix_commit_message: "io_uring: fix file leak on error path of io ctx creation\n\n\
+  Put file as part of error handling when setting up io ctx to fix\nmemory leaks like\
+  \ the following one.\n\n   BUG: memory leak\n   unreferenced object 0xffff888101ea2200\
+  \ (size 256):\n     comm \"syz-executor355\", pid 8470, jiffies 4294953658 (age\
+  \ 32.400s)\n     hex dump (first 32 bytes):\n       00 00 00 00 00 00 00 00 00 00\
+  \ 00 00 00 00 00 00  ................\n       20 59 03 01 81 88 ff ff 80 87 a8 10\
+  \ 81 88 ff ff   Y..............\n     backtrace:\n       [<000000002e0a7c5f>] kmem_cache_zalloc\
+  \ include/linux/slab.h:654 [inline]\n       [<000000002e0a7c5f>] __alloc_file+0x1f/0x130\
+  \ fs/file_table.c:101\n       [<000000001a55b73a>] alloc_empty_file+0x69/0x120 fs/file_table.c:151\n\
+  \       [<00000000fb22349e>] alloc_file+0x33/0x1b0 fs/file_table.c:193\n       [<000000006e1465bb>]\
+  \ alloc_file_pseudo+0xb2/0x140 fs/file_table.c:233\n       [<000000007118092a>]\
+  \ anon_inode_getfile fs/anon_inodes.c:91 [inline]\n       [<000000007118092a>] anon_inode_getfile+0xaa/0x120\
+  \ fs/anon_inodes.c:74\n       [<000000002ae99012>] io_uring_get_fd fs/io_uring.c:9198\
+  \ [inline]\n       [<000000002ae99012>] io_uring_create fs/io_uring.c:9377 [inline]\n\
+  \       [<000000002ae99012>] io_uring_setup+0x1125/0x1630 fs/io_uring.c:9411\n \
+  \      [<000000008280baad>] do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n\
+  \       [<00000000685d8cf0>] entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nReported-by:\
+  \ syzbot+71c4697e27c99fddcf17@syzkaller.appspotmail.com\nFixes: 0f2122045b94 (\"\
+  io_uring: don't rely on weak ->files references\")\nCc: Pavel Begunkov <asml.silence@gmail.com>\n\
+  Signed-off-by: Hillf Danton <hdanton@sina.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 3
+covered_count: 0

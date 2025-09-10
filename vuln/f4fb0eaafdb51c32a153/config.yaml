@@ -1,0 +1,26 @@
+id: f4fb0eaafdb51c32a153
+bug_link: https://syzkaller.appspot.com/bug?extid=f4fb0eaafdb51c32a153
+title: 'KASAN: null-ptr-deref Write in amp_read_loc_assoc_final_data'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fc342c4dc408754f50f19dc832152fbb4b73f1e6
+fix_commit: e8bd76ede155fd54d8c41d045dda43cd3174d506
+datetime: '2021-02-02T17:23:14+01:00'
+fix_commit_message: "Bluetooth: Fix null pointer dereference in amp_read_loc_assoc_final_data\n\
+  \nkernel panic trace looks like:\n\n #5 [ffffb9e08698fc80] do_page_fault at ffffffffb666e0d7\n\
+  \ #6 [ffffb9e08698fcb0] page_fault at ffffffffb70010fe\n    [exception RIP: amp_read_loc_assoc_final_data+63]\n\
+  \    RIP: ffffffffc06ab54f  RSP: ffffb9e08698fd68  RFLAGS: 00010246\n    RAX: 0000000000000000\
+  \  RBX: ffff8c8845a5a000  RCX: 0000000000000004\n    RDX: 0000000000000000  RSI:\
+  \ ffff8c8b9153d000  RDI: ffff8c8845a5a000\n    RBP: ffffb9e08698fe40   R8: 00000000000330e0\
+  \   R9: ffffffffc0675c94\n    R10: ffffb9e08698fe58  R11: 0000000000000001  R12:\
+  \ ffff8c8b9cbf6200\n    R13: 0000000000000000  R14: 0000000000000000  R15: ffff8c8b2026da0b\n\
+  \    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018\n #7 [ffffb9e08698fda8] hci_event_packet\
+  \ at ffffffffc0676904 [bluetooth]\n #8 [ffffb9e08698fe50] hci_rx_work at ffffffffc06629ac\
+  \ [bluetooth]\n #9 [ffffb9e08698fe98] process_one_work at ffffffffb66f95e7\n\nhcon->amp_mgr\
+  \ seems NULL triggered kernel panic in following line inside\nfunction amp_read_loc_assoc_final_data\n\
+  \n        set_bit(READ_LOC_AMP_ASSOC_FINAL, &mgr->state);\n\nFixed by checking NULL\
+  \ for mgr.\n\nSigned-off-by: Gopal Tiwari <gtiwari@redhat.com>\nSigned-off-by: Marcel\
+  \ Holtmann <marcel@holtmann.org>\n"
+submodule:
+- net/bluetooth
+hunk_count: 1
+covered_count: 1

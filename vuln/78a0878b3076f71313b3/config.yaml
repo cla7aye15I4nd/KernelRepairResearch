@@ -1,0 +1,31 @@
+id: 78a0878b3076f71313b3
+bug_link: https://syzkaller.appspot.com/bug?extid=78a0878b3076f71313b3
+title: 'BUG: sleeping function called from invalid context in break_ksm'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e07cda5f232fac4de0925d8a4c92e51e41fa2f6e
+fix_commit: d7c0e68dab98f0f5a2af501eaefeb90cc855fc80
+datetime: '2022-12-11T18:12:09-08:00'
+fix_commit_message: "mm/ksm: convert break_ksm() to use walk_page_range_vma()\n\n\
+  FOLL_MIGRATION exists only for the purpose of break_ksm(), and actually,\nthere\
+  \ is not even the need to wait for the migration to finish, we only\nwant to know\
+  \ if we're dealing with a KSM page.\n\nUsing follow_page() just to identify a KSM\
+  \ page overcomplicates GUP code. \nLet's use walk_page_range_vma() instead, because\
+  \ we don't actually care\nabout the page itself, we only need to know a single property\
+  \ -- no need\nto even grab a reference.\n\nSo, get rid of follow_page() usage such\
+  \ that we can get rid of\nFOLL_MIGRATION now and eventually be able to get rid of\
+  \ follow_page() in\nthe future.\n\nIn my setup (AMD Ryzen 9 3900X), running the\
+  \ KSM selftest to test unmerge\nperformance on 2 GiB (taskset 0x8 ./ksm_tests -D\
+  \ -s 2048), this results in\na performance degradation of ~2% (old: ~5010 MiB/s,\
+  \ new: ~4900 MiB/s).  I\ndon't think we particularly care for now.\n\nInterestingly,\
+  \ the benchmark reduction is due to the single callback. \nAdding a second callback\
+  \ (e.g., pud_entry()) reduces the benchmark by\nanother 100-200 MiB/s.\n\nLink:\
+  \ https://lkml.kernel.org/r/20221021101141.84170-9-david@redhat.com\nSigned-off-by:\
+  \ David Hildenbrand <david@redhat.com>\nCc: Andrea Arcangeli <aarcange@redhat.com>\n\
+  Cc: Hugh Dickins <hughd@google.com>\nCc: Jason Gunthorpe <jgg@nvidia.com>\nCc: John\
+  \ Hubbard <jhubbard@nvidia.com>\nCc: Matthew Wilcox (Oracle) <willy@infradead.org>\n\
+  Cc: Peter Xu <peterx@redhat.com>\nCc: Shuah Khan <shuah@kernel.org>\nCc: Vlastimil\
+  \ Babka <vbabka@suse.cz>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 3
+covered_count: 2

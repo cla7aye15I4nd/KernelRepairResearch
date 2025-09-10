@@ -1,0 +1,40 @@
+id: 9abda841d636d86c41da
+bug_link: https://syzkaller.appspot.com/bug?extid=9abda841d636d86c41da
+title: WARNING in snd_usbmidi_output_open
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5534bbb7c658a6b21e118b0d22de36b5bbb19805
+fix_commit: ad72c3c3f6eb81d2cb189ec71e888316adada5df
+datetime: '2022-11-12T15:13:01+01:00'
+fix_commit_message: 'ALSA: usb-audio: Drop snd_BUG_ON() from snd_usbmidi_output_open()
+
+
+  snd_usbmidi_output_open() has a check of the NULL port with
+
+  snd_BUG_ON().  snd_BUG_ON() was used as this shouldn''t have happened,
+
+  but in reality, the NULL port may be seen when the device gives an
+
+  invalid endpoint setup at the descriptor, hence the driver skips the
+
+  allocation.  That is, the check itself is valid and snd_BUG_ON()
+
+  should be dropped from there.  Otherwise it''s confusing as if it were
+
+  a real bug, as recently syzbot stumbled on it.
+
+
+  Reported-by: syzbot+9abda841d636d86c41da@syzkaller.appspotmail.com
+
+  Cc: <stable@vger.kernel.org>
+
+  Link: https://lore.kernel.org/r/syzbot+9abda841d636d86c41da@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/20221112141223.6144-1-tiwai@suse.de
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/usb
+hunk_count: 1
+covered_count: 1

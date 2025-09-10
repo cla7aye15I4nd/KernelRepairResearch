@@ -1,0 +1,89 @@
+id: 57bcc752f0df8bb1365c
+bug_link: https://syzkaller.appspot.com/bug?extid=57bcc752f0df8bb1365c
+title: WARNING in follow_page_pte
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ab5ac789efa985e42bdb5b5e8a7a4ad84935d44e
+fix_commit: cf1b80dc31a1137b8b4568c138b453bf7453204a
+datetime: '2025-08-11T23:00:59-07:00'
+fix_commit_message: 'mm: pass page directly instead of using folio_page
+
+
+  In commit_anon_folio_batch(), we iterate over all pages pointed to by the
+
+  PTE batch.  Therefore we need to know the first page of the batch;
+
+  currently we derive that via folio_page(folio, 0), but, that takes us to
+
+  the first (head) page of the folio instead - our PTE batch may lie in the
+
+  middle of the folio, leading to incorrectness.
+
+
+  Bite the bullet and throw away the micro-optimization of reusing the folio
+
+  in favour of code simplicity.  Derive the page and the folio in
+
+  change_pte_range, and pass the page too to commit_anon_folio_batch to fix
+
+  the aforementioned issue.
+
+
+  Link: https://lkml.kernel.org/r/20250806145611.3962-1-dev.jain@arm.com
+
+  Fixes: cac1db8c3aad ("mm: optimize mprotect() by PTE batching")
+
+  Reported-by: syzbot+57bcc752f0df8bb1365c@syzkaller.appspotmail.com
+
+  Signed-off-by: Dev Jain <dev.jain@arm.com>
+
+  Reviewed-by: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
+
+  Debugged-by: David Hildenbrand <david@redhat.com>
+
+  Acked-by: David Hildenbrand <david@redhat.com>
+
+  Cc: Anshuman Khandual <anshuman.khandual@arm.com>
+
+  Cc: Barry Song <baohua@kernel.org>
+
+  Cc: Catalin Marinas <catalin.marinas@arm.com>
+
+  Cc: Christophe Leroy <christophe.leroy@csgroup.eu>
+
+  Cc: Hugh Dickins <hughd@google.com>
+
+  Cc: Jann Horn <jannh@google.com>
+
+  Cc: Joey Gouly <joey.gouly@arm.com>
+
+  Cc: Kevin Brodsky <kevin.brodsky@arm.com>
+
+  Cc: Lance Yang <ioworker0@gmail.com>
+
+  Cc: Liam Howlett <liam.howlett@oracle.com>
+
+  Cc: Matthew Wilcox (Oracle) <willy@infradead.org>
+
+  Cc: Peter Xu <peterx@redhat.com>
+
+  Cc: Ryan Roberts <ryan.roberts@arm.com>
+
+  Cc: Vlastimil Babka <vbabka@suse.cz>
+
+  Cc: Will Deacon <will@kernel.org>
+
+  Cc: Yang Shi <yang@os.amperecomputing.com>
+
+  Cc: Yicong Yang <yangyicong@hisilicon.com>
+
+  Cc: Zhenhua Huang <quic_zhenhuah@quicinc.com>
+
+  Cc: Zi Yan <ziy@nvidia.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 9
+covered_count: 0

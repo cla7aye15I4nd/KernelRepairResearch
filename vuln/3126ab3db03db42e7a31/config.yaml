@@ -1,0 +1,27 @@
+id: 3126ab3db03db42e7a31
+bug_link: https://syzkaller.appspot.com/bug?extid=3126ab3db03db42e7a31
+title: possible deadlock in xfs_dquot_detach_buf
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4b8d867ca6e2fc6d152f629fdaf027053b81765a
+fix_commit: 1aacd3fac248902ea1f7607f2d12b93929a4833b
+datetime: '2024-12-23T13:06:01-08:00'
+fix_commit_message: "xfs: release the dquot buf outside of qli_lock\n\nLai Yi reported\
+  \ a lockdep complaint about circular locking:\n\n Chain exists of:\n   &lp->qli_lock\
+  \ --> &bch->bc_lock --> &l->lock\n\n  Possible unsafe locking scenario:\n\n    \
+  \    CPU0                    CPU1\n        ----                    ----\n   lock(&l->lock);\n\
+  \                                lock(&bch->bc_lock);\n                        \
+  \        lock(&l->lock);\n   lock(&lp->qli_lock);\n\nI /think/ the problem here\
+  \ is that xfs_dquot_attach_buf during\nquotacheck will release the buffer while\
+  \ it's holding the qli_lock.\nBecause this is a cached buffer, xfs_buf_rele_cached\
+  \ takes b_lock before\ndecrementing b_hold.  Other threads have taught lockdep that\
+  \ a locking\ndependency chain is bp->b_lock -> bch->bc_lock -> l(ru)->lock; and\
+  \ that\nanother chain is l(ru)->lock -> lp->qli_lock.  Hence we do not want to\n\
+  take b_lock while holding qli_lock.\n\nReported-by: syzbot+3126ab3db03db42e7a31@syzkaller.appspotmail.com\n\
+  Cc: <stable@vger.kernel.org> # v6.13-rc3\nFixes: ca378189fdfa89 (\"xfs: convert\
+  \ quotacheck to attach dquot buffers\")\nTested-by: syzbot+3126ab3db03db42e7a31@syzkaller.appspotmail.com\n\
+  Signed-off-by: \"Darrick J. Wong\" <djwong@kernel.org>\nReviewed-by: Christoph Hellwig\
+  \ <hch@lst.de>\n"
+submodule:
+- fs/xfs
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,107 @@
+diff --git a/fs/nfsd/filecache.c b/fs/nfsd/filecache.c
+index 19bb88c7eebd..ea1ca374cdab 100644
+--- a/fs/nfsd/filecache.c
++++ b/fs/nfsd/filecache.c
+@@ -792,7 +792,7 @@ nfsd_file_cache_init(void)
+ 	}
+ 
+ 	nfsd_file_fsnotify_group = fsnotify_alloc_group(&nfsd_file_fsnotify_ops,
+-							FSNOTIFY_GROUP_NOFS);
++							0);
+ 	if (IS_ERR(nfsd_file_fsnotify_group)) {
+ 		pr_err("nfsd: unable to create fsnotify group: %ld\n",
+ 			PTR_ERR(nfsd_file_fsnotify_group));
+diff --git a/fs/notify/dnotify/dnotify.c b/fs/notify/dnotify/dnotify.c
+index 46440fbb8662..d5dbef7f5c95 100644
+--- a/fs/notify/dnotify/dnotify.c
++++ b/fs/notify/dnotify/dnotify.c
+@@ -406,8 +406,7 @@ static int __init dnotify_init(void)
+ 					  SLAB_PANIC|SLAB_ACCOUNT);
+ 	dnotify_mark_cache = KMEM_CACHE(dnotify_mark, SLAB_PANIC|SLAB_ACCOUNT);
+ 
+-	dnotify_group = fsnotify_alloc_group(&dnotify_fsnotify_ops,
+-					     FSNOTIFY_GROUP_NOFS);
++	dnotify_group = fsnotify_alloc_group(&dnotify_fsnotify_ops, 0);
+ 	if (IS_ERR(dnotify_group))
+ 		panic("unable to allocate fsnotify group for dnotify\n");
+ 	dnotify_sysctl_init();
+diff --git a/fs/notify/fanotify/fanotify_user.c b/fs/notify/fanotify/fanotify_user.c
+index 13454e5fd3fb..9644bc72e457 100644
+--- a/fs/notify/fanotify/fanotify_user.c
++++ b/fs/notify/fanotify/fanotify_user.c
+@@ -1480,7 +1480,7 @@ SYSCALL_DEFINE2(fanotify_init, unsigned int, flags, unsigned int, event_f_flags)
+ 
+ 	/* fsnotify_alloc_group takes a ref.  Dropped in fanotify_release */
+ 	group = fsnotify_alloc_group(&fanotify_fsnotify_ops,
+-				     FSNOTIFY_GROUP_USER | FSNOTIFY_GROUP_NOFS);
++				     FSNOTIFY_GROUP_USER);
+ 	if (IS_ERR(group)) {
+ 		return PTR_ERR(group);
+ 	}
+diff --git a/fs/notify/group.c b/fs/notify/group.c
+index 1de6631a3925..18446b7b0d49 100644
+--- a/fs/notify/group.c
++++ b/fs/notify/group.c
+@@ -115,7 +115,6 @@ static struct fsnotify_group *__fsnotify_alloc_group(
+ 				const struct fsnotify_ops *ops,
+ 				int flags, gfp_t gfp)
+ {
+-	static struct lock_class_key nofs_marks_lock;
+ 	struct fsnotify_group *group;
+ 
+ 	group = kzalloc(sizeof(struct fsnotify_group), gfp);
+@@ -136,16 +135,6 @@ static struct fsnotify_group *__fsnotify_alloc_group(
+ 
+ 	group->ops = ops;
+ 	group->flags = flags;
+-	/*
+-	 * For most backends, eviction of inode with a mark is not expected,
+-	 * because marks hold a refcount on the inode against eviction.
+-	 *
+-	 * Use a different lockdep class for groups that support evictable
+-	 * inode marks, because with evictable marks, mark_mutex is NOT
+-	 * fs-reclaim safe - the mutex is taken when evicting inodes.
+-	 */
+-	if (flags & FSNOTIFY_GROUP_NOFS)
+-		lockdep_set_class(&group->mark_mutex, &nofs_marks_lock);
+ 
+ 	return group;
+ }
+diff --git a/include/linux/fsnotify_backend.h b/include/linux/fsnotify_backend.h
+index 8be029bc50b1..3ecf7768e577 100644
+--- a/include/linux/fsnotify_backend.h
++++ b/include/linux/fsnotify_backend.h
+@@ -217,7 +217,6 @@ struct fsnotify_group {
+ 
+ #define FSNOTIFY_GROUP_USER	0x01 /* user allocated group */
+ #define FSNOTIFY_GROUP_DUPS	0x02 /* allow multiple marks per object */
+-#define FSNOTIFY_GROUP_NOFS	0x04 /* group lock is not direct reclaim safe */
+ 	int flags;
+ 	unsigned int owner_flags;	/* stored flags of mark_mutex owner */
+ 
+@@ -268,22 +267,19 @@ struct fsnotify_group {
+ static inline void fsnotify_group_lock(struct fsnotify_group *group)
+ {
+ 	mutex_lock(&group->mark_mutex);
+-	if (group->flags & FSNOTIFY_GROUP_NOFS)
+-		group->owner_flags = memalloc_nofs_save();
++	group->owner_flags = memalloc_nofs_save();
+ }
+ 
+ static inline void fsnotify_group_unlock(struct fsnotify_group *group)
+ {
+-	if (group->flags & FSNOTIFY_GROUP_NOFS)
+-		memalloc_nofs_restore(group->owner_flags);
++	memalloc_nofs_restore(group->owner_flags);
+ 	mutex_unlock(&group->mark_mutex);
+ }
+ 
+ static inline void fsnotify_group_assert_locked(struct fsnotify_group *group)
+ {
+ 	WARN_ON_ONCE(!mutex_is_locked(&group->mark_mutex));
+-	if (group->flags & FSNOTIFY_GROUP_NOFS)
+-		WARN_ON_ONCE(!(current->flags & PF_MEMALLOC_NOFS));
++	WARN_ON_ONCE(!(current->flags & PF_MEMALLOC_NOFS));
+ }
+ 
+ /* When calling fsnotify tell it if the data is a path or inode */

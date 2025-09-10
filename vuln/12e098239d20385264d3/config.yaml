@@ -1,0 +1,22 @@
+id: 12e098239d20385264d3
+bug_link: https://syzkaller.appspot.com/bug?extid=12e098239d20385264d3
+title: WARNING in __kernel_write_iter
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 94dbf7c0871f7ae6349ba4b0341ce8f5f98a071d
+fix_commit: 0ac1d13a55eb37d398b63e6ff6db4a09a2c9128c
+datetime: '2023-11-24T18:50:53+01:00'
+fix_commit_message: "btrfs: send: ensure send_fd is writable\n\nkernel_write() requires\
+  \ the caller to ensure that the file is writable.\nLet's do that directly after\
+  \ looking up the ->send_fd.\n\nWe don't need a separate bailout path because the\
+  \ \"out\" path already\ndoes fput() if ->send_filp is non-NULL.\n\nThis has no security\
+  \ impact for two reasons:\n\n - the ioctl requires CAP_SYS_ADMIN\n - __kernel_write()\
+  \ bails out on read-only files - but only since 5.8,\n   see commit a01ac27be472\
+  \ (\"fs: check FMODE_WRITE in __kernel_write\")\n\nReported-and-tested-by: syzbot+12e098239d20385264d3@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=12e098239d20385264d3\nFixes: 31db9f7c23fb\
+  \ (\"Btrfs: introduce BTRFS_IOC_SEND for btrfs send/receive\")\nCC: stable@vger.kernel.org\
+  \ # 4.14+\nSigned-off-by: Jann Horn <jannh@google.com>\nReviewed-by: David Sterba\
+  \ <dsterba@suse.com>\nSigned-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 0

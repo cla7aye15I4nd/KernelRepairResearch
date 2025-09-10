@@ -1,0 +1,75 @@
+diff --git a/arch/x86/kvm/smm.c b/arch/x86/kvm/smm.c
+index 00e3c27d2a87..85241c0c7f56 100644
+--- a/arch/x86/kvm/smm.c
++++ b/arch/x86/kvm/smm.c
+@@ -624,17 +624,31 @@ int emulator_leave_smm(struct x86_emulate_ctxt *ctxt)
+ #endif
+ 
+ 	/*
+-	 * Give leave_smm() a chance to make ISA-specific changes to the vCPU
+-	 * state (e.g. enter guest mode) before loading state from the SMM
+-	 * state-save area.
++	 * FIXME: When resuming L2 (a.k.a. guest mode), the transition to guest
++	 * mode should happen _after_ loading state from SMRAM.  However, KVM
++	 * piggybacks the nested VM-Enter flows (which is wrong for many other
++	 * reasons), and so nSVM/nVMX would clobber state that is loaded from
++	 * SMRAM and from the VMCS/VMCB.
+ 	 */
+ 	if (kvm_x86_call(leave_smm)(vcpu, &smram))
+ 		return X86EMUL_UNHANDLEABLE;
+ 
+ #ifdef CONFIG_X86_64
+ 	if (guest_cpuid_has(vcpu, X86_FEATURE_LM))
+-		return rsm_load_state_64(ctxt, &smram.smram64);
++		ret = rsm_load_state_64(ctxt, &smram.smram64);
+ 	else
+ #endif
+-		return rsm_load_state_32(ctxt, &smram.smram32);
++		ret = rsm_load_state_32(ctxt, &smram.smram32);
++
++	/*
++	 * If RSM fails and triggers shutdown, architecturally the shutdown
++	 * occurs *before* the transition to guest mode.  But due to KVM's
++	 * flawed handling of RSM to L2 (see above), the vCPU may already be
++	 * in_guest_mode().  Force the vCPU out of guest mode before delivering
++	 * the shutdown, so that L1 enters shutdown instead of seeing a VM-Exit
++	 * that architecturally shouldn't be possible.
++	 */
++	if (ret != X86EMUL_CONTINUE && is_guest_mode(vcpu))
++		kvm_leave_nested(vcpu);
++	return ret;
+ }
+diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
+index fa455a60b557..92fade53c79f 100644
+--- a/arch/x86/kvm/x86.c
++++ b/arch/x86/kvm/x86.c
+@@ -833,12 +833,6 @@ static void kvm_queue_exception_vmexit(struct kvm_vcpu *vcpu, unsigned int vecto
+ 	ex->payload = payload;
+ }
+ 
+-/* Forcibly leave the nested mode in cases like a vCPU reset */
+-static void kvm_leave_nested(struct kvm_vcpu *vcpu)
+-{
+-	kvm_x86_ops.nested_ops->leave_nested(vcpu);
+-}
+-
+ static void kvm_multiple_exception(struct kvm_vcpu *vcpu,
+ 		unsigned nr, bool has_error, u32 error_code,
+ 	        bool has_payload, unsigned long payload, bool reinject)
+diff --git a/arch/x86/kvm/x86.h b/arch/x86/kvm/x86.h
+index 516eb9e28752..121f5c19613e 100644
+--- a/arch/x86/kvm/x86.h
++++ b/arch/x86/kvm/x86.h
+@@ -108,6 +108,12 @@ static inline unsigned int __shrink_ple_window(unsigned int val,
+ void kvm_service_local_tlb_flush_requests(struct kvm_vcpu *vcpu);
+ int kvm_check_nested_events(struct kvm_vcpu *vcpu);
+ 
++/* Forcibly leave the nested mode in cases like a vCPU reset */
++static inline void kvm_leave_nested(struct kvm_vcpu *vcpu)
++{
++	kvm_x86_ops.nested_ops->leave_nested(vcpu);
++}
++
+ static inline bool kvm_vcpu_has_run(struct kvm_vcpu *vcpu)
+ {
+ 	return vcpu->arch.last_vmentry_cpu != -1;

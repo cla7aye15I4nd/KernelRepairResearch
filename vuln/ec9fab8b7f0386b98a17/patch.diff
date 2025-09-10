@@ -1,0 +1,14 @@
+diff --git a/fs/overlayfs/util.c b/fs/overlayfs/util.c
+index a33115e7384c..41033bac96cb 100644
+--- a/fs/overlayfs/util.c
++++ b/fs/overlayfs/util.c
+@@ -1552,7 +1552,8 @@ void ovl_copyattr(struct inode *inode)
+ int ovl_parent_lock(struct dentry *parent, struct dentry *child)
+ {
+ 	inode_lock_nested(parent->d_inode, I_MUTEX_PARENT);
+-	if (!child || child->d_parent == parent)
++	if (!child ||
++	    (!d_unhashed(child) && child->d_parent == parent))
+ 		return 0;
+ 
+ 	inode_unlock(parent->d_inode);

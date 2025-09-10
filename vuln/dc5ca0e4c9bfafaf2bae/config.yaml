@@ -1,0 +1,59 @@
+id: dc5ca0e4c9bfafaf2bae
+bug_link: https://syzkaller.appspot.com/bug?extid=dc5ca0e4c9bfafaf2bae
+title: possible deadlock in perf_event_detach_bpf_prog
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0abf854d7cbbb405e39e0f93d5c1da98dca24bc0
+fix_commit: 3a38bb98d9abdc3856f26b5ed4332803065cd7cf
+datetime: '2018-04-11T01:01:40+02:00'
+fix_commit_message: "bpf/tracing: fix a deadlock in perf_event_detach_bpf_prog\n\n\
+  syzbot reported a possible deadlock in perf_event_detach_bpf_prog.\nThe error details:\n\
+  \  ======================================================\n  WARNING: possible circular\
+  \ locking dependency detected\n  4.16.0-rc7+ #3 Not tainted\n  ------------------------------------------------------\n\
+  \  syz-executor7/24531 is trying to acquire lock:\n   (bpf_event_mutex){+.+.}, at:\
+  \ [<000000008a849b07>] perf_event_detach_bpf_prog+0x92/0x3d0 kernel/trace/bpf_trace.c:854\n\
+  \n  but task is already holding lock:\n   (&mm->mmap_sem){++++}, at: [<0000000038768f87>]\
+  \ vm_mmap_pgoff+0x198/0x280 mm/util.c:353\n\n  which lock already depends on the\
+  \ new lock.\n\n  the existing dependency chain (in reverse order) is:\n\n  -> #1\
+  \ (&mm->mmap_sem){++++}:\n       __might_fault+0x13a/0x1d0 mm/memory.c:4571\n  \
+  \     _copy_to_user+0x2c/0xc0 lib/usercopy.c:25\n       copy_to_user include/linux/uaccess.h:155\
+  \ [inline]\n       bpf_prog_array_copy_info+0xf2/0x1c0 kernel/bpf/core.c:1694\n\
+  \       perf_event_query_prog_array+0x1c7/0x2c0 kernel/trace/bpf_trace.c:891\n \
+  \      _perf_ioctl kernel/events/core.c:4750 [inline]\n       perf_ioctl+0x3e1/0x1480\
+  \ kernel/events/core.c:4770\n       vfs_ioctl fs/ioctl.c:46 [inline]\n       do_vfs_ioctl+0x1b1/0x1520\
+  \ fs/ioctl.c:686\n       SYSC_ioctl fs/ioctl.c:701 [inline]\n       SyS_ioctl+0x8f/0xc0\
+  \ fs/ioctl.c:692\n       do_syscall_64+0x281/0x940 arch/x86/entry/common.c:287\n\
+  \       entry_SYSCALL_64_after_hwframe+0x42/0xb7\n\n  -> #0 (bpf_event_mutex){+.+.}:\n\
+  \       lock_acquire+0x1d5/0x580 kernel/locking/lockdep.c:3920\n       __mutex_lock_common\
+  \ kernel/locking/mutex.c:756 [inline]\n       __mutex_lock+0x16f/0x1a80 kernel/locking/mutex.c:893\n\
+  \       mutex_lock_nested+0x16/0x20 kernel/locking/mutex.c:908\n       perf_event_detach_bpf_prog+0x92/0x3d0\
+  \ kernel/trace/bpf_trace.c:854\n       perf_event_free_bpf_prog kernel/events/core.c:8147\
+  \ [inline]\n       _free_event+0xbdb/0x10f0 kernel/events/core.c:4116\n       put_event+0x24/0x30\
+  \ kernel/events/core.c:4204\n       perf_mmap_close+0x60d/0x1010 kernel/events/core.c:5172\n\
+  \       remove_vma+0xb4/0x1b0 mm/mmap.c:172\n       remove_vma_list mm/mmap.c:2490\
+  \ [inline]\n       do_munmap+0x82a/0xdf0 mm/mmap.c:2731\n       mmap_region+0x59e/0x15a0\
+  \ mm/mmap.c:1646\n       do_mmap+0x6c0/0xe00 mm/mmap.c:1483\n       do_mmap_pgoff\
+  \ include/linux/mm.h:2223 [inline]\n       vm_mmap_pgoff+0x1de/0x280 mm/util.c:355\n\
+  \       SYSC_mmap_pgoff mm/mmap.c:1533 [inline]\n       SyS_mmap_pgoff+0x462/0x5f0\
+  \ mm/mmap.c:1491\n       SYSC_mmap arch/x86/kernel/sys_x86_64.c:100 [inline]\n \
+  \      SyS_mmap+0x16/0x20 arch/x86/kernel/sys_x86_64.c:91\n       do_syscall_64+0x281/0x940\
+  \ arch/x86/entry/common.c:287\n       entry_SYSCALL_64_after_hwframe+0x42/0xb7\n\
+  \n  other info that might help us debug this:\n\n   Possible unsafe locking scenario:\n\
+  \n         CPU0                    CPU1\n         ----                    ----\n\
+  \    lock(&mm->mmap_sem);\n                                 lock(bpf_event_mutex);\n\
+  \                                 lock(&mm->mmap_sem);\n    lock(bpf_event_mutex);\n\
+  \n   *** DEADLOCK ***\n  ======================================================\n\
+  \nThe bug is introduced by Commit f371b304f12e (\"bpf/tracing: allow\nuser space\
+  \ to query prog array on the same tp\") where copy_to_user,\nwhich requires mm->mmap_sem,\
+  \ is called inside bpf_event_mutex lock.\nAt the same time, during perf_event file\
+  \ descriptor close,\nmm->mmap_sem is held first and then subsequent\nperf_event_detach_bpf_prog\
+  \ needs bpf_event_mutex lock.\nSuch a senario caused a deadlock.\n\nAs suggested\
+  \ by Daniel, moving copy_to_user out of the\nbpf_event_mutex lock should fix the\
+  \ problem.\n\nFixes: f371b304f12e (\"bpf/tracing: allow user space to query prog\
+  \ array on the same tp\")\nReported-by: syzbot+dc5ca0e4c9bfafaf2bae@syzkaller.appspotmail.com\n\
+  Signed-off-by: Yonghong Song <yhs@fb.com>\nSigned-off-by: Daniel Borkmann <daniel@iogearbox.net>\n"
+submodule:
+- include/linux
+- kernel/bpf
+- kernel/trace
+hunk_count: 6
+covered_count: 1

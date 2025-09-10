@@ -1,0 +1,15 @@
+diff --git a/net/can/isotp.c b/net/can/isotp.c
+index caaa532ece94..2ac29c2b2ca6 100644
+--- a/net/can/isotp.c
++++ b/net/can/isotp.c
+@@ -865,7 +865,9 @@ static int isotp_sendmsg(struct socket *sock, struct msghdr *msg, size_t size)
+ 			return -EAGAIN;
+ 
+ 		/* wait for complete transmission of current pdu */
+-		wait_event_interruptible(so->wait, so->tx.state == ISOTP_IDLE);
++		err = wait_event_interruptible(so->wait, so->tx.state == ISOTP_IDLE);
++		if (err)
++			return err;
+ 	}
+ 
+ 	if (!size || size > MAX_MSG_LENGTH)

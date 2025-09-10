@@ -1,0 +1,62 @@
+id: 457d3e2ffbcf31aee5c0
+bug_link: https://syzkaller.appspot.com/bug?extid=457d3e2ffbcf31aee5c0
+title: 'KASAN: use-after-free Read in __dev_map_entry_free'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d4c26eb6e721683a0f93e346ce55bc8dc3cbb175
+fix_commit: 2baae3545327632167c0180e9ca1d467416f1919
+datetime: '2019-05-14T01:25:49+02:00'
+fix_commit_message: "bpf: devmap: fix use-after-free Read in __dev_map_entry_free\n\
+  \nsynchronize_rcu() is fine when the rcu callbacks only need\nto free memory (kfree_rcu()\
+  \ or direct kfree() call rcu call backs)\n\n__dev_map_entry_free() is a bit more\
+  \ complex, so we need to make\nsure that call queued __dev_map_entry_free() callbacks\
+  \ have completed.\n\nsysbot report:\n\nBUG: KASAN: use-after-free in dev_map_flush_old\
+  \ kernel/bpf/devmap.c:365\n[inline]\nBUG: KASAN: use-after-free in __dev_map_entry_free+0x2a8/0x300\n\
+  kernel/bpf/devmap.c:379\nRead of size 8 at addr ffff8801b8da38c8 by task ksoftirqd/1/18\n\
+  \nCPU: 1 PID: 18 Comm: ksoftirqd/1 Not tainted 4.17.0+ #39\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS\nGoogle 01/01/2011\nCall Trace:\n\
+  \  __dump_stack lib/dump_stack.c:77 [inline]\n  dump_stack+0x1b9/0x294 lib/dump_stack.c:113\n\
+  \  print_address_description+0x6c/0x20b mm/kasan/report.c:256\n  kasan_report_error\
+  \ mm/kasan/report.c:354 [inline]\n  kasan_report.cold.7+0x242/0x2fe mm/kasan/report.c:412\n\
+  \  __asan_report_load8_noabort+0x14/0x20 mm/kasan/report.c:433\n  dev_map_flush_old\
+  \ kernel/bpf/devmap.c:365 [inline]\n  __dev_map_entry_free+0x2a8/0x300 kernel/bpf/devmap.c:379\n\
+  \  __rcu_reclaim kernel/rcu/rcu.h:178 [inline]\n  rcu_do_batch kernel/rcu/tree.c:2558\
+  \ [inline]\n  invoke_rcu_callbacks kernel/rcu/tree.c:2818 [inline]\n  __rcu_process_callbacks\
+  \ kernel/rcu/tree.c:2785 [inline]\n  rcu_process_callbacks+0xe9d/0x1760 kernel/rcu/tree.c:2802\n\
+  \  __do_softirq+0x2e0/0xaf5 kernel/softirq.c:284\n  run_ksoftirqd+0x86/0x100 kernel/softirq.c:645\n\
+  \  smpboot_thread_fn+0x417/0x870 kernel/smpboot.c:164\n  kthread+0x345/0x410 kernel/kthread.c:240\n\
+  \  ret_from_fork+0x3a/0x50 arch/x86/entry/entry_64.S:412\n\nAllocated by task 6675:\n\
+  \  save_stack+0x43/0xd0 mm/kasan/kasan.c:448\n  set_track mm/kasan/kasan.c:460 [inline]\n\
+  \  kasan_kmalloc+0xc4/0xe0 mm/kasan/kasan.c:553\n  kmem_cache_alloc_trace+0x152/0x780\
+  \ mm/slab.c:3620\n  kmalloc include/linux/slab.h:513 [inline]\n  kzalloc include/linux/slab.h:706\
+  \ [inline]\n  dev_map_alloc+0x208/0x7f0 kernel/bpf/devmap.c:102\n  find_and_alloc_map\
+  \ kernel/bpf/syscall.c:129 [inline]\n  map_create+0x393/0x1010 kernel/bpf/syscall.c:453\n\
+  \  __do_sys_bpf kernel/bpf/syscall.c:2351 [inline]\n  __se_sys_bpf kernel/bpf/syscall.c:2328\
+  \ [inline]\n  __x64_sys_bpf+0x303/0x510 kernel/bpf/syscall.c:2328\n  do_syscall_64+0x1b1/0x800\
+  \ arch/x86/entry/common.c:290\n  entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\nFreed\
+  \ by task 26:\n  save_stack+0x43/0xd0 mm/kasan/kasan.c:448\n  set_track mm/kasan/kasan.c:460\
+  \ [inline]\n  __kasan_slab_free+0x11a/0x170 mm/kasan/kasan.c:521\n  kasan_slab_free+0xe/0x10\
+  \ mm/kasan/kasan.c:528\n  __cache_free mm/slab.c:3498 [inline]\n  kfree+0xd9/0x260\
+  \ mm/slab.c:3813\n  dev_map_free+0x4fa/0x670 kernel/bpf/devmap.c:191\n  bpf_map_free_deferred+0xba/0xf0\
+  \ kernel/bpf/syscall.c:262\n  process_one_work+0xc64/0x1b70 kernel/workqueue.c:2153\n\
+  \  worker_thread+0x181/0x13a0 kernel/workqueue.c:2296\n  kthread+0x345/0x410 kernel/kthread.c:240\n\
+  \  ret_from_fork+0x3a/0x50 arch/x86/entry/entry_64.S:412\n\nThe buggy address belongs\
+  \ to the object at ffff8801b8da37c0\n  which belongs to the cache kmalloc-512 of\
+  \ size 512\nThe buggy address is located 264 bytes inside of\n  512-byte region\
+  \ [ffff8801b8da37c0, ffff8801b8da39c0)\nThe buggy address belongs to the page:\n\
+  page:ffffea0006e368c0 count:1 mapcount:0 mapping:ffff8801da800940\nindex:0xffff8801b8da3540\n\
+  flags: 0x2fffc0000000100(slab)\nraw: 02fffc0000000100 ffffea0007217b88 ffffea0006e30cc8\
+  \ ffff8801da800940\nraw: ffff8801b8da3540 ffff8801b8da3040 0000000100000004 0000000000000000\n\
+  page dumped because: kasan: bad access detected\n\nMemory state around the buggy\
+  \ address:\n  ffff8801b8da3780: fc fc fc fc fc fc fc fc fb fb fb fb fb fb fb fb\n\
+  \  ffff8801b8da3800: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n> ffff8801b8da3880:\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n                            \
+  \                   ^\n  ffff8801b8da3900: fb fb fb fb fb fb fb fb fb fb fb fb fb\
+  \ fb fb fb\n  ffff8801b8da3980: fb fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc\n\
+  \nFixes: 546ac1ffb70d (\"bpf: add devmap, a map for storing net device references\"\
+  )\nSigned-off-by: Eric Dumazet <edumazet@google.com>\nReported-by: syzbot+457d3e2ffbcf31aee5c0@syzkaller.appspotmail.com\n\
+  Acked-by: Toke Høiland-Jørgensen <toke@redhat.com>\nAcked-by: Jesper Dangaard Brouer\
+  \ <brouer@redhat.com>\nSigned-off-by: Daniel Borkmann <daniel@iogearbox.net>\n"
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 1

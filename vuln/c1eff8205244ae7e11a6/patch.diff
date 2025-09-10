@@ -1,0 +1,31 @@
+diff --git a/fs/afs/dynroot.c b/fs/afs/dynroot.c
+index b79879aacc02..7b784af604fd 100644
+--- a/fs/afs/dynroot.c
++++ b/fs/afs/dynroot.c
+@@ -382,15 +382,17 @@ void afs_dynroot_depopulate(struct super_block *sb)
+ 		net->dynroot_sb = NULL;
+ 	mutex_unlock(&net->proc_cells_lock);
+ 
+-	inode_lock(root->d_inode);
+-
+-	/* Remove all the pins for dirs created for manually added cells */
+-	list_for_each_entry_safe(subdir, tmp, &root->d_subdirs, d_child) {
+-		if (subdir->d_fsdata) {
+-			subdir->d_fsdata = NULL;
+-			dput(subdir);
++	if (root) {
++		inode_lock(root->d_inode);
++
++		/* Remove all the pins for dirs created for manually added cells */
++		list_for_each_entry_safe(subdir, tmp, &root->d_subdirs, d_child) {
++			if (subdir->d_fsdata) {
++				subdir->d_fsdata = NULL;
++				dput(subdir);
++			}
+ 		}
+-	}
+ 
+-	inode_unlock(root->d_inode);
++		inode_unlock(root->d_inode);
++	}
+ }

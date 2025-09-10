@@ -1,0 +1,28 @@
+id: 2eeef62ee31f9460ad65
+bug_link: https://syzkaller.appspot.com/bug?extid=2eeef62ee31f9460ad65
+title: 'BUG: sleeping function called from invalid context in tpk_write'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7771b893f093bd272b0d28fe6d69fc996d4efb9e
+fix_commit: 9a655c77ff8fc65699a3f98e237db563b37c439b
+datetime: '2020-01-14T14:37:54+01:00'
+fix_commit_message: "ttyprintk: fix a potential deadlock in interrupt context issue\n\
+  \ntpk_write()/tpk_close() could be interrupted when holding a mutex, then\nin timer\
+  \ handler tpk_write() may be called again trying to acquire same\nmutex, lead to\
+  \ deadlock.\n\nGoogle syzbot reported this issue with CONFIG_DEBUG_ATOMIC_SLEEP\n\
+  enabled:\n\nBUG: sleeping function called from invalid context at\nkernel/locking/mutex.c:938\n\
+  in_atomic(): 1, irqs_disabled(): 0, non_block: 0, pid: 0, name: swapper/1\n1 lock\
+  \ held by swapper/1/0:\n...\nCall Trace:\n  <IRQ>\n  dump_stack+0x197/0x210\n  ___might_sleep.cold+0x1fb/0x23e\n\
+  \  __might_sleep+0x95/0x190\n  __mutex_lock+0xc5/0x13c0\n  mutex_lock_nested+0x16/0x20\n\
+  \  tpk_write+0x5d/0x340\n  resync_tnc+0x1b6/0x320\n  call_timer_fn+0x1ac/0x780\n\
+  \  run_timer_softirq+0x6c3/0x1790\n  __do_softirq+0x262/0x98c\n  irq_exit+0x19b/0x1e0\n\
+  \  smp_apic_timer_interrupt+0x1a3/0x610\n  apic_timer_interrupt+0xf/0x20\n  </IRQ>\n\
+  \nSee link https://syzkaller.appspot.com/bug?extid=2eeef62ee31f9460ad65 for\nmore\
+  \ details.\n\nFix it by using spinlock in process context instead of mutex and having\n\
+  interrupt disabled in critical section.\n\nReported-by: syzbot+2eeef62ee31f9460ad65@syzkaller.appspotmail.com\n\
+  Signed-off-by: Zhenzhong Duan <zhenzhong.duan@gmail.com>\nCc: Arnd Bergmann <arnd@arndb.de>\n\
+  Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\nLink: https://lore.kernel.org/r/20200113034842.435-1-zhenzhong.duan@gmail.com\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/char
+hunk_count: 4
+covered_count: 4

@@ -1,0 +1,44 @@
+id: 26183d9746e62da329b8
+bug_link: https://syzkaller.appspot.com/bug?extid=26183d9746e62da329b8
+title: possible deadlock in tty_unthrottle
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4b70dd57a15d2f4685ac6e38056bad93e81e982f
+fix_commit: e8c75a30a23c6ba63f4ef6895cbf41fd42f21aa2
+datetime: '2020-02-28T16:06:49+01:00'
+fix_commit_message: "vt: selection, push sel_lock up\n\nsel_lock cannot nest in the\
+  \ console lock. Thanks to syzkaller, the\nkernel states firmly:\n\n> WARNING: possible\
+  \ circular locking dependency detected\n> 5.6.0-rc3-syzkaller #0 Not tainted\n>\
+  \ ------------------------------------------------------\n> syz-executor.4/20336\
+  \ is trying to acquire lock:\n> ffff8880a2e952a0 (&tty->termios_rwsem){++++}, at:\
+  \ tty_unthrottle+0x22/0x100 drivers/tty/tty_ioctl.c:136\n>\n> but task is already\
+  \ holding lock:\n> ffffffff89462e70 (sel_lock){+.+.}, at: paste_selection+0x118/0x470\
+  \ drivers/tty/vt/selection.c:374\n>\n> which lock already depends on the new lock.\n\
+  >\n> the existing dependency chain (in reverse order) is:\n>\n> -> #2 (sel_lock){+.+.}:\n\
+  >        mutex_lock_nested+0x1b/0x30 kernel/locking/mutex.c:1118\n>        set_selection_kernel+0x3b8/0x18a0\
+  \ drivers/tty/vt/selection.c:217\n>        set_selection_user+0x63/0x80 drivers/tty/vt/selection.c:181\n\
+  >        tioclinux+0x103/0x530 drivers/tty/vt/vt.c:3050\n>        vt_ioctl+0x3f1/0x3a30\
+  \ drivers/tty/vt/vt_ioctl.c:364\n\nThis is ioctl(TIOCL_SETSEL).\nLocks held on the\
+  \ path: console_lock -> sel_lock\n\n> -> #1 (console_lock){+.+.}:\n>        console_lock+0x46/0x70\
+  \ kernel/printk/printk.c:2289\n>        con_flush_chars+0x50/0x650 drivers/tty/vt/vt.c:3223\n\
+  >        n_tty_write+0xeae/0x1200 drivers/tty/n_tty.c:2350\n>        do_tty_write\
+  \ drivers/tty/tty_io.c:962 [inline]\n>        tty_write+0x5a1/0x950 drivers/tty/tty_io.c:1046\n\
+  \nThis is write().\nLocks held on the path: termios_rwsem -> console_lock\n\n> ->\
+  \ #0 (&tty->termios_rwsem){++++}:\n>        down_write+0x57/0x140 kernel/locking/rwsem.c:1534\n\
+  >        tty_unthrottle+0x22/0x100 drivers/tty/tty_ioctl.c:136\n>        mkiss_receive_buf+0x12aa/0x1340\
+  \ drivers/net/hamradio/mkiss.c:902\n>        tty_ldisc_receive_buf+0x12f/0x170 drivers/tty/tty_buffer.c:465\n\
+  >        paste_selection+0x346/0x470 drivers/tty/vt/selection.c:389\n>        tioclinux+0x121/0x530\
+  \ drivers/tty/vt/vt.c:3055\n>        vt_ioctl+0x3f1/0x3a30 drivers/tty/vt/vt_ioctl.c:364\n\
+  \nThis is ioctl(TIOCL_PASTESEL).\nLocks held on the path: sel_lock -> termios_rwsem\n\
+  \n> other info that might help us debug this:\n>\n> Chain exists of:\n>   &tty->termios_rwsem\
+  \ --> console_lock --> sel_lock\n\nClearly. From the above, we have:\n console_lock\
+  \ -> sel_lock\n sel_lock -> termios_rwsem\n termios_rwsem -> console_lock\n\nFix\
+  \ this by reversing the console_lock -> sel_lock dependency in\nioctl(TIOCL_SETSEL).\
+  \ First, lock sel_lock, then console_lock.\n\nSigned-off-by: Jiri Slaby <jslaby@suse.cz>\n\
+  Reported-by: syzbot+26183d9746e62da329b8@syzkaller.appspotmail.com\nFixes: 07e6124a1a46\
+  \ (\"vt: selection, close sel_buffer race\")\nCc: stable <stable@vger.kernel.org>\n\
+  Link: https://lore.kernel.org/r/20200228115406.5735-2-jslaby@suse.cz\nSigned-off-by:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty/vt
+hunk_count: 6
+covered_count: 4

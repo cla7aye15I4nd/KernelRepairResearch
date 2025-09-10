@@ -1,0 +1,38 @@
+id: 61cba5033e2072d61806
+bug_link: https://syzkaller.appspot.com/bug?extid=61cba5033e2072d61806
+title: possible deadlock in sidtab_sid2str_put
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a20456aef80fa6dda500b46c4bd04e39135097c6
+fix_commit: 39a706fbcf2694bfb651bed9041d44c3f4fa8078
+datetime: '2020-02-05T18:31:10-05:00'
+fix_commit_message: "selinux: fix sidtab string cache locking\n\nAvoiding taking a\
+  \ lock in an IRQ context is not enough to prevent\ndeadlocks, as discovered by syzbot:\n\
+  \n===\nWARNING: SOFTIRQ-safe -> SOFTIRQ-unsafe lock order detected\n5.5.0-syzkaller\
+  \ #0 Not tainted\n-----------------------------------------------------\nsyz-executor.0/8927\
+  \ [HC0[0]:SC0[2]:HE1:SE0] is trying to acquire:\nffff888027c94098 (&(&s->cache_lock)->rlock){+.+.},\
+  \ at: spin_lock include/linux/spinlock.h:338 [inline]\nffff888027c94098 (&(&s->cache_lock)->rlock){+.+.},\
+  \ at: sidtab_sid2str_put.part.0+0x36/0x880 security/selinux/ss/sidtab.c:533\n\n\
+  and this task is already holding:\nffffffff898639b0 (&(&nf_conntrack_locks[i])->rlock){+.-.},\
+  \ at: spin_lock include/linux/spinlock.h:338 [inline]\nffffffff898639b0 (&(&nf_conntrack_locks[i])->rlock){+.-.},\
+  \ at: nf_conntrack_lock+0x17/0x70 net/netfilter/nf_conntrack_core.c:91\nwhich would\
+  \ create a new lock dependency:\n (&(&nf_conntrack_locks[i])->rlock){+.-.} -> (&(&s->cache_lock)->rlock){+.+.}\n\
+  \nbut this new dependency connects a SOFTIRQ-irq-safe lock:\n (&(&nf_conntrack_locks[i])->rlock){+.-.}\n\
+  \n[...]\n\nother info that might help us debug this:\n\n Possible interrupt unsafe\
+  \ locking scenario:\n\n       CPU0                    CPU1\n       ----        \
+  \            ----\n  lock(&(&s->cache_lock)->rlock);\n                         \
+  \      local_irq_disable();\n                               lock(&(&nf_conntrack_locks[i])->rlock);\n\
+  \                               lock(&(&s->cache_lock)->rlock);\n  <Interrupt>\n\
+  \    lock(&(&nf_conntrack_locks[i])->rlock);\n\n *** DEADLOCK ***\n[...]\n===\n\n\
+  Fix this by simply locking with irqsave/irqrestore and stop giving up on\n!in_task().\
+  \ It makes the locking a bit slower, but it shouldn't make a\nbig difference in\
+  \ real workloads. Under the scenario from [1] (only\ncache hits) it only increased\
+  \ the runtime overhead from the\nsecurity_secid_to_secctx() function from ~2% to\
+  \ ~3% (it was ~5-65%\nbefore introducing the cache).\n\n[1] https://bugzilla.redhat.com/show_bug.cgi?id=1733259\n\
+  \nFixes: d97bd23c2d7d (\"selinux: cache the SID -> context string translation\"\
+  )\nReported-by: syzbot+61cba5033e2072d61806@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Ondrej Mosnacek <omosnace@redhat.com>\nAcked-by: Stephen Smalley <sds@tycho.nsa.gov>\n\
+  Signed-off-by: Paul Moore <paul@paul-moore.com>\n"
+submodule:
+- security/selinux/ss
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,59 @@
+id: e9632e3eb038d93d6bc6
+bug_link: https://syzkaller.appspot.com/bug?extid=e9632e3eb038d93d6bc6
+title: memory leak in ath9k_hif_usb_rx_cb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9b25e3985477ac3f02eca5fc1e0cc6850a3f7e69
+fix_commit: 0af54343a76263a12dbae7fafb64eb47c4a6ad38
+datetime: '2023-01-17T13:53:46+02:00'
+fix_commit_message: 'wifi: ath9k: hif_usb: clean up skbs if ath9k_hif_usb_rx_stream()
+  fails
+
+
+  Syzkaller detected a memory leak of skbs in ath9k_hif_usb_rx_stream().
+
+  While processing skbs in ath9k_hif_usb_rx_stream(), the already allocated
+
+  skbs in skb_pool are not freed if ath9k_hif_usb_rx_stream() fails. If we
+
+  have an incorrect pkt_len or pkt_tag, the input skb is considered invalid
+
+  and dropped. All the associated packets already in skb_pool should be
+
+  dropped and freed. Added a comment describing this issue.
+
+
+  The patch also makes remain_skb NULL after being processed so that it
+
+  cannot be referenced after potential free. The initialization of hif_dev
+
+  fields which are associated with remain_skb (rx_remain_len,
+
+  rx_transfer_len and rx_pad_len) is moved after a new remain_skb is
+
+  allocated.
+
+
+  Found by Linux Verification Center (linuxtesting.org) with Syzkaller.
+
+
+  Fixes: 6ce708f54cc8 ("ath9k: Fix out-of-bound memcpy in ath9k_hif_usb_rx_stream")
+
+  Fixes: 44b23b488d44 ("ath9k: hif_usb: Reduce indent 1 column")
+
+  Reported-by: syzbot+e9632e3eb038d93d6bc6@syzkaller.appspotmail.com
+
+  Signed-off-by: Fedor Pchelkin <pchelkin@ispras.ru>
+
+  Signed-off-by: Alexey Khoroshilov <khoroshilov@ispras.ru>
+
+  Acked-by: Toke Høiland-Jørgensen <toke@toke.dk>
+
+  Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+
+  Link: https://lore.kernel.org/r/20230104123615.51511-1-pchelkin@ispras.ru
+
+  '
+submodule:
+- drivers/net/wireless/ath/ath9k
+hunk_count: 5
+covered_count: 4

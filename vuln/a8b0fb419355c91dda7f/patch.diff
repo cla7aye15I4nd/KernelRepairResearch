@@ -1,0 +1,26 @@
+diff --git a/fs/bcachefs/bcachefs_format.h b/fs/bcachefs/bcachefs_format.h
+index 8345a2b2d05b..2e8b1a489c20 100644
+--- a/fs/bcachefs/bcachefs_format.h
++++ b/fs/bcachefs/bcachefs_format.h
+@@ -903,6 +903,8 @@ unsigned bcachefs_metadata_required_upgrade_below = bcachefs_metadata_version_re
+ #define BCH_SB_SECTOR			8
+ #define BCH_SB_MEMBERS_MAX		64 /* XXX kill */
+ 
++#define BCH_SB_LAYOUT_SIZE_BITS_MAX	16 /* 32 MB */
++
+ struct bch_sb_layout {
+ 	__uuid_t		magic;	/* bcachefs superblock UUID */
+ 	__u8			layout_type;
+diff --git a/fs/bcachefs/super-io.c b/fs/bcachefs/super-io.c
+index e7527d551e3c..989d16bba8f0 100644
+--- a/fs/bcachefs/super-io.c
++++ b/fs/bcachefs/super-io.c
+@@ -649,7 +649,7 @@ static int read_one_super(struct bch_sb_handle *sb, u64 offset, struct printbuf
+ 
+ 	bytes = vstruct_bytes(sb->sb);
+ 
+-	if (bytes > 512 << sb->sb->layout.sb_max_size_bits) {
++	if (bytes > 512ULL << min(BCH_SB_LAYOUT_SIZE_BITS_MAX, sb->sb->layout.sb_max_size_bits)) {
+ 		prt_printf(err, "Invalid superblock: too big (got %zu bytes, layout max %lu)",
+ 		       bytes, 512UL << sb->sb->layout.sb_max_size_bits);
+ 		return -BCH_ERR_invalid_sb_too_big;

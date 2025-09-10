@@ -1,0 +1,52 @@
+diff --git a/net/bridge/br_private.h b/net/bridge/br_private.h
+index 2920e06a5403..04c19a37e500 100644
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -102,12 +102,18 @@ struct br_tunnel_info {
+ 	struct metadata_dst	*tunnel_dst;
+ };
+ 
++/* private vlan flags */
++enum {
++	BR_VLFLAG_PER_PORT_STATS = BIT(0),
++};
++
+ /**
+  * struct net_bridge_vlan - per-vlan entry
+  *
+  * @vnode: rhashtable member
+  * @vid: VLAN id
+  * @flags: bridge vlan flags
++ * @priv_flags: private (in-kernel) bridge vlan flags
+  * @stats: per-cpu VLAN statistics
+  * @br: if MASTER flag set, this points to a bridge struct
+  * @port: if MASTER flag unset, this points to a port struct
+@@ -127,6 +133,7 @@ struct net_bridge_vlan {
+ 	struct rhash_head		tnode;
+ 	u16				vid;
+ 	u16				flags;
++	u16				priv_flags;
+ 	struct br_vlan_stats __percpu	*stats;
+ 	union {
+ 		struct net_bridge	*br;
+diff --git a/net/bridge/br_vlan.c b/net/bridge/br_vlan.c
+index 8c9297a01947..e84be08b8285 100644
+--- a/net/bridge/br_vlan.c
++++ b/net/bridge/br_vlan.c
+@@ -197,7 +197,7 @@ static void nbp_vlan_rcu_free(struct rcu_head *rcu)
+ 	v = container_of(rcu, struct net_bridge_vlan, rcu);
+ 	WARN_ON(br_vlan_is_master(v));
+ 	/* if we had per-port stats configured then free them here */
+-	if (v->brvlan->stats != v->stats)
++	if (v->priv_flags & BR_VLFLAG_PER_PORT_STATS)
+ 		free_percpu(v->stats);
+ 	v->stats = NULL;
+ 	kfree(v);
+@@ -264,6 +264,7 @@ static int __vlan_add(struct net_bridge_vlan *v, u16 flags)
+ 				err = -ENOMEM;
+ 				goto out_filt;
+ 			}
++			v->priv_flags |= BR_VLFLAG_PER_PORT_STATS;
+ 		} else {
+ 			v->stats = masterv->stats;
+ 		}

@@ -1,0 +1,26 @@
+id: 94cc2a66fc228b23f360
+bug_link: https://syzkaller.appspot.com/bug?extid=94cc2a66fc228b23f360
+title: 'WARNING: locking bug in inet_autobind'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c4d48a58f32c5972174a1d01c33b296fe378cce0
+fix_commit: 0b2c59720e65885a394a017d0cf9cab118914682
+datetime: '2023-01-16T13:40:55+00:00'
+fix_commit_message: "l2tp: close all race conditions in l2tp_tunnel_register()\n\n\
+  The code in l2tp_tunnel_register() is racy in several ways:\n\n1. It modifies the\
+  \ tunnel socket _after_ publishing it.\n\n2. It calls setup_udp_tunnel_sock() on\
+  \ an existing socket without\n   locking.\n\n3. It changes sock lock class on fly,\
+  \ which triggers many syzbot\n   reports.\n\nThis patch amends all of them by moving\
+  \ socket initialization code\nbefore publishing and under sock lock. As suggested\
+  \ by Jakub, the\nl2tp lockdep class is not necessary as we can just switch to\n\
+  bh_lock_sock_nested().\n\nFixes: 37159ef2c1ae (\"l2tp: fix a lockdep splat\")\n\
+  Fixes: 6b9f34239b00 (\"l2tp: fix races in tunnel creation\")\nReported-by: syzbot+52866e24647f9a23403f@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+94cc2a66fc228b23f360@syzkaller.appspotmail.com\nReported-by:\
+  \ Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nCc: Guillaume Nault <gnault@redhat.com>\n\
+  Cc: Jakub Sitnicki <jakub@cloudflare.com>\nCc: Eric Dumazet <edumazet@google.com>\n\
+  Cc: Tom Parkin <tparkin@katalix.com>\nSigned-off-by: Cong Wang <cong.wang@bytedance.com>\n\
+  Reviewed-by: Guillaume Nault <gnault@redhat.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/l2tp
+hunk_count: 4
+covered_count: 0

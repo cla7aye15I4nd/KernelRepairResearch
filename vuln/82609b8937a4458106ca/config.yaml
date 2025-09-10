@@ -1,0 +1,33 @@
+id: 82609b8937a4458106ca
+bug_link: https://syzkaller.appspot.com/bug?extid=82609b8937a4458106ca
+title: 'KMSAN: uninit-value in io_req_task_work_add_remote'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 29d63b94036e561a016ec8878b44aad6650d23e2
+fix_commit: 0db4618e8fabfcc404af4dda23799bba726785a5
+datetime: '2024-07-25T08:41:35-06:00'
+fix_commit_message: "io_uring/msg_ring: fix uninitialized use of target_req->flags\n\
+  \nsyzbot reports that KMSAN complains that 'nr_tw' is an uninit-value\nwith the\
+  \ following report:\n\nBUG: KMSAN: uninit-value in io_req_local_work_add io_uring/io_uring.c:1192\
+  \ [inline]\nBUG: KMSAN: uninit-value in io_req_task_work_add_remote+0x588/0x5d0\
+  \ io_uring/io_uring.c:1240\n io_req_local_work_add io_uring/io_uring.c:1192 [inline]\n\
+  \ io_req_task_work_add_remote+0x588/0x5d0 io_uring/io_uring.c:1240\n io_msg_remote_post\
+  \ io_uring/msg_ring.c:102 [inline]\n io_msg_data_remote io_uring/msg_ring.c:133\
+  \ [inline]\n io_msg_ring_data io_uring/msg_ring.c:152 [inline]\n io_msg_ring+0x1c38/0x1ef0\
+  \ io_uring/msg_ring.c:305\n io_issue_sqe+0x383/0x22c0 io_uring/io_uring.c:1710\n\
+  \ io_queue_sqe io_uring/io_uring.c:1924 [inline]\n io_submit_sqe io_uring/io_uring.c:2180\
+  \ [inline]\n io_submit_sqes+0x1259/0x2f20 io_uring/io_uring.c:2295\n __do_sys_io_uring_enter\
+  \ io_uring/io_uring.c:3205 [inline]\n __se_sys_io_uring_enter+0x40c/0x3ca0 io_uring/io_uring.c:3142\n\
+  \ __x64_sys_io_uring_enter+0x11f/0x1a0 io_uring/io_uring.c:3142\n x64_sys_call+0x2d82/0x3c10\
+  \ arch/x86/include/generated/asm/syscalls_64.h:427\n do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \nwhich is the following check:\n\nif (nr_tw < nr_wait)\n\treturn;\n\nin io_req_local_work_add().\
+  \ While nr_tw itself cannot be uninitialized,\nit does depend on req->flags, which\
+  \ off the msg ring issue path can\nindeed be uninitialized.\n\nFix this by always\
+  \ clearing the allocated 'req' fully if we can't grab\none from the cache itself.\n\
+  \nFixes: 50cf5f3842af (\"io_uring/msg_ring: add an alloc cache for io_kiocb entries\"\
+  )\nReported-by: syzbot+82609b8937a4458106ca@syzkaller.appspotmail.com\nLink: https://lore.kernel.org/io-uring/000000000000fd3d8d061dfc0e4a@google.com/\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- io_uring
+hunk_count: 1
+covered_count: 1

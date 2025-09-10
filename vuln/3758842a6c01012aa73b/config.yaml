@@ -1,0 +1,24 @@
+id: 3758842a6c01012aa73b
+bug_link: https://syzkaller.appspot.com/bug?extid=3758842a6c01012aa73b
+title: 'UBSAN: array-index-out-of-bounds in print_bpf_insn'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 74bdfab4fd7c641e55f7fe9d1be9687eeb01df67
+fix_commit: e99688eba2e90a600956e936bc335ece902a5d7f
+datetime: '2023-07-31T17:35:02-07:00'
+fix_commit_message: "bpf: Fix an array-index-out-of-bounds issue in disasm.c\n\nsyzbot\
+  \ reported an array-index-out-of-bounds when printing out bpf\ninsns. Further investigation\
+  \ shows the insn is illegal but\nis printed out due to log level 1 or 2 before actual\
+  \ insn verification\nin do_check().\n\nThis particular illegal insn is a MOVSX insn\
+  \ with offset value 2.\nThe legal offset value for MOVSX should be 8, 16 and 32.\n\
+  The disasm sign-extension-size array index is calculated as\n (insn->off / 8) -\
+  \ 1\nand offset value 2 gives an out-of-bound index -1.\n\nTighten the checking\
+  \ for MOVSX insn in disasm.c to avoid\narray-index-out-of-bounds issue.\n\nReported-by:\
+  \ syzbot+3758842a6c01012aa73b@syzkaller.appspotmail.com\nFixes: f835bb622299 (\"\
+  bpf: Add kernel/bpftool asm support for new instructions\")\nSigned-off-by: Yonghong\
+  \ Song <yonghong.song@linux.dev>\nAcked-by: Eduard Zingerman <eddyz87@gmail.com>\n\
+  Link: https://lore.kernel.org/r/20230731204534.1975311-1-yonghong.song@linux.dev\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 1

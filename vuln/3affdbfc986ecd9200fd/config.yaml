@@ -1,0 +1,32 @@
+id: 3affdbfc986ecd9200fd
+bug_link: https://syzkaller.appspot.com/bug?extid=3affdbfc986ecd9200fd
+title: general protection fault in vsock_connectible_has_data
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2cb7c756f605ec02ffe562fb26828e4bcc5fdfc1
+fix_commit: f6abafcd32f9cfc4b1a2f820ecea70773e26d423
+datetime: '2025-01-14T12:29:37+01:00'
+fix_commit_message: "vsock/bpf: return early if transport is not assigned\n\nSome\
+  \ of the core functions can only be called if the transport\nhas been assigned.\n\
+  \nAs Michal reported, a socket might have the transport at NULL,\nfor example after\
+  \ a failed connect(), causing the following trace:\n\n    BUG: kernel NULL pointer\
+  \ dereference, address: 00000000000000a0\n    #PF: supervisor read access in kernel\
+  \ mode\n    #PF: error_code(0x0000) - not-present page\n    PGD 12faf8067 P4D 12faf8067\
+  \ PUD 113670067 PMD 0\n    Oops: Oops: 0000 [#1] PREEMPT SMP NOPTI\n    CPU: 15\
+  \ UID: 0 PID: 1198 Comm: a.out Not tainted 6.13.0-rc2+\n    RIP: 0010:vsock_connectible_has_data+0x1f/0x40\n\
+  \    Call Trace:\n     vsock_bpf_recvmsg+0xca/0x5e0\n     sock_recvmsg+0xb9/0xc0\n\
+  \     __sys_recvfrom+0xb3/0x130\n     __x64_sys_recvfrom+0x20/0x30\n     do_syscall_64+0x93/0x180\n\
+  \     entry_SYSCALL_64_after_hwframe+0x76/0x7e\n\nSo we need to check the `vsk->transport`\
+  \ in vsock_bpf_recvmsg(),\nespecially for connected sockets (stream/seqpacket) as\
+  \ we already\ndo in __vsock_connectible_recvmsg().\n\nFixes: 634f1a7110b4 (\"vsock:\
+  \ support sockmap\")\nCc: stable@vger.kernel.org\nReported-by: Michal Luczaj <mhal@rbox.co>\n\
+  Closes: https://lore.kernel.org/netdev/5ca20d4c-1017-49c2-9516-f6f75fd331e9@rbox.co/\n\
+  Tested-by: Michal Luczaj <mhal@rbox.co>\nReported-by: syzbot+3affdbfc986ecd9200fd@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/netdev/677f84a8.050a0220.25a300.01b3.GAE@google.com/\n\
+  Tested-by: syzbot+3affdbfc986ecd9200fd@syzkaller.appspotmail.com\nReviewed-by: Hyunwoo\
+  \ Kim <v4bel@theori.io>\nAcked-by: Michael S. Tsirkin <mst@redhat.com>\nReviewed-by:\
+  \ Luigi Leonardi <leonardi@redhat.com>\nSigned-off-by: Stefano Garzarella <sgarzare@redhat.com>\n\
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>\n\n"
+submodule:
+- net/vmw_vsock
+hunk_count: 3
+covered_count: 3

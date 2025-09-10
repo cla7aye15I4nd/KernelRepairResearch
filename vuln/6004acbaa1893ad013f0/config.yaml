@@ -1,0 +1,22 @@
+id: 6004acbaa1893ad013f0
+bug_link: https://syzkaller.appspot.com/bug?extid=6004acbaa1893ad013f0
+title: general protection fault in do_move_mount (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d728cf79164bb38e9628d15276e636539f857ef1
+fix_commit: 570d7a98e7d6d5d8706d94ffd2d40adeaa318332
+datetime: '2019-07-01T10:46:36-04:00'
+fix_commit_message: "vfs: move_mount: reject moving kernel internal mounts\n\nsys_move_mount()\
+  \ crashes by dereferencing the pointer MNT_NS_INTERNAL,\na.k.a. ERR_PTR(-EINVAL),\
+  \ if the old mount is specified by fd for a\nkernel object with an internal mount,\
+  \ such as a pipe or memfd.\n\nFix it by checking for this case and returning -EINVAL.\n\
+  \n[AV: what we want is is_mounted(); use that instead of making the\ncondition even\
+  \ more convoluted]\n\nReproducer:\n\n    #include <unistd.h>\n\n    #define __NR_move_mount\
+  \         429\n    #define MOVE_MOUNT_F_EMPTY_PATH 0x00000004\n\n    int main()\n\
+  \    {\n    \tint fds[2];\n\n    \tpipe(fds);\n        syscall(__NR_move_mount,\
+  \ fds[0], \"\", -1, \"/\", MOVE_MOUNT_F_EMPTY_PATH);\n    }\n\nReported-by: syzbot+6004acbaa1893ad013f0@syzkaller.appspotmail.com\n\
+  Fixes: 2db154b3ea8e (\"vfs: syscall: Add move_mount(2) to move mounts around\")\n\
+  Signed-off-by: Eric Biggers <ebiggers@google.com>\nSigned-off-by: Al Viro <viro@zeniv.linux.org.uk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

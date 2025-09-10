@@ -1,0 +1,73 @@
+id: d5204cbbdd921f1f7cad
+bug_link: https://syzkaller.appspot.com/bug?extid=d5204cbbdd921f1f7cad
+title: 'UBSAN: shift-out-of-bounds in __kfifo_alloc'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bd07f751208ba190f9b0db5e5b7f35d5bb4a8a1e
+fix_commit: 6bf8ab7774a20e1e60030e20f42ac8cc804fa457
+datetime: '2025-04-24T12:13:32+02:00'
+fix_commit_message: 'HID: wacom: fix shift OOB in kfifo allocation for zero pktlen
+
+
+  During wacom_parse_and_register() the code calls wacom_devm_kfifo_alloc
+
+  to allocate a fifo. During this operation it passes kfifo_alloc a
+
+  fifo_size of 0. Kfifo attempts to round the size passed to it to the
+
+  next power of 2 via roundup_pow_of_two (queue-type data structures
+
+  do this to maintain efficiency of operations).
+
+
+  However during this phase a problem arises when the roundup_pow_of_two()
+
+  function utilises a shift exponent of fls_long(n-1), where n is the
+
+  fifo_size. Since n is 0 in this case and n is also an unsigned long,
+
+  doing n-1 causes unsigned integer wrap-around to occur making the
+
+  fifo_size 4294967295. So the code effectively does fls_long(4294967295)
+
+  which results in 64. Returning back to roundup_pow_of_two(), the code
+
+  utilises a shift exponent of 64. When a shift exponent of 64 is used
+
+  on a 64-bit type such as 1UL it results in a shift-out-of-bounds.
+
+
+  The root cause of the issue seems to stem from insufficient validation
+
+  of wacom_compute_pktlen(), since in this case the fifo_size comes
+
+  from wacom_wac->features.pktlen. During wacom_parse_and_register()
+
+  the wacom_compute_pktlen() function sets the pktlen as 0.
+
+
+  To fix this, we should handle cases where wacom_compute_pktlen()
+
+  results in 0.
+
+
+  Reported-by: syzbot <syzbot+d5204cbbdd921f1f7cad@syzkaller.appspotmail.com>
+
+  Closes: https://syzkaller.appspot.com/bug?extid=d5204cbbdd921f1f7cad
+
+  Fixes: 5e013ad20689 ("HID: wacom: Remove static WACOM_PKGLEN_MAX limit")
+
+  Tested-by: Qasim Ijaz <qasdev00@gmail.com>
+
+  Reviewed-by: Jason Gerecke <jason.gerecke@wacom.com>
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Qasim Ijaz <qasdev00@gmail.com>
+
+  Signed-off-by: Jiri Kosina <jkosina@suse.com>
+
+  '
+submodule:
+- drivers/hid
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,29 @@
+=====================================================
+BUG: KMSAN: uninit-value in ieee80211_amsdu_to_8023s+0x8c1/0x2d40 net/wireless/util.c:856
+ ieee80211_amsdu_to_8023s+0x8c1/0x2d40 net/wireless/util.c:856
+ __ieee80211_rx_h_amsdu+0x91a/0x13b0 net/mac80211/rx.c:3047
+ ieee80211_rx_h_amsdu net/mac80211/rx.c:3133 [inline]
+ ieee80211_rx_handlers+0x571a/0x10c40 net/mac80211/rx.c:4141
+ ieee80211_invoke_rx_handlers net/mac80211/rx.c:4185 [inline]
+ ieee80211_prepare_and_rx_handle+0x5640/0x9690 net/mac80211/rx.c:5033
+ __ieee80211_rx_handle_packet net/mac80211/rx.c:5239 [inline]
+ ieee80211_rx_list+0x642c/0x65d0 net/mac80211/rx.c:5410
+ ieee80211_rx_napi+0x84/0x3e0 net/mac80211/rx.c:5433
+ ieee80211_rx include/net/mac80211.h:4983 [inline]
+ ieee80211_tasklet_handler+0x19f/0x330 net/mac80211/main.c:318
+ tasklet_action_common+0x391/0xd30 kernel/softirq.c:780
+ tasklet_action+0x26/0x30 kernel/softirq.c:805
+ __do_softirq+0x1b7/0x7c5 kernel/softirq.c:553
+ run_ksoftirqd+0x24/0x40 kernel/softirq.c:921
+ smpboot_thread_fn+0x558/0xa60 kernel/smpboot.c:164
+ kthread+0x3ed/0x550 kernel/kthread.c:388
+ ret_from_fork+0x66/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:243
+
+Local variable hdr created at:
+ ieee80211_amsdu_to_8023s+0x5b/0x2d40 net/wireless/util.c:832
+ __ieee80211_rx_h_amsdu+0x91a/0x13b0 net/mac80211/rx.c:3047
+
+CPU: 0 PID: 15 Comm: ksoftirqd/0 Not tainted 6.8.0-rc6-syzkaller-00278-g58c806d867bf #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/25/2024
+=====================================================

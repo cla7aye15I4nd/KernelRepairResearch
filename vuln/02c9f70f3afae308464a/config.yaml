@@ -1,0 +1,31 @@
+id: 02c9f70f3afae308464a
+bug_link: https://syzkaller.appspot.com/bug?extid=02c9f70f3afae308464a
+title: 'KMSAN: uninit-value in pegasus_probe'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ae03d189bae306e1e00aa631feee090ebda6cf63
+fix_commit: af35fc37354cda3c9c8cc4961b1d24bdc9d27903
+datetime: '2021-08-05T07:29:24-07:00'
+fix_commit_message: "net: pegasus: fix uninit-value in get_interrupt_interval\n\n\
+  Syzbot reported uninit value pegasus_probe(). The problem was in missing\nerror\
+  \ handling.\n\nget_interrupt_interval() internally calls read_eprom_word() which\
+  \ can\nfail in some cases. For example: failed to receive usb control message.\n\
+  These cases should be handled to prevent uninit value bug, since\nread_eprom_word()\
+  \ will not initialize passed stack variable in case of\ninternal failure.\n\nFail\
+  \ log:\n\nBUG: KMSAN: uninit-value in get_interrupt_interval drivers/net/usb/pegasus.c:746\
+  \ [inline]\nBUG: KMSAN: uninit-value in pegasus_probe+0x10e7/0x4080 drivers/net/usb/pegasus.c:1152\n\
+  CPU: 1 PID: 825 Comm: kworker/1:1 Not tainted 5.12.0-rc6-syzkaller #0\n...\nWorkqueue:\
+  \ usb_hub_wq hub_event\nCall Trace:\n __dump_stack lib/dump_stack.c:79 [inline]\n\
+  \ dump_stack+0x24c/0x2e0 lib/dump_stack.c:120\n kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118\n\
+  \ __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197\n get_interrupt_interval drivers/net/usb/pegasus.c:746\
+  \ [inline]\n pegasus_probe+0x10e7/0x4080 drivers/net/usb/pegasus.c:1152\n....\n\n\
+  Local variable ----data.i@pegasus_probe created at:\n get_interrupt_interval drivers/net/usb/pegasus.c:1151\
+  \ [inline]\n pegasus_probe+0xe57/0x4080 drivers/net/usb/pegasus.c:1152\n get_interrupt_interval\
+  \ drivers/net/usb/pegasus.c:1151 [inline]\n pegasus_probe+0xe57/0x4080 drivers/net/usb/pegasus.c:1152\n\
+  \nReported-and-tested-by: syzbot+02c9f70f3afae308464a@syzkaller.appspotmail.com\n\
+  Fixes: 1da177e4c3f4 (\"Linux-2.6.12-rc2\")\nSigned-off-by: Pavel Skripkin <paskripkin@gmail.com>\n\
+  Link: https://lore.kernel.org/r/20210804143005.439-1-paskripkin@gmail.com\nSigned-off-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net/usb
+hunk_count: 3
+covered_count: 3

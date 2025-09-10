@@ -1,0 +1,189 @@
+diff --git a/net/rds/ib_frmr.c b/net/rds/ib_frmr.c
+index 48332a6ed738..d152e48ea371 100644
+--- a/net/rds/ib_frmr.c
++++ b/net/rds/ib_frmr.c
+@@ -344,6 +344,11 @@ struct rds_ib_mr *rds_ib_reg_frmr(struct rds_ib_device *rds_ibdev,
+ 	struct rds_ib_frmr *frmr;
+ 	int ret;
+ 
++	if (!ic) {
++		/* TODO: Add FRWR support for RDS_GET_MR using proxy qp*/
++		return ERR_PTR(-EOPNOTSUPP);
++	}
++
+ 	do {
+ 		if (ibmr)
+ 			rds_ib_free_frmr(ibmr, true);
+diff --git a/net/rds/ib_mr.h b/net/rds/ib_mr.h
+index 0ea4ab017a8c..655f01d427fe 100644
+--- a/net/rds/ib_mr.h
++++ b/net/rds/ib_mr.h
+@@ -115,7 +115,8 @@ void rds_ib_get_mr_info(struct rds_ib_device *rds_ibdev,
+ 			struct rds_info_rdma_connection *iinfo);
+ void rds_ib_destroy_mr_pool(struct rds_ib_mr_pool *);
+ void *rds_ib_get_mr(struct scatterlist *sg, unsigned long nents,
+-		    struct rds_sock *rs, u32 *key_ret);
++		    struct rds_sock *rs, u32 *key_ret,
++		    struct rds_connection *conn);
+ void rds_ib_sync_mr(void *trans_private, int dir);
+ void rds_ib_free_mr(void *trans_private, int invalidate);
+ void rds_ib_flush_mrs(void);
+diff --git a/net/rds/ib_rdma.c b/net/rds/ib_rdma.c
+index e678699268a2..2e49a40a5e11 100644
+--- a/net/rds/ib_rdma.c
++++ b/net/rds/ib_rdma.c
+@@ -537,11 +537,12 @@ void rds_ib_flush_mrs(void)
+ }
+ 
+ void *rds_ib_get_mr(struct scatterlist *sg, unsigned long nents,
+-		    struct rds_sock *rs, u32 *key_ret)
++		    struct rds_sock *rs, u32 *key_ret,
++		    struct rds_connection *conn)
+ {
+ 	struct rds_ib_device *rds_ibdev;
+ 	struct rds_ib_mr *ibmr = NULL;
+-	struct rds_ib_connection *ic = rs->rs_conn->c_transport_data;
++	struct rds_ib_connection *ic = NULL;
+ 	int ret;
+ 
+ 	rds_ibdev = rds_ib_get_device(rs->rs_bound_addr);
+@@ -550,6 +551,9 @@ void *rds_ib_get_mr(struct scatterlist *sg, unsigned long nents,
+ 		goto out;
+ 	}
+ 
++	if (conn)
++		ic = conn->c_transport_data;
++
+ 	if (!rds_ibdev->mr_8k_pool || !rds_ibdev->mr_1m_pool) {
+ 		ret = -ENODEV;
+ 		goto out;
+@@ -559,17 +563,18 @@ void *rds_ib_get_mr(struct scatterlist *sg, unsigned long nents,
+ 		ibmr = rds_ib_reg_frmr(rds_ibdev, ic, sg, nents, key_ret);
+ 	else
+ 		ibmr = rds_ib_reg_fmr(rds_ibdev, sg, nents, key_ret);
+-	if (ibmr)
+-		rds_ibdev = NULL;
+-
+- out:
+-	if (!ibmr)
++	if (IS_ERR(ibmr)) {
++		ret = PTR_ERR(ibmr);
+ 		pr_warn("RDS/IB: rds_ib_get_mr failed (errno=%d)\n", ret);
++	} else {
++		return ibmr;
++	}
+ 
++ out:
+ 	if (rds_ibdev)
+ 		rds_ib_dev_put(rds_ibdev);
+ 
+-	return ibmr;
++	return ERR_PTR(ret);
+ }
+ 
+ void rds_ib_destroy_mr_pool(struct rds_ib_mr_pool *pool)
+diff --git a/net/rds/rdma.c b/net/rds/rdma.c
+index 634cfcb7bba6..80920e47f2c7 100644
+--- a/net/rds/rdma.c
++++ b/net/rds/rdma.c
+@@ -170,7 +170,8 @@ static int rds_pin_pages(unsigned long user_addr, unsigned int nr_pages,
+ }
+ 
+ static int __rds_rdma_map(struct rds_sock *rs, struct rds_get_mr_args *args,
+-				u64 *cookie_ret, struct rds_mr **mr_ret)
++			  u64 *cookie_ret, struct rds_mr **mr_ret,
++			  struct rds_conn_path *cp)
+ {
+ 	struct rds_mr *mr = NULL, *found;
+ 	unsigned int nr_pages;
+@@ -269,7 +270,8 @@ static int __rds_rdma_map(struct rds_sock *rs, struct rds_get_mr_args *args,
+ 	 * Note that dma_map() implies that pending writes are
+ 	 * flushed to RAM, so no dma_sync is needed here. */
+ 	trans_private = rs->rs_transport->get_mr(sg, nents, rs,
+-						 &mr->r_key);
++						 &mr->r_key,
++						 cp ? cp->cp_conn : NULL);
+ 
+ 	if (IS_ERR(trans_private)) {
+ 		for (i = 0 ; i < nents; i++)
+@@ -330,7 +332,7 @@ int rds_get_mr(struct rds_sock *rs, char __user *optval, int optlen)
+ 			   sizeof(struct rds_get_mr_args)))
+ 		return -EFAULT;
+ 
+-	return __rds_rdma_map(rs, &args, NULL, NULL);
++	return __rds_rdma_map(rs, &args, NULL, NULL, NULL);
+ }
+ 
+ int rds_get_mr_for_dest(struct rds_sock *rs, char __user *optval, int optlen)
+@@ -354,7 +356,7 @@ int rds_get_mr_for_dest(struct rds_sock *rs, char __user *optval, int optlen)
+ 	new_args.cookie_addr = args.cookie_addr;
+ 	new_args.flags = args.flags;
+ 
+-	return __rds_rdma_map(rs, &new_args, NULL, NULL);
++	return __rds_rdma_map(rs, &new_args, NULL, NULL, NULL);
+ }
+ 
+ /*
+@@ -782,7 +784,8 @@ int rds_cmsg_rdma_map(struct rds_sock *rs, struct rds_message *rm,
+ 	    rm->m_rdma_cookie != 0)
+ 		return -EINVAL;
+ 
+-	return __rds_rdma_map(rs, CMSG_DATA(cmsg), &rm->m_rdma_cookie, &rm->rdma.op_rdma_mr);
++	return __rds_rdma_map(rs, CMSG_DATA(cmsg), &rm->m_rdma_cookie,
++			      &rm->rdma.op_rdma_mr, rm->m_conn_path);
+ }
+ 
+ /*
+diff --git a/net/rds/rds.h b/net/rds/rds.h
+index f2272fb8cd45..60b3b787fbdb 100644
+--- a/net/rds/rds.h
++++ b/net/rds/rds.h
+@@ -464,6 +464,8 @@ struct rds_message {
+ 			struct scatterlist	*op_sg;
+ 		} data;
+ 	};
++
++	struct rds_conn_path *m_conn_path;
+ };
+ 
+ /*
+@@ -544,7 +546,8 @@ struct rds_transport {
+ 					unsigned int avail);
+ 	void (*exit)(void);
+ 	void *(*get_mr)(struct scatterlist *sg, unsigned long nr_sg,
+-			struct rds_sock *rs, u32 *key_ret);
++			struct rds_sock *rs, u32 *key_ret,
++			struct rds_connection *conn);
+ 	void (*sync_mr)(void *trans_private, int direction);
+ 	void (*free_mr)(void *trans_private, int invalidate);
+ 	void (*flush_mrs)(void);
+diff --git a/net/rds/send.c b/net/rds/send.c
+index 94c7f74909be..59f17a2335f4 100644
+--- a/net/rds/send.c
++++ b/net/rds/send.c
+@@ -1169,6 +1169,13 @@ int rds_sendmsg(struct socket *sock, struct msghdr *msg, size_t payload_len)
+ 		rs->rs_conn = conn;
+ 	}
+ 
++	if (conn->c_trans->t_mp_capable)
++		cpath = &conn->c_path[rds_send_mprds_hash(rs, conn)];
++	else
++		cpath = &conn->c_path[0];
++
++	rm->m_conn_path = cpath;
++
+ 	/* Parse any control messages the user may have included. */
+ 	ret = rds_cmsg_send(rs, rm, msg, &allocated_mr);
+ 	if (ret) {
+@@ -1192,11 +1199,6 @@ int rds_sendmsg(struct socket *sock, struct msghdr *msg, size_t payload_len)
+ 		goto out;
+ 	}
+ 
+-	if (conn->c_trans->t_mp_capable)
+-		cpath = &conn->c_path[rds_send_mprds_hash(rs, conn)];
+-	else
+-		cpath = &conn->c_path[0];
+-
+ 	if (rds_destroy_pending(conn)) {
+ 		ret = -EAGAIN;
+ 		goto out;

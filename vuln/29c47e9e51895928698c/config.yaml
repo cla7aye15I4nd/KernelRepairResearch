@@ -1,0 +1,42 @@
+id: 29c47e9e51895928698c
+bug_link: https://syzkaller.appspot.com/bug?extid=29c47e9e51895928698c
+title: 'KASAN: slab-use-after-free Write in gfs2_qd_dealloc'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 074d7306a4fe22fcac0b53f699f92757ab1cee99
+fix_commit: bdcb8aa434c6d36b5c215d02a9ef07551be25a37
+datetime: '2023-11-06T01:51:26+01:00'
+fix_commit_message: 'gfs2: Fix slab-use-after-free in gfs2_qd_dealloc
+
+
+  In gfs2_put_super(), whether withdrawn or not, the quota should
+
+  be cleaned up by gfs2_quota_cleanup().
+
+
+  Otherwise, struct gfs2_sbd will be freed before gfs2_qd_dealloc (rcu
+
+  callback) has run for all gfs2_quota_data objects, resulting in
+
+  use-after-free.
+
+
+  Also, gfs2_destroy_threads() and gfs2_quota_cleanup() is already called
+
+  by gfs2_make_fs_ro(), so in gfs2_put_super(), after calling
+
+  gfs2_make_fs_ro(), there is no need to call them again.
+
+
+  Reported-by: syzbot+29c47e9e51895928698c@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=29c47e9e51895928698c
+
+  Signed-off-by: Juntong Deng <juntong.deng@outlook.com>
+
+  Signed-off-by: Andreas Gruenbacher <agruenba@redhat.com>
+
+  '
+submodule:
+- fs/gfs2
+hunk_count: 1
+covered_count: 0

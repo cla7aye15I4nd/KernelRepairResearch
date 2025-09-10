@@ -1,0 +1,56 @@
+------------[ cut here ]------------
+kernel BUG at include/linux/page-flags.h:314!
+Internal error: Oops - BUG: 00000000f2000800 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 0 PID: 12282 Comm: syz-executor.2 Not tainted 6.8.0-rc7-syzkaller-g707081b61156 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+pstate: 60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : folio_flags include/linux/page-flags.h:314 [inline]
+pc : folio_test_hugetlb include/linux/page-flags.h:849 [inline]
+pc : PageHuge+0x1f8/0x1fc mm/hugetlb.c:2173
+lr : folio_flags include/linux/page-flags.h:314 [inline]
+lr : folio_test_hugetlb include/linux/page-flags.h:849 [inline]
+lr : PageHuge+0x1f8/0x1fc mm/hugetlb.c:2173
+sp : ffff800097ca6d00
+x29: ffff800097ca6d00 x28: dfff800000000000 x27: fffffdffc318ac00
+x26: 00000000000000b0 x25: fffffdffc3188000 x24: 05ffc00000000840
+x23: 1fffffbff8631580 x22: 1fffffbff8631581 x21: dfff800000000000
+x20: 05ffc00000000000 x19: fffffdffc318ac00 x18: 1fffe000367fff96
+x17: ffff80008ec9d000 x16: ffff80008ad6b09c x15: 0000000000000001
+x14: 1ffff00012f94ce4 x13: 0000000000000000 x12: 0000000000000000
+x11: 0000000000040000 x10: 000000000003ffff x9 : ffff80009a5da000
+x8 : 0000000000040000 x7 : ffff800080297c0c x6 : 0000000000000000
+x5 : 0000000000000001 x4 : 0000000000000001 x3 : ffff800082f248d0
+x2 : 0000000000000001 x1 : 0000000100000000 x0 : 0000000000000166
+Call trace:
+ folio_flags include/linux/page-flags.h:314 [inline]
+ folio_test_hugetlb include/linux/page-flags.h:849 [inline]
+ PageHuge+0x1f8/0x1fc mm/hugetlb.c:2173
+ isolate_migratepages_block+0x7d8/0x2f9c mm/compaction.c:950
+ isolate_migratepages mm/compaction.c:2074 [inline]
+ compact_zone+0x26a8/0x4120 mm/compaction.c:2530
+ compact_node+0x234/0x3c0 mm/compaction.c:2851
+ compact_nodes mm/compaction.c:2864 [inline]
+ sysctl_compaction_handler+0x110/0x1d4 mm/compaction.c:2910
+ proc_sys_call_handler+0x4cc/0x7cc fs/proc/proc_sysctl.c:595
+ proc_sys_write+0x2c/0x3c fs/proc/proc_sysctl.c:621
+ call_write_iter include/linux/fs.h:2087 [inline]
+ iter_file_splice_write+0x894/0xfc0 fs/splice.c:743
+ do_splice_from fs/splice.c:941 [inline]
+ direct_splice_actor+0xec/0x1d8 fs/splice.c:1164
+ splice_direct_to_actor+0x438/0xa0c fs/splice.c:1108
+ do_splice_direct_actor fs/splice.c:1207 [inline]
+ do_splice_direct+0x1e4/0x304 fs/splice.c:1233
+ do_sendfile+0x460/0xb3c fs/read_write.c:1295
+ __do_sys_sendfile64 fs/read_write.c:1356 [inline]
+ __se_sys_sendfile64 fs/read_write.c:1348 [inline]
+ __arm64_sys_sendfile64+0x23c/0x3b4 fs/read_write.c:1348
+ __invoke_syscall arch/arm64/kernel/syscall.c:34 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:48
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:133
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:152
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:712
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:730
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:598
+Code: f0052f01 912c0021 aa1303e0 97fbce80 (d4210000) 
+---[ end trace 0000000000000000 ]---

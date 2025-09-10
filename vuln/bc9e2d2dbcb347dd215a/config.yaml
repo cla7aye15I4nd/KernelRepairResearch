@@ -1,0 +1,51 @@
+id: bc9e2d2dbcb347dd215a
+bug_link: https://syzkaller.appspot.com/bug?extid=bc9e2d2dbcb347dd215a
+title: WARNING in page_counter_cancel (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 110b6d1fe98fd7af9893992459b651594d789293
+fix_commit: 269bda9e7da48eafb599d01c96199caa2f7547e5
+datetime: '2022-01-07T11:29:45+00:00'
+fix_commit_message: "mptcp: Check reclaim amount before reducing allocation\n\nsyzbot\
+  \ found a page counter underflow that was triggered by MPTCP's\nreclaim code:\n\n\
+  page_counter underflow: -4294964789 nr_pages=4294967295\nWARNING: CPU: 2 PID: 3785\
+  \ at mm/page_counter.c:56 page_counter_cancel+0xcf/0xe0 mm/page_counter.c:56\nModules\
+  \ linked in:\nCPU: 2 PID: 3785 Comm: kworker/2:6 Not tainted 5.16.0-rc1-syzkaller\
+  \ #0\nHardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.14.0-2 04/01/2014\n\
+  Workqueue: events mptcp_worker\n\nRIP: 0010:page_counter_cancel+0xcf/0xe0 mm/page_counter.c:56\n\
+  Code: c7 04 24 00 00 00 00 45 31 f6 eb 97 e8 2a 2b b5 ff 4c 89 ea 48 89 ee 48 c7\
+  \ c7 00 9e b8 89 c6 05 a0 c1 ba 0b 01 e8 95 e4 4b 07 <0f> 0b eb a8 4c 89 e7 e8 25\
+  \ 5a fb ff eb c7 0f 1f 00 41 56 41 55 49\nRSP: 0018:ffffc90002d4f918 EFLAGS: 00010082\n\
+  \nRAX: 0000000000000000 RBX: ffff88806a494120 RCX: 0000000000000000\nRDX: ffff8880688c41c0\
+  \ RSI: ffffffff815e8f28 RDI: fffff520005a9f15\nRBP: ffffffff000009cb R08: 0000000000000000\
+  \ R09: 0000000000000000\nR10: ffffffff815e2cfe R11: 0000000000000000 R12: ffff88806a494120\n\
+  R13: 00000000ffffffff R14: 0000000000000000 R15: 0000000000000001\nFS:  0000000000000000(0000)\
+  \ GS:ffff88802cc00000(0000) knlGS:0000000000000000\nCS:  0010 DS: 0000 ES: 0000\
+  \ CR0: 0000000080050033\nCR2: 0000001b2de21000 CR3: 000000005ad59000 CR4: 0000000000150ee0\n\
+  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\nDR3: 0000000000000000\
+  \ DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n <TASK>\n page_counter_uncharge+0x2e/0x60\
+  \ mm/page_counter.c:160\n drain_stock+0xc1/0x180 mm/memcontrol.c:2219\n refill_stock+0x139/0x2f0\
+  \ mm/memcontrol.c:2271\n __sk_mem_reduce_allocated+0x24d/0x550 net/core/sock.c:2945\n\
+  \ __mptcp_rmem_reclaim net/mptcp/protocol.c:167 [inline]\n __mptcp_mem_reclaim_partial+0x124/0x410\
+  \ net/mptcp/protocol.c:975\n mptcp_mem_reclaim_partial net/mptcp/protocol.c:982\
+  \ [inline]\n mptcp_alloc_tx_skb net/mptcp/protocol.c:1212 [inline]\n mptcp_sendmsg_frag+0x18c6/0x2190\
+  \ net/mptcp/protocol.c:1279\n __mptcp_push_pending+0x232/0x720 net/mptcp/protocol.c:1545\n\
+  \ mptcp_release_cb+0xfe/0x200 net/mptcp/protocol.c:2975\n release_sock+0xb4/0x1b0\
+  \ net/core/sock.c:3306\n mptcp_worker+0x51e/0xc10 net/mptcp/protocol.c:2443\n process_one_work+0x9b2/0x1690\
+  \ kernel/workqueue.c:2298\n worker_thread+0x658/0x11f0 kernel/workqueue.c:2445\n\
+  \ kthread+0x405/0x4f0 kernel/kthread.c:327\n ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:295\n\
+  \ </TASK>\n\n__mptcp_mem_reclaim_partial() could call __mptcp_rmem_reclaim() with\
+  \ a\nnegative value, which passed that negative value to\n__sk_mem_reduce_allocated()\
+  \ and triggered the splat above.\n\nCheck for a reclaim amount that is positive\
+  \ and large enough for\n__mptcp_rmem_reclaim() to actually adjust rmem_fwd_alloc\
+  \ (much like\nthe sk_mem_reclaim_partial() code the function is based on).\n\nv2:\
+  \ Use '>' instead of '>=', since SK_MEM_QUANTUM - 1 would get\nright-shifted into\
+  \ nothing by __mptcp_rmem_reclaim.\n\nFixes: 6511882cdd82 (\"mptcp: allocate fwd\
+  \ memory separately on the rx and tx path\")\nCloses: https://github.com/multipath-tcp/mptcp_net-next/issues/252\n\
+  Reported-and-tested-by: syzbot+bc9e2d2dbcb347dd215a@syzkaller.appspotmail.com\n\
+  Cc: Andrew Morton <akpm@linux-foundation.org>\nCc: Michal Hocko <mhocko@suse.com>\n\
+  Acked-by: Paolo Abeni <pabeni@redhat.com>\nSigned-off-by: Mat Martineau <mathew.j.martineau@linux.intel.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/mptcp
+hunk_count: 1
+covered_count: 1

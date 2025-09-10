@@ -1,0 +1,43 @@
+id: 50a8a9cf8127f2c6f5df
+bug_link: https://syzkaller.appspot.com/bug?extid=50a8a9cf8127f2c6f5df
+title: general protection fault in gfs2_withdraw
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1a5a2cfd34c17db73c53ef127272c8c1ae220485
+fix_commit: d5bf630f355d8c532bef2347cf90e8ae60a5f1bd
+datetime: '2021-03-12T14:55:23+01:00'
+fix_commit_message: 'gfs2: bypass signal_our_withdraw if no journal
+
+
+  Before this patch, function signal_our_withdraw referenced the journal
+
+  inode immediately. But corrupt file systems may have some invalid
+
+  journals, in which case our attempt to read it in will withdraw and the
+
+  resulting signal_our_withdraw would dereference the NULL value.
+
+
+  This patch adds a check to signal_our_withdraw so that if the journal
+
+  has not yet been initialized, it simply returns and does the old-style
+
+  withdraw.
+
+
+  Thanks, Andy Price, for his analysis.
+
+
+  Reported-by: syzbot+50a8a9cf8127f2c6f5df@syzkaller.appspotmail.com
+
+  Fixes: 601ef0d52e96 ("gfs2: Force withdraw to replay journals and wait for it to
+  finish")
+
+  Signed-off-by: Bob Peterson <rpeterso@redhat.com>
+
+  Signed-off-by: Andreas Gruenbacher <agruenba@redhat.com>
+
+  '
+submodule:
+- fs/gfs2
+hunk_count: 1
+covered_count: 1

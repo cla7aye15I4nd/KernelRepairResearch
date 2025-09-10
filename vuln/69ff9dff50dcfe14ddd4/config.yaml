@@ -1,0 +1,33 @@
+id: 69ff9dff50dcfe14ddd4
+bug_link: https://syzkaller.appspot.com/bug?extid=69ff9dff50dcfe14ddd4
+title: possible deadlock in ieee80211_tx_frags
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 444d7be9532dcfda8e0385226c862fd7e986f607
+fix_commit: 1d482e666b8e74c7555dbdfbfb77205eeed3ff2d
+datetime: '2021-05-17T15:31:03-07:00'
+fix_commit_message: "netlink: disable IRQs for netlink_lock_table()\n\nSyzbot reports\
+  \ that in mac80211 we have a potential deadlock\nbetween our \"local->stop_queue_reasons_lock\"\
+  \ (spinlock) and\nnetlink's nl_table_lock (rwlock). This is because there's at\n\
+  least one situation in which we might try to send a netlink\nmessage with this spinlock\
+  \ held while it is also possible to\ntake the spinlock from a hardirq context, resulting\
+  \ in the\nfollowing deadlock scenario reported by lockdep:\n\n       CPU0      \
+  \              CPU1\n       ----                    ----\n  lock(nl_table_lock);\n\
+  \                               local_irq_disable();\n                         \
+  \      lock(&local->queue_stop_reason_lock);\n                               lock(nl_table_lock);\n\
+  \  <Interrupt>\n    lock(&local->queue_stop_reason_lock);\n\nThis seems valid, we\
+  \ can take the queue_stop_reason_lock in\nany kind of context (\"CPU0\"), and call\
+  \ ieee80211_report_ack_skb()\nwith the spinlock held and IRQs disabled (\"CPU1\"\
+  ) in some\ncode path (ieee80211_do_stop() via ieee80211_free_txskb()).\n\nShort\
+  \ of disallowing netlink use in scenarios like these\n(which would be rather complex\
+  \ in mac80211's case due to\nthe deep callchain), it seems the only fix for this\
+  \ is to\ndisable IRQs while nl_table_lock is held to avoid hitting\nthis scenario,\
+  \ this disallows the \"CPU0\" portion of the\nreported deadlock.\n\nNote that the\
+  \ writer side (netlink_table_grab()) already\ndisables IRQs for this lock.\n\nUnfortunately\
+  \ though, this seems like a huge hammer, and\nmaybe the whole netlink table locking\
+  \ should be reworked.\n\nReported-by: syzbot+69ff9dff50dcfe14ddd4@syzkaller.appspotmail.com\n\
+  Signed-off-by: Johannes Berg <johannes.berg@intel.com>\nSigned-off-by: David S.\
+  \ Miller <davem@davemloft.net>\n"
+submodule:
+- net/netlink
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,165 @@
+9pnet: Found fid 1 not clunked
+==================================================================
+BUG: KASAN: slab-use-after-free in p9_fid_destroy net/9p/client.c:885 [inline]
+BUG: KASAN: slab-use-after-free in p9_client_destroy+0x183/0x660 net/9p/client.c:1071
+Read of size 8 at addr ffff8880556f8200 by task syz-executor.1/24296
+
+CPU: 0 PID: 24296 Comm: syz-executor.1 Not tainted 6.9.0-syzkaller-08284-gea5f6ad9ad96 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ p9_fid_destroy net/9p/client.c:885 [inline]
+ p9_client_destroy+0x183/0x660 net/9p/client.c:1071
+ v9fs_session_close+0x51/0x210 fs/9p/v9fs.c:506
+ v9fs_kill_super+0x5c/0x90 fs/9p/vfs_super.c:196
+ deactivate_locked_super+0xc4/0x130 fs/super.c:472
+ cleanup_mnt+0x426/0x4c0 fs/namespace.c:1267
+ task_work_run+0x24f/0x310 kernel/task_work.c:180
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:114 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x168/0x370 kernel/entry/common.c:218
+ do_syscall_64+0x102/0x240 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fb73087e217
+Code: b0 ff ff ff f7 d8 64 89 01 48 83 c8 ff c3 0f 1f 44 00 00 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffe3c27e148 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007fb73087e217
+RDX: 0000000000000000 RSI: 0000000000000009 RDI: 00007ffe3c27e200
+RBP: 00007ffe3c27e200 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000246 R12: 00007ffe3c27f2c0
+R13: 00007fb7308c8336 R14: 000000000014010f R15: 000000000000000a
+ </TASK>
+
+Allocated by task 24682:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:370 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:387
+ kasan_kmalloc include/linux/kasan.h:211 [inline]
+ kmalloc_trace+0x1db/0x370 mm/slub.c:4070
+ kmalloc include/linux/slab.h:628 [inline]
+ kzalloc include/linux/slab.h:749 [inline]
+ p9_fid_create+0x4f/0x230 net/9p/client.c:854
+ p9_client_walk+0x103/0x690 net/9p/client.c:1155
+ clone_fid fs/9p/fid.h:23 [inline]
+ v9fs_fid_clone fs/9p/fid.h:33 [inline]
+ v9fs_file_open+0x285/0xa60 fs/9p/vfs_file.c:56
+ do_dentry_open+0x907/0x15a0 fs/open.c:955
+ do_open fs/namei.c:3650 [inline]
+ path_openat+0x2860/0x3240 fs/namei.c:3807
+ do_filp_open+0x235/0x490 fs/namei.c:3834
+ do_sys_openat2+0x13e/0x1d0 fs/open.c:1406
+ do_sys_open fs/open.c:1421 [inline]
+ __do_sys_creat fs/open.c:1497 [inline]
+ __se_sys_creat fs/open.c:1491 [inline]
+ __x64_sys_creat+0x123/0x170 fs/open.c:1491
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 2820:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:579
+ poison_slab_object+0xa6/0xe0 mm/kasan/common.c:240
+ __kasan_slab_free+0x37/0x60 mm/kasan/common.c:256
+ kasan_slab_free include/linux/kasan.h:184 [inline]
+ slab_free_hook mm/slub.c:2121 [inline]
+ slab_free mm/slub.c:4353 [inline]
+ kfree+0x153/0x3b0 mm/slub.c:4463
+ p9_fid_destroy net/9p/client.c:890 [inline]
+ p9_client_clunk+0x1ce/0x260 net/9p/client.c:1457
+ netfs_free_request+0x244/0x5e0 fs/netfs/objects.c:133
+ netfs_write_collection_worker+0x507c/0x5640 fs/netfs/write_collect.c:701
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3312
+ worker_thread+0x86d/0xd70 kernel/workqueue.c:3393
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+The buggy address belongs to the object at ffff8880556f8200
+ which belongs to the cache kmalloc-96 of size 96
+The buggy address is located 0 bytes inside of
+ freed 96-byte region [ffff8880556f8200, ffff8880556f8260)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x556f8
+flags: 0xfff00000000800(slab|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000800 ffff888015041280 dead000000000100 dead000000000122
+raw: 0000000000000000 0000000000200020 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x152c40(GFP_NOFS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_HARDWALL), pid 16791, tgid 16790 (syz-executor.4), ts 1004232802819, free_ts 1004062204891
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1ea/0x210 mm/page_alloc.c:1534
+ prep_new_page mm/page_alloc.c:1541 [inline]
+ get_page_from_freelist+0x3410/0x35b0 mm/page_alloc.c:3317
+ __alloc_pages+0x256/0x6c0 mm/page_alloc.c:4575
+ __alloc_pages_node include/linux/gfp.h:238 [inline]
+ alloc_pages_node include/linux/gfp.h:261 [inline]
+ alloc_slab_page+0x5f/0x160 mm/slub.c:2190
+ allocate_slab mm/slub.c:2353 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2406
+ ___slab_alloc+0xb07/0x12e0 mm/slub.c:3592
+ __slab_alloc mm/slub.c:3682 [inline]
+ __slab_alloc_node mm/slub.c:3735 [inline]
+ slab_alloc_node mm/slub.c:3908 [inline]
+ __do_kmalloc_node mm/slub.c:4038 [inline]
+ __kmalloc+0x2e5/0x4a0 mm/slub.c:4052
+ kmalloc include/linux/slab.h:632 [inline]
+ qtree_write_dquot+0xf9/0x5b0 fs/quota/quota_tree.c:444
+ v2_write_dquot+0x17a/0x270 fs/quota/quota_v2.c:372
+ dquot_commit+0x399/0x490 fs/quota/dquot.c:514
+ ext4_write_dquot+0x212/0x370 fs/ext4/super.c:6858
+ mark_dquot_dirty fs/quota/dquot.c:372 [inline]
+ mark_all_dquot_dirty+0xfb/0x410 fs/quota/dquot.c:412
+ __dquot_alloc_space+0xb96/0x10b0 fs/quota/dquot.c:1740
+ dquot_alloc_space_nodirty include/linux/quotaops.h:299 [inline]
+ dquot_alloc_space include/linux/quotaops.h:312 [inline]
+ dquot_alloc_block include/linux/quotaops.h:336 [inline]
+ ext4_xattr_block_set+0x1c2e/0x3480 fs/ext4/xattr.c:2076
+ ext4_xattr_set_handle+0xce0/0x1580 fs/ext4/xattr.c:2443
+ ext4_initxattrs+0xa3/0x120 fs/ext4/xattr_security.c:44
+page last free pid 20126 tgid 20126 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1141 [inline]
+ free_unref_page_prepare+0x97b/0xaa0 mm/page_alloc.c:2347
+ free_unref_page+0x37/0x3f0 mm/page_alloc.c:2487
+ discard_slab mm/slub.c:2452 [inline]
+ __put_partials+0xeb/0x130 mm/slub.c:2920
+ put_cpu_partial+0x17c/0x250 mm/slub.c:2995
+ __slab_free+0x2ea/0x3d0 mm/slub.c:4224
+ qlink_free mm/kasan/quarantine.c:163 [inline]
+ qlist_free_all+0x5e/0xc0 mm/kasan/quarantine.c:179
+ kasan_quarantine_reduce+0x14f/0x170 mm/kasan/quarantine.c:286
+ __kasan_slab_alloc+0x23/0x80 mm/kasan/common.c:322
+ kasan_slab_alloc include/linux/kasan.h:201 [inline]
+ slab_post_alloc_hook mm/slub.c:3871 [inline]
+ slab_alloc_node mm/slub.c:3918 [inline]
+ __do_kmalloc_node mm/slub.c:4038 [inline]
+ __kmalloc_node_track_caller+0x1fd/0x4f0 mm/slub.c:4059
+ kvasprintf+0xdf/0x190 lib/kasprintf.c:25
+ kobject_set_name_vargs+0x61/0x120 lib/kobject.c:274
+ dev_set_name+0xd5/0x120 drivers/base/core.c:3523
+ rfkill_register+0xc5/0x8c0 net/rfkill/core.c:1083
+ wiphy_register+0x234c/0x2b30 net/wireless/core.c:1029
+ ieee80211_register_hw+0x3098/0x3d80 net/mac80211/main.c:1558
+ mac80211_hwsim_new_radio+0x2597/0x44c0 drivers/net/wireless/virtual/mac80211_hwsim.c:5470
+
+Memory state around the buggy address:
+ ffff8880556f8100: 00 00 00 00 00 00 00 00 05 fc fc fc fc fc fc fc
+ ffff8880556f8180: fa fb fb fb fb fb fb fb fb fb fb fb fc fc fc fc
+>ffff8880556f8200: fa fb fb fb fb fb fb fb fb fb fb fb fc fc fc fc
+                   ^
+ ffff8880556f8280: fa fb fb fb fb fb fb fb fb fb fb fb fc fc fc fc
+ ffff8880556f8300: fa fb fb fb fb fb fb fb fb fb fb fb fc fc fc fc
+==================================================================

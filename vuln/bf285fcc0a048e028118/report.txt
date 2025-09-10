@@ -1,0 +1,62 @@
+==================================================================
+BUG: KCSAN: data-race in next_expiry_recalc / update_process_times
+
+write to 0xffff888237c1de58 of 8 bytes by interrupt on cpu 1:
+ next_expiry_recalc+0x187/0x1e0 kernel/time/timer.c:1967
+ __run_timers kernel/time/timer.c:2414 [inline]
+ __run_timer_base+0x2ee/0x640 kernel/time/timer.c:2428
+ timer_expire_remote+0x2f/0x40 kernel/time/timer.c:2180
+ tmigr_handle_remote_cpu kernel/time/timer_migration.c:930 [inline]
+ tmigr_handle_remote_up kernel/time/timer_migration.c:1021 [inline]
+ __walk_groups kernel/time/timer_migration.c:533 [inline]
+ tmigr_handle_remote+0x4f6/0x940 kernel/time/timer_migration.c:1080
+ run_timer_softirq+0x5f/0x70 kernel/time/timer.c:2451
+ handle_softirqs+0xc3/0x280 kernel/softirq.c:554
+ __do_softirq kernel/softirq.c:588 [inline]
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu kernel/softirq.c:637 [inline]
+ irq_exit_rcu+0x3e/0x90 kernel/softirq.c:649
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0x73/0x80 arch/x86/kernel/apic/apic.c:1043
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+ syscall_enter_from_user_mode_work include/linux/entry-common.h:165 [inline]
+ syscall_enter_from_user_mode include/linux/entry-common.h:198 [inline]
+ do_syscall_64+0x9a/0x1c0 arch/x86/entry/common.c:79
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff888237c1de58 of 8 bytes by interrupt on cpu 0:
+ run_local_timers kernel/time/timer.c:2466 [inline]
+ update_process_times+0x8a/0x180 kernel/time/timer.c:2484
+ tick_sched_handle kernel/time/tick-sched.c:276 [inline]
+ tick_nohz_handler+0x250/0x2d0 kernel/time/tick-sched.c:297
+ __run_hrtimer kernel/time/hrtimer.c:1689 [inline]
+ __hrtimer_run_queues+0x20d/0x5e0 kernel/time/hrtimer.c:1753
+ hrtimer_interrupt+0x210/0x7b0 kernel/time/hrtimer.c:1815
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0x5c/0x1a0 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0x6e/0x80 arch/x86/kernel/apic/apic.c:1043
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+ native_safe_halt arch/x86/include/asm/irqflags.h:48 [inline]
+ arch_safe_halt arch/x86/include/asm/irqflags.h:106 [inline]
+ acpi_safe_halt+0x21/0x30 drivers/acpi/processor_idle.c:111
+ acpi_idle_do_entry+0x1d/0x30 drivers/acpi/processor_idle.c:568
+ acpi_idle_enter+0x96/0xb0 drivers/acpi/processor_idle.c:702
+ cpuidle_enter_state+0xcf/0x270 drivers/cpuidle/cpuidle.c:267
+ cpuidle_enter+0x40/0x70 drivers/cpuidle/cpuidle.c:388
+ call_cpuidle kernel/sched/idle.c:155 [inline]
+ cpuidle_idle_call kernel/sched/idle.c:230 [inline]
+ do_idle+0x195/0x230 kernel/sched/idle.c:326
+ cpu_startup_entry+0x25/0x30 kernel/sched/idle.c:424
+ rest_init+0xef/0xf0 init/main.c:747
+ start_kernel+0x581/0x5e0 init/main.c:1103
+ x86_64_start_reservations+0x2a/0x30 arch/x86/kernel/head64.c:507
+ x86_64_start_kernel+0x9a/0xa0 arch/x86/kernel/head64.c:488
+ common_startup_64+0x12c/0x137
+
+value changed: 0x00000000ffffa73f -> 0x00000000ffffa740
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 0 Comm: swapper/0 Not tainted 6.11.0-rc5-syzkaller-00057-g86987d84b968 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+==================================================================

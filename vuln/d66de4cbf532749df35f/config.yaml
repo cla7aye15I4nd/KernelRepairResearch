@@ -1,0 +1,45 @@
+id: d66de4cbf532749df35f
+bug_link: https://syzkaller.appspot.com/bug?extid=d66de4cbf532749df35f
+title: memory leak in btrfs_ref_tree_mod
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2db313205f8b96eea467691917138d646bb50aef
+fix_commit: f91192cd68591c6b037da345bc9fcd5e50540358
+datetime: '2023-11-23T22:27:34+01:00'
+fix_commit_message: 'btrfs: ref-verify: fix memory leaks in btrfs_ref_tree_mod()
+
+
+  In btrfs_ref_tree_mod(), when !parent ''re'' was allocated through
+
+  kmalloc(). In the following code, if an error occurs, the execution will
+
+  be redirected to ''out'' or ''out_unlock'' and the function will be exited.
+
+  However, on some of the paths, ''re'' are not deallocated and may lead to
+
+  memory leaks.
+
+
+  For example: lookup_block_entry() for ''be'' returns NULL, the out label
+
+  will be invoked. During that flow ref and ''ra'' are freed but not ''re'',
+
+  which can potentially lead to a memory leak.
+
+
+  CC: stable@vger.kernel.org # 5.10+
+
+  Reported-and-tested-by: syzbot+d66de4cbf532749df35f@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=d66de4cbf532749df35f
+
+  Signed-off-by: Bragatheswaran Manickavel <bragathemanick0908@gmail.com>
+
+  Reviewed-by: David Sterba <dsterba@suse.com>
+
+  Signed-off-by: David Sterba <dsterba@suse.com>
+
+  '
+submodule:
+- fs/btrfs
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,41 @@
+diff --git a/fs/bcachefs/sb-errors_types.h b/fs/bcachefs/sb-errors_types.h
+index 87324747351a..666599d3fb9d 100644
+--- a/fs/bcachefs/sb-errors_types.h
++++ b/fs/bcachefs/sb-errors_types.h
+@@ -273,7 +273,9 @@
+ 	x(dup_backpointer_to_bad_csum_extent,			265)	\
+ 	x(btree_bitmap_not_marked,				266)	\
+ 	x(sb_clean_entry_overrun,				267)	\
+-	x(btree_ptr_v2_written_0,				268)
++	x(btree_ptr_v2_written_0,				268)	\
++	x(subvol_snapshot_bad,					269)	\
++	x(subvol_inode_bad,					270)
+ 
+ enum bch_sb_error_id {
+ #define x(t, n) BCH_FSCK_ERR_##t = n,
+diff --git a/fs/bcachefs/subvolume.c b/fs/bcachefs/subvolume.c
+index 132213761ef6..dfc9cf305756 100644
+--- a/fs/bcachefs/subvolume.c
++++ b/fs/bcachefs/subvolume.c
+@@ -210,12 +210,21 @@ int bch2_check_subvol_children(struct bch_fs *c)
+ int bch2_subvolume_invalid(struct bch_fs *c, struct bkey_s_c k,
+ 			   enum bch_validate_flags flags, struct printbuf *err)
+ {
++	struct bkey_s_c_subvolume subvol = bkey_s_c_to_subvolume(k);
+ 	int ret = 0;
+ 
+ 	bkey_fsck_err_on(bkey_lt(k.k->p, SUBVOL_POS_MIN) ||
+ 			 bkey_gt(k.k->p, SUBVOL_POS_MAX), c, err,
+ 			 subvol_pos_bad,
+ 			 "invalid pos");
++
++	bkey_fsck_err_on(!subvol.v->snapshot, c, err,
++			 subvol_snapshot_bad,
++			 "invalid snapshot");
++
++	bkey_fsck_err_on(!subvol.v->inode, c, err,
++			 subvol_inode_bad,
++			 "invalid inode");
+ fsck_err:
+ 	return ret;
+ }

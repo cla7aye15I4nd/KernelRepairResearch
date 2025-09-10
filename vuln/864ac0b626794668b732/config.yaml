@@ -1,0 +1,62 @@
+id: 864ac0b626794668b732
+bug_link: https://syzkaller.appspot.com/bug?extid=864ac0b626794668b732
+title: 'KASAN: slab-use-after-free Read in kvm_tdp_mmu_invalidate_all_roots'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9ed3bf411226f446a9795f2b49a15b9df98d7cf5
+fix_commit: edbdb43fc96b11b3bfa531be306a1993d9fe89ec
+datetime: '2023-04-26T15:50:27-07:00'
+fix_commit_message: "KVM: x86: Preserve TDP MMU roots until they are explicitly invalidated\n\
+  \nPreserve TDP MMU roots until they are explicitly invalidated by gifting\nthe TDP\
+  \ MMU itself a reference to a root when it is allocated.  Keeping a\nreference in\
+  \ the TDP MMU fixes a flaw where the TDP MMU exhibits terrible\nperformance, and\
+  \ can potentially even soft-hang a vCPU, if a vCPU\nfrequently unloads its roots,\
+  \ e.g. when KVM is emulating SMI+RSM.\n\nWhen KVM emulates something that invalidates\
+  \ _all_ TLB entries, e.g. SMI\nand RSM, KVM unloads all of the vCPUs roots (KVM\
+  \ keeps a small per-vCPU\ncache of previous roots).  Unloading roots is a simple\
+  \ way to ensure KVM\nflushes and synchronizes all roots for the vCPU, as KVM flushes\
+  \ and syncs\nwhen allocating a \"new\" root (from the vCPU's perspective).\n\nIn\
+  \ the shadow MMU, KVM keeps track of all shadow pages, roots included, in\na per-VM\
+  \ hash table.  Unloading a shadow MMU root just wipes it from the\nper-vCPU cache;\
+  \ the root is still tracked in the per-VM hash table.  When\nKVM loads a \"new\"\
+  \ root for the vCPU, KVM will find the old, unloaded root\nin the per-VM hash table.\n\
+  \nUnlike the shadow MMU, the TDP MMU doesn't track \"inactive\" roots in a\nper-VM\
+  \ structure, where \"active\" in this case means a root is either\nin-use or cached\
+  \ as a previous root by at least one vCPU.  When a TDP MMU\nroot becomes inactive,\
+  \ i.e. the last vCPU reference to the root is put,\nKVM immediately frees the root\
+  \ (asterisk on \"immediately\" as the actual\nfreeing may be done by a worker, but\
+  \ for all intents and purposes the root\nis gone).\n\nThe TDP MMU behavior is especially\
+  \ problematic for 1-vCPU setups, as\nunloading all roots effectively frees all roots.\
+  \  The issue is mitigated\nto some degree in multi-vCPU setups as a different vCPU\
+  \ usually holds a\nreference to an unloaded root and thus keeps the root alive,\
+  \ allowing the\nvCPU to reuse its old root after unloading (with a flush+sync).\n\
+  \nThe TDP MMU flaw has been known for some time, as until very recently,\nKVM's\
+  \ handling of CR0.WP also triggered unloading of all roots.  The\nCR0.WP toggling\
+  \ scenario was eventually addressed by not unloading roots\nwhen _only_ CR0.WP is\
+  \ toggled, but such an approach doesn't Just Work\nfor emulating SMM as KVM must\
+  \ emulate a full TLB flush on entry and exit\nto/from SMM.  Given that the shadow\
+  \ MMU plays nice with unloading roots\nat will, teaching the TDP MMU to do the same\
+  \ is far less complex than\nmodifying KVM to track which roots need to be flushed\
+  \ before reuse.\n\nNote, preserving all possible TDP MMU roots is not a concern\
+  \ with respect\nto memory consumption.  Now that the role for direct MMUs doesn't\
+  \ include\ninformation about the guest, e.g. CR0.PG, CR0.WP, CR4.SMEP, etc., there\n\
+  are _at most_ six possible roots (where \"guest_mode\" here means L2):\n\n  1. 4-level\
+  \ !SMM !guest_mode\n  2. 4-level  SMM !guest_mode\n  3. 5-level !SMM !guest_mode\n\
+  \  4. 5-level  SMM !guest_mode\n  5. 4-level !SMM guest_mode\n  6. 5-level !SMM\
+  \ guest_mode\n\nAnd because each vCPU can track 4 valid roots, a VM can already\
+  \ have all\n6 root combinations live at any given time.  Not to mention that, in\n\
+  practice, no sane VMM will advertise different guest.MAXPHYADDR values\nacross vCPUs,\
+  \ i.e. KVM won't ever use both 4-level and 5-level roots for\na single VM.  Furthermore,\
+  \ the vast majority of modern hypervisors will\nutilize EPT/NPT when available,\
+  \ thus the guest_mode=%true cases are also\nunlikely to be utilized.\n\nReported-by:\
+  \ Jeremi Piotrowski <jpiotrowski@linux.microsoft.com>\nLink: https://lore.kernel.org/all/959c5bce-beb5-b463-7158-33fc4a4f910c@linux.microsoft.com\n\
+  Link: https://lkml.kernel.org/r/20220209170020.1775368-1-pbonzini%40redhat.com\n\
+  Link: https://lore.kernel.org/all/20230322013731.102955-1-minipli@grsecurity.net\n\
+  Link: https://lore.kernel.org/all/000000000000a0bc2b05f9dd7fab@google.com\nLink:\
+  \ https://lore.kernel.org/all/000000000000eca0b905fa0f7756@google.com\nCc: Ben Gardon\
+  \ <bgardon@google.com>\nCc: David Matlack <dmatlack@google.com>\nCc: stable@vger.kernel.org\n\
+  Tested-by: Jeremi Piotrowski <jpiotrowski@linux.microsoft.com>\nLink: https://lore.kernel.org/r/20230426220323.3079789-1-seanjc@google.com\n\
+  Signed-off-by: Sean Christopherson <seanjc@google.com>\n"
+submodule:
+- arch/x86/kvm/mmu
+hunk_count: 5
+covered_count: 4

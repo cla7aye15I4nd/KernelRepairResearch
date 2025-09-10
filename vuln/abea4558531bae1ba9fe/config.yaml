@@ -1,0 +1,34 @@
+id: abea4558531bae1ba9fe
+bug_link: https://syzkaller.appspot.com/bug?extid=abea4558531bae1ba9fe
+title: 'KCSAN: data-race in expire_timers / try_to_del_timer_sync'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ff1176468d368232b684f75e82563369208bc371
+fix_commit: bb7262b295472eb6858b5c49893954794027cd84
+datetime: '2021-07-27T20:57:44+02:00'
+fix_commit_message: "timers: Move clearing of base::timer_running under base:: Lock\n\
+  \nsyzbot reported KCSAN data races vs. timer_base::timer_running being set to\n\
+  NULL without holding base::lock in expire_timers().\n\nThis looks innocent and most\
+  \ reads are clearly not problematic, but\nFrederic identified an issue which is:\n\
+  \n int data = 0;\n\n void timer_func(struct timer_list *t)\n {\n    data = 1;\n\
+  \ }\n\n CPU 0                                            CPU 1\n ------------------------------\
+  \                   --------------------------\n base = lock_timer_base(timer, &flags);\
+  \           raw_spin_unlock(&base->lock);\n if (base->running_timer != timer)  \
+  \              call_timer_fn(timer, fn, baseclk);\n   ret = detach_if_pending(timer,\
+  \ base, true);    base->running_timer = NULL;\n raw_spin_unlock_irqrestore(&base->lock,\
+  \ flags);  raw_spin_lock(&base->lock);\n\n x = data;\n\nIf the timer has previously\
+  \ executed on CPU 1 and then CPU 0 can observe\nbase->running_timer == NULL and\
+  \ returns, assuming the timer has completed,\nbut it's not guaranteed on all architectures.\
+  \ The comment for\ndel_timer_sync() makes that guarantee. Moving the assignment\
+  \ under\nbase->lock prevents this.\n\nFor non-RT kernel it's performance wise completely\
+  \ irrelevant whether the\nstore happens before or after taking the lock. For an\
+  \ RT kernel moving the\nstore under the lock requires an extra unlock/lock pair\
+  \ in the case that\nthere is a waiter for the timer, but that's not the end of the\
+  \ world.\n\nReported-by: syzbot+aa7c2385d46c5eba0b89@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+abea4558531bae1ba9fe@syzkaller.appspotmail.com\nFixes: 030dcdd197d7\
+  \ (\"timers: Prepare support for PREEMPT_RT\")\nSigned-off-by: Thomas Gleixner <tglx@linutronix.de>\n\
+  Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>\nLink: https://lore.kernel.org/r/87lfea7gw8.fsf@nanos.tec.linutronix.de\n\
+  Cc: stable@vger.kernel.org\n"
+submodule:
+- kernel/time
+hunk_count: 2
+covered_count: 2

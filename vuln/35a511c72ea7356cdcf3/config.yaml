@@ -1,0 +1,24 @@
+id: 35a511c72ea7356cdcf3
+bug_link: https://syzkaller.appspot.com/bug?extid=35a511c72ea7356cdcf3
+title: memory leak in qrtr_create
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 200bd5668c04d35510d152aa2f74c659f705a5b3
+fix_commit: 52f3456a96c06760b9bfae460e39596fec7af22e
+datetime: '2021-07-23T17:48:06+01:00'
+fix_commit_message: "net: qrtr: fix memory leaks\n\nSyzbot reported memory leak in\
+  \ qrtr. The problem was in unputted\nstruct sock. qrtr_local_enqueue() function\
+  \ calls qrtr_port_lookup()\nwhich takes sock reference if port was found. Then there\
+  \ is the following\ncheck:\n\nif (!ipc || &ipc->sk == skb->sk) {\n\t...\n\treturn\
+  \ -ENODEV;\n}\n\nSince we should drop the reference before returning from this function\
+  \ and\nipc can be non-NULL inside this if, we should add qrtr_port_put() inside\n\
+  this if.\n\nThe similar corner case is in qrtr_endpoint_post() as Manivannan\nreported.\
+  \ In case of sock_queue_rcv_skb() failure we need to put\nport reference to avoid\
+  \ leaking struct sock pointer.\n\nFixes: e04df98adf7d (\"net: qrtr: Remove receive\
+  \ worker\")\nFixes: bdabad3e363d (\"net: Add Qualcomm IPC router\")\nReported-and-tested-by:\
+  \ syzbot+35a511c72ea7356cdcf3@syzkaller.appspotmail.com\nSigned-off-by: Pavel Skripkin\
+  \ <paskripkin@gmail.com>\nReviewed-by: Manivannan Sadhasivam <mani@kernel.org>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/qrtr
+hunk_count: 2
+covered_count: 0

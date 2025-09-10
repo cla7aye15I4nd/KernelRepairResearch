@@ -1,0 +1,38 @@
+id: c2c79c6d6eddc5262b77
+bug_link: https://syzkaller.appspot.com/bug?extid=c2c79c6d6eddc5262b77
+title: 'KASAN: invalid-access Read in copy_page'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5f4853e810943af5e45fcc040cbbcbba07d8fc25
+fix_commit: a8e5e5146ad08d794c58252bab00b261045ef16d
+datetime: '2022-10-12T10:00:19+01:00'
+fix_commit_message: "arm64: mte: Avoid setting PG_mte_tagged if no tags cleared or\
+  \ restored\n\nPrior to commit 69e3b846d8a7 (\"arm64: mte: Sync tags for pages where\
+  \ PTE\nis untagged\"), mte_sync_tags() was only called for pte_tagged() entries\n\
+  (those mapped with PROT_MTE). Therefore mte_sync_tags() could safely use\ntest_and_set_bit(PG_mte_tagged,\
+  \ &page->flags) without inadvertently\nsetting PG_mte_tagged on an untagged page.\n\
+  \nThe above commit was required as guests may enable MTE without any\ncontrol at\
+  \ the stage 2 mapping, nor a PROT_MTE mapping in the VMM.\nHowever, the side-effect\
+  \ was that any page with a PTE that looked like\nswap (or migration) was getting\
+  \ PG_mte_tagged set automatically. A\nsubsequent page copy (e.g. migration) copied\
+  \ the tags to the destination\npage even if the tags were owned by KASAN.\n\nThis\
+  \ issue was masked by the page_kasan_tag_reset() call introduced in\ncommit e5b8d9218951\
+  \ (\"arm64: mte: reset the page tag in page->flags\").\nWhen this commit was reverted\
+  \ (20794545c146), KASAN started reporting\naccess faults because the overriding\
+  \ tags in a page did not match the\noriginal page->flags (with CONFIG_KASAN_HW_TAGS=y):\n\
+  \n  BUG: KASAN: invalid-access in copy_page+0x10/0xd0 arch/arm64/lib/copy_page.S:26\n\
+  \  Read at addr f5ff000017f2e000 by task syz-executor.1/2218\n  Pointer tag: [f5],\
+  \ memory tag: [f2]\n\nMove the PG_mte_tagged bit setting from mte_sync_tags() to\
+  \ the actual\nplace where tags are cleared (mte_sync_page_tags()) or restored\n\
+  (mte_restore_tags()).\n\nSigned-off-by: Catalin Marinas <catalin.marinas@arm.com>\n\
+  Reported-by: syzbot+c2c79c6d6eddc5262b77@syzkaller.appspotmail.com\nFixes: 69e3b846d8a7\
+  \ (\"arm64: mte: Sync tags for pages where PTE is untagged\")\nCc: <stable@vger.kernel.org>\
+  \ # 5.14.x\nCc: Steven Price <steven.price@arm.com>\nCc: Andrey Konovalov <andreyknvl@gmail.com>\n\
+  Cc: Vincenzo Frascino <vincenzo.frascino@arm.com>\nCc: Will Deacon <will@kernel.org>\n\
+  Link: https://lore.kernel.org/r/0000000000004387dc05e5888ae5@google.com/\nReviewed-by:\
+  \ Steven Price <steven.price@arm.com>\nLink: https://lore.kernel.org/r/20221006163354.3194102-1-catalin.marinas@arm.com\n\
+  Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>\n"
+submodule:
+- arch/arm64/kernel
+- arch/arm64/mm
+hunk_count: 3
+covered_count: 0

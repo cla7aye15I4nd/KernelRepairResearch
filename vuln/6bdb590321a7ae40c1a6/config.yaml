@@ -1,0 +1,52 @@
+id: 6bdb590321a7ae40c1a6
+bug_link: https://syzkaller.appspot.com/bug?extid=6bdb590321a7ae40c1a6
+title: 'KMSAN: uninit-value in tipc_nl_compat_dumpit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 974cb0e3e7c963ced06c4e32c5b2884173fa5e01
+fix_commit: 2753ca5d9009c180dbfd4c802c80983b4b6108d1
+datetime: '2019-01-15T20:29:21-08:00'
+fix_commit_message: "tipc: fix uninit-value in tipc_nl_compat_doit\n\nBUG: KMSAN:\
+  \ uninit-value in tipc_nl_compat_doit+0x404/0xa10 net/tipc/netlink_compat.c:335\n\
+  CPU: 0 PID: 4514 Comm: syz-executor485 Not tainted 4.16.0+ #87\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\nCall Trace:\n\
+  \ __dump_stack lib/dump_stack.c:17 [inline]\n dump_stack+0x185/0x1d0 lib/dump_stack.c:53\n\
+  \ kmsan_report+0x142/0x240 mm/kmsan/kmsan.c:1067\n __msan_warning_32+0x6c/0xb0 mm/kmsan/kmsan_instr.c:683\n\
+  \ tipc_nl_compat_doit+0x404/0xa10 net/tipc/netlink_compat.c:335\n tipc_nl_compat_recv+0x164b/0x2700\
+  \ net/tipc/netlink_compat.c:1153\n genl_family_rcv_msg net/netlink/genetlink.c:599\
+  \ [inline]\n genl_rcv_msg+0x1686/0x1810 net/netlink/genetlink.c:624\n netlink_rcv_skb+0x378/0x600\
+  \ net/netlink/af_netlink.c:2447\n genl_rcv+0x63/0x80 net/netlink/genetlink.c:635\n\
+  \ netlink_unicast_kernel net/netlink/af_netlink.c:1311 [inline]\n netlink_unicast+0x166b/0x1740\
+  \ net/netlink/af_netlink.c:1337\n netlink_sendmsg+0x1048/0x1310 net/netlink/af_netlink.c:1900\n\
+  \ sock_sendmsg_nosec net/socket.c:630 [inline]\n sock_sendmsg net/socket.c:640 [inline]\n\
+  \ ___sys_sendmsg+0xec0/0x1310 net/socket.c:2046\n __sys_sendmsg net/socket.c:2080\
+  \ [inline]\n SYSC_sendmsg+0x2a3/0x3d0 net/socket.c:2091\n SyS_sendmsg+0x54/0x80\
+  \ net/socket.c:2087\n do_syscall_64+0x309/0x430 arch/x86/entry/common.c:287\n entry_SYSCALL_64_after_hwframe+0x3d/0xa2\n\
+  RIP: 0033:0x43fda9\nRSP: 002b:00007ffd0c184ba8 EFLAGS: 00000213 ORIG_RAX: 000000000000002e\n\
+  RAX: ffffffffffffffda RBX: 00000000004002c8 RCX: 000000000043fda9\nRDX: 0000000000000000\
+  \ RSI: 0000000020023000 RDI: 0000000000000003\nRBP: 00000000006ca018 R08: 00000000004002c8\
+  \ R09: 00000000004002c8\nR10: 00000000004002c8 R11: 0000000000000213 R12: 00000000004016d0\n\
+  R13: 0000000000401760 R14: 0000000000000000 R15: 0000000000000000\n\nUninit was\
+  \ created at:\n kmsan_save_stack_with_flags mm/kmsan/kmsan.c:278 [inline]\n kmsan_internal_poison_shadow+0xb8/0x1b0\
+  \ mm/kmsan/kmsan.c:188\n kmsan_kmalloc+0x94/0x100 mm/kmsan/kmsan.c:314\n kmsan_slab_alloc+0x11/0x20\
+  \ mm/kmsan/kmsan.c:321\n slab_post_alloc_hook mm/slab.h:445 [inline]\n slab_alloc_node\
+  \ mm/slub.c:2737 [inline]\n __kmalloc_node_track_caller+0xaed/0x11c0 mm/slub.c:4369\n\
+  \ __kmalloc_reserve net/core/skbuff.c:138 [inline]\n __alloc_skb+0x2cf/0x9f0 net/core/skbuff.c:206\n\
+  \ alloc_skb include/linux/skbuff.h:984 [inline]\n netlink_alloc_large_skb net/netlink/af_netlink.c:1183\
+  \ [inline]\n netlink_sendmsg+0x9a6/0x1310 net/netlink/af_netlink.c:1875\n sock_sendmsg_nosec\
+  \ net/socket.c:630 [inline]\n sock_sendmsg net/socket.c:640 [inline]\n ___sys_sendmsg+0xec0/0x1310\
+  \ net/socket.c:2046\n __sys_sendmsg net/socket.c:2080 [inline]\n SYSC_sendmsg+0x2a3/0x3d0\
+  \ net/socket.c:2091\n SyS_sendmsg+0x54/0x80 net/socket.c:2087\n do_syscall_64+0x309/0x430\
+  \ arch/x86/entry/common.c:287\n entry_SYSCALL_64_after_hwframe+0x3d/0xa2\n\nIn tipc_nl_compat_recv(),\
+  \ when the len variable returned by\nnlmsg_attrlen() is 0, the message is still\
+  \ treated as a valid one,\nwhich is obviously unresonable. When len is zero, it\
+  \ means the\nmessage not only doesn't contain any valid TLV payload, but also\n\
+  TLV header is not included. Under this stituation, tlv_type field\nin TLV header\
+  \ is still accessed in tipc_nl_compat_dumpit() or\ntipc_nl_compat_doit(), but the\
+  \ field space is obviously illegal.\nOf course, it is not initialized.\n\nReported-by:\
+  \ syzbot+bca0dc46634781f08b38@syzkaller.appspotmail.com\nReported-by: syzbot+6bdb590321a7ae40c1a6@syzkaller.appspotmail.com\n\
+  Signed-off-by: Ying Xue <ying.xue@windriver.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 1
+covered_count: 0

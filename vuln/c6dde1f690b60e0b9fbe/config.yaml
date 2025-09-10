@@ -1,0 +1,28 @@
+id: c6dde1f690b60e0b9fbe
+bug_link: https://syzkaller.appspot.com/bug?extid=c6dde1f690b60e0b9fbe
+title: general protection fault in ath9k_hif_usb_rx_cb (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8092a0eed4080a33a4c8681f4231c40c0bb7cb5c
+fix_commit: 0ac4827f78c7ffe8eef074bc010e7e34bc22f533
+datetime: '2022-06-20T13:02:16+03:00'
+fix_commit_message: "ath9k: fix use-after-free in ath9k_hif_usb_rx_cb\n\nSyzbot reported\
+  \ use-after-free Read in ath9k_hif_usb_rx_cb() [0]. The\nproblem was in incorrect\
+  \ htc_handle->drv_priv initialization.\n\nProbable call trace which can trigger\
+  \ use-after-free:\n\nath9k_htc_probe_device()\n  /* htc_handle->drv_priv = priv;\
+  \ */\n  ath9k_htc_wait_for_target()      <--- Failed\n  ieee80211_free_hw()\t\t\
+  \   <--- priv pointer is freed\n\n<IRQ>\n...\nath9k_hif_usb_rx_cb()\n  ath9k_hif_usb_rx_stream()\n\
+  \   RX_STAT_INC()\t\t<--- htc_handle->drv_priv access\n\nIn order to not add fancy\
+  \ protection for drv_priv we can move\nhtc_handle->drv_priv initialization at the\
+  \ end of the\nath9k_htc_probe_device() and add helper macro to make\nall *_STAT_*\
+  \ macros NULL safe, since syzbot has reported related NULL\nderef in that macros\
+  \ [1]\n\nLink: https://syzkaller.appspot.com/bug?id=6ead44e37afb6866ac0c7dd121b4ce07cb665f60\
+  \ [0]\nLink: https://syzkaller.appspot.com/bug?id=b8101ffcec107c0567a0cd8acbbacec91e9ee8de\
+  \ [1]\nFixes: fb9987d0f748 (\"ath9k_htc: Support for AR9271 chipset.\")\nReported-and-tested-by:\
+  \ syzbot+03110230a11411024147@syzkaller.appspotmail.com\nReported-and-tested-by:\
+  \ syzbot+c6dde1f690b60e0b9fbe@syzkaller.appspotmail.com\nSigned-off-by: Pavel Skripkin\
+  \ <paskripkin@gmail.com>\nAcked-by: Toke Høiland-Jørgensen <toke@toke.dk>\nSigned-off-by:\
+  \ Kalle Valo <quic_kvalo@quicinc.com>\nLink: https://lore.kernel.org/r/d57bbedc857950659bfacac0ab48790c1eda00c8.1655145743.git.paskripkin@gmail.com\n"
+submodule:
+- drivers/net/wireless/ath/ath9k
+hunk_count: 3
+covered_count: 0

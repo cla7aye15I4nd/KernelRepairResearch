@@ -1,0 +1,26 @@
+id: c2537ce72a879a38113e
+bug_link: https://syzkaller.appspot.com/bug?extid=c2537ce72a879a38113e
+title: 'linux-next test error: WARNING in switch_mm_irqs_off'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f99002b9a9cc441a8f362e6fb32cf8a5a990261a
+fix_commit: 52ebfe7412ce4b3af54fe962af58efe9b25cd9a9
+datetime: '2025-04-17T14:46:25+02:00'
+fix_commit_message: "x86/mm: Remove the mm_cpumask(prev) warning from switch_mm_irqs_off()\n\
+  \nThe CONFIG_DEBUG_VM=y warning in switch_mm_irqs_off() started\ntriggering in testing:\n\
+  \n\tVM_WARN_ON_ONCE(prev != &init_mm && !cpumask_test_cpu(cpu, mm_cpumask(prev)));\n\
+  \nAFAIU what happens is that unuse_temporary_mm() clears the mm_cpumask()\nfor the\
+  \ current CPU, while switch_mm_irqs_off() then checks that the\nmm_cpumask() bit\
+  \ is set for the current CPU.\n\nWhile this behaviour hasn't really changed since\
+  \ the following commit:\n\n  209954cbc7d0 (\"x86/mm/tlb: Update mm_cpumask lazily\"\
+  )\n\nintroduced both, but the warning is wrong, so remove it.\n\n[ mingo: Patchified\
+  \ Peter's email. ]\n\nReported-by: syzbot+c2537ce72a879a38113e@syzkaller.appspotmail.com\n\
+  Reported-by: Borislav Petkov <bp@alien8.de>\nSigned-off-by: Peter Zijlstra <peterz@infradead.org>\n\
+  Signed-off-by: Ingo Molnar <mingo@kernel.org>\nCc: Andy Lutomirski <luto@kernel.org>\n\
+  Cc: Brian Gerst <brgerst@gmail.com>\nCc: Juergen Gross <jgross@suse.com>\nCc: Andrew\
+  \ Cooper <andrew.cooper3@citrix.com>\nCc: Rik van Riel <riel@surriel.com>\nCc: \"\
+  H. Peter Anvin\" <hpa@zytor.com>\nCc: Linus Torvalds <torvalds@linux-foundation.org>\n\
+  Cc: linux-kernel@vger.kernel.org\nLink: https://lore.kernel.org/r/20250414135629.GA17910@noisy.programming.kicks-ass.net\n"
+submodule:
+- arch/x86/mm
+hunk_count: 1
+covered_count: 1

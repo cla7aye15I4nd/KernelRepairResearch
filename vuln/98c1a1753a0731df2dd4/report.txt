@@ -1,0 +1,43 @@
+------------[ cut here ]------------
+refcount_t: decrement hit 0; leaking memory.
+WARNING: CPU: 0 PID: 110 at lib/refcount.c:31 refcount_warn_saturate+0x1ed/0x210 lib/refcount.c:31
+Modules linked in:
+CPU: 0 PID: 110 Comm: kswapd0 Not tainted 6.9.0-rc4-syzkaller-00113-g2668e3ae2ef3 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+RIP: 0010:refcount_warn_saturate+0x1ed/0x210 lib/refcount.c:31
+Code: 8b e8 37 a4 d0 fc 90 0f 0b 90 90 e9 c3 fe ff ff e8 98 35 0e fd c6 05 e5 3b 09 0b 01 90 48 c7 c7 40 f4 6e 8b e8 14 a4 d0 fc 90 <0f> 0b 90 90 e9 a0 fe ff ff 48 89 ef e8 02 59 69 fd e9 44 fe ff ff
+RSP: 0000:ffffc9000161f150 EFLAGS: 00010286
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffffffff81503349
+RDX: ffff88801bbcc880 RSI: ffffffff81503356 RDI: 0000000000000001
+RBP: ffff88802b9fe36c R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000001 R12: ffff88802b9fe36c
+R13: 0000000000000000 R14: 00000000046a0213 R15: ffff8880186378a8
+FS:  0000000000000000(0000) GS:ffff88806b200000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fcf7d13bb90 CR3: 000000001f502000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __refcount_dec include/linux/refcount.h:336 [inline]
+ refcount_dec include/linux/refcount.h:351 [inline]
+ dec_stack_record_count mm/page_owner.c:228 [inline]
+ __reset_page_owner+0x2ea/0x370 mm/page_owner.c:266
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1141 [inline]
+ free_unref_page_prepare+0x527/0xb10 mm/page_alloc.c:2347
+ free_unref_folios+0x256/0xad0 mm/page_alloc.c:2536
+ shrink_folio_list+0x27c9/0x3f00 mm/vmscan.c:1495
+ evict_folios+0x6e6/0x1bb0 mm/vmscan.c:4537
+ try_to_shrink_lruvec+0x618/0x9b0 mm/vmscan.c:4733
+ shrink_one+0x3f8/0x7c0 mm/vmscan.c:4772
+ shrink_many mm/vmscan.c:4835 [inline]
+ lru_gen_shrink_node mm/vmscan.c:4935 [inline]
+ shrink_node+0x231f/0x3a80 mm/vmscan.c:5894
+ kswapd_shrink_node mm/vmscan.c:6704 [inline]
+ balance_pgdat+0x9a0/0x19a0 mm/vmscan.c:6895
+ kswapd+0x5ea/0xbf0 mm/vmscan.c:7164
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

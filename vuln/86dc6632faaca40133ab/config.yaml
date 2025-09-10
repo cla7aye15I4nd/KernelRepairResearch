@@ -1,0 +1,26 @@
+id: 86dc6632faaca40133ab
+bug_link: https://syzkaller.appspot.com/bug?extid=86dc6632faaca40133ab
+title: memory leak in generic_parse_monolithic
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c6f7e1510b872c281ff603a3108c084b6548d35c
+fix_commit: 4cb682964706deffb4861f0a91329ab3a705039f
+datetime: '2020-12-08T15:59:25-08:00'
+fix_commit_message: "afs: Fix memory leak when mounting with multiple source parameters\n\
+  \nThere's a memory leak in afs_parse_source() whereby multiple source=\nparameters\
+  \ overwrite fc->source in the fs_context struct without freeing\nthe previously\
+  \ recorded source.\n\nFix this by only permitting a single source parameter and\
+  \ rejecting with\nan error all subsequent ones.\n\nThis was caught by syzbot with\
+  \ the kernel memory leak detector, showing\nsomething like the following trace:\n\
+  \n  unreferenced object 0xffff888114375440 (size 32):\n    comm \"repro\", pid 5168,\
+  \ jiffies 4294923723 (age 569.948s)\n    backtrace:\n      slab_post_alloc_hook+0x42/0x79\n\
+  \      __kmalloc_track_caller+0x125/0x16a\n      kmemdup_nul+0x24/0x3c\n      vfs_parse_fs_string+0x5a/0xa1\n\
+  \      generic_parse_monolithic+0x9d/0xc5\n      do_new_mount+0x10d/0x15a\n    \
+  \  do_mount+0x5f/0x8e\n      __do_sys_mount+0xff/0x127\n      do_syscall_64+0x2d/0x3a\n\
+  \      entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nFixes: 13fcc6837049 (\"afs: Add\
+  \ fs_context support\")\nReported-by: syzbot+86dc6632faaca40133ab@syzkaller.appspotmail.com\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\ncc: Randy Dunlap <rdunlap@infradead.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs/afs
+hunk_count: 1
+covered_count: 0

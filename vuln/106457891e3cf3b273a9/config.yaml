@@ -1,0 +1,42 @@
+id: 106457891e3cf3b273a9
+bug_link: https://syzkaller.appspot.com/bug?extid=106457891e3cf3b273a9
+title: 'KMSAN: uninit-value in virtio_net_hdr_to_skb'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c056d480b40a68f2520ccc156c7fae672d69d57d
+fix_commit: 61431a5907fc36d0738e9a547c7e1556349a03e9
+datetime: '2021-03-30T17:40:46-07:00'
+fix_commit_message: "net: ensure mac header is set in virtio_net_hdr_to_skb()\n\n\
+  Commit 924a9bc362a5 (\"net: check if protocol extracted by virtio_net_hdr_set_proto\
+  \ is correct\")\nadded a call to dev_parse_header_protocol() but mac_header is not\
+  \ yet set.\n\nThis means that eth_hdr() reads complete garbage, and syzbot complained\
+  \ about it [1]\n\nThis patch resets mac_header earlier, to get more coverage about\
+  \ this change.\n\nAudit of virtio_net_hdr_to_skb() callers shows that this change\
+  \ should be safe.\n\n[1]\n\nBUG: KASAN: use-after-free in eth_header_parse_protocol+0xdc/0xe0\
+  \ net/ethernet/eth.c:282\nRead of size 2 at addr ffff888017a6200b by task syz-executor313/8409\n\
+  \nCPU: 1 PID: 8409 Comm: syz-executor313 Not tainted 5.12.0-rc2-syzkaller #0\nHardware\
+  \ name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n\
+  Call Trace:\n __dump_stack lib/dump_stack.c:79 [inline]\n dump_stack+0x141/0x1d7\
+  \ lib/dump_stack.c:120\n print_address_description.constprop.0.cold+0x5b/0x2f8 mm/kasan/report.c:232\n\
+  \ __kasan_report mm/kasan/report.c:399 [inline]\n kasan_report.cold+0x7c/0xd8 mm/kasan/report.c:416\n\
+  \ eth_header_parse_protocol+0xdc/0xe0 net/ethernet/eth.c:282\n dev_parse_header_protocol\
+  \ include/linux/netdevice.h:3177 [inline]\n virtio_net_hdr_to_skb.constprop.0+0x99d/0xcd0\
+  \ include/linux/virtio_net.h:83\n packet_snd net/packet/af_packet.c:2994 [inline]\n\
+  \ packet_sendmsg+0x2325/0x52b0 net/packet/af_packet.c:3031\n sock_sendmsg_nosec\
+  \ net/socket.c:654 [inline]\n sock_sendmsg+0xcf/0x120 net/socket.c:674\n sock_no_sendpage+0xf3/0x130\
+  \ net/core/sock.c:2860\n kernel_sendpage.part.0+0x1ab/0x350 net/socket.c:3631\n\
+  \ kernel_sendpage net/socket.c:3628 [inline]\n sock_sendpage+0xe5/0x140 net/socket.c:947\n\
+  \ pipe_to_sendpage+0x2ad/0x380 fs/splice.c:364\n splice_from_pipe_feed fs/splice.c:418\
+  \ [inline]\n __splice_from_pipe+0x43e/0x8a0 fs/splice.c:562\n splice_from_pipe fs/splice.c:597\
+  \ [inline]\n generic_splice_sendpage+0xd4/0x140 fs/splice.c:746\n do_splice_from\
+  \ fs/splice.c:767 [inline]\n do_splice+0xb7e/0x1940 fs/splice.c:1079\n __do_splice+0x134/0x250\
+  \ fs/splice.c:1144\n __do_sys_splice fs/splice.c:1350 [inline]\n __se_sys_splice\
+  \ fs/splice.c:1332 [inline]\n __x64_sys_splice+0x198/0x250 fs/splice.c:1332\n do_syscall_64+0x2d/0x70\
+  \ arch/x86/entry/common.c:46\n\nFixes: 924a9bc362a5 (\"net: check if protocol extracted\
+  \ by virtio_net_hdr_set_proto is correct\")\nSigned-off-by: Eric Dumazet <edumazet@google.com>\n\
+  Cc: Balazs Nemeth <bnemeth@redhat.com>\nCc: Willem de Bruijn <willemb@google.com>\n\
+  Reported-by: syzbot <syzkaller@googlegroups.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- include/linux
+hunk_count: 1
+covered_count: 1

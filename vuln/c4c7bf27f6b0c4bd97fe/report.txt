@@ -1,0 +1,78 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000098: 0000 [#1] SMP KASAN NOPTI
+KASAN: null-ptr-deref in range [0x00000000000004c0-0x00000000000004c7]
+CPU: 3 UID: 0 PID: 34 Comm: kworker/3:0 Not tainted 6.15.0-syzkaller-13743-g8630c59e9936 #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: wg-crypt-wg0 wg_packet_encrypt_worker
+RIP: 0010:netdev_get_tx_queue include/linux/netdevice.h:2636 [inline]
+RIP: 0010:veth_xdp_rcv.constprop.0+0x142/0xda0 drivers/net/veth.c:912
+Code: 34 91 2f fb 45 85 e4 0f 85 db 08 00 00 e8 e6 95 2f fb 48 8d bd c0 04 00 00 48 b8 00 00 00 00 00 fc ff df 48 89 fa 48 c1 ea 03 <0f> b6 04 02 84 c0 74 08 3c 03 0f 8e 18 0c 00 00 44 8b a5 c0 04 00
+RSP: 0018:ffffc900006f89b8 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: ffffffff868c8fb6
+RDX: 0000000000000098 RSI: ffffffff868c86ca RDI: 00000000000004c0
+RBP: 0000000000000000 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000001 R12: 0000000000000001
+R13: 1ffff920000df145 R14: ffffc900006f8e58 R15: ffff88805491c000
+FS:  0000000000000000(0000) GS:ffff8880d6a54000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000000 CR3: 000000004fb0a000 CR4: 0000000000352ef0
+DR0: 0000000000000007 DR1: 000000000000000f DR2: 0000000000000090
+DR3: 0000000000000009 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ veth_poll+0x19c/0x9c0 drivers/net/veth.c:979
+ __napi_poll.constprop.0+0xb7/0x550 net/core/dev.c:7414
+ napi_poll net/core/dev.c:7478 [inline]
+ net_rx_action+0xa9f/0xfe0 net/core/dev.c:7605
+ handle_softirqs+0x219/0x8e0 kernel/softirq.c:579
+ do_softirq kernel/softirq.c:480 [inline]
+ do_softirq+0xb2/0xf0 kernel/softirq.c:467
+ </IRQ>
+ <TASK>
+ __local_bh_enable_ip+0x100/0x120 kernel/softirq.c:407
+ spin_unlock_bh include/linux/spinlock.h:396 [inline]
+ ptr_ring_consume_bh include/linux/ptr_ring.h:367 [inline]
+ wg_packet_encrypt_worker+0xa62/0xdb0 drivers/net/wireguard/send.c:293
+ process_one_work+0x9cf/0x1b70 kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3321 [inline]
+ worker_thread+0x6c8/0xf10 kernel/workqueue.c:3402
+ kthread+0x3c5/0x780 kernel/kthread.c:464
+ ret_from_fork+0x5d4/0x6f0 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:netdev_get_tx_queue include/linux/netdevice.h:2636 [inline]
+RIP: 0010:veth_xdp_rcv.constprop.0+0x142/0xda0 drivers/net/veth.c:912
+Code: 34 91 2f fb 45 85 e4 0f 85 db 08 00 00 e8 e6 95 2f fb 48 8d bd c0 04 00 00 48 b8 00 00 00 00 00 fc ff df 48 89 fa 48 c1 ea 03 <0f> b6 04 02 84 c0 74 08 3c 03 0f 8e 18 0c 00 00 44 8b a5 c0 04 00
+RSP: 0018:ffffc900006f89b8 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: ffffffff868c8fb6
+RDX: 0000000000000098 RSI: ffffffff868c86ca RDI: 00000000000004c0
+RBP: 0000000000000000 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000001 R12: 0000000000000001
+R13: 1ffff920000df145 R14: ffffc900006f8e58 R15: ffff88805491c000
+FS:  0000000000000000(0000) GS:ffff8880d6a54000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000000 CR3: 000000004fb0a000 CR4: 0000000000352ef0
+DR0: 0000000000000007 DR1: 000000000000000f DR2: 0000000000000090
+DR3: 0000000000000009 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess), 3 bytes skipped:
+   0:	fb                   	sti
+   1:	45 85 e4             	test   %r12d,%r12d
+   4:	0f 85 db 08 00 00    	jne    0x8e5
+   a:	e8 e6 95 2f fb       	call   0xfb2f95f5
+   f:	48 8d bd c0 04 00 00 	lea    0x4c0(%rbp),%rdi
+  16:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  1d:	fc ff df
+  20:	48 89 fa             	mov    %rdi,%rdx
+  23:	48 c1 ea 03          	shr    $0x3,%rdx
+* 27:	0f b6 04 02          	movzbl (%rdx,%rax,1),%eax <-- trapping instruction
+  2b:	84 c0                	test   %al,%al
+  2d:	74 08                	je     0x37
+  2f:	3c 03                	cmp    $0x3,%al
+  31:	0f 8e 18 0c 00 00    	jle    0xc4f
+  37:	44                   	rex.R
+  38:	8b                   	.byte 0x8b
+  39:	a5                   	movsl  %ds:(%rsi),%es:(%rdi)
+  3a:	c0                   	.byte 0xc0
+  3b:	04 00                	add    $0x0,%al

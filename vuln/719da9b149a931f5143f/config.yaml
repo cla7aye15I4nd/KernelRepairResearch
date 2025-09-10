@@ -1,0 +1,36 @@
+id: 719da9b149a931f5143f
+bug_link: https://syzkaller.appspot.com/bug?extid=719da9b149a931f5143f
+title: general protection fault in usb_audio_probe
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f15c5c11abfbf8909eb30598315ecbec2311cfdc
+fix_commit: 30dea07180de3aa0ad613af88431ef4e34b5ef68
+datetime: '2021-03-09T07:40:09+01:00'
+fix_commit_message: "ALSA: usb-audio: fix NULL ptr dereference in usb_audio_probe\n\
+  \nsyzbot reported null pointer dereference in usb_audio_probe.\nThe problem was\
+  \ in case, when quirk == NULL. It's not an\nerror condition, so quirk must be checked\
+  \ before dereferencing.\n\nCall Trace:\n usb_probe_interface+0x315/0x7f0 drivers/usb/core/driver.c:396\n\
+  \ really_probe+0x291/0xe60 drivers/base/dd.c:554\n driver_probe_device+0x26b/0x3d0\
+  \ drivers/base/dd.c:740\n __device_attach_driver+0x1d1/0x290 drivers/base/dd.c:846\n\
+  \ bus_for_each_drv+0x15f/0x1e0 drivers/base/bus.c:431\n __device_attach+0x228/0x4a0\
+  \ drivers/base/dd.c:914\n bus_probe_device+0x1e4/0x290 drivers/base/bus.c:491\n\
+  \ device_add+0xbdb/0x1db0 drivers/base/core.c:3242\n usb_set_configuration+0x113f/0x1910\
+  \ drivers/usb/core/message.c:2164\n usb_generic_driver_probe+0xba/0x100 drivers/usb/core/generic.c:238\n\
+  \ usb_probe_device+0xd9/0x2c0 drivers/usb/core/driver.c:293\n really_probe+0x291/0xe60\
+  \ drivers/base/dd.c:554\n driver_probe_device+0x26b/0x3d0 drivers/base/dd.c:740\n\
+  \ __device_attach_driver+0x1d1/0x290 drivers/base/dd.c:846\n bus_for_each_drv+0x15f/0x1e0\
+  \ drivers/base/bus.c:431\n __device_attach+0x228/0x4a0 drivers/base/dd.c:914\n bus_probe_device+0x1e4/0x290\
+  \ drivers/base/bus.c:491\n device_add+0xbdb/0x1db0 drivers/base/core.c:3242\n usb_new_device.cold+0x721/0x1058\
+  \ drivers/usb/core/hub.c:2555\n hub_port_connect drivers/usb/core/hub.c:5223 [inline]\n\
+  \ hub_port_connect_change drivers/usb/core/hub.c:5363 [inline]\n port_event drivers/usb/core/hub.c:5509\
+  \ [inline]\n hub_event+0x2357/0x4320 drivers/usb/core/hub.c:5591\n process_one_work+0x98d/0x1600\
+  \ kernel/workqueue.c:2275\n worker_thread+0x64c/0x1120 kernel/workqueue.c:2421\n\
+  \ kthread+0x3b1/0x4a0 kernel/kthread.c:292\n ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:294\n\
+  \nReported-by: syzbot+719da9b149a931f5143f@syzkaller.appspotmail.com\nFixes: 9799110825db\
+  \ (\"ALSA: usb-audio: Disable USB autosuspend properly in setup_disable_autosuspend()\"\
+  )\nSigned-off-by: Pavel Skripkin <paskripkin@gmail.com>\nCc: <stable@vger.kernel.org>\n\
+  Link: https://lore.kernel.org/r/f1ebad6e721412843bd1b12584444c0a63c6b2fb.1615242183.git.paskripkin@gmail.com\n\
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>\n"
+submodule:
+- sound/usb
+hunk_count: 1
+covered_count: 1

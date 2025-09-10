@@ -1,0 +1,52 @@
+id: 63dec323ac56c28e644f
+bug_link: https://syzkaller.appspot.com/bug?extid=63dec323ac56c28e644f
+title: WARNING in copy_page_from_iter
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7777f47f2ea64efd1016262e7b59fab34adfb869
+fix_commit: 13f3956eb5681a4045a8dfdef48df5dc4d9f58a6
+datetime: '2024-01-23T08:56:55-07:00'
+fix_commit_message: 'block: Fix WARNING in _copy_from_iter
+
+
+  Syzkaller reports a warning in _copy_from_iter because an
+
+  iov_iter is supposedly used in the wrong direction. The reason
+
+  is that syzcaller managed to generate a request with
+
+  a transfer direction of SG_DXFER_TO_FROM_DEV. This instructs
+
+  the kernel to copy user buffers into the kernel, read into
+
+  the copied buffers and then copy the data back to user space.
+
+
+  Thus the iovec is used in both directions.
+
+
+  Detect this situation in the block layer and construct a new
+
+  iterator with the correct direction for the copy-in.
+
+
+  Reported-by: syzbot+a532b03fdfee2c137666@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/lkml/0000000000009b92c10604d7a5e9@google.com/t/
+
+  Reported-by: syzbot+63dec323ac56c28e644f@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/lkml/0000000000003faaa105f6e7c658@google.com/T/
+
+  Signed-off-by: Christian A. Ehrhardt <lk@c--e.de>
+
+  Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+  Link: https://lore.kernel.org/r/20240121202634.275068-1-lk@c--e.de
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- block
+hunk_count: 1
+covered_count: 1

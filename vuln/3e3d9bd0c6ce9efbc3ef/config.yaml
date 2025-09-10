@@ -1,0 +1,28 @@
+id: 3e3d9bd0c6ce9efbc3ef
+bug_link: https://syzkaller.appspot.com/bug?extid=3e3d9bd0c6ce9efbc3ef
+title: WARNING in io_uring_cancel_task_requests
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f609cbb8911e40e15f9055e8f945f926ac906924
+fix_commit: 70b2c60d3797bffe182dddb9bb55975b9be5889a
+datetime: '2021-01-28T11:44:13-07:00'
+fix_commit_message: "io_uring: fix sqo ownership false positive warning\n\nWARNING:\
+  \ CPU: 0 PID: 21359 at fs/io_uring.c:9042\n    io_uring_cancel_task_requests+0xe55/0x10c0\
+  \ fs/io_uring.c:9042\nCall Trace:\n io_uring_flush+0x47b/0x6e0 fs/io_uring.c:9227\n\
+  \ filp_close+0xb4/0x170 fs/open.c:1295\n close_files fs/file.c:403 [inline]\n put_files_struct\
+  \ fs/file.c:418 [inline]\n put_files_struct+0x1cc/0x350 fs/file.c:415\n exit_files+0x7e/0xa0\
+  \ fs/file.c:435\n do_exit+0xc22/0x2ae0 kernel/exit.c:820\n do_group_exit+0x125/0x310\
+  \ kernel/exit.c:922\n get_signal+0x427/0x20f0 kernel/signal.c:2773\n arch_do_signal_or_restart+0x2a8/0x1eb0\
+  \ arch/x86/kernel/signal.c:811\n handle_signal_work kernel/entry/common.c:147 [inline]\n\
+  \ exit_to_user_mode_loop kernel/entry/common.c:171 [inline]\n exit_to_user_mode_prepare+0x148/0x250\
+  \ kernel/entry/common.c:201\n __syscall_exit_to_user_mode_work kernel/entry/common.c:291\
+  \ [inline]\n syscall_exit_to_user_mode+0x19/0x50 kernel/entry/common.c:302\n entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \nNow io_uring_cancel_task_requests() can be called not through file\nnotes but\
+  \ directly, remove a WARN_ONCE() there that give us false\npositives. That check\
+  \ is not very important and we catch it in other\nplaces.\n\nFixes: 84965ff8a84f0\
+  \ (\"io_uring: if we see flush on exit, cancel related tasks\")\nCc: stable@vger.kernel.org\
+  \ # 5.9+\nReported-by: syzbot+3e3d9bd0c6ce9efbc3ef@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Pavel Begunkov <asml.silence@gmail.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 0

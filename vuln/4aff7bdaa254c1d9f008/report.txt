@@ -1,0 +1,71 @@
+bucket 0:127 gen 0 has wrong data_type: got free, should be sb, fixing
+bucket 0:127 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+ done
+bcachefs (loop0): going read-write
+bcachefs (loop0): journal_replay...
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/btree_write_buffer.c:147!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 UID: 0 PID: 5840 Comm: syz-executor338 Not tainted 6.12.0-syzkaller-09567-g7eef7e306d3c #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:wb_flush_one fs/bcachefs/btree_write_buffer.c:147 [inline]
+RIP: 0010:bch2_btree_write_buffer_flush_locked+0x56bd/0x5a20 fs/bcachefs/btree_write_buffer.c:379
+Code: c9 fc f4 ff e8 84 20 72 fd 90 0f 0b e8 7c 20 72 fd 90 0f 0b e8 74 20 72 fd 90 0f 0b e8 6c 20 72 fd 90 0f 0b e8 64 20 72 fd 90 <0f> 0b e8 5c 20 72 fd 90 0f 0b e8 e4 bf a5 07 e8 4f 20 72 fd 90 0f
+RSP: 0018:ffffc90003e06760 EFLAGS: 00010293
+RAX: ffffffff8423bc6c RBX: fff8af000000000b RCX: ffff88806c390000
+RDX: 0000000000000000 RSI: 00f8af000000000b RDI: fff8af000000000b
+RBP: ffffc90003e06bb0 R08: ffffffff84237f1b R09: 0000000000000000
+R10: ffffc90003e06240 R11: fffff520007c0c49 R12: ffffc90004e000f0
+R13: ffff88803225c000 R14: 00f8af000000000b R15: ffffc90004e00000
+FS:  00005555684e7380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055fe8e12f0d8 CR3: 000000007b07a000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ btree_write_buffer_flush_seq+0x1b23/0x1cc0 fs/bcachefs/btree_write_buffer.c:517
+ bch2_btree_write_buffer_journal_flush+0xc7/0x150 fs/bcachefs/btree_write_buffer.c:533
+ journal_flush_pins+0x5f7/0xb20 fs/bcachefs/journal_reclaim.c:565
+ journal_flush_done+0x8e/0x260 fs/bcachefs/journal_reclaim.c:819
+ bch2_journal_flush_pins+0x225/0x3a0 fs/bcachefs/journal_reclaim.c:852
+ bch2_journal_flush_all_pins fs/bcachefs/journal_reclaim.h:76 [inline]
+ bch2_journal_replay+0x270f/0x2a40 fs/bcachefs/recovery.c:383
+ bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:191
+ bch2_run_recovery_passes+0x3a7/0x880 fs/bcachefs/recovery_passes.c:244
+ bch2_fs_recovery+0x25cc/0x39d0 fs/bcachefs/recovery.c:861
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1037
+ bch2_fs_get_tree+0xd68/0x1710 fs/bcachefs/fs.c:2170
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f246db07dea
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffdce796828 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffdce796840 RCX: 00007f246db07dea
+RDX: 00000000200058c0 RSI: 00000000200002c0 RDI: 00007ffdce796840
+RBP: 0000000000000004 R08: 00007ffdce796880 R09: 0000000000005931
+R10: 0000000000010000 R11: 0000000000000282 R12: 0000000000010000
+R13: 00007ffdce796880 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:wb_flush_one fs/bcachefs/btree_write_buffer.c:147 [inline]
+RIP: 0010:bch2_btree_write_buffer_flush_locked+0x56bd/0x5a20 fs/bcachefs/btree_write_buffer.c:379
+Code: c9 fc f4 ff e8 84 20 72 fd 90 0f 0b e8 7c 20 72 fd 90 0f 0b e8 74 20 72 fd 90 0f 0b e8 6c 20 72 fd 90 0f 0b e8 64 20 72 fd 90 <0f> 0b e8 5c 20 72 fd 90 0f 0b e8 e4 bf a5 07 e8 4f 20 72 fd 90 0f
+RSP: 0018:ffffc90003e06760 EFLAGS: 00010293
+RAX: ffffffff8423bc6c RBX: fff8af000000000b RCX: ffff88806c390000
+RDX: 0000000000000000 RSI: 00f8af000000000b RDI: fff8af000000000b
+RBP: ffffc90003e06bb0 R08: ffffffff84237f1b R09: 0000000000000000
+R10: ffffc90003e06240 R11: fffff520007c0c49 R12: ffffc90004e000f0
+R13: ffff88803225c000 R14: 00f8af000000000b R15: ffffc90004e00000
+FS:  00005555684e7380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055fe8e12f0d8 CR3: 000000007b07a000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

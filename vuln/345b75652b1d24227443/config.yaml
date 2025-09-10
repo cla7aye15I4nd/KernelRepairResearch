@@ -1,0 +1,44 @@
+id: 345b75652b1d24227443
+bug_link: https://syzkaller.appspot.com/bug?extid=345b75652b1d24227443
+title: 'UBSAN: shift-out-of-bounds in ext4_fill_super'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cca415537244f6102cbb09b5b90db6ae2c953bdd
+fix_commit: c9200760da8a728eb9767ca41a956764b28c1310
+datetime: '2020-12-17T13:30:32-05:00'
+fix_commit_message: 'ext4: check for invalid block size early when mounting a file
+  system
+
+
+  Check for valid block size directly by validating s_log_block_size; we
+
+  were doing this in two places.  First, by calculating blocksize via
+
+  BLOCK_SIZE << s_log_block_size, and then checking that the blocksize
+
+  was valid.  And then secondly, by checking s_log_block_size directly.
+
+
+  The first check is not reliable, and can trigger an UBSAN warning if
+
+  s_log_block_size on a maliciously corrupted superblock is greater than
+
+  22.  This is harmless, since the second test will correctly reject the
+
+  maliciously fuzzed file system, but to make syzbot shut up, and
+
+  because the two checks are duplicative in any case, delete the
+
+  blocksize check, and move the s_log_block_size earlier in
+
+  ext4_fill_super().
+
+
+  Signed-off-by: Theodore Ts''o <tytso@mit.edu>
+
+  Reported-by: syzbot+345b75652b1d24227443@syzkaller.appspotmail.com
+
+  '
+submodule:
+- fs/ext4
+hunk_count: 2
+covered_count: 1

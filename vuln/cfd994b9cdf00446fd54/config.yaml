@@ -1,0 +1,46 @@
+id: cfd994b9cdf00446fd54
+bug_link: https://syzkaller.appspot.com/bug?extid=cfd994b9cdf00446fd54
+title: 'UBSAN: shift-out-of-bounds in __bch2_bkey_unpack_key'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 56be92c63f02e0f6fd855075acb1471ea1c68539
+fix_commit: 03208bd06a61bc2ebc423b6485cbcffecd37af36
+datetime: '2025-06-16T19:03:52-04:00'
+fix_commit_message: 'bcachefs: don''t return fsck_fix for unfixable node errors in
+  __btree_err
+
+
+  After cd3cdb1ef706 ("Single err message for btree node reads"),
+
+  all errors caused __btree_err to return -BCH_ERR_fsck_fix no matter what
+
+  the actual error type was if the recovery pass was scanning for btree
+
+  nodes. This lead to the code continuing despite things like bad node
+
+  formats when they earlier would have caused a jump to fsck_err, because
+
+  btree_err only jumps when the return from __btree_err does not match
+
+  fsck_fix. Ultimately this lead to undefined behavior by attempting to
+
+  unpack a key based on an invalid format.
+
+
+  Make only errors of type -BCH_ERR_btree_node_read_err_fixable cause
+
+  __btree_err to return -BCH_ERR_fsck_fix when scanning for btree nodes.
+
+
+  Reported-by: syzbot+cfd994b9cdf00446fd54@syzkaller.appspotmail.com
+
+  Fixes: cd3cdb1ef706 ("bcachefs: Single err message for btree node reads")
+
+  Signed-off-by: Bharadwaj Raju <bharadwaj.raju777@gmail.com>
+
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>
+
+  '
+submodule:
+- fs/bcachefs
+hunk_count: 1
+covered_count: 0

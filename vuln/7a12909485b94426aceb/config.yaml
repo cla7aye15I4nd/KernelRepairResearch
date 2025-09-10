@@ -1,0 +1,45 @@
+id: 7a12909485b94426aceb
+bug_link: https://syzkaller.appspot.com/bug?extid=7a12909485b94426aceb
+title: general protection fault in fq_codel_enqueue (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 92f619735b7c4269fc6349a7ec13f09ffb558f77
+fix_commit: fd1894224407c484f652ad456e1ce423e89bb3eb
+datetime: '2022-07-19T09:50:54-07:00'
+fix_commit_message: 'bpf: Don''t redirect packets with invalid pkt_len
+
+
+  Syzbot found an issue [1]: fq_codel_drop() try to drop a flow whitout any
+
+  skbs, that is, the flow->head is null.
+
+  The root cause, as the [2] says, is because that bpf_prog_test_run_skb()
+
+  run a bpf prog which redirects empty skbs.
+
+  So we should determine whether the length of the packet modified by bpf
+
+  prog or others like bpf_prog_test is valid before forwarding it directly.
+
+
+  LINK: [1] https://syzkaller.appspot.com/bug?id=0b84da80c2917757915afa89f7738a9d16ec96c5
+
+  LINK: [2] https://www.spinics.net/lists/netdev/msg777503.html
+
+
+  Reported-by: syzbot+7a12909485b94426aceb@syzkaller.appspotmail.com
+
+  Signed-off-by: Zhengchao Shao <shaozhengchao@huawei.com>
+
+  Reviewed-by: Stanislav Fomichev <sdf@google.com>
+
+  Link: https://lore.kernel.org/r/20220715115559.139691-1-shaozhengchao@huawei.com
+
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>
+
+  '
+submodule:
+- include/linux
+- net/bpf
+- net/core
+hunk_count: 3
+covered_count: 1

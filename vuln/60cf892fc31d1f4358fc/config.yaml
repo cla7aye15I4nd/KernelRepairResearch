@@ -1,0 +1,30 @@
+id: 60cf892fc31d1f4358fc
+bug_link: https://syzkaller.appspot.com/bug?extid=60cf892fc31d1f4358fc
+title: 'BUG: unable to handle kernel NULL pointer dereference in hdr_find_e (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 34e6552a442f268eefd408e47f4f2d471aa64829
+fix_commit: 1f9b94af923c88539426ed811ae7e9543834a5c5
+datetime: '2023-09-28T15:04:05+03:00'
+fix_commit_message: "fs/ntfs3: Fix possible null-pointer dereference in hdr_find_e()\n\
+  \nUpon investigation of the C reproducer provided by Syzbot, it seemed\nthe reproducer\
+  \ was trying to mount a corrupted NTFS filesystem, then\nissue a rename syscall\
+  \ to some nodes in the filesystem. This can be\nshown by modifying the reproducer\
+  \ to only include the mount syscall,\nand investigating the filesystem by e.g. `ls`\
+  \ and `rm` commands. As a\nresult, during the problematic call to `hdr_fine_e`,\
+  \ the `inode` being\nsupplied did not go through `indx_init`, hence the `cmp` function\n\
+  pointer was never set.\n\nThe fix is simply to check whether `cmp` is not set, and\
+  \ return NULL\nif that's the case, in order to be consistent with other error\n\
+  scenarios of the `hdr_find_e` method. The rationale behind this patch\nis that:\n\
+  \n- We should prevent crashing the kernel even if the mounted filesystem\n  is corrupted.\
+  \ Any syscalls made on the filesystem could return\n  invalid, but the kernel should\
+  \ be able to sustain these calls.\n\n- Only very specific corruption would lead\
+  \ to this bug, so it would be\n  a pretty rare case in actual usage anyways. Therefore,\
+  \ introducing a\n  check to specifically protect against this bug seems appropriate.\n\
+  \  Because of its rarity, an `unlikely` clause is used to wrap around\n  this nullity\
+  \ check.\n\nReported-by: syzbot+60cf892fc31d1f4358fc@syzkaller.appspotmail.com\n\
+  Signed-off-by: Ziqi Zhao <astrajoan@yahoo.com>\nSigned-off-by: Konstantin Komarov\
+  \ <almaz.alexandrovich@paragon-software.com>\n"
+submodule:
+- fs/ntfs3
+hunk_count: 1
+covered_count: 1

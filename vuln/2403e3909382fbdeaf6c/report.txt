@@ -1,0 +1,83 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000001: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000008-0x000000000000000f]
+CPU: 1 PID: 5082 Comm: syz-executor346 Not tainted 6.10.0-rc7-syzkaller-00141-g43db1e03c086 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+RIP: 0010:list_add_tail include/linux/list.h:183 [inline]
+RIP: 0010:list_lru_add+0x1b1/0x390 mm/list_lru.c:97
+Code: 89 ef e8 e2 06 1c 00 48 8b 45 00 48 8b 4c 24 30 48 8d 6c 08 40 4c 8d 6d 08 4d 89 ec 49 c1 ec 03 48 b8 00 00 00 00 00 fc ff df <41> 80 3c 04 00 74 08 4c 89 ef e8 b0 06 1c 00 4c 8b 7d 08 4c 89 f7
+RSP: 0018:ffffc9000346fa78 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 1ffff1100f661037 RCX: 0000000000000000
+RDX: 0000000000000003 RSI: ffffffff8bcaccc0 RDI: ffffffff8c1f54c0
+RBP: 0000000000000000 R08: ffffffff8fac686f R09: 1ffffffff1f58d0d
+R10: dffffc0000000000 R11: fffffbfff1f58d0e R12: 0000000000000001
+R13: 0000000000000008 R14: ffff88807b3081b8 R15: 0000000000000000
+FS:  000055556b19b380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055556b1a46f8 CR3: 000000007911c000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __inode_add_lru fs/inode.c:467 [inline]
+ iput_final fs/inode.c:1718 [inline]
+ iput+0x87a/0x930 fs/inode.c:1767
+ __dentry_kill+0x20d/0x630 fs/dcache.c:607
+ dput+0x19f/0x2b0 fs/dcache.c:849
+ shrink_dcache_for_umount+0x7d/0x130 fs/dcache.c:1559
+ generic_shutdown_super+0x6a/0x2d0 fs/super.c:620
+ bch2_kill_sb+0x41/0x50 fs/bcachefs/fs.c:2052
+ deactivate_locked_super+0xc4/0x130 fs/super.c:473
+ cleanup_mnt+0x41f/0x4b0 fs/namespace.c:1267
+ task_work_run+0x24f/0x310 kernel/task_work.c:180
+ ptrace_notify+0x2d2/0x380 kernel/signal.c:2402
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]
+ syscall_exit_work+0xc6/0x190 kernel/entry/common.c:173
+ syscall_exit_to_user_mode_prepare kernel/entry/common.c:200 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:205 [inline]
+ syscall_exit_to_user_mode+0x273/0x360 kernel/entry/common.c:218
+ do_syscall_64+0x100/0x230 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f3c1c83ce77
+Code: 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b8 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007fffd0d57ec8 EFLAGS: 00000202 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f3c1c83ce77
+RDX: 0000000000000000 RSI: 0000000000000009 RDI: 00007fffd0d57f80
+RBP: 00007fffd0d57f80 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000202 R12: 00007fffd0d58ff0
+R13: 000055556b19c6c0 R14: 00007fffd0d58fec R15: 431bde82d7b634db
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:list_add_tail include/linux/list.h:183 [inline]
+RIP: 0010:list_lru_add+0x1b1/0x390 mm/list_lru.c:97
+Code: 89 ef e8 e2 06 1c 00 48 8b 45 00 48 8b 4c 24 30 48 8d 6c 08 40 4c 8d 6d 08 4d 89 ec 49 c1 ec 03 48 b8 00 00 00 00 00 fc ff df <41> 80 3c 04 00 74 08 4c 89 ef e8 b0 06 1c 00 4c 8b 7d 08 4c 89 f7
+RSP: 0018:ffffc9000346fa78 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 1ffff1100f661037 RCX: 0000000000000000
+RDX: 0000000000000003 RSI: ffffffff8bcaccc0 RDI: ffffffff8c1f54c0
+RBP: 0000000000000000 R08: ffffffff8fac686f R09: 1ffffffff1f58d0d
+R10: dffffc0000000000 R11: fffffbfff1f58d0e R12: 0000000000000001
+R13: 0000000000000008 R14: ffff88807b3081b8 R15: 0000000000000000
+FS:  000055556b19b380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055556b1a46f8 CR3: 000000007911c000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	89 ef                	mov    %ebp,%edi
+   2:	e8 e2 06 1c 00       	call   0x1c06e9
+   7:	48 8b 45 00          	mov    0x0(%rbp),%rax
+   b:	48 8b 4c 24 30       	mov    0x30(%rsp),%rcx
+  10:	48 8d 6c 08 40       	lea    0x40(%rax,%rcx,1),%rbp
+  15:	4c 8d 6d 08          	lea    0x8(%rbp),%r13
+  19:	4d 89 ec             	mov    %r13,%r12
+  1c:	49 c1 ec 03          	shr    $0x3,%r12
+  20:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  27:	fc ff df
+* 2a:	41 80 3c 04 00       	cmpb   $0x0,(%r12,%rax,1) <-- trapping instruction
+  2f:	74 08                	je     0x39
+  31:	4c 89 ef             	mov    %r13,%rdi
+  34:	e8 b0 06 1c 00       	call   0x1c06e9
+  39:	4c 8b 7d 08          	mov    0x8(%rbp),%r15
+  3d:	4c 89 f7             	mov    %r14,%rdi

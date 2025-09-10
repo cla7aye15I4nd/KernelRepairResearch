@@ -1,0 +1,58 @@
+id: 3f84280d52be9b7083cc
+bug_link: https://syzkaller.appspot.com/bug?extid=3f84280d52be9b7083cc
+title: kernel BUG at mm/memory.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2c4541e24c55e2847bede93e33d749280edd429a
+fix_commit: bfd40eaff5abb9f62c8ef94ca13ed0d94a560f10
+datetime: '2018-07-26T19:38:03-07:00'
+fix_commit_message: "mm: fix vma_is_anonymous() false-positives\n\nvma_is_anonymous()\
+  \ relies on ->vm_ops being NULL to detect anonymous\nVMA.  This is unreliable as\
+  \ ->mmap may not set ->vm_ops.\n\nFalse-positive vma_is_anonymous() may lead to\
+  \ crashes:\n\n\tnext ffff8801ce5e7040 prev ffff8801d20eca50 mm ffff88019c1e13c0\n\
+  \tprot 27 anon_vma ffff88019680cdd8 vm_ops 0000000000000000\n\tpgoff 0 file ffff8801b2ec2d00\
+  \ private_data 0000000000000000\n\tflags: 0xff(read|write|exec|shared|mayread|maywrite|mayexec|mayshare)\n\
+  \t------------[ cut here ]------------\n\tkernel BUG at mm/memory.c:1422!\n\tinvalid\
+  \ opcode: 0000 [#1] SMP KASAN\n\tCPU: 0 PID: 18486 Comm: syz-executor3 Not tainted\
+  \ 4.18.0-rc3+ #136\n\tHardware name: Google Google Compute Engine/Google Compute\
+  \ Engine, BIOS Google\n\t01/01/2011\n\tRIP: 0010:zap_pmd_range mm/memory.c:1421\
+  \ [inline]\n\tRIP: 0010:zap_pud_range mm/memory.c:1466 [inline]\n\tRIP: 0010:zap_p4d_range\
+  \ mm/memory.c:1487 [inline]\n\tRIP: 0010:unmap_page_range+0x1c18/0x2220 mm/memory.c:1508\n\
+  \tCall Trace:\n\t unmap_single_vma+0x1a0/0x310 mm/memory.c:1553\n\t zap_page_range_single+0x3cc/0x580\
+  \ mm/memory.c:1644\n\t unmap_mapping_range_vma mm/memory.c:2792 [inline]\n\t unmap_mapping_range_tree\
+  \ mm/memory.c:2813 [inline]\n\t unmap_mapping_pages+0x3a7/0x5b0 mm/memory.c:2845\n\
+  \t unmap_mapping_range+0x48/0x60 mm/memory.c:2880\n\t truncate_pagecache+0x54/0x90\
+  \ mm/truncate.c:800\n\t truncate_setsize+0x70/0xb0 mm/truncate.c:826\n\t simple_setattr+0xe9/0x110\
+  \ fs/libfs.c:409\n\t notify_change+0xf13/0x10f0 fs/attr.c:335\n\t do_truncate+0x1ac/0x2b0\
+  \ fs/open.c:63\n\t do_sys_ftruncate+0x492/0x560 fs/open.c:205\n\t __do_sys_ftruncate\
+  \ fs/open.c:215 [inline]\n\t __se_sys_ftruncate fs/open.c:213 [inline]\n\t __x64_sys_ftruncate+0x59/0x80\
+  \ fs/open.c:213\n\t do_syscall_64+0x1b9/0x820 arch/x86/entry/common.c:290\n\t entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nReproducer:\n\n\t#include <stdio.h>\n\t#include <stddef.h>\n\t#include <stdint.h>\n\
+  \t#include <stdlib.h>\n\t#include <string.h>\n\t#include <sys/types.h>\n\t#include\
+  \ <sys/stat.h>\n\t#include <sys/ioctl.h>\n\t#include <sys/mman.h>\n\t#include <unistd.h>\n\
+  \t#include <fcntl.h>\n\n\t#define KCOV_INIT_TRACE\t\t\t_IOR('c', 1, unsigned long)\n\
+  \t#define KCOV_ENABLE\t\t\t_IO('c', 100)\n\t#define KCOV_DISABLE\t\t\t_IO('c', 101)\n\
+  \t#define COVER_SIZE\t\t\t(1024<<10)\n\n\t#define KCOV_TRACE_PC  0\n\t#define KCOV_TRACE_CMP\
+  \ 1\n\n\tint main(int argc, char **argv)\n\t{\n\t\tint fd;\n\t\tunsigned long *cover;\n\
+  \n\t\tsystem(\"mount -t debugfs none /sys/kernel/debug\");\n\t\tfd = open(\"/sys/kernel/debug/kcov\"\
+  , O_RDWR);\n\t\tioctl(fd, KCOV_INIT_TRACE, COVER_SIZE);\n\t\tcover = mmap(NULL,\
+  \ COVER_SIZE * sizeof(unsigned long),\n\t\t\t\tPROT_READ | PROT_WRITE, MAP_SHARED,\
+  \ fd, 0);\n\t\tmunmap(cover, COVER_SIZE * sizeof(unsigned long));\n\t\tcover = mmap(NULL,\
+  \ COVER_SIZE * sizeof(unsigned long),\n\t\t\t\tPROT_READ | PROT_WRITE, MAP_PRIVATE,\
+  \ fd, 0);\n\t\tmemset(cover, 0, COVER_SIZE * sizeof(unsigned long));\n\t\tftruncate(fd,\
+  \ 3UL << 20);\n\t\treturn 0;\n\t}\n\nThis can be fixed by assigning anonymous VMAs\
+  \ own vm_ops and not relying\non it being NULL.\n\nIf ->mmap() failed to set ->vm_ops,\
+  \ mmap_region() will set it to\ndummy_vm_ops.  This way we will have non-NULL ->vm_ops\
+  \ for all VMAs.\n\nLink: http://lkml.kernel.org/r/20180724121139.62570-4-kirill.shutemov@linux.intel.com\n\
+  Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>\nReported-by:\
+  \ syzbot+3f84280d52be9b7083cc@syzkaller.appspotmail.com\nAcked-by: Linus Torvalds\
+  \ <torvalds@linux-foundation.org>\nReviewed-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Cc: Dmitry Vyukov <dvyukov@google.com>\nCc: Oleg Nesterov <oleg@redhat.com>\nCc:\
+  \ Andrea Arcangeli <aarcange@redhat.com>\nCc: <stable@vger.kernel.org>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- drivers/char
+- fs
+- include/linux
+- mm
+hunk_count: 6
+covered_count: 0

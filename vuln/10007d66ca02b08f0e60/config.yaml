@@ -1,0 +1,24 @@
+id: 10007d66ca02b08f0e60
+bug_link: https://syzkaller.appspot.com/bug?extid=10007d66ca02b08f0e60
+title: 'INFO: task hung in __get_super'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a278682dad37fd2f8d2f30d8e84e376a856ab472
+fix_commit: 33ec3e53e7b1869d7851e59e126bdb0fe0bd1982
+datetime: '2019-05-27T07:34:04-06:00'
+fix_commit_message: "loop: Don't change loop device under exclusive opener\n\nLoop\
+  \ module allows calling LOOP_SET_FD while there are other openers of\nthe loop device.\
+  \ Even exclusive ones. This can lead to weird\nconsequences such as kernel deadlocks\
+  \ like:\n\nmount_bdev()\t\t\t\tlo_ioctl()\n  udf_fill_super()\n    udf_load_vrs()\n\
+  \      sb_set_blocksize() - sets desired block size B\n      udf_tread()\n     \
+  \   sb_bread()\n          __bread_gfp(bdev, block, B)\n\t\t\t\t\t  loop_set_fd()\n\
+  \t\t\t\t\t    set_blocksize()\n            - now __getblk_slow() indefinitely loops\
+  \ because B != bdev\n              block size\n\nFix the problem by disallowing\
+  \ LOOP_SET_FD ioctl when there are\nexclusive openers of a loop device.\n\n[Deliberately\
+  \ chosen not to CC stable as a user with priviledges to\ntrigger this race has other\
+  \ means of taking the system down and this\nhas a potential of breaking some weird\
+  \ userspace setup]\n\nReported-and-tested-by: syzbot+10007d66ca02b08f0e60@syzkaller.appspotmail.com\n\
+  Signed-off-by: Jan Kara <jack@suse.cz>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 2
+covered_count: 1

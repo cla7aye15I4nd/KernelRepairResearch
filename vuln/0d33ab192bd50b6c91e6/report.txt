@@ -1,0 +1,169 @@
+RDX: 0000000000000000 RSI: 0000000000000080 RDI: 00007ff4e31a5fa8
+RBP: 00007ff4e31a5fa0 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ff4e31a5fac
+R13: 0000000000000000 R14: 00007fff13dc0c50 R15: 00007fff13dc0d38
+ </TASK>
+==================================================================
+BUG: KASAN: slab-use-after-free in vidtv_mux_pid_ctx_init drivers/media/test-drivers/vidtv/vidtv_mux.c:78 [inline]
+BUG: KASAN: slab-use-after-free in vidtv_mux_init+0xac2/0xbe0 drivers/media/test-drivers/vidtv/vidtv_mux.c:524
+Read of size 8 at addr ffff888029b550cc by task syz.1.17/6133
+
+CPU: 1 UID: 0 PID: 6133 Comm: syz.1.17 Not tainted 6.15.0-rc1-syzkaller-00173-g0c7cae12f67c #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0xc3/0x670 mm/kasan/report.c:521
+ kasan_report+0xe0/0x110 mm/kasan/report.c:634
+ vidtv_mux_pid_ctx_init drivers/media/test-drivers/vidtv/vidtv_mux.c:78 [inline]
+ vidtv_mux_init+0xac2/0xbe0 drivers/media/test-drivers/vidtv/vidtv_mux.c:524
+ vidtv_start_streaming drivers/media/test-drivers/vidtv/vidtv_bridge.c:194 [inline]
+ vidtv_start_feed+0x33e/0x4d0 drivers/media/test-drivers/vidtv/vidtv_bridge.c:239
+ dmx_section_feed_start_filtering+0x3a5/0x660 drivers/media/dvb-core/dvb_demux.c:973
+ dvb_dmxdev_feed_start drivers/media/dvb-core/dmxdev.c:508 [inline]
+ dvb_dmxdev_feed_restart.isra.0+0x461/0x540 drivers/media/dvb-core/dmxdev.c:537
+ dvb_dmxdev_filter_stop+0x2b6/0x3a0 drivers/media/dvb-core/dmxdev.c:564
+ dvb_dmxdev_filter_free drivers/media/dvb-core/dmxdev.c:840 [inline]
+ dvb_demux_release+0x92/0x560 drivers/media/dvb-core/dmxdev.c:1246
+ __fput+0x3ff/0xb70 fs/file_table.c:465
+ task_work_run+0x14d/0x240 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0xafb/0x2c30 kernel/exit.c:953
+ do_group_exit+0xd3/0x2a0 kernel/exit.c:1102
+ get_signal+0x2673/0x26d0 kernel/signal.c:3034
+ arch_do_signal_or_restart+0x8f/0x7d0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x150/0x2a0 kernel/entry/common.c:218
+ do_syscall_64+0xda/0x260 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7ff4e2f8d169
+Code: Unable to access opcode bytes at 0x7ff4e2f8d13f.
+RSP: 002b:00007ff4e3d650e8 EFLAGS: 00000246 ORIG_RAX: 00000000000000ca
+RAX: fffffffffffffe00 RBX: 00007ff4e31a5fa8 RCX: 00007ff4e2f8d169
+RDX: 0000000000000000 RSI: 0000000000000080 RDI: 00007ff4e31a5fa8
+RBP: 00007ff4e31a5fa0 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ff4e31a5fac
+R13: 0000000000000000 R14: 00007fff13dc0c50 R15: 00007fff13dc0d38
+ </TASK>
+
+Allocated by task 6133:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:394
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ vidtv_psi_pat_table_init+0x46/0x2c0 drivers/media/test-drivers/vidtv/vidtv_psi.c:970
+ vidtv_channel_si_init+0x67/0x1a50 drivers/media/test-drivers/vidtv/vidtv_channel.c:423
+ vidtv_mux_init+0x526/0xbe0 drivers/media/test-drivers/vidtv/vidtv_mux.c:519
+ vidtv_start_streaming drivers/media/test-drivers/vidtv/vidtv_bridge.c:194 [inline]
+ vidtv_start_feed+0x33e/0x4d0 drivers/media/test-drivers/vidtv/vidtv_bridge.c:239
+ dmx_section_feed_start_filtering+0x3a5/0x660 drivers/media/dvb-core/dvb_demux.c:973
+ dvb_dmxdev_feed_start drivers/media/dvb-core/dmxdev.c:508 [inline]
+ dvb_dmxdev_feed_restart.isra.0+0x461/0x540 drivers/media/dvb-core/dmxdev.c:537
+ dvb_dmxdev_filter_stop+0x2b6/0x3a0 drivers/media/dvb-core/dmxdev.c:564
+ dvb_dmxdev_filter_free drivers/media/dvb-core/dmxdev.c:840 [inline]
+ dvb_demux_release+0x92/0x560 drivers/media/dvb-core/dmxdev.c:1246
+ __fput+0x3ff/0xb70 fs/file_table.c:465
+ task_work_run+0x14d/0x240 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0xafb/0x2c30 kernel/exit.c:953
+ do_group_exit+0xd3/0x2a0 kernel/exit.c:1102
+ get_signal+0x2673/0x26d0 kernel/signal.c:3034
+ arch_do_signal_or_restart+0x8f/0x7d0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x150/0x2a0 kernel/entry/common.c:218
+ do_syscall_64+0xda/0x260 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 6133:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ kasan_save_free_info+0x3b/0x60 mm/kasan/generic.c:576
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x51/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2389 [inline]
+ slab_free mm/slub.c:4646 [inline]
+ kfree+0x2b6/0x4d0 mm/slub.c:4845
+ vidtv_channel_si_init+0x34a/0x1a50 drivers/media/test-drivers/vidtv/vidtv_channel.c:499
+ vidtv_mux_init+0x526/0xbe0 drivers/media/test-drivers/vidtv/vidtv_mux.c:519
+ vidtv_start_streaming drivers/media/test-drivers/vidtv/vidtv_bridge.c:194 [inline]
+ vidtv_start_feed+0x33e/0x4d0 drivers/media/test-drivers/vidtv/vidtv_bridge.c:239
+ dmx_section_feed_start_filtering+0x3a5/0x660 drivers/media/dvb-core/dvb_demux.c:973
+ dvb_dmxdev_feed_start drivers/media/dvb-core/dmxdev.c:508 [inline]
+ dvb_dmxdev_feed_restart.isra.0+0x461/0x540 drivers/media/dvb-core/dmxdev.c:537
+ dvb_dmxdev_filter_stop+0x2b6/0x3a0 drivers/media/dvb-core/dmxdev.c:564
+ dvb_dmxdev_filter_free drivers/media/dvb-core/dmxdev.c:840 [inline]
+ dvb_demux_release+0x92/0x560 drivers/media/dvb-core/dmxdev.c:1246
+ __fput+0x3ff/0xb70 fs/file_table.c:465
+ task_work_run+0x14d/0x240 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0xafb/0x2c30 kernel/exit.c:953
+ do_group_exit+0xd3/0x2a0 kernel/exit.c:1102
+ get_signal+0x2673/0x26d0 kernel/signal.c:3034
+ arch_do_signal_or_restart+0x8f/0x7d0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x150/0x2a0 kernel/entry/common.c:218
+ do_syscall_64+0xda/0x260 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff888029b550c0
+ which belongs to the cache kmalloc-32 of size 32
+The buggy address is located 12 bytes inside of
+ freed 32-byte region [ffff888029b550c0, ffff888029b550e0)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x29b55
+anon flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000000 ffff88801b441780 0000000000000000 dead000000000001
+raw: 0000000000000000 0000000000400040 00000000f5000000 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x52800(GFP_NOWAIT|__GFP_NORETRY|__GFP_COMP), pid 1936, tgid 1936 (kworker/u8:3), ts 20298848349, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x181/0x1b0 mm/page_alloc.c:1717
+ prep_new_page mm/page_alloc.c:1725 [inline]
+ get_page_from_freelist+0x1193/0x39b0 mm/page_alloc.c:3652
+ __alloc_frozen_pages_noprof+0x263/0x23a0 mm/page_alloc.c:4934
+ alloc_pages_mpol+0x1fb/0x550 mm/mempolicy.c:2301
+ alloc_slab_page mm/slub.c:2459 [inline]
+ allocate_slab mm/slub.c:2623 [inline]
+ new_slab+0x23c/0x330 mm/slub.c:2676
+ ___slab_alloc+0xd9c/0x1940 mm/slub.c:3862
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3952
+ __slab_alloc_node mm/slub.c:4027 [inline]
+ slab_alloc_node mm/slub.c:4188 [inline]
+ __kmalloc_cache_noprof+0xfb/0x3e0 mm/slub.c:4357
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ slab_free_hook mm/slub.c:2341 [inline]
+ slab_free mm/slub.c:4646 [inline]
+ kmem_cache_free+0x148/0x4d0 mm/slub.c:4748
+ __cleanup_sighand kernel/fork.c:1881 [inline]
+ __cleanup_sighand+0x73/0xa0 kernel/fork.c:1873
+ __exit_signal kernel/exit.c:212 [inline]
+ release_task+0xd39/0x1c70 kernel/exit.c:260
+ exit_notify kernel/exit.c:790 [inline]
+ do_exit+0x1506/0x2c30 kernel/exit.c:973
+ call_usermodehelper_exec_async+0x379/0x4c0 kernel/umh.c:122
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff888029b54f80: 00 00 00 00 00 00 fc fc fc fc fc fc fc fc fc fc
+ ffff888029b55000: fa fb fb fb fc fc fc fc fa fb fb fb fc fc fc fc
+>ffff888029b55080: fa fb fb fb fc fc fc fc fa fb fb fb fc fc fc fc
+                                              ^
+ ffff888029b55100: 00 00 00 fc fc fc fc fc fa fb fb fb fc fc fc fc
+ ffff888029b55180: fa fb fb fb fc fc fc fc 00 00 00 fc fc fc fc fc
+==================================================================

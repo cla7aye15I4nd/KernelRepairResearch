@@ -1,0 +1,29 @@
+id: df400f2f24a1677cd7e0
+bug_link: https://syzkaller.appspot.com/bug?extid=df400f2f24a1677cd7e0
+title: 'unregister_netdevice: waiting for DEV to become free (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8d520b4de3edca4f4fb242b5ddc659b6a9b9e65e
+fix_commit: 5399d52233c47905bbf97dcbaa2d7a9cc31670ba
+datetime: '2021-01-29T21:38:11-08:00'
+fix_commit_message: "rxrpc: Fix deadlock around release of dst cached on udp tunnel\n\
+  \nAF_RXRPC sockets use UDP ports in encap mode.  This causes socket and dst\nfrom\
+  \ an incoming packet to get stolen and attached to the UDP socket from\nwhence it\
+  \ is leaked when that socket is closed.\n\nWhen a network namespace is removed,\
+  \ the wait for dst records to be cleaned\nup happens before the cleanup of the rxrpc\
+  \ and UDP socket, meaning that the\nwait never finishes.\n\nFix this by moving the\
+  \ rxrpc (and, by dependence, the afs) private\nper-network namespace registrations\
+  \ to the device group rather than subsys\ngroup.  This allows cached rxrpc local\
+  \ endpoints to be cleared and their\nUDP sockets closed before we try waiting for\
+  \ the dst records.\n\nThe symptom is that lines looking like the following:\n\n\t\
+  unregister_netdevice: waiting for lo to become free\n\nget emitted at regular intervals\
+  \ after running something like the\nreferenced syzbot test.\n\nThanks to Vadim for\
+  \ tracking this down and work out the fix.\n\nReported-by: syzbot+df400f2f24a1677cd7e0@syzkaller.appspotmail.com\n\
+  Reported-by: Vadim Fedorenko <vfedorenko@novek.ru>\nFixes: 5271953cad31 (\"rxrpc:\
+  \ Use the UDP encap_rcv hook\")\nSigned-off-by: David Howells <dhowells@redhat.com>\n\
+  Acked-by: Vadim Fedorenko <vfedorenko@novek.ru>\nLink: https://lore.kernel.org/r/161196443016.3868642.5577440140646403533.stgit@warthog.procyon.org.uk\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- fs/afs
+- net/rxrpc
+hunk_count: 6
+covered_count: 0

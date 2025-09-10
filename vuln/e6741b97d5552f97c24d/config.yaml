@@ -1,0 +1,25 @@
+id: e6741b97d5552f97c24d
+bug_link: https://syzkaller.appspot.com/bug?extid=e6741b97d5552f97c24d
+title: 'KASAN: use-after-free Read in tipc_recvmsg'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0e804326759de7b9991353dd66b03595b5c3f544
+fix_commit: cc19862ffe454a5b632ca202e5a51bfec9f89fd2
+datetime: '2021-07-25T10:43:30+01:00'
+fix_commit_message: "tipc: fix an use-after-free issue in tipc_recvmsg\n\nsyzbot reported\
+  \ an use-after-free crash:\n\n  BUG: KASAN: use-after-free in tipc_recvmsg+0xf77/0xf90\
+  \ net/tipc/socket.c:1979\n  Call Trace:\n   tipc_recvmsg+0xf77/0xf90 net/tipc/socket.c:1979\n\
+  \   sock_recvmsg_nosec net/socket.c:943 [inline]\n   sock_recvmsg net/socket.c:961\
+  \ [inline]\n   sock_recvmsg+0xca/0x110 net/socket.c:957\n   tipc_conn_rcv_from_sock+0x162/0x2f0\
+  \ net/tipc/topsrv.c:398\n   tipc_conn_recv_work+0xeb/0x190 net/tipc/topsrv.c:421\n\
+  \   process_one_work+0x98d/0x1630 kernel/workqueue.c:2276\n   worker_thread+0x658/0x11f0\
+  \ kernel/workqueue.c:2422\n\nAs Hoang pointed out, it was caused by skb_cb->bytes_read\
+  \ still accessed\nafter calling tsk_advance_rx_queue() to free the skb in tipc_recvmsg().\n\
+  \nThis patch is to fix it by accessing skb_cb->bytes_read earlier than\ncalling\
+  \ tsk_advance_rx_queue().\n\nFixes: f4919ff59c28 (\"tipc: keep the skb in rcv queue\
+  \ until the whole data is read\")\nReported-by: syzbot+e6741b97d5552f97c24d@syzkaller.appspotmail.com\n\
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>\nAcked-by: Jon Maloy <jmaloy@redhat.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 1
+covered_count: 1

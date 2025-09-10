@@ -1,0 +1,36 @@
+id: 119ba87189432ead09b4
+bug_link: https://syzkaller.appspot.com/bug?extid=119ba87189432ead09b4
+title: WARNING in enqueue_task_dl
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ce9bc3b27f2a21a7969b41ffb04df8cf61bd1592
+fix_commit: 740797ce3a124b7dd22b7fb832d87bc8fba1cf6f
+datetime: '2020-06-28T17:01:20+02:00'
+fix_commit_message: "sched/core: Fix PI boosting between RT and DEADLINE tasks\n\n\
+  syzbot reported the following warning:\n\n WARNING: CPU: 1 PID: 6351 at kernel/sched/deadline.c:628\n\
+  \ enqueue_task_dl+0x22da/0x38a0 kernel/sched/deadline.c:1504\n\nAt deadline.c:628\
+  \ we have:\n\n 623 static inline void setup_new_dl_entity(struct sched_dl_entity\
+  \ *dl_se)\n 624 {\n 625 \tstruct dl_rq *dl_rq = dl_rq_of_se(dl_se);\n 626 \tstruct\
+  \ rq *rq = rq_of_dl_rq(dl_rq);\n 627\n 628 \tWARN_ON(dl_se->dl_boosted);\n 629 \t\
+  WARN_ON(dl_time_before(rq_clock(rq), dl_se->deadline));\n        [...]\n     }\n\
+  \nWhich means that setup_new_dl_entity() has been called on a task\ncurrently boosted.\
+  \ This shouldn't happen though, as setup_new_dl_entity()\nis only called when the\
+  \ 'dynamic' deadline of the new entity\nis in the past w.r.t. rq_clock and boosted\
+  \ tasks shouldn't verify this\ncondition.\n\nDigging through the PI code I noticed\
+  \ that what above might in fact happen\nif an RT tasks blocks on an rt_mutex hold\
+  \ by a DEADLINE task. In the\nfirst branch of boosting conditions we check only\
+  \ if a pi_task 'dynamic'\ndeadline is earlier than mutex holder's and in this case\
+  \ we set mutex\nholder to be dl_boosted. However, since RT 'dynamic' deadlines are\
+  \ only\ninitialized if such tasks get boosted at some point (or if they become\n\
+  DEADLINE of course), in general RT 'dynamic' deadlines are usually equal\nto 0 and\
+  \ this verifies the aforementioned condition.\n\nFix it by checking that the potential\
+  \ donor task is actually (even if\ntemporary because in turn boosted) running at\
+  \ DEADLINE priority before\nusing its 'dynamic' deadline value.\n\nFixes: 2d3d891d3344\
+  \ (\"sched/deadline: Add SCHED_DEADLINE inheritance logic\")\nReported-by: syzbot+119ba87189432ead09b4@syzkaller.appspotmail.com\n\
+  Signed-off-by: Juri Lelli <juri.lelli@redhat.com>\nSigned-off-by: Peter Zijlstra\
+  \ (Intel) <peterz@infradead.org>\nSigned-off-by: Ingo Molnar <mingo@kernel.org>\n\
+  Reviewed-by: Daniel Bristot de Oliveira <bristot@redhat.com>\nTested-by: Daniel\
+  \ Wagner <dwagner@suse.de>\nLink: https://lkml.kernel.org/r/20181119153201.GB2119@localhost.localdomain\n"
+submodule:
+- kernel/sched
+hunk_count: 1
+covered_count: 0

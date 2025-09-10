@@ -1,0 +1,48 @@
+id: 85992ace37d5b7b51635
+bug_link: https://syzkaller.appspot.com/bug?extid=85992ace37d5b7b51635
+title: 'UBSAN: shift-out-of-bounds in iova_bitmap_alloc'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d9df72c6acd683adf6dd23c061f3a414ec00b1f8
+fix_commit: e24c1551059268b37f6f40639883eafb281b8b9c
+datetime: '2025-01-14T13:53:18-04:00'
+fix_commit_message: 'iommufd/iova_bitmap: Fix shift-out-of-bounds in iova_bitmap_offset_to_index()
+
+
+  Resolve a UBSAN shift-out-of-bounds issue in iova_bitmap_offset_to_index()
+
+  where shifting the constant "1" (of type int) by bitmap->mapped.pgshift
+
+  (an unsigned long value) could result in undefined behavior.
+
+
+  The constant "1" defaults to a 32-bit "int", and when "pgshift" exceeds
+
+  31 (e.g., pgshift = 63) the shift operation overflows, as the result
+
+  cannot be represented in a 32-bit type.
+
+
+  To resolve this, the constant is updated to "1UL", promoting it to an
+
+  unsigned long type to match the operand''s type.
+
+
+  Fixes: 58ccf0190d19 ("vfio: Add an IOVA bitmap support")
+
+  Link: https://patch.msgid.link/r/20250113223820.10713-1-qasdev00@gmail.com
+
+  Reported-by: syzbot <syzbot+85992ace37d5b7b51635@syzkaller.appspotmail.com>
+
+  Closes: https://syzkaller.appspot.com/bug?extid=85992ace37d5b7b51635
+
+  Signed-off-by: Qasim Ijaz <qasdev00@gmail.com>
+
+  Reviewed-by: Joao Martins <joao.m.martins@oracle.com>
+
+  Signed-off-by: Jason Gunthorpe <jgg@nvidia.com>
+
+  '
+submodule:
+- drivers/iommu/iommufd
+hunk_count: 1
+covered_count: 1

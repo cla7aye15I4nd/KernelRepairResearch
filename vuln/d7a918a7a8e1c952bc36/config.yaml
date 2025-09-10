@@ -1,0 +1,23 @@
+id: d7a918a7a8e1c952bc36
+bug_link: https://syzkaller.appspot.com/bug?extid=d7a918a7a8e1c952bc36
+title: possible deadlock in __might_fault
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a42ae5905140c324362fe5036ae1dbb16e4d359c
+fix_commit: 740a5759bf222332fbb5eda42f89aa25ba38f9b2
+datetime: '2018-03-06T07:21:10-08:00'
+fix_commit_message: "staging: android: ashmem: Fix possible deadlock in ashmem_ioctl\n\
+  \nashmem_mutex may create a chain of dependencies like:\n\nCPU0                \
+  \                    CPU1\n mmap syscall                           ioctl syscall\n\
+  \ -> mmap_sem (acquired)                 -> ashmem_ioctl\n -> ashmem_mmap      \
+  \                      -> ashmem_mutex (acquired)\n    -> ashmem_mutex (try to acquire)\
+  \       -> copy_from_user\n                                              -> mmap_sem\
+  \ (try to acquire)\n\nThere is a lock odering problem between mmap_sem and ashmem_mutex\
+  \ causing\na lockdep splat[1] during a syzcaller test. This patch fixes the problem\n\
+  by move copy_from_user out of ashmem_mutex.\n\n[1] https://www.spinics.net/lists/kernel/msg2733200.html\n\
+  \nFixes: ce8a3a9e76d0 (staging: android: ashmem: Fix a race condition in pin ioctls)\n\
+  Reported-by: syzbot+d7a918a7a8e1c952bc36@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Yisheng Xie <xieyisheng1@huawei.com>\nSigned-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/staging/android
+hunk_count: 1
+covered_count: 1

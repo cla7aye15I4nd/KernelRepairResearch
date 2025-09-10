@@ -1,0 +1,47 @@
+id: ecb1e7e51c52f68f7481
+bug_link: https://syzkaller.appspot.com/bug?extid=ecb1e7e51c52f68f7481
+title: 'KASAN: vmalloc-out-of-bounds Read in __text_poke'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b75dacaac4650478ed5a9d33975b91b99016daff
+fix_commit: d24d2a2b0a81dd5e9bb99aeb4559ec9734e1416f
+datetime: '2022-02-17T13:15:36-08:00'
+fix_commit_message: 'bpf: bpf_prog_pack: Set proper size before freeing ro_header
+
+
+  bpf_prog_pack_free() uses header->size to decide whether the header
+
+  should be freed with module_memfree() or the bpf_prog_pack logic.
+
+  However, in kvmalloc() failure path of bpf_jit_binary_pack_alloc(),
+
+  header->size is not set yet. As a result, bpf_prog_pack_free() may treat
+
+  a slice of a pack as a standalone kvmalloc''d header and call
+
+  module_memfree() on the whole pack. This in turn causes use-after-free by
+
+  other users of the pack.
+
+
+  Fix this by setting ro_header->size before freeing ro_header.
+
+
+  Fixes: 33c9805860e5 ("bpf: Introduce bpf_jit_binary_pack_[alloc|finalize|free]")
+
+  Reported-by: syzbot+2f649ec6d2eea1495a8f@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+ecb1e7e51c52f68f7481@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+87f65c75f4a72db05445@syzkaller.appspotmail.com
+
+  Signed-off-by: Song Liu <song@kernel.org>
+
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>
+
+  Link: https://lore.kernel.org/bpf/20220217183001.1876034-1-song@kernel.org
+
+  '
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 0

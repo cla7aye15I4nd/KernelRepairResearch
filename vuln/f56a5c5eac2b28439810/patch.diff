@@ -1,0 +1,132 @@
+diff --git a/drivers/net/tap.c b/drivers/net/tap.c
+index 5aa41d5f7765..5ca6ecf0ce5f 100644
+--- a/drivers/net/tap.c
++++ b/drivers/net/tap.c
+@@ -1329,9 +1329,9 @@ int tap_queue_resize(struct tap_dev *tap)
+ 	list_for_each_entry(q, &tap->queue_list, next)
+ 		rings[i++] = &q->ring;
+ 
+-	ret = ptr_ring_resize_multiple(rings, n,
+-				       dev->tx_queue_len, GFP_KERNEL,
+-				       __skb_array_destroy_skb);
++	ret = ptr_ring_resize_multiple_bh(rings, n,
++					  dev->tx_queue_len, GFP_KERNEL,
++					  __skb_array_destroy_skb);
+ 
+ 	kfree(rings);
+ 	return ret;
+diff --git a/drivers/net/tun.c b/drivers/net/tun.c
+index 8e94df88392c..41e3eeac06fd 100644
+--- a/drivers/net/tun.c
++++ b/drivers/net/tun.c
+@@ -3701,9 +3701,9 @@ static int tun_queue_resize(struct tun_struct *tun)
+ 	list_for_each_entry(tfile, &tun->disabled, next)
+ 		rings[i++] = &tfile->tx_ring;
+ 
+-	ret = ptr_ring_resize_multiple(rings, n,
+-				       dev->tx_queue_len, GFP_KERNEL,
+-				       tun_ptr_free);
++	ret = ptr_ring_resize_multiple_bh(rings, n,
++					  dev->tx_queue_len, GFP_KERNEL,
++					  tun_ptr_free);
+ 
+ 	kfree(rings);
+ 	return ret;
+diff --git a/include/linux/ptr_ring.h b/include/linux/ptr_ring.h
+index fd037c127bb0..551329220e4f 100644
+--- a/include/linux/ptr_ring.h
++++ b/include/linux/ptr_ring.h
+@@ -615,15 +615,14 @@ static inline int ptr_ring_resize_noprof(struct ptr_ring *r, int size, gfp_t gfp
+ /*
+  * Note: producer lock is nested within consumer lock, so if you
+  * resize you must make sure all uses nest correctly.
+- * In particular if you consume ring in interrupt or BH context, you must
+- * disable interrupts/BH when doing so.
++ * In particular if you consume ring in BH context, you must
++ * disable BH when doing so.
+  */
+-static inline int ptr_ring_resize_multiple_noprof(struct ptr_ring **rings,
+-						  unsigned int nrings,
+-						  int size,
+-						  gfp_t gfp, void (*destroy)(void *))
++static inline int ptr_ring_resize_multiple_bh_noprof(struct ptr_ring **rings,
++						     unsigned int nrings,
++						     int size, gfp_t gfp,
++						     void (*destroy)(void *))
+ {
+-	unsigned long flags;
+ 	void ***queues;
+ 	int i;
+ 
+@@ -638,12 +637,12 @@ static inline int ptr_ring_resize_multiple_noprof(struct ptr_ring **rings,
+ 	}
+ 
+ 	for (i = 0; i < nrings; ++i) {
+-		spin_lock_irqsave(&(rings[i])->consumer_lock, flags);
++		spin_lock_bh(&(rings[i])->consumer_lock);
+ 		spin_lock(&(rings[i])->producer_lock);
+ 		queues[i] = __ptr_ring_swap_queue(rings[i], queues[i],
+ 						  size, gfp, destroy);
+ 		spin_unlock(&(rings[i])->producer_lock);
+-		spin_unlock_irqrestore(&(rings[i])->consumer_lock, flags);
++		spin_unlock_bh(&(rings[i])->consumer_lock);
+ 	}
+ 
+ 	for (i = 0; i < nrings; ++i)
+@@ -662,8 +661,8 @@ static inline int ptr_ring_resize_multiple_noprof(struct ptr_ring **rings,
+ noqueues:
+ 	return -ENOMEM;
+ }
+-#define ptr_ring_resize_multiple(...) \
+-		alloc_hooks(ptr_ring_resize_multiple_noprof(__VA_ARGS__))
++#define ptr_ring_resize_multiple_bh(...) \
++		alloc_hooks(ptr_ring_resize_multiple_bh_noprof(__VA_ARGS__))
+ 
+ static inline void ptr_ring_cleanup(struct ptr_ring *r, void (*destroy)(void *))
+ {
+diff --git a/include/linux/skb_array.h b/include/linux/skb_array.h
+index 926496c9cc9c..bf178238a308 100644
+--- a/include/linux/skb_array.h
++++ b/include/linux/skb_array.h
+@@ -199,17 +199,18 @@ static inline int skb_array_resize(struct skb_array *a, int size, gfp_t gfp)
+ 	return ptr_ring_resize(&a->ring, size, gfp, __skb_array_destroy_skb);
+ }
+ 
+-static inline int skb_array_resize_multiple_noprof(struct skb_array **rings,
+-						   int nrings, unsigned int size,
+-						   gfp_t gfp)
++static inline int skb_array_resize_multiple_bh_noprof(struct skb_array **rings,
++						      int nrings,
++						      unsigned int size,
++						      gfp_t gfp)
+ {
+ 	BUILD_BUG_ON(offsetof(struct skb_array, ring));
+-	return ptr_ring_resize_multiple_noprof((struct ptr_ring **)rings,
+-					       nrings, size, gfp,
+-					       __skb_array_destroy_skb);
++	return ptr_ring_resize_multiple_bh_noprof((struct ptr_ring **)rings,
++					          nrings, size, gfp,
++					          __skb_array_destroy_skb);
+ }
+-#define skb_array_resize_multiple(...)	\
+-		alloc_hooks(skb_array_resize_multiple_noprof(__VA_ARGS__))
++#define skb_array_resize_multiple_bh(...)	\
++		alloc_hooks(skb_array_resize_multiple_bh_noprof(__VA_ARGS__))
+ 
+ static inline void skb_array_cleanup(struct skb_array *a)
+ {
+diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
+index 38ec18f73de4..8874ae668095 100644
+--- a/net/sched/sch_generic.c
++++ b/net/sched/sch_generic.c
+@@ -911,8 +911,8 @@ static int pfifo_fast_change_tx_queue_len(struct Qdisc *sch,
+ 		bands[prio] = q;
+ 	}
+ 
+-	return skb_array_resize_multiple(bands, PFIFO_FAST_BANDS, new_len,
+-					 GFP_KERNEL);
++	return skb_array_resize_multiple_bh(bands, PFIFO_FAST_BANDS, new_len,
++					    GFP_KERNEL);
+ }
+ 
+ struct Qdisc_ops pfifo_fast_ops __read_mostly = {

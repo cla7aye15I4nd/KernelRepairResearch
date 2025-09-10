@@ -1,0 +1,27 @@
+diff --git a/net/ethtool/bitset.c b/net/ethtool/bitset.c
+index 8977fe1f3946..ef9197541cb3 100644
+--- a/net/ethtool/bitset.c
++++ b/net/ethtool/bitset.c
+@@ -305,7 +305,8 @@ int ethnl_put_bitset32(struct sk_buff *skb, int attrtype, const u32 *val,
+ static const struct nla_policy bitset_policy[ETHTOOL_A_BITSET_MAX + 1] = {
+ 	[ETHTOOL_A_BITSET_UNSPEC]	= { .type = NLA_REJECT },
+ 	[ETHTOOL_A_BITSET_NOMASK]	= { .type = NLA_FLAG },
+-	[ETHTOOL_A_BITSET_SIZE]		= { .type = NLA_U32 },
++	[ETHTOOL_A_BITSET_SIZE]		= NLA_POLICY_MAX(NLA_U32,
++							 ETHNL_MAX_BITSET_SIZE),
+ 	[ETHTOOL_A_BITSET_BITS]		= { .type = NLA_NESTED },
+ 	[ETHTOOL_A_BITSET_VALUE]	= { .type = NLA_BINARY },
+ 	[ETHTOOL_A_BITSET_MASK]		= { .type = NLA_BINARY },
+diff --git a/net/ethtool/bitset.h b/net/ethtool/bitset.h
+index b8247e34109d..b849f9d19676 100644
+--- a/net/ethtool/bitset.h
++++ b/net/ethtool/bitset.h
+@@ -3,6 +3,8 @@
+ #ifndef _NET_ETHTOOL_BITSET_H
+ #define _NET_ETHTOOL_BITSET_H
+ 
++#define ETHNL_MAX_BITSET_SIZE S16_MAX
++
+ typedef const char (*const ethnl_string_array_t)[ETH_GSTRING_LEN];
+ 
+ int ethnl_bitset_is_compact(const struct nlattr *bitset, bool *compact);

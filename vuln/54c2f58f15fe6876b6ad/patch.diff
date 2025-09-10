@@ -1,0 +1,22 @@
+diff --git a/drivers/staging/comedi/drivers/vmk80xx.c b/drivers/staging/comedi/drivers/vmk80xx.c
+index 6234b649d887..b035d662390b 100644
+--- a/drivers/staging/comedi/drivers/vmk80xx.c
++++ b/drivers/staging/comedi/drivers/vmk80xx.c
+@@ -800,6 +800,8 @@ static int vmk80xx_auto_attach(struct comedi_device *dev,
+ 
+ 	devpriv->model = board->model;
+ 
++	sema_init(&devpriv->limit_sem, 8);
++
+ 	ret = vmk80xx_find_usb_endpoints(dev);
+ 	if (ret)
+ 		return ret;
+@@ -808,8 +810,6 @@ static int vmk80xx_auto_attach(struct comedi_device *dev,
+ 	if (ret)
+ 		return ret;
+ 
+-	sema_init(&devpriv->limit_sem, 8);
+-
+ 	usb_set_intfdata(intf, devpriv);
+ 
+ 	if (devpriv->model == VMK8055_MODEL)

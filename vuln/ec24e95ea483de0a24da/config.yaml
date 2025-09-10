@@ -1,0 +1,29 @@
+id: ec24e95ea483de0a24da
+bug_link: https://syzkaller.appspot.com/bug?extid=ec24e95ea483de0a24da
+title: kernel BUG at security/keys/keyring.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cc1780fc42c76c705dd07ea123f1143dc5057630
+fix_commit: ede0fa98a900e657d1fcd80b50920efc896c1a4c
+datetime: '2019-02-22T10:11:34-08:00'
+fix_commit_message: "KEYS: always initialize keyring_index_key::desc_len\n\nsyzbot\
+  \ hit the 'BUG_ON(index_key->desc_len == 0);' in __key_link_begin()\ncalled from\
+  \ construct_alloc_key() during sys_request_key(), because the\nlength of the key\
+  \ description was never calculated.\n\nThe problem is that we rely on ->desc_len\
+  \ being initialized by\nsearch_process_keyrings(), specifically by search_nested_keyrings().\n\
+  But, if the process isn't subscribed to any keyrings that never happens.\n\nFix\
+  \ it by always initializing keyring_index_key::desc_len as soon as the\ndescription\
+  \ is set, like we already do in some places.\n\nThe following program reproduces\
+  \ the BUG_ON() when it's run as root and\nno session keyring has been installed.\
+  \  If it doesn't work, try removing\npam_keyinit.so from /etc/pam.d/login and rebooting.\n\
+  \n    #include <stdlib.h>\n    #include <unistd.h>\n    #include <keyutils.h>\n\n\
+  \    int main(void)\n    {\n            int id = add_key(\"keyring\", \"syz\", NULL,\
+  \ 0, KEY_SPEC_USER_KEYRING);\n\n            keyctl_setperm(id, KEY_OTH_WRITE);\n\
+  \            setreuid(5000, 5000);\n            request_key(\"user\", \"desc\",\
+  \ \"\", id);\n    }\n\nReported-by: syzbot+ec24e95ea483de0a24da@syzkaller.appspotmail.com\n\
+  Fixes: b2a4df200d57 (\"KEYS: Expand the capacity of a keyring\")\nSigned-off-by:\
+  \ Eric Biggers <ebiggers@google.com>\nSigned-off-by: David Howells <dhowells@redhat.com>\n\
+  Cc: stable@vger.kernel.org\nSigned-off-by: James Morris <james.morris@microsoft.com>\n"
+submodule:
+- security/keys
+hunk_count: 5
+covered_count: 0

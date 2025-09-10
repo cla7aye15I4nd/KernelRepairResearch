@@ -1,0 +1,35 @@
+id: cdeaeec70992eca2d920
+bug_link: https://syzkaller.appspot.com/bug?extid=cdeaeec70992eca2d920
+title: 'WARNING: suspicious RCU usage in kvm_vcpu_gfn_to_memslot'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a64dcfb451e254085a7daee5fe51bf22959d52d3
+fix_commit: 3617c0ee7decb3db3f230b1c844126575fab4d49
+datetime: '2025-02-11T07:05:01-08:00'
+fix_commit_message: "KVM: x86/xen: Only write Xen hypercall page for guest writes\
+  \ to MSR\n\nThe Xen hypercall page MSR is write-only. When the guest writes an address\n\
+  to the MSR, the hypervisor populates the referenced page with hypercall\nfunctions.\n\
+  \nThere is no reason for the host ever to write to the MSR, and it isn't\neven readable.\n\
+  \nAllowing host writes to trigger the hypercall page allows userspace to\nattack\
+  \ the kernel, as kvm_xen_write_hypercall_page() takes multiple\nlocks and writes\
+  \ to guest memory.  E.g. if userspace sets the MSR to\nMSR_IA32_XSS, KVM's write\
+  \ to MSR_IA32_XSS during vCPU creation will\ntrigger an SRCU violation due to writing\
+  \ guest memory:\n\n  =============================\n  WARNING: suspicious RCU usage\n\
+  \  6.13.0-rc3\n  -----------------------------\n  include/linux/kvm_host.h:1046\
+  \ suspicious rcu_dereference_check() usage!\n\n  stack backtrace:\n  CPU: 6 UID:\
+  \ 1000 PID: 1101 Comm: repro Not tainted 6.13.0-rc3\n  Hardware name: QEMU Standard\
+  \ PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015\n  Call Trace:\n   <TASK>\n   dump_stack_lvl+0x7f/0x90\n\
+  \   lockdep_rcu_suspicious+0x176/0x1c0\n   kvm_vcpu_gfn_to_memslot+0x259/0x280\n\
+  \   kvm_vcpu_write_guest+0x3a/0xa0\n   kvm_xen_write_hypercall_page+0x268/0x300\n\
+  \   kvm_set_msr_common+0xc44/0x1940\n   vmx_set_msr+0x9db/0x1fc0\n   kvm_vcpu_reset+0x857/0xb50\n\
+  \   kvm_arch_vcpu_create+0x37e/0x4d0\n   kvm_vm_ioctl+0x669/0x2100\n   __x64_sys_ioctl+0xc1/0xf0\n\
+  \   do_syscall_64+0xc5/0x210\n   entry_SYSCALL_64_after_hwframe+0x4b/0x53\n  RIP:\
+  \ 0033:0x7feda371b539\n\nWhile the MSR index isn't strictly ABI, i.e. can theoretically\
+  \ float to\nany value, in practice no known VMM sets the MSR index to anything other\n\
+  than 0x40000000 or 0x40000200.\n\nReported-by: syzbot+cdeaeec70992eca2d920@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/all/679258d4.050a0220.2eae65.000a.GAE@google.com\n\
+  Signed-off-by: David Woodhouse <dwmw@amazon.co.uk>\nLink: https://lore.kernel.org/r/de0437379dfab11e431a23c8ce41a29234c06cbf.camel@infradead.org\n\
+  Signed-off-by: Sean Christopherson <seanjc@google.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 1
+covered_count: 1

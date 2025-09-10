@@ -1,0 +1,28 @@
+id: b4cd76826045a1eb93c1
+bug_link: https://syzkaller.appspot.com/bug?extid=b4cd76826045a1eb93c1
+title: WARNING in tls_strp_msg_load
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f1a69a940de58b16e8249dff26f74c8cc59b32be
+fix_commit: 5071a1e606b30c0c11278d3c6620cd6a24724cf6
+datetime: '2025-04-08T11:38:49+02:00'
+fix_commit_message: "net: tls: explicitly disallow disconnect\n\nsyzbot discovered\
+  \ that it can disconnect a TLS socket and then\nrun into all sort of unexpected\
+  \ corner cases. I have a vague\nrecollection of Eric pointing this out to us a long\
+  \ time ago.\nSupporting disconnect is really hard, for one thing if offload\nis\
+  \ enabled we'd need to wait for all packets to be _acked_.\nDisconnect is not commonly\
+  \ used, disallow it.\n\nThe immediate problem syzbot run into is the warning in\
+  \ the strp,\nbut that's just the easiest bug to trigger:\n\n  WARNING: CPU: 0 PID:\
+  \ 5834 at net/tls/tls_strp.c:486 tls_strp_msg_load+0x72e/0xa80 net/tls/tls_strp.c:486\n\
+  \  RIP: 0010:tls_strp_msg_load+0x72e/0xa80 net/tls/tls_strp.c:486\n  Call Trace:\n\
+  \   <TASK>\n   tls_rx_rec_wait+0x280/0xa60 net/tls/tls_sw.c:1363\n   tls_sw_recvmsg+0x85c/0x1c30\
+  \ net/tls/tls_sw.c:2043\n   inet6_recvmsg+0x2c9/0x730 net/ipv6/af_inet6.c:678\n\
+  \   sock_recvmsg_nosec net/socket.c:1023 [inline]\n   sock_recvmsg+0x109/0x280 net/socket.c:1045\n\
+  \   __sys_recvfrom+0x202/0x380 net/socket.c:2237\n\nFixes: 3c4d7559159b (\"tls:\
+  \ kernel TLS support\")\nReported-by: syzbot+b4cd76826045a1eb93c1@syzkaller.appspotmail.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\nReviewed-by: Eric Dumazet <edumazet@google.com>\n\
+  Reviewed-by: Sabrina Dubroca <sd@queasysnail.net>\nLink: https://patch.msgid.link/20250404180334.3224206-1-kuba@kernel.org\n\
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>\n\n"
+submodule:
+- net/tls
+hunk_count: 2
+covered_count: 0

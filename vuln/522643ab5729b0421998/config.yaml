@@ -1,0 +1,44 @@
+id: 522643ab5729b0421998
+bug_link: https://syzkaller.appspot.com/bug?extid=522643ab5729b0421998
+title: 'KASAN: use-after-free Write in release_tty'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3b9c55efb23ebc6edb8190d9afa78b311e49404f
+fix_commit: ca4463bf8438b403596edd0ec961ca0d4fbe0220
+datetime: '2020-03-27T12:35:04+01:00'
+fix_commit_message: "vt: vt_ioctl: fix VT_DISALLOCATE freeing in-use virtual console\n\
+  \nThe VT_DISALLOCATE ioctl can free a virtual console while tty_release()\nis still\
+  \ running, causing a use-after-free in con_shutdown().  This\noccurs because VT_DISALLOCATE\
+  \ considers a virtual console's\n'struct vc_data' to be unused as soon as the corresponding\
+  \ tty's\nrefcount hits 0.  But actually it may be still being closed.\n\nFix this\
+  \ by making vc_data be reference-counted via the embedded\n'struct tty_port'.  A\
+  \ newly allocated virtual console has refcount 1.\nOpening it for the first time\
+  \ increments the refcount to 2.  Closing it\nfor the last time decrements the refcount\
+  \ (in tty_operations::cleanup()\nso that it happens late enough), as does VT_DISALLOCATE.\n\
+  \nReproducer:\n\t#include <fcntl.h>\n\t#include <linux/vt.h>\n\t#include <sys/ioctl.h>\n\
+  \t#include <unistd.h>\n\n\tint main()\n\t{\n\t\tif (fork()) {\n\t\t\tfor (;;)\n\t\
+  \t\t\tclose(open(\"/dev/tty5\", O_RDWR));\n\t\t} else {\n\t\t\tint fd = open(\"\
+  /dev/tty10\", O_RDWR);\n\n\t\t\tfor (;;)\n\t\t\t\tioctl(fd, VT_DISALLOCATE, 5);\n\
+  \t\t}\n\t}\n\nKASAN report:\n\tBUG: KASAN: use-after-free in con_shutdown+0x76/0x80\
+  \ drivers/tty/vt/vt.c:3278\n\tWrite of size 8 at addr ffff88806a4ec108 by task syz_vt/129\n\
+  \n\tCPU: 0 PID: 129 Comm: syz_vt Not tainted 5.6.0-rc2 #11\n\tHardware name: QEMU\
+  \ Standard PC (i440FX + PIIX, 1996), BIOS ?-20191223_100556-anatol 04/01/2014\n\t\
+  Call Trace:\n\t [...]\n\t con_shutdown+0x76/0x80 drivers/tty/vt/vt.c:3278\n\t release_tty+0xa8/0x410\
+  \ drivers/tty/tty_io.c:1514\n\t tty_release_struct+0x34/0x50 drivers/tty/tty_io.c:1629\n\
+  \t tty_release+0x984/0xed0 drivers/tty/tty_io.c:1789\n\t [...]\n\n\tAllocated by\
+  \ task 129:\n\t [...]\n\t kzalloc include/linux/slab.h:669 [inline]\n\t vc_allocate\
+  \ drivers/tty/vt/vt.c:1085 [inline]\n\t vc_allocate+0x1ac/0x680 drivers/tty/vt/vt.c:1066\n\
+  \t con_install+0x4d/0x3f0 drivers/tty/vt/vt.c:3229\n\t tty_driver_install_tty drivers/tty/tty_io.c:1228\
+  \ [inline]\n\t tty_init_dev+0x94/0x350 drivers/tty/tty_io.c:1341\n\t tty_open_by_driver\
+  \ drivers/tty/tty_io.c:1987 [inline]\n\t tty_open+0x3ca/0xb30 drivers/tty/tty_io.c:2035\n\
+  \t [...]\n\n\tFreed by task 130:\n\t [...]\n\t kfree+0xbf/0x1e0 mm/slab.c:3757\n\
+  \t vt_disallocate drivers/tty/vt/vt_ioctl.c:300 [inline]\n\t vt_ioctl+0x16dc/0x1e30\
+  \ drivers/tty/vt/vt_ioctl.c:818\n\t tty_ioctl+0x9db/0x11b0 drivers/tty/tty_io.c:2660\n\
+  \t [...]\n\nFixes: 4001d7b7fc27 (\"vt: push down the tty lock so we can see what\
+  \ is left to tackle\")\nCc: <stable@vger.kernel.org> # v3.4+\nReported-by: syzbot+522643ab5729b0421998@syzkaller.appspotmail.com\n\
+  Acked-by: Jiri Slaby <jslaby@suse.cz>\nSigned-off-by: Eric Biggers <ebiggers@google.com>\n\
+  Link: https://lore.kernel.org/r/20200322034305.210082-2-ebiggers@kernel.org\nSigned-off-by:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty/vt
+hunk_count: 7
+covered_count: 6

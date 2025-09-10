@@ -1,0 +1,28 @@
+id: e58465c446f16bd6191a
+bug_link: https://syzkaller.appspot.com/bug?extid=e58465c446f16bd6191a
+title: 'net-next boot error: WARNING: refcount bug in __free_pages_ok'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ea4b5b33bf8a4936cfb07759d926db697c43fb1e
+fix_commit: f5c12105c15f0ddf0ff37646290568dd986fa2f3
+datetime: '2024-04-16T15:39:49-07:00'
+fix_commit_message: "mm,page_owner: fix refcount imbalance\n\nCurrent code does not\
+  \ contemplate scenarios were an allocation and free\noperation on the same pages\
+  \ do not handle it in the same amount at once. \nTo give an example, page_alloc_exact(),\
+  \ where we will allocate a page of\nenough order to stafisfy the size request, but\
+  \ we will free the remainings\nright away.\n\nIn the above example, we will increment\
+  \ the stack_record refcount only\nonce, but we will decrease it the same number\
+  \ of times as number of unused\npages we have to free.  This will lead to a warning\
+  \ because of refcount\nimbalance.\n\nFix this by recording the number of base pages\
+  \ in the refcount field.\n\nLink: https://lkml.kernel.org/r/20240404070702.2744-3-osalvador@suse.de\n\
+  Reported-by: syzbot+41bbfdb8d41003d12c0f@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/linux-mm/00000000000090e8ff0613eda0e5@google.com\n\
+  Fixes: 217b2119b9e2 (\"mm,page_owner: implement the tracking of the stacks count\"\
+  )\nSigned-off-by: Oscar Salvador <osalvador@suse.de>\nReviewed-by: Vlastimil Babka\
+  \ <vbabka@suse.cz>\nTested-by: Alexandre Ghiti <alexghiti@rivosinc.com>\nCc: Alexander\
+  \ Potapenko <glider@google.com>\nCc: Andrey Konovalov <andreyknvl@gmail.com>\nCc:\
+  \ Marco Elver <elver@google.com>\nCc: Michal Hocko <mhocko@suse.com>\nCc: Palmer\
+  \ Dabbelt <palmer@dabbelt.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- Documentation/mm
+- mm
+hunk_count: 9
+covered_count: 0

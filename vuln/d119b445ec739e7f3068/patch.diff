@@ -1,0 +1,105 @@
+diff --git a/fs/bcachefs/fs-io.c b/fs/bcachefs/fs-io.c
+index c6fdfec51082..33d0e7080bf6 100644
+--- a/fs/bcachefs/fs-io.c
++++ b/fs/bcachefs/fs-io.c
+@@ -167,6 +167,34 @@ void __bch2_i_sectors_acct(struct bch_fs *c, struct bch_inode_info *inode,
+ 
+ /* fsync: */
+ 
++static int bch2_get_inode_journal_seq_trans(struct btree_trans *trans, subvol_inum inum,
++					    u64 *seq)
++{
++	struct printbuf buf = PRINTBUF;
++	struct bch_inode_unpacked u;
++	struct btree_iter iter;
++	int ret = bch2_inode_peek(trans, &iter, &u, inum, 0);
++	if (ret)
++		return ret;
++
++	u64 cur_seq = journal_cur_seq(&trans->c->journal);
++	*seq = min(cur_seq, u.bi_journal_seq);
++
++	if (fsck_err_on(u.bi_journal_seq > cur_seq,
++			trans, inode_journal_seq_in_future,
++			"inode journal seq in future (currently at %llu)\n%s",
++			cur_seq,
++			(bch2_inode_unpacked_to_text(&buf, &u),
++			buf.buf))) {
++		u.bi_journal_seq = cur_seq;
++		ret = bch2_inode_write(trans, &iter, &u);
++	}
++fsck_err:
++	bch2_trans_iter_exit(trans, &iter);
++	printbuf_exit(&buf);
++	return ret;
++}
++
+ /*
+  * inode->ei_inode.bi_journal_seq won't be up to date since it's set in an
+  * insert trigger: look up the btree inode instead
+@@ -180,9 +208,10 @@ static int bch2_flush_inode(struct bch_fs *c,
+ 	if (!bch2_write_ref_tryget(c, BCH_WRITE_REF_fsync))
+ 		return -EROFS;
+ 
+-	struct bch_inode_unpacked u;
+-	int ret = bch2_inode_find_by_inum(c, inode_inum(inode), &u) ?:
+-		  bch2_journal_flush_seq(&c->journal, u.bi_journal_seq, TASK_INTERRUPTIBLE) ?:
++	u64 seq;
++	int ret = bch2_trans_commit_do(c, NULL, NULL, 0,
++			bch2_get_inode_journal_seq_trans(trans, inode_inum(inode), &seq)) ?:
++		  bch2_journal_flush_seq(&c->journal, seq, TASK_INTERRUPTIBLE) ?:
+ 		  bch2_inode_flush_nocow_writes(c, inode);
+ 	bch2_write_ref_put(c, BCH_WRITE_REF_fsync);
+ 	return ret;
+diff --git a/fs/bcachefs/fsck.c b/fs/bcachefs/fsck.c
+index e10abd2e6c69..f2174528ee5f 100644
+--- a/fs/bcachefs/fsck.c
++++ b/fs/bcachefs/fsck.c
+@@ -1392,7 +1392,7 @@ static int check_inode(struct btree_trans *trans,
+ 
+ 			if (fsck_err_on(!ret,
+ 					trans, inode_unlinked_and_not_open,
+-				      "inode %llu%u unlinked and not open",
++				      "inode %llu:%u unlinked and not open",
+ 				      u.bi_inum, u.bi_snapshot)) {
+ 				ret = bch2_inode_rm_snapshot(trans, u.bi_inum, iter->pos.snapshot);
+ 				bch_err_msg(c, ret, "in fsck deleting inode");
+@@ -1441,6 +1441,17 @@ static int check_inode(struct btree_trans *trans,
+ 			do_update = true;
+ 		}
+ 	}
++
++	if (fsck_err_on(u.bi_journal_seq > journal_cur_seq(&c->journal),
++			trans, inode_journal_seq_in_future,
++			"inode journal seq in future (currently at %llu)\n%s",
++			journal_cur_seq(&c->journal),
++			(printbuf_reset(&buf),
++			 bch2_inode_unpacked_to_text(&buf, &u),
++			buf.buf))) {
++		u.bi_journal_seq = journal_cur_seq(&c->journal);
++		do_update = true;
++	}
+ do_update:
+ 	if (do_update) {
+ 		ret = __bch2_fsck_write_inode(trans, &u);
+diff --git a/fs/bcachefs/sb-errors_format.h b/fs/bcachefs/sb-errors_format.h
+index 8e3a6c5da10d..342eda8ab69f 100644
+--- a/fs/bcachefs/sb-errors_format.h
++++ b/fs/bcachefs/sb-errors_format.h
+@@ -233,6 +233,7 @@ enum bch_fsck_flags {
+ 	x(inode_wrong_nlink,					209,	FSCK_AUTOFIX)	\
+ 	x(inode_has_child_snapshots_wrong,			287,	0)		\
+ 	x(inode_unreachable,					210,	FSCK_AUTOFIX)	\
++	x(inode_journal_seq_in_future,				299,	FSCK_AUTOFIX)	\
+ 	x(deleted_inode_but_clean,				211,	FSCK_AUTOFIX)	\
+ 	x(deleted_inode_missing,				212,	FSCK_AUTOFIX)	\
+ 	x(deleted_inode_is_dir,					213,	FSCK_AUTOFIX)	\
+@@ -309,7 +310,7 @@ enum bch_fsck_flags {
+ 	x(logged_op_but_clean,					283,	FSCK_AUTOFIX)	\
+ 	x(compression_opt_not_marked_in_sb,			295,	FSCK_AUTOFIX)	\
+ 	x(compression_type_not_marked_in_sb,			296,	FSCK_AUTOFIX)	\
+-	x(MAX,							299,	0)
++	x(MAX,							300,	0)
+ 
+ enum bch_sb_error_id {
+ #define x(t, n, ...) BCH_FSCK_ERR_##t = n,

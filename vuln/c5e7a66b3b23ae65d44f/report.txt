@@ -1,0 +1,78 @@
+  bp_start          8
+  invalid data type (got 130 should be 9): delete?, fixing
+bcachefs (loop0): accounting_read... done
+bcachefs (loop0): alloc_read... done
+bcachefs (loop0): stripes_read... done
+bcachefs (loop0): snapshots_read... done
+bcachefs (loop0): check_allocations...
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/bkey.c:298!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5823 Comm: syz-executor163 Not tainted 6.13.0-rc4-syzkaller-00069-g8379578b11d5 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:__bkey_unpack_pos+0x781/0x790 fs/bcachefs/bkey.c:298
+Code: e8 54 2f 8c fd 48 c7 c7 40 e0 f2 8e 4c 89 e6 48 89 da e8 22 9c df 00 e9 f4 fc ff ff e8 38 2f 8c fd 90 0f 0b e8 30 2f 8c fd 90 <0f> 0b e8 28 2f 8c fd 90 0f 0b 0f 1f 44 00 00 90 90 90 90 90 90 90
+RSP: 0018:ffffc90003b762c0 EFLAGS: 00010293
+RAX: ffffffff841344b0 RBX: 0000000000000003 RCX: ffff888032e1bc00
+RDX: 0000000000000000 RSI: 0000000000000003 RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff84133e05 R09: 0000000000000000
+R10: ffffc90003b76380 R11: fffff5200076ec72 R12: ffffc90003b76380
+R13: dffffc0000000000 R14: 0000000000000000 R15: ffff88807a6a1060
+FS:  0000555580235380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffc8b1cd000 CR3: 000000007f460000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bkey_unpack_pos_format_checked fs/bcachefs/bkey.h:456 [inline]
+ bkey_unpack_pos fs/bcachefs/bkey.h:464 [inline]
+ __bch2_bkey_cmp_packed_format_checked_inlined fs/bcachefs/bkey_cmp.h:103 [inline]
+ __bch2_bkey_cmp_packed_format_checked+0x2c7/0x800 fs/bcachefs/bkey.c:1020
+ bkey_cmp_p_or_unp fs/bcachefs/bset.h:291 [inline]
+ bkey_iter_cmp_p_or_unp fs/bcachefs/bset.h:400 [inline]
+ bch2_bset_search_linear fs/bcachefs/bset.c:1189 [inline]
+ bch2_btree_node_iter_init+0x234b/0x4280 fs/bcachefs/bset.c:1334
+ __bch2_btree_path_set_pos+0xb8e/0x1710 fs/bcachefs/btree_iter.c:1302
+ bch2_btree_path_set_pos fs/bcachefs/btree_iter.h:229 [inline]
+ bch2_btree_iter_peek_node+0x7c5/0xed0 fs/bcachefs/btree_iter.c:1915
+ bch2_gc_btree fs/bcachefs/btree_gc.c:686 [inline]
+ bch2_gc_btrees fs/bcachefs/btree_gc.c:729 [inline]
+ bch2_check_allocations+0x2125/0x7070 fs/bcachefs/btree_gc.c:1133
+ bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:191
+ bch2_run_recovery_passes+0x3a7/0x880 fs/bcachefs/recovery_passes.c:244
+ bch2_fs_recovery+0x25cc/0x39d0 fs/bcachefs/recovery.c:861
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1037
+ bch2_fs_get_tree+0xd68/0x1710 fs/bcachefs/fs.c:2170
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f7e8db0306a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc8b1cc428 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffc8b1cc440 RCX: 00007f7e8db0306a
+RDX: 00000000200002c0 RSI: 0000000020000380 RDI: 00007ffc8b1cc440
+RBP: 0000000000000004 R08: 00007ffc8b1cc480 R09: 0000000000005931
+R10: 0000000000000000 R11: 0000000000000282 R12: 0000000000000000
+R13: 00007ffc8b1cc480 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__bkey_unpack_pos+0x781/0x790 fs/bcachefs/bkey.c:298
+Code: e8 54 2f 8c fd 48 c7 c7 40 e0 f2 8e 4c 89 e6 48 89 da e8 22 9c df 00 e9 f4 fc ff ff e8 38 2f 8c fd 90 0f 0b e8 30 2f 8c fd 90 <0f> 0b e8 28 2f 8c fd 90 0f 0b 0f 1f 44 00 00 90 90 90 90 90 90 90
+RSP: 0018:ffffc90003b762c0 EFLAGS: 00010293
+RAX: ffffffff841344b0 RBX: 0000000000000003 RCX: ffff888032e1bc00
+RDX: 0000000000000000 RSI: 0000000000000003 RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff84133e05 R09: 0000000000000000
+R10: ffffc90003b76380 R11: fffff5200076ec72 R12: ffffc90003b76380
+R13: dffffc0000000000 R14: 0000000000000000 R15: ffff88807a6a1060
+FS:  0000555580235380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffc8b1cd000 CR3: 000000007f460000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

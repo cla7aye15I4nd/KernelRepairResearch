@@ -1,0 +1,35 @@
+id: d5aa7e0385f6a5d0f4fd
+bug_link: https://syzkaller.appspot.com/bug?extid=d5aa7e0385f6a5d0f4fd
+title: possible deadlock in cleanup_net
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 02a20d4fef3da0278bd2d95c86f48318a9902b76
+fix_commit: d966ddcc38217a6110a6a0ff37ad2dee7d42e23e
+datetime: '2020-09-07T12:08:53-07:00'
+fix_commit_message: "tipc: fix a deadlock when flushing scheduled work\n\nIn the commit\
+  \ fdeba99b1e58\n(\"tipc: fix use-after-free in tipc_bcast_get_mode\"), we're trying\n\
+  to make sure the tipc_net_finalize_work work item finished if it\nenqueued. But\
+  \ calling flush_scheduled_work() is not just affecting\nabove work item but either\
+  \ any scheduled work. This has turned out\nto be overkill and caused to deadlock\
+  \ as syzbot reported:\n\n======================================================\n\
+  WARNING: possible circular locking dependency detected\n5.9.0-rc2-next-20200828-syzkaller\
+  \ #0 Not tainted\n------------------------------------------------------\nkworker/u4:6/349\
+  \ is trying to acquire lock:\nffff8880aa063d38 ((wq_completion)events){+.+.}-{0:0},\
+  \ at: flush_workqueue+0xe1/0x13e0 kernel/workqueue.c:2777\n\nbut task is already\
+  \ holding lock:\nffffffff8a879430 (pernet_ops_rwsem){++++}-{3:3}, at: cleanup_net+0x9b/0xb10\
+  \ net/core/net_namespace.c:565\n\n[...]\n Possible unsafe locking scenario:\n\n\
+  \       CPU0                    CPU1\n       ----                    ----\n  lock(pernet_ops_rwsem);\n\
+  \                               lock(&sb->s_type->i_mutex_key#13);\n           \
+  \                    lock(pernet_ops_rwsem);\n  lock((wq_completion)events);\n\n\
+  \ *** DEADLOCK ***\n[...]\n\nv1:\nTo fix the original issue, we replace above calling\
+  \ by introducing\na bit flag. When a namespace cleaned-up, bit flag is set to zero\
+  \ and:\n- tipc_net_finalize functionial just does return immediately.\n- tipc_net_finalize_work\
+  \ does not enqueue into the scheduled work queue.\n\nv2:\nUse cancel_work_sync()\
+  \ helper to make sure ONLY the\ntipc_net_finalize_work() stopped before releasing\
+  \ bcbase object.\n\nReported-by: syzbot+d5aa7e0385f6a5d0f4fd@syzkaller.appspotmail.com\n\
+  Fixes: fdeba99b1e58 (\"tipc: fix use-after-free in tipc_bcast_get_mode\")\nAcked-by:\
+  \ Jon Maloy <jmaloy@redhat.com>\nSigned-off-by: Hoang Huu Le <hoang.h.le@dektech.com.au>\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/tipc
+hunk_count: 7
+covered_count: 2

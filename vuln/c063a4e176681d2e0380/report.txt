@@ -1,0 +1,102 @@
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 c1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffec1f5bb98 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007ffec1f5bbb0 RCX: 00007f0f64570b79
+RDX: 0000000020000040 RSI: 00000000c0105512 RDI: 0000000000000003
+RBP: 0000000000000002 R08: 00007ffec1f5b936 R09: 00000000000000a0
+R10: 0000000000000002 R11: 0000000000000246 R12: 0000000000000001
+R13: 431bde82d7b634db R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] PREEMPT SMP KASAN
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 0 PID: 5044 Comm: syz-executor252 Not tainted 6.5.0-syzkaller-11812-g7733171926cc #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
+RIP: 0010:strchr+0x1b/0xb0 lib/string.c:329
+Code: d6 ad f7 48 8b 74 24 08 48 8b 14 24 eb 89 90 f3 0f 1e fa 48 b8 00 00 00 00 00 fc ff df 48 89 fa 55 48 c1 ea 03 53 48 83 ec 10 <0f> b6 04 02 48 89 fa 83 e2 07 38 d0 7f 04 84 c0 75 51 0f b6 07 89
+RSP: 0018:ffffc900039475b8 EFLAGS: 00010286
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: 0000000000000025 RDI: 0000000000000000
+RBP: ffffc90003947648 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000001 R11: ffffffff81dd3e95 R12: ffffc90003947648
+R13: 0000000000000cc0 R14: ffff888141f9a078 R15: 0000000000000001
+FS:  0000555555b33380(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f86054f7ae0 CR3: 0000000073363000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ kvasprintf_const+0x25/0x190 lib/kasprintf.c:45
+ kobject_set_name_vargs+0x5a/0x130 lib/kobject.c:272
+ kobject_add_varg lib/kobject.c:366 [inline]
+ kobject_add+0x12a/0x240 lib/kobject.c:424
+ device_add+0x290/0x1ac0 drivers/base/core.c:3560
+ usb_hub_create_port_device+0x3bb/0xe30 drivers/usb/core/port.c:713
+ hub_configure drivers/usb/core/hub.c:1685 [inline]
+ hub_probe+0x1e66/0x3070 drivers/usb/core/hub.c:1922
+ usb_probe_interface+0x307/0x930 drivers/usb/core/driver.c:396
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x234/0xc90 drivers/base/dd.c:658
+ __driver_probe_device+0x1de/0x4b0 drivers/base/dd.c:800
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:830
+ __device_attach_driver+0x1d4/0x300 drivers/base/dd.c:958
+ bus_for_each_drv+0x157/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e8/0x4b0 drivers/base/dd.c:1030
+ proc_ioctl+0x585/0x6a0 drivers/usb/core/devio.c:2365
+ proc_ioctl_default drivers/usb/core/devio.c:2400 [inline]
+ usbdev_do_ioctl drivers/usb/core/devio.c:2756 [inline]
+ usbdev_ioctl+0x1650/0x3ca0 drivers/usb/core/devio.c:2816
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:871 [inline]
+ __se_sys_ioctl fs/ioctl.c:857 [inline]
+ __x64_sys_ioctl+0x18f/0x210 fs/ioctl.c:857
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0f64570b79
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 c1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffec1f5bb98 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007ffec1f5bbb0 RCX: 00007f0f64570b79
+RDX: 0000000020000040 RSI: 00000000c0105512 RDI: 0000000000000003
+RBP: 0000000000000002 R08: 00007ffec1f5b936 R09: 00000000000000a0
+R10: 0000000000000002 R11: 0000000000000246 R12: 0000000000000001
+R13: 431bde82d7b634db R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:strchr+0x1b/0xb0 lib/string.c:329
+Code: d6 ad f7 48 8b 74 24 08 48 8b 14 24 eb 89 90 f3 0f 1e fa 48 b8 00 00 00 00 00 fc ff df 48 89 fa 55 48 c1 ea 03 53 48 83 ec 10 <0f> b6 04 02 48 89 fa 83 e2 07 38 d0 7f 04 84 c0 75 51 0f b6 07 89
+RSP: 0018:ffffc900039475b8 EFLAGS: 00010286
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: 0000000000000025 RDI: 0000000000000000
+RBP: ffffc90003947648 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000001 R11: ffffffff81dd3e95 R12: ffffc90003947648
+R13: 0000000000000cc0 R14: ffff888141f9a078 R15: 0000000000000001
+FS:  0000555555b33380(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f86054f7ae0 CR3: 0000000073363000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	28 00                	sub    %al,(%rax)
+   2:	00 00                	add    %al,(%rax)
+   4:	75 05                	jne    0xb
+   6:	48 83 c4 28          	add    $0x28,%rsp
+   a:	c3                   	ret
+   b:	e8 c1 17 00 00       	call   0x17d1
+  10:	90                   	nop
+  11:	48 89 f8             	mov    %rdi,%rax
+  14:	48 89 f7             	mov    %rsi,%rdi
+  17:	48 89 d6             	mov    %rdx,%rsi
+  1a:	48 89 ca             	mov    %rcx,%rdx
+  1d:	4d 89 c2             	mov    %r8,%r10
+  20:	4d 89 c8             	mov    %r9,%r8
+  23:	4c 8b 4c 24 08       	mov    0x8(%rsp),%r9
+  28:	0f 05                	syscall
+* 2a:	48 3d 01 f0 ff ff    	cmp    $0xfffffffffffff001,%rax <-- trapping instruction
+  30:	73 01                	jae    0x33
+  32:	c3                   	ret
+  33:	48 c7 c1 b8 ff ff ff 	mov    $0xffffffffffffffb8,%rcx
+  3a:	f7 d8                	neg    %eax
+  3c:	64 89 01             	mov    %eax,%fs:(%rcx)
+  3f:	48                   	rex.W

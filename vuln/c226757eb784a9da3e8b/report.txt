@@ -1,0 +1,97 @@
+Oops: general protection fault, probably for non-canonical address 0xe3fffa2202e4cfad: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: maybe wild-memory-access in range [0x1ffff11017267d68-0x1ffff11017267d6f]
+CPU: 0 UID: 0 PID: 5229 Comm: syz-executor379 Not tainted 6.10.0-next-20240726-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/27/2024
+RIP: 0010:__cpu_map_flush+0x42/0xd0
+Code: e8 13 8c d6 ff 4c 89 f0 48 c1 e8 03 42 80 3c 38 00 74 08 4c 89 f7 e8 8d 10 3e 00 49 8b 1e 4c 39 f3 74 77 48 89 d8 48 c1 e8 03 <42> 80 3c 38 00 74 08 48 89 df e8 6f 10 3e 00 4c 8b 23 48 8d 7b c0
+RSP: 0018:ffffc90000007b10 EFLAGS: 00010202
+RAX: 03fffe2202e4cfad RBX: 1ffff11017267d6b RCX: ffff888026d15a00
+RDX: 0000000080000102 RSI: 0000000000000000 RDI: ffffc900035a7800
+RBP: dffffc0000000000 R08: ffffffff8992342a R09: 1ffffffff202fc75
+R10: dffffc0000000000 R11: fffffbfff202fc76 R12: ffffc900035a7800
+R13: ffffc900035a77c0 R14: ffffc900035a7800 R15: dffffc0000000000
+FS:  00005555697ee380(0000) GS:ffff8880b9200000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000002000f000 CR3: 0000000076e4c000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ xdp_do_check_flushed+0x136/0x240 net/core/filter.c:4311
+ __napi_poll+0xe4/0x490 net/core/dev.c:6774
+ napi_poll net/core/dev.c:6840 [inline]
+ net_rx_action+0x89b/0x1240 net/core/dev.c:6962
+ handle_softirqs+0x2c4/0x970 kernel/softirq.c:554
+ __do_softirq kernel/softirq.c:588 [inline]
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu+0xf4/0x1c0 kernel/softirq.c:637
+ irq_exit_rcu+0x9/0x30 kernel/softirq.c:649
+ common_interrupt+0xaa/0xd0 arch/x86/kernel/irq.c:278
+ </IRQ>
+ <TASK>
+ asm_common_interrupt+0x26/0x40 arch/x86/include/asm/idtentry.h:693
+RIP: 0010:__raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152 [inline]
+RIP: 0010:_raw_spin_unlock_irqrestore+0xd8/0x140 kernel/locking/spinlock.c:194
+Code: 9c 8f 44 24 20 42 80 3c 23 00 74 08 4c 89 f7 e8 8e be 37 f6 f6 44 24 21 02 75 52 41 f7 c7 00 02 00 00 74 01 fb bf 01 00 00 00 <e8> 83 4f 9f f5 65 8b 05 04 46 40 74 85 c0 74 43 48 c7 04 24 0e 36
+RSP: 0018:ffffc900035a7b60 EFLAGS: 00000206
+RAX: c97183fe8872c200 RBX: 1ffff920006b4f70 RCX: ffffffff817022aa
+RDX: dffffc0000000000 RSI: ffffffff8c0ad540 RDI: 0000000000000001
+RBP: ffffc900035a7bf0 R08: ffffffff93737817 R09: 1ffffffff26e6f02
+R10: dffffc0000000000 R11: fffffbfff26e6f03 R12: dffffc0000000000
+R13: 1ffff920006b4f6c R14: ffffc900035a7b80 R15: 0000000000000246
+ spin_unlock_irqrestore include/linux/spinlock.h:406 [inline]
+ do_notify_parent_cldstop+0x9ab/0xb50 kernel/signal.c:2216
+ ptrace_stop+0x465/0x940 kernel/signal.c:2319
+ ptrace_do_notify kernel/signal.c:2393 [inline]
+ ptrace_notify+0x255/0x380 kernel/signal.c:2405
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_entry include/linux/ptrace.h:452 [inline]
+ syscall_trace_enter+0x5d/0x150 kernel/entry/common.c:45
+ syscall_enter_from_user_mode_work include/linux/entry-common.h:168 [inline]
+ syscall_enter_from_user_mode include/linux/entry-common.h:198 [inline]
+ do_syscall_64+0xcc/0x230 arch/x86/entry/common.c:79
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f7692d0be60
+Code: ff f7 d8 64 89 02 48 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 80 3d 41 e2 07 00 00 74 17 b8 03 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 48 c3 0f 1f 80 00 00 00 00 48 83 ec 18 89 7c
+RSP: 002b:00007ffc4073c208 EFLAGS: 00000202 ORIG_RAX: 0000000000000003
+RAX: ffffffffffffffda RBX: 0000000000000015 RCX: 00007f7692d0be60
+RDX: ffffffffffffffb8 RSI: 0000000020000200 RDI: 0000000000000014
+RBP: 0000000000000000 R08: 00007ffc4073c338 R09: 00007ffc4073c338
+R10: 00007ffc4073c338 R11: 0000000000000202 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007ffc4073c240 R15: 00007ffc4073c230
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__cpu_map_flush+0x42/0xd0
+Code: e8 13 8c d6 ff 4c 89 f0 48 c1 e8 03 42 80 3c 38 00 74 08 4c 89 f7 e8 8d 10 3e 00 49 8b 1e 4c 39 f3 74 77 48 89 d8 48 c1 e8 03 <42> 80 3c 38 00 74 08 48 89 df e8 6f 10 3e 00 4c 8b 23 48 8d 7b c0
+RSP: 0018:ffffc90000007b10 EFLAGS: 00010202
+RAX: 03fffe2202e4cfad RBX: 1ffff11017267d6b RCX: ffff888026d15a00
+RDX: 0000000080000102 RSI: 0000000000000000 RDI: ffffc900035a7800
+RBP: dffffc0000000000 R08: ffffffff8992342a R09: 1ffffffff202fc75
+R10: dffffc0000000000 R11: fffffbfff202fc76 R12: ffffc900035a7800
+R13: ffffc900035a77c0 R14: ffffc900035a7800 R15: dffffc0000000000
+FS:  00005555697ee380(0000) GS:ffff8880b9200000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000002000f000 CR3: 0000000076e4c000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	e8 13 8c d6 ff       	call   0xffd68c18
+   5:	4c 89 f0             	mov    %r14,%rax
+   8:	48 c1 e8 03          	shr    $0x3,%rax
+   c:	42 80 3c 38 00       	cmpb   $0x0,(%rax,%r15,1)
+  11:	74 08                	je     0x1b
+  13:	4c 89 f7             	mov    %r14,%rdi
+  16:	e8 8d 10 3e 00       	call   0x3e10a8
+  1b:	49 8b 1e             	mov    (%r14),%rbx
+  1e:	4c 39 f3             	cmp    %r14,%rbx
+  21:	74 77                	je     0x9a
+  23:	48 89 d8             	mov    %rbx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 80 3c 38 00       	cmpb   $0x0,(%rax,%r15,1) <-- trapping instruction
+  2f:	74 08                	je     0x39
+  31:	48 89 df             	mov    %rbx,%rdi
+  34:	e8 6f 10 3e 00       	call   0x3e10a8
+  39:	4c 8b 23             	mov    (%rbx),%r12
+  3c:	48 8d 7b c0          	lea    -0x40(%rbx),%rdi

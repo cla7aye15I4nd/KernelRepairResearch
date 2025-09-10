@@ -1,0 +1,24 @@
+diff --git a/sound/usb/card.c b/sound/usb/card.c
+index 3fd1743513b5..b6f4c0848e66 100644
+--- a/sound/usb/card.c
++++ b/sound/usb/card.c
+@@ -907,6 +907,9 @@ static void usb_audio_disconnect(struct usb_interface *intf)
+ 		}
+ 	}
+ 
++	if (chip->quirk_type & QUIRK_SETUP_DISABLE_AUTOSUSPEND)
++		usb_enable_autosuspend(interface_to_usbdev(intf));
++
+ 	chip->num_interfaces--;
+ 	if (chip->num_interfaces <= 0) {
+ 		usb_chip[chip->index] = NULL;
+@@ -915,9 +918,6 @@ static void usb_audio_disconnect(struct usb_interface *intf)
+ 	} else {
+ 		mutex_unlock(&register_mutex);
+ 	}
+-
+-	if (chip->quirk_type & QUIRK_SETUP_DISABLE_AUTOSUSPEND)
+-		usb_enable_autosuspend(interface_to_usbdev(intf));
+ }
+ 
+ /* lock the shutdown (disconnect) task and autoresume */

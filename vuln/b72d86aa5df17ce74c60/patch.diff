@@ -1,0 +1,48 @@
+diff --git a/include/net/kcm.h b/include/net/kcm.h
+index 90279e5e09a5..441e993be634 100644
+--- a/include/net/kcm.h
++++ b/include/net/kcm.h
+@@ -70,6 +70,7 @@ struct kcm_sock {
+ 	struct work_struct tx_work;
+ 	struct list_head wait_psock_list;
+ 	struct sk_buff *seq_skb;
++	struct mutex tx_mutex;
+ 	u32 tx_stopped : 1;
+ 
+ 	/* Don't use bit fields here, these are set under different locks */
+diff --git a/net/kcm/kcmsock.c b/net/kcm/kcmsock.c
+index 2f191e50d4fc..d4118c796290 100644
+--- a/net/kcm/kcmsock.c
++++ b/net/kcm/kcmsock.c
+@@ -755,6 +755,7 @@ static int kcm_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
+ 		  !(msg->msg_flags & MSG_MORE) : !!(msg->msg_flags & MSG_EOR);
+ 	int err = -EPIPE;
+ 
++	mutex_lock(&kcm->tx_mutex);
+ 	lock_sock(sk);
+ 
+ 	/* Per tcp_sendmsg this should be in poll */
+@@ -926,6 +927,7 @@ static int kcm_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
+ 	KCM_STATS_ADD(kcm->stats.tx_bytes, copied);
+ 
+ 	release_sock(sk);
++	mutex_unlock(&kcm->tx_mutex);
+ 	return copied;
+ 
+ out_error:
+@@ -951,6 +953,7 @@ static int kcm_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
+ 		sk->sk_write_space(sk);
+ 
+ 	release_sock(sk);
++	mutex_unlock(&kcm->tx_mutex);
+ 	return err;
+ }
+ 
+@@ -1204,6 +1207,7 @@ static void init_kcm_sock(struct kcm_sock *kcm, struct kcm_mux *mux)
+ 	spin_unlock_bh(&mux->lock);
+ 
+ 	INIT_WORK(&kcm->tx_work, kcm_tx_work);
++	mutex_init(&kcm->tx_mutex);
+ 
+ 	spin_lock_bh(&mux->rx_lock);
+ 	kcm_rcv_ready(kcm);

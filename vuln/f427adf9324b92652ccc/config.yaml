@@ -1,0 +1,23 @@
+id: f427adf9324b92652ccc
+bug_link: https://syzkaller.appspot.com/bug?extid=f427adf9324b92652ccc
+title: kernel BUG at fs/notify/dnotify/dnotify.c:LINE! (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9d769e6aa2524e1762e3b8681e0ed78f8acf6cad
+fix_commit: 5d069dbe8aaf2a197142558b6fb2978189ba3454
+datetime: '2020-12-10T15:33:14+01:00'
+fix_commit_message: "fuse: fix bad inode\n\nJan Kara's analysis of the syzbot report\
+  \ (edited):\n\n  The reproducer opens a directory on FUSE filesystem, it then attaches\n\
+  \  dnotify mark to the open directory.  After that a fuse_do_getattr() call\n  finds\
+  \ that attributes returned by the server are inconsistent, and calls\n  make_bad_inode()\
+  \ which, among other things does:\n\n          inode->i_mode = S_IFREG;\n\n  This\
+  \ then confuses dnotify which doesn't tear down its structures\n  properly and eventually\
+  \ crashes.\n\nAvoid calling make_bad_inode() on a live inode: switch to a private\
+  \ flag on\nthe fuse inode.  Also add the test to ops which the bad_inode_ops would\n\
+  have caught.\n\nThis bug goes back to the initial merge of fuse in 2.6.14...\n\n\
+  Reported-by: syzbot+f427adf9324b92652ccc@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Miklos Szeredi <mszeredi@redhat.com>\nTested-by: Jan Kara <jack@suse.cz>\nCc:\
+  \ <stable@vger.kernel.org>\n"
+submodule:
+- fs/fuse
+hunk_count: 34
+covered_count: 0

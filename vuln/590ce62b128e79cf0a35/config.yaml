@@ -1,0 +1,59 @@
+id: 590ce62b128e79cf0a35
+bug_link: https://syzkaller.appspot.com/bug?extid=590ce62b128e79cf0a35
+title: WARNING in kernfs_active
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 54de93cd8740d52a83728802b4270f953d1a636f
+fix_commit: 1edfe4ea16ca2c9e91ec6cecd446b13636724e4f
+datetime: '2022-11-10T19:03:42+01:00'
+fix_commit_message: "kernfs: Fix spurious lockdep warning in kernfs_find_and_get_node_by_id()\n\
+  \nc25491747b21 (\"kernfs: Add KERNFS_REMOVING flags\") made\nkernfs_find_and_get_node_by_id()\
+  \ test kernfs_active() instead of\nKERNFS_ACTIVATED. kernfs_find_and_get_by_id()\
+  \ is called without holding the\nkernfs_rwsem triggering the following lockdep warning.\n\
+  \n  WARNING: CPU: 1 PID: 6191 at fs/kernfs/dir.c:36 kernfs_active+0xe8/0x120 fs/kernfs/dir.c:38\n\
+  \  Modules linked in:\n  CPU: 1 PID: 6191 Comm: syz-executor.1 Not tainted 6.0.0-syzkaller-09413-g4899a36f91a9\
+  \ #0\n  Hardware name: linux,dummy-virt (DT)\n  pstate: 10000005 (nzcV daif -PAN\
+  \ -UAO -TCO -DIT -SSBS BTYPE=--)\n  pc : kernfs_active+0xe8/0x120 fs/kernfs/dir.c:36\n\
+  \  lr : lock_is_held include/linux/lockdep.h:283 [inline]\n  lr : kernfs_active+0x94/0x120\
+  \ fs/kernfs/dir.c:36\n  sp : ffff8000182c7a00\n  x29: ffff8000182c7a00 x28: 0000000000000002\
+  \ x27: 0000000000000001\n  x26: ffff00000ee1f6a8 x25: 1fffe00001dc3ed5 x24: 0000000000000000\n\
+  \  x23: ffff80000ca1fba0 x22: ffff8000089efcb0 x21: 0000000000000001\n  x20: ffff0000091181d0\
+  \ x19: ffff0000091181d0 x18: ffff00006a9e6b88\n  x17: 0000000000000000 x16: 0000000000000000\
+  \ x15: ffff00006a9e6bc4\n  x14: 1ffff00003058f0e x13: 1fffe0000258c816 x12: ffff700003058f39\n\
+  \  x11: 1ffff00003058f38 x10: ffff700003058f38 x9 : dfff800000000000\n  x8 : ffff80000e482f20\
+  \ x7 : ffff0000091d8058 x6 : ffff80000e482c60\n  x5 : ffff000009402ee8 x4 : 1ffff00001bd1f46\
+  \ x3 : 1fffe0000258c6d1\n  x2 : 0000000000000003 x1 : 00000000000000c0 x0 : 0000000000000000\n\
+  \  Call trace:\n   kernfs_active+0xe8/0x120 fs/kernfs/dir.c:38\n   kernfs_find_and_get_node_by_id+0x6c/0x140\
+  \ fs/kernfs/dir.c:708\n   __kernfs_fh_to_dentry fs/kernfs/mount.c:102 [inline]\n\
+  \   kernfs_fh_to_dentry+0x88/0x1fc fs/kernfs/mount.c:128\n   exportfs_decode_fh_raw+0x104/0x560\
+  \ fs/exportfs/expfs.c:435\n   exportfs_decode_fh+0x10/0x5c fs/exportfs/expfs.c:575\n\
+  \   do_handle_to_path fs/fhandle.c:152 [inline]\n   handle_to_path fs/fhandle.c:207\
+  \ [inline]\n   do_handle_open+0x2a4/0x7b0 fs/fhandle.c:223\n   __do_compat_sys_open_by_handle_at\
+  \ fs/fhandle.c:277 [inline]\n   __se_compat_sys_open_by_handle_at fs/fhandle.c:274\
+  \ [inline]\n   __arm64_compat_sys_open_by_handle_at+0x6c/0x9c fs/fhandle.c:274\n\
+  \   __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]\n   invoke_syscall+0x6c/0x260\
+  \ arch/arm64/kernel/syscall.c:52\n   el0_svc_common.constprop.0+0xc4/0x254 arch/arm64/kernel/syscall.c:142\n\
+  \   do_el0_svc_compat+0x40/0x70 arch/arm64/kernel/syscall.c:212\n   el0_svc_compat+0x54/0x140\
+  \ arch/arm64/kernel/entry-common.c:772\n   el0t_32_sync_handler+0x90/0x140 arch/arm64/kernel/entry-common.c:782\n\
+  \   el0t_32_sync+0x190/0x194 arch/arm64/kernel/entry.S:586\n  irq event stamp: 232\n\
+  \  hardirqs last  enabled at (231): [<ffff8000081edf70>] raw_spin_rq_unlock_irq\
+  \ kernel/sched/sched.h:1367 [inline]\n  hardirqs last  enabled at (231): [<ffff8000081edf70>]\
+  \ finish_lock_switch kernel/sched/core.c:4943 [inline]\n  hardirqs last  enabled\
+  \ at (231): [<ffff8000081edf70>] finish_task_switch.isra.0+0x200/0x880 kernel/sched/core.c:5061\n\
+  \  hardirqs last disabled at (232): [<ffff80000c888bb4>] el1_dbg+0x24/0x80 arch/arm64/kernel/entry-common.c:404\n\
+  \  softirqs last  enabled at (228): [<ffff800008010938>] _stext+0x938/0xf58\n  softirqs\
+  \ last disabled at (207): [<ffff800008019380>] ____do_softirq+0x10/0x20 arch/arm64/kernel/irq.c:79\n\
+  \  ---[ end trace 0000000000000000 ]---\n\nThe lockdep warning in kernfs_active()\
+  \ is there to ensure that the activated\nstate stays stable for the caller. For\
+  \ kernfs_find_and_get_node_by_id(), all\nthat's needed is ensuring that a node which\
+  \ has never been activated can't\nbe looked up and guaranteeing lookup success when\
+  \ the caller knows the node\nto be active, both of which can be achieved by testing\
+  \ the active count\nwithout holding the kernfs_rwsem.\n\nFix the spurious warning\
+  \ by introducing __kernfs_active() which doesn't have\nthe lockdep annotation.\n\
+  \nSigned-off-by: Tejun Heo <tj@kernel.org>\nReported-by: syzbot+590ce62b128e79cf0a35@syzkaller.appspotmail.com\n\
+  Fixes: c25491747b21 (\"kernfs: Add KERNFS_REMOVING flags\")\nCc: Amir Goldstein\
+  \ <amir73il@gmail.com>\nCc: Dmitry Vyukov <dvyukov@google.com>\nLink: https://lore.kernel.org/r/Y0SwqBsZ9BMmZv6x@slm.duckdns.org\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- fs/kernfs
+hunk_count: 2
+covered_count: 2

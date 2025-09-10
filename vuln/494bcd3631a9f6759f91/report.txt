@@ -1,0 +1,53 @@
+bcachefs (loop0): stripes_read... done
+bcachefs (loop0): snapshots_read... done
+bcachefs (loop0): scanning for old btree nodes: min_version 0.11: inode_btree_change
+bcachefs (loop0): going read-write
+=====================================================
+BUG: KMSAN: uninit-value in bch2_btree_node_check_topology+0xf8a/0x2e70 fs/bcachefs/btree_update_interior.c:96
+ bch2_btree_node_check_topology+0xf8a/0x2e70 fs/bcachefs/btree_update_interior.c:96
+ bch2_btree_insert_keys_interior+0x1dd4/0x2210 fs/bcachefs/btree_update_interior.c:1414
+ btree_split_insert_keys fs/bcachefs/btree_update_interior.c:1576 [inline]
+ btree_split+0x36ce/0xc230 fs/bcachefs/btree_update_interior.c:1665
+ bch2_btree_insert_node+0xaba/0x27f0 fs/bcachefs/btree_update_interior.c:1838
+ bch2_btree_node_rewrite+0x10fc/0x1ae0 fs/bcachefs/btree_update_interior.c:2162
+ bch2_move_btree+0xc3f/0x1410 fs/bcachefs/move.c:923
+ bch2_scan_old_btree_nodes+0x15f/0x580 fs/bcachefs/move.c:1053
+ bch2_fs_recovery+0x5ccf/0x6230 fs/bcachefs/recovery.c:1050
+ bch2_fs_start+0x7ca/0xc20 fs/bcachefs/super.c:1041
+ bch2_fs_get_tree+0x143a/0x2330 fs/bcachefs/fs.c:2203
+ vfs_get_tree+0xb1/0x5a0 fs/super.c:1814
+ do_new_mount+0x71f/0x15e0 fs/namespace.c:3560
+ path_mount+0x742/0x1f10 fs/namespace.c:3887
+ do_mount fs/namespace.c:3900 [inline]
+ __do_sys_mount fs/namespace.c:4111 [inline]
+ __se_sys_mount+0x71f/0x800 fs/namespace.c:4088
+ __x64_sys_mount+0xe4/0x150 fs/namespace.c:4088
+ x64_sys_call+0x39bf/0x3c30 arch/x86/include/generated/asm/syscalls_64.h:166
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ ___kmalloc_large_node+0x22c/0x370 mm/slub.c:4249
+ __kmalloc_large_node_noprof+0x3f/0x1e0 mm/slub.c:4266
+ __do_kmalloc_node mm/slub.c:4282 [inline]
+ __kmalloc_node_noprof+0xc96/0x1250 mm/slub.c:4300
+ __kvmalloc_node_noprof+0xc0/0x2d0 mm/util.c:662
+ btree_node_data_alloc fs/bcachefs/btree_cache.c:156 [inline]
+ bch2_btree_node_mem_alloc+0xa72/0x2ee0 fs/bcachefs/btree_cache.c:834
+ __bch2_btree_node_alloc fs/bcachefs/btree_update_interior.c:304 [inline]
+ bch2_btree_reserve_get+0x37f/0x2290 fs/bcachefs/btree_update_interior.c:532
+ bch2_btree_update_start+0x2b0e/0x2d60 fs/bcachefs/btree_update_interior.c:1249
+ bch2_btree_node_rewrite+0x1d7/0x1ae0 fs/bcachefs/btree_update_interior.c:2142
+ async_btree_node_rewrite_trans fs/bcachefs/btree_update_interior.c:2215 [inline]
+ async_btree_node_rewrite_work+0x74c/0x1aa0 fs/bcachefs/btree_update_interior.c:2251
+ process_one_work kernel/workqueue.c:3236 [inline]
+ process_scheduled_works+0xae0/0x1c40 kernel/workqueue.c:3317
+ worker_thread+0xea7/0x14f0 kernel/workqueue.c:3398
+ kthread+0x6b9/0xef0 kernel/kthread.c:464
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+CPU: 1 UID: 0 PID: 5820 Comm: syz-executor300 Not tainted 6.14.0-rc2-syzkaller-00056-gab68d7eb7b1a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+=====================================================

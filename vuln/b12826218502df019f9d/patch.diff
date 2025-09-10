@@ -1,0 +1,35 @@
+diff --git a/fs/gfs2/ops_fstype.c b/fs/gfs2/ops_fstype.c
+index 653f0ff4b057..85c491fcf1a3 100644
+--- a/fs/gfs2/ops_fstype.c
++++ b/fs/gfs2/ops_fstype.c
+@@ -64,7 +64,10 @@ static void gfs2_tune_init(struct gfs2_tune *gt)
+ 
+ void free_sbd(struct gfs2_sbd *sdp)
+ {
++	struct super_block *sb = sdp->sd_vfs;
++
+ 	free_percpu(sdp->sd_lkstats);
++	sb->s_fs_info = NULL;
+ 	kfree(sdp);
+ }
+ 
+@@ -1314,7 +1317,6 @@ static int gfs2_fill_super(struct super_block *sb, struct fs_context *fc)
+ 	iput(sdp->sd_inode);
+ fail_free:
+ 	free_sbd(sdp);
+-	sb->s_fs_info = NULL;
+ 	return error;
+ }
+ 
+diff --git a/fs/gfs2/sys.c b/fs/gfs2/sys.c
+index 748125653d6c..c3c8842920d2 100644
+--- a/fs/gfs2/sys.c
++++ b/fs/gfs2/sys.c
+@@ -764,7 +764,6 @@ int gfs2_sys_fs_add(struct gfs2_sbd *sdp)
+ 	fs_err(sdp, "error %d adding sysfs files\n", error);
+ 	kobject_put(&sdp->sd_kobj);
+ 	wait_for_completion(&sdp->sd_kobj_unregister);
+-	sb->s_fs_info = NULL;
+ 	return error;
+ }
+ 

@@ -1,0 +1,26 @@
+id: 987d7bb19195ae45208c
+bug_link: https://syzkaller.appspot.com/bug?extid=987d7bb19195ae45208c
+title: 'WARNING: still has locks held in io_ring_submit_lock'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4e86a2c980137f7be1ea600af5f1f5c8342ecc09
+fix_commit: e7637a492b9f1ae6b7cfcecf0aed5e4c76efa3bd
+datetime: '2022-05-18T06:12:41-06:00'
+fix_commit_message: "io_uring: fix locking state for empty buffer group\n\nio_provided_buffer_select()\
+  \ must drop the submit lock, if needed, even\nin the error handling case. Failure\
+  \ to do so will leave us with the\nctx->uring_lock held, causing spew like:\n\n\
+  ====================================\nWARNING: iou-wrk-366/368 still has locks held!\n\
+  5.18.0-rc6-00294-gdf8dc7004331 #994 Not tainted\n------------------------------------\n\
+  1 lock held by iou-wrk-366/368:\n #0: ffff0000c72598a8 (&ctx->uring_lock){+.+.}-{3:3},\
+  \ at: io_ring_submit_lock+0x20/0x48\n\nstack backtrace:\nCPU: 4 PID: 368 Comm: iou-wrk-366\
+  \ Not tainted 5.18.0-rc6-00294-gdf8dc7004331 #994\nHardware name: linux,dummy-virt\
+  \ (DT)\nCall trace:\n dump_backtrace.part.0+0xa4/0xd4\n show_stack+0x14/0x5c\n dump_stack_lvl+0x88/0xb0\n\
+  \ dump_stack+0x14/0x2c\n debug_check_no_locks_held+0x84/0x90\n try_to_freeze.isra.0+0x18/0x44\n\
+  \ get_signal+0x94/0x6ec\n io_wqe_worker+0x1d8/0x2b4\n ret_from_fork+0x10/0x20\n\n\
+  and triggering later hangs off get_signal() because we attempt to\nre-grab the lock.\n\
+  \nReported-by: syzbot+987d7bb19195ae45208c@syzkaller.appspotmail.com\nFixes: 149c69b04a90\
+  \ (\"io_uring: abstract out provided buffer list selection\")\nSigned-off-by: Jens\
+  \ Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 0

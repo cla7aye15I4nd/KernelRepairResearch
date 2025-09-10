@@ -1,0 +1,41 @@
+id: ea4c8fd177a47338881a
+bug_link: https://syzkaller.appspot.com/bug?extid=ea4c8fd177a47338881a
+title: 'BUG: sleeping function called from invalid context in __xas_nomem (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 01ed88aea527e19def9070349399684522c66c72
+fix_commit: 0d519bb0de3bf0ac9e6f401d4910fc119062d7be
+datetime: '2025-07-01T08:14:01-06:00'
+fix_commit_message: 'brd: fix sleeping function called from invalid context in brd_insert_page()
+
+
+  __xa_cmpxchg() is called with rcu_read_lock(), and it will allocate
+
+  memory if necessary.
+
+
+  Fix the problem by moving rcu_read_lock() after __xa_cmpxchg(), meanwhile,
+
+  it still should be held before xa_unlock(), prevent returned page to be
+
+  freed by concurrent discard.
+
+
+  Fixes: bbcacab2e8ee ("brd: avoid extra xarray lookups on first write")
+
+  Reported-by: syzbot+ea4c8fd177a47338881a@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/all/685ec4c9.a00a0220.129264.000c.GAE@google.com/
+
+  Signed-off-by: Yu Kuai <yukuai3@huawei.com>
+
+  Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+  Link: https://lore.kernel.org/r/20250630112828.421219-1-yukuai1@huaweicloud.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- drivers/block
+hunk_count: 1
+covered_count: 1

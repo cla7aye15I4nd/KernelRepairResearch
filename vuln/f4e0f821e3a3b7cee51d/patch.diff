@@ -1,0 +1,16 @@
+diff --git a/net/sctp/socket.c b/net/sctp/socket.c
+index 32f76f1298da..078bcb3858c7 100644
+--- a/net/sctp/socket.c
++++ b/net/sctp/socket.c
+@@ -8557,8 +8557,10 @@ static int sctp_listen_start(struct sock *sk, int backlog)
+ 	 */
+ 	inet_sk_set_state(sk, SCTP_SS_LISTENING);
+ 	if (!ep->base.bind_addr.port) {
+-		if (sctp_autobind(sk))
++		if (sctp_autobind(sk)) {
++			inet_sk_set_state(sk, SCTP_SS_CLOSED);
+ 			return -EAGAIN;
++		}
+ 	} else {
+ 		if (sctp_get_port(sk, inet_sk(sk)->inet_num)) {
+ 			inet_sk_set_state(sk, SCTP_SS_CLOSED);

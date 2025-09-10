@@ -1,0 +1,51 @@
+id: fcc629d1a1ae8d3fe8a5
+bug_link: https://syzkaller.appspot.com/bug?extid=fcc629d1a1ae8d3fe8a5
+title: kernel BUG in ext4_ind_remove_space
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c186f0887fe7061a35cebef024550ec33ef8fbd8
+fix_commit: 2da376228a2427501feb9d15815a45dbdbdd753e
+datetime: '2022-04-12T22:24:35-04:00'
+fix_commit_message: 'ext4: limit length to bitmap_maxbytes - blocksize in punch_hole
+
+
+  Syzbot found an issue [1] in ext4_fallocate().
+
+  The C reproducer [2] calls fallocate(), passing size 0xffeffeff000ul,
+
+  and offset 0x1000000ul, which, when added together exceed the
+
+  bitmap_maxbytes for the inode. This triggers a BUG in
+
+  ext4_ind_remove_space(). According to the comments in this function
+
+  the ''end'' parameter needs to be one block after the last block to be
+
+  removed. In the case when the BUG is triggered it points to the last
+
+  block. Modify the ext4_punch_hole() function and add constraint that
+
+  caps the length to satisfy the one before laster block requirement.
+
+
+  LINK: [1] https://syzkaller.appspot.com/bug?id=b80bd9cf348aac724a4f4dff251800106d721331
+
+  LINK: [2] https://syzkaller.appspot.com/text?tag=ReproC&x=14ba0238700000
+
+
+  Fixes: a4bb6b64e39a ("ext4: enable "punch hole" functionality")
+
+  Reported-by: syzbot+7a806094edd5d07ba029@syzkaller.appspotmail.com
+
+  Signed-off-by: Tadeusz Struk <tadeusz.struk@linaro.org>
+
+  Link: https://lore.kernel.org/r/20220331200515.153214-1-tadeusz.struk@linaro.org
+
+  Signed-off-by: Theodore Ts''o <tytso@mit.edu>
+
+  Cc: stable@kernel.org
+
+  '
+submodule:
+- fs/ext4
+hunk_count: 2
+covered_count: 1

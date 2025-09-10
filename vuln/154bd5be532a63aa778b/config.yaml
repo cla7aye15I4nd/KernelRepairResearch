@@ -1,0 +1,29 @@
+id: 154bd5be532a63aa778b
+bug_link: https://syzkaller.appspot.com/bug?extid=154bd5be532a63aa778b
+title: WARNING in __nf_unregister_net_hook (4)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 77076934afdcd46516caf18ed88b2f88025c9ddb
+fix_commit: 68a3765c659f809dcaac20030853a054646eb739
+datetime: '2021-10-07T19:37:38+02:00'
+fix_commit_message: "netfilter: nf_tables: skip netdev events generated on netns removal\n\
+  \nsyzbot reported following (harmless) WARN:\n\n WARNING: CPU: 1 PID: 2648 at net/netfilter/core.c:468\n\
+  \  nft_netdev_unregister_hooks net/netfilter/nf_tables_api.c:230 [inline]\n  nf_tables_unregister_hook\
+  \ include/net/netfilter/nf_tables.h:1090 [inline]\n  __nft_release_basechain+0x138/0x640\
+  \ net/netfilter/nf_tables_api.c:9524\n  nft_netdev_event net/netfilter/nft_chain_filter.c:351\
+  \ [inline]\n  nf_tables_netdev_event+0x521/0x8a0 net/netfilter/nft_chain_filter.c:382\n\
+  \nreproducer:\nunshare -n bash -c 'ip link add br0 type bridge; nft add table netdev\
+  \ t ; \\\n nft add chain netdev t ingress \\{ type filter hook ingress device \"\
+  br0\" \\\n priority 0\\; policy drop\\; \\}'\n\nProblem is that when netns device\
+  \ exit hooks create the UNREGISTER\nevent, the .pre_exit hook for nf_tables core\
+  \ has already removed the\nbase hook.  Notifier attempts to do this again.\n\nThe\
+  \ need to do base hook unregister unconditionally was needed in the past,\nbecause\
+  \ notifier was last stage where reg->dev dereference was safe.\n\nNow that nf_tables\
+  \ does the hook removal in .pre_exit, this isn't\nneeded anymore.\n\nReported-and-tested-by:\
+  \ syzbot+154bd5be532a63aa778b@syzkaller.appspotmail.com\nFixes: 767d1216bff825 (\"\
+  netfilter: nftables: fix possible UAF over chains from packet path in netns\")\n\
+  Signed-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Pablo Neira Ayuso\
+  \ <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 2
+covered_count: 2

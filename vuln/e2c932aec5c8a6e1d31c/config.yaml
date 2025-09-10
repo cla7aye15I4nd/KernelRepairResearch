@@ -1,0 +1,23 @@
+id: e2c932aec5c8a6e1d31c
+bug_link: https://syzkaller.appspot.com/bug?extid=e2c932aec5c8a6e1d31c
+title: WARNING in format_decode (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 66701750d5565c574af42bef0b789ce0203e3071
+fix_commit: f8242745871f81a3ac37f9f51853d12854fd0b58
+datetime: '2025-07-01T15:22:46-07:00'
+fix_commit_message: "bpf: Reject %p% format string in bprintf-like helpers\n\nstatic\
+  \ const char fmt[] = \"%p%\";\n    bpf_trace_printk(fmt, sizeof(fmt));\n\nThe above\
+  \ BPF program isn't rejected and causes a kernel warning at\nruntime:\n\n    Please\
+  \ remove unsupported %\\x00 in format string\n    WARNING: CPU: 1 PID: 7244 at lib/vsprintf.c:2680\
+  \ format_decode+0x49c/0x5d0\n\nThis happens because bpf_bprintf_prepare skips over\
+  \ the second %,\ndetected as punctuation, while processing %p. This patch fixes\
+  \ it by\nnot skipping over punctuation. %\\x00 is then processed in the next\niteration\
+  \ and rejected.\n\nReported-by: syzbot+e2c932aec5c8a6e1d31c@syzkaller.appspotmail.com\n\
+  Fixes: 48cac3f4a96d (\"bpf: Implement formatted output helpers with bstr_printf\"\
+  )\nAcked-by: Yonghong Song <yonghong.song@linux.dev>\nSigned-off-by: Paul Chaignon\
+  \ <paul.chaignon@gmail.com>\nLink: https://lore.kernel.org/r/a0e06cc479faec9e802ae51ba5d66420523251ee.1751395489.git.paul.chaignon@gmail.com\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\n\n"
+submodule:
+- kernel/bpf
+hunk_count: 2
+covered_count: 0

@@ -1,0 +1,35 @@
+id: 7a2ab2cdc14d134de553
+bug_link: https://syzkaller.appspot.com/bug?extid=7a2ab2cdc14d134de553
+title: WARNING in __dev_set_promiscuity
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d5ef190693a7d76c5c192d108e8dec48307b46ee
+fix_commit: a5b8fd657881003ea11c193d147c8f4ba143725d
+datetime: '2021-09-30T13:29:09+01:00'
+fix_commit_message: "net: dev_addr_list: handle first address in __hw_addr_add_ex\n\
+  \nstruct dev_addr_list is used for device addresses, unicast addresses\nand multicast\
+  \ addresses. The first of those needs special handling\nof the main address - netdev->dev_addr\
+  \ points directly the data\nof the entry and drivers write to it freely, so we can't\
+  \ maintain\nit in the rbtree (for now, at least, to be fixed in net-next).\n\nCurrent\
+  \ work around sprinkles special handling of the first\naddress on the list throughout\
+  \ the code but it missed the case\nwhere address is being added. First address will\
+  \ not be visible\nduring subsequent adds.\n\nSyzbot found a warning where unicast\
+  \ addresses are modified\nwithout holding the rtnl lock, tl;dr is that team generates\n\
+  the same modification multiple times, not necessarily when\nright locks are held.\n\
+  \nIn the repro we have:\n\n  macvlan -> team -> veth\n\nmacvlan adds a unicast address\
+  \ to the team. Team then pushes\nthat address down to its memebers (veths). Next\
+  \ something unrelated\nmakes team sync member addrs again, and because of the bug\n\
+  the addr entries get duplicated in the veths. macvlan gets\nremoved, removes its\
+  \ addr from team which removes only one\nof the duplicated addresses from veths.\
+  \ This removal is done\nunder rtnl. Next syzbot uses iptables to add a multicast\
+  \ addr\nto team (which does not hold rtnl lock). Team syncs veth addrs,\nbut because\
+  \ veths' unicast list still has the duplicate it will\nalso get sync, even though\
+  \ this update is intended for mc addresses.\nAgain, uc address updates need rtnl\
+  \ lock, boom.\n\nReported-by: syzbot+7a2ab2cdc14d134de553@syzkaller.appspotmail.com\n\
+  Fixes: 406f42fa0d3c (\"net-next: When a bond have a massive amount of VLANs with\
+  \ IPv6 addresses, performance of changing link state, attaching a VRF, changing\
+  \ an IPv6 address, etc. go down dramtically.\")\nSigned-off-by: Jakub Kicinski <kuba@kernel.org>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/core
+hunk_count: 2
+covered_count: 2

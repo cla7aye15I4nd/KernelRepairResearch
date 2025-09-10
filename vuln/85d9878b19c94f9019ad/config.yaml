@@ -1,0 +1,28 @@
+id: 85d9878b19c94f9019ad
+bug_link: https://syzkaller.appspot.com/bug?extid=85d9878b19c94f9019ad
+title: 'WARNING: refcount bug in j1939_netdev_start (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b504a884f6b5a77dac7d580ffa08e482f70d1a30
+fix_commit: d9d52a3ebd284882f5562c88e55991add5d01586
+datetime: '2021-10-17T14:12:56+02:00'
+fix_commit_message: "can: j1939: j1939_netdev_start(): fix UAF for rx_kref of j1939_priv\n\
+  \nIt will trigger UAF for rx_kref of j1939_priv as following.\n\n        cpu0  \
+  \                                  cpu1\nj1939_sk_bind(socket0, ndev0, ...)\nj1939_netdev_start\n\
+  \                                        j1939_sk_bind(socket1, ndev0, ...)\n  \
+  \                                      j1939_netdev_start\nj1939_priv_set\n    \
+  \                                    j1939_priv_get_by_ndev_locked\nj1939_jsk_add\n\
+  .....\nj1939_netdev_stop\nkref_put_lock(&priv->rx_kref, ...)\n                 \
+  \                       kref_get(&priv->rx_kref, ...)\n                        \
+  \                REFCOUNT_WARN(\"addition on 0;...\")\n\n====================================================\n\
+  refcount_t: addition on 0; use-after-free.\nWARNING: CPU: 1 PID: 20874 at lib/refcount.c:25\
+  \ refcount_warn_saturate+0x169/0x1e0\nRIP: 0010:refcount_warn_saturate+0x169/0x1e0\n\
+  Call Trace:\n j1939_netdev_start+0x68b/0x920\n j1939_sk_bind+0x426/0xeb0\n ? security_socket_bind+0x83/0xb0\n\
+  \nThe rx_kref's kref_get() and kref_put() should use j1939_netdev_lock to\nprotect.\n\
+  \nFixes: 9d71dd0c70099 (\"can: add support of SAE J1939 protocol\")\nLink: https://lore.kernel.org/all/20210926104757.2021540-1-william.xuanziyang@huawei.com\n\
+  Cc: stable@vger.kernel.org\nReported-by: syzbot+85d9878b19c94f9019ad@syzkaller.appspotmail.com\n\
+  Signed-off-by: Ziyang Xuan <william.xuanziyang@huawei.com>\nAcked-by: Oleksij Rempel\
+  \ <o.rempel@pengutronix.de>\nSigned-off-by: Marc Kleine-Budde <mkl@pengutronix.de>\n"
+submodule:
+- net/can
+hunk_count: 2
+covered_count: 2

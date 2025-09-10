@@ -1,0 +1,40 @@
+id: 1fa947e7f09e136925b8
+bug_link: https://syzkaller.appspot.com/bug?extid=1fa947e7f09e136925b8
+title: 'INFO: task hung in clean_bdev_aliases'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a5f31a5028d1e88e97c3b6cdc3e3bf2da085e232
+fix_commit: 381c043233e66b1c160ef235675e65cf6c580e92
+datetime: '2023-09-25T08:55:00-07:00'
+fix_commit_message: 'iomap: add a workaround for racy i_size updates on block devices
+
+
+  A szybot reproducer that does write I/O while truncating the size of a
+
+  block device can end up in clean_bdev_aliases, which tries to clean the
+
+  bdev aliases that it uses.  This is because iomap_to_bh automatically
+
+  sets the BH_New flag when outside of i_size.  For block devices updates
+
+  to i_size are racy and we can hit this case in a tiny race window,
+
+  leading to the eventual clean_bdev_aliases call.  Fix this by erroring
+
+  out of > i_size I/O on block devices.
+
+
+  Reported-by: syzbot+1fa947e7f09e136925b8@syzkaller.appspotmail.com
+
+  Signed-off-by: Christoph Hellwig <hch@lst.de>
+
+  Tested-by: syzbot+1fa947e7f09e136925b8@syzkaller.appspotmail.com
+
+  Reviewed-by: Darrick J. Wong <djwong@kernel.org>
+
+  Signed-off-by: Darrick J. Wong <djwong@kernel.org>
+
+  '
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,51 @@
+id: 439922184004028117f4
+bug_link: https://syzkaller.appspot.com/bug?extid=439922184004028117f4
+title: 'KASAN: use-after-free Read in fib6_ifdown'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 22dd8e6bd8dc26b2c9fbf1cb99a5301f7b6c3a09
+fix_commit: 4512c43eac7e007d982e7ea45152ea6f3f4d1921
+datetime: '2018-01-09T12:33:55-05:00'
+fix_commit_message: "ipv6: remove null_entry before adding default route\n\nIn the\
+  \ current code, when creating a new fib6 table, tb6_root.leaf gets\ninitialized\
+  \ to net->ipv6.ip6_null_entry.\nIf a default route is being added with rt->rt6i_metric\
+  \ = 0xffffffff,\nfib6_add() will add this route after net->ipv6.ip6_null_entry.\
+  \ As\nnull_entry is shared, it could cause problem.\n\nIn order to fix it, set fn->leaf\
+  \ to NULL before calling\nfib6_add_rt2node() when trying to add the first default\
+  \ route.\nAnd reset fn->leaf to null_entry when adding fails or when deleting the\n\
+  last default route.\n\nsyzkaller reported the following issue which is fixed by\
+  \ this commit:\n\nWARNING: suspicious RCU usage\n4.15.0-rc5+ #171 Not tainted\n\
+  -----------------------------\nnet/ipv6/ip6_fib.c:1702 suspicious rcu_dereference_protected()\
+  \ usage!\n\nother info that might help us debug this:\n\nrcu_scheduler_active =\
+  \ 2, debug_locks = 1\n4 locks held by swapper/0/0:\n #0:  ((&net->ipv6.ip6_fib_timer)){+.-.},\
+  \ at: [<00000000d43f631b>] lockdep_copy_map include/linux/lockdep.h:178 [inline]\n\
+  \ #0:  ((&net->ipv6.ip6_fib_timer)){+.-.}, at: [<00000000d43f631b>] call_timer_fn+0x1c6/0x820\
+  \ kernel/time/timer.c:1310\n #1:  (&(&net->ipv6.fib6_gc_lock)->rlock){+.-.}, at:\
+  \ [<000000002ff9d65c>] spin_lock_bh include/linux/spinlock.h:315 [inline]\n #1:\
+  \  (&(&net->ipv6.fib6_gc_lock)->rlock){+.-.}, at: [<000000002ff9d65c>] fib6_run_gc+0x9d/0x3c0\
+  \ net/ipv6/ip6_fib.c:2007\n #2:  (rcu_read_lock){....}, at: [<0000000091db762d>]\
+  \ __fib6_clean_all+0x0/0x3a0 net/ipv6/ip6_fib.c:1560\n #3:  (&(&tb->tb6_lock)->rlock){+.-.},\
+  \ at: [<000000009e503581>] spin_lock_bh include/linux/spinlock.h:315 [inline]\n\
+  \ #3:  (&(&tb->tb6_lock)->rlock){+.-.}, at: [<000000009e503581>] __fib6_clean_all+0x1d0/0x3a0\
+  \ net/ipv6/ip6_fib.c:1948\n\nstack backtrace:\nCPU: 0 PID: 0 Comm: swapper/0 Not\
+  \ tainted 4.15.0-rc5+ #171\nHardware name: Google Google Compute Engine/Google Compute\
+  \ Engine, BIOS Google 01/01/2011\nCall Trace:\n <IRQ>\n __dump_stack lib/dump_stack.c:17\
+  \ [inline]\n dump_stack+0x194/0x257 lib/dump_stack.c:53\n lockdep_rcu_suspicious+0x123/0x170\
+  \ kernel/locking/lockdep.c:4585\n fib6_del+0xcaa/0x11b0 net/ipv6/ip6_fib.c:1701\n\
+  \ fib6_clean_node+0x3aa/0x4f0 net/ipv6/ip6_fib.c:1892\n fib6_walk_continue+0x46c/0x8a0\
+  \ net/ipv6/ip6_fib.c:1815\n fib6_walk+0x91/0xf0 net/ipv6/ip6_fib.c:1863\n fib6_clean_tree+0x1e6/0x340\
+  \ net/ipv6/ip6_fib.c:1933\n __fib6_clean_all+0x1f4/0x3a0 net/ipv6/ip6_fib.c:1949\n\
+  \ fib6_clean_all net/ipv6/ip6_fib.c:1960 [inline]\n fib6_run_gc+0x16b/0x3c0 net/ipv6/ip6_fib.c:2016\n\
+  \ fib6_gc_timer_cb+0x20/0x30 net/ipv6/ip6_fib.c:2033\n call_timer_fn+0x228/0x820\
+  \ kernel/time/timer.c:1320\n expire_timers kernel/time/timer.c:1357 [inline]\n __run_timers+0x7ee/0xb70\
+  \ kernel/time/timer.c:1660\n run_timer_softirq+0x4c/0xb0 kernel/time/timer.c:1686\n\
+  \ __do_softirq+0x2d7/0xb85 kernel/softirq.c:285\n invoke_softirq kernel/softirq.c:365\
+  \ [inline]\n irq_exit+0x1cc/0x200 kernel/softirq.c:405\n exiting_irq arch/x86/include/asm/apic.h:540\
+  \ [inline]\n smp_apic_timer_interrupt+0x16b/0x700 arch/x86/kernel/apic/apic.c:1052\n\
+  \ apic_timer_interrupt+0xa9/0xb0 arch/x86/entry/entry_64.S:904\n </IRQ>\n\nReported-by:\
+  \ syzbot <syzkaller@googlegroups.com>\nFixes: 66f5d6ce53e6 (\"ipv6: replace rwlock\
+  \ with rcu and spinlock in fib6_table\")\nSigned-off-by: Wei Wang <weiwan@google.com>\n\
+  Acked-by: Martin KaFai Lau <kafai@fb.com>\n\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv6
+hunk_count: 4
+covered_count: 0

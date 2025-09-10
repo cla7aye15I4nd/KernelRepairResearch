@@ -1,0 +1,81 @@
+=============================
+[ BUG: Invalid wait context ]
+6.13.0-rc2-syzkaller-ge4c80f69758e #0 Not tainted
+-----------------------------
+sshd/5830 is trying to lock:
+ffff888022a80958 (&sighand->siglock){-...}-{3:3}, at: __lock_task_sighand+0x149/0x2d0 kernel/signal.c:1379
+other info that might help us debug this:
+context-{5:5}
+3 locks held by sshd/5830:
+ #0: ffffffff8e937a60 (rcu_read_lock_sched){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:337 [inline]
+ #0: ffffffff8e937a60 (rcu_read_lock_sched){....}-{1:2}, at: rcu_read_lock_sched include/linux/rcupdate.h:941 [inline]
+ #0: ffffffff8e937a60 (rcu_read_lock_sched){....}-{1:2}, at: pfn_valid include/linux/mmzone.h:2048 [inline]
+ #0: ffffffff8e937a60 (rcu_read_lock_sched){....}-{1:2}, at: __virt_addr_valid+0x183/0x530 arch/x86/mm/physaddr.c:65
+ #1: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: trace_call_bpf+0xbc/0x8a0
+ #2: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:337 [inline]
+ #2: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:849 [inline]
+ #2: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: __lock_task_sighand+0x29/0x2d0 kernel/signal.c:1362
+stack backtrace:
+CPU: 0 UID: 0 PID: 5830 Comm: sshd Not tainted 6.13.0-rc2-syzkaller-ge4c80f69758e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/25/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_lock_invalid_wait_context kernel/locking/lockdep.c:4826 [inline]
+ check_wait_context kernel/locking/lockdep.c:4898 [inline]
+ __lock_acquire+0x15a8/0x2100 kernel/locking/lockdep.c:5176
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5849
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+ _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+ __lock_task_sighand+0x149/0x2d0 kernel/signal.c:1379
+ lock_task_sighand include/linux/sched/signal.h:743 [inline]
+ do_send_sig_info kernel/signal.c:1267 [inline]
+ group_send_sig_info+0x274/0x310 kernel/signal.c:1418
+ bpf_send_signal_common+0x3c4/0x630 kernel/trace/bpf_trace.c:881
+ ____bpf_send_signal_thread kernel/trace/bpf_trace.c:898 [inline]
+ bpf_send_signal_thread+0x1a/0x30 kernel/trace/bpf_trace.c:896
+ bpf_prog_b7be628660dc1b90+0x23/0x29
+ bpf_dispatcher_nop_func include/linux/bpf.h:1290 [inline]
+ __bpf_prog_run include/linux/filter.h:701 [inline]
+ bpf_prog_run include/linux/filter.h:708 [inline]
+ bpf_prog_run_array include/linux/bpf.h:2178 [inline]
+ trace_call_bpf+0x369/0x8a0 kernel/trace/bpf_trace.c:146
+ perf_trace_run_bpf_submit+0x82/0x180 kernel/events/core.c:10466
+ do_perf_trace_lock include/trace/events/lock.h:50 [inline]
+ perf_trace_lock+0x388/0x490 include/trace/events/lock.h:50
+ trace_lock_release include/trace/events/lock.h:69 [inline]
+ lock_release+0x9cc/0xa30 kernel/locking/lockdep.c:5860
+ rcu_lock_release include/linux/rcupdate.h:347 [inline]
+ rcu_read_unlock_sched include/linux/rcupdate.h:962 [inline]
+ pfn_valid include/linux/mmzone.h:2058 [inline]
+ __virt_addr_valid+0x42f/0x530 arch/x86/mm/physaddr.c:65
+ free_pages+0x15/0x50 mm/page_alloc.c:4850
+ mm_free_pgd kernel/fork.c:809 [inline]
+ __mmdrop+0xb9/0x3d0 kernel/fork.c:925
+ mmdrop include/linux/sched/mm.h:55 [inline]
+ mmdrop_sched include/linux/sched/mm.h:83 [inline]
+ mmdrop_lazy_tlb_sched include/linux/sched/mm.h:110 [inline]
+ finish_task_switch+0x304/0x870 kernel/sched/core.c:5268
+ context_switch kernel/sched/core.c:5372 [inline]
+ __schedule+0x1858/0x4c30 kernel/sched/core.c:6756
+ __schedule_loop kernel/sched/core.c:6833 [inline]
+ schedule+0x14b/0x320 kernel/sched/core.c:6848
+ schedule_hrtimeout_range_clock+0x191/0x320 kernel/time/sleep_timeout.c:216
+ poll_schedule_timeout fs/select.c:241 [inline]
+ do_poll fs/select.c:958 [inline]
+ do_sys_poll+0x10bd/0x15d0 fs/select.c:1009
+ __do_sys_ppoll fs/select.c:1115 [inline]
+ __se_sys_ppoll+0x2a0/0x330 fs/select.c:1095
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fbe84519ad5
+Code: 85 d2 74 0d 0f 10 02 48 8d 54 24 20 0f 11 44 24 20 64 8b 04 25 18 00 00 00 85 c0 75 27 41 b8 08 00 00 00 b8 0f 01 00 00 0f 05 <48> 3d 00 f0 ff ff 76 75 48 8b 15 24 73 0d 00 f7 d8 64 89 02 48 83
+RSP: 002b:00007fff664af770 EFLAGS: 00000246 ORIG_RAX: 000000000000010f
+RAX: ffffffffffffffda RBX: 00000000000668a0 RCX: 00007fbe84519ad5
+RDX: 00007fff664af790 RSI: 0000000000000004 RDI: 00005573f2f02ae0
+RBP: 00005573f2f015a0 R08: 0000000000000008 R09: 0000000000000000
+R10: 00007fff664af878 R11: 0000000000000246 R12: 00005573ebb90aa4
+R13: 0000000000000001 R14: 00005573ebb913e8 R15: 00007fff664af7f8
+ </TASK>

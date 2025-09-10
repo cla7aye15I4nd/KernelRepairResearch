@@ -1,0 +1,58 @@
+------------[ cut here ]------------
+WARNING: CPU: 3 PID: 13932 at block/genhd.c:144 bdev_count_inflight_rw+0x3ba/0x510 block/genhd.c:144
+Modules linked in:
+CPU: 3 UID: 0 PID: 13932 Comm: syz.0.1834 Not tainted 6.16.0-rc3-syzkaller-00042-g78f4e737a53e #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:bdev_count_inflight_rw+0x3ba/0x510 block/genhd.c:144
+Code: b6 14 02 4c 89 f0 83 e0 07 83 c0 03 38 d0 7c 08 84 d2 0f 85 4b 01 00 00 c7 43 04 00 00 00 00 e9 5f ff ff ff e8 a7 86 ff fc 90 <0f> 0b 90 48 b8 00 00 00 00 00 fc ff df 48 89 da 48 c1 ea 03 0f b6
+RSP: 0000:ffffc9000c3571a8 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: ffffc9000c357230 RCX: ffffffff84bc0298
+RDX: ffff8880233e0000 RSI: ffffffff84bc0359 RDI: 0000000000000005
+RBP: 0000000000000000 R08: 0000000000000005 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000001 R12: 00000000ffffffff
+R13: dffffc0000000000 R14: ffffc9000c357234 R15: 0000000000000008
+FS:  0000000000000000(0000) GS:ffff888097860000(0063) knlGS:00000000569b2440
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 00000000f71bd12a CR3: 0000000069b94000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bdev_count_inflight+0x74/0xb0 block/genhd.c:163
+ update_io_ticks+0x22a/0x2a0 block/blk-core.c:1021
+ blk_account_io_start block/blk-mq.c:1116 [inline]
+ blk_account_io_start+0x3e9/0x730 block/blk-mq.c:1092
+ blk_mq_bio_to_request block/blk-mq.c:2675 [inline]
+ blk_mq_submit_bio+0xd9d/0x26a0 block/blk-mq.c:3191
+ __submit_bio+0x3cf/0x690 block/blk-core.c:635
+ __submit_bio_noacct_mq block/blk-core.c:722 [inline]
+ submit_bio_noacct_nocheck+0x660/0xd30 block/blk-core.c:751
+ submit_bio_noacct+0x50d/0x1eb0 block/blk-core.c:874
+ ext4_mpage_readpages+0x66d/0x19d0 fs/ext4/readpage.c:395
+ ext4_readahead+0x102/0x140 fs/ext4/inode.c:3337
+ read_pages+0x1c4/0xc70 mm/readahead.c:160
+ page_cache_ra_unbounded+0x5d2/0x7d0 mm/readahead.c:264
+ do_page_cache_ra mm/readahead.c:327 [inline]
+ page_cache_ra_order+0x9c8/0xd00 mm/readahead.c:532
+ do_sync_mmap_readahead mm/filemap.c:3271 [inline]
+ filemap_fault+0x1465/0x26c0 mm/filemap.c:3412
+ __do_fault+0x10a/0x490 mm/memory.c:5169
+ do_read_fault mm/memory.c:5590 [inline]
+ do_fault mm/memory.c:5724 [inline]
+ do_pte_missing mm/memory.c:4251 [inline]
+ handle_pte_fault mm/memory.c:6069 [inline]
+ __handle_mm_fault+0x3c2a/0x5490 mm/memory.c:6212
+ handle_mm_fault+0x589/0xd10 mm/memory.c:6381
+ do_user_addr_fault+0x60c/0x1370 arch/x86/mm/fault.c:1336
+ handle_page_fault arch/x86/mm/fault.c:1476 [inline]
+ exc_page_fault+0x5c/0xb0 arch/x86/mm/fault.c:1532
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+RIP: 0023:0xf71bd12a
+Code: Unable to access opcode bytes at 0xf71bd100.
+RSP: 002b:00000000ff8ced80 EFLAGS: 00010202
+RAX: 00000000000000a0 RBX: 0000000000000000 RCX: 000000000000000b
+RDX: 000000000001c5f8 RSI: 00000000569b7a08 RDI: 0000000000000090
+RBP: 00000000f73f96a0 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000286 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>

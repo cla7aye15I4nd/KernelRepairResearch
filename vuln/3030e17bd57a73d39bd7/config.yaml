@@ -1,0 +1,51 @@
+id: 3030e17bd57a73d39bd7
+bug_link: https://syzkaller.appspot.com/bug?extid=3030e17bd57a73d39bd7
+title: general protection fault in btrfs_search_slot
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ed67f2a913a4f0fc505db29805c41dd07d3cb356
+fix_commit: 3ed51857a50f530ac7a1482e069dfbd1298558d4
+datetime: '2024-11-29T16:50:40+01:00'
+fix_commit_message: 'btrfs: add a sanity check for btrfs root in btrfs_search_slot()
+
+
+  Syzbot reports a null-ptr-deref in btrfs_search_slot().
+
+
+  The reproducer is using rescue=ibadroots, and the extent tree root is
+
+  corrupted thus the extent tree is NULL.
+
+
+  When scrub tries to search the extent tree to gather the needed extent
+
+  info, btrfs_search_slot() doesn''t check if the target root is NULL or
+
+  not, resulting the null-ptr-deref.
+
+
+  Add sanity check for btrfs root before using it in btrfs_search_slot().
+
+
+  Reported-by: syzbot+3030e17bd57a73d39bd7@syzkaller.appspotmail.com
+
+  Fixes: 42437a6386ff ("btrfs: introduce mount option rescue=ignorebadroots")
+
+  Link: https://syzkaller.appspot.com/bug?extid=3030e17bd57a73d39bd7
+
+  CC: stable@vger.kernel.org # 5.15+
+
+  Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+  Tested-by: syzbot+3030e17bd57a73d39bd7@syzkaller.appspotmail.com
+
+  Signed-off-by: Lizhi Xu <lizhi.xu@windriver.com>
+
+  Reviewed-by: David Sterba <dsterba@suse.com>
+
+  Signed-off-by: David Sterba <dsterba@suse.com>
+
+  '
+submodule:
+- fs/btrfs
+hunk_count: 2
+covered_count: 2

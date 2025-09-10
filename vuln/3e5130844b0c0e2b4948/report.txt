@@ -1,0 +1,47 @@
+gfs2: fsid=syz:syz.0: journal 0 mapped with 12 extents in 0ms
+gfs2: fsid=syz:syz.0: first mount done, others may mount
+=============================
+WARNING: suspicious RCU usage
+6.6.0-rc7-next-20231026-syzkaller #0 Not tainted
+-----------------------------
+fs/gfs2/inode.c:1878 suspicious rcu_dereference_check() usage!
+
+other info that might help us debug this:
+
+
+rcu_scheduler_active = 2, debug_locks = 1
+no locks held by syz-executor250/5076.
+
+stack backtrace:
+CPU: 0 PID: 5076 Comm: syz-executor250 Not tainted 6.6.0-rc7-next-20231026-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/06/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x125/0x1b0 lib/dump_stack.c:106
+ lockdep_rcu_suspicious+0x20b/0x3a0 kernel/locking/lockdep.c:6711
+ gfs2_permission+0x3f8/0x4c0 fs/gfs2/inode.c:1878
+ do_inode_permission fs/namei.c:462 [inline]
+ inode_permission fs/namei.c:529 [inline]
+ inode_permission+0x384/0x5e0 fs/namei.c:504
+ may_open+0x11c/0x400 fs/namei.c:3249
+ do_open fs/namei.c:3620 [inline]
+ path_openat+0x6c9/0x2c40 fs/namei.c:3779
+ do_filp_open+0x1dc/0x430 fs/namei.c:3809
+ do_sys_openat2+0x176/0x1e0 fs/open.c:1440
+ do_sys_open fs/open.c:1455 [inline]
+ __do_sys_openat fs/open.c:1471 [inline]
+ __se_sys_openat fs/open.c:1466 [inline]
+ __x64_sys_openat+0x175/0x210 fs/open.c:1466
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x3f/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x62/0x6a
+RIP: 0033:0x7f67838e9a11
+Code: 75 57 89 f0 25 00 00 41 00 3d 00 00 41 00 74 49 80 3d 7a b6 08 00 00 74 6d 89 da 48 89 ee bf 9c ff ff ff b8 01 01 00 00 0f 05 <48> 3d 00 f0 ff ff 0f 87 93 00 00 00 48 8b 54 24 28 64 48 2b 14 25
+RSP: 002b:00007fffeb32c830 EFLAGS: 00000202 ORIG_RAX: 0000000000000101
+RAX: ffffffffffffffda RBX: 0000000000010000 RCX: 00007f67838e9a11
+RDX: 0000000000010000 RSI: 0000000020000140 RDI: 00000000ffffff9c
+RBP: 0000000020000140 R08: 00007fffeb32c8f0 R09: 00000000000125c1
+R10: 0000000000000000 R11: 0000000000000202 R12: 00007fffeb32c8f0
+R13: 0000000000000003 R14: 0000000001000000 R15: 00007f678393303b
+ </TASK>

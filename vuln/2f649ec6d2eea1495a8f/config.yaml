@@ -1,0 +1,69 @@
+id: 2f649ec6d2eea1495a8f
+bug_link: https://syzkaller.appspot.com/bug?extid=2f649ec6d2eea1495a8f
+title: 'KASAN: vmalloc-out-of-bounds Read in bpf_jit_free'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4201d9ab3e42d9e2a20320b751a931e6239c0df2
+fix_commit: 1d5f82d9dd477d5c66e0214a68c3e4f308eadd6d
+datetime: '2022-07-12T17:33:22-07:00'
+fix_commit_message: 'bpf, x86: fix freeing of not-finalized bpf_prog_pack
+
+
+  syzbot reported a few issues with bpf_prog_pack [1], [2]. This only happens
+
+  with multiple subprogs. In jit_subprogs(), we first call bpf_int_jit_compile()
+
+  on each sub program. And then, we call it on each sub program again. jit_data
+
+  is not freed in the first call of bpf_int_jit_compile(). Similarly we don''t
+
+  call bpf_jit_binary_pack_finalize() in the first call of bpf_int_jit_compile().
+
+
+  If bpf_int_jit_compile() failed for one sub program, we will call
+
+  bpf_jit_binary_pack_finalize() for this sub program. However, we don''t have a
+
+  chance to call it for other sub programs. Then we will hit "goto out_free" in
+
+  jit_subprogs(), and call bpf_jit_free on some subprograms that haven''t got
+
+  bpf_jit_binary_pack_finalize() yet.
+
+
+  At this point, bpf_jit_binary_pack_free() is called and the whole 2MB page is
+
+  freed erroneously.
+
+
+  Fix this with a custom bpf_jit_free() for x86_64, which calls
+
+  bpf_jit_binary_pack_finalize() if necessary. Also, with custom
+
+  bpf_jit_free(), bpf_prog_aux->use_bpf_prog_pack is not needed any more,
+
+  remove it.
+
+
+  Fixes: 1022a5498f6f ("bpf, x86_64: Use bpf_jit_binary_pack_alloc")
+
+  [1] https://syzkaller.appspot.com/bug?extid=2f649ec6d2eea1495a8f
+
+  [2] https://syzkaller.appspot.com/bug?extid=87f65c75f4a72db05445
+
+  Reported-by: syzbot+2f649ec6d2eea1495a8f@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+87f65c75f4a72db05445@syzkaller.appspotmail.com
+
+  Signed-off-by: Song Liu <song@kernel.org>
+
+  Link: https://lore.kernel.org/r/20220706002612.4013790-1-song@kernel.org
+
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>
+
+  '
+submodule:
+- arch/x86/net
+- include/linux
+- kernel/bpf
+hunk_count: 7
+covered_count: 3

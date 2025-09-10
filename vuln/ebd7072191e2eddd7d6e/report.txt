@@ -1,0 +1,58 @@
+F2FS-fs (loop4): detect filesystem reference count leak during umount, type: 2, count: 1
+------------[ cut here ]------------
+kernel BUG at fs/f2fs/super.c:1642!
+invalid opcode: 0000 [#1] PREEMPT SMP KASAN
+CPU: 1 PID: 5075 Comm: syz-executor.4 Not tainted 6.6.0-rc4-syzkaller-00037-g3006adf3be79 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/06/2023
+RIP: 0010:f2fs_put_super+0x12ac/0x12c0 fs/f2fs/super.c:1642
+Code: be 0c 00 00 00 48 8b 5c 24 28 48 89 df 44 89 f6 e8 69 57 00 00 48 89 df 48 c7 c6 c0 31 4f 8b 44 89 f2 48 89 c1 e8 84 bc fd ff <0f> 0b e8 dd 00 be fd 0f 0b e8 f6 60 fd 06 66 0f 1f 44 00 00 f3 0f
+RSP: 0018:ffffc9000454faa0 EFLAGS: 00010246
+RAX: f5800c1af78c1d00 RBX: ffff888077a30000 RCX: f5800c1af78c1d00
+RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
+RBP: ffffc9000454fc00 R08: ffffffff81710a9c R09: 1ffff920008a9ecc
+R10: dffffc0000000000 R11: fffff520008a9ecd R12: dffffc0000000000
+R13: ffff888077a30000 R14: 0000000000000002 R15: 1ffff920008a9f60
+FS:  0000555557165480(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007faff7254000 CR3: 000000002e1e4000 CR4: 00000000003506e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ generic_shutdown_super+0x13a/0x2c0 fs/super.c:693
+ kill_block_super+0x41/0x70 fs/super.c:1646
+ kill_f2fs_super+0x303/0x3b0 fs/f2fs/super.c:4883
+ deactivate_locked_super+0xa4/0x110 fs/super.c:481
+ cleanup_mnt+0x426/0x4c0 fs/namespace.c:1254
+ task_work_run+0x24a/0x300 kernel/task_work.c:180
+ resume_user_mode_work include/linux/resume_user_mode.h:49 [inline]
+ exit_to_user_mode_loop+0xde/0x100 kernel/entry/common.c:171
+ exit_to_user_mode_prepare+0xb1/0x140 kernel/entry/common.c:204
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:285 [inline]
+ syscall_exit_to_user_mode+0x64/0x280 kernel/entry/common.c:296
+ do_syscall_64+0x4d/0xc0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f71e7e7de17
+Code: b0 ff ff ff f7 d8 64 89 01 48 83 c8 ff c3 0f 1f 44 00 00 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007fff5052ee18 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f71e7e7de17
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007fff5052eed0
+RBP: 00007fff5052eed0 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000246 R12: 00007fff5052ff90
+R13: 00007f71e7ec73b9 R14: 0000000000222efe R15: 0000000000000007
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:f2fs_put_super+0x12ac/0x12c0 fs/f2fs/super.c:1642
+Code: be 0c 00 00 00 48 8b 5c 24 28 48 89 df 44 89 f6 e8 69 57 00 00 48 89 df 48 c7 c6 c0 31 4f 8b 44 89 f2 48 89 c1 e8 84 bc fd ff <0f> 0b e8 dd 00 be fd 0f 0b e8 f6 60 fd 06 66 0f 1f 44 00 00 f3 0f
+RSP: 0018:ffffc9000454faa0 EFLAGS: 00010246
+RAX: f5800c1af78c1d00 RBX: ffff888077a30000 RCX: f5800c1af78c1d00
+RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
+RBP: ffffc9000454fc00 R08: ffffffff81710a9c R09: 1ffff920008a9ecc
+R10: dffffc0000000000 R11: fffff520008a9ecd R12: dffffc0000000000
+R13: ffff888077a30000 R14: 0000000000000002 R15: 1ffff920008a9f60
+FS:  0000555557165480(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fb6c8386000 CR3: 000000002e1e4000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

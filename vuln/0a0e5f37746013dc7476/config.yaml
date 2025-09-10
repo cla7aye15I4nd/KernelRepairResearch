@@ -1,0 +1,53 @@
+id: 0a0e5f37746013dc7476
+bug_link: https://syzkaller.appspot.com/bug?extid=0a0e5f37746013dc7476
+title: 'KASAN: use-after-free Read in blkdev_direct_IO'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3d0b63c5dfa8a912ac2d5026a24826b99b20ecc9
+fix_commit: 0eb6ddfb865c7d7ec05cb330050671363515e67f
+datetime: '2019-08-01T13:51:18-06:00'
+fix_commit_message: 'block: Fix __blkdev_direct_IO() for bio fragments
+
+
+  The recent fix to properly handle IOCB_NOWAIT for async O_DIRECT IO
+
+  (patch 6a43074e2f46) introduced two problems with BIO fragment handling
+
+  for direct IOs:
+
+  1) The dio size processed is calculated by incrementing the ret variable
+
+  by the size of the bio fragment issued for the dio. However, this size
+
+  is obtained directly from bio->bi_iter.bi_size AFTER the bio submission
+
+  which may result in referencing the bi_size value after the bio
+
+  completed, resulting in an incorrect value use.
+
+  2) The ret variable is not incremented by the size of the last bio
+
+  fragment issued for the bio, leading to an invalid IO size being
+
+  returned to the user.
+
+
+  Fix both problem by using dio->size (which is incremented before the bio
+
+  submission) to update the value of ret after bio submissions, including
+
+  for the last bio fragment issued.
+
+
+  Fixes: 6a43074e2f46 ("block: properly handle IOCB_NOWAIT for async O_DIRECT IO")
+
+  Reported-by: Masato Suzuki <masato.suzuki@wdc.com>
+
+  Signed-off-by: Damien Le Moal <damien.lemoal@wdc.com>
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

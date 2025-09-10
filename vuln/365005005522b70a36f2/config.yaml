@@ -1,0 +1,34 @@
+id: 365005005522b70a36f2
+bug_link: https://syzkaller.appspot.com/bug?extid=365005005522b70a36f2
+title: 'KASAN: vmalloc-out-of-bounds Write in tpg_fill_plane_buffer (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5bc68bd3826e573f9a83c82c5107536cf616fea8
+fix_commit: f83ac8d30c43fd902af7c84c480f216157b60ef0
+datetime: '2025-04-25T15:14:35+02:00'
+fix_commit_message: "media: vivid: Change the siize of the composing\n\nsyzkaller\
+  \ found a bug:\n\nBUG: KASAN: vmalloc-out-of-bounds in tpg_fill_plane_pattern drivers/media/common/v4l2-tpg/v4l2-tpg-core.c:2608\
+  \ [inline]\nBUG: KASAN: vmalloc-out-of-bounds in tpg_fill_plane_buffer+0x1a9c/0x5af0\
+  \ drivers/media/common/v4l2-tpg/v4l2-tpg-core.c:2705\nWrite of size 1440 at addr\
+  \ ffffc9000d0ffda0 by task vivid-000-vid-c/5304\n\nCPU: 0 UID: 0 PID: 5304 Comm:\
+  \ vivid-000-vid-c Not tainted 6.14.0-rc2-syzkaller-00039-g09fbf3d50205 #0\nHardware\
+  \ name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1\
+  \ 04/01/2014\n\nCall Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:94 [inline]\n\
+  \ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120\n print_address_description mm/kasan/report.c:378\
+  \ [inline]\n print_report+0x169/0x550 mm/kasan/report.c:489\n kasan_report+0x143/0x180\
+  \ mm/kasan/report.c:602\n kasan_check_range+0x282/0x290 mm/kasan/generic.c:189\n\
+  \ __asan_memcpy+0x40/0x70 mm/kasan/shadow.c:106\n tpg_fill_plane_pattern drivers/media/common/v4l2-tpg/v4l2-tpg-core.c:2608\
+  \ [inline]\n tpg_fill_plane_buffer+0x1a9c/0x5af0 drivers/media/common/v4l2-tpg/v4l2-tpg-core.c:2705\n\
+  \ vivid_fillbuff drivers/media/test-drivers/vivid/vivid-kthread-cap.c:470 [inline]\n\
+  \ vivid_thread_vid_cap_tick+0xf8e/0x60d0 drivers/media/test-drivers/vivid/vivid-kthread-cap.c:629\n\
+  \ vivid_thread_vid_cap+0x8aa/0xf30 drivers/media/test-drivers/vivid/vivid-kthread-cap.c:767\n\
+  \ kthread+0x7a9/0x920 kernel/kthread.c:464\n ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:148\n\
+  \ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244\n </TASK>\n\nThe composition\
+  \ size cannot be larger than the size of fmt_cap_rect.\nSo execute v4l2_rect_map_inside()\
+  \ even if has_compose_cap == 0.\n\nFixes: 94a7ad928346 (\"media: vivid: fix compose\
+  \ size exceed boundary\")\nCc: stable@vger.kernel.org\nReported-by: syzbot+365005005522b70a36f2@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?id=8ed8e8cc30cbe0d86c9a25bd1d6a5775129b8ea3\n\
+  Signed-off-by: Denis Arefev <arefev@swemel.ru>\nSigned-off-by: Hans Verkuil <hverkuil@xs4all.nl>\n"
+submodule:
+- drivers/media/test-drivers/vivid
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,58 @@
+diff --git a/mm/filemap.c b/mm/filemap.c
+index f61cf51c2238..33b60d448fca 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -124,15 +124,6 @@
+  *    ->private_lock		(zap_pte_range->block_dirty_folio)
+  */
+ 
+-static void mapping_set_update(struct xa_state *xas,
+-		struct address_space *mapping)
+-{
+-	if (dax_mapping(mapping) || shmem_mapping(mapping))
+-		return;
+-	xas_set_update(xas, workingset_update_node);
+-	xas_set_lru(xas, &shadow_nodes);
+-}
+-
+ static void page_cache_delete(struct address_space *mapping,
+ 				   struct folio *folio, void *shadow)
+ {
+diff --git a/mm/internal.h b/mm/internal.h
+index 3bd08bafad04..9826f7dce607 100644
+--- a/mm/internal.h
++++ b/mm/internal.h
+@@ -1504,6 +1504,12 @@ static inline void shrinker_debugfs_remove(struct dentry *debugfs_entry,
+ /* Only track the nodes of mappings with shadow entries */
+ void workingset_update_node(struct xa_node *node);
+ extern struct list_lru shadow_nodes;
++#define mapping_set_update(xas, mapping) do {			\
++	if (!dax_mapping(mapping) && !shmem_mapping(mapping)) {	\
++		xas_set_update(xas, workingset_update_node);	\
++		xas_set_lru(xas, &shadow_nodes);		\
++	}							\
++} while (0)
+ 
+ /* mremap.c */
+ unsigned long move_page_tables(struct vm_area_struct *vma,
+diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+index 6f8d46d107b4..653dbb1ff05c 100644
+--- a/mm/khugepaged.c
++++ b/mm/khugepaged.c
+@@ -19,6 +19,7 @@
+ #include <linux/rcupdate_wait.h>
+ #include <linux/swapops.h>
+ #include <linux/shmem_fs.h>
++#include <linux/dax.h>
+ #include <linux/ksm.h>
+ 
+ #include <asm/tlb.h>
+@@ -1837,6 +1838,8 @@ static int collapse_file(struct mm_struct *mm, unsigned long addr,
+ 	if (result != SCAN_SUCCEED)
+ 		goto out;
+ 
++	mapping_set_update(&xas, mapping);
++
+ 	__folio_set_locked(new_folio);
+ 	if (is_shmem)
+ 		__folio_set_swapbacked(new_folio);

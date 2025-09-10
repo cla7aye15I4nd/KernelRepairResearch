@@ -1,0 +1,39 @@
+id: 9d95beb2a3c260622518
+bug_link: https://syzkaller.appspot.com/bug?extid=9d95beb2a3c260622518
+title: possible deadlock in trie_delete_elem
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f2ac0e5d1c4dcc55d6510dcaefb8f45661a9a1fb
+fix_commit: 47979314c0fe245ed54306e2f91b3f819c7c0f9f
+datetime: '2025-03-19T08:03:05-07:00'
+fix_commit_message: 'bpf: Convert lpm_trie.c to rqspinlock
+
+
+  Convert all LPM trie usage of raw_spinlock to rqspinlock.
+
+
+  Note that rcu_dereference_protected in trie_delete_elem is switched over
+
+  to plain rcu_dereference, the RCU read lock should be held from BPF
+
+  program side or eBPF syscall path, and the trie->lock is just acquired
+
+  before the dereference. It is not clear the reason the protected variant
+
+  was used from the commit history, but the above reasoning makes sense so
+
+  switch over.
+
+
+  Closes: https://lore.kernel.org/lkml/000000000000adb08b061413919e@google.com
+
+  Signed-off-by: Kumar Kartikeya Dwivedi <memxor@gmail.com>
+
+  Link: https://lore.kernel.org/r/20250316040541.108729-22-memxor@gmail.com
+
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>
+
+  '
+submodule:
+- kernel/bpf
+hunk_count: 9
+covered_count: 5

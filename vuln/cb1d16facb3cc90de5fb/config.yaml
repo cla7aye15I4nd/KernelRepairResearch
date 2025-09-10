@@ -1,0 +1,49 @@
+id: cb1d16facb3cc90de5fb
+bug_link: https://syzkaller.appspot.com/bug?extid=cb1d16facb3cc90de5fb
+title: 'KASAN: wild-memory-access Write in v9fs_get_acl'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fe15c26ee26efa11741a7b632e9f23b01aca4cc6
+fix_commit: 707823e7f22f3864ddc7d85e8e9b614afe4f1b16
+datetime: '2023-03-27T00:34:16+00:00'
+fix_commit_message: "9P FS: Fix wild-memory-access write in v9fs_get_acl\n\nKASAN\
+  \ reported the following issue:\n[   36.825817][ T5923] BUG: KASAN: wild-memory-access\
+  \ in v9fs_get_acl+0x1a4/0x390\n[   36.827479][ T5923] Write of size 4 at addr 9fffeb37f97f1c00\
+  \ by task syz-executor798/5923\n[   36.829303][ T5923]\n[   36.829846][ T5923] CPU:\
+  \ 0 PID: 5923 Comm: syz-executor798 Not tainted 6.2.0-syzkaller-18302-g596b6b709632\
+  \ #0\n[   36.832110][ T5923] Hardware name: Google Google Compute Engine/Google\
+  \ Compute Engine, BIOS Google 01/21/2023\n[   36.834464][ T5923] Call trace:\n[\
+  \   36.835196][ T5923]  dump_backtrace+0x1c8/0x1f4\n[   36.836229][ T5923]  show_stack+0x2c/0x3c\n\
+  [   36.837100][ T5923]  dump_stack_lvl+0xd0/0x124\n[   36.838103][ T5923]  print_report+0xe4/0x4c0\n\
+  [   36.839068][ T5923]  kasan_report+0xd4/0x130\n[   36.840052][ T5923]  kasan_check_range+0x264/0x2a4\n\
+  [   36.841199][ T5923]  __kasan_check_write+0x2c/0x3c\n[   36.842216][ T5923]  v9fs_get_acl+0x1a4/0x390\n\
+  [   36.843232][ T5923]  v9fs_mount+0x77c/0xa5c\n[   36.844163][ T5923]  legacy_get_tree+0xd4/0x16c\n\
+  [   36.845173][ T5923]  vfs_get_tree+0x90/0x274\n[   36.846137][ T5923]  do_new_mount+0x25c/0x8c8\n\
+  [   36.847066][ T5923]  path_mount+0x590/0xe58\n[   36.848147][ T5923]  __arm64_sys_mount+0x45c/0x594\n\
+  [   36.849273][ T5923]  invoke_syscall+0x98/0x2c0\n[   36.850421][ T5923]  el0_svc_common+0x138/0x258\n\
+  [   36.851397][ T5923]  do_el0_svc+0x64/0x198\n[   36.852398][ T5923]  el0_svc+0x58/0x168\n\
+  [   36.853224][ T5923]  el0t_64_sync_handler+0x84/0xf0\n[   36.854293][ T5923] \
+  \ el0t_64_sync+0x190/0x194\n\nCalling '__v9fs_get_acl' method in 'v9fs_get_acl'\
+  \ creates the\nfollowing chain of function calls:\n\n__v9fs_get_acl\n\tv9fs_fid_get_acl\n\
+  \t\tv9fs_fid_xattr_get\n\t\t\tp9_client_xattrwalk\n\nFunction p9_client_xattrwalk\
+  \ accepts a pointer to u64-typed\nvariable attr_size and puts some u64 value into\
+  \ it. However,\nafter the executing the p9_client_xattrwalk, in some circumstances\n\
+  we assign the value of u64-typed variable 'attr_size' to the\nvariable 'retval',\
+  \ which we will return. However, the type of\n'retval' is ssize_t, and if the value\
+  \ of attr_size is larger\nthan SSIZE_MAX, we will face the signed type overflow.\
+  \ If the\noverflow occurs, the result of v9fs_fid_xattr_get may be\nnegative, but\
+  \ not classified as an error. When we try to allocate\nan acl with 'broken' size\
+  \ we receive an error, but don't process\nit. When we try to free this acl, we face\
+  \ the 'wild-memory-access'\nerror (because it wasn't allocated).\n\nThis patch will\
+  \ add new condition to the 'v9fs_fid_xattr_get'\nfunction, so it will return an\
+  \ EOVERFLOW error if the 'attr_size'\nis larger than SSIZE_MAX.\n\nIn this version\
+  \ of the patch I simplified the condition.\n\nIn previous (v2) version of the patch\
+  \ I removed explicit type conversion\nand added separate condition to check the\
+  \ possible overflow and return\nan error (in v1 version I've just modified the existing\
+  \ condition).\n\nTested via syzkaller.\n\nSuggested-by: Christian Schoenebeck <linux_oss@crudebyte.com>\n\
+  Reported-by: syzbot+cb1d16facb3cc90de5fb@syzkaller.appspotmail.com\nLink: https://syzkaller.appspot.com/bug?id=fbbef66d9e4d096242f3617de5d14d12705b4659\n\
+  Signed-off-by: Ivan Orlov <ivan.orlov0322@gmail.com>\nReviewed-by: Christian Schoenebeck\
+  \ <linux_oss@crudebyte.com>\nSigned-off-by: Eric Van Hensbergen <ericvh@kernel.org>\n"
+submodule:
+- fs/9p
+hunk_count: 1
+covered_count: 0

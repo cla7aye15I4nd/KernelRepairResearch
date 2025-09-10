@@ -1,0 +1,86 @@
+id: 02b16343704b3af1667e
+bug_link: https://syzkaller.appspot.com/bug?extid=02b16343704b3af1667e
+title: WARNING in driver_unregister
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: dbab764ed5e987306480f827775876b99b81429e
+fix_commit: f2d8c2606825317b77db1f9ba0fc26ef26160b30
+datetime: '2022-06-21T10:51:09+02:00'
+fix_commit_message: 'usb: gadget: Fix non-unique driver names in raw-gadget driver
+
+
+  In a report for a separate bug (which has already been fixed by commit
+
+  5f0b5f4d50fa "usb: gadget: fix race when gadget driver register via
+
+  ioctl") in the raw-gadget driver, the syzbot console log included
+
+  error messages caused by attempted registration of a new driver with
+
+  the same name as an existing driver:
+
+
+  > kobject_add_internal failed for raw-gadget with -EEXIST, don''t try to register
+  things with the same name in the same directory.
+
+  > UDC core: USB Raw Gadget: driver registration failed: -17
+
+  > misc raw-gadget: fail, usb_gadget_register_driver returned -17
+
+
+  These errors arise because raw_gadget.c registers a separate UDC
+
+  driver for each of the UDC instances it creates, but these drivers all
+
+  have the same name: "raw-gadget".  Until recently this wasn''t a
+
+  problem, but when the "gadget" bus was added and UDC drivers were
+
+  registered on this bus, it became possible for name conflicts to cause
+
+  the registrations to fail.  The reason is simply that the bus code in
+
+  the driver core uses the driver name as a sysfs directory name (e.g.,
+
+  /sys/bus/gadget/drivers/raw-gadget/), and you can''t create two
+
+  directories with the same pathname.
+
+
+  To fix this problem, the driver names used by raw-gadget are made
+
+  distinct by appending a unique ID number: "raw-gadget.N", with a
+
+  different value of N for each driver instance.  And to avoid the
+
+  proliferation of error handling code in the raw_ioctl_init() routine,
+
+  the error return paths are refactored into the common pattern (goto
+
+  statements leading to cleanup code at the end of the routine).
+
+
+  Link: https://lore.kernel.org/all/0000000000008c664105dffae2eb@google.com/
+
+  Fixes: fc274c1e9973 "USB: gadget: Add a new bus for gadgets"
+
+  CC: Andrey Konovalov <andreyknvl@gmail.com>
+
+  CC: <stable@vger.kernel.org>
+
+  Reported-and-tested-by: syzbot+02b16343704b3af1667e@syzkaller.appspotmail.com
+
+  Reviewed-by: Andrey Konovalov <andreyknvl@gmail.com>
+
+  Acked-by: Hillf Danton <hdanton@sina.com>
+
+  Signed-off-by: Alan Stern <stern@rowland.harvard.edu>
+
+  Link: https://lore.kernel.org/r/YqdG32w+3h8c1s7z@rowland.harvard.edu
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/gadget/legacy
+hunk_count: 8
+covered_count: 4

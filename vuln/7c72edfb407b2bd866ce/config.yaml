@@ -1,0 +1,24 @@
+id: 7c72edfb407b2bd866ce
+bug_link: https://syzkaller.appspot.com/bug?extid=7c72edfb407b2bd866ce
+title: 'KASAN: invalid-free in rsi_91x_deinit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 13fa451568ab9e8b3074ef741477c7938c713c42
+fix_commit: 8b51dc7291473093c821195c4b6af85fadedbc2f
+datetime: '2019-09-03T16:54:48+03:00'
+fix_commit_message: "rsi: fix a double free bug in rsi_91x_deinit()\n\n`dev` (struct\
+  \ rsi_91x_usbdev *) field of adapter\n(struct rsi_91x_usbdev *) is allocated  and\
+  \ initialized in\n`rsi_init_usb_interface`. If any error is detected in information\n\
+  read from the device side,  `rsi_init_usb_interface` will be\nfreed. However, in\
+  \ the higher level error handling code in\n`rsi_probe`, if error is detected, `rsi_91x_deinit`\
+  \ is called\nagain, in which `dev` will be freed again, resulting double free.\n\
+  \nThis patch fixes the double free by removing the free operation on\n`dev` in `rsi_init_usb_interface`,\
+  \ because `rsi_91x_deinit` is also\nused in `rsi_disconnect`, in that code path,\
+  \ the `dev` field is not\n (and thus needs to be) freed.\n\nThis bug was found in\
+  \ v4.19, but is also present in the latest version\nof kernel. Fixes CVE-2019-15504.\n\
+  \nReported-by: Hui Peng <benquike@gmail.com>\nReported-by: Mathias Payer <mathias.payer@nebelwelt.net>\n\
+  Signed-off-by: Hui Peng <benquike@gmail.com>\nReviewed-by: Guenter Roeck <linux@roeck-us.net>\n\
+  Signed-off-by: Kalle Valo <kvalo@codeaurora.org>\n"
+submodule:
+- drivers/net/wireless/rsi
+hunk_count: 1
+covered_count: 1

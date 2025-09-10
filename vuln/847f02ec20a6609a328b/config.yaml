@@ -1,0 +1,37 @@
+id: 847f02ec20a6609a328b
+bug_link: https://syzkaller.appspot.com/bug?extid=847f02ec20a6609a328b
+title: possible deadlock in io_flush_timeouts
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 617a89484debcd4e7999796d693cf0b77d2519de
+fix_commit: 6af3f48bf6156a7f02e91aca64e2927c4bebda03
+datetime: '2021-11-26T08:35:57-07:00'
+fix_commit_message: "io_uring: fix link traversal locking\n\nWARNING: inconsistent\
+  \ lock state\n5.16.0-rc2-syzkaller #0 Not tainted\ninconsistent {HARDIRQ-ON-W} ->\
+  \ {IN-HARDIRQ-W} usage.\nffff888078e11418 (&ctx->timeout_lock\n){?.+.}-{2:2}\n,\
+  \ at: io_timeout_fn+0x6f/0x360 fs/io_uring.c:5943\n{HARDIRQ-ON-W} state was registered\
+  \ at:\n  [...]\n  spin_unlock_irq include/linux/spinlock.h:399 [inline]\n  __io_poll_remove_one\
+  \ fs/io_uring.c:5669 [inline]\n  __io_poll_remove_one fs/io_uring.c:5654 [inline]\n\
+  \  io_poll_remove_one+0x236/0x870 fs/io_uring.c:5680\n  io_poll_remove_all+0x1af/0x235\
+  \ fs/io_uring.c:5709\n  io_ring_ctx_wait_and_kill+0x1cc/0x322 fs/io_uring.c:9534\n\
+  \  io_uring_release+0x42/0x46 fs/io_uring.c:9554\n  __fput+0x286/0x9f0 fs/file_table.c:280\n\
+  \  task_work_run+0xdd/0x1a0 kernel/task_work.c:164\n  exit_task_work include/linux/task_work.h:32\
+  \ [inline]\n  do_exit+0xc14/0x2b40 kernel/exit.c:832\n\n674ee8e1b4a41 (\"io_uring:\
+  \ correct link-list traversal locking\") fixed a\ndata race but introduced a possible\
+  \ deadlock and inconsistentcy in irq\nstates. E.g.\n\nio_poll_remove_all()\n   \
+  \ spin_lock_irq(timeout_lock)\n    io_poll_remove_one()\n        spin_lock/unlock_irq(poll_lock);\n\
+  \    spin_unlock_irq(timeout_lock)\n\nAnother type of problem is freeing a request\
+  \ while holding\n->timeout_lock, which may leads to a deadlock in\nio_commit_cqring()\
+  \ -> io_flush_timeouts() and other places.\n\nHaving 3 nested locks is also too\
+  \ ugly. Add io_match_task_safe(), which\nwould briefly take and release timeout_lock\
+  \ for race prevention inside,\nso the actuall request cancellation / free / etc.\
+  \ code doesn't have it\ntaken.\n\nReported-by: syzbot+ff49a3059d49b0ca0eec@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+847f02ec20a6609a328b@syzkaller.appspotmail.com\nReported-by:\
+  \ syzbot+3368aadcd30425ceb53b@syzkaller.appspotmail.com\nReported-by: syzbot+51ce8887cdef77c9ac83@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+3cb756a49d2f394a9ee3@syzkaller.appspotmail.com\nFixes: 674ee8e1b4a41\
+  \ (\"io_uring: correct link-list traversal locking\")\nCc: stable@kernel.org # 5.15+\n\
+  Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>\nLink: https://lore.kernel.org/r/397f7ebf3f4171f1abe41f708ac1ecb5766f0b68.1637937097.git.asml.silence@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 5
+covered_count: 3

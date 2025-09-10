@@ -1,0 +1,22 @@
+id: b8c1d60e95df65e827d4
+bug_link: https://syzkaller.appspot.com/bug?extid=b8c1d60e95df65e827d4
+title: 'KMSAN: uninit-value in __try_merge_extent_node'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 90c5ce37adf074ed85b26d1cd43074f29c0743ba
+fix_commit: 154467f4ad033473e5c903a03e7b9bca7df9a0fa
+datetime: '2025-06-30T16:43:58+00:00'
+fix_commit_message: "f2fs: fix KMSAN uninit-value in extent_info usage\n\nKMSAN reported\
+  \ a use of uninitialized value in `__is_extent_mergeable()`\n and `__is_back_mergeable()`\
+  \ via the read extent tree path.\n\nThe root cause is that `get_read_extent_info()`\
+  \ only initializes three\nfields (`fofs`, `blk`, `len`) of `struct extent_info`,\
+  \ leaving the\nremaining fields uninitialized. This leads to undefined behavior\n\
+  when those fields are accessed later, especially during\nextent merging.\n\nFix\
+  \ it by zero-initializing the `extent_info` struct before population.\n\nReported-by:\
+  \ syzbot+b8c1d60e95df65e827d4@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=b8c1d60e95df65e827d4\n\
+  Fixes: 94afd6d6e525 (\"f2fs: extent cache: support unaligned extent\")\nReviewed-by:\
+  \ Chao Yu <chao@kernel.org>\nSigned-off-by: Abinash Singh <abinashsinghlalotra@gmail.com>\n\
+  Signed-off-by: Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 1
+covered_count: 1

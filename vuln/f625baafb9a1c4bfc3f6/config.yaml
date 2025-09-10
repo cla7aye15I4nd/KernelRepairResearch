@@ -1,0 +1,36 @@
+id: f625baafb9a1c4bfc3f6
+bug_link: https://syzkaller.appspot.com/bug?extid=f625baafb9a1c4bfc3f6
+title: general protection fault in mm_update_next_owner
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0e858739c2d2eedeeac1d35bfa0ec3cc2a7190d8
+fix_commit: 95fa145479fbc0a0c1fd3274ceb42ec03c042a4a
+datetime: '2019-07-22T16:04:17+02:00'
+fix_commit_message: "bpf: sockmap/tls, close can race with map free\n\nWhen a map\
+  \ free is called and in parallel a socket is closed we\nhave two paths that can\
+  \ potentially reset the socket prot ops, the\nbpf close() path and the map free\
+  \ path. This creates a problem\nwith which prot ops should be used from the socket\
+  \ closed side.\n\nIf the map_free side completes first then we want to call the\n\
+  original lowest level ops. However, if the tls path runs first\nwe want to call\
+  \ the sockmap ops. Additionally there was no locking\naround prot updates in TLS\
+  \ code paths so the prot ops could\nbe changed multiple times once from TLS path\
+  \ and again from sockmap\nside potentially leaving ops pointed at either TLS or\
+  \ sockmap\nwhen psock and/or tls context have already been destroyed.\n\nTo fix\
+  \ this race first only update ops inside callback lock\nso that TLS, sockmap and\
+  \ lowest level all agree on prot state.\nSecond and a ULP callback update() so that\
+  \ lower layers can\ninform the upper layer when they are being removed allowing\
+  \ the\nupper layer to reset prot ops.\n\nThis gets us close to allowing sockmap\
+  \ and tls to be stacked\nin arbitrary order but will save that patch for *next trees.\n\
+  \nv4:\n - make sure we don't free things for device;\n - remove the checks which\
+  \ swap the callbacks back\n   only if TLS is at the top.\n\nReported-by: syzbot+06537213db7ba2745c4a@syzkaller.appspotmail.com\n\
+  Fixes: 02c558b2d5d6 (\"bpf: sockmap, support for msg_peek in sk_msg with redirect\
+  \ ingress\")\nSigned-off-by: John Fastabend <john.fastabend@gmail.com>\nSigned-off-by:\
+  \ Jakub Kicinski <jakub.kicinski@netronome.com>\nReviewed-by: Dirk van der Merwe\
+  \ <dirk.vandermerwe@netronome.com>\nSigned-off-by: Daniel Borkmann <daniel@iogearbox.net>\n"
+submodule:
+- include/linux
+- include/net
+- net/core
+- net/ipv4
+- net/tls
+hunk_count: 12
+covered_count: 0

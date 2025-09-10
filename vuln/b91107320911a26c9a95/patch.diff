@@ -1,0 +1,86 @@
+diff --git a/fs/exfat/cache.c b/fs/exfat/cache.c
+index 03d0824fc368..5a2f119b7e8c 100644
+--- a/fs/exfat/cache.c
++++ b/fs/exfat/cache.c
+@@ -17,7 +17,6 @@
+ #include "exfat_raw.h"
+ #include "exfat_fs.h"
+ 
+-#define EXFAT_CACHE_VALID	0
+ #define EXFAT_MAX_CACHE		16
+ 
+ struct exfat_cache {
+@@ -61,16 +60,6 @@ void exfat_cache_shutdown(void)
+ 	kmem_cache_destroy(exfat_cachep);
+ }
+ 
+-void exfat_cache_init_inode(struct inode *inode)
+-{
+-	struct exfat_inode_info *ei = EXFAT_I(inode);
+-
+-	spin_lock_init(&ei->cache_lru_lock);
+-	ei->nr_caches = 0;
+-	ei->cache_valid_id = EXFAT_CACHE_VALID + 1;
+-	INIT_LIST_HEAD(&ei->cache_lru);
+-}
+-
+ static inline struct exfat_cache *exfat_cache_alloc(void)
+ {
+ 	return kmem_cache_alloc(exfat_cachep, GFP_NOFS);
+diff --git a/fs/exfat/exfat_fs.h b/fs/exfat/exfat_fs.h
+index 95d717f8620c..c013fe931d9c 100644
+--- a/fs/exfat/exfat_fs.h
++++ b/fs/exfat/exfat_fs.h
+@@ -248,6 +248,8 @@ struct exfat_sb_info {
+ 	struct rcu_head rcu;
+ };
+ 
++#define EXFAT_CACHE_VALID	0
++
+ /*
+  * EXFAT file system inode in-memory data
+  */
+@@ -428,7 +430,6 @@ extern const struct dentry_operations exfat_utf8_dentry_ops;
+ /* cache.c */
+ int exfat_cache_init(void);
+ void exfat_cache_shutdown(void);
+-void exfat_cache_init_inode(struct inode *inode);
+ void exfat_cache_inval_inode(struct inode *inode);
+ int exfat_get_cluster(struct inode *inode, unsigned int cluster,
+ 		unsigned int *fclus, unsigned int *dclus,
+diff --git a/fs/exfat/inode.c b/fs/exfat/inode.c
+index 7f90204adef5..a6de17cac3df 100644
+--- a/fs/exfat/inode.c
++++ b/fs/exfat/inode.c
+@@ -611,8 +611,6 @@ static int exfat_fill_inode(struct inode *inode, struct exfat_dir_entry *info)
+ 	ei->i_crtime = info->crtime;
+ 	inode->i_atime = info->atime;
+ 
+-	exfat_cache_init_inode(inode);
+-
+ 	return 0;
+ }
+ 
+diff --git a/fs/exfat/super.c b/fs/exfat/super.c
+index 3b6a1659892f..60b941ba557b 100644
+--- a/fs/exfat/super.c
++++ b/fs/exfat/super.c
+@@ -376,7 +376,6 @@ static int exfat_read_root(struct inode *inode)
+ 	inode->i_mtime = inode->i_atime = inode->i_ctime = ei->i_crtime =
+ 		current_time(inode);
+ 	exfat_truncate_atime(&inode->i_atime);
+-	exfat_cache_init_inode(inode);
+ 	return 0;
+ }
+ 
+@@ -763,6 +762,10 @@ static void exfat_inode_init_once(void *foo)
+ {
+ 	struct exfat_inode_info *ei = (struct exfat_inode_info *)foo;
+ 
++	spin_lock_init(&ei->cache_lru_lock);
++	ei->nr_caches = 0;
++	ei->cache_valid_id = EXFAT_CACHE_VALID + 1;
++	INIT_LIST_HEAD(&ei->cache_lru);
+ 	INIT_HLIST_NODE(&ei->i_hash_fat);
+ 	inode_init_once(&ei->vfs_inode);
+ }

@@ -1,0 +1,32 @@
+id: 6f11c7e2a1b91d466432
+bug_link: https://syzkaller.appspot.com/bug?extid=6f11c7e2a1b91d466432
+title: WARNING in snd_pcm_hw_param_first
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 44be77c590f381bc629815ac789b8b15ecc4ddcf
+fix_commit: fe08f34d066f4404934a509b6806db1a4f700c86
+datetime: '2018-01-02T14:52:45+01:00'
+fix_commit_message: "ALSA: pcm: Remove incorrect snd_BUG_ON() usages\n\nsyzkaller\
+  \ triggered kernel warnings through PCM OSS emulation at\nclosing a stream:\n  WARNING:\
+  \ CPU: 0 PID: 3502 at sound/core/pcm_lib.c:1635\n  snd_pcm_hw_param_first+0x289/0x690\
+  \ sound/core/pcm_lib.c:1635\n  Call Trace:\n  ....\n   snd_pcm_hw_param_near.constprop.27+0x78d/0x9a0\
+  \ sound/core/oss/pcm_oss.c:457\n   snd_pcm_oss_change_params+0x17d3/0x3720 sound/core/oss/pcm_oss.c:969\n\
+  \   snd_pcm_oss_make_ready+0xaa/0x130 sound/core/oss/pcm_oss.c:1128\n   snd_pcm_oss_sync+0x257/0x830\
+  \ sound/core/oss/pcm_oss.c:1638\n   snd_pcm_oss_release+0x20b/0x280 sound/core/oss/pcm_oss.c:2431\n\
+  \   __fput+0x327/0x7e0 fs/file_table.c:210\n   ....\n\nThis happens while it tries\
+  \ to open and set up the aloop device\nconcurrently.  The warning above (invoked\
+  \ from snd_BUG_ON() macro) is\nto detect the unexpected logical error where snd_pcm_hw_refine()\
+  \ call\nshouldn't fail.  The theory is true for the case where the hw_params\nconfig\
+  \ rules are static.  But for an aloop device, the hw_params rule\ncondition does\
+  \ vary dynamically depending on the connected target;\nwhen another device is opened\
+  \ and changes the parameters, the device\nconnected in another side is also affected,\
+  \ and it caused the error\nfrom snd_pcm_hw_refine().\n\nThat is, the simplest \"\
+  solution\" for this is to remove the incorrect\nassumption of static rules, and\
+  \ treat such an error as a normal error\npath.  As there are a couple of other places\
+  \ using snd_BUG_ON()\nincorrectly, this patch removes these spurious snd_BUG_ON()\
+  \ calls.\n\nReported-by: syzbot+6f11c7e2a1b91d466432@syzkaller.appspotmail.com\n\
+  Cc: <stable@vger.kernel.org>\nSigned-off-by: Takashi Iwai <tiwai@suse.de>\n"
+submodule:
+- sound/core
+- sound/core/oss
+hunk_count: 3
+covered_count: 3

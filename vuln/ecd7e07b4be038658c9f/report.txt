@@ -1,0 +1,63 @@
+==================================================================
+BUG: KASAN: global-out-of-bounds in validate_nla lib/nlattr.c:411 [inline]
+BUG: KASAN: global-out-of-bounds in __nla_validate_parse+0x1f1c/0x2f70 lib/nlattr.c:635
+Read of size 1 at addr ffffffff8c55d030 by task syz-executor361/5080
+
+CPU: 1 PID: 5080 Comm: syz-executor361 Not tainted 6.9.0-rc2-next-20240405-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ validate_nla lib/nlattr.c:411 [inline]
+ __nla_validate_parse+0x1f1c/0x2f70 lib/nlattr.c:635
+ __nla_parse+0x40/0x60 lib/nlattr.c:732
+ __nlmsg_parse include/net/netlink.h:760 [inline]
+ genl_family_rcv_msg_attrs_parse+0x1d1/0x290 net/netlink/genetlink.c:945
+ genl_family_rcv_msg_doit net/netlink/genetlink.c:1093 [inline]
+ genl_family_rcv_msg net/netlink/genetlink.c:1195 [inline]
+ genl_rcv_msg+0x802/0xec0 net/netlink/genetlink.c:1210
+ netlink_rcv_skb+0x1e3/0x430 net/netlink/af_netlink.c:2559
+ genl_rcv+0x28/0x40 net/netlink/genetlink.c:1219
+ netlink_unicast_kernel net/netlink/af_netlink.c:1335 [inline]
+ netlink_unicast+0x7ea/0x980 net/netlink/af_netlink.c:1361
+ netlink_sendmsg+0x8e1/0xcb0 net/netlink/af_netlink.c:1905
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg+0x221/0x270 net/socket.c:745
+ ____sys_sendmsg+0x525/0x7d0 net/socket.c:2584
+ ___sys_sendmsg net/socket.c:2638 [inline]
+ __sys_sendmsg+0x2b0/0x3a0 net/socket.c:2667
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x72/0x7a
+RIP: 0033:0x7f831a5c23a9
+Code: 48 83 c4 28 c3 e8 37 17 00 00 0f 1f 80 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffcd752ec88 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 00007ffcd752ee58 RCX: 00007f831a5c23a9
+RDX: 0000000000000000 RSI: 0000000020000100 RDI: 0000000000000003
+RBP: 00007f831a635610 R08: 00007f831a5fda23 R09: 00007ffcd752ee58
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffcd752ee48 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+The buggy address belongs to the variable:
+ team_nl_policy+0x30/0x60
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0xc55d
+flags: 0xfff80000002000(reserved|node=0|zone=1|lastcpupid=0xfff)
+raw: 00fff80000002000 ffffea0000315748 ffffea0000315748 0000000000000000
+raw: 0000000000000000 0000000000000000 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner info is not present (never set?)
+
+Memory state around the buggy address:
+ ffffffff8c55cf00: f9 f9 f9 f9 00 00 00 00 00 00 00 00 00 00 00 00
+ ffffffff8c55cf80: 00 00 00 00 f9 f9 f9 f9 00 00 00 00 f9 f9 f9 f9
+>ffffffff8c55d000: 00 00 00 00 00 00 f9 f9 f9 f9 f9 f9 00 00 00 00
+                                     ^
+ ffffffff8c55d080: 00 00 00 00 00 00 00 00 f9 f9 f9 f9 00 00 00 00
+ ffffffff8c55d100: 00 00 00 00 00 00 f9 f9 f9 f9 f9 f9 00 02 f9 f9
+==================================================================

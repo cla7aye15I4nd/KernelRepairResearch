@@ -1,0 +1,58 @@
+id: 53369d11851d8f26735c
+bug_link: https://syzkaller.appspot.com/bug?extid=53369d11851d8f26735c
+title: general protection fault in nilfs_clear_dirty_page
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 71c3ad65fabec9620d3f548b2da948c79c7ad9d5
+fix_commit: 782e53d0c14420858dbf0f8f797973c150d3b6d7
+datetime: '2023-06-19T13:19:35-07:00'
+fix_commit_message: 'nilfs2: prevent general protection fault in nilfs_clear_dirty_page()
+
+
+  In a syzbot stress test that deliberately causes file system errors on
+
+  nilfs2 with a corrupted disk image, it has been reported that
+
+  nilfs_clear_dirty_page() called from nilfs_clear_dirty_pages() can cause a
+
+  general protection fault.
+
+
+  In nilfs_clear_dirty_pages(), when looking up dirty pages from the page
+
+  cache and calling nilfs_clear_dirty_page() for each dirty page/folio
+
+  retrieved, the back reference from the argument page to "mapping" may have
+
+  been changed to NULL (and possibly others).  It is necessary to check this
+
+  after locking the page/folio.
+
+
+  So, fix this issue by not calling nilfs_clear_dirty_page() on a page/folio
+
+  after locking it in nilfs_clear_dirty_pages() if the back reference
+
+  "mapping" from the page/folio is different from the "mapping" that held
+
+  the page/folio just before.
+
+
+  Link: https://lkml.kernel.org/r/20230612021456.3682-1-konishi.ryusuke@gmail.com
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+53369d11851d8f26735c@syzkaller.appspotmail.com
+
+  Closes: https://lkml.kernel.org/r/000000000000da4f6b05eb9bf593@google.com
+
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,28 @@
+diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
+index e0fa6fc0b2d8..bd13fdddbdc4 100644
+--- a/arch/x86/kvm/lapic.c
++++ b/arch/x86/kvm/lapic.c
+@@ -1507,9 +1507,6 @@ void wait_lapic_expire(struct kvm_vcpu *vcpu)
+ 	u32 timer_advance_ns = apic->lapic_timer.timer_advance_ns;
+ 	u64 guest_tsc, tsc_deadline, ns;
+ 
+-	if (!lapic_in_kernel(vcpu))
+-		return;
+-
+ 	if (apic->lapic_timer.expired_tscdeadline == 0)
+ 		return;
+ 
+diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
+index 57621313dead..b5edc8e3ce1d 100644
+--- a/arch/x86/kvm/x86.c
++++ b/arch/x86/kvm/x86.c
+@@ -7894,7 +7894,8 @@ static int vcpu_enter_guest(struct kvm_vcpu *vcpu)
+ 	}
+ 
+ 	trace_kvm_entry(vcpu->vcpu_id);
+-	if (vcpu->arch.apic->lapic_timer.timer_advance_ns)
++	if (lapic_in_kernel(vcpu) &&
++	    vcpu->arch.apic->lapic_timer.timer_advance_ns)
+ 		wait_lapic_expire(vcpu);
+ 	guest_enter_irqoff();
+ 

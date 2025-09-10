@@ -1,0 +1,59 @@
+------------[ cut here ]------------
+kernel BUG at fs/f2fs/inode.c:904!
+invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 0 PID: 5079 Comm: syz-executor152 Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+RIP: 0010:f2fs_evict_inode+0x17a2/0x1e80 fs/f2fs/inode.c:904
+Code: df 48 c1 ea 03 80 3c 02 00 0f 85 d9 05 00 00 8b 73 40 ba 01 00 00 00 48 89 ef e8 c9 8c 07 00 e9 9e fc ff ff e8 5f 53 ca fd 90 <0f> 0b e8 57 53 ca fd 48 c7 c0 48 08 fb 8d 48 ba 00 00 00 00 00 fc
+RSP: 0018:ffffc900042c7a98 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: ffff888077a111b0 RCX: ffffffff83c3d8af
+RDX: ffff888025cfda00 RSI: ffffffff83c3e8d1 RDI: 0000000000000007
+RBP: ffff888020d3c000 R08: 0000000000000007 R09: 0000000000000000
+R10: 0000000000000001 R11: ffffffff93499f70 R12: 0000000000000001
+R13: 0000000000000000 R14: ffff888020d3d498 R15: ffff888077a11660
+FS:  000055558df08380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055558df116f8 CR3: 00000000774f4000 CR4: 0000000000350ef0
+Call Trace:
+ <TASK>
+ evict+0x2f0/0x6c0 fs/inode.c:667
+ dispose_list+0x117/0x1e0 fs/inode.c:700
+ evict_inodes+0x34e/0x450 fs/inode.c:750
+ generic_shutdown_super+0xb5/0x3d0 fs/super.c:626
+ kill_block_super+0x3b/0x90 fs/super.c:1675
+ kill_f2fs_super+0x2b4/0x440 fs/f2fs/super.c:4931
+ deactivate_locked_super+0xc1/0x1a0 fs/super.c:472
+ deactivate_super+0xde/0x100 fs/super.c:505
+ cleanup_mnt+0x222/0x450 fs/namespace.c:1267
+ task_work_run+0x151/0x250 kernel/task_work.c:180
+ ptrace_notify+0x10e/0x130 kernel/signal.c:2404
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]
+ syscall_exit_work kernel/entry/common.c:167 [inline]
+ syscall_exit_to_user_mode_prepare+0x126/0x240 kernel/entry/common.c:194
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:199 [inline]
+ syscall_exit_to_user_mode+0x11/0x2a0 kernel/entry/common.c:212
+ do_syscall_64+0xe2/0x260 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f8cc7049307
+Code: 07 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b8 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffeb31fdfa8 EFLAGS: 00000202 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 000000000001b913 RCX: 00007f8cc7049307
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffeb31fe060
+RBP: 00007ffeb31fe060 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000202 R12: 00007ffeb31ff0c0
+R13: 000055558df096c0 R14: 0000000000000001 R15: 431bde82d7b634db
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:f2fs_evict_inode+0x17a2/0x1e80 fs/f2fs/inode.c:904
+Code: df 48 c1 ea 03 80 3c 02 00 0f 85 d9 05 00 00 8b 73 40 ba 01 00 00 00 48 89 ef e8 c9 8c 07 00 e9 9e fc ff ff e8 5f 53 ca fd 90 <0f> 0b e8 57 53 ca fd 48 c7 c0 48 08 fb 8d 48 ba 00 00 00 00 00 fc
+RSP: 0018:ffffc900042c7a98 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: ffff888077a111b0 RCX: ffffffff83c3d8af
+RDX: ffff888025cfda00 RSI: ffffffff83c3e8d1 RDI: 0000000000000007
+RBP: ffff888020d3c000 R08: 0000000000000007 R09: 0000000000000000
+R10: 0000000000000001 R11: ffffffff93499f70 R12: 0000000000000001
+R13: 0000000000000000 R14: ffff888020d3d498 R15: ffff888077a11660
+FS:  000055558df08380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000000045bdd0 CR3: 00000000774f4000 CR4: 0000000000350ef0

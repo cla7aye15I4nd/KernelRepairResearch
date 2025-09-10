@@ -1,0 +1,16 @@
+diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
+index 4c575324a985..9eba2e648385 100644
+--- a/net/netlink/af_netlink.c
++++ b/net/netlink/af_netlink.c
+@@ -1852,6 +1852,11 @@ static int netlink_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
+ 	if (msg->msg_flags & MSG_OOB)
+ 		return -EOPNOTSUPP;
+ 
++	if (len == 0) {
++		pr_warn_once("Zero length message leads to an empty skb\n");
++		return -ENODATA;
++	}
++
+ 	err = scm_send(sock, msg, &scm, true);
+ 	if (err < 0)
+ 		return err;

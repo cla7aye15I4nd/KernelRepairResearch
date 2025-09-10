@@ -1,0 +1,101 @@
+id: c225dea486da4d5592bd
+bug_link: https://syzkaller.appspot.com/bug?extid=c225dea486da4d5592bd
+title: WARNING in page_copy_sane
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0374af1da077573b2bea8ff70258d3537c5a1e79
+fix_commit: a08c7193e4f18dc8508f2d07d0de2c5b94cb39a3
+datetime: '2023-10-16T15:44:38-07:00'
+fix_commit_message: "mm/filemap: remove hugetlb special casing in filemap.c\n\nRemove\
+  \ special cased hugetlb handling code within the page cache by\nchanging the granularity\
+  \ of ->index to the base page size rather than the\nhuge page size.  The motivation\
+  \ of this patch is to reduce complexity\nwithin the filemap code while also increasing\
+  \ performance by removing\nbranches that are evaluated on every page cache lookup.\n\
+  \nTo support the change in index, new wrappers for hugetlb page cache\ninteractions\
+  \ are added.  These wrappers perform the conversion to a linear\nindex which is\
+  \ now expected by the page cache for huge pages.\n\n========================= PERFORMANCE\
+  \ ======================================\n\nPerf was used to check the performance\
+  \ differences after the patch. \nOverall the performance is similar to mainline\
+  \ with a very small larger\noverhead that occurs in __filemap_add_folio() and\n\
+  hugetlb_add_to_page_cache().  This is because of the larger overhead that\noccurs\
+  \ in xa_load() and xa_store() as the xarray is now using more entries\nto store\
+  \ hugetlb folios in the page cache.\n\nTiming\n\naarch64\n    2MB Page Size\n  \
+  \      6.5-rc3 + this patch:\n            [root@sidhakum-ol9-1 hugepages]# time\
+  \ fallocate -l 700GB test.txt\n            real    1m49.568s\n            user \
+  \   0m0.000s\n            sys     1m49.461s\n\n        6.5-rc3:\n            [root]#\
+  \ time fallocate -l 700GB test.txt\n            real    1m47.495s\n            user\
+  \    0m0.000s\n            sys     1m47.370s\n    1GB Page Size\n        6.5-rc3\
+  \ + this patch:\n            [root@sidhakum-ol9-1 hugepages1G]# time fallocate -l\
+  \ 700GB test.txt\n            real    1m47.024s\n            user    0m0.000s\n\
+  \            sys     1m46.921s\n\n        6.5-rc3:\n            [root@sidhakum-ol9-1\
+  \ hugepages1G]# time fallocate -l 700GB test.txt\n            real    1m44.551s\n\
+  \            user    0m0.000s\n            sys     1m44.438s\n\nx86\n    2MB Page\
+  \ Size\n        6.5-rc3 + this patch:\n            [root@sidhakum-ol9-2 hugepages]#\
+  \ time fallocate -l 100GB test.txt\n            real    0m22.383s\n            user\
+  \    0m0.000s\n            sys     0m22.255s\n\n        6.5-rc3:\n            [opc@sidhakum-ol9-2\
+  \ hugepages]$ time sudo fallocate -l 100GB /dev/hugepages/test.txt\n           \
+  \ real    0m22.735s\n            user    0m0.038s\n            sys     0m22.567s\n\
+  \n    1GB Page Size\n        6.5-rc3 + this patch:\n            [root@sidhakum-ol9-2\
+  \ hugepages1GB]# time fallocate -l 100GB test.txt\n            real    0m25.786s\n\
+  \            user    0m0.001s\n            sys     0m25.589s\n\n        6.5-rc3:\n\
+  \            [root@sidhakum-ol9-2 hugepages1G]# time fallocate -l 100GB test.txt\n\
+  \            real    0m33.454s\n            user    0m0.001s\n            sys  \
+  \   0m33.193s\n\naarch64:\n    workload - fallocate a 700GB file backed by huge\
+  \ pages\n\n    6.5-rc3 + this patch:\n        2MB Page Size:\n            --100.00%--__arm64_sys_fallocate\n\
+  \                          ksys_fallocate\n                          vfs_fallocate\n\
+  \                          hugetlbfs_fallocate\n                          |\n  \
+  \                        |--95.04%--__pi_clear_page\n                          |\n\
+  \                          |--3.57%--clear_huge_page\n                         \
+  \ |          |\n                          |          |--2.63%--rcu_all_qs\n    \
+  \                      |          |\n                          |           --0.91%--__cond_resched\n\
+  \                          |\n                           --0.67%--__cond_resched\n\
+  \            0.17%     0.00%             0  fallocate  [kernel.vmlinux]       [k]\
+  \ hugetlb_add_to_page_cache\n            0.14%     0.10%            11  fallocate\
+  \  [kernel.vmlinux]       [k] __filemap_add_folio\n\n    6.5-rc3\n        2MB Page\
+  \ Size:\n                --100.00%--__arm64_sys_fallocate\n                    \
+  \      ksys_fallocate\n                          vfs_fallocate\n               \
+  \           hugetlbfs_fallocate\n                          |\n                 \
+  \         |--94.91%--__pi_clear_page\n                          |\n            \
+  \              |--4.11%--clear_huge_page\n                          |          |\n\
+  \                          |          |--3.00%--rcu_all_qs\n                   \
+  \       |          |\n                          |           --1.10%--__cond_resched\n\
+  \                          |\n                           --0.59%--__cond_resched\n\
+  \            0.08%     0.01%             1  fallocate  [kernel.kallsyms]  [k] hugetlb_add_to_page_cache\n\
+  \            0.05%     0.03%             3  fallocate  [kernel.kallsyms]  [k] __filemap_add_folio\n\
+  \nx86\n    workload - fallocate a 100GB file backed by huge pages\n\n    6.5-rc3\
+  \ + this patch:\n        2MB Page Size:\n            hugetlbfs_fallocate\n     \
+  \       |\n            --99.57%--clear_huge_page\n                |\n          \
+  \      --98.47%--clear_page_erms\n                    |\n                    --0.53%--asm_sysvec_apic_timer_interrupt\n\
+  \n            0.04%     0.04%             1  fallocate  [kernel.kallsyms]     [k]\
+  \ xa_load\n            0.04%     0.00%             0  fallocate  [kernel.kallsyms]\
+  \     [k] hugetlb_add_to_page_cache\n            0.04%     0.00%             0 \
+  \ fallocate  [kernel.kallsyms]     [k] __filemap_add_folio\n            0.04%  \
+  \   0.00%             0  fallocate  [kernel.kallsyms]     [k] xas_store\n\n    6.5-rc3\n\
+  \        2MB Page Size:\n                --99.93%--__x64_sys_fallocate\n       \
+  \                   vfs_fallocate\n                          hugetlbfs_fallocate\n\
+  \                          |\n                           --99.38%--clear_huge_page\n\
+  \                                     |\n                                     |--98.40%--clear_page_erms\n\
+  \                                     |\n                                      --0.59%--__cond_resched\n\
+  \            0.03%     0.03%             1  fallocate  [kernel.kallsyms]  [k] __filemap_add_folio\n\
+  \n========================= TESTING ======================================\n\nThis\
+  \ patch passes libhugetlbfs tests and LTP hugetlb tests\n\n********** TEST SUMMARY\n\
+  *                      2M\n*                      32-bit 64-bit\n*     Total testcases:\
+  \   110    113\n*             Skipped:     0      0\n*                PASS:   107\
+  \    113\n*                FAIL:     0      0\n*    Killed by signal:     3    \
+  \  0\n*   Bad configuration:     0      0\n*       Expected FAIL:     0      0\n\
+  *     Unexpected PASS:     0      0\n*    Test not present:     0      0\n* Strange\
+  \ test result:     0      0\n**********\n\n    Done executing testcases.\n    LTP\
+  \ Version:  20220527-178-g2761a81c4\n\npage migration was also tested using Mike\
+  \ Kravetz's test program.[8]\n\n[dan.carpenter@linaro.org: fix an NULL vs IS_ERR()\
+  \ bug]\n  Link: https://lkml.kernel.org/r/1772c296-1417-486f-8eef-171af2192681@moroto.mountain\n\
+  Link: https://lkml.kernel.org/r/20230926192017.98183-1-sidhartha.kumar@oracle.com\n\
+  Signed-off-by: Sidhartha Kumar <sidhartha.kumar@oracle.com>\nSigned-off-by: Dan\
+  \ Carpenter <dan.carpenter@linaro.org>\nReported-and-tested-by: syzbot+c225dea486da4d5592bd@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=c225dea486da4d5592bd\nCc: Matthew\
+  \ Wilcox (Oracle) <willy@infradead.org>\nCc: Mike Kravetz <mike.kravetz@oracle.com>\n\
+  Cc: Muchun Song <songmuchun@bytedance.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- fs/hugetlbfs
+- include/linux
+- mm
+hunk_count: 33
+covered_count: 3

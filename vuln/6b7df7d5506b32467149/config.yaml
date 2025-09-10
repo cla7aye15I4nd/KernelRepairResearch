@@ -1,0 +1,44 @@
+id: 6b7df7d5506b32467149
+bug_link: https://syzkaller.appspot.com/bug?extid=6b7df7d5506b32467149
+title: possible deadlock in ext4_multi_mount_protect
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fa08a7b61dff8a4df11ff1e84abfc214b487caf7
+fix_commit: 949f95ff39bf188e594e7ecd8e29b82eb108f5bf
+datetime: '2023-05-07T21:11:18-04:00'
+fix_commit_message: 'ext4: fix lockdep warning when enabling MMP
+
+
+  When we enable MMP in ext4_multi_mount_protect() during mount or
+
+  remount, we end up calling sb_start_write() from write_mmp_block(). This
+
+  triggers lockdep warning because freeze protection ranks above s_umount
+
+  semaphore we are holding during mount / remount. The problem is harmless
+
+  because we are guaranteed the filesystem is not frozen during mount /
+
+  remount but still let''s fix the warning by not grabbing freeze
+
+  protection from ext4_multi_mount_protect().
+
+
+  Cc: stable@kernel.org
+
+  Reported-by: syzbot+6b7df7d5506b32467149@syzkaller.appspotmail.com
+
+  Link: https://syzkaller.appspot.com/bug?id=ab7e5b6f400b7778d46f01841422e5718fb81843
+
+  Signed-off-by: Jan Kara <jack@suse.cz>
+
+  Reviewed-by: Christian Brauner <brauner@kernel.org>
+
+  Link: https://lore.kernel.org/r/20230411121019.21940-1-jack@suse.cz
+
+  Signed-off-by: Theodore Ts''o <tytso@mit.edu>
+
+  '
+submodule:
+- fs/ext4
+hunk_count: 2
+covered_count: 2

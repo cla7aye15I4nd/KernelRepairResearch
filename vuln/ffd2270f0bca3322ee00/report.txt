@@ -1,0 +1,46 @@
+bcachefs (loop0): flushing journal and stopping allocators, journal seq 11
+bcachefs (loop0): flushing journal and stopping allocators complete, journal seq 11
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/journal.h:375!
+Internal error: Oops - BUG: 00000000f2000800 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 1 PID: 6249 Comm: syz-executor102 Tainted: G        W          6.10.0-rc2-syzkaller-g8867bbd4a056 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : bch2_journal_res_get+0x1a8/0x1b4 fs/bcachefs/journal.h:375
+lr : bch2_journal_res_get+0x1a8/0x1b4 fs/bcachefs/journal.h:375
+sp : ffff80009b3076e0
+x29: ffff80009b3076e0 x28: 1fffe0001bf4957f x27: 0000000000000002
+x26: dfff800000000000 x25: 1ffff00013660ee8 x24: dfff800000000000
+x23: 1ffff00013660eec x22: dfff800000000000 x21: 0000000000000005
+x20: ffff0000dfa4a5c0 x19: ffff80009b307760 x18: 0000000000000008
+x17: 6c706d6f63207372 x16: ffff80008ae4f3c0 x15: 0000000000000002
+x14: 1ffff00013660eec x13: 0000000000000000 x12: 0000000000000000
+x11: ffff700013660eee x10: 0000000000ff0100 x9 : 0000000000000000
+x8 : ffff0000d62fbc80 x7 : 0000000000000000 x6 : 0000000000000000
+x5 : 0000000000000000 x4 : 0000000000000000 x3 : 0000000000000010
+x2 : 0000000000000000 x1 : 0000000000000000 x0 : 0000000000000000
+Call trace:
+ bch2_journal_res_get+0x1a8/0x1b4 fs/bcachefs/journal.h:375
+ bch2_journal_meta+0x9c/0x268 fs/bcachefs/journal.c:828
+ bch2_fs_journal_stop+0x188/0x348 fs/bcachefs/journal.c:1179
+ __bch2_fs_read_only+0x2a4/0x3d0 fs/bcachefs/super.c:291
+ __bch2_fs_read_write+0x2f0/0x434 fs/bcachefs/super.c:507
+ bch2_fs_read_write+0xa8/0xf0 fs/bcachefs/super.c:520
+ bch2_remount+0x2bc/0x460 fs/bcachefs/fs.c:1731
+ legacy_reconfigure+0xfc/0x114 fs/fs_context.c:685
+ reconfigure_super+0x1d0/0x6f0 fs/super.c:1072
+ vfs_cmd_reconfigure fs/fsopen.c:267 [inline]
+ vfs_fsconfig_locked fs/fsopen.c:296 [inline]
+ __do_sys_fsconfig fs/fsopen.c:476 [inline]
+ __se_sys_fsconfig fs/fsopen.c:349 [inline]
+ __arm64_sys_fsconfig+0x8b8/0xc40 fs/fsopen.c:349
+ __invoke_syscall arch/arm64/kernel/syscall.c:34 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:48
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:133
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:152
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:712
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:730
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:598
+Code: 17ffffab 9770cd61 d4210000 9770cd5f (d4210000) 
+---[ end trace 0000000000000000 ]---

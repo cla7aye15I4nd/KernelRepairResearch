@@ -1,0 +1,56 @@
+id: b6e703f648ebbbf57a4528d4314e0c2a5c893dc2
+bug_link: https://syzkaller.appspot.com/bug?extid=b6e703f648ebbbf57a4528d4314e0c2a5c893dc2
+title: general protection fault in crypto_remove_spawns
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2973633e9f09311e849f975d969737af81a521ff
+fix_commit: 9a00674213a3f00394f4e3221b88f2d21fc05789
+datetime: '2018-01-05T18:41:52+11:00'
+fix_commit_message: 'crypto: algapi - fix NULL dereference in crypto_remove_spawns()
+
+
+  syzkaller triggered a NULL pointer dereference in crypto_remove_spawns()
+
+  via a program that repeatedly and concurrently requests AEADs
+
+  "authenc(cmac(des3_ede-asm),pcbc-aes-aesni)" and hashes "cmac(des3_ede)"
+
+  through AF_ALG, where the hashes are requested as "untested"
+
+  (CRYPTO_ALG_TESTED is set in ->salg_mask but clear in ->salg_feat; this
+
+  causes the template to be instantiated for every request).
+
+
+  Although AF_ALG users really shouldn''t be able to request an "untested"
+
+  algorithm, the NULL pointer dereference is actually caused by a
+
+  longstanding race condition where crypto_remove_spawns() can encounter
+
+  an instance which has had spawn(s) "grabbed" but hasn''t yet been
+
+  registered, resulting in ->cra_users still being NULL.
+
+
+  We probably should properly initialize ->cra_users earlier, but that
+
+  would require updating many templates individually.  For now just fix
+
+  the bug in a simple way that can easily be backported: make
+
+  crypto_remove_spawns() treat a NULL ->cra_users list as empty.
+
+
+  Reported-by: syzbot <syzkaller@googlegroups.com>
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Eric Biggers <ebiggers@google.com>
+
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  '
+submodule:
+- crypto
+hunk_count: 1
+covered_count: 1

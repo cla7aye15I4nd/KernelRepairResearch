@@ -1,0 +1,55 @@
+id: 4e42a04e0bc33cb6c087
+bug_link: https://syzkaller.appspot.com/bug?extid=4e42a04e0bc33cb6c087
+title: 'KASAN: stack-out-of-bounds Write in compat_copy_entries'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b71534583f22d08c3e3563bf5100aeb5f5c9fbe5
+fix_commit: 94c752f99954797da583a84c4907ff19e92550a4
+datetime: '2018-05-17T13:48:48+02:00'
+fix_commit_message: "netfilter: ebtables: handle string from userspace with care\n\
+  \nstrlcpy() can't be safely used on a user-space provided string,\nas it can try\
+  \ to read beyond the buffer's end, if the latter is\nnot NULL terminated.\n\nLeveraging\
+  \ the above, syzbot has been able to trigger the following\nsplat:\n\nBUG: KASAN:\
+  \ stack-out-of-bounds in strlcpy include/linux/string.h:300\n[inline]\nBUG: KASAN:\
+  \ stack-out-of-bounds in compat_mtw_from_user\nnet/bridge/netfilter/ebtables.c:1957\
+  \ [inline]\nBUG: KASAN: stack-out-of-bounds in ebt_size_mwt\nnet/bridge/netfilter/ebtables.c:2059\
+  \ [inline]\nBUG: KASAN: stack-out-of-bounds in size_entry_mwt\nnet/bridge/netfilter/ebtables.c:2155\
+  \ [inline]\nBUG: KASAN: stack-out-of-bounds in compat_copy_entries+0x96c/0x14a0\n\
+  net/bridge/netfilter/ebtables.c:2194\nWrite of size 33 at addr ffff8801b0abf888\
+  \ by task syz-executor0/4504\n\nCPU: 0 PID: 4504 Comm: syz-executor0 Not tainted\
+  \ 4.17.0-rc2+ #40\nHardware name: Google Google Compute Engine/Google Compute Engine,\
+  \ BIOS\nGoogle 01/01/2011\nCall Trace:\n  __dump_stack lib/dump_stack.c:77 [inline]\n\
+  \  dump_stack+0x1b9/0x294 lib/dump_stack.c:113\n  print_address_description+0x6c/0x20b\
+  \ mm/kasan/report.c:256\n  kasan_report_error mm/kasan/report.c:354 [inline]\n \
+  \ kasan_report.cold.7+0x242/0x2fe mm/kasan/report.c:412\n  check_memory_region_inline\
+  \ mm/kasan/kasan.c:260 [inline]\n  check_memory_region+0x13e/0x1b0 mm/kasan/kasan.c:267\n\
+  \  memcpy+0x37/0x50 mm/kasan/kasan.c:303\n  strlcpy include/linux/string.h:300 [inline]\n\
+  \  compat_mtw_from_user net/bridge/netfilter/ebtables.c:1957 [inline]\n  ebt_size_mwt\
+  \ net/bridge/netfilter/ebtables.c:2059 [inline]\n  size_entry_mwt net/bridge/netfilter/ebtables.c:2155\
+  \ [inline]\n  compat_copy_entries+0x96c/0x14a0 net/bridge/netfilter/ebtables.c:2194\n\
+  \  compat_do_replace+0x483/0x900 net/bridge/netfilter/ebtables.c:2285\n  compat_do_ebt_set_ctl+0x2ac/0x324\
+  \ net/bridge/netfilter/ebtables.c:2367\n  compat_nf_sockopt net/netfilter/nf_sockopt.c:144\
+  \ [inline]\n  compat_nf_setsockopt+0x9b/0x140 net/netfilter/nf_sockopt.c:156\n \
+  \ compat_ip_setsockopt+0xff/0x140 net/ipv4/ip_sockglue.c:1279\n  inet_csk_compat_setsockopt+0x97/0x120\
+  \ net/ipv4/inet_connection_sock.c:1041\n  compat_tcp_setsockopt+0x49/0x80 net/ipv4/tcp.c:2901\n\
+  \  compat_sock_common_setsockopt+0xb4/0x150 net/core/sock.c:3050\n  __compat_sys_setsockopt+0x1ab/0x7c0\
+  \ net/compat.c:403\n  __do_compat_sys_setsockopt net/compat.c:416 [inline]\n  __se_compat_sys_setsockopt\
+  \ net/compat.c:413 [inline]\n  __ia32_compat_sys_setsockopt+0xbd/0x150 net/compat.c:413\n\
+  \  do_syscall_32_irqs_on arch/x86/entry/common.c:323 [inline]\n  do_fast_syscall_32+0x345/0xf9b\
+  \ arch/x86/entry/common.c:394\n  entry_SYSENTER_compat+0x70/0x7f arch/x86/entry/entry_64_compat.S:139\n\
+  RIP: 0023:0xf7fb3cb9\nRSP: 002b:00000000fff0c26c EFLAGS: 00000282 ORIG_RAX: 000000000000016e\n\
+  RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 0000000000000000\nRDX: 0000000000000080\
+  \ RSI: 0000000020000300 RDI: 00000000000005f4\nRBP: 0000000000000000 R08: 0000000000000000\
+  \ R09: 0000000000000000\nR10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000\n\
+  R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000\n\nThe buggy address\
+  \ belongs to the page:\npage:ffffea0006c2afc0 count:0 mapcount:0 mapping:0000000000000000\
+  \ index:0x0\nflags: 0x2fffc0000000000()\nraw: 02fffc0000000000 0000000000000000\
+  \ 0000000000000000 00000000ffffffff\nraw: 0000000000000000 ffffea0006c20101 0000000000000000\
+  \ 0000000000000000\npage dumped because: kasan: bad access detected\n\nFix the issue\
+  \ replacing the unsafe function with strscpy() and\ntaking care of possible errors.\n\
+  \nFixes: 81e675c227ec (\"netfilter: ebtables: add CONFIG_COMPAT support\")\nReported-and-tested-by:\
+  \ syzbot+4e42a04e0bc33cb6c087@syzkaller.appspotmail.com\nSigned-off-by: Paolo Abeni\
+  \ <pabeni@redhat.com>\nSigned-off-by: Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/bridge
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,46 @@
+id: c70d87ac1d001f29a058
+bug_link: https://syzkaller.appspot.com/bug?extid=c70d87ac1d001f29a058
+title: 'KASAN: use-after-free Read in post_one_notification'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 543ce63b664e2c2f9533d089a4664b559c3e6b5b
+fix_commit: 353f7988dd8413c47718f7ca79c030b6fb62cfe5
+datetime: '2022-07-20T10:46:07-07:00'
+fix_commit_message: 'watchqueue: make sure to serialize ''wqueue->defunct'' properly
+
+
+  When the pipe is closed, we mark the associated watchqueue defunct by
+
+  calling watch_queue_clear().  However, while that is protected by the
+
+  watchqueue lock, new watchqueue entries aren''t actually added under that
+
+  lock at all: they use the pipe->rd_wait.lock instead, and looking up
+
+  that pipe happens without any locking.
+
+
+  The watchqueue code uses the RCU read-side section to make sure that the
+
+  wqueue entry itself hasn''t disappeared, but that does not protect the
+
+  pipe_info in any way.
+
+
+  So make sure to actually hold the wqueue lock when posting watch events,
+
+  properly serializing against the pipe being torn down.
+
+
+  Reported-by: Noam Rathaus <noamr@ssd-disclosure.com>
+
+  Cc: Greg KH <gregkh@linuxfoundation.org>
+
+  Cc: David Howells <dhowells@redhat.com>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- kernel
+hunk_count: 6
+covered_count: 4

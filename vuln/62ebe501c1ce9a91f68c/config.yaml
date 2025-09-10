@@ -1,0 +1,38 @@
+id: 62ebe501c1ce9a91f68c
+bug_link: https://syzkaller.appspot.com/bug?extid=62ebe501c1ce9a91f68c
+title: WARNING in print_bfs_bug
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 267580db047ef428a70bef8287ca62c5a450c139
+fix_commit: 6d1823ccc480866e571ab1206665d693aeb600cf
+datetime: '2020-09-29T09:56:59+02:00'
+fix_commit_message: "lockdep: Optimize the memory usage of circular queue\n\nQian\
+  \ Cai reported a BFS_EQUEUEFULL warning [1] after read recursive\ndeadlock detection\
+  \ merged into tip tree recently. Unlike the previous\nlockep graph searching, which\
+  \ iterate every lock class (every node in\nthe graph) exactly once, the graph searching\
+  \ for read recurisve deadlock\ndetection needs to iterate every lock dependency\
+  \ (every edge in the\ngraph) once, as a result, the maximum memory cost of the circular\
+  \ queue\nchanges from O(V), where V is the number of lock classes (nodes or\nvertices)\
+  \ in the graph, to O(E), where E is the number of lock\ndependencies (edges), because\
+  \ every lock class or dependency gets\nenqueued once in the BFS. Therefore we hit\
+  \ the BFS_EQUEUEFULL case.\n\nHowever, actually we don't need to enqueue all dependencies\
+  \ for the BFS,\nbecause every time we enqueue a dependency, we almostly enqueue\
+  \ all\nother dependencies in the same dependency list (\"almostly\" is because\n\
+  we currently check before enqueue, so if a dependency doesn't pass the\ncheck stage\
+  \ we won't enqueue it, however, we can always do in reverse\nordering), based on\
+  \ this, we can only enqueue the first dependency from\na dependency list and every\
+  \ time we want to fetch a new dependency to\nwork, we can either:\n\n  1)\tfetch\
+  \ the dependency next to the current dependency in the\n\tdependency list\nor\n\n\
+  \  2)\tif the dependency in 1) doesn't exist, fetch the dependency from\n\tthe queue.\n\
+  \nWith this approach, the \"max bfs queue depth\" for a x86_64_defconfig +\nlockdep\
+  \ and selftest config kernel can get descreased from:\n\n        max bfs queue depth:\
+  \                   201\n\nto (after apply this patch)\n\n        max bfs queue\
+  \ depth:                   61\n\nWhile I'm at it, clean up the code logic a little\
+  \ (e.g. directly return\nother than set a \"ret\" value and goto the \"exit\" label).\n\
+  \n[1]: https://lore.kernel.org/lkml/17343f6f7f2438fc376125384133c5ba70c2a681.camel@redhat.com/\n\
+  \nReported-by: Qian Cai <cai@redhat.com>\nReported-by: syzbot+62ebe501c1ce9a91f68c@syzkaller.appspotmail.com\n\
+  Signed-off-by: Boqun Feng <boqun.feng@gmail.com>\nSigned-off-by: Peter Zijlstra\
+  \ (Intel) <peterz@infradead.org>\nLink: https://lkml.kernel.org/r/20200917080210.108095-1-boqun.feng@gmail.com\n"
+submodule:
+- kernel/locking
+hunk_count: 4
+covered_count: 3

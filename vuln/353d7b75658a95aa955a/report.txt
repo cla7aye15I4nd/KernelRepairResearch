@@ -1,0 +1,182 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in __hlist_del include/linux/list.h:982 [inline]
+BUG: KASAN: slab-use-after-free in hlist_del_init include/linux/list.h:1008 [inline]
+BUG: KASAN: slab-use-after-free in binderfs_evict_inode+0x335/0x340 drivers/android/binderfs.c:277
+Write of size 8 at addr ffff8881417f2408 by task syz-executor/5808
+
+CPU: 0 UID: 0 PID: 5808 Comm: syz-executor Not tainted 6.15.0-syzkaller-01972-g914873bc7df9 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0xcd/0x680 mm/kasan/report.c:521
+ kasan_report+0xe0/0x110 mm/kasan/report.c:634
+ __hlist_del include/linux/list.h:982 [inline]
+ hlist_del_init include/linux/list.h:1008 [inline]
+ binderfs_evict_inode+0x335/0x340 drivers/android/binderfs.c:277
+ evict+0x3e6/0x920 fs/inode.c:810
+ iput_final fs/inode.c:1898 [inline]
+ iput fs/inode.c:1924 [inline]
+ iput+0x521/0x880 fs/inode.c:1910
+ dentry_unlink_inode+0x29c/0x480 fs/dcache.c:466
+ __dentry_kill+0x1d0/0x600 fs/dcache.c:669
+ shrink_kill fs/dcache.c:1114 [inline]
+ shrink_dentry_list+0x140/0x5d0 fs/dcache.c:1141
+ shrink_dcache_parent+0xe1/0x530 fs/dcache.c:1575
+ do_one_tree fs/dcache.c:1604 [inline]
+ shrink_dcache_for_umount+0xa5/0x3e0 fs/dcache.c:1621
+ generic_shutdown_super+0x6c/0x390 fs/super.c:621
+ kill_anon_super fs/super.c:1287 [inline]
+ kill_litter_super+0x70/0xa0 fs/super.c:1297
+ binderfs_kill_super+0x3b/0xa0 drivers/android/binderfs.c:792
+ deactivate_locked_super+0xc1/0x1a0 fs/super.c:474
+ deactivate_super fs/super.c:507 [inline]
+ deactivate_super+0xde/0x100 fs/super.c:503
+ cleanup_mnt+0x225/0x450 fs/namespace.c:1432
+ task_work_run+0x14d/0x240 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0xae2/0x2c70 kernel/exit.c:959
+ do_group_exit+0xd3/0x2a0 kernel/exit.c:1108
+ get_signal+0x2673/0x26d0 kernel/signal.c:3034
+ arch_do_signal_or_restart+0x8f/0x7d0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x13b/0x290 kernel/entry/common.c:218
+ do_syscall_64+0xda/0x260 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f3c42b8d33d
+Code: Unable to access opcode bytes at 0x7f3c42b8d313.
+RSP: 002b:00007ffc6fae6b88 EFLAGS: 00000246 ORIG_RAX: 0000000000000000
+RAX: fffffffffffffe00 RBX: 0000000000000003 RCX: 00007f3c42b8d33d
+RDX: 0000000000000030 RSI: 00007ffc6fae6c20 RDI: 00000000000000f9
+RBP: 00007ffc6fae6bcc R08: 000000000000000a R09: 00007ffc6fae68d7
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000016
+R13: 00000000000927c0 R14: 0000000000010b92 R15: 00007ffc6fae6c20
+ </TASK>
+
+Allocated by task 5810:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:394
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ binderfs_binder_device_create.isra.0+0x189/0xc30 drivers/android/binderfs.c:147
+ binderfs_fill_super+0x8d4/0x1360 drivers/android/binderfs.c:730
+ vfs_get_super fs/super.c:1330 [inline]
+ get_tree_nodev+0xdd/0x190 fs/super.c:1349
+ vfs_get_tree+0x8e/0x340 fs/super.c:1809
+ do_new_mount fs/namespace.c:3882 [inline]
+ path_mount+0x14d4/0x1f70 fs/namespace.c:4209
+ do_mount fs/namespace.c:4222 [inline]
+ __do_sys_mount fs/namespace.c:4433 [inline]
+ __se_sys_mount fs/namespace.c:4410 [inline]
+ __x64_sys_mount+0x28d/0x310 fs/namespace.c:4410
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 5810:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ kasan_save_free_info+0x3b/0x60 mm/kasan/generic.c:576
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x51/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2380 [inline]
+ slab_free mm/slub.c:4642 [inline]
+ kfree+0x2b4/0x4d0 mm/slub.c:4841
+ binderfs_evict_inode+0x29f/0x340 drivers/android/binderfs.c:279
+ evict+0x3e6/0x920 fs/inode.c:810
+ iput_final fs/inode.c:1898 [inline]
+ iput fs/inode.c:1924 [inline]
+ iput+0x521/0x880 fs/inode.c:1910
+ dentry_unlink_inode+0x29c/0x480 fs/dcache.c:466
+ __dentry_kill+0x1d0/0x600 fs/dcache.c:669
+ shrink_kill fs/dcache.c:1114 [inline]
+ shrink_dentry_list+0x140/0x5d0 fs/dcache.c:1141
+ shrink_dcache_parent+0xe1/0x530 fs/dcache.c:1575
+ do_one_tree fs/dcache.c:1604 [inline]
+ shrink_dcache_for_umount+0xa5/0x3e0 fs/dcache.c:1621
+ generic_shutdown_super+0x6c/0x390 fs/super.c:621
+ kill_anon_super fs/super.c:1287 [inline]
+ kill_litter_super+0x70/0xa0 fs/super.c:1297
+ binderfs_kill_super+0x3b/0xa0 drivers/android/binderfs.c:792
+ deactivate_locked_super+0xc1/0x1a0 fs/super.c:474
+ deactivate_super fs/super.c:507 [inline]
+ deactivate_super+0xde/0x100 fs/super.c:503
+ cleanup_mnt+0x225/0x450 fs/namespace.c:1432
+ task_work_run+0x14d/0x240 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0xae2/0x2c70 kernel/exit.c:959
+ do_group_exit+0xd3/0x2a0 kernel/exit.c:1108
+ get_signal+0x2673/0x26d0 kernel/signal.c:3034
+ arch_do_signal_or_restart+0x8f/0x7d0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x13b/0x290 kernel/entry/common.c:218
+ do_syscall_64+0xda/0x260 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff8881417f2400
+ which belongs to the cache kmalloc-512 of size 512
+The buggy address is located 8 bytes inside of
+ freed 512-byte region [ffff8881417f2400, ffff8881417f2600)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x1417f0
+head: order:2 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0x57ff00000000040(head|node=1|zone=2|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 057ff00000000040 ffff88801b441c80 dead000000000100 dead000000000122
+raw: 0000000000000000 0000000000100010 00000000f5000000 0000000000000000
+head: 057ff00000000040 ffff88801b441c80 dead000000000100 dead000000000122
+head: 0000000000000000 0000000000100010 00000000f5000000 0000000000000000
+head: 057ff00000000002 ffffea000505fc01 00000000ffffffff 00000000ffffffff
+head: ffffffffffffffff 0000000000000000 00000000ffffffff 0000000000000004
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 2, migratetype Unmovable, gfp_mask 0xd2000(__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 1, tgid 1 (swapper/0), ts 7446305366, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1c0/0x230 mm/page_alloc.c:1714
+ prep_new_page mm/page_alloc.c:1722 [inline]
+ get_page_from_freelist+0x135c/0x3950 mm/page_alloc.c:3684
+ __alloc_frozen_pages_noprof+0x261/0x23f0 mm/page_alloc.c:4974
+ alloc_pages_mpol+0x1fb/0x550 mm/mempolicy.c:2301
+ alloc_slab_page mm/slub.c:2450 [inline]
+ allocate_slab mm/slub.c:2618 [inline]
+ new_slab+0x23b/0x330 mm/slub.c:2672
+ ___slab_alloc+0xd9c/0x1940 mm/slub.c:3858
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3948
+ __slab_alloc_node mm/slub.c:4023 [inline]
+ slab_alloc_node mm/slub.c:4184 [inline]
+ __kmalloc_cache_noprof+0xfb/0x3e0 mm/slub.c:4353
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ device_private_init drivers/base/core.c:3537 [inline]
+ device_add+0xccc/0x1a70 drivers/base/core.c:3588
+ __add_disk+0x457/0xf00 block/genhd.c:492
+ add_disk_fwnode+0x13f/0x5d0 block/genhd.c:593
+ add_disk include/linux/blkdev.h:764 [inline]
+ loop_add+0x90f/0xb70 drivers/block/loop.c:2053
+ loop_init+0x164/0x270 drivers/block/loop.c:2245
+ do_one_initcall+0x120/0x6e0 init/main.c:1257
+ do_initcall_level init/main.c:1319 [inline]
+ do_initcalls init/main.c:1335 [inline]
+ do_basic_setup init/main.c:1354 [inline]
+ kernel_init_freeable+0x5c2/0x900 init/main.c:1567
+ kernel_init+0x1c/0x2b0 init/main.c:1457
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff8881417f2300: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff8881417f2380: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+>ffff8881417f2400: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                      ^
+ ffff8881417f2480: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff8881417f2500: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

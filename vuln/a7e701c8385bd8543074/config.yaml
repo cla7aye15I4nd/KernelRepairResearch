@@ -1,0 +1,57 @@
+id: a7e701c8385bd8543074
+bug_link: https://syzkaller.appspot.com/bug?extid=a7e701c8385bd8543074
+title: WARNING in xfrm_alloc_compat
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4e0396c59559264442963b349ab71f66e471f84d
+fix_commit: dbd7ae5154d5fff7e84a9f3010bb06499017ef29
+datetime: '2020-11-09T07:34:56+01:00'
+fix_commit_message: 'xfrm/compat: Translate by copying XFRMA_UNSPEC attribute
+
+
+  xfrm_xlate32() translates 64-bit message provided by kernel to be sent
+
+  for 32-bit listener (acknowledge or monitor). Translator code doesn''t
+
+  expect XFRMA_UNSPEC attribute as it doesn''t know its payload.
+
+  Kernel never attaches such attribute, but a user can.
+
+
+  I''ve searched if any opensource does it and the answer is no.
+
+  Nothing on github and google finds only tfcproject that has such code
+
+  commented-out.
+
+
+  What will happen if a user sends a netlink message with XFRMA_UNSPEC
+
+  attribute? Ipsec code ignores this attribute. But if there is a
+
+  monitor-process or 32-bit user requested ack - kernel will try to
+
+  translate such message and will hit WARN_ONCE() in xfrm_xlate64_attr().
+
+
+  Deal with XFRMA_UNSPEC by copying the attribute payload with
+
+  xfrm_nla_cpy(). In result, the default switch-case in xfrm_xlate64_attr()
+
+  becomes an unused code. Leave those 3 lines in case a new xfrm attribute
+
+  will be added.
+
+
+  Fixes: 5461fc0c8d9f ("xfrm/compat: Add 64=>32-bit messages translator")
+
+  Reported-by: syzbot+a7e701c8385bd8543074@syzkaller.appspotmail.com
+
+  Signed-off-by: Dmitry Safonov <dima@arista.com>
+
+  Signed-off-by: Steffen Klassert <steffen.klassert@secunet.com>
+
+  '
+submodule:
+- net/xfrm
+hunk_count: 1
+covered_count: 1

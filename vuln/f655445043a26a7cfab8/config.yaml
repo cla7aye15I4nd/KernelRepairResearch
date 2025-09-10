@@ -1,0 +1,34 @@
+id: f655445043a26a7cfab8
+bug_link: https://syzkaller.appspot.com/bug?extid=f655445043a26a7cfab8
+title: WARNING in io_wq_submit_work
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a1bb3cd58913338e1b627ea6b8c03c2ae82d293f
+fix_commit: ca70f00bed6cb255b7a9b91aa18a2717c9217f70
+datetime: '2021-01-26T09:01:49-07:00'
+fix_commit_message: "io_uring: fix cancellation taking mutex while TASK_UNINTERRUPTIBLE\n\
+  \ndo not call blocking ops when !TASK_RUNNING; state=2 set at\n\t[<00000000ced9dbfc>]\
+  \ prepare_to_wait+0x1f4/0x3b0\n\tkernel/sched/wait.c:262\nWARNING: CPU: 1 PID: 19888\
+  \ at kernel/sched/core.c:7853\n\t__might_sleep+0xed/0x100 kernel/sched/core.c:7848\n\
+  RIP: 0010:__might_sleep+0xed/0x100 kernel/sched/core.c:7848\nCall Trace:\n __mutex_lock_common+0xc4/0x2ef0\
+  \ kernel/locking/mutex.c:935\n __mutex_lock kernel/locking/mutex.c:1103 [inline]\n\
+  \ mutex_lock_nested+0x1a/0x20 kernel/locking/mutex.c:1118\n io_wq_submit_work+0x39a/0x720\
+  \ fs/io_uring.c:6411\n io_run_cancel fs/io-wq.c:856 [inline]\n io_wqe_cancel_pending_work\
+  \ fs/io-wq.c:990 [inline]\n io_wq_cancel_cb+0x614/0xcb0 fs/io-wq.c:1027\n io_uring_cancel_files\
+  \ fs/io_uring.c:8874 [inline]\n io_uring_cancel_task_requests fs/io_uring.c:8952\
+  \ [inline]\n __io_uring_files_cancel+0x115d/0x19e0 fs/io_uring.c:9038\n io_uring_files_cancel\
+  \ include/linux/io_uring.h:51 [inline]\n do_exit+0x2e6/0x2490 kernel/exit.c:780\n\
+  \ do_group_exit+0x168/0x2d0 kernel/exit.c:922\n get_signal+0x16b5/0x2030 kernel/signal.c:2770\n\
+  \ arch_do_signal_or_restart+0x8e/0x6a0 arch/x86/kernel/signal.c:811\n handle_signal_work\
+  \ kernel/entry/common.c:147 [inline]\n exit_to_user_mode_loop kernel/entry/common.c:171\
+  \ [inline]\n exit_to_user_mode_prepare+0xac/0x1e0 kernel/entry/common.c:201\n __syscall_exit_to_user_mode_work\
+  \ kernel/entry/common.c:291 [inline]\n syscall_exit_to_user_mode+0x48/0x190 kernel/entry/common.c:302\n\
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nRewrite io_uring_cancel_files() to\
+  \ mimic __io_uring_task_cancel()'s\ncounting scheme, so it does all the heavy work\
+  \ before setting\nTASK_UNINTERRUPTIBLE.\n\nCc: stable@vger.kernel.org # 5.9+\nReported-by:\
+  \ syzbot+f655445043a26a7cfab8@syzkaller.appspotmail.com\nSigned-off-by: Pavel Begunkov\
+  \ <asml.silence@gmail.com>\n[axboe: fix inverted task check]\nSigned-off-by: Jens\
+  \ Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

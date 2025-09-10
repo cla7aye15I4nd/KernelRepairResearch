@@ -1,0 +1,70 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 1 UID: 0 PID: 5891 Comm: iou-sqp-5889 Not tainted 6.14.0-rc3-next-20250218-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+RIP: 0010:native_tss_update_io_bitmap+0x1f5/0x640 arch/x86/kernel/process.c:471
+Code: ff df 48 89 44 24 50 42 80 3c 38 00 74 08 48 89 df e8 cf 75 c7 00 48 89 5c 24 58 4c 8b 2b 4c 89 f0 48 c1 e8 03 48 89 44 24 48 <42> 80 3c 38 00 74 08 4c 89 f7 e8 ac 75 c7 00 49 8b 1e 4c 89 ef 48
+RSP: 0018:ffffc900042cf280 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: ffff8880b870a068 RCX: dffffc0000000000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000003
+RBP: ffffc900042cf380 R08: ffffffff81620a34 R09: 1ffff1100fbacb40
+R10: dffffc0000000000 R11: ffffed100fbacb41 R12: 1ffff92000859e5c
+R13: 0000000000000014 R14: 0000000000000000 R15: dffffc0000000000
+FS:  0000555565746480(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f62e5469170 CR3: 000000002a054000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ task_update_io_bitmap+0xb8/0xf0 arch/x86/kernel/ioport.c:47
+ io_bitmap_exit+0x62/0xf0 arch/x86/kernel/ioport.c:57
+ exit_thread+0x76/0xa0 arch/x86/kernel/process.c:123
+ copy_process+0x277d/0x3cf0 kernel/fork.c:2638
+ create_io_thread+0x16a/0x1e0 kernel/fork.c:2746
+ create_io_worker+0x176/0x540 io_uring/io-wq.c:862
+ io_wq_create_worker io_uring/io-wq.c:332 [inline]
+ io_wq_enqueue+0x7b5/0xa00 io_uring/io-wq.c:989
+ io_queue_iowq+0x433/0x670 io_uring/io_uring.c:542
+ io_submit_state_end io_uring/io_uring.c:2215 [inline]
+ io_submit_sqes+0x1940/0x1cf0 io_uring/io_uring.c:2335
+ __io_sq_thread io_uring/sqpoll.c:189 [inline]
+ io_sq_thread+0xc8c/0x1fd0 io_uring/sqpoll.c:312
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:native_tss_update_io_bitmap+0x1f5/0x640 arch/x86/kernel/process.c:471
+Code: ff df 48 89 44 24 50 42 80 3c 38 00 74 08 48 89 df e8 cf 75 c7 00 48 89 5c 24 58 4c 8b 2b 4c 89 f0 48 c1 e8 03 48 89 44 24 48 <42> 80 3c 38 00 74 08 4c 89 f7 e8 ac 75 c7 00 49 8b 1e 4c 89 ef 48
+RSP: 0018:ffffc900042cf280 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: ffff8880b870a068 RCX: dffffc0000000000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000003
+RBP: ffffc900042cf380 R08: ffffffff81620a34 R09: 1ffff1100fbacb40
+R10: dffffc0000000000 R11: ffffed100fbacb41 R12: 1ffff92000859e5c
+R13: 0000000000000014 R14: 0000000000000000 R15: dffffc0000000000
+FS:  0000555565746480(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f62e5469170 CR3: 000000002a054000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess), 1 bytes skipped:
+   0:	df 48 89             	fisttps -0x77(%rax)
+   3:	44 24 50             	rex.R and $0x50,%al
+   6:	42 80 3c 38 00       	cmpb   $0x0,(%rax,%r15,1)
+   b:	74 08                	je     0x15
+   d:	48 89 df             	mov    %rbx,%rdi
+  10:	e8 cf 75 c7 00       	call   0xc775e4
+  15:	48 89 5c 24 58       	mov    %rbx,0x58(%rsp)
+  1a:	4c 8b 2b             	mov    (%rbx),%r13
+  1d:	4c 89 f0             	mov    %r14,%rax
+  20:	48 c1 e8 03          	shr    $0x3,%rax
+  24:	48 89 44 24 48       	mov    %rax,0x48(%rsp)
+* 29:	42 80 3c 38 00       	cmpb   $0x0,(%rax,%r15,1) <-- trapping instruction
+  2e:	74 08                	je     0x38
+  30:	4c 89 f7             	mov    %r14,%rdi
+  33:	e8 ac 75 c7 00       	call   0xc775e4
+  38:	49 8b 1e             	mov    (%r14),%rbx
+  3b:	4c 89 ef             	mov    %r13,%rdi
+  3e:	48                   	rex.W

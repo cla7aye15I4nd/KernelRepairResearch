@@ -1,0 +1,85 @@
+id: b4b0d1b35442afbf6fd2
+bug_link: https://syzkaller.appspot.com/bug?extid=b4b0d1b35442afbf6fd2
+title: memory leak in setup_mq_sysctls
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a111daf0c53ae91e71fd2bfe7497862d14132e3e
+fix_commit: db7cfc380900bc4243b09623fd72fabe0a8ff23b
+datetime: '2022-06-22T17:47:41-05:00'
+fix_commit_message: "ipc: Free mq_sysctls if ipc namespace creation failed\n\nThe\
+  \ problem that Dmitry Vyukov pointed out is that if setup_ipc_sysctls fails,\nmq_sysctls\
+  \ must be freed before return.\n\nexecuting program\nBUG: memory leak\nunreferenced\
+  \ object 0xffff888112fc9200 (size 512):\n  comm \"syz-executor237\", pid 3648, jiffies\
+  \ 4294970469 (age 12.270s)\n  hex dump (first 32 bytes):\n    ef d3 60 85 ff ff\
+  \ ff ff 0c 9b d2 12 81 88 ff ff  ..`.............\n    04 00 00 00 a4 01 00 00 00\
+  \ 00 00 00 00 00 00 00  ................\n  backtrace:\n    [<ffffffff814b6eb3>]\
+  \ kmemdup+0x23/0x50 mm/util.c:129\n    [<ffffffff82219a9b>] kmemdup include/linux/fortify-string.h:456\
+  \ [inline]\n    [<ffffffff82219a9b>] setup_mq_sysctls+0x4b/0x1c0 ipc/mq_sysctl.c:89\n\
+  \    [<ffffffff822197f2>] create_ipc_ns ipc/namespace.c:63 [inline]\n    [<ffffffff822197f2>]\
+  \ copy_ipcs+0x292/0x390 ipc/namespace.c:91\n    [<ffffffff8127de7c>] create_new_namespaces+0xdc/0x4f0\
+  \ kernel/nsproxy.c:90\n    [<ffffffff8127e89b>] unshare_nsproxy_namespaces+0x9b/0x120\
+  \ kernel/nsproxy.c:226\n    [<ffffffff8123f92e>] ksys_unshare+0x2fe/0x600 kernel/fork.c:3165\n\
+  \    [<ffffffff8123fc42>] __do_sys_unshare kernel/fork.c:3236 [inline]\n    [<ffffffff8123fc42>]\
+  \ __se_sys_unshare kernel/fork.c:3234 [inline]\n    [<ffffffff8123fc42>] __x64_sys_unshare+0x12/0x20\
+  \ kernel/fork.c:3234\n    [<ffffffff845aab45>] do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n    [<ffffffff845aab45>] do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n\
+  \    [<ffffffff8460006a>] entry_SYSCALL_64_after_hwframe+0x46/0xb0\n\nBUG: memory\
+  \ leak\nunreferenced object 0xffff888112fd5f00 (size 256):\n  comm \"syz-executor237\"\
+  , pid 3648, jiffies 4294970469 (age 12.270s)\n  hex dump (first 32 bytes):\n   \
+  \ 00 92 fc 12 81 88 ff ff 00 00 00 00 01 00 00 00  ................\n    01 00 00\
+  \ 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n  backtrace:\n    [<ffffffff816fea1b>]\
+  \ kmalloc include/linux/slab.h:605 [inline]\n    [<ffffffff816fea1b>] kzalloc include/linux/slab.h:733\
+  \ [inline]\n    [<ffffffff816fea1b>] __register_sysctl_table+0x7b/0x7f0 fs/proc/proc_sysctl.c:1344\n\
+  \    [<ffffffff82219b7a>] setup_mq_sysctls+0x12a/0x1c0 ipc/mq_sysctl.c:112\n   \
+  \ [<ffffffff822197f2>] create_ipc_ns ipc/namespace.c:63 [inline]\n    [<ffffffff822197f2>]\
+  \ copy_ipcs+0x292/0x390 ipc/namespace.c:91\n    [<ffffffff8127de7c>] create_new_namespaces+0xdc/0x4f0\
+  \ kernel/nsproxy.c:90\n    [<ffffffff8127e89b>] unshare_nsproxy_namespaces+0x9b/0x120\
+  \ kernel/nsproxy.c:226\n    [<ffffffff8123f92e>] ksys_unshare+0x2fe/0x600 kernel/fork.c:3165\n\
+  \    [<ffffffff8123fc42>] __do_sys_unshare kernel/fork.c:3236 [inline]\n    [<ffffffff8123fc42>]\
+  \ __se_sys_unshare kernel/fork.c:3234 [inline]\n    [<ffffffff8123fc42>] __x64_sys_unshare+0x12/0x20\
+  \ kernel/fork.c:3234\n    [<ffffffff845aab45>] do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n    [<ffffffff845aab45>] do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n\
+  \    [<ffffffff8460006a>] entry_SYSCALL_64_after_hwframe+0x46/0xb0\n\nBUG: memory\
+  \ leak\nunreferenced object 0xffff888112fbba00 (size 256):\n  comm \"syz-executor237\"\
+  , pid 3648, jiffies 4294970469 (age 12.270s)\n  hex dump (first 32 bytes):\n   \
+  \ 78 ba fb 12 81 88 ff ff 00 00 00 00 01 00 00 00  x...............\n    01 00 00\
+  \ 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n  backtrace:\n    [<ffffffff816fef49>]\
+  \ kmalloc include/linux/slab.h:605 [inline]\n    [<ffffffff816fef49>] kzalloc include/linux/slab.h:733\
+  \ [inline]\n    [<ffffffff816fef49>] new_dir fs/proc/proc_sysctl.c:978 [inline]\n\
+  \    [<ffffffff816fef49>] get_subdir fs/proc/proc_sysctl.c:1022 [inline]\n    [<ffffffff816fef49>]\
+  \ __register_sysctl_table+0x5a9/0x7f0 fs/proc/proc_sysctl.c:1373\n    [<ffffffff82219b7a>]\
+  \ setup_mq_sysctls+0x12a/0x1c0 ipc/mq_sysctl.c:112\n    [<ffffffff822197f2>] create_ipc_ns\
+  \ ipc/namespace.c:63 [inline]\n    [<ffffffff822197f2>] copy_ipcs+0x292/0x390 ipc/namespace.c:91\n\
+  \    [<ffffffff8127de7c>] create_new_namespaces+0xdc/0x4f0 kernel/nsproxy.c:90\n\
+  \    [<ffffffff8127e89b>] unshare_nsproxy_namespaces+0x9b/0x120 kernel/nsproxy.c:226\n\
+  \    [<ffffffff8123f92e>] ksys_unshare+0x2fe/0x600 kernel/fork.c:3165\n    [<ffffffff8123fc42>]\
+  \ __do_sys_unshare kernel/fork.c:3236 [inline]\n    [<ffffffff8123fc42>] __se_sys_unshare\
+  \ kernel/fork.c:3234 [inline]\n    [<ffffffff8123fc42>] __x64_sys_unshare+0x12/0x20\
+  \ kernel/fork.c:3234\n    [<ffffffff845aab45>] do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n    [<ffffffff845aab45>] do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n\
+  \    [<ffffffff8460006a>] entry_SYSCALL_64_after_hwframe+0x46/0xb0\n\nBUG: memory\
+  \ leak\nunreferenced object 0xffff888112fbb900 (size 256):\n  comm \"syz-executor237\"\
+  , pid 3648, jiffies 4294970469 (age 12.270s)\n  hex dump (first 32 bytes):\n   \
+  \ 78 b9 fb 12 81 88 ff ff 00 00 00 00 01 00 00 00  x...............\n    01 00 00\
+  \ 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n  backtrace:\n    [<ffffffff816fef49>]\
+  \ kmalloc include/linux/slab.h:605 [inline]\n    [<ffffffff816fef49>] kzalloc include/linux/slab.h:733\
+  \ [inline]\n    [<ffffffff816fef49>] new_dir fs/proc/proc_sysctl.c:978 [inline]\n\
+  \    [<ffffffff816fef49>] get_subdir fs/proc/proc_sysctl.c:1022 [inline]\n    [<ffffffff816fef49>]\
+  \ __register_sysctl_table+0x5a9/0x7f0 fs/proc/proc_sysctl.c:1373\n    [<ffffffff82219b7a>]\
+  \ setup_mq_sysctls+0x12a/0x1c0 ipc/mq_sysctl.c:112\n    [<ffffffff822197f2>] create_ipc_ns\
+  \ ipc/namespace.c:63 [inline]\n    [<ffffffff822197f2>] copy_ipcs+0x292/0x390 ipc/namespace.c:91\n\
+  \    [<ffffffff8127de7c>] create_new_namespaces+0xdc/0x4f0 kernel/nsproxy.c:90\n\
+  \    [<ffffffff8127e89b>] unshare_nsproxy_namespaces+0x9b/0x120 kernel/nsproxy.c:226\n\
+  \    [<ffffffff8123f92e>] ksys_unshare+0x2fe/0x600 kernel/fork.c:3165\n    [<ffffffff8123fc42>]\
+  \ __do_sys_unshare kernel/fork.c:3236 [inline]\n    [<ffffffff8123fc42>] __se_sys_unshare\
+  \ kernel/fork.c:3234 [inline]\n    [<ffffffff8123fc42>] __x64_sys_unshare+0x12/0x20\
+  \ kernel/fork.c:3234\n    [<ffffffff845aab45>] do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n    [<ffffffff845aab45>] do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n\
+  \    [<ffffffff8460006a>] entry_SYSCALL_64_after_hwframe+0x46/0xb0\n\nReported-by:\
+  \ syzbot+b4b0d1b35442afbf6fd2@syzkaller.appspotmail.com\nSigned-off-by: Alexey Gladkov\
+  \ <legion@kernel.org>\nLink: https://lkml.kernel.org/r/000000000000f5004705e1db8bad@google.com\n\
+  Link: https://lkml.kernel.org/r/20220622200729.2639663-1-legion@kernel.org\nSigned-off-by:\
+  \ Eric W. Biederman <ebiederm@xmission.com>\n"
+submodule:
+- ipc
+hunk_count: 2
+covered_count: 2

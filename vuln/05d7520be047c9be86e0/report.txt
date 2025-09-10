@@ -1,0 +1,145 @@
+loop0: detected capacity change from 0 to 32768
+==================================================================
+BUG: KASAN: slab-out-of-bounds in journal_entry_dev_usage_to_text+0x12d/0x1d0 fs/bcachefs/journal_io.c:717
+Read of size 8 at addr ffff88807b41a000 by task syz-executor408/5827
+
+CPU: 0 UID: 0 PID: 5827 Comm: syz-executor408 Not tainted 6.12.0-rc7-syzkaller-00070-g0a9b9d17f3a7 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/30/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ journal_entry_dev_usage_to_text+0x12d/0x1d0 fs/bcachefs/journal_io.c:717
+ bch2_sb_clean_to_text+0x138/0x240 fs/bcachefs/sb-clean.c:252
+ bch2_sb_field_validate+0x201/0x2e0 fs/bcachefs/super-io.c:1244
+ bch2_sb_validate+0xbb1/0xf70 fs/bcachefs/super-io.c:480
+ __bch2_read_super+0xc24/0x1380 fs/bcachefs/super-io.c:837
+ bch2_fs_open+0x270/0x2f80 fs/bcachefs/super.c:2032
+ bch2_fs_get_tree+0x738/0x1710 fs/bcachefs/fs.c:2157
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fce355348fa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffdab9314e8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffdab931500 RCX: 00007fce355348fa
+RDX: 00000000200058c0 RSI: 0000000020005900 RDI: 00007ffdab931500
+RBP: 0000000000000004 R08: 00007ffdab931540 R09: 000000000000594b
+R10: 0000000000000400 R11: 0000000000000282 R12: 0000000000000400
+R13: 00007ffdab931540 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+
+Allocated by task 5827:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:257 [inline]
+ __do_kmalloc_node mm/slub.c:4264 [inline]
+ __kmalloc_node_track_caller_noprof+0x225/0x440 mm/slub.c:4283
+ __do_krealloc mm/slab_common.c:1229 [inline]
+ krealloc_noprof+0x88/0x120 mm/slab_common.c:1278
+ bch2_sb_realloc+0x2d2/0x660 fs/bcachefs/super-io.c:189
+ read_one_super+0x73b/0xf40 fs/bcachefs/super-io.c:672
+ __bch2_read_super+0x87c/0x1380 fs/bcachefs/super-io.c:763
+ bch2_fs_open+0x270/0x2f80 fs/bcachefs/super.c:2032
+ bch2_fs_get_tree+0x738/0x1710 fs/bcachefs/fs.c:2157
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88807b418000
+ which belongs to the cache kmalloc-8k of size 8192
+The buggy address is located 0 bytes to the right of
+ allocated 8192-byte region [ffff88807b418000, ffff88807b41a000)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x7b418
+head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000000040(head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000040 ffff88801ac42280 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000080020002 00000001f5000000 0000000000000000
+head: 00fff00000000040 ffff88801ac42280 dead000000000122 0000000000000000
+head: 0000000000000000 0000000080020002 00000001f5000000 0000000000000000
+head: 00fff00000000003 ffffea0001ed0601 ffffffffffffffff 0000000000000000
+head: 0000000000000008 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd2040(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 5827, tgid 5827 (syz-executor408), ts 61901873723, free_ts 61699077225
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1556
+ prep_new_page mm/page_alloc.c:1564 [inline]
+ get_page_from_freelist+0x363e/0x3790 mm/page_alloc.c:3474
+ __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4750
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2265
+ alloc_slab_page+0x6a/0x140 mm/slub.c:2412
+ allocate_slab+0x5a/0x2f0 mm/slub.c:2578
+ new_slab mm/slub.c:2631 [inline]
+ ___slab_alloc+0xcd1/0x14b0 mm/slub.c:3818
+ __slab_alloc+0x58/0xa0 mm/slub.c:3908
+ __slab_alloc_node mm/slub.c:3961 [inline]
+ slab_alloc_node mm/slub.c:4122 [inline]
+ __do_kmalloc_node mm/slub.c:4263 [inline]
+ __kmalloc_node_track_caller_noprof+0x281/0x440 mm/slub.c:4283
+ __do_krealloc mm/slab_common.c:1229 [inline]
+ krealloc_noprof+0x88/0x120 mm/slab_common.c:1278
+ bch2_sb_realloc+0x2d2/0x660 fs/bcachefs/super-io.c:189
+ read_one_super+0x73b/0xf40 fs/bcachefs/super-io.c:672
+ __bch2_read_super+0x87c/0x1380 fs/bcachefs/super-io.c:763
+ bch2_fs_open+0x270/0x2f80 fs/bcachefs/super.c:2032
+ bch2_fs_get_tree+0x738/0x1710 fs/bcachefs/fs.c:2157
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+page last free pid 5827 tgid 5827 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_page+0xded/0x1130 mm/page_alloc.c:2657
+ discard_slab mm/slub.c:2677 [inline]
+ __put_partials+0xeb/0x130 mm/slub.c:3145
+ put_cpu_partial+0x17c/0x250 mm/slub.c:3220
+ __slab_free+0x2ea/0x3d0 mm/slub.c:4449
+ qlink_free mm/kasan/quarantine.c:163 [inline]
+ qlist_free_all+0x9a/0x140 mm/kasan/quarantine.c:179
+ kasan_quarantine_reduce+0x14f/0x170 mm/kasan/quarantine.c:286
+ __kasan_slab_alloc+0x23/0x80 mm/kasan/common.c:329
+ kasan_slab_alloc include/linux/kasan.h:247 [inline]
+ slab_post_alloc_hook mm/slub.c:4085 [inline]
+ slab_alloc_node mm/slub.c:4134 [inline]
+ __kmalloc_cache_noprof+0x132/0x2c0 mm/slub.c:4290
+ kmalloc_noprof include/linux/slab.h:878 [inline]
+ kzalloc_noprof include/linux/slab.h:1014 [inline]
+ tomoyo_print_bprm security/tomoyo/audit.c:26 [inline]
+ tomoyo_init_log+0x11cd/0x2050 security/tomoyo/audit.c:264
+ tomoyo_supervisor+0x38a/0x11f0 security/tomoyo/common.c:2089
+ tomoyo_audit_env_log security/tomoyo/environ.c:36 [inline]
+ tomoyo_env_perm+0x178/0x210 security/tomoyo/environ.c:63
+ tomoyo_environ security/tomoyo/domain.c:672 [inline]
+ tomoyo_find_next_domain+0x146e/0x1d40 security/tomoyo/domain.c:881
+ tomoyo_bprm_check_security+0x114/0x180 security/tomoyo/tomoyo.c:102
+ security_bprm_check+0x86/0x250 security/security.c:1297
+ search_binary_handler fs/exec.c:1740 [inline]
+ exec_binprm fs/exec.c:1794 [inline]
+ bprm_execve+0xa56/0x1770 fs/exec.c:1845
+ do_execveat_common+0x55f/0x6f0 fs/exec.c:1952
+
+Memory state around the buggy address:
+ ffff88807b419f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff88807b419f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff88807b41a000: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+                   ^
+ ffff88807b41a080: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88807b41a100: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

@@ -1,0 +1,94 @@
+=============================
+WARNING: suspicious RCU usage
+6.9.0-syzkaller-10323-g8f6a15f095a6 #0 Not tainted
+-----------------------------
+net/bridge/br_private.h:1599 suspicious rcu_dereference_protected() usage!
+
+other info that might help us debug this:
+
+
+rcu_scheduler_active = 2, debug_locks = 1
+5 locks held by kworker/u8:2/35:
+ #0: ffff88802b2d0148 ((wq_completion)bat_events){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3206 [inline]
+ #0: ffff88802b2d0148 ((wq_completion)bat_events){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3312
+ #1: ffffc90000ab7d00 ((work_completion)(&(&bat_priv->nc.work)->work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3207 [inline]
+ #1: ffffc90000ab7d00 ((work_completion)(&(&bat_priv->nc.work)->work)){+.+.}-{0:0}, at: process_scheduled_works+0x945/0x1830 kernel/workqueue.c:3312
+ #2: ffffc90000007be0 ((&p->forward_delay_timer)){+.-.}-{0:0}, at: call_timer_fn+0xc0/0x650 kernel/time/timer.c:1789
+ #3: ffff888051e94cb8 (&br->lock){+.-.}-{2:2}, at: spin_lock include/linux/spinlock.h:351 [inline]
+ #3: ffff888051e94cb8 (&br->lock){+.-.}-{2:2}, at: br_forward_delay_timer_expired+0x50/0x440 net/bridge/br_stp_timer.c:86
+ #4: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #4: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #4: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: br_mst_set_state+0x171/0x7a0 net/bridge/br_mst.c:105
+
+stack backtrace:
+CPU: 0 PID: 35 Comm: kworker/u8:2 Not tainted 6.9.0-syzkaller-10323-g8f6a15f095a6 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Workqueue: bat_events batadv_nc_worker
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ lockdep_rcu_suspicious+0x221/0x340 kernel/locking/lockdep.c:6712
+ nbp_vlan_group net/bridge/br_private.h:1599 [inline]
+ br_mst_set_state+0x29e/0x7a0 net/bridge/br_mst.c:106
+ br_set_state+0x28a/0x7b0 net/bridge/br_stp.c:47
+ br_forward_delay_timer_expired+0x176/0x440 net/bridge/br_stp_timer.c:88
+ call_timer_fn+0x18e/0x650 kernel/time/timer.c:1792
+ expire_timers kernel/time/timer.c:1843 [inline]
+ __run_timers kernel/time/timer.c:2417 [inline]
+ __run_timer_base+0x66a/0x8e0 kernel/time/timer.c:2428
+ run_timer_base kernel/time/timer.c:2437 [inline]
+ run_timer_softirq+0xb7/0x170 kernel/time/timer.c:2447
+ handle_softirqs+0x2d6/0x990 kernel/softirq.c:554
+ __do_softirq kernel/softirq.c:588 [inline]
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu+0xf4/0x1c0 kernel/softirq.c:637
+ irq_exit_rcu+0x9/0x30 kernel/softirq.c:649
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0xa6/0xc0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:lock_release+0x630/0x9f0 kernel/locking/lockdep.c:5778
+Code: 3c 3b 00 74 08 4c 89 f7 e8 4d 1d 86 00 f6 84 24 91 00 00 00 02 75 77 41 f7 c5 00 02 00 00 74 01 fb 48 c7 44 24 60 0e 36 e0 45 <4b> c7 04 27 00 00 00 00 4b c7 44 27 08 00 00 00 00 65 48 8b 04 25
+RSP: 0018:ffffc90000ab7a20 EFLAGS: 00000206
+RAX: 0000000000000001 RBX: 1ffff92000156f56 RCX: ffffc90000ab7a03
+RDX: 0000000000000002 RSI: ffffffff8bcaca00 RDI: ffffffff8c1f0da0
+RBP: ffffc90000ab7b48 R08: ffffffff8fac0c6f R09: 1ffffffff1f5818d
+R10: dffffc0000000000 R11: fffffbfff1f5818e R12: 1ffff92000156f50
+R13: 0000000000000246 R14: ffffc90000ab7ab0 R15: dffffc0000000000
+ rcu_lock_release include/linux/rcupdate.h:339 [inline]
+ rcu_read_unlock include/linux/rcupdate.h:812 [inline]
+ batadv_nc_purge_orig_hash net/batman-adv/network-coding.c:412 [inline]
+ batadv_nc_worker+0x28b/0x610 net/batman-adv/network-coding.c:719
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3312
+ worker_thread+0x86d/0xd70 kernel/workqueue.c:3393
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+bridge0: port 1(bridge_slave_0) entered learning state
+bridge0: port 2(bridge_slave_1) entered learning state
+----------------
+Code disassembly (best guess):
+   0:	3c 3b                	cmp    $0x3b,%al
+   2:	00 74 08 4c          	add    %dh,0x4c(%rax,%rcx,1)
+   6:	89 f7                	mov    %esi,%edi
+   8:	e8 4d 1d 86 00       	call   0x861d5a
+   d:	f6 84 24 91 00 00 00 	testb  $0x2,0x91(%rsp)
+  14:	02
+  15:	75 77                	jne    0x8e
+  17:	41 f7 c5 00 02 00 00 	test   $0x200,%r13d
+  1e:	74 01                	je     0x21
+  20:	fb                   	sti
+  21:	48 c7 44 24 60 0e 36 	movq   $0x45e0360e,0x60(%rsp)
+  28:	e0 45
+* 2a:	4b c7 04 27 00 00 00 	movq   $0x0,(%r15,%r12,1) <-- trapping instruction
+  31:	00
+  32:	4b c7 44 27 08 00 00 	movq   $0x0,0x8(%r15,%r12,1)
+  39:	00 00
+  3b:	65                   	gs
+  3c:	48                   	rex.W
+  3d:	8b                   	.byte 0x8b
+  3e:	04 25                	add    $0x25,%al

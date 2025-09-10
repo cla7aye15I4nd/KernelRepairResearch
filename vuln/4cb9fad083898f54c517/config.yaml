@@ -1,0 +1,62 @@
+id: 4cb9fad083898f54c517
+bug_link: https://syzkaller.appspot.com/bug?extid=4cb9fad083898f54c517
+title: 'BUG: sleeping function called from invalid context in snd_card_locked'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f479ecc5ef15ed8d774968c1a8726a49420f11a0
+fix_commit: c9ce148ea753bef66686460fa3cec6641cdfbb9f
+datetime: '2025-03-02T08:27:52+01:00'
+fix_commit_message: 'ALSA: seq: Avoid module auto-load handling at event delivery
+
+
+  snd_seq_client_use_ptr() is supposed to return the snd_seq_client
+
+  object for the given client ID, and it tries to handle the module
+
+  auto-loading when no matching object is found.  Although the module
+
+  handling is performed only conditionally with "!in_interrupt()", this
+
+  condition may be fragile, e.g. when the code is called from the ALSA
+
+  timer callback where the spinlock is temporarily disabled while the
+
+  irq is disabled.  Then his doesn''t fit well and spews the error about
+
+  sleep from invalid context, as complained recently by syzbot.
+
+
+  Also, in general, handling the module-loading at each time if no
+
+  matching object is found is really an overkill.  It can be still
+
+  useful when performed at the top-level ioctl or proc reads, but it
+
+  shouldn''t be done at event delivery at all.
+
+
+  For addressing the issues above, this patch disables the module
+
+  handling in snd_seq_client_use_ptr() in normal cases like event
+
+  deliveries, but allow only in limited and safe situations.
+
+  A new function client_load_and_use_ptr() is used for the cases where
+
+  the module loading can be done safely, instead.
+
+
+  Reported-by: syzbot+4cb9fad083898f54c517@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/67c272e5.050a0220.dc10f.0159.GAE@google.com
+
+  Cc: <stable@vger.kernel.org>
+
+  Link: https://patch.msgid.link/20250301114530.8975-1-tiwai@suse.de
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/core/seq
+hunk_count: 16
+covered_count: 4

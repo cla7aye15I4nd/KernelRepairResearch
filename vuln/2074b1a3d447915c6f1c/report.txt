@@ -1,0 +1,64 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 1 PID: 35 Comm: kworker/u8:2 Not tainted 6.10.0-syzkaller-01155-gd67978318827 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Workqueue: iou_exit io_ring_exit_work
+RIP: 0010:__io_remove_buffers+0xac/0x700 io_uring/kbuf.c:341
+Code: 42 80 3c 28 00 74 08 48 89 df e8 5f 02 5b fd 4d 89 fe 48 89 6c 24 40 48 89 5c 24 18 48 8b 1b 48 83 c3 0e 48 89 d8 48 c1 e8 03 <42> 0f b6 04 28 84 c0 0f 85 3b 05 00 00 44 0f b7 3b 49 8d 7c 24 16
+RSP: 0018:ffffc90000ab7840 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000002 RCX: ffff888017a8da00
+RDX: ffff888017a8da00 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: 1ffff110052be8e4 R08: ffffffff849ddaa4 R09: 1ffff110052be8e3
+R10: dffffc0000000000 R11: ffffed10052be8e4 R12: ffff8880295f4700
+R13: dffffc0000000000 R14: ffff8880295f4720 R15: ffff8880295f4720
+FS:  0000000000000000(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000555589c12650 CR3: 000000000e132000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ io_put_bl io_uring/kbuf.c:378 [inline]
+ io_destroy_buffers+0x14e/0x490 io_uring/kbuf.c:392
+ io_ring_ctx_free+0xa00/0x1070 io_uring/io_uring.c:2613
+ io_ring_exit_work+0x80f/0x8a0 io_uring/io_uring.c:2844
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3312
+ worker_thread+0x86d/0xd40 kernel/workqueue.c:3390
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__io_remove_buffers+0xac/0x700 io_uring/kbuf.c:341
+Code: 42 80 3c 28 00 74 08 48 89 df e8 5f 02 5b fd 4d 89 fe 48 89 6c 24 40 48 89 5c 24 18 48 8b 1b 48 83 c3 0e 48 89 d8 48 c1 e8 03 <42> 0f b6 04 28 84 c0 0f 85 3b 05 00 00 44 0f b7 3b 49 8d 7c 24 16
+RSP: 0018:ffffc90000ab7840 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000002 RCX: ffff888017a8da00
+RDX: ffff888017a8da00 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: 1ffff110052be8e4 R08: ffffffff849ddaa4 R09: 1ffff110052be8e3
+R10: dffffc0000000000 R11: ffffed10052be8e4 R12: ffff8880295f4700
+R13: dffffc0000000000 R14: ffff8880295f4720 R15: ffff8880295f4720
+FS:  0000000000000000(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000555589c12650 CR3: 000000000e132000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	42 80 3c 28 00       	cmpb   $0x0,(%rax,%r13,1)
+   5:	74 08                	je     0xf
+   7:	48 89 df             	mov    %rbx,%rdi
+   a:	e8 5f 02 5b fd       	call   0xfd5b026e
+   f:	4d 89 fe             	mov    %r15,%r14
+  12:	48 89 6c 24 40       	mov    %rbp,0x40(%rsp)
+  17:	48 89 5c 24 18       	mov    %rbx,0x18(%rsp)
+  1c:	48 8b 1b             	mov    (%rbx),%rbx
+  1f:	48 83 c3 0e          	add    $0xe,%rbx
+  23:	48 89 d8             	mov    %rbx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 0f b6 04 28       	movzbl (%rax,%r13,1),%eax <-- trapping instruction
+  2f:	84 c0                	test   %al,%al
+  31:	0f 85 3b 05 00 00    	jne    0x572
+  37:	44 0f b7 3b          	movzwl (%rbx),%r15d
+  3b:	49 8d 7c 24 16       	lea    0x16(%r12),%rdi

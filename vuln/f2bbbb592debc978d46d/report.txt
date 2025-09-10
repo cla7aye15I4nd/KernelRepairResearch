@@ -1,0 +1,123 @@
+BUG: Bad rss-counter state mm:ffff88801239a800 type:MM_FILEPAGES val:7
+page: refcount:3 mapcount:1 mapping:ffff888148c58878 index:0x550 pfn:0x34ebe
+memcg:ffff888140e94000
+aops:def_blk_aops ino:fa00000
+flags: 0xfff78000000a2d(locked|referenced|uptodate|lru|workingset|owner_2|node=0|zone=1|lastcpupid=0x7ff)
+raw: 00fff78000000a2d ffffea0000cc9a88 ffffea0001eda608 ffff888148c58878
+raw: 0000000000000550 0000000000000000 0000000300000000 ffff888140e94000
+page dumped because: VM_BUG_ON_FOLIO(folio_mapped(folio))
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x152c40(GFP_NOFS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_HARDWALL), pid 6836, tgid 6832 (syz-executor428), ts 152559879995, free_ts 150737691171
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f4/0x240 mm/page_alloc.c:1551
+ prep_new_page mm/page_alloc.c:1559 [inline]
+ get_page_from_freelist+0x365c/0x37a0 mm/page_alloc.c:3477
+ __alloc_frozen_pages_noprof+0x292/0x710 mm/page_alloc.c:4754
+ alloc_pages_mpol+0x30e/0x550 mm/mempolicy.c:2270
+ alloc_frozen_pages_noprof mm/mempolicy.c:2340 [inline]
+ alloc_pages_noprof+0x121/0x190 mm/mempolicy.c:2360
+ folio_alloc_noprof+0x1e/0x30 mm/mempolicy.c:2370
+ filemap_alloc_folio_noprof+0xe1/0x540 mm/filemap.c:1010
+ page_cache_ra_unbounded+0x30e/0x720 mm/readahead.c:259
+ do_async_mmap_readahead mm/filemap.c:3225 [inline]
+ filemap_fault+0x764/0x16c0 mm/filemap.c:3366
+ __do_fault+0x135/0x390 mm/memory.c:4978
+ do_read_fault mm/memory.c:5393 [inline]
+ do_fault mm/memory.c:5527 [inline]
+ do_pte_missing mm/memory.c:4048 [inline]
+ handle_pte_fault+0x39eb/0x5ee0 mm/memory.c:5890
+ __handle_mm_fault mm/memory.c:6033 [inline]
+ handle_mm_fault+0x11f5/0x1d50 mm/memory.c:6202
+ faultin_page mm/gup.c:1196 [inline]
+ __get_user_pages+0x1a92/0x4140 mm/gup.c:1491
+ populate_vma_page_range+0x264/0x330 mm/gup.c:1929
+ __mm_populate+0x27a/0x460 mm/gup.c:2032
+ mm_populate include/linux/mm.h:3400 [inline]
+ vm_mmap_pgoff+0x303/0x430 mm/util.c:585
+page last free pid 6750 tgid 6750 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_folios+0xe40/0x18b0 mm/page_alloc.c:2707
+ folios_put_refs+0x76c/0x860 mm/swap.c:990
+ folio_batch_release include/linux/pagevec.h:101 [inline]
+ truncate_inode_pages_range+0x460/0x10e0 mm/truncate.c:330
+ kill_bdev block/bdev.c:91 [inline]
+ blkdev_flush_mapping+0x108/0x270 block/bdev.c:671
+ blkdev_put_whole block/bdev.c:678 [inline]
+ bdev_release+0x460/0x700 block/bdev.c:1103
+ blkdev_release+0x15/0x20 block/fops.c:660
+ __fput+0x3e9/0x9f0 fs/file_table.c:450
+ task_work_run+0x24f/0x310 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0xa2f/0x28e0 kernel/exit.c:938
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1087
+ __do_sys_exit_group kernel/exit.c:1098 [inline]
+ __se_sys_exit_group kernel/exit.c:1096 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1096
+ x64_sys_call+0x26a8/0x26b0 arch/x86/include/generated/asm/syscalls_64.h:232
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+------------[ cut here ]------------
+kernel BUG at mm/filemap.c:163!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 6832 Comm: syz-executor428 Not tainted 6.13.0-rc3-next-20241220-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:filemap_unaccount_folio+0x73d/0x7d0 mm/filemap.c:163
+Code: fb c7 ff 48 89 df 48 c7 c6 a0 ac 13 8c e8 cb d3 11 00 90 0f 0b e8 03 fb c7 ff 48 89 df 48 c7 c6 80 ab 13 8c e8 b4 d3 11 00 90 <0f> 0b e8 ec fa c7 ff 48 89 df 48 c7 c6 a0 ac 13 8c e8 9d d3 11 00
+RSP: 0018:ffffc9000c4375b0 EFLAGS: 00010046
+RAX: 1b3f766294124100 RBX: ffffea0000d3af80 RCX: ffffc9000c437103
+RDX: 0000000000000003 RSI: ffffffff8c0aaba0 RDI: ffffffff8c5fed00
+RBP: 0000000000000000 R08: ffffffff901ab1f7 R09: 1ffffffff203563e
+R10: dffffc0000000000 R11: fffffbfff203563f R12: dffffc0000000000
+R13: 1ffffd40001a75f1 R14: ffff888148c58878 R15: ffffea0000d3af88
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffed3040c08 CR3: 0000000076f5e000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ delete_from_page_cache_batch+0x172/0xa60 mm/filemap.c:342
+ truncate_inode_pages_range+0x36b/0x10e0 mm/truncate.c:327
+ kill_bdev block/bdev.c:91 [inline]
+ blkdev_flush_mapping+0x108/0x270 block/bdev.c:671
+ blkdev_put_whole block/bdev.c:678 [inline]
+ bdev_release+0x460/0x700 block/bdev.c:1103
+ blkdev_release+0x15/0x20 block/fops.c:660
+ __fput+0x3e9/0x9f0 fs/file_table.c:450
+ task_work_run+0x24f/0x310 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0xa2f/0x28e0 kernel/exit.c:938
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1087
+ __do_sys_exit_group kernel/exit.c:1098 [inline]
+ __se_sys_exit_group kernel/exit.c:1096 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1096
+ x64_sys_call+0x26a8/0x26b0 arch/x86/include/generated/asm/syscalls_64.h:232
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f9655f3f079
+Code: Unable to access opcode bytes at 0x7f9655f3f04f.
+RSP: 002b:00007ffed3042448 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f9655f3f079
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000000
+RBP: 00007f9655fcb390 R08: ffffffffffffffb0 R09: 0000000000000003
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f9655fcb390
+R13: 0000000000000000 R14: 00007f9655fcbf20 R15: 00007f9655f0c690
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:filemap_unaccount_folio+0x73d/0x7d0 mm/filemap.c:163
+Code: fb c7 ff 48 89 df 48 c7 c6 a0 ac 13 8c e8 cb d3 11 00 90 0f 0b e8 03 fb c7 ff 48 89 df 48 c7 c6 80 ab 13 8c e8 b4 d3 11 00 90 <0f> 0b e8 ec fa c7 ff 48 89 df 48 c7 c6 a0 ac 13 8c e8 9d d3 11 00
+RSP: 0018:ffffc9000c4375b0 EFLAGS: 00010046
+RAX: 1b3f766294124100 RBX: ffffea0000d3af80 RCX: ffffc9000c437103
+RDX: 0000000000000003 RSI: ffffffff8c0aaba0 RDI: ffffffff8c5fed00
+RBP: 0000000000000000 R08: ffffffff901ab1f7 R09: 1ffffffff203563e
+R10: dffffc0000000000 R11: fffffbfff203563f R12: dffffc0000000000
+R13: 1ffffd40001a75f1 R14: ffff888148c58878 R15: ffffea0000d3af88
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffed3040c08 CR3: 0000000076f5e000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

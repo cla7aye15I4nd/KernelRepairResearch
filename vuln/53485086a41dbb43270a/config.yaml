@@ -1,0 +1,39 @@
+id: 53485086a41dbb43270a
+bug_link: https://syzkaller.appspot.com/bug?extid=53485086a41dbb43270a
+title: 'BUG: sleeping function called from invalid context in dev_set_promiscuity'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c9e455581e2ba87ee38c126e8dc49a424b9df0cf
+fix_commit: 6b1d3c5f675cc794a015138b115afff172fb4c58
+datetime: '2025-05-16T15:47:48-07:00'
+fix_commit_message: "team: grab team lock during team_change_rx_flags\n\nSyzkaller\
+  \ reports the following issue:\nBUG: sleeping function called from invalid context\
+  \ at kernel/locking/mutex.c:578\n\n netdev_lock include/linux/netdevice.h:2751 [inline]\n\
+  \ netdev_lock_ops include/net/netdev_lock.h:42 [inline]\n dev_set_promiscuity+0x10e/0x260\
+  \ net/core/dev_api.c:285\n bond_set_promiscuity drivers/net/bonding/bond_main.c:922\
+  \ [inline]\n bond_change_rx_flags+0x219/0x690 drivers/net/bonding/bond_main.c:4732\n\
+  \ dev_change_rx_flags net/core/dev.c:9145 [inline]\n __dev_set_promiscuity+0x3f5/0x590\
+  \ net/core/dev.c:9189\n netif_set_promiscuity+0x50/0xe0 net/core/dev.c:9201\n dev_set_promiscuity+0x126/0x260\
+  \ net/core/dev_api.c:286\n ^^ all of the above is under rcu lock\n team_change_rx_flags+0x1b3/0x330\
+  \ drivers/net/team/team_core.c:1785\n dev_change_rx_flags net/core/dev.c:9145 [inline]\n\
+  \ __dev_set_promiscuity+0x3f5/0x590 net/core/dev.c:9189\n netif_set_promiscuity+0x50/0xe0\
+  \ net/core/dev.c:9201\n dev_set_promiscuity+0x126/0x260 net/core/dev_api.c:286\n\
+  \ hsr_del_port+0x25e/0x2d0 net/hsr/hsr_slave.c:233\n hsr_netdev_notify+0x827/0xb60\
+  \ net/hsr/hsr_main.c:104\n notifier_call_chain+0x1b3/0x3e0 kernel/notifier.c:85\n\
+  \ call_netdevice_notifiers_extack net/core/dev.c:2214 [inline]\n call_netdevice_notifiers\
+  \ net/core/dev.c:2228 [inline]\n unregister_netdevice_many_notify+0x15d8/0x2330\
+  \ net/core/dev.c:11970\n rtnl_delete_link net/core/rtnetlink.c:3522 [inline]\n rtnl_dellink+0x488/0x710\
+  \ net/core/rtnetlink.c:3564\n rtnetlink_rcv_msg+0x7cc/0xb70 net/core/rtnetlink.c:6955\n\
+  \ netlink_rcv_skb+0x219/0x490 net/netlink/af_netlink.c:2534\n netlink_unicast_kernel\
+  \ net/netlink/af_netlink.c:1313 [inline]\n netlink_unicast+0x758/0x8d0 net/netlink/af_netlink.c:1339\n\
+  \ netlink_sendmsg+0x805/0xb30 net/netlink/af_netlink.c:1883\n\nteam_change_rx_flags\
+  \ runs under rcu lock which means we can't grab\ninstance lock for the lower devices.\
+  \ Switch to team->lock, similar\nto what we already do for team_set_mac_address\
+  \ and team_change_mtu.\n\nFixes: 78cd408356fe (\"net: add missing instance lock\
+  \ to dev_set_promiscuity\")\nReported-by: syzbot+53485086a41dbb43270a@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=53485086a41dbb43270a\nLink: https://lore.kernel.org/netdev/6822cc81.050a0220.f2294.00e8.GAE@google.com\n\
+  Signed-off-by: Stanislav Fomichev <stfomichev@gmail.com>\nLink: https://patch.msgid.link/20250514220319.3505158-1-stfomichev@gmail.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net/team
+hunk_count: 2
+covered_count: 0

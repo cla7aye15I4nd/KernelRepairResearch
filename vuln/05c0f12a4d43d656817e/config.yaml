@@ -1,0 +1,36 @@
+id: 05c0f12a4d43d656817e
+bug_link: https://syzkaller.appspot.com/bug?extid=05c0f12a4d43d656817e
+title: general protection fault in io_sqe_buffer_register
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4007c3d8c22a2025367953f4ee36ae106a69d855
+fix_commit: d50f94d761a5d9a34e03a86e512e19d88cbeaf06
+datetime: '2024-11-02T15:45:30-06:00'
+fix_commit_message: 'io_uring/rsrc: get rid of the empty node and dummy_ubuf
+
+
+  The empty node was used as a placeholder for a sparse entry, but it
+
+  didn''t really solve any issues. The caller still has to check for
+
+  whether it''s the empty node or not, it may as well just check for a NULL
+
+  return instead.
+
+
+  The dummy_ubuf was used for a sparse buffer entry, but NULL will serve
+
+  the same purpose there of ensuring an -EFAULT on attempted import.
+
+
+  Just use NULL for a sparse node, regardless of whether or not it''s a
+
+  file or buffer resource.
+
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 15
+covered_count: 5

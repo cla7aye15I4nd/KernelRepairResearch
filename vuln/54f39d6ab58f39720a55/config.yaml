@@ -1,0 +1,40 @@
+id: 54f39d6ab58f39720a55
+bug_link: https://syzkaller.appspot.com/bug?extid=54f39d6ab58f39720a55
+title: 'KASAN: out-of-bounds Read in bpf_test_finish'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b65f370d0671c4980ffe866c41e327b88893245c
+fix_commit: 6e6fddc78323533be570873abb728b7e0ba7e024
+datetime: '2018-07-11T16:10:57-07:00'
+fix_commit_message: "bpf: fix panic due to oob in bpf_prog_test_run_skb\n\nsykzaller\
+  \ triggered several panics similar to the below:\n\n  [...]\n  [  248.851531] BUG:\
+  \ KASAN: use-after-free in _copy_to_user+0x5c/0x90\n  [  248.857656] Read of size\
+  \ 985 at addr ffff8808017ffff2 by task a.out/1425\n  [...]\n  [  248.865902] CPU:\
+  \ 1 PID: 1425 Comm: a.out Not tainted 4.18.0-rc4+ #13\n  [  248.865903] Hardware\
+  \ name: Supermicro SYS-5039MS-H12TRF/X11SSE-F, BIOS 2.1a 03/08/2018\n  [  248.865905]\
+  \ Call Trace:\n  [  248.865910]  dump_stack+0xd6/0x185\n  [  248.865911]  ? show_regs_print_info+0xb/0xb\n\
+  \  [  248.865913]  ? printk+0x9c/0xc3\n  [  248.865915]  ? kmsg_dump_rewind_nolock+0xe4/0xe4\n\
+  \  [  248.865919]  print_address_description+0x6f/0x270\n  [  248.865920]  kasan_report+0x25b/0x380\n\
+  \  [  248.865922]  ? _copy_to_user+0x5c/0x90\n  [  248.865924]  check_memory_region+0x137/0x190\n\
+  \  [  248.865925]  kasan_check_read+0x11/0x20\n  [  248.865927]  _copy_to_user+0x5c/0x90\n\
+  \  [  248.865930]  bpf_test_finish.isra.8+0x4f/0xc0\n  [  248.865932]  bpf_prog_test_run_skb+0x6a0/0xba0\n\
+  \  [...]\n\nAfter scrubbing the BPF prog a bit from the noise, turns out it called\n\
+  bpf_skb_change_head() for the lwt_xmit prog with headroom of 2. Nothing\nwrong in\
+  \ that, however, this was run with repeat >> 0 in bpf_prog_test_run_skb()\nand the\
+  \ same skb thus keeps changing until the pskb_expand_head() called\nfrom skb_cow()\
+  \ keeps bailing out in atomic alloc context with -ENOMEM.\nSo upon return we'll\
+  \ basically have 0 headroom left yet blindly do the\n__skb_push() of 14 bytes and\
+  \ keep copying data from there in bpf_test_finish()\nout of bounds. Fix to check\
+  \ if we have enough headroom and if pskb_expand_head()\nfails, bail out with error.\n\
+  \nAnother bug independent of this fix (but related in triggering above) is\nthat\
+  \ BPF_PROG_TEST_RUN should be reworked to reset the skb/xdp buffer to\nit's original\
+  \ state from input as otherwise repeating the same test in a\nloop won't work for\
+  \ benchmarking when underlying input buffer is getting\nchanged by the prog each\
+  \ time and reused for the next run leading to\nunexpected results.\n\nFixes: 1cf1cae963c2\
+  \ (\"bpf: introduce BPF_PROG_TEST_RUN command\")\nReported-by: syzbot+709412e651e55ed96498@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+54f39d6ab58f39720a55@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Daniel Borkmann <daniel@iogearbox.net>\nSigned-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- net/bpf
+- tools/testing/selftests/bpf
+hunk_count: 4
+covered_count: 2

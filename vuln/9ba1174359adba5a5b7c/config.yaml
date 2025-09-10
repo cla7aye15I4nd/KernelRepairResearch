@@ -1,0 +1,48 @@
+id: 9ba1174359adba5a5b7c
+bug_link: https://syzkaller.appspot.com/bug?extid=9ba1174359adba5a5b7c
+title: general protection fault in br_switchdev_fdb_notify
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1c69d7cf4a8b6b6cfd920a1e809f1cd33ae4369c
+fix_commit: 0541a6293298fb52789de389dfb27ef54df81f73
+datetime: '2021-08-02T15:00:48-07:00'
+fix_commit_message: "net: bridge: validate the NUD_PERMANENT bit when adding an extern_learn\
+  \ FDB entry\n\nCurrently it is possible to add broken extern_learn FDB entries to\
+  \ the\nbridge in two ways:\n\n1. Entries pointing towards the bridge device that\
+  \ are not local/permanent:\n\nip link add br0 type bridge\nbridge fdb add 00:01:02:03:04:05\
+  \ dev br0 self extern_learn static\n\n2. Entries pointing towards the bridge device\
+  \ or towards a port that\nare marked as local/permanent, however the bridge does\
+  \ not process the\n'permanent' bit in any way, therefore they are recorded as though\
+  \ they\naren't permanent:\n\nip link add br0 type bridge\nbridge fdb add 00:01:02:03:04:05\
+  \ dev br0 self extern_learn permanent\n\nSince commit 52e4bec15546 (\"net: bridge:\
+  \ switchdev: treat local FDBs the\nsame as entries towards the bridge\"), these\
+  \ incorrect FDB entries can\neven trigger NULL pointer dereferences inside the kernel.\n\
+  \nThis is because that commit made the assumption that all FDB entries\nthat are\
+  \ not local/permanent have a valid destination port. For context,\nlocal / permanent\
+  \ FDB entries either have fdb->dst == NULL, and these\npoint towards the bridge\
+  \ device and are therefore local and not to be\nused for forwarding, or have fdb->dst\
+  \ == a net_bridge_port structure\n(but are to be treated in the same way, i.e. not\
+  \ for forwarding).\n\nThat assumption _is_ correct as long as things are working\
+  \ correctly in\nthe bridge driver, i.e. we cannot logically have fdb->dst == NULL\
+  \ under\nany circumstance for FDB entries that are not local. However, the\nextern_learn\
+  \ code path where FDB entries are managed by a user space\ncontroller show that\
+  \ it is possible for the bridge kernel driver to\nmisinterpret the NUD flags of\
+  \ an entry transmitted by user space, and\nend up having fdb->dst == NULL while\
+  \ not being a local entry. This is\ninvalid and should be rejected.\n\nBefore, the\
+  \ two commands listed above both crashed the kernel in this\ncheck from br_switchdev_fdb_notify:\n\
+  \n\tstruct net_device *dev = info.is_local ? br->dev : dst->dev;\n\ninfo.is_local\
+  \ == false, dst == NULL.\n\nAfter this patch, the invalid entry added by the first\
+  \ command is\nrejected:\n\nip link add br0 type bridge && bridge fdb add 00:01:02:03:04:05\
+  \ dev br0 self extern_learn static; ip link del br0\nError: bridge: FDB entry towards\
+  \ bridge must be permanent.\n\nand the valid entry added by the second command is\
+  \ properly treated as a\nlocal address and does not crash br_switchdev_fdb_notify\
+  \ anymore:\n\nip link add br0 type bridge && bridge fdb add 00:01:02:03:04:05 dev\
+  \ br0 self extern_learn permanent; ip link del br0\n\nFixes: eb100e0e24a2 (\"net:\
+  \ bridge: allow to add externally learned entries from user-space\")\nReported-by:\
+  \ syzbot+9ba1174359adba5a5b7c@syzkaller.appspotmail.com\nSigned-off-by: Vladimir\
+  \ Oltean <vladimir.oltean@nxp.com>\nAcked-by: Nikolay Aleksandrov <nikolay@nvidia.com>\n\
+  Link: https://lore.kernel.org/r/20210801231730.7493-1-vladimir.oltean@nxp.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/bridge
+hunk_count: 9
+covered_count: 7

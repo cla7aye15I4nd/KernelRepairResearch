@@ -1,0 +1,58 @@
+id: c8a2e66e37eee553c4fd
+bug_link: https://syzkaller.appspot.com/bug?extid=c8a2e66e37eee553c4fd
+title: kernel BUG in ip_frag_next
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3bee9b573af515a8f15db70e7875ac96f87d57b5
+fix_commit: f72ff8b81ebc6a0a25e41b7e6c1dc42e3aa33e7e
+datetime: '2023-01-23T21:39:04-08:00'
+fix_commit_message: 'net: fix kfree_skb_list use of skb_mark_not_on_list
+
+
+  A bug was introduced by commit eedade12f4cb ("net: kfree_skb_list use
+
+  kmem_cache_free_bulk"). It unconditionally unlinked the SKB list via
+
+  invoking skb_mark_not_on_list().
+
+
+  In this patch we choose to remove the skb_mark_not_on_list() call as it
+
+  isn''t necessary. It would be possible and correct to call
+
+  skb_mark_not_on_list() only when __kfree_skb_reason() returns true,
+
+  meaning the SKB is ready to be free''ed, as it calls/check skb_unref().
+
+
+  This fix is needed as kfree_skb_list() is also invoked on skb_shared_info
+
+  frag_list (skb_drop_fraglist() calling kfree_skb_list()). A frag_list can
+
+  have SKBs with elevated refcnt due to cloning via skb_clone_fraglist(),
+
+  which takes a reference on all SKBs in the list. This implies the
+
+  invariant that all SKBs in the list must have the same refcnt, when using
+
+  kfree_skb_list().
+
+
+  Reported-by: syzbot+c8a2e66e37eee553c4fd@syzkaller.appspotmail.com
+
+  Reported-and-tested-by: syzbot+c8a2e66e37eee553c4fd@syzkaller.appspotmail.com
+
+  Fixes: eedade12f4cb ("net: kfree_skb_list use kmem_cache_free_bulk")
+
+  Signed-off-by: Jesper Dangaard Brouer <brouer@redhat.com>
+
+  Reviewed-by: Eric Dumazet <edumazet@google.com>
+
+  Link: https://lore.kernel.org/r/167421088417.1125894.9761158218878962159.stgit@firesoul
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,24 @@
+diff --git a/io_uring/net.c b/io_uring/net.c
+index 0a48596429d9..7c98c4d50946 100644
+--- a/io_uring/net.c
++++ b/io_uring/net.c
+@@ -1127,6 +1127,9 @@ int io_recv(struct io_kiocb *req, unsigned int issue_flags)
+ 		flags |= MSG_DONTWAIT;
+ 
+ retry_multishot:
++	kmsg->msg.msg_inq = -1;
++	kmsg->msg.msg_flags = 0;
++
+ 	if (io_do_buffer_select(req)) {
+ 		ret = io_recv_buf_select(req, kmsg, &len, issue_flags);
+ 		if (unlikely(ret))
+@@ -1134,9 +1137,6 @@ int io_recv(struct io_kiocb *req, unsigned int issue_flags)
+ 		sr->buf = NULL;
+ 	}
+ 
+-	kmsg->msg.msg_inq = -1;
+-	kmsg->msg.msg_flags = 0;
+-
+ 	if (flags & MSG_WAITALL)
+ 		min_ret = iov_iter_count(&kmsg->msg.msg_iter);
+ 

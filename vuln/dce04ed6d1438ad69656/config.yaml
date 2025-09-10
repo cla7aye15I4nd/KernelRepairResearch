@@ -1,0 +1,33 @@
+id: dce04ed6d1438ad69656
+bug_link: https://syzkaller.appspot.com/bug?extid=dce04ed6d1438ad69656
+title: 'WARNING: suspicious RCU usage in __do_softirq'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c26591afd33adce296c022e3480dea4282b7ef91
+fix_commit: 1dd1eff161bd55968d3d46bc36def62d71fb4785
+datetime: '2024-04-29T05:03:51+02:00'
+fix_commit_message: "softirq: Fix suspicious RCU usage in __do_softirq()\n\nCurrently,\
+  \ the condition \"__this_cpu_read(ksoftirqd) == current\" is used to\ninvoke rcu_softirq_qs()\
+  \ in ksoftirqd tasks context for non-RT kernels.\n\nThis works correctly as long\
+  \ as the context is actually task context but\nthis condition is wrong when:\n\n\
+  \     - the current task is ksoftirqd\n     - the task is interrupted in a RCU read\
+  \ side critical section\n     - __do_softirq() is invoked on return from interrupt\n\
+  \nSyzkaller triggered the following scenario:\n\n  -> finish_task_switch()\n   \
+  \ -> put_task_struct_rcu_user()\n      -> call_rcu(&task->rcu, delayed_put_task_struct)\n\
+  \        -> __kasan_record_aux_stack()\n          -> pfn_valid()\n            ->\
+  \ rcu_read_lock_sched()\n              <interrupt>\n                __irq_exit_rcu()\n\
+  \                -> __do_softirq)()\n                   -> if (!IS_ENABLED(CONFIG_PREEMPT_RT)\
+  \ &&\n                     __this_cpu_read(ksoftirqd) == current)\n            \
+  \         -> rcu_softirq_qs()\n                       -> RCU_LOCKDEP_WARN(lock_is_held(&rcu_sched_lock_map))\n\
+  \nThe rcu quiescent state is reported in the rcu-read critical section, so\nthe\
+  \ lockdep warning is triggered.\n\nFix this by splitting out the inner working of\
+  \ __do_softirq() into a helper\nfunction which takes an argument to distinguish\
+  \ between ksoftirqd task\ncontext and interrupted context and invoke it from the\
+  \ relevant call sites\nwith the proper context information and use that for the\
+  \ conditional\ninvocation of rcu_softirq_qs().\n\nReported-by: syzbot+dce04ed6d1438ad69656@syzkaller.appspotmail.com\n\
+  Suggested-by: Thomas Gleixner <tglx@linutronix.de>\nSigned-off-by: Zqiang <qiang.zhang1211@gmail.com>\n\
+  Signed-off-by: Thomas Gleixner <tglx@linutronix.de>\nLink: https://lore.kernel.org/r/20240427102808.29356-1-qiang.zhang1211@gmail.com\n\
+  Link: https://lore.kernel.org/lkml/8f281a10-b85a-4586-9586-5bbc12dc784f@paulmck-laptop/T/#mea8aba4abfcb97bbf499d169ce7f30c4cff1b0e3\n"
+submodule:
+- kernel
+hunk_count: 4
+covered_count: 2

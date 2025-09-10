@@ -1,0 +1,70 @@
+bcachefs (loop0): recovering from clean shutdown, journal seq 13
+bcachefs (loop0): Doing compatible version upgrade from 1.7: mi_btree_bitmap to 1.9: disk_accounting_v2
+  running recovery passes: check_allocations
+BUG: sleeping function called from invalid context at include/linux/sched/mm.h:337
+in_atomic(): 1, irqs_disabled(): 0, non_block: 0, pid: 5089, name: syz-executor787
+preempt_count: 1, expected: 0
+RCU nest depth: 0, expected: 0
+2 locks held by syz-executor787/5089:
+ #0: ffff888071680278 (&c->state_lock){+.+.}-{3:3}, at: bch2_fs_start+0x45/0x5b0 fs/bcachefs/super.c:1006
+ #1: ffff8880716ca880 (&j->lock){+.+.}-{2:2}, at: spin_lock include/linux/spinlock.h:351 [inline]
+ #1: ffff8880716ca880 (&j->lock){+.+.}-{2:2}, at: bch2_fs_journal_start+0x1219/0x14a0 fs/bcachefs/journal.c:1265
+Preemption disabled at:
+[<0000000000000000>] 0x0
+CPU: 0 PID: 5089 Comm: syz-executor787 Not tainted 6.10.0-syzkaller-09061-g4305ca0087dd #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ __might_resched+0x5d4/0x780 kernel/sched/core.c:8437
+ might_alloc include/linux/sched/mm.h:337 [inline]
+ slab_pre_alloc_hook mm/slub.c:3930 [inline]
+ slab_alloc_node mm/slub.c:4008 [inline]
+ __do_kmalloc_node mm/slub.c:4148 [inline]
+ __kmalloc_node_track_caller_noprof+0xcb/0x440 mm/slub.c:4168
+ __do_krealloc mm/slab_common.c:1280 [inline]
+ krealloc_noprof+0x7d/0x120 mm/slab_common.c:1313
+ bch2_printbuf_make_room+0x1f1/0x350 fs/bcachefs/printbuf.c:59
+ bch2_prt_printf+0x267/0x6d0 fs/bcachefs/printbuf.c:186
+ bch2_journal_space_available+0x89b/0x1b00 fs/bcachefs/journal_reclaim.c:209
+ bch2_fs_journal_start+0x1356/0x14a0 fs/bcachefs/journal.c:1275
+ bch2_fs_recovery+0x1ec8/0x38d0 fs/bcachefs/recovery.c:833
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1036
+ bch2_fs_get_tree+0xd61/0x1700 fs/bcachefs/fs.c:1946
+ vfs_get_tree+0x90/0x2a0 fs/super.c:1789
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3472
+ do_mount fs/namespace.c:3812 [inline]
+ __do_sys_mount fs/namespace.c:4020 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:3997
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f9ba10ccdea
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff66cd73f8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007fff66cd7410 RCX: 00007f9ba10ccdea
+RDX: 0000000020000000 RSI: 000000002000f680 RDI: 00007fff66cd7410
+RBP: 0000000000000004 R08: 00007fff66cd7450 R09: 000000000000f626
+R10: 0000000000200012 R11: 0000000000000282 R12: 0000000000200012
+R13: 00007fff66cd7450 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+bcachefs (loop0): insufficient writeable journal devices available: have 0, need 1
+rw journal devs:
+bcachefs (loop0): accounting_read... done
+bcachefs (loop0): alloc_read... done
+bcachefs (loop0): stripes_read... done
+bcachefs (loop0): snapshots_read... done
+bcachefs (loop0): check_allocations...
+btree ptr not marked in member info btree allocated bitmap
+  u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 1818ce08861e3527 written 40 min_key POS_MIN durability: 1 ptr: 0:26:0 gen 0, shutting down
+bcachefs (loop0): inconsistency detected - emergency read only at journal seq 13
+bcachefs (loop0): bch2_gc_mark_key(): error fsck_errors_not_fixed
+bcachefs (loop0): bch2_gc_btree(): error fsck_errors_not_fixed
+bcachefs (loop0): bch2_gc_btrees(): error fsck_errors_not_fixed
+bcachefs (loop0): bch2_check_allocations(): error fsck_errors_not_fixed
+bcachefs (loop0): bch2_fs_recovery(): error fsck_errors_not_fixed
+bcachefs (loop0): bch2_fs_start(): error starting filesystem fsck_errors_not_fixed
+bcachefs (loop0): shutting down
+bcachefs (loop0): shutdown complete
+bcachefs: bch2_fs_get_tree() error: fsck_errors_not_fixed

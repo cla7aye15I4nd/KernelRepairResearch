@@ -1,0 +1,30 @@
+id: 6f39a9deb697359fe520
+bug_link: https://syzkaller.appspot.com/bug?extid=6f39a9deb697359fe520
+title: 'BUG: MAX_STACK_TRACE_ENTRIES too low! (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a2970421640bd9b6a78f2685d7750a791abdfd4e
+fix_commit: 12593b7467f9130b64a6d4b6a26ed4ec217b6784
+datetime: '2019-07-25T15:43:27+02:00'
+fix_commit_message: "locking/lockdep: Reduce space occupied by stack traces\n\nAlthough\
+  \ commit 669de8bda87b (\"kernel/workqueue: Use dynamic lockdep keys\nfor workqueues\"\
+  ) unregisters dynamic lockdep keys when a workqueue is\ndestroyed, a side effect\
+  \ of that commit is that all stack traces\nassociated with the lockdep key are leaked\
+  \ when a workqueue is destroyed.\nFix this by storing each unique stack trace once.\
+  \ Other changes in this\npatch are:\n\n- Use NULL instead of { .nr_entries = 0 }\
+  \ to represent 'no trace'.\n- Store a pointer to a stack trace in struct lock_class\
+  \ and struct\n  lock_list instead of storing 'nr_entries' and 'offset'.\n\nThis\
+  \ patch avoids that the following program triggers the \"BUG:\nMAX_STACK_TRACE_ENTRIES\
+  \ too low!\" complaint:\n\n\t#include <fcntl.h>\n\t#include <unistd.h>\n\n\tint\
+  \ main()\n\t{\n\t\tfor (;;) {\n\t\t\tint fd = open(\"/dev/infiniband/rdma_cm\",\
+  \ O_RDWR);\n\t\t\tclose(fd);\n\t\t}\n\t}\n\nSuggested-by: Peter Zijlstra <peterz@infradead.org>\n\
+  Reported-by: Eric Biggers <ebiggers@kernel.org>\nSigned-off-by: Bart Van Assche\
+  \ <bvanassche@acm.org>\nSigned-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>\n\
+  Cc: Linus Torvalds <torvalds@linux-foundation.org>\nCc: Thomas Gleixner <tglx@linutronix.de>\n\
+  Cc: Waiman Long <longman@redhat.com>\nCc: Will Deacon <will.deacon@arm.com>\nCc:\
+  \ Yuyang Du <duyuyang@gmail.com>\nLink: https://lkml.kernel.org/r/20190722182443.216015-4-bvanassche@acm.org\n\
+  Signed-off-by: Ingo Molnar <mingo@kernel.org>\n"
+submodule:
+- include/linux
+- kernel/locking
+hunk_count: 25
+covered_count: 2

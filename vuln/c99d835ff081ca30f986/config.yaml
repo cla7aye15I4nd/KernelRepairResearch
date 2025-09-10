@@ -1,0 +1,29 @@
+id: c99d835ff081ca30f986
+bug_link: https://syzkaller.appspot.com/bug?extid=c99d835ff081ca30f986
+title: WARNING in skb_warn_bad_offload (4)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2f3389c73832ad90b63208c0fc281ad080114c7a
+fix_commit: fc8b2a619469378717e7270d2a4e1ef93c585f7a
+datetime: '2023-10-15T19:59:15+01:00'
+fix_commit_message: "net: more strict VIRTIO_NET_HDR_GSO_UDP_L4 validation\n\nSyzbot\
+  \ reported two new paths to hit an internal WARNING using the\nnew virtio gso type\
+  \ VIRTIO_NET_HDR_GSO_UDP_L4.\n\n    RIP: 0010:skb_checksum_help+0x4a2/0x600 net/core/dev.c:3260\n\
+  \    skb len=64521 gso_size=344\nand\n\n    RIP: 0010:skb_warn_bad_offload+0x118/0x240\
+  \ net/core/dev.c:3262\n\nOlder virtio types have historically had loose restrictions,\
+  \ leading\nto many entirely impractical fuzzer generated packets causing\nproblems\
+  \ deep in the kernel stack. Ideally, we would have had strict\nvalidation for all\
+  \ types from the start.\n\nNew virtio types can have tighter validation. Limit UDP\
+  \ GSO packets\ninserted via virtio to the same limits imposed by the UDP_SEGMENT\n\
+  socket interface:\n\n1. must use checksum offload\n2. checksum offload matches UDP\
+  \ header\n3. no more segments than UDP_MAX_SEGMENTS\n4. UDP GSO does not take modifier\
+  \ flags, notably SKB_GSO_TCP_ECN\n\nFixes: 860b7f27b8f7 (\"linux/virtio_net.h: Support\
+  \ USO offload in vnet header.\")\nReported-by: syzbot+01cdbc31e9c0ae9b33ac@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/netdev/0000000000005039270605eb0b7f@google.com/\n\
+  Reported-by: syzbot+c99d835ff081ca30f986@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/netdev/0000000000005426680605eb0b9f@google.com/\n\
+  Signed-off-by: Willem de Bruijn <willemb@google.com>\nReviewed-by: Eric Dumazet\
+  \ <edumazet@google.com>\nAcked-by: Jason Wang <jasowang@redhat.com>\nSigned-off-by:\
+  \ David S. Miller <davem@davemloft.net>\n"
+submodule:
+- include/linux
+hunk_count: 2
+covered_count: 0

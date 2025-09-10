@@ -1,0 +1,33 @@
+id: a157ac7c03a56397f553
+bug_link: https://syzkaller.appspot.com/bug?extid=a157ac7c03a56397f553
+title: 'KASAN: use-after-free Read in tctx_task_work'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0d30b3e7eea94cc818fadf2ac0dd189c616028f8
+fix_commit: 2c32395d8111037ae2cb8cab883e80bcdbb70713
+datetime: '2021-03-04T06:37:05-07:00'
+fix_commit_message: "io_uring: fix __tctx_task_work() ctx race\n\nThere is an unlikely\
+  \ but possible race using a freed context. That's\nbecause req->task_work.func()\
+  \ can free a request, but we won't\nnecessarily find a completion in submit_state.comp\
+  \ and so all ctx refs\nmay be put by the time we do mutex_lock(&ctx->uring_ctx);\n\
+  \nThere are several reasons why it can miss going through\nsubmit_state.comp: 1)\
+  \ req->task_work.func() didn't complete it itself,\nbut punted to iowq (e.g. reissue)\
+  \ and it got freed later, or a similar\nsituation with it overflowing and getting\
+  \ flushed by someone else, or\nbeing submitted to IRQ completion, 2) As we don't\
+  \ hold the uring_lock,\nsomeone else can do io_submit_flush_completions() and put\
+  \ our ref.\n3) Bugs and code obscurities, e.g. failing to propagate issue_flags\n\
+  properly.\n\nOne example is as follows\n\n  CPU1                               \
+  \   |  CPU2\n=======================================================================\n\
+  @req->task_work.func()                  |\n  -> @req overflwed,                \
+  \    |\n     so submit_state.comp,nr==0         |\n                            \
+  \            | flush overflows, and free @req\n                                \
+  \        | ctx refs == 0, free it\nctx is dead, but we do                  |\n\t\
+  lock + flush + unlock           |\n\nSo take a ctx reference for each new ctx we\
+  \ see in __tctx_task_work(),\nand do release it until we do all our flushing.\n\n\
+  Fixes: 65453d1efbd2 (\"io_uring: enable req cache for task_work items\")\nReported-by:\
+  \ syzbot+a157ac7c03a56397f553@syzkaller.appspotmail.com\nSigned-off-by: Pavel Begunkov\
+  \ <asml.silence@gmail.com>\n[axboe: fold in my one-liner and fix ref mismatch]\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 2
+covered_count: 0

@@ -1,0 +1,94 @@
+ done
+bcachefs (loop0): accounting_read... done
+bcachefs (loop0): alloc_read... done
+bcachefs (loop0): snapshots_read... done
+bcachefs (loop0): check_allocations...
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000004: 0000 [#1] SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000020-0x0000000000000027]
+CPU: 0 UID: 0 PID: 5833 Comm: syz-executor194 Not tainted 6.14.0-syzkaller-12966-ga2cc6ff5ec8f #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+RIP: 0010:bch2_snapshot_tree_oldest_subvol+0x1d3/0x6a0 fs/bcachefs/snapshot.c:400
+Code: e6 e8 f1 71 39 fd 4c 39 e5 0f 86 c9 03 00 00 e8 83 6f 39 fd 49 6b c4 38 49 01 c6 49 83 c6 18 49 83 c6 20 4c 89 f0 48 c1 e8 03 <42> 0f b6 04 28 84 c0 0f 85 c6 03 00 00 41 8b 2e 31 ff 89 ee e8 94
+RSP: 0018:ffffc90003dc6020 EFLAGS: 00010202
+RAX: 0000000000000004 RBX: 0000000000000001 RCX: ffff88802412bc00
+RDX: 0000000000000000 RSI: 00000000ffeb487f RDI: 0000000000000001
+RBP: 0000000000000001 R08: ffffffff8489d72f R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000000 R12: 00000000ffeb487f
+R13: dffffc0000000000 R14: 0000000000000020 R15: 000000000014b780
+FS:  000055556e8aa380(0000) GS:ffff888124fcc000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00005648fe403f80 CR3: 0000000034f66000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_inum_snap_offset_err_msg_trans+0x374/0x680 fs/bcachefs/error.c:691
+ bch2_indirect_extent_missing_error+0x411/0x1290 fs/bcachefs/reflink.c:192
+ gc_trigger_reflink_p_segment fs/bcachefs/reflink.c:392 [inline]
+ __trigger_reflink_p+0x196c/0x1cc0 fs/bcachefs/reflink.c:432
+ bch2_trigger_reflink_p+0x299/0x380 fs/bcachefs/reflink.c:451
+ bch2_key_trigger fs/bcachefs/bkey_methods.h:88 [inline]
+ bch2_gc_mark_key+0x6bd/0x1180 fs/bcachefs/btree_gc.c:639
+ bch2_gc_btree fs/bcachefs/btree_gc.c:677 [inline]
+ bch2_gc_btrees fs/bcachefs/btree_gc.c:740 [inline]
+ bch2_check_allocations+0x1488/0x6ab0 fs/bcachefs/btree_gc.c:1042
+ bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:226
+ bch2_run_recovery_passes+0x2ad/0xa90 fs/bcachefs/recovery_passes.c:285
+ bch2_fs_recovery+0x292a/0x3e20 fs/bcachefs/recovery.c:936
+ bch2_fs_start+0x2fb/0x610 fs/bcachefs/super.c:1060
+ bch2_fs_get_tree+0x113e/0x18f0 fs/bcachefs/fs.c:2253
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1759
+ do_new_mount+0x2cf/0xb70 fs/namespace.c:3878
+ do_mount fs/namespace.c:4218 [inline]
+ __do_sys_mount fs/namespace.c:4429 [inline]
+ __se_sys_mount+0x38c/0x400 fs/namespace.c:4406
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f6635236e2a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffcc0dd06d8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffcc0dd06f0 RCX: 00007f6635236e2a
+RDX: 0000200000000040 RSI: 0000200000000000 RDI: 00007ffcc0dd06f0
+RBP: 0000200000000000 R08: 00007ffcc0dd0730 R09: 0000000000005995
+R10: 0000000000800001 R11: 0000000000000282 R12: 0000200000000040
+R13: 0000000000000004 R14: 0000000000000003 R15: 00007ffcc0dd0730
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_snapshot_tree_oldest_subvol+0x1d3/0x6a0 fs/bcachefs/snapshot.c:400
+Code: e6 e8 f1 71 39 fd 4c 39 e5 0f 86 c9 03 00 00 e8 83 6f 39 fd 49 6b c4 38 49 01 c6 49 83 c6 18 49 83 c6 20 4c 89 f0 48 c1 e8 03 <42> 0f b6 04 28 84 c0 0f 85 c6 03 00 00 41 8b 2e 31 ff 89 ee e8 94
+RSP: 0018:ffffc90003dc6020 EFLAGS: 00010202
+RAX: 0000000000000004 RBX: 0000000000000001 RCX: ffff88802412bc00
+RDX: 0000000000000000 RSI: 00000000ffeb487f RDI: 0000000000000001
+RBP: 0000000000000001 R08: ffffffff8489d72f R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000000 R12: 00000000ffeb487f
+R13: dffffc0000000000 R14: 0000000000000020 R15: 000000000014b780
+FS:  000055556e8aa380(0000) GS:ffff888124fcc000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00005648fe403f80 CR3: 0000000034f66000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	e6 e8                	out    %al,$0xe8
+   2:	f1                   	int1
+   3:	71 39                	jno    0x3e
+   5:	fd                   	std
+   6:	4c 39 e5             	cmp    %r12,%rbp
+   9:	0f 86 c9 03 00 00    	jbe    0x3d8
+   f:	e8 83 6f 39 fd       	call   0xfd396f97
+  14:	49 6b c4 38          	imul   $0x38,%r12,%rax
+  18:	49 01 c6             	add    %rax,%r14
+  1b:	49 83 c6 18          	add    $0x18,%r14
+  1f:	49 83 c6 20          	add    $0x20,%r14
+  23:	4c 89 f0             	mov    %r14,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 0f b6 04 28       	movzbl (%rax,%r13,1),%eax <-- trapping instruction
+  2f:	84 c0                	test   %al,%al
+  31:	0f 85 c6 03 00 00    	jne    0x3fd
+  37:	41 8b 2e             	mov    (%r14),%ebp
+  3a:	31 ff                	xor    %edi,%edi
+  3c:	89 ee                	mov    %ebp,%esi
+  3e:	e8                   	.byte 0xe8
+  3f:	94                   	xchg   %eax,%esp

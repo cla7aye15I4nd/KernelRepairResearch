@@ -1,0 +1,55 @@
+id: befff0a9536049e7902e
+bug_link: https://syzkaller.appspot.com/bug?extid=befff0a9536049e7902e
+title: general protection fault in virtio_transport_purge_skbs
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 622035847f5e8661be7c0b9d6222391ccd8022bc
+fix_commit: b465518dc27da1ed74b8cbada4659708aac35adb
+datetime: '2023-03-27T08:14:39+01:00'
+fix_commit_message: 'vsock/loopback: use only sk_buff_head.lock to protect the packet
+  queue
+
+
+  pkt_list_lock was used before commit 71dc9ec9ac7d ("virtio/vsock:
+
+  replace virtio_vsock_pkt with sk_buff") to protect the packet queue.
+
+  After that commit we switched to sk_buff and we are using
+
+  sk_buff_head.lock in almost every place to protect the packet queue
+
+  except in vsock_loopback_work() when we call skb_queue_splice_init().
+
+
+  As reported by syzbot, this caused unlocked concurrent access to the
+
+  packet queue between vsock_loopback_work() and
+
+  vsock_loopback_cancel_pkt() since it is not holding pkt_list_lock.
+
+
+  With the introduction of sk_buff_head, pkt_list_lock is redundant and
+
+  can cause confusion, so let''s remove it and use sk_buff_head.lock
+
+  everywhere to protect the packet queue access.
+
+
+  Fixes: 71dc9ec9ac7d ("virtio/vsock: replace virtio_vsock_pkt with sk_buff")
+
+  Cc: bobby.eshleman@bytedance.com
+
+  Reported-and-tested-by: syzbot+befff0a9536049e7902e@syzkaller.appspotmail.com
+
+  Signed-off-by: Stefano Garzarella <sgarzare@redhat.com>
+
+  Reviewed-by: Bobby Eshleman <bobby.eshleman@bytedance.com>
+
+  Reviewed-by: Arseniy Krasnov <AVKrasnov@sberdevices.ru>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/vmw_vsock
+hunk_count: 5
+covered_count: 2

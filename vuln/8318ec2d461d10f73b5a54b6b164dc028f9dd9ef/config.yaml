@@ -1,0 +1,59 @@
+id: 8318ec2d461d10f73b5a54b6b164dc028f9dd9ef
+bug_link: https://syzkaller.appspot.com/bug?extid=8318ec2d461d10f73b5a54b6b164dc028f9dd9ef
+title: 'BUG: sleeping function called from invalid context at net/core/sock.c:LINE
+  (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8e1fa89aa8bc2870009b4486644e4a58f2e2a4f5
+fix_commit: 7d2c3f54e6f646887d019faa45f35d6fe9fe82ce
+datetime: '2017-11-24T13:23:39+08:00'
+fix_commit_message: 'crypto: af_alg - remove locking in async callback
+
+
+  The code paths protected by the socket-lock do not use or modify the
+
+  socket in a non-atomic fashion. The actions pertaining the socket do not
+
+  even need to be handled as an atomic operation. Thus, the socket-lock
+
+  can be safely ignored.
+
+
+  This fixes a bug regarding scheduling in atomic as the callback function
+
+  may be invoked in interrupt context.
+
+
+  In addition, the sock_hold is moved before the AIO encrypt/decrypt
+
+  operation to ensure that the socket is always present. This avoids a
+
+  tiny race window where the socket is unprotected and yet used by the AIO
+
+  operation.
+
+
+  Finally, the release of resources for a crypto operation is moved into a
+
+  common function of af_alg_free_resources.
+
+
+  Cc: <stable@vger.kernel.org>
+
+  Fixes: e870456d8e7c8 ("crypto: algif_skcipher - overhaul memory management")
+
+  Fixes: d887c52d6ae43 ("crypto: algif_aead - overhaul memory management")
+
+  Reported-by: Romain Izard <romain.izard.pro@gmail.com>
+
+  Signed-off-by: Stephan Mueller <smueller@chronox.de>
+
+  Tested-by: Romain Izard <romain.izard.pro@gmail.com>
+
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  '
+submodule:
+- crypto
+- include/crypto
+hunk_count: 8
+covered_count: 2

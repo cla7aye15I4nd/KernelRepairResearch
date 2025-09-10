@@ -1,0 +1,46 @@
+id: 2b96f44164236dda0f3b
+bug_link: https://syzkaller.appspot.com/bug?extid=2b96f44164236dda0f3b
+title: possible deadlock in __snd_timer_user_ioctl
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e8e472d0c5a410227bbde2bba6eb0f428eaf761c
+fix_commit: 3424c8f53bc63c87712a7fc22dc13d0cc85fb0d6
+datetime: '2025-03-21T18:28:28+01:00'
+fix_commit_message: 'ALSA: timer: Don''t take register_mutex with copy_from/to_user()
+
+
+  The infamous mmap_lock taken in copy_from/to_user() can be often
+
+  problematic when it''s called inside another mutex, as they might lead
+
+  to deadlocks.
+
+
+  In the case of ALSA timer code, the bad pattern is with
+
+  guard(mutex)(&register_mutex) that covers copy_from/to_user() -- which
+
+  was mistakenly introduced at converting to guard(), and it had been
+
+  carefully worked around in the past.
+
+
+  This patch fixes those pieces simply by moving copy_from/to_user() out
+
+  of the register mutex lock again.
+
+
+  Fixes: 3923de04c817 ("ALSA: pcm: oss: Use guard() for setup")
+
+  Reported-by: syzbot+2b96f44164236dda0f3b@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/67dd86c8.050a0220.25ae54.0059.GAE@google.com
+
+  Link: https://patch.msgid.link/20250321172653.14310-1-tiwai@suse.de
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/core
+hunk_count: 3
+covered_count: 2

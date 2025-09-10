@@ -1,0 +1,125 @@
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index a333caeca291..617db4e0faa0 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -551,8 +551,17 @@ static int proc_oom_score(struct seq_file *m, struct pid_namespace *ns,
+ {
+ 	unsigned long totalpages = totalram_pages() + total_swap_pages;
+ 	unsigned long points = 0;
++	long badness;
++
++	badness = oom_badness(task, totalpages);
++	/*
++	 * Special case OOM_SCORE_ADJ_MIN for all others scale the
++	 * badness value into [0, 2000] range which we have been
++	 * exporting for a long time so userspace might depend on it.
++	 */
++	if (badness != LONG_MIN)
++		points = (1000 + badness * 1000 / (long)totalpages) * 2 / 3;
+ 
+-	points = oom_badness(task, totalpages) * 1000 / totalpages;
+ 	seq_printf(m, "%lu\n", points);
+ 
+ 	return 0;
+diff --git a/include/linux/oom.h b/include/linux/oom.h
+index c696c265f019..f022f581ac29 100644
+--- a/include/linux/oom.h
++++ b/include/linux/oom.h
+@@ -48,7 +48,7 @@ struct oom_control {
+ 	/* Used by oom implementation, do not set */
+ 	unsigned long totalpages;
+ 	struct task_struct *chosen;
+-	unsigned long chosen_points;
++	long chosen_points;
+ 
+ 	/* Used to print the constraint info. */
+ 	enum oom_constraint constraint;
+@@ -107,7 +107,7 @@ static inline vm_fault_t check_stable_address_space(struct mm_struct *mm)
+ 
+ bool __oom_reap_task_mm(struct mm_struct *mm);
+ 
+-extern unsigned long oom_badness(struct task_struct *p,
++long oom_badness(struct task_struct *p,
+ 		unsigned long totalpages);
+ 
+ extern bool out_of_memory(struct oom_control *oc);
+diff --git a/mm/oom_kill.c b/mm/oom_kill.c
+index d30ce75f23fb..48e0db54d838 100644
+--- a/mm/oom_kill.c
++++ b/mm/oom_kill.c
+@@ -196,17 +196,17 @@ static bool is_dump_unreclaim_slabs(void)
+  * predictable as possible.  The goal is to return the highest value for the
+  * task consuming the most memory to avoid subsequent oom failures.
+  */
+-unsigned long oom_badness(struct task_struct *p, unsigned long totalpages)
++long oom_badness(struct task_struct *p, unsigned long totalpages)
+ {
+ 	long points;
+ 	long adj;
+ 
+ 	if (oom_unkillable_task(p))
+-		return 0;
++		return LONG_MIN;
+ 
+ 	p = find_lock_task_mm(p);
+ 	if (!p)
+-		return 0;
++		return LONG_MIN;
+ 
+ 	/*
+ 	 * Do not even consider tasks which are explicitly marked oom
+@@ -218,7 +218,7 @@ unsigned long oom_badness(struct task_struct *p, unsigned long totalpages)
+ 			test_bit(MMF_OOM_SKIP, &p->mm->flags) ||
+ 			in_vfork(p)) {
+ 		task_unlock(p);
+-		return 0;
++		return LONG_MIN;
+ 	}
+ 
+ 	/*
+@@ -233,11 +233,7 @@ unsigned long oom_badness(struct task_struct *p, unsigned long totalpages)
+ 	adj *= totalpages / 1000;
+ 	points += adj;
+ 
+-	/*
+-	 * Never return 0 for an eligible task regardless of the root bonus and
+-	 * oom_score_adj (oom_score_adj can't be OOM_SCORE_ADJ_MIN here).
+-	 */
+-	return points > 0 ? points : 1;
++	return points;
+ }
+ 
+ static const char * const oom_constraint_text[] = {
+@@ -310,7 +306,7 @@ static enum oom_constraint constrained_alloc(struct oom_control *oc)
+ static int oom_evaluate_task(struct task_struct *task, void *arg)
+ {
+ 	struct oom_control *oc = arg;
+-	unsigned long points;
++	long points;
+ 
+ 	if (oom_unkillable_task(task))
+ 		goto next;
+@@ -336,12 +332,12 @@ static int oom_evaluate_task(struct task_struct *task, void *arg)
+ 	 * killed first if it triggers an oom, then select it.
+ 	 */
+ 	if (oom_task_origin(task)) {
+-		points = ULONG_MAX;
++		points = LONG_MAX;
+ 		goto select;
+ 	}
+ 
+ 	points = oom_badness(task, oc->totalpages);
+-	if (!points || points < oc->chosen_points)
++	if (points == LONG_MIN || points < oc->chosen_points)
+ 		goto next;
+ 
+ select:
+@@ -365,6 +361,8 @@ static int oom_evaluate_task(struct task_struct *task, void *arg)
+  */
+ static void select_bad_process(struct oom_control *oc)
+ {
++	oc->chosen_points = LONG_MIN;
++
+ 	if (is_memcg_oom(oc))
+ 		mem_cgroup_scan_tasks(oc->memcg, oom_evaluate_task, oc);
+ 	else {

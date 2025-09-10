@@ -1,0 +1,51 @@
+id: 6bde52d89cfdf9f61425
+bug_link: https://syzkaller.appspot.com/bug?extid=6bde52d89cfdf9f61425
+title: WARNING in kvm_mmu_notifier_invalidate_range_start (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a431dbbc540532b7465eae4fc8b56a85a9fc7d17
+fix_commit: 01e67e04c28170c47700c2c226d732bbfedb1ad0
+datetime: '2022-04-08T14:20:36-10:00'
+fix_commit_message: 'mmmremap.c: avoid pointless invalidate_range_start/end on mremap(old_size=0)
+
+
+  If an mremap() syscall with old_size=0 ends up in move_page_tables(), it
+
+  will call invalidate_range_start()/invalidate_range_end() unnecessarily,
+
+  i.e.  with an empty range.
+
+
+  This causes a WARN in KVM''s mmu_notifier.  In the past, empty ranges
+
+  have been diagnosed to be off-by-one bugs, hence the WARNing.  Given the
+
+  low (so far) number of unique reports, the benefits of detecting more
+
+  buggy callers seem to outweigh the cost of having to fix cases such as
+
+  this one, where userspace is doing something silly.  In this particular
+
+  case, an early return from move_page_tables() is enough to fix the
+
+  issue.
+
+
+  Link: https://lkml.kernel.org/r/20220329173155.172439-1-pbonzini@redhat.com
+
+  Reported-by: syzbot+6bde52d89cfdf9f61425@syzkaller.appspotmail.com
+
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  Cc: Sean Christopherson <seanjc@google.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

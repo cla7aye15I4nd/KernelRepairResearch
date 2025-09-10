@@ -1,0 +1,23 @@
+id: 9043030c040ce1849a60
+bug_link: https://syzkaller.appspot.com/bug?extid=9043030c040ce1849a60
+title: general protection fault in ext4_commit_super
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 02a7780e4d2fcf438ac6773bc469e7ada2af56be
+fix_commit: c92dc856848f32781e37b88c1b7f875e274f5efb
+datetime: '2020-12-22T13:07:49-05:00'
+fix_commit_message: "ext4: defer saving error info from atomic context\n\nWhen filesystem\
+  \ inconsistency is detected with group locked, we\ncurrently try to modify superblock\
+  \ to store error there without\nblocking. However this can cause superblock checksum\
+  \ failures (or\nDIF/DIX failure) when the superblock is just being written out.\n\
+  \nMake error handling code just store error information in ext4_sb_info\nstructure\
+  \ and copy it to on-disk superblock only in ext4_commit_super().\nIn case of error\
+  \ happening with group locked, we just postpone the\nsuperblock flushing to a workqueue.\n\
+  \n[ Added fixup so that s_first_error_* does not get updated after\n  the file system\
+  \ is remounted.\n  Also added fix for syzbot failure.  - Ted ]\n\nSigned-off-by:\
+  \ Jan Kara <jack@suse.cz>\nLink: https://lore.kernel.org/r/20201127113405.26867-8-jack@suse.cz\n\
+  Signed-off-by: Theodore Ts'o <tytso@mit.edu>\nCc: Hillf Danton <hdanton@sina.com>\n\
+  Reported-by: syzbot+9043030c040ce1849a60@syzkaller.appspotmail.com\n"
+submodule:
+- fs/ext4
+hunk_count: 14
+covered_count: 3

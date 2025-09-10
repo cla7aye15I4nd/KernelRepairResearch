@@ -1,0 +1,39 @@
+id: 4a0643a653ac375612d1
+bug_link: https://syzkaller.appspot.com/bug?extid=4a0643a653ac375612d1
+title: general protection fault in sctp_inq_pop
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aa19d1f1042e52f0c2419e6242958b594d761eeb
+fix_commit: c7a42eb49212f93a800560662d17d5293960d3c3
+datetime: '2019-08-23T14:42:14-07:00'
+fix_commit_message: "net: ipv6: fix listify ip6_rcv_finish in case of forwarding\n\
+  \nWe need a similar fix for ipv6 as Commit 0761680d5215 (\"net: ipv4: fix\nlistify\
+  \ ip_rcv_finish in case of forwarding\") does for ipv4.\n\nThis issue can be reprocuded\
+  \ by syzbot since Commit 323ebb61e32b (\"net:\nuse listified RX for handling GRO_NORMAL\
+  \ skbs\") on net-next. The call\ntrace was:\n\n  kernel BUG at include/linux/skbuff.h:2225!\n\
+  \  RIP: 0010:__skb_pull include/linux/skbuff.h:2225 [inline]\n  RIP: 0010:skb_pull+0xea/0x110\
+  \ net/core/skbuff.c:1902\n  Call Trace:\n    sctp_inq_pop+0x2f1/0xd80 net/sctp/inqueue.c:202\n\
+  \    sctp_endpoint_bh_rcv+0x184/0x8d0 net/sctp/endpointola.c:385\n    sctp_inq_push+0x1e4/0x280\
+  \ net/sctp/inqueue.c:80\n    sctp_rcv+0x2807/0x3590 net/sctp/input.c:256\n    sctp6_rcv+0x17/0x30\
+  \ net/sctp/ipv6.c:1049\n    ip6_protocol_deliver_rcu+0x2fe/0x1660 net/ipv6/ip6_input.c:397\n\
+  \    ip6_input_finish+0x84/0x170 net/ipv6/ip6_input.c:438\n    NF_HOOK include/linux/netfilter.h:305\
+  \ [inline]\n    NF_HOOK include/linux/netfilter.h:299 [inline]\n    ip6_input+0xe4/0x3f0\
+  \ net/ipv6/ip6_input.c:447\n    dst_input include/net/dst.h:442 [inline]\n    ip6_sublist_rcv_finish+0x98/0x1e0\
+  \ net/ipv6/ip6_input.c:84\n    ip6_list_rcv_finish net/ipv6/ip6_input.c:118 [inline]\n\
+  \    ip6_sublist_rcv+0x80c/0xcf0 net/ipv6/ip6_input.c:282\n    ipv6_list_rcv+0x373/0x4b0\
+  \ net/ipv6/ip6_input.c:316\n    __netif_receive_skb_list_ptype net/core/dev.c:5049\
+  \ [inline]\n    __netif_receive_skb_list_core+0x5fc/0x9d0 net/core/dev.c:5097\n\
+  \    __netif_receive_skb_list net/core/dev.c:5149 [inline]\n    netif_receive_skb_list_internal+0x7eb/0xe60\
+  \ net/core/dev.c:5244\n    gro_normal_list.part.0+0x1e/0xb0 net/core/dev.c:5757\n\
+  \    gro_normal_list net/core/dev.c:5755 [inline]\n    gro_normal_one net/core/dev.c:5769\
+  \ [inline]\n    napi_frags_finish net/core/dev.c:5782 [inline]\n    napi_gro_frags+0xa6a/0xea0\
+  \ net/core/dev.c:5855\n    tun_get_user+0x2e98/0x3fa0 drivers/net/tun.c:1974\n \
+  \   tun_chr_write_iter+0xbd/0x156 drivers/net/tun.c:2020\n\nFixes: d8269e2cbf90\
+  \ (\"net: ipv6: listify ipv6_rcv() and ip6_rcv_finish()\")\nFixes: 323ebb61e32b\
+  \ (\"net: use listified RX for handling GRO_NORMAL skbs\")\nReported-by: syzbot+eb349eeee854e389c36d@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+4a0643a653ac375612d1@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Xin Long <lucien.xin@gmail.com>\nAcked-by: Edward Cree <ecree@solarflare.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv6
+hunk_count: 1
+covered_count: 1

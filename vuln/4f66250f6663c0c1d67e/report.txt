@@ -1,0 +1,64 @@
+------------[ cut here ]------------
+kernel BUG at net/core/skbuff.c:2849!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5849 Comm: syz-executor158 Not tainted 6.13.0-rc1-syzkaller-00407-g96b6fcc0ee41 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/25/2024
+RIP: 0010:__pskb_pull_tail+0x1568/0x1570 net/core/skbuff.c:2848
+Code: 38 c1 0f 8c 32 f1 ff ff 4c 89 f7 e8 92 96 74 f8 e9 25 f1 ff ff e8 e8 ae 09 f8 48 8b 5c 24 08 e9 eb fb ff ff e8 d9 ae 09 f8 90 <0f> 0b 66 0f 1f 44 00 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90
+RSP: 0018:ffffc9000422ef30 EFLAGS: 00010293
+RAX: ffffffff8995c347 RBX: 00000000fffffff2 RCX: ffff888034861e00
+RDX: 0000000000000000 RSI: 00000000fffffff2 RDI: 0000000000000000
+RBP: ffff88801baf306a R08: ffffffff8995b084 R09: 1ffff1100375e65c
+R10: dffffc0000000000 R11: ffffed100375e65d R12: ffff8880328a0e90
+R13: ffff8880328a0dc0 R14: ffff8880328a0e34 R15: ffff8880328a0dc0
+FS:  00007faa4954c6c0(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007faa4954cd58 CR3: 0000000033e6e000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ skb_cow_data+0x2da/0xcb0 net/core/skbuff.c:5284
+ tipc_aead_decrypt net/tipc/crypto.c:894 [inline]
+ tipc_crypto_rcv+0x402/0x24e0 net/tipc/crypto.c:1844
+ tipc_rcv+0x57e/0x12a0 net/tipc/node.c:2109
+ tipc_l2_rcv_msg+0x2bd/0x450 net/tipc/bearer.c:668
+ __netif_receive_skb_list_ptype net/core/dev.c:5720 [inline]
+ __netif_receive_skb_list_core+0x8b7/0x980 net/core/dev.c:5762
+ __netif_receive_skb_list net/core/dev.c:5814 [inline]
+ netif_receive_skb_list_internal+0xa51/0xe30 net/core/dev.c:5905
+ gro_normal_list include/net/gro.h:515 [inline]
+ napi_complete_done+0x2b5/0x870 net/core/dev.c:6256
+ napi_complete include/linux/netdevice.h:567 [inline]
+ tun_get_user+0x2ea0/0x4890 drivers/net/tun.c:1982
+ tun_chr_write_iter+0x10d/0x1f0 drivers/net/tun.c:2057
+ do_iter_readv_writev+0x600/0x880
+ vfs_writev+0x376/0xba0 fs/read_write.c:1050
+ do_writev+0x1b6/0x360 fs/read_write.c:1096
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7faa495bbdf9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 11 1d 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007faa4954c168 EFLAGS: 00000246 ORIG_RAX: 0000000000000014
+RAX: ffffffffffffffda RBX: 00007faa4963e438 RCX: 00007faa495bbdf9
+RDX: 0000000000000002 RSI: 00000000200001c0 RDI: 0000000000000004
+RBP: 00007faa4963e430 R08: 00007fffcfe3aea7 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007faa4963e43c
+R13: 000000000000006e R14: 00007fffcfe3adc0 R15: 00007fffcfe3aea8
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__pskb_pull_tail+0x1568/0x1570 net/core/skbuff.c:2848
+Code: 38 c1 0f 8c 32 f1 ff ff 4c 89 f7 e8 92 96 74 f8 e9 25 f1 ff ff e8 e8 ae 09 f8 48 8b 5c 24 08 e9 eb fb ff ff e8 d9 ae 09 f8 90 <0f> 0b 66 0f 1f 44 00 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90
+RSP: 0018:ffffc9000422ef30 EFLAGS: 00010293
+RAX: ffffffff8995c347 RBX: 00000000fffffff2 RCX: ffff888034861e00
+RDX: 0000000000000000 RSI: 00000000fffffff2 RDI: 0000000000000000
+RBP: ffff88801baf306a R08: ffffffff8995b084 R09: 1ffff1100375e65c
+R10: dffffc0000000000 R11: ffffed100375e65d R12: ffff8880328a0e90
+R13: ffff8880328a0dc0 R14: ffff8880328a0e34 R15: ffff8880328a0dc0
+FS:  00007faa4954c6c0(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007faa4954cd58 CR3: 0000000033e6e000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

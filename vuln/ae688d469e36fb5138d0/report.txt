@@ -1,0 +1,80 @@
+EXT4-fs error (device loop0): ext4_orphan_get:1399: comm syz-executor306: couldn't read orphan inode 15 (err -117)
+EXT4-fs (loop0): mounted filesystem 00000000-0000-0000-0000-000000000000 r/w without journal. Quota mode: none.
+BUG: unable to handle page fault for address: ffffed11022e24fe
+#PF: supervisor read access in kernel mode
+#PF: error_code(0x0000) - not-present page
+PGD 23ffee067 P4D 23ffee067 PUD 0 
+Oops: Oops: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 PID: 5079 Comm: syz-executor306 Not tainted 6.10.0-rc5-syzkaller-00018-g55027e689933 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+RIP: 0010:do_split+0x150b/0x2490 fs/ext4/namei.c:2046
+Code: 89 f8 48 c1 e8 03 0f b6 04 10 84 c0 48 89 74 24 18 0f 85 f5 0c 00 00 46 8b 3c f6 41 8d 46 ff 48 8d 1c c6 48 89 d8 48 c1 e8 03 <0f> b6 04 10 84 c0 4c 8b a4 24 98 00 00 00 0f 85 f7 0c 00 00 8b 1b
+RSP: 0018:ffffc9000327f060 EFLAGS: 00010a02
+RAX: 1ffff111022e24fe RBX: ffff8888117127f0 RCX: ffff8880237e1e00
+RDX: dffffc0000000000 RSI: ffff8880117127f8 RDI: ffff8880117127f8
+RBP: ffffc9000327f250 R08: ffffffff825fc2ad R09: ffffffff82541cf8
+R10: 0000000000000007 R11: ffffffff825435f0 R12: 0000000000000000
+R13: 0000000000000400 R14: 0000000000000000 R15: 000000002b74e18c
+FS:  00005555787b4380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffed11022e24fe CR3: 0000000043598000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ make_indexed_dir+0xdaf/0x13c0 fs/ext4/namei.c:2341
+ ext4_add_entry+0x222a/0x25d0 fs/ext4/namei.c:2451
+ ext4_rename fs/ext4/namei.c:3936 [inline]
+ ext4_rename2+0x26e5/0x4370 fs/ext4/namei.c:4214
+ vfs_rename+0xbdb/0xf00 fs/namei.c:4887
+ do_renameat2+0xd94/0x13f0 fs/namei.c:5044
+ __do_sys_rename fs/namei.c:5091 [inline]
+ __se_sys_rename fs/namei.c:5089 [inline]
+ __x64_sys_rename+0x86/0xa0 fs/namei.c:5089
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fe5c7dcdb59
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffcd201c228 EFLAGS: 00000246 ORIG_RAX: 0000000000000052
+RAX: ffffffffffffffda RBX: 00007fe5c7e16568 RCX: 00007fe5c7dcdb59
+RDX: 0000000000000000 RSI: 0000000020000f40 RDI: 00000000200003c0
+RBP: 00007fe5c7e16668 R08: 00005555787b54c0 R09: 00005555787b54c0
+R10: 00005555787b54c0 R11: 0000000000000246 R12: 00007ffcd201c250
+R13: 00007ffcd201c478 R14: 431bde82d7b634db R15: 00007fe5c7e1603b
+ </TASK>
+Modules linked in:
+CR2: ffffed11022e24fe
+---[ end trace 0000000000000000 ]---
+RIP: 0010:do_split+0x150b/0x2490 fs/ext4/namei.c:2046
+Code: 89 f8 48 c1 e8 03 0f b6 04 10 84 c0 48 89 74 24 18 0f 85 f5 0c 00 00 46 8b 3c f6 41 8d 46 ff 48 8d 1c c6 48 89 d8 48 c1 e8 03 <0f> b6 04 10 84 c0 4c 8b a4 24 98 00 00 00 0f 85 f7 0c 00 00 8b 1b
+RSP: 0018:ffffc9000327f060 EFLAGS: 00010a02
+RAX: 1ffff111022e24fe RBX: ffff8888117127f0 RCX: ffff8880237e1e00
+RDX: dffffc0000000000 RSI: ffff8880117127f8 RDI: ffff8880117127f8
+RBP: ffffc9000327f250 R08: ffffffff825fc2ad R09: ffffffff82541cf8
+R10: 0000000000000007 R11: ffffffff825435f0 R12: 0000000000000000
+R13: 0000000000000400 R14: 0000000000000000 R15: 000000002b74e18c
+FS:  00005555787b4380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffed11022e24fe CR3: 0000000043598000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	89 f8                	mov    %edi,%eax
+   2:	48 c1 e8 03          	shr    $0x3,%rax
+   6:	0f b6 04 10          	movzbl (%rax,%rdx,1),%eax
+   a:	84 c0                	test   %al,%al
+   c:	48 89 74 24 18       	mov    %rsi,0x18(%rsp)
+  11:	0f 85 f5 0c 00 00    	jne    0xd0c
+  17:	46 8b 3c f6          	mov    (%rsi,%r14,8),%r15d
+  1b:	41 8d 46 ff          	lea    -0x1(%r14),%eax
+  1f:	48 8d 1c c6          	lea    (%rsi,%rax,8),%rbx
+  23:	48 89 d8             	mov    %rbx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	0f b6 04 10          	movzbl (%rax,%rdx,1),%eax <-- trapping instruction
+  2e:	84 c0                	test   %al,%al
+  30:	4c 8b a4 24 98 00 00 	mov    0x98(%rsp),%r12
+  37:	00
+  38:	0f 85 f7 0c 00 00    	jne    0xd35
+  3e:	8b 1b                	mov    (%rbx),%ebx

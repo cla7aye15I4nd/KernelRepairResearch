@@ -1,0 +1,94 @@
+general protection fault, probably for non-canonical address 0xdffffc0000000006: 0000 [#1] PREEMPT SMP KASAN
+KASAN: null-ptr-deref in range [0x0000000000000030-0x0000000000000037]
+CPU: 1 PID: 22196 Comm: syz-executor.1 Not tainted 6.5.0-syzkaller-09276-g99d99825fc07 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
+RIP: 0010:flush_send_queue drivers/infiniband/sw/rxe/rxe_comp.c:600 [inline]
+RIP: 0010:rxe_completer+0x323/0x4750 drivers/infiniband/sw/rxe/rxe_comp.c:659
+Code: 48 89 94 24 a8 00 00 00 eb 0e 83 fb 02 0f 84 16 08 00 00 e8 af db 7f f9 48 b8 00 00 00 00 00 fc ff df 48 8b 8c 24 a8 00 00 00 <0f> b6 04 01 84 c0 0f 85 12 08 00 00 48 8b 44 24 18 44 8b 30 4c 89
+RSP: 0018:ffffc900058de440 EFLAGS: 00010006
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: 0000000000000006
+RDX: 0000000000000006 RSI: ffffc900058de61c RDI: ffff88808cb64388
+RBP: ffffc900058de6c8 R08: ffff88808cb6455b R09: 1ffff1101196c8ab
+R10: dffffc0000000000 R11: ffffed101196c8ac R12: ffff88808cb64000
+R13: 1ffff1101196c800 R14: ffff88808cb64540 R15: ffff88808cb64000
+FS:  00007f2bbdf686c0(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ff4f3b75198 CR3: 000000002d8a5000 CR4: 00000000003506e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ rxe_qp_do_cleanup+0x1a3/0x730 drivers/infiniband/sw/rxe/rxe_qp.c:778
+ execute_in_process_context+0x117/0x130 kernel/workqueue.c:3673
+ __rxe_cleanup+0x290/0x320 drivers/infiniband/sw/rxe/rxe_pool.c:233
+ rxe_create_qp+0x31a/0x5c0 drivers/infiniband/sw/rxe/rxe_verbs.c:583
+ create_qp+0x55c/0x760 drivers/infiniband/core/verbs.c:1235
+ ib_create_qp_kernel+0xaf/0x380 drivers/infiniband/core/verbs.c:1346
+ ib_create_qp include/rdma/ib_verbs.h:3743 [inline]
+ create_mad_qp drivers/infiniband/core/mad.c:2905 [inline]
+ ib_mad_port_open drivers/infiniband/core/mad.c:2986 [inline]
+ ib_mad_init_device+0xf83/0x2d80 drivers/infiniband/core/mad.c:3077
+ add_client_context+0x52b/0x8a0 drivers/infiniband/core/device.c:721
+ enable_device_and_get+0x1e3/0x440 drivers/infiniband/core/device.c:1332
+ ib_register_device+0x10c2/0x13c0 drivers/infiniband/core/device.c:1420
+ rxe_register_device+0x267/0x380 drivers/infiniband/sw/rxe/rxe_verbs.c:1525
+ rxe_net_add+0x78/0xd0 drivers/infiniband/sw/rxe/rxe_net.c:534
+ rxe_newlink+0xe2/0x190 drivers/infiniband/sw/rxe/rxe.c:197
+ nldev_newlink+0x5aa/0x620 drivers/infiniband/core/nldev.c:1731
+ rdma_nl_rcv_skb drivers/infiniband/core/netlink.c:239 [inline]
+ rdma_nl_rcv+0x6d4/0x9d0 drivers/infiniband/core/netlink.c:259
+ netlink_unicast_kernel net/netlink/af_netlink.c:1342 [inline]
+ netlink_unicast+0x7dc/0x970 net/netlink/af_netlink.c:1368
+ netlink_sendmsg+0xa37/0xd70 net/netlink/af_netlink.c:1910
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ sock_sendmsg net/socket.c:753 [inline]
+ ____sys_sendmsg+0x592/0x890 net/socket.c:2540
+ ___sys_sendmsg net/socket.c:2594 [inline]
+ __sys_sendmsg+0x2b0/0x3a0 net/socket.c:2623
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f2bbd27cae9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 e1 20 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f2bbdf680c8 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 00007f2bbd39bf80 RCX: 00007f2bbd27cae9
+RDX: 0000000000000000 RSI: 0000000020000380 RDI: 0000000000000003
+RBP: 00007f2bbd2c847a R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 000000000000000b R14: 00007f2bbd39bf80 R15: 00007ffcdb058598
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:flush_send_queue drivers/infiniband/sw/rxe/rxe_comp.c:600 [inline]
+RIP: 0010:rxe_completer+0x323/0x4750 drivers/infiniband/sw/rxe/rxe_comp.c:659
+Code: 48 89 94 24 a8 00 00 00 eb 0e 83 fb 02 0f 84 16 08 00 00 e8 af db 7f f9 48 b8 00 00 00 00 00 fc ff df 48 8b 8c 24 a8 00 00 00 <0f> b6 04 01 84 c0 0f 85 12 08 00 00 48 8b 44 24 18 44 8b 30 4c 89
+RSP: 0018:ffffc900058de440 EFLAGS: 00010006
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: 0000000000000006
+RDX: 0000000000000006 RSI: ffffc900058de61c RDI: ffff88808cb64388
+RBP: ffffc900058de6c8 R08: ffff88808cb6455b R09: 1ffff1101196c8ab
+R10: dffffc0000000000 R11: ffffed101196c8ac R12: ffff88808cb64000
+R13: 1ffff1101196c800 R14: ffff88808cb64540 R15: ffff88808cb64000
+FS:  00007f2bbdf686c0(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ff4f3b75198 CR3: 000000002d8a5000 CR4: 00000000003506e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	48 89 94 24 a8 00 00 	mov    %rdx,0xa8(%rsp)
+   7:	00
+   8:	eb 0e                	jmp    0x18
+   a:	83 fb 02             	cmp    $0x2,%ebx
+   d:	0f 84 16 08 00 00    	je     0x829
+  13:	e8 af db 7f f9       	call   0xf97fdbc7
+  18:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  1f:	fc ff df
+  22:	48 8b 8c 24 a8 00 00 	mov    0xa8(%rsp),%rcx
+  29:	00
+* 2a:	0f b6 04 01          	movzbl (%rcx,%rax,1),%eax <-- trapping instruction
+  2e:	84 c0                	test   %al,%al
+  30:	0f 85 12 08 00 00    	jne    0x848
+  36:	48 8b 44 24 18       	mov    0x18(%rsp),%rax
+  3b:	44 8b 30             	mov    (%rax),%r14d
+  3e:	4c                   	rex.WR
+  3f:	89                   	.byte 0x89

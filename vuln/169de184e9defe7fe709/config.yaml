@@ -1,0 +1,21 @@
+id: 169de184e9defe7fe709
+bug_link: https://syzkaller.appspot.com/bug?extid=169de184e9defe7fe709
+title: possible deadlock in rpc_close_pipes
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 61c5d53e815784708c45dac086c50a12ed1db694
+fix_commit: 2a8061ee5e41034eb14170ec4517b5583dbeff9f
+datetime: '2025-07-02T22:30:32-04:00'
+fix_commit_message: "better lockdep annotations for simple_recursive_removal()\n\n\
+  We want a class that nests outside of I_MUTEX_NORMAL (for the sake of\ncallbacks\
+  \ that might want to lock the victim) and inside I_MUTEX_PARENT\n(so that a variant\
+  \ of that could be used with parent of the victim\nheld locked by the caller).\n\
+  \nIn reality, simple_recursive_removal()\n\t* never holds two locks at once\n\t\
+  * holds the lock on parent of dentry passed to callback\n\t* is used only on the\
+  \ trees with fixed topology, so the depths\nare not changing.\n\nSo the locking\
+  \ order is actually fine.\n\nAFAICS, the best solution is to assign I_MUTEX_CHILD\
+  \ to the locks\ngrabbed by that thing.\n\nReported-by: syzbot+169de184e9defe7fe709@syzkaller.appspotmail.com\n\
+  Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>\n"
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

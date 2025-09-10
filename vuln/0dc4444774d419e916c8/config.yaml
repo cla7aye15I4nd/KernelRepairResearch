@@ -1,0 +1,28 @@
+id: 0dc4444774d419e916c8
+bug_link: https://syzkaller.appspot.com/bug?extid=0dc4444774d419e916c8
+title: 'KASAN: use-after-free Read in vgem_gem_dumb_create'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: db735fc4036bbe1fbe606819b5f0ff26cc76cdff
+fix_commit: 4b848f20eda5974020f043ca14bacf7a7e634fc8
+datetime: '2020-02-06T19:04:41+01:00'
+fix_commit_message: "drm/vgem: Close use-after-free race in vgem_gem_create\n\nThere's\
+  \ two references floating around here (for the object reference,\nnot the handle_count\
+  \ reference, that's a different thing):\n\n- The temporary reference held by vgem_gem_create,\
+  \ acquired by\n  creating the object and released by calling\n  drm_gem_object_put_unlocked.\n\
+  \n- The reference held by the object handle, created by\n  drm_gem_handle_create.\
+  \ This one generally outlives the function,\n  except if a 2nd thread races with\
+  \ a GEM_CLOSE ioctl call.\n\nSo usually everything is correct, except in that race\
+  \ case, where the\naccess to gem_object->size could be looking at freed data already.\n\
+  Which again isn't a real problem (userspace shot its feet off already\nwith the\
+  \ race, we could return garbage), but maybe someone can exploit\nthis as an information\
+  \ leak.\n\nCc: Dan Carpenter <dan.carpenter@oracle.com>\nCc: Hillf Danton <hdanton@sina.com>\n\
+  Reported-by: syzbot+0dc4444774d419e916c8@syzkaller.appspotmail.com\nCc: stable@vger.kernel.org\n\
+  Cc: Emil Velikov <emil.velikov@collabora.com>\nCc: Daniel Vetter <daniel.vetter@ffwll.ch>\n\
+  Cc: Sean Paul <seanpaul@chromium.org>\nCc: Chris Wilson <chris@chris-wilson.co.uk>\n\
+  Cc: Eric Anholt <eric@anholt.net>\nCc: Sam Ravnborg <sam@ravnborg.org>\nCc: Rob\
+  \ Clark <robdclark@chromium.org>\nReviewed-by: Chris Wilson <chris@chris-wilson.co.uk>\n\
+  Signed-off-by: Daniel Vetter <daniel.vetter@intel.com>\nLink: https://patchwork.freedesktop.org/patch/msgid/20200202132133.1891846-1-daniel.vetter@ffwll.ch\n"
+submodule:
+- drivers/gpu/drm/vgem
+hunk_count: 2
+covered_count: 2

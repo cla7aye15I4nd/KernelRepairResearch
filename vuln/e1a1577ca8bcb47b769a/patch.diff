@@ -1,0 +1,16 @@
+diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
+index 54e21f19d722..f9d2f2233f09 100644
+--- a/net/xfrm/xfrm_state.c
++++ b/net/xfrm/xfrm_state.c
+@@ -2056,6 +2056,11 @@ int xfrm_user_policy(struct sock *sk, int optname, u8 __user *optval, int optlen
+ 	struct xfrm_mgr *km;
+ 	struct xfrm_policy *pol = NULL;
+ 
++#ifdef CONFIG_COMPAT
++	if (in_compat_syscall())
++		return -EOPNOTSUPP;
++#endif
++
+ 	if (!optval && !optlen) {
+ 		xfrm_sk_policy_insert(sk, XFRM_POLICY_IN, NULL);
+ 		xfrm_sk_policy_insert(sk, XFRM_POLICY_OUT, NULL);

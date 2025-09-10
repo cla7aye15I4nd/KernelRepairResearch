@@ -1,0 +1,27 @@
+id: 2e22057de05b9f3b30d8
+bug_link: https://syzkaller.appspot.com/bug?extid=2e22057de05b9f3b30d8
+title: 'UBSAN: array-index-out-of-bounds in nilfs_add_link'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8247bf1db92a9697d4ee26db3259d2a1959d1366
+fix_commit: c4a7dc9523b59b3e73fd522c73e95e072f876b16
+datetime: '2024-04-16T15:39:52-07:00'
+fix_commit_message: "nilfs2: fix OOB in nilfs_set_de_type\n\nThe size of the nilfs_type_by_mode\
+  \ array in the fs/nilfs2/dir.c file is\ndefined as \"S_IFMT >> S_SHIFT\", but the\
+  \ nilfs_set_de_type() function,\nwhich uses this array, specifies the index to read\
+  \ from the array in the\nsame way as \"(mode & S_IFMT) >> S_SHIFT\".\n\nstatic void\
+  \ nilfs_set_de_type(struct nilfs_dir_entry *de, struct inode\n *inode)\n{\n\tumode_t\
+  \ mode = inode->i_mode;\n\n\tde->file_type = nilfs_type_by_mode[(mode & S_IFMT)>>S_SHIFT];\
+  \ // oob\n}\n\nHowever, when the index is determined this way, an out-of-bounds\
+  \ (OOB)\nerror occurs by referring to an index that is 1 larger than the array size\n\
+  when the condition \"mode & S_IFMT == S_IFMT\" is satisfied.  Therefore, a\npatch\
+  \ to resize the nilfs_type_by_mode array should be applied to prevent\nOOB errors.\n\
+  \nLink: https://lkml.kernel.org/r/20240415182048.7144-1-konishi.ryusuke@gmail.com\n\
+  Reported-by: syzbot+2e22057de05b9f3b30d8@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=2e22057de05b9f3b30d8\n\
+  Fixes: 2ba466d74ed7 (\"nilfs2: directory entry operations\")\nSigned-off-by: Jeongjun\
+  \ Park <aha310510@gmail.com>\nSigned-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>\n\
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>\nCc: <stable@vger.kernel.org>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- fs/nilfs2
+hunk_count: 1
+covered_count: 1

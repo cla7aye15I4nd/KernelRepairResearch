@@ -1,0 +1,45 @@
+id: b51c77ef956678a65834
+bug_link: https://syzkaller.appspot.com/bug?extid=b51c77ef956678a65834
+title: general protection fault in rds_ib_get_mr
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7effaf06c3cdef6855e127886c7405b9ab62f90d
+fix_commit: 9e630bcb7701f94dbd729fe57d37c089c763ad9f
+datetime: '2018-07-26T14:03:07-07:00'
+fix_commit_message: "RDS: RDMA: Fix the NULL-ptr deref in rds_ib_get_mr\n\nRegistration\
+  \ of a memory region(MR) through FRMR/fastreg(unlike FMR)\nneeds a connection/qp.\
+  \ With a proxy qp, this dependency on connection\nwill be removed, but that needs\
+  \ more infrastructure patches, which is a\nwork in progress.\n\nAs an intermediate\
+  \ fix, the get_mr returns EOPNOTSUPP when connection\ndetails are not populated.\
+  \ The MR registration through sendmsg() will\ncontinue to work even with fast registration,\
+  \ since connection in this\ncase is formed upfront.\n\nThis patch fixes the following\
+  \ crash:\nkasan: GPF could be caused by NULL-ptr deref or user memory access\ngeneral\
+  \ protection fault: 0000 [#1] SMP KASAN\nModules linked in:\nCPU: 1 PID: 4244 Comm:\
+  \ syzkaller468044 Not tainted 4.16.0-rc6+ #361\nHardware name: Google Google Compute\
+  \ Engine/Google Compute Engine, BIOS\nGoogle 01/01/2011\nRIP: 0010:rds_ib_get_mr+0x5c/0x230\
+  \ net/rds/ib_rdma.c:544\nRSP: 0018:ffff8801b059f890 EFLAGS: 00010202\nRAX: dffffc0000000000\
+  \ RBX: ffff8801b07e1300 RCX: ffffffff8562d96e\nRDX: 000000000000000d RSI: 0000000000000001\
+  \ RDI: 0000000000000068\nRBP: ffff8801b059f8b8 R08: ffffed0036274244 R09: ffff8801b13a1200\n\
+  R10: 0000000000000004 R11: ffffed0036274243 R12: ffff8801b13a1200\nR13: 0000000000000001\
+  \ R14: ffff8801ca09fa9c R15: 0000000000000000\nFS:  00007f4d050af700(0000) GS:ffff8801db300000(0000)\n\
+  knlGS:0000000000000000\nCS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2:\
+  \ 00007f4d050aee78 CR3: 00000001b0d9b006 CR4: 00000000001606e0\nDR0: 0000000000000000\
+  \ DR1: 0000000000000000 DR2: 0000000000000000\nDR3: 0000000000000000 DR6: 00000000fffe0ff0\
+  \ DR7: 0000000000000400\nCall Trace:\n __rds_rdma_map+0x710/0x1050 net/rds/rdma.c:271\n\
+  \ rds_get_mr_for_dest+0x1d4/0x2c0 net/rds/rdma.c:357\n rds_setsockopt+0x6cc/0x980\
+  \ net/rds/af_rds.c:347\n SYSC_setsockopt net/socket.c:1849 [inline]\n SyS_setsockopt+0x189/0x360\
+  \ net/socket.c:1828\n do_syscall_64+0x281/0x940 arch/x86/entry/common.c:287\n entry_SYSCALL_64_after_hwframe+0x42/0xb7\n\
+  RIP: 0033:0x4456d9\nRSP: 002b:00007f4d050aedb8 EFLAGS: 00000246 ORIG_RAX: 0000000000000036\n\
+  RAX: ffffffffffffffda RBX: 00000000006dac3c RCX: 00000000004456d9\nRDX: 0000000000000007\
+  \ RSI: 0000000000000114 RDI: 0000000000000004\nRBP: 00000000006dac38 R08: 00000000000000a0\
+  \ R09: 0000000000000000\nR10: 0000000020000380 R11: 0000000000000246 R12: 0000000000000000\n\
+  R13: 00007fffbfb36d6f R14: 00007f4d050af9c0 R15: 0000000000000005\nCode: fa 48 c1\
+  \ ea 03 80 3c 02 00 0f 85 cc 01 00 00 4c 8b bb 80 04 00 00\n48\nb8 00 00 00 00 00\
+  \ fc ff df 49 8d 7f 68 48 89 fa 48 c1 ea 03 <80> 3c 02\n00 0f\n85 9c 01 00 00 4d\
+  \ 8b 7f 68 48 b8 00 00 00 00 00\nRIP: rds_ib_get_mr+0x5c/0x230 net/rds/ib_rdma.c:544\
+  \ RSP:\nffff8801b059f890\n---[ end trace 7e1cea13b85473b0 ]---\n\nReported-by: syzbot+b51c77ef956678a65834@syzkaller.appspotmail.com\n\
+  Signed-off-by: Santosh Shilimkar <santosh.shilimkar@oracle.com>\nSigned-off-by:\
+  \ Avinash Repaka <avinash.repaka@oracle.com>\n\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/rds
+hunk_count: 14
+covered_count: 6

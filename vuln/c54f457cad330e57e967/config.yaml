@@ -1,0 +1,31 @@
+id: c54f457cad330e57e967
+bug_link: https://syzkaller.appspot.com/bug?extid=c54f457cad330e57e967
+title: general protection fault in ip6_sublist_rcv
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: acda6180e86ba9e0026287d65f30d1e2b0c8882a
+fix_commit: 51210ad5a558dcc7511d0c083f5cd796077b4e4d
+datetime: '2019-10-29T17:54:29-07:00'
+fix_commit_message: "inet: do not call sublist_rcv on empty list\n\nsyzbot triggered\
+  \ struct net NULL deref in NF_HOOK_LIST:\nRIP: 0010:NF_HOOK_LIST include/linux/netfilter.h:331\
+  \ [inline]\nRIP: 0010:ip6_sublist_rcv+0x5c9/0x930 net/ipv6/ip6_input.c:292\n ipv6_list_rcv+0x373/0x4b0\
+  \ net/ipv6/ip6_input.c:328\n __netif_receive_skb_list_ptype net/core/dev.c:5274\
+  \ [inline]\n\nReason:\nvoid ipv6_list_rcv(struct list_head *head, struct packet_type\
+  \ *pt,\n                   struct net_device *orig_dev)\n[..]\n        list_for_each_entry_safe(skb,\
+  \ next, head, list) {\n\t\t/* iterates list */\n                skb = ip6_rcv_core(skb,\
+  \ dev, net);\n\t\t/* ip6_rcv_core drops skb -> NULL is returned */\n           \
+  \     if (skb == NULL)\n                        continue;\n\t[..]\n\t}\n\t/* sublist\
+  \ is empty -> curr_net is NULL */\n        ip6_sublist_rcv(&sublist, curr_dev, curr_net);\n\
+  \nBefore the recent change NF_HOOK_LIST did a list iteration before\nstruct net\
+  \ deref, i.e. it was a no-op in the empty list case.\n\nList iteration now happens\
+  \ after *net deref, causing crash.\n\nFollow the same pattern as the ip(v6)_list_rcv\
+  \ loop and add a list_empty\ntest for the final sublist dispatch too.\n\nCc: Edward\
+  \ Cree <ecree@solarflare.com>\nReported-by: syzbot+c54f457cad330e57e967@syzkaller.appspotmail.com\n\
+  Fixes: ca58fbe06c54 (\"netfilter: add and use nf_hook_slow_list()\")\nSigned-off-by:\
+  \ Florian Westphal <fw@strlen.de>\nTested-by: Leon Romanovsky <leonro@mellanox.com>\n\
+  Tested-by: Nikolay Aleksandrov <nikolay@cumulusnetworks.com>\nSigned-off-by: David\
+  \ S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv4
+- net/ipv6
+hunk_count: 2
+covered_count: 1

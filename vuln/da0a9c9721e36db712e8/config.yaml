@@ -1,0 +1,25 @@
+id: da0a9c9721e36db712e8
+bug_link: https://syzkaller.appspot.com/bug?extid=da0a9c9721e36db712e8
+title: possible deadlock in __flush_workqueue
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 88e72239ead9814b886db54fc4ee39ef3c2b8f26
+fix_commit: 0d151a103775dd9645c78c97f77d6e2a5298d913
+datetime: '2024-06-28T14:30:34-04:00'
+fix_commit_message: "Bluetooth: hci_core: cancel all works upon hci_unregister_dev()\n\
+  \nsyzbot is reporting that calling hci_release_dev() from hci_error_reset()\ndue\
+  \ to hci_dev_put() from hci_error_reset() can cause deadlock at\ndestroy_workqueue(),\
+  \ for hci_error_reset() is called from\nhdev->req_workqueue which destroy_workqueue()\
+  \ needs to flush.\n\nWe need to make sure that hdev->{rx_work,cmd_work,tx_work}\
+  \ which are\nqueued into hdev->workqueue and hdev->{power_on,error_reset} which\
+  \ are\nqueued into hdev->req_workqueue are no longer running by the moment\n\n \
+  \      destroy_workqueue(hdev->workqueue);\n       destroy_workqueue(hdev->req_workqueue);\n\
+  \nare called from hci_release_dev().\n\nCall cancel_work_sync() on these work items\
+  \ from hci_unregister_dev()\nas soon as hdev->list is removed from hci_dev_list.\n\
+  \nReported-by: syzbot <syzbot+da0a9c9721e36db712e8@syzkaller.appspotmail.com>\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=da0a9c9721e36db712e8\nSigned-off-by:\
+  \ Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nSigned-off-by: Luiz Augusto\
+  \ von Dentz <luiz.von.dentz@intel.com>\n"
+submodule:
+- net/bluetooth
+hunk_count: 1
+covered_count: 0

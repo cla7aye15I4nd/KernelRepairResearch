@@ -1,0 +1,38 @@
+id: e633c79ceaecbf479854
+bug_link: https://syzkaller.appspot.com/bug?extid=e633c79ceaecbf479854
+title: general protection fault in ext4_acquire_dquot
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aac2fa20132e390e87270e3a738e86abcf1aea8b
+fix_commit: 6a4e3363792e30177cc3965697e34ddcea8b900b
+datetime: '2023-06-05T16:50:30+02:00'
+fix_commit_message: 'quota: Properly disable quotas when add_dquot_ref() fails
+
+
+  When add_dquot_ref() fails (usually due to IO error or ENOMEM), we want
+
+  to disable quotas we are trying to enable. However dquot_disable() call
+
+  was passed just the flags we are enabling so in case flags ==
+
+  DQUOT_USAGE_ENABLED dquot_disable() call will just fail with EINVAL
+
+  instead of properly disabling quotas. Fix the problem by always passing
+
+  DQUOT_LIMITS_ENABLED | DQUOT_USAGE_ENABLED to dquot_disable() in this
+
+  case.
+
+
+  Reported-and-tested-by: Ye Bin <yebin10@huawei.com>
+
+  Reported-by: syzbot+e633c79ceaecbf479854@syzkaller.appspotmail.com
+
+  Signed-off-by: Jan Kara <jack@suse.cz>
+
+  Message-Id: <20230605140731.2427629-2-yebin10@huawei.com>
+
+  '
+submodule:
+- fs/quota
+hunk_count: 1
+covered_count: 0

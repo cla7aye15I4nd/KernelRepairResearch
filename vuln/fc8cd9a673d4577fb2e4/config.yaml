@@ -1,0 +1,29 @@
+id: fc8cd9a673d4577fb2e4
+bug_link: https://syzkaller.appspot.com/bug?extid=fc8cd9a673d4577fb2e4
+title: 'KASAN: slab-out-of-bounds Write in decode_data'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5f773519639041faed4132f5943d7895f9078a4c
+fix_commit: 19d1532a187669ce86d5a2696eb7275310070793
+datetime: '2021-08-16T11:08:05+01:00'
+fix_commit_message: "net: 6pack: fix slab-out-of-bounds in decode_data\n\nSyzbot reported\
+  \ slab-out-of bounds write in decode_data().\nThe problem was in missing validation\
+  \ checks.\n\nSyzbot's reproducer generated malicious input, which caused\ndecode_data()\
+  \ to be called a lot in sixpack_decode(). Since\nrx_count_cooked is only 400 bytes\
+  \ and noone reported before,\nthat 400 bytes is not enough, let's just check if\
+  \ input is malicious\nand complain about buffer overrun.\n\nFail log:\n==================================================================\n\
+  BUG: KASAN: slab-out-of-bounds in drivers/net/hamradio/6pack.c:843\nWrite of size\
+  \ 1 at addr ffff888087c5544e by task kworker/u4:0/7\n\nCPU: 0 PID: 7 Comm: kworker/u4:0\
+  \ Not tainted 5.6.0-rc3-syzkaller #0\n...\nWorkqueue: events_unbound flush_to_ldisc\n\
+  Call Trace:\n __dump_stack lib/dump_stack.c:77 [inline]\n dump_stack+0x197/0x210\
+  \ lib/dump_stack.c:118\n print_address_description.constprop.0.cold+0xd4/0x30b mm/kasan/report.c:374\n\
+  \ __kasan_report.cold+0x1b/0x32 mm/kasan/report.c:506\n kasan_report+0x12/0x20 mm/kasan/common.c:641\n\
+  \ __asan_report_store1_noabort+0x17/0x20 mm/kasan/generic_report.c:137\n decode_data.part.0+0x23b/0x270\
+  \ drivers/net/hamradio/6pack.c:843\n decode_data drivers/net/hamradio/6pack.c:965\
+  \ [inline]\n sixpack_decode drivers/net/hamradio/6pack.c:968 [inline]\n\nReported-and-tested-by:\
+  \ syzbot+fc8cd9a673d4577fb2e4@syzkaller.appspotmail.com\nFixes: 1da177e4c3f4 (\"\
+  Linux-2.6.12-rc2\")\nSigned-off-by: Pavel Skripkin <paskripkin@gmail.com>\nReviewed-by:\
+  \ Dan Carpenter <dan.carpenter@oracle.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- drivers/net/hamradio
+hunk_count: 1
+covered_count: 1

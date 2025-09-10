@@ -1,0 +1,22 @@
+id: ab412638aeb652ded540
+bug_link: https://syzkaller.appspot.com/bug?extid=ab412638aeb652ded540
+title: general protection fault in io_disable_sqo_submit
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 621fadc22365f3cf307bcd9048e3372e9ee9cdcc
+fix_commit: b4411616c26f26c4017b8fa4d3538b1a02028733
+datetime: '2021-01-13T08:29:17-07:00'
+fix_commit_message: "io_uring: fix null-deref in io_disable_sqo_submit\n\ngeneral\
+  \ protection fault, probably for non-canonical address\n\t0xdffffc0000000022: 0000\
+  \ [#1] KASAN: null-ptr-deref\n\tin range [0x0000000000000110-0x0000000000000117]\n\
+  RIP: 0010:io_ring_set_wakeup_flag fs/io_uring.c:6929 [inline]\nRIP: 0010:io_disable_sqo_submit+0xdb/0x130\
+  \ fs/io_uring.c:8891\nCall Trace:\n io_uring_create fs/io_uring.c:9711 [inline]\n\
+  \ io_uring_setup+0x12b1/0x38e0 fs/io_uring.c:9739\n do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n\
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nio_disable_sqo_submit() might be called\
+  \ before user rings were\nallocated, don't do io_ring_set_wakeup_flag() in those\
+  \ cases.\n\nReported-by: syzbot+ab412638aeb652ded540@syzkaller.appspotmail.com\n\
+  Fixes: d9d05217cb69 (\"io_uring: stop SQPOLL submit on creator's death\")\nSigned-off-by:\
+  \ Pavel Begunkov <asml.silence@gmail.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

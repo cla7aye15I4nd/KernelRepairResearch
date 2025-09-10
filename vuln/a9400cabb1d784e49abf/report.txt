@@ -1,0 +1,49 @@
+==================================================================
+BUG: KCSAN: data-race in ipv6_mc_down / mld_ifc_work
+
+read to 0xffff88810789a032 of 1 bytes by task 9 on cpu 0:
+ mld_ifc_work+0x52c/0x7b0 net/ipv6/mcast.c:2652
+ process_one_work kernel/workqueue.c:2633 [inline]
+ process_scheduled_works+0x5b8/0xa30 kernel/workqueue.c:2706
+ worker_thread+0x525/0x730 kernel/workqueue.c:2787
+ kthread+0x1d7/0x210 kernel/kthread.c:388
+ ret_from_fork+0x48/0x60 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+
+write to 0xffff88810789a032 of 1 bytes by task 22400 on cpu 1:
+ mld_ifc_stop_work net/ipv6/mcast.c:1080 [inline]
+ ipv6_mc_down+0x10a/0x280 net/ipv6/mcast.c:2725
+ addrconf_ifdown+0xe32/0xf10 net/ipv6/addrconf.c:3941
+ addrconf_notify+0x2ff/0x940
+ notifier_call_chain kernel/notifier.c:93 [inline]
+ raw_notifier_call_chain+0x6b/0x1c0 kernel/notifier.c:461
+ __dev_notify_flags+0x205/0x3d0
+ dev_change_flags+0xab/0xd0 net/core/dev.c:8725
+ do_setlink+0x9f3/0x2450 net/core/rtnetlink.c:2910
+ rtnl_group_changelink net/core/rtnetlink.c:3452 [inline]
+ __rtnl_newlink net/core/rtnetlink.c:3711 [inline]
+ rtnl_newlink+0xbbf/0x1670 net/core/rtnetlink.c:3748
+ rtnetlink_rcv_msg+0x80a/0x8c0 net/core/rtnetlink.c:6615
+ netlink_rcv_skb+0x126/0x220 net/netlink/af_netlink.c:2543
+ rtnetlink_rcv+0x1c/0x20 net/core/rtnetlink.c:6633
+ netlink_unicast_kernel net/netlink/af_netlink.c:1341 [inline]
+ netlink_unicast+0x589/0x650 net/netlink/af_netlink.c:1367
+ netlink_sendmsg+0x66e/0x770 net/netlink/af_netlink.c:1908
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg net/socket.c:745 [inline]
+ ____sys_sendmsg+0x37c/0x4d0 net/socket.c:2584
+ ___sys_sendmsg net/socket.c:2638 [inline]
+ __sys_sendmsg+0x1e9/0x270 net/socket.c:2667
+ __do_sys_sendmsg net/socket.c:2676 [inline]
+ __se_sys_sendmsg net/socket.c:2674 [inline]
+ __x64_sys_sendmsg+0x46/0x50 net/socket.c:2674
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x59/0x120 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+value changed: 0x02 -> 0x01
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 PID: 22400 Comm: syz-executor.4 Not tainted 6.7.0-syzkaller-10085-g1b1934dbbdcf #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+==================================================================

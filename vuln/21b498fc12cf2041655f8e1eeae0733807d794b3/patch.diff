@@ -1,0 +1,84 @@
+diff --git a/include/net/sctp/structs.h b/include/net/sctp/structs.h
+index 2f8f93da5dc2..9a5ccf03a59b 100644
+--- a/include/net/sctp/structs.h
++++ b/include/net/sctp/structs.h
+@@ -966,7 +966,7 @@ void sctp_transport_burst_limited(struct sctp_transport *);
+ void sctp_transport_burst_reset(struct sctp_transport *);
+ unsigned long sctp_transport_timeout(struct sctp_transport *);
+ void sctp_transport_reset(struct sctp_transport *t);
+-void sctp_transport_update_pmtu(struct sctp_transport *t, u32 pmtu);
++bool sctp_transport_update_pmtu(struct sctp_transport *t, u32 pmtu);
+ void sctp_transport_immediate_rtx(struct sctp_transport *);
+ void sctp_transport_dst_release(struct sctp_transport *t);
+ void sctp_transport_dst_confirm(struct sctp_transport *t);
+diff --git a/net/sctp/input.c b/net/sctp/input.c
+index 9320661cc41d..141c9c466ec1 100644
+--- a/net/sctp/input.c
++++ b/net/sctp/input.c
+@@ -406,8 +406,12 @@ void sctp_icmp_frag_needed(struct sock *sk, struct sctp_association *asoc,
+ 		 */
+ 		return;
+ 
+-	/* Update transports view of the MTU */
+-	sctp_transport_update_pmtu(t, pmtu);
++	/* Update transports view of the MTU. Return if no update was needed.
++	 * If an update wasn't needed/possible, it also doesn't make sense to
++	 * try to retransmit now.
++	 */
++	if (!sctp_transport_update_pmtu(t, pmtu))
++		return;
+ 
+ 	/* Update association pmtu. */
+ 	sctp_assoc_sync_pmtu(asoc);
+diff --git a/net/sctp/transport.c b/net/sctp/transport.c
+index 1e5a22430cf5..47f82bd794d9 100644
+--- a/net/sctp/transport.c
++++ b/net/sctp/transport.c
+@@ -248,28 +248,37 @@ void sctp_transport_pmtu(struct sctp_transport *transport, struct sock *sk)
+ 		transport->pathmtu = SCTP_DEFAULT_MAXSEGMENT;
+ }
+ 
+-void sctp_transport_update_pmtu(struct sctp_transport *t, u32 pmtu)
++bool sctp_transport_update_pmtu(struct sctp_transport *t, u32 pmtu)
+ {
+ 	struct dst_entry *dst = sctp_transport_dst_check(t);
++	bool change = true;
+ 
+ 	if (unlikely(pmtu < SCTP_DEFAULT_MINSEGMENT)) {
+-		pr_warn("%s: Reported pmtu %d too low, using default minimum of %d\n",
+-			__func__, pmtu, SCTP_DEFAULT_MINSEGMENT);
+-		/* Use default minimum segment size and disable
+-		 * pmtu discovery on this transport.
+-		 */
+-		t->pathmtu = SCTP_DEFAULT_MINSEGMENT;
+-	} else {
+-		t->pathmtu = pmtu;
++		pr_warn_ratelimited("%s: Reported pmtu %d too low, using default minimum of %d\n",
++				    __func__, pmtu, SCTP_DEFAULT_MINSEGMENT);
++		/* Use default minimum segment instead */
++		pmtu = SCTP_DEFAULT_MINSEGMENT;
+ 	}
++	pmtu = SCTP_TRUNC4(pmtu);
+ 
+ 	if (dst) {
+ 		dst->ops->update_pmtu(dst, t->asoc->base.sk, NULL, pmtu);
+ 		dst = sctp_transport_dst_check(t);
+ 	}
+ 
+-	if (!dst)
++	if (!dst) {
+ 		t->af_specific->get_dst(t, &t->saddr, &t->fl, t->asoc->base.sk);
++		dst = t->dst;
++	}
++
++	if (dst) {
++		/* Re-fetch, as under layers may have a higher minimum size */
++		pmtu = SCTP_TRUNC4(dst_mtu(dst));
++		change = t->pathmtu != pmtu;
++	}
++	t->pathmtu = pmtu;
++
++	return change;
+ }
+ 
+ /* Caches the dst entry and source address for a transport's destination

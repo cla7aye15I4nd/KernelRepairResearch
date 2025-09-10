@@ -1,0 +1,61 @@
+=====================================================
+BUG: KMSAN: uninit-value in ipvlan_process_outbound drivers/net/ipvlan/ipvlan_core.c:524 [inline]
+BUG: KMSAN: uninit-value in ipvlan_xmit_mode_l3 drivers/net/ipvlan/ipvlan_core.c:602 [inline]
+BUG: KMSAN: uninit-value in ipvlan_queue_xmit+0xf44/0x16b0 drivers/net/ipvlan/ipvlan_core.c:668
+ ipvlan_process_outbound drivers/net/ipvlan/ipvlan_core.c:524 [inline]
+ ipvlan_xmit_mode_l3 drivers/net/ipvlan/ipvlan_core.c:602 [inline]
+ ipvlan_queue_xmit+0xf44/0x16b0 drivers/net/ipvlan/ipvlan_core.c:668
+ ipvlan_start_xmit+0x5c/0x1a0 drivers/net/ipvlan/ipvlan_main.c:222
+ __netdev_start_xmit include/linux/netdevice.h:4989 [inline]
+ netdev_start_xmit include/linux/netdevice.h:5003 [inline]
+ xmit_one net/core/dev.c:3547 [inline]
+ dev_hard_start_xmit+0x244/0xa10 net/core/dev.c:3563
+ __dev_queue_xmit+0x33ed/0x51c0 net/core/dev.c:4351
+ dev_queue_xmit include/linux/netdevice.h:3171 [inline]
+ packet_xmit+0x9c/0x6b0 net/packet/af_packet.c:276
+ packet_snd net/packet/af_packet.c:3081 [inline]
+ packet_sendmsg+0x8aef/0x9f10 net/packet/af_packet.c:3113
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg net/socket.c:745 [inline]
+ __sys_sendto+0x735/0xa10 net/socket.c:2191
+ __do_sys_sendto net/socket.c:2203 [inline]
+ __se_sys_sendto net/socket.c:2199 [inline]
+ __x64_sys_sendto+0x125/0x1c0 net/socket.c:2199
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Uninit was created at:
+ slab_post_alloc_hook mm/slub.c:3819 [inline]
+ slab_alloc_node mm/slub.c:3860 [inline]
+ __do_kmalloc_node mm/slub.c:3980 [inline]
+ __kmalloc_node_track_caller+0x705/0x1000 mm/slub.c:4001
+ kmalloc_reserve+0x249/0x4a0 net/core/skbuff.c:582
+ __alloc_skb+0x352/0x790 net/core/skbuff.c:651
+ skb_segment+0x20aa/0x7080 net/core/skbuff.c:4647
+ udp6_ufo_fragment+0xcab/0x1150 net/ipv6/udp_offload.c:109
+ ipv6_gso_segment+0x14be/0x2ca0 net/ipv6/ip6_offload.c:152
+ skb_mac_gso_segment+0x3e8/0x760 net/core/gso.c:53
+ nsh_gso_segment+0x6f4/0xf70 net/nsh/nsh.c:108
+ skb_mac_gso_segment+0x3e8/0x760 net/core/gso.c:53
+ __skb_gso_segment+0x4b0/0x730 net/core/gso.c:124
+ skb_gso_segment include/net/gso.h:83 [inline]
+ validate_xmit_skb+0x107f/0x1930 net/core/dev.c:3628
+ __dev_queue_xmit+0x1f28/0x51c0 net/core/dev.c:4343
+ dev_queue_xmit include/linux/netdevice.h:3171 [inline]
+ packet_xmit+0x9c/0x6b0 net/packet/af_packet.c:276
+ packet_snd net/packet/af_packet.c:3081 [inline]
+ packet_sendmsg+0x8aef/0x9f10 net/packet/af_packet.c:3113
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg net/socket.c:745 [inline]
+ __sys_sendto+0x735/0xa10 net/socket.c:2191
+ __do_sys_sendto net/socket.c:2203 [inline]
+ __se_sys_sendto net/socket.c:2199 [inline]
+ __x64_sys_sendto+0x125/0x1c0 net/socket.c:2199
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+CPU: 1 PID: 5101 Comm: syz-executor421 Not tainted 6.8.0-rc5-syzkaller-00297-gf2e367d6ad3b #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/25/2024
+=====================================================

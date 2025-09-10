@@ -1,0 +1,43 @@
+id: 73554e2258b7b8bf0bbf
+bug_link: https://syzkaller.appspot.com/bug?extid=73554e2258b7b8bf0bbf
+title: 'KCSAN: data-race in __io_uring_cancel / io_uring_try_cancel_requests'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3743c1723bfc62e69dbf022417720eed3f431b29
+fix_commit: b16ef427adf31fb4f6522458d37b3fe21d6d03b8
+datetime: '2021-05-27T07:44:49-06:00'
+fix_commit_message: "io_uring: fix data race to avoid potential NULL-deref\n\nCommit\
+  \ ba5ef6dc8a82 (\"io_uring: fortify tctx/io_wq cleanup\") introduced\nsetting tctx->io_wq\
+  \ to NULL a bit earlier. This has caused KCSAN to\ndetect a data race between accesses\
+  \ to tctx->io_wq:\n\n  write to 0xffff88811d8df330 of 8 bytes by task 3709 on cpu\
+  \ 1:\n   io_uring_clean_tctx                  fs/io_uring.c:9042 [inline]\n   __io_uring_cancel\
+  \                    fs/io_uring.c:9136\n   io_uring_files_cancel              \
+  \  include/linux/io_uring.h:16 [inline]\n   do_exit                            \
+  \  kernel/exit.c:781\n   do_group_exit                        kernel/exit.c:923\n\
+  \   get_signal                           kernel/signal.c:2835\n   arch_do_signal_or_restart\
+  \            arch/x86/kernel/signal.c:789\n   handle_signal_work               \
+  \    kernel/entry/common.c:147 [inline]\n   exit_to_user_mode_loop             \
+  \  kernel/entry/common.c:171 [inline]\n   ...\n  read to 0xffff88811d8df330 of 8\
+  \ bytes by task 6412 on cpu 0:\n   io_uring_try_cancel_iowq             fs/io_uring.c:8911\
+  \ [inline]\n   io_uring_try_cancel_requests         fs/io_uring.c:8933\n   io_ring_exit_work\
+  \                    fs/io_uring.c:8736\n   process_one_work                   \
+  \  kernel/workqueue.c:2276\n   ...\n\nWith the config used, KCSAN only reports data\
+  \ races with value changes:\nthis implies that in the case here we also know that\
+  \ tctx->io_wq was\nnon-NULL. Therefore, depending on interleaving, we may end up\
+  \ with:\n\n              [CPU 0]                 |        [CPU 1]\n  io_uring_try_cancel_iowq()\
+  \          | io_uring_clean_tctx()\n    if (!tctx->io_wq) // false        |   ...\n\
+  \    ...                               |   tctx->io_wq = NULL\n    io_wq_cancel_cb(tctx->io_wq,\
+  \ ...) |   ...\n      -> NULL-deref                   |\n\nNote: It is likely that\
+  \ thus far we've gotten lucky and the compiler\noptimizes the double-read into a\
+  \ single read into a register -- but this\nis never guaranteed, and can easily change\
+  \ with a different config!\n\nFix the data race by restoring the previous behaviour,\
+  \ where both\nsetting io_wq to NULL and put of the wq are _serialized_ after\nconcurrent\
+  \ io_uring_try_cancel_iowq() via acquisition of the uring_lock\nand removal of the\
+  \ node in io_uring_del_task_file().\n\nFixes: ba5ef6dc8a82 (\"io_uring: fortify\
+  \ tctx/io_wq cleanup\")\nSuggested-by: Pavel Begunkov <asml.silence@gmail.com>\n\
+  Reported-by: syzbot+bf2b3d0435b9b728946c@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Marco Elver <elver@google.com>\nCc: Jens Axboe <axboe@kernel.dk>\nLink: https://lore.kernel.org/r/20210527092547.2656514-1-elver@google.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

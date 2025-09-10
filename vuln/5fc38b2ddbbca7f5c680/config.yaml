@@ -1,0 +1,24 @@
+id: 5fc38b2ddbbca7f5c680
+bug_link: https://syzkaller.appspot.com/bug?extid=5fc38b2ddbbca7f5c680
+title: WARNING in jfs_symlink
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: dee8744524096514109a9680a9c45a4259dae2a4
+fix_commit: ebe060369f8d6e4588b115f252bebf5ba4d64350
+datetime: '2022-10-27T17:16:00-05:00'
+fix_commit_message: "jfs: Fix fortify moan in symlink\n\nJFS has in jfs_incore.h:\n\
+  \n      /* _inline may overflow into _inline_ea when needed */\n      /* _inline_ea\
+  \ may overlay the last part of\n       * file._xtroot if maxentry = XTROOTINITSLOT\n\
+  \       */\n      union {\n        struct {\n          /* 128: inline symlink */\n\
+  \          unchar _inline[128];\n          /* 128: inline extended attr */\n   \
+  \       unchar _inline_ea[128];\n        };\n        unchar _inline_all[256];\n\n\
+  and currently the symlink code copies into _inline;\nif this is larger than 128\
+  \ bytes it triggers a fortify warning of the\nform:\n\n  memcpy: detected field-spanning\
+  \ write (size 132) of single field\n     \"ip->i_link\" at fs/jfs/namei.c:950 (size\
+  \ 18446744073709551615)\n\nwhen it's actually OK.\n\nCopy it into _inline_all instead.\n\
+  \nReported-by: syzbot+5fc38b2ddbbca7f5c680@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Dr. David Alan Gilbert <linux@treblig.org>\nReviewed-by: Kees Cook <keescook@chromium.org>\n\
+  Signed-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>\n"
+submodule:
+- fs/jfs
+hunk_count: 1
+covered_count: 1

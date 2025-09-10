@@ -1,0 +1,23 @@
+id: e28037ac1c96d2a86e89
+bug_link: https://syzkaller.appspot.com/bug?extid=e28037ac1c96d2a86e89
+title: 'WARNING: refcount bug in igmp_start_timer'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 67270136949e1d55e1a614b0a2e053b7762384ef
+fix_commit: 323ebb61e32b478e2432c5a3cbf9e2ca678a9609
+datetime: '2019-08-08T18:22:29-07:00'
+fix_commit_message: "net: use listified RX for handling GRO_NORMAL skbs\n\nWhen GRO\
+  \ decides not to coalesce a packet, in napi_frags_finish(), instead\n of passing\
+  \ it to the stack immediately, place it on a list in the napi\n struct.  Then, at\
+  \ flush time (napi_complete_done(), napi_poll(), or\n napi_busy_loop()), call netif_receive_skb_list_internal()\
+  \ on the list.\nWe'd like to do that in napi_gro_flush(), but it's not called if\n\
+  \ !napi->gro_bitmask, so we have to do it in the callers instead.  (There are\n\
+  \ a handful of drivers that call napi_gro_flush() themselves, but it's not\n clear\
+  \ why, or whether this will affect them.)\nBecause a full 64 packets is an inefficiently\
+  \ large batch, also consume the\n list whenever it exceeds gro_normal_batch, a new\
+  \ net/core sysctl that\n defaults to 8.\n\nSigned-off-by: Edward Cree <ecree@solarflare.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- include/linux
+- net/core
+hunk_count: 11
+covered_count: 2

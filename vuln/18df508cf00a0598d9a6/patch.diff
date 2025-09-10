@@ -1,0 +1,29 @@
+diff --git a/fs/buffer.c b/fs/buffer.c
+index 8c19e705b9c3..645f0387dfe1 100644
+--- a/fs/buffer.c
++++ b/fs/buffer.c
+@@ -2187,6 +2187,8 @@ static void __block_commit_write(struct folio *folio, size_t from, size_t to)
+ 	struct buffer_head *bh, *head;
+ 
+ 	bh = head = folio_buffers(folio);
++	if (!bh)
++		return;
+ 	blocksize = bh->b_size;
+ 
+ 	block_start = 0;
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index c81cf67d8e77..941c1c0d5c6e 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -3019,6 +3019,11 @@ static int ext4_da_do_write_end(struct address_space *mapping,
+ 	bool disksize_changed = false;
+ 	loff_t new_i_size;
+ 
++	if (unlikely(!folio_buffers(folio))) {
++		folio_unlock(folio);
++		folio_put(folio);
++		return -EIO;
++	}
+ 	/*
+ 	 * block_write_end() will mark the inode as dirty with I_DIRTY_PAGES
+ 	 * flag, which all that's needed to trigger page writeback.

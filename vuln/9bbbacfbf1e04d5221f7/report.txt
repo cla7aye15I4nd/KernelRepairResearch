@@ -1,0 +1,36 @@
+BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!
+turning off the locking correctness validator.
+CPU: 1 PID: 40 Comm: kworker/u4:2 Not tainted 6.6.0-rc4-syzkaller-g19af4a4ed414 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/06/2023
+Workqueue: btrfs-endio-write btrfs_work_helper
+Call trace:
+ dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:233
+ show_stack+0x2c/0x44 arch/arm64/kernel/stacktrace.c:240
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106
+ dump_stack+0x1c/0x28 lib/dump_stack.c:113
+ lookup_chain_cache_add kernel/locking/lockdep.c:3815 [inline]
+ validate_chain kernel/locking/lockdep.c:3836 [inline]
+ __lock_acquire+0x1c60/0x75e8 kernel/locking/lockdep.c:5136
+ lock_acquire+0x23c/0x71c kernel/locking/lockdep.c:5753
+ fs_reclaim_acquire+0xb0/0x120 mm/page_alloc.c:3568
+ might_alloc include/linux/sched/mm.h:303 [inline]
+ slab_pre_alloc_hook mm/slab.h:709 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ slab_alloc mm/slub.c:3486 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3493 [inline]
+ kmem_cache_alloc+0x58/0x424 mm/slub.c:3502
+ btrfs_add_delayed_data_ref+0x1bc/0xe50 fs/btrfs/delayed-ref.c:1007
+ btrfs_inc_extent_ref+0x100/0x1a8 fs/btrfs/extent-tree.c:1430
+ btrfs_drop_extents+0x10b0/0x2c28 fs/btrfs/file.c:382
+ insert_reserved_file_extent+0x2bc/0xa7c fs/btrfs/inode.c:2895
+ insert_ordered_extent_file_extent fs/btrfs/inode.c:3002 [inline]
+ btrfs_finish_one_ordered+0xd78/0x1770 fs/btrfs/inode.c:3106
+ btrfs_finish_ordered_io+0xf8/0x10c fs/btrfs/inode.c:3229
+ finish_ordered_fn+0x20/0xa8 fs/btrfs/ordered-data.c:303
+ btrfs_work_helper+0x340/0x1504 fs/btrfs/async-thread.c:314
+ process_one_work+0x694/0x1204 kernel/workqueue.c:2630
+ process_scheduled_works kernel/workqueue.c:2703 [inline]
+ worker_thread+0x938/0xef4 kernel/workqueue.c:2784
+ kthread+0x288/0x310 kernel/kthread.c:388
+ ret_from_fork+0x10/0x20 arch/arm64/kernel/entry.S:857

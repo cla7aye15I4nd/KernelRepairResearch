@@ -1,0 +1,38 @@
+id: 9201a61c060513d4be38
+bug_link: https://syzkaller.appspot.com/bug?extid=9201a61c060513d4be38
+title: kernel BUG in do_write_page
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 185f203a6991f7dd7f8070d6638415215da35d7e
+fix_commit: 8f4688591d96be9a71c0ddfbf32032d55dd54cfa
+datetime: '2025-07-01T16:22:47+00:00'
+fix_commit_message: "f2fs: fix to use f2fs_is_valid_blkaddr_raw() in do_write_page()\n\
+  \nAs syzbot reported as below:\n\nF2FS-fs (loop9): inject invalid blkaddr in f2fs_is_valid_blkaddr\
+  \ of do_write_page+0x277/0xb10 fs/f2fs/segment.c:3956\n------------[ cut here ]------------\n\
+  kernel BUG at fs/f2fs/segment.c:3957!\nOops: invalid opcode: 0000 [#1] SMP KASAN\
+  \ PTI\nCPU: 0 UID: 0 PID: 10538 Comm: syz-executor Not tainted 6.16.0-rc3-next-20250627-syzkaller\
+  \ #0 PREEMPT(full)\nCall Trace:\n <TASK>\n f2fs_outplace_write_data+0x11a/0x220\
+  \ fs/f2fs/segment.c:4017\n f2fs_do_write_data_page+0x12ea/0x1a40 fs/f2fs/data.c:2752\n\
+  \ f2fs_write_single_data_page+0xa68/0x1680 fs/f2fs/data.c:2851\n f2fs_write_cache_pages\
+  \ fs/f2fs/data.c:3133 [inline]\n __f2fs_write_data_pages fs/f2fs/data.c:3282 [inline]\n\
+  \ f2fs_write_data_pages+0x195b/0x3000 fs/f2fs/data.c:3309\n do_writepages+0x32b/0x550\
+  \ mm/page-writeback.c:2636\n filemap_fdatawrite_wbc mm/filemap.c:386 [inline]\n\
+  \ __filemap_fdatawrite_range mm/filemap.c:419 [inline]\n __filemap_fdatawrite mm/filemap.c:425\
+  \ [inline]\n filemap_fdatawrite+0x199/0x240 mm/filemap.c:430\n f2fs_sync_dirty_inodes+0x31f/0x830\
+  \ fs/f2fs/checkpoint.c:1108\n block_operations fs/f2fs/checkpoint.c:1247 [inline]\n\
+  \ f2fs_write_checkpoint+0x95a/0x1df0 fs/f2fs/checkpoint.c:1638\n kill_f2fs_super+0x2c3/0x6c0\
+  \ fs/f2fs/super.c:5081\n deactivate_locked_super+0xb9/0x130 fs/super.c:474\n cleanup_mnt+0x425/0x4c0\
+  \ fs/namespace.c:1417\n task_work_run+0x1d4/0x260 kernel/task_work.c:227\n resume_user_mode_work\
+  \ include/linux/resume_user_mode.h:50 [inline]\n exit_to_user_mode_loop+0xec/0x110\
+  \ kernel/entry/common.c:114\n exit_to_user_mode_prepare include/linux/entry-common.h:330\
+  \ [inline]\n syscall_exit_to_user_mode_work include/linux/entry-common.h:414 [inline]\n\
+  \ syscall_exit_to_user_mode include/linux/entry-common.h:449 [inline]\n do_syscall_64+0x2bd/0x3b0\
+  \ arch/x86/entry/syscall_64.c:100\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\n\
+  If we inject block address fault, it may trigger kernel panic, we need\nto use f2fs_is_valid_blkaddr_raw()\
+  \ instead of f2fs_is_valid_blkaddr()\nin do_write_page() to avoid such issue.\n\n\
+  Fixes: 70b6e8500431 (\"f2fs: do sanity check on fio.new_blkaddr in do_write_page()\"\
+  )\nReported-by: syzbot+9201a61c060513d4be38@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/linux-f2fs-devel/68639520.a70a0220.3b7e22.17e6.GAE@google.com\n\
+  Signed-off-by: Chao Yu <chao@kernel.org>\nSigned-off-by: Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 1
+covered_count: 1

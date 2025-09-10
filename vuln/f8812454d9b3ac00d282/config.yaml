@@ -1,0 +1,23 @@
+id: f8812454d9b3ac00d282
+bug_link: https://syzkaller.appspot.com/bug?extid=f8812454d9b3ac00d282
+title: WARNING in call_netdevice_notifiers_info
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b888c510f7b3d64ca75fc0f43b4a4bd1a611312f
+fix_commit: 987aae75fc1041072941ffb622b45ce2359a99b9
+datetime: '2023-08-22T17:25:10-07:00'
+fix_commit_message: "batman-adv: Hold rtnl lock during MTU update via netlink\n\n\
+  The automatic recalculation of the maximum allowed MTU is usually triggered\nby\
+  \ code sections which are already rtnl lock protected by callers outside\nof batman-adv.\
+  \ But when the fragmentation setting is changed via\nbatman-adv's own batadv genl\
+  \ family, then the rtnl lock is not yet taken.\n\nBut dev_set_mtu requires that\
+  \ the caller holds the rtnl lock because it\nuses netdevice notifiers. And this\
+  \ code will then fail the check for this\nlock:\n\n  RTNL: assertion failed at net/core/dev.c\
+  \ (1953)\n\nCc: stable@vger.kernel.org\nReported-by: syzbot+f8812454d9b3ac00d282@syzkaller.appspotmail.com\n\
+  Fixes: c6a953cce8d0 (\"batman-adv: Trigger events for auto adjusted MTU\")\nSigned-off-by:\
+  \ Sven Eckelmann <sven@narfation.org>\nReviewed-by: Simon Horman <horms@kernel.org>\n\
+  Link: https://lore.kernel.org/r/20230821-batadv-missing-mtu-rtnl-lock-v1-1-1c5a7bfe861e@narfation.org\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/batman-adv
+hunk_count: 1
+covered_count: 1

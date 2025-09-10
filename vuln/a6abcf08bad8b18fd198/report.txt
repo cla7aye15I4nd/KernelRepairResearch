@@ -1,0 +1,86 @@
+general protection fault, maybe for address 0xffffffff8c12a198: 0000 [#1] PREEMPT SMP KASAN
+CPU: 2 PID: 5136 Comm: syz-executor269 Not tainted 6.4.0-rc1-syzkaller-00190-g31f4104e392a #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.14.0-2 04/01/2014
+RIP: 0010:__aria_aesni_avx_gfni_crypt_16way+0x2a6/0x4f40 arch/x86/crypto/aria-aesni-avx-asm_64.S:1164
+Code: d0 10 c4 e2 69 00 d7 c5 11 ef ea c5 e9 72 d0 08 c4 e2 69 00 d7 c5 09 ef f2 c4 e2 79 00 d7 c5 01 ef fa c5 f9 6f 05 7a 15 c9 0a <c5> f9 6f 0d 6a 15 c9 0a c5 f9 6f 15 7a 15 c9 0a c5 f9 6f 1d 52 15
+RSP: 0018:ffffc9000384f210 EFLAGS: 00010286
+RAX: ffff888026364890 RBX: 0000000000000000 RCX: ffff888026364890
+RDX: ffff888026364890 RSI: ffff888026364890 RDI: ffff888023c79028
+RBP: ffff88801fb3c900 R08: ffff888026364910 R09: ffff888023c79028
+R10: ffff88801fb3c800 R11: ffff88801fb3c800 R12: ffff88801fb3c900
+R13: ffff888023c79028 R14: dffffc0000000000 R15: ffff888026364890
+FS:  0000000000000000(0000) GS:ffff88802c800000(0063) knlGS:0000000056fc72c0
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 00007f29a06956a8 CR3: 000000001f222000 CR4: 0000000000350ee0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ aria_aesni_avx_gfni_ctr_crypt_16way+0x1d/0x110 arch/x86/crypto/aria-aesni-avx-asm_64.S:1339
+ aria_avx_ctr_encrypt+0x180/0x680 arch/x86/crypto/aria_aesni_avx_glue.c:103
+ crypto_skcipher_encrypt+0xbc/0x100 crypto/skcipher.c:653
+ crypto_skcipher_encrypt+0xbc/0x100 crypto/skcipher.c:653
+ crypto_gcm_encrypt+0x393/0x4b0 crypto/gcm.c:459
+ crypto_aead_encrypt+0xbc/0x100 crypto/aead.c:121
+ tls_do_encryption net/tls/tls_sw.c:544 [inline]
+ tls_push_record+0x12d8/0x30f0 net/tls/tls_sw.c:777
+ bpf_exec_tx_verdict+0xdf0/0x1210 net/tls/tls_sw.c:817
+ tls_sw_sendmsg+0x100b/0x1850 net/tls/tls_sw.c:1033
+ inet6_sendmsg+0x9d/0xe0 net/ipv6/af_inet6.c:651
+ sock_sendmsg_nosec net/socket.c:724 [inline]
+ sock_sendmsg+0xde/0x190 net/socket.c:747
+ sock_write_iter+0x295/0x3d0 net/socket.c:1140
+ call_write_iter include/linux/fs.h:1868 [inline]
+ new_sync_write fs/read_write.c:491 [inline]
+ vfs_write+0x945/0xd50 fs/read_write.c:584
+ ksys_write+0x1ec/0x250 fs/read_write.c:637
+ do_syscall_32_irqs_on arch/x86/entry/common.c:112 [inline]
+ __do_fast_syscall_32+0x65/0xf0 arch/x86/entry/common.c:178
+ do_fast_syscall_32+0x33/0x70 arch/x86/entry/common.c:203
+ entry_SYSENTER_compat_after_hwframe+0x70/0x82
+RIP: 0023:0xf7f45579
+Code: b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
+RSP: 002b:00000000ff8f022c EFLAGS: 00000246 ORIG_RAX: 0000000000000004
+RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 0000000020000580
+RDX: 0000000000000278 RSI: 00000000f7fe8000 RDI: 0000000000000000
+RBP: 00000000ff8f0290 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__aria_aesni_avx_gfni_crypt_16way+0x2a6/0x4f40 arch/x86/crypto/aria-aesni-avx-asm_64.S:1164
+Code: d0 10 c4 e2 69 00 d7 c5 11 ef ea c5 e9 72 d0 08 c4 e2 69 00 d7 c5 09 ef f2 c4 e2 79 00 d7 c5 01 ef fa c5 f9 6f 05 7a 15 c9 0a <c5> f9 6f 0d 6a 15 c9 0a c5 f9 6f 15 7a 15 c9 0a c5 f9 6f 1d 52 15
+RSP: 0018:ffffc9000384f210 EFLAGS: 00010286
+RAX: ffff888026364890 RBX: 0000000000000000 RCX: ffff888026364890
+RDX: ffff888026364890 RSI: ffff888026364890 RDI: ffff888023c79028
+RBP: ffff88801fb3c900 R08: ffff888026364910 R09: ffff888023c79028
+R10: ffff88801fb3c800 R11: ffff88801fb3c800 R12: ffff88801fb3c900
+R13: ffff888023c79028 R14: dffffc0000000000 R15: ffff888026364890
+FS:  0000000000000000(0000) GS:ffff88802c800000(0063) knlGS:0000000056fc72c0
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 00007f29a06956a8 CR3: 000000001f222000 CR4: 0000000000350ee0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	d0 10                	rclb   (%rax)
+   2:	c4 e2 69 00 d7       	vpshufb %xmm7,%xmm2,%xmm2
+   7:	c5 11 ef ea          	vpxor  %xmm2,%xmm13,%xmm13
+   b:	c5 e9 72 d0 08       	vpsrld $0x8,%xmm0,%xmm2
+  10:	c4 e2 69 00 d7       	vpshufb %xmm7,%xmm2,%xmm2
+  15:	c5 09 ef f2          	vpxor  %xmm2,%xmm14,%xmm14
+  19:	c4 e2 79 00 d7       	vpshufb %xmm7,%xmm0,%xmm2
+  1e:	c5 01 ef fa          	vpxor  %xmm2,%xmm15,%xmm15
+  22:	c5 f9 6f 05 7a 15 c9 	vmovdqa 0xac9157a(%rip),%xmm0        # 0xac915a4
+  29:	0a
+* 2a:	c5 f9 6f 0d 6a 15 c9 	vmovdqa 0xac9156a(%rip),%xmm1        # 0xac9159c <-- trapping instruction
+  31:	0a
+  32:	c5 f9 6f 15 7a 15 c9 	vmovdqa 0xac9157a(%rip),%xmm2        # 0xac915b4
+  39:	0a
+  3a:	c5                   	.byte 0xc5
+  3b:	f9                   	stc
+  3c:	6f                   	outsl  %ds:(%rsi),(%dx)
+  3d:	1d                   	.byte 0x1d
+  3e:	52                   	push   %rdx
+  3f:	15                   	.byte 0x15

@@ -1,0 +1,44 @@
+id: cd80c5ef5121bfe85b55
+bug_link: https://syzkaller.appspot.com/bug?extid=cd80c5ef5121bfe85b55
+title: 'KMSAN: uninit-value in kalmia_send_init_packet'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2fa28f5c6fcbfc794340684f36d2581b4f2d20b5
+fix_commit: c68f345b7c425b38656e1791a0486769a8797016
+datetime: '2023-02-13T09:41:14+00:00'
+fix_commit_message: 'net/usb: kalmia: Don''t pass act_len in usb_bulk_msg error path
+
+
+  syzbot reported that act_len in kalmia_send_init_packet() is
+
+  uninitialized when passing it to the first usb_bulk_msg error path. Jiri
+
+  Pirko noted that it''s pointless to pass it in the error path, and that
+
+  the value that would be printed in the second error path would be the
+
+  value of act_len from the first call to usb_bulk_msg.[1]
+
+
+  With this in mind, let''s just not pass act_len to the usb_bulk_msg error
+
+  paths.
+
+
+  1: https://lore.kernel.org/lkml/Y9pY61y1nwTuzMOa@nanopsycho/
+
+
+  Fixes: d40261236e8e ("net/usb: Add Samsung Kalmia driver for Samsung GT-B3730")
+
+  Reported-and-tested-by: syzbot+cd80c5ef5121bfe85b55@syzkaller.appspotmail.com
+
+  Signed-off-by: Miko Larsson <mikoxyzzz@gmail.com>
+
+  Reviewed-by: Alexander Duyck <alexanderduyck@fb.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- drivers/net/usb
+hunk_count: 2
+covered_count: 2

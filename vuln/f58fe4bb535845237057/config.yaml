@@ -1,0 +1,37 @@
+id: f58fe4bb535845237057
+bug_link: https://syzkaller.appspot.com/bug?extid=f58fe4bb535845237057
+title: general protection fault in qp_release_pages
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: da0d6b3a536bc800cb46b35cc75327fd546b6272
+fix_commit: 90ca6333fd65f318c47bff425e1ea36c0a5539f6
+datetime: '2020-08-28T12:31:39+02:00'
+fix_commit_message: 'VMCI: check return value of get_user_pages_fast() for errors
+
+
+  In a couple of places in qp_host_get_user_memory(),
+
+  get_user_pages_fast() is called without properly checking for errors. If
+
+  e.g. -EFAULT is returned, this negative value will then be passed on to
+
+  qp_release_pages(), which expects a u64 as input.
+
+
+  Fix this by only calling qp_release_pages() when we have a positive
+
+  number returned.
+
+
+  Fixes: 06164d2b72aa ("VMCI: queue pairs implementation.")
+
+  Signed-off-by: Alex Dewar <alex.dewar90@gmail.com>
+
+  Link: https://lore.kernel.org/r/20200825164522.412392-1-alex.dewar90@gmail.com
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/misc/vmw_vmci
+hunk_count: 2
+covered_count: 2

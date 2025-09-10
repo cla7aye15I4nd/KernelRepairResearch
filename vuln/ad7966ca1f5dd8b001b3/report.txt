@@ -1,0 +1,173 @@
+BTRFS info (device loop0 state EA): last unmount of filesystem c9fe44da-de57-406a-8241-57ec7d4412cf
+==================================================================
+BUG: KASAN: slab-use-after-free in rb_left_deepest_node lib/rbtree.c:595 [inline]
+BUG: KASAN: slab-use-after-free in rb_first_postorder+0x69/0x90 lib/rbtree.c:628
+Read of size 8 at addr ffff888011beb010 by task syz-executor207/5215
+
+CPU: 1 UID: 0 PID: 5215 Comm: syz-executor207 Not tainted 6.11.0-syzkaller-07462-g1868f9d0260e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:93 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:119
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ rb_left_deepest_node lib/rbtree.c:595 [inline]
+ rb_first_postorder+0x69/0x90 lib/rbtree.c:628
+ btrfs_cleanup_defrag_inodes+0x2f/0x80 fs/btrfs/defrag.c:212
+ close_ctree+0x2af/0xd20 fs/btrfs/disk-io.c:4256
+ generic_shutdown_super+0x139/0x2d0 fs/super.c:642
+ kill_anon_super+0x3b/0x70 fs/super.c:1237
+ btrfs_kill_super+0x41/0x50 fs/btrfs/super.c:2121
+ deactivate_locked_super+0xc4/0x130 fs/super.c:473
+ cleanup_mnt+0x41f/0x4b0 fs/namespace.c:1373
+ task_work_run+0x24f/0x310 kernel/task_work.c:228
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0xa2f/0x27f0 kernel/exit.c:882
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1031
+ __do_sys_exit_group kernel/exit.c:1042 [inline]
+ __se_sys_exit_group kernel/exit.c:1040 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1040
+ x64_sys_call+0x2634/0x2640 arch/x86/include/generated/asm/syscalls_64.h:232
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f3a255b4809
+Code: Unable to access opcode bytes at 0x7f3a255b47df.
+RSP: 002b:00007fffb78455a8 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007f3a255b4809
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000001
+RBP: 00007f3a25636390 R08: ffffffffffffffb8 R09: 0000000000000000
+R10: 0000000000001000 R11: 0000000000000246 R12: 00007f3a25636390
+R13: 0000000000000000 R14: 00007f3a25637100 R15: 00007f3a255827a0
+ </TASK>
+
+Allocated by task 5218:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ unpoison_slab_object mm/kasan/common.c:319 [inline]
+ __kasan_slab_alloc+0x66/0x80 mm/kasan/common.c:345
+ kasan_slab_alloc include/linux/kasan.h:247 [inline]
+ slab_post_alloc_hook mm/slub.c:4086 [inline]
+ slab_alloc_node mm/slub.c:4135 [inline]
+ kmem_cache_alloc_noprof+0x135/0x2a0 mm/slub.c:4142
+ btrfs_add_inode_defrag+0x15c/0x790 fs/btrfs/defrag.c:136
+ inode_should_defrag fs/btrfs/inode.c:888 [inline]
+ cow_file_range+0x380/0x11f0 fs/btrfs/inode.c:1382
+ btrfs_run_delalloc_range+0x33d/0xf70 fs/btrfs/inode.c:2334
+ writepage_delalloc+0x482/0x7d0 fs/btrfs/extent_io.c:1192
+ extent_writepage fs/btrfs/extent_io.c:1454 [inline]
+ extent_write_cache_pages fs/btrfs/extent_io.c:2130 [inline]
+ btrfs_writepages+0x1157/0x2370 fs/btrfs/extent_io.c:2261
+ do_writepages+0x35d/0x870 mm/page-writeback.c:2683
+ filemap_fdatawrite_wbc+0x125/0x180 mm/filemap.c:397
+ __filemap_fdatawrite_range mm/filemap.c:430 [inline]
+ filemap_fdatawrite_range+0x120/0x180 mm/filemap.c:448
+ btrfs_fdatawrite_range+0x53/0xe0 fs/btrfs/file.c:3799
+ btrfs_direct_write+0x565/0xa70 fs/btrfs/direct-io.c:961
+ btrfs_do_write_iter+0x2a0/0x760 fs/btrfs/file.c:1505
+ new_sync_write fs/read_write.c:590 [inline]
+ vfs_write+0xa6d/0xc90 fs/read_write.c:683
+ ksys_pwrite64 fs/read_write.c:798 [inline]
+ __do_sys_pwrite64 fs/read_write.c:808 [inline]
+ __se_sys_pwrite64 fs/read_write.c:805 [inline]
+ __x64_sys_pwrite64+0x1aa/0x230 fs/read_write.c:805
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 5218:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:579
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x59/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:230 [inline]
+ slab_free_hook mm/slub.c:2343 [inline]
+ slab_free mm/slub.c:4580 [inline]
+ kmem_cache_free+0x1a3/0x420 mm/slub.c:4682
+ btrfs_cleanup_defrag_inodes+0x51/0x80 fs/btrfs/defrag.c:214
+ btrfs_remount_cleanup fs/btrfs/super.c:1263 [inline]
+ btrfs_reconfigure+0x269c/0x2d40 fs/btrfs/super.c:1555
+ reconfigure_super+0x445/0x880 fs/super.c:1083
+ vfs_cmd_reconfigure fs/fsopen.c:263 [inline]
+ vfs_fsconfig_locked fs/fsopen.c:292 [inline]
+ __do_sys_fsconfig fs/fsopen.c:473 [inline]
+ __se_sys_fsconfig+0xb68/0xf70 fs/fsopen.c:345
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff888011beb000
+ which belongs to the cache btrfs_inode_defrag of size 56
+The buggy address is located 16 bytes inside of
+ freed 56-byte region [ffff888011beb000, ffff888011beb038)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x11beb
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xfdffffff(slab)
+raw: 00fff00000000000 ffff88802f0d2000 dead000000000122 0000000000000000
+raw: 0000000000000000 00000000802e002e 00000001fdffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x52c40(GFP_NOFS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 5218, tgid 5218 (syz-executor207), ts 66928155163, free_ts 66428245005
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1500
+ prep_new_page mm/page_alloc.c:1508 [inline]
+ get_page_from_freelist+0x2e4c/0x2f10 mm/page_alloc.c:3446
+ __alloc_pages_noprof+0x256/0x6c0 mm/page_alloc.c:4702
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2263
+ alloc_slab_page+0x6a/0x130 mm/slub.c:2413
+ allocate_slab+0x5a/0x2f0 mm/slub.c:2579
+ new_slab mm/slub.c:2632 [inline]
+ ___slab_alloc+0xcd1/0x14b0 mm/slub.c:3819
+ __slab_alloc+0x58/0xa0 mm/slub.c:3909
+ __slab_alloc_node mm/slub.c:3962 [inline]
+ slab_alloc_node mm/slub.c:4123 [inline]
+ kmem_cache_alloc_noprof+0x1c1/0x2a0 mm/slub.c:4142
+ btrfs_add_inode_defrag+0x15c/0x790 fs/btrfs/defrag.c:136
+ inode_should_defrag fs/btrfs/inode.c:888 [inline]
+ cow_file_range+0x380/0x11f0 fs/btrfs/inode.c:1382
+ btrfs_run_delalloc_range+0x33d/0xf70 fs/btrfs/inode.c:2334
+ writepage_delalloc+0x482/0x7d0 fs/btrfs/extent_io.c:1192
+ extent_writepage fs/btrfs/extent_io.c:1454 [inline]
+ extent_write_cache_pages fs/btrfs/extent_io.c:2130 [inline]
+ btrfs_writepages+0x1157/0x2370 fs/btrfs/extent_io.c:2261
+ do_writepages+0x35d/0x870 mm/page-writeback.c:2683
+ filemap_fdatawrite_wbc+0x125/0x180 mm/filemap.c:397
+page last free pid 5216 tgid 5216 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1101 [inline]
+ free_unref_page+0xd19/0xea0 mm/page_alloc.c:2619
+ discard_slab mm/slub.c:2678 [inline]
+ __put_partials+0xeb/0x130 mm/slub.c:3146
+ put_cpu_partial+0x17c/0x250 mm/slub.c:3221
+ __slab_free+0x2ea/0x3d0 mm/slub.c:4450
+ qlink_free mm/kasan/quarantine.c:163 [inline]
+ qlist_free_all+0x9e/0x140 mm/kasan/quarantine.c:179
+ kasan_quarantine_reduce+0x14f/0x170 mm/kasan/quarantine.c:286
+ __kasan_slab_alloc+0x23/0x80 mm/kasan/common.c:329
+ kasan_slab_alloc include/linux/kasan.h:247 [inline]
+ slab_post_alloc_hook mm/slub.c:4086 [inline]
+ slab_alloc_node mm/slub.c:4135 [inline]
+ kmem_cache_alloc_noprof+0x135/0x2a0 mm/slub.c:4142
+ getname_flags+0xb7/0x540 fs/namei.c:139
+ do_sys_openat2+0xd2/0x1d0 fs/open.c:1409
+ do_sys_open fs/open.c:1430 [inline]
+ __do_sys_openat fs/open.c:1446 [inline]
+ __se_sys_openat fs/open.c:1441 [inline]
+ __x64_sys_openat+0x247/0x2a0 fs/open.c:1441
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff888011beaf00: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff888011beaf80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+>ffff888011beb000: fa fb fb fb fb fb fb fc fc fc fc fc fc fc fc fc
+                         ^
+ ffff888011beb080: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff888011beb100: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

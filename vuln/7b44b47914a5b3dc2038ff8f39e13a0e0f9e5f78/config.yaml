@@ -1,0 +1,24 @@
+id: 7b44b47914a5b3dc2038ff8f39e13a0e0f9e5f78
+bug_link: https://syzkaller.appspot.com/bug?extid=7b44b47914a5b3dc2038ff8f39e13a0e0f9e5f78
+title: possible deadlock in ftrace_profile_set_filter (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 82d94856fa221b5173eefd56bcd1057c037e9b07
+fix_commit: 43fa87f7deed52e8c8420182e0c133bc4cf395f6
+datetime: '2018-01-25T14:48:30+01:00'
+fix_commit_message: "perf/core: Fix another perf,trace,cpuhp lock inversion\n\nLockdep\
+  \ noticed the following 3-way lockup race:\n\n        perf_trace_init()\n #0   \
+  \    mutex_lock(&event_mutex)\n          perf_trace_event_init()\n            perf_trace_event_reg()\n\
+  \              tp_event->class->reg() := tracepoint_probe_register\n #1        \
+  \      mutex_lock(&tracepoints_mutex)\n                  trace_point_add_func()\n\
+  \ #2                  static_key_enable()\n\n #2\tdo_cpu_up()\n\t  perf_event_init_cpu()\n\
+  \ #3\t    mutex_lock(&pmus_lock)\n #4\t    mutex_lock(&ctx->mutex)\n\n\tperf_ioctl()\n\
+  \ #4\t  ctx = perf_event_ctx_lock()\n\t  _perf_iotcl()\n\t    ftrace_profile_set_filter()\n\
+  \ #0\t      mutex_lock(&event_mutex)\n\nFudge it for now by noting that the tracepoint\
+  \ state does not depend\non the event <-> context relation. Ugly though :/\n\nSigned-off-by:\
+  \ Peter Zijlstra (Intel) <peterz@infradead.org>\nCc: Linus Torvalds <torvalds@linux-foundation.org>\n\
+  Cc: Peter Zijlstra <peterz@infradead.org>\nCc: Steven Rostedt <rostedt@goodmis.org>\n\
+  Cc: Thomas Gleixner <tglx@linutronix.de>\nSigned-off-by: Ingo Molnar <mingo@kernel.org>\n"
+submodule:
+- kernel/events
+hunk_count: 2
+covered_count: 0

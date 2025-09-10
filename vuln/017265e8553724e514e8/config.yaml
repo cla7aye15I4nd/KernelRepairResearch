@@ -1,0 +1,38 @@
+id: 017265e8553724e514e8
+bug_link: https://syzkaller.appspot.com/bug?extid=017265e8553724e514e8
+title: general protection fault in do_con_write
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ba47d845d715a010f7b51f6f89bae32845e6acb7
+fix_commit: ce684552a266cb1c7cc2f7e623f38567adec6653
+datetime: '2020-07-21T18:07:15+02:00'
+fix_commit_message: "vt: Reject zero-sized screen buffer size.\n\nsyzbot is reporting\
+  \ general protection fault in do_con_write() [1] caused\nby vc->vc_screenbuf ==\
+  \ ZERO_SIZE_PTR caused by vc->vc_screenbuf_size == 0\ncaused by vc->vc_cols == vc->vc_rows\
+  \ == vc->vc_size_row == 0 caused by\nfb_set_var() from ioctl(FBIOPUT_VSCREENINFO)\
+  \ on /dev/fb0 , for\ngotoxy(vc, 0, 0) from reset_terminal() from vc_init() from\
+  \ vc_allocate()\n from con_install() from tty_init_dev() from tty_open() on such\
+  \ console\ncauses vc->vc_pos == 0x10000000e due to\n((unsigned long) ZERO_SIZE_PTR)\
+  \ + -1U * 0 + (-1U << 1).\n\nI don't think that a console with 0 column or 0 row\
+  \ makes sense. And it\nseems that vc_do_resize() does not intend to allow resizing\
+  \ a console to\n0 column or 0 row due to\n\n  new_cols = (cols ? cols : vc->vc_cols);\n\
+  \  new_rows = (lines ? lines : vc->vc_rows);\n\nexception.\n\nTheoretically, cols\
+  \ and rows can be any range as long as\n0 < cols * rows * 2 <= KMALLOC_MAX_SIZE\
+  \ is satisfied (e.g.\ncols == 1048576 && rows == 2 is possible) because of\n\n \
+  \ vc->vc_size_row = vc->vc_cols << 1;\n  vc->vc_screenbuf_size = vc->vc_rows * vc->vc_size_row;\n\
+  \nin visual_init() and kzalloc(vc->vc_screenbuf_size) in vc_allocate().\n\nSince\
+  \ we can detect cols == 0 or rows == 0 via screenbuf_size = 0 in\nvisual_init(),\
+  \ we can reject kzalloc(0). Then, vc_allocate() will return\nan error, and con_write()\
+  \ will not be called on a console with 0 column\nor 0 row.\n\nWe need to make sure\
+  \ that integer overflow in visual_init() won't happen.\nSince vc_do_resize() restricts\
+  \ cols <= 32767 and rows <= 32767, applying\n1 <= cols <= 32767 and 1 <= rows <=\
+  \ 32767 restrictions to vc_allocate()\nwill be practically fine.\n\nThis patch does\
+  \ not touch con_init(), for returning -EINVAL there\ndoes not help when we are not\
+  \ returning -ENOMEM.\n\n[1] https://syzkaller.appspot.com/bug?extid=017265e8553724e514e8\n\
+  \nReported-and-tested-by: syzbot <syzbot+017265e8553724e514e8@syzkaller.appspotmail.com>\n\
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nCc: stable <stable@vger.kernel.org>\n\
+  Link: https://lore.kernel.org/r/20200712111013.11881-1-penguin-kernel@I-love.SAKURA.ne.jp\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty/vt
+hunk_count: 7
+covered_count: 0

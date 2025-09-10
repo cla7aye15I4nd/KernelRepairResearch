@@ -1,0 +1,33 @@
+id: 1cfe6406582d72de07f78837946d111c2aea6936
+bug_link: https://syzkaller.appspot.com/bug?extid=1cfe6406582d72de07f78837946d111c2aea6936
+title: general protection fault in ___cache_free
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: af3ff8045bbf3e32f1a448542e73abb4c8ceb6f1
+fix_commit: ecaaab5649781c5a0effdaf298a925063020500e
+datetime: '2017-11-29T16:25:58+11:00'
+fix_commit_message: "crypto: salsa20 - fix blkcipher_walk API usage\n\nWhen asked\
+  \ to encrypt or decrypt 0 bytes, both the generic and x86\nimplementations of Salsa20\
+  \ crash in blkcipher_walk_done(), either when\ndoing 'kfree(walk->buffer)' or 'free_page((unsigned\
+  \ long)walk->page)',\nbecause walk->buffer and walk->page have not been initialized.\n\
+  \nThe bug is that Salsa20 is calling blkcipher_walk_done() even when\nnothing is\
+  \ in 'walk.nbytes'.  But blkcipher_walk_done() is only meant to\nbe called when\
+  \ a nonzero number of bytes have been provided.\n\nThe broken code is part of an\
+  \ optimization that tries to make only one\ncall to salsa20_encrypt_bytes() to process\
+  \ inputs that are not evenly\ndivisible by 64 bytes.  To fix the bug, just remove\
+  \ this \"optimization\"\nand use the blkcipher_walk API the same way all the other\
+  \ users do.\n\nReproducer:\n\n    #include <linux/if_alg.h>\n    #include <sys/socket.h>\n\
+  \    #include <unistd.h>\n\n    int main()\n    {\n            int algfd, reqfd;\n\
+  \            struct sockaddr_alg addr = {\n                    .salg_type = \"skcipher\"\
+  ,\n                    .salg_name = \"salsa20\",\n            };\n            char\
+  \ key[16] = { 0 };\n\n            algfd = socket(AF_ALG, SOCK_SEQPACKET, 0);\n \
+  \           bind(algfd, (void *)&addr, sizeof(addr));\n            reqfd = accept(algfd,\
+  \ 0, 0);\n            setsockopt(algfd, SOL_ALG, ALG_SET_KEY, key, sizeof(key));\n\
+  \            read(reqfd, key, sizeof(key));\n    }\n\nReported-by: syzbot <syzkaller@googlegroups.com>\n\
+  Fixes: eb6f13eb9f81 (\"[CRYPTO] salsa20_generic: Fix multi-page processing\")\n\
+  Cc: <stable@vger.kernel.org> # v2.6.25+\nSigned-off-by: Eric Biggers <ebiggers@google.com>\n\
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- arch/x86/crypto
+- crypto
+hunk_count: 2
+covered_count: 1

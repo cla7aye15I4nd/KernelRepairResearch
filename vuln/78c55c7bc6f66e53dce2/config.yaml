@@ -1,0 +1,26 @@
+id: 78c55c7bc6f66e53dce2
+bug_link: https://syzkaller.appspot.com/bug?extid=78c55c7bc6f66e53dce2
+title: possible deadlock in rds_tcp_reset_callbacks
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ae3ed15da5889263de372ff9df2e83e16acca4cb
+fix_commit: a91b750fd6629354460282bbf5146c01b05c4859
+datetime: '2022-10-03T07:56:02+01:00'
+fix_commit_message: "net: rds: don't hold sock lock when cancelling work from rds_tcp_reset_callbacks()\n\
+  \nsyzbot is reporting lockdep warning at rds_tcp_reset_callbacks() [1], for\ncommit\
+  \ ac3615e7f3cffe2a (\"RDS: TCP: Reduce code duplication in\nrds_tcp_reset_callbacks()\"\
+  ) added cancel_delayed_work_sync() into a section\nprotected by lock_sock() without\
+  \ realizing that rds_send_xmit() might call\nlock_sock().\n\nWe don't need to protect\
+  \ cancel_delayed_work_sync() using lock_sock(), for\neven if rds_{send,recv}_worker()\
+  \ re-queued this work while __flush_work()\n from cancel_delayed_work_sync() was\
+  \ waiting for this work to complete,\nretried rds_{send,recv}_worker() is no-op\
+  \ due to the absence of RDS_CONN_UP\nbit.\n\nLink: https://syzkaller.appspot.com/bug?extid=78c55c7bc6f66e53dce2\
+  \ [1]\nReported-by: syzbot <syzbot+78c55c7bc6f66e53dce2@syzkaller.appspotmail.com>\n\
+  Co-developed-by: Hillf Danton <hdanton@sina.com>\nSigned-off-by: Hillf Danton <hdanton@sina.com>\n\
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nTested-by: syzbot\
+  \ <syzbot+78c55c7bc6f66e53dce2@syzkaller.appspotmail.com>\nFixes: ac3615e7f3cffe2a\
+  \ (\"RDS: TCP: Reduce code duplication in rds_tcp_reset_callbacks()\")\nSigned-off-by:\
+  \ David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/rds
+hunk_count: 1
+covered_count: 1

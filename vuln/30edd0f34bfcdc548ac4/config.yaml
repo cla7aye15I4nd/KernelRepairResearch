@@ -1,0 +1,45 @@
+id: 30edd0f34bfcdc548ac4
+bug_link: https://syzkaller.appspot.com/bug?extid=30edd0f34bfcdc548ac4
+title: memory leak in snd_pcm_hw_params
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 46b770f720bdd8a7de1c04a1cab5d4e9e21d6666
+fix_commit: 66f2d19f8116e16898f8d82e28573a384ddc430d
+datetime: '2020-01-29T21:01:19+01:00'
+fix_commit_message: 'ALSA: pcm: Fix memory leak at closing a stream without hw_free
+
+
+  ALSA PCM core recently introduced a new managed PCM buffer allocation
+
+  mode that does allocate / free automatically at hw_params and
+
+  hw_free.  However, it overlooked the code path directly calling
+
+  hw_free PCM ops at releasing the PCM substream, and it may result in a
+
+  memory leak as spotted by syzkaller when no buffer preallocation is
+
+  used (e.g. vmalloc buffer).
+
+
+  This patch papers over it with a slight refactoring.  The hw_free ops
+
+  call and relevant tasks are unified in a new helper function, and call
+
+  it from both places.
+
+
+  Fixes: 0dba808eae26 ("ALSA: pcm: Introduce managed buffer allocation mode")
+
+  Reported-by: syzbot+30edd0f34bfcdc548ac4@syzkaller.appspotmail.com
+
+  Cc: <stable@vger.kernel.org>
+
+  Link: https://lore.kernel.org/r/20200129195907.12197-1-tiwai@suse.de
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/core
+hunk_count: 3
+covered_count: 0

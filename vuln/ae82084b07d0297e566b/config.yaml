@@ -1,0 +1,41 @@
+id: ae82084b07d0297e566b
+bug_link: https://syzkaller.appspot.com/bug?extid=ae82084b07d0297e566b
+title: possible deadlock in mnt_want_write
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b21d9c435f935014d3e3fa6914f2e4fbabb0e94d
+fix_commit: 146d62e5a5867fbf84490d82455718bfb10fe824
+datetime: '2019-05-29T13:03:37+02:00'
+fix_commit_message: "ovl: detect overlapping layers\n\nOverlapping overlay layers\
+  \ are not supported and can cause unexpected\nbehavior, but overlayfs does not currently\
+  \ check or warn about these\nconfigurations.\n\nUser is not supposed to specify\
+  \ the same directory for upper and\nlower dirs or for different lower layers and\
+  \ user is not supposed to\nspecify directories that are descendants of each other\
+  \ for overlay\nlayers, but that is exactly what this zysbot repro did:\n\n    https://syzkaller.appspot.com/x/repro.syz?x=12c7a94f400000\n\
+  \nMoving layer root directories into other layers while overlayfs\nis mounted could\
+  \ also result in unexpected behavior.\n\nThis commit places \"traps\" in the overlay\
+  \ inode hash table.\nThose traps are dummy overlay inodes that are hashed by the\
+  \ layers\nroot inodes.\n\nOn mount, the hash table trap entries are used to verify\
+  \ that overlay\nlayers are not overlapping.  While at it, we also verify that overlay\n\
+  layers are not overlapping with directories \"in-use\" by other overlay\ninstances\
+  \ as upperdir/workdir.\n\nOn lookup, the trap entries are used to verify that overlay\
+  \ layers\nroot inodes have not been moved into other layers after mount.\n\nSome\
+  \ examples:\n\n$ ./run --ov --samefs -s\n...\n( mkdir -p base/upper/0/u base/upper/0/w\
+  \ base/lower lower upper mnt\n  mount -o bind base/lower lower\n  mount -o bind\
+  \ base/upper upper\n  mount -t overlay none mnt ...\n        -o lowerdir=lower,upperdir=upper/0/u,workdir=upper/0/w)\n\
+  \n$ umount mnt\n$ mount -t overlay none mnt ...\n        -o lowerdir=base,upperdir=upper/0/u,workdir=upper/0/w\n\
+  \n  [   94.434900] overlayfs: overlapping upperdir path\n  mount: mount overlay\
+  \ on mnt failed: Too many levels of symbolic links\n\n$ mount -t overlay none mnt\
+  \ ...\n        -o lowerdir=upper/0/u,upperdir=upper/0/u,workdir=upper/0/w\n\n  [\
+  \  151.350132] overlayfs: conflicting lowerdir path\n  mount: none is already mounted\
+  \ or mnt busy\n\n$ mount -t overlay none mnt ...\n        -o lowerdir=lower:lower/a,upperdir=upper/0/u,workdir=upper/0/w\n\
+  \n  [  201.205045] overlayfs: overlapping lowerdir path\n  mount: mount overlay\
+  \ on mnt failed: Too many levels of symbolic links\n\n$ mount -t overlay none mnt\
+  \ ...\n        -o lowerdir=lower,upperdir=upper/0/u,workdir=upper/0/w\n$ mv base/upper/0/\
+  \ base/lower/\n$ find mnt/0\n  mnt/0\n  mnt/0/w\n  find: 'mnt/0/w/work': Too many\
+  \ levels of symbolic links\n  find: 'mnt/0/u': Too many levels of symbolic links\n\
+  \nReported-by: syzbot+9c69c282adc4edd2b540@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Amir Goldstein <amir73il@gmail.com>\nSigned-off-by: Miklos Szeredi <mszeredi@redhat.com>\n"
+submodule:
+- fs/overlayfs
+hunk_count: 27
+covered_count: 0

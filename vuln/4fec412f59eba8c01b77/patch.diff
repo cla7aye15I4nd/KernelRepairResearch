@@ -1,0 +1,30 @@
+diff --git a/fs/ext2/ext2.h b/fs/ext2/ext2.h
+index 6c8e838bb278..8244366862e4 100644
+--- a/fs/ext2/ext2.h
++++ b/fs/ext2/ext2.h
+@@ -180,6 +180,7 @@ static inline struct ext2_sb_info *EXT2_SB(struct super_block *sb)
+ #define EXT2_MIN_BLOCK_SIZE		1024
+ #define	EXT2_MAX_BLOCK_SIZE		65536
+ #define EXT2_MIN_BLOCK_LOG_SIZE		  10
++#define EXT2_MAX_BLOCK_LOG_SIZE		  16
+ #define EXT2_BLOCK_SIZE(s)		((s)->s_blocksize)
+ #define	EXT2_ADDR_PER_BLOCK(s)		(EXT2_BLOCK_SIZE(s) / sizeof (__u32))
+ #define EXT2_BLOCK_SIZE_BITS(s)		((s)->s_blocksize_bits)
+diff --git a/fs/ext2/super.c b/fs/ext2/super.c
+index 69c88facfe90..f342f347a695 100644
+--- a/fs/ext2/super.c
++++ b/fs/ext2/super.c
+@@ -945,6 +945,13 @@ static int ext2_fill_super(struct super_block *sb, void *data, int silent)
+ 		goto failed_mount;
+ 	}
+ 
++	if (le32_to_cpu(es->s_log_block_size) >
++	    (EXT2_MAX_BLOCK_LOG_SIZE - BLOCK_SIZE_BITS)) {
++		ext2_msg(sb, KERN_ERR,
++			 "Invalid log block size: %u",
++			 le32_to_cpu(es->s_log_block_size));
++		goto failed_mount;
++	}
+ 	blocksize = BLOCK_SIZE << le32_to_cpu(sbi->s_es->s_log_block_size);
+ 
+ 	if (test_opt(sb, DAX)) {

@@ -1,0 +1,24 @@
+id: 7fa38a608b1075dfd634
+bug_link: https://syzkaller.appspot.com/bug?extid=7fa38a608b1075dfd634
+title: general protection fault in usb_set_interface
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 59251a8be3c258c6ce59dcce703ce440a4e03b82
+fix_commit: c7a191464078262bf799136317c95824e26a222b
+datetime: '2019-10-10T07:22:06-03:00'
+fix_commit_message: "media: usbvision: Fix invalid accesses after device disconnect\n\
+  \nThe syzbot fuzzer found two invalid-access bugs in the usbvision\ndriver.  These\
+  \ bugs occur when userspace keeps the device file open\nafter the device has been\
+  \ disconnected and usbvision_disconnect() has\nset usbvision->dev to NULL:\n\n\t\
+  When the device file is closed, usbvision_radio_close() tries\n\tto issue a usb_set_interface()\
+  \ call, passing the NULL pointer\n\tas its first argument.\n\n\tIf userspace performs\
+  \ a querycap ioctl call, vidioc_querycap()\n\tcalls usb_make_path() with the same\
+  \ NULL pointer.\n\nThis patch fixes the problems by making the appropriate tests\n\
+  beforehand.  Note that vidioc_querycap() is protected by\nusbvision->v4l2_lock,\
+  \ acquired in a higher layer of the V4L2\nsubsystem.\n\nReported-and-tested-by:\
+  \ syzbot+7fa38a608b1075dfd634@syzkaller.appspotmail.com\n\nSigned-off-by: Alan Stern\
+  \ <stern@rowland.harvard.edu>\nCC: <stable@vger.kernel.org>\nSigned-off-by: Hans\
+  \ Verkuil <hverkuil-cisco@xs4all.nl>\nSigned-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>\n"
+submodule:
+- drivers/media/usb/usbvision
+hunk_count: 2
+covered_count: 1

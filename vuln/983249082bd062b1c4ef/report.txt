@@ -1,0 +1,59 @@
+=====================================================
+BUG: KMSAN: uninit-value in bch2_xattr_validate+0x448/0x910 fs/bcachefs/xattr.c:81
+ bch2_xattr_validate+0x448/0x910 fs/bcachefs/xattr.c:81
+ bch2_bkey_val_validate+0x357/0x530 fs/bcachefs/bkey_methods.c:143
+ btree_node_bkey_val_validate fs/bcachefs/btree_io.c:838 [inline]
+ bset_key_validate fs/bcachefs/btree_io.c:859 [inline]
+ validate_bset_keys+0x2048/0x22b0 fs/bcachefs/btree_io.c:942
+ validate_bset_for_write+0x2b3/0x410 fs/bcachefs/btree_io.c:1987
+ __bch2_btree_node_write+0x5436/0x6870 fs/bcachefs/btree_io.c:2197
+ bch2_btree_node_write_trans+0xd7/0x890 fs/bcachefs/btree_io.c:2357
+ btree_node_write_if_need fs/bcachefs/btree_io.h:153 [inline]
+ __btree_node_flush+0x5e6/0x660 fs/bcachefs/btree_trans_commit.c:252
+ bch2_btree_node_flush1+0x38/0x60 fs/bcachefs/btree_trans_commit.c:266
+ journal_flush_pins+0x1335/0x1f90 fs/bcachefs/journal_reclaim.c:589
+ __bch2_journal_reclaim+0xda8/0x1670 fs/bcachefs/journal_reclaim.c:722
+ bch2_journal_reclaim_thread+0x17f/0x750 fs/bcachefs/journal_reclaim.c:764
+ kthread+0x6b9/0xef0 kernel/kthread.c:464
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Uninit was stored to memory at:
+ memcpy_u64s_small fs/bcachefs/util.h:416 [inline]
+ bkey_p_copy fs/bcachefs/bkey.h:40 [inline]
+ bch2_sort_keys_keep_unwritten_whiteouts+0x10e3/0x1840 fs/bcachefs/bkey_sort.c:187
+ __bch2_btree_node_write+0x3b3f/0x6870 fs/bcachefs/btree_io.c:2140
+ bch2_btree_node_write_trans+0xd7/0x890 fs/bcachefs/btree_io.c:2357
+ btree_node_write_if_need fs/bcachefs/btree_io.h:153 [inline]
+ __btree_node_flush+0x5e6/0x660 fs/bcachefs/btree_trans_commit.c:252
+ bch2_btree_node_flush1+0x38/0x60 fs/bcachefs/btree_trans_commit.c:266
+ journal_flush_pins+0x1335/0x1f90 fs/bcachefs/journal_reclaim.c:589
+ __bch2_journal_reclaim+0xda8/0x1670 fs/bcachefs/journal_reclaim.c:722
+ bch2_journal_reclaim_thread+0x17f/0x750 fs/bcachefs/journal_reclaim.c:764
+ kthread+0x6b9/0xef0 kernel/kthread.c:464
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Uninit was created at:
+ ___kmalloc_large_node+0x22c/0x370 mm/slub.c:4249
+ __kmalloc_large_node_noprof+0x3f/0x1e0 mm/slub.c:4266
+ __do_kmalloc_node mm/slub.c:4282 [inline]
+ __kmalloc_node_noprof+0xc96/0x1250 mm/slub.c:4300
+ __kvmalloc_node_noprof+0xc0/0x2d0 mm/util.c:662
+ btree_bounce_alloc fs/bcachefs/btree_io.c:123 [inline]
+ btree_node_sort+0x78a/0x1d30 fs/bcachefs/btree_io.c:322
+ bch2_btree_post_write_cleanup+0x1b0/0xf80 fs/bcachefs/btree_io.c:2293
+ bch2_btree_node_write_trans+0x27f/0x890 fs/bcachefs/btree_io.c:2362
+ btree_node_write_if_need fs/bcachefs/btree_io.h:153 [inline]
+ __btree_node_flush+0x5e6/0x660 fs/bcachefs/btree_trans_commit.c:252
+ bch2_btree_node_flush0+0x35/0x60 fs/bcachefs/btree_trans_commit.c:261
+ journal_flush_pins+0x1335/0x1f90 fs/bcachefs/journal_reclaim.c:589
+ __bch2_journal_reclaim+0xda8/0x1670 fs/bcachefs/journal_reclaim.c:722
+ bch2_journal_reclaim_thread+0x17f/0x750 fs/bcachefs/journal_reclaim.c:764
+ kthread+0x6b9/0xef0 kernel/kthread.c:464
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+CPU: 0 UID: 0 PID: 8363 Comm: bch-reclaim/loo Not tainted 6.14.0-rc5-syzkaller-00016-g48a5eed9ad58 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+=====================================================

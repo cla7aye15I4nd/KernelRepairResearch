@@ -1,0 +1,160 @@
+RBP: 00007f572cd516f0 R08: 00007fffe4582ab7 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f572cd516fc
+R13: 000000000000006e R14: 00007fffe45829d0 R15: 00007fffe4582ab8
+ </TASK>
+==================================================================
+BUG: KASAN: slab-use-after-free in sanity_check_extent_cache+0x370/0x410 fs/f2fs/extent_cache.c:46
+Read of size 4 at addr ffff88807ef61080 by task syz-executor714/5089
+
+CPU: 0 PID: 5089 Comm: syz-executor714 Not tainted 6.9.0-rc6-syzkaller-00234-g7367539ad4b0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ sanity_check_extent_cache+0x370/0x410 fs/f2fs/extent_cache.c:46
+ do_read_inode fs/f2fs/inode.c:509 [inline]
+ f2fs_iget+0x33e1/0x46e0 fs/f2fs/inode.c:560
+ f2fs_nfs_get_inode+0x74/0x100 fs/f2fs/super.c:3237
+ generic_fh_to_dentry+0x9f/0xf0 fs/libfs.c:1413
+ exportfs_decode_fh_raw+0x152/0x5f0 fs/exportfs/expfs.c:444
+ exportfs_decode_fh+0x3c/0x80 fs/exportfs/expfs.c:584
+ do_handle_to_path fs/fhandle.c:155 [inline]
+ handle_to_path fs/fhandle.c:210 [inline]
+ do_handle_open+0x495/0x650 fs/fhandle.c:226
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f572ccc9b59
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 21 1f 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f572cc53168 EFLAGS: 00000246 ORIG_RAX: 0000000000000130
+RAX: ffffffffffffffda RBX: 00007f572cd516f8 RCX: 00007f572ccc9b59
+RDX: 0000000000000000 RSI: 0000000020000040 RDI: 0000000000000004
+RBP: 00007f572cd516f0 R08: 00007fffe4582ab7 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f572cd516fc
+R13: 000000000000006e R14: 00007fffe45829d0 R15: 00007fffe4582ab8
+ </TASK>
+
+Allocated by task 5084:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ unpoison_slab_object mm/kasan/common.c:312 [inline]
+ __kasan_slab_alloc+0x66/0x80 mm/kasan/common.c:338
+ kasan_slab_alloc include/linux/kasan.h:201 [inline]
+ slab_post_alloc_hook mm/slub.c:3798 [inline]
+ slab_alloc_node mm/slub.c:3845 [inline]
+ kmem_cache_alloc+0x174/0x340 mm/slub.c:3852
+ f2fs_kmem_cache_alloc_nofail fs/f2fs/f2fs.h:2817 [inline]
+ f2fs_kmem_cache_alloc fs/f2fs/f2fs.h:2827 [inline]
+ __grab_extent_tree+0x183/0x400 fs/f2fs/extent_cache.c:334
+ f2fs_init_read_extent_tree+0x455/0x910 fs/f2fs/extent_cache.c:405
+ do_read_inode fs/f2fs/inode.c:506 [inline]
+ f2fs_iget+0x33d1/0x46e0 fs/f2fs/inode.c:560
+ f2fs_nfs_get_inode+0x74/0x100 fs/f2fs/super.c:3237
+ generic_fh_to_dentry+0x9f/0xf0 fs/libfs.c:1413
+ exportfs_decode_fh_raw+0x152/0x5f0 fs/exportfs/expfs.c:444
+ exportfs_decode_fh+0x3c/0x80 fs/exportfs/expfs.c:584
+ do_handle_to_path fs/fhandle.c:155 [inline]
+ handle_to_path fs/fhandle.c:210 [inline]
+ do_handle_open+0x495/0x650 fs/fhandle.c:226
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 5084:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:579
+ poison_slab_object+0xa6/0xe0 mm/kasan/common.c:240
+ __kasan_slab_free+0x37/0x60 mm/kasan/common.c:256
+ kasan_slab_free include/linux/kasan.h:184 [inline]
+ slab_free_hook mm/slub.c:2106 [inline]
+ slab_free mm/slub.c:4280 [inline]
+ kmem_cache_free+0x10b/0x2c0 mm/slub.c:4344
+ __destroy_extent_tree+0x307/0x600 fs/f2fs/extent_cache.c:1132
+ f2fs_destroy_extent_tree+0x17/0x30 fs/f2fs/extent_cache.c:1143
+ f2fs_evict_inode+0x44d/0x1550 fs/f2fs/inode.c:831
+ evict+0x2a8/0x630 fs/inode.c:667
+ f2fs_iget+0x1a68/0x46e0 fs/f2fs/inode.c:621
+ f2fs_nfs_get_inode+0x74/0x100 fs/f2fs/super.c:3237
+ generic_fh_to_dentry+0x9f/0xf0 fs/libfs.c:1413
+ exportfs_decode_fh_raw+0x152/0x5f0 fs/exportfs/expfs.c:444
+ exportfs_decode_fh+0x3c/0x80 fs/exportfs/expfs.c:584
+ do_handle_to_path fs/fhandle.c:155 [inline]
+ handle_to_path fs/fhandle.c:210 [inline]
+ do_handle_open+0x495/0x650 fs/fhandle.c:226
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88807ef61000
+ which belongs to the cache f2fs_extent_tree of size 144
+The buggy address is located 128 bytes inside of
+ freed 144-byte region [ffff88807ef61000, ffff88807ef61090)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x7ef61
+flags: 0xfff00000000800(slab|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000800 ffff88801bbfdc80 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000080130013 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Reclaimable, gfp_mask 0x12c50(GFP_NOFS|__GFP_NOWARN|__GFP_NORETRY|__GFP_RECLAIMABLE), pid 5073, tgid -147224205 (syz-executor714), ts 5084, free_ts 17531897574
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1ea/0x210 mm/page_alloc.c:1534
+ prep_new_page mm/page_alloc.c:1541 [inline]
+ get_page_from_freelist+0x3410/0x35b0 mm/page_alloc.c:3317
+ __alloc_pages+0x256/0x6c0 mm/page_alloc.c:4575
+ __alloc_pages_node include/linux/gfp.h:238 [inline]
+ alloc_pages_node include/linux/gfp.h:261 [inline]
+ alloc_slab_page+0x5f/0x160 mm/slub.c:2175
+ allocate_slab mm/slub.c:2338 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2391
+ ___slab_alloc+0xc73/0x1260 mm/slub.c:3525
+ __slab_alloc mm/slub.c:3610 [inline]
+ __slab_alloc_node mm/slub.c:3663 [inline]
+ slab_alloc_node mm/slub.c:3835 [inline]
+ kmem_cache_alloc+0x252/0x340 mm/slub.c:3852
+ f2fs_kmem_cache_alloc_nofail fs/f2fs/f2fs.h:2817 [inline]
+ f2fs_kmem_cache_alloc fs/f2fs/f2fs.h:2827 [inline]
+ __grab_extent_tree+0x183/0x400 fs/f2fs/extent_cache.c:334
+ f2fs_init_read_extent_tree+0x455/0x910 fs/f2fs/extent_cache.c:405
+ do_read_inode fs/f2fs/inode.c:506 [inline]
+ f2fs_iget+0x33d1/0x46e0 fs/f2fs/inode.c:560
+ f2fs_nfs_get_inode+0x74/0x100 fs/f2fs/super.c:3237
+ generic_fh_to_dentry+0x9f/0xf0 fs/libfs.c:1413
+ exportfs_decode_fh_raw+0x152/0x5f0 fs/exportfs/expfs.c:444
+ exportfs_decode_fh+0x3c/0x80 fs/exportfs/expfs.c:584
+ do_handle_to_path fs/fhandle.c:155 [inline]
+ handle_to_path fs/fhandle.c:210 [inline]
+ do_handle_open+0x495/0x650 fs/fhandle.c:226
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+page last free pid 1 tgid 1 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1141 [inline]
+ free_unref_page_prepare+0x97b/0xaa0 mm/page_alloc.c:2347
+ free_unref_page+0x37/0x3f0 mm/page_alloc.c:2487
+ free_contig_range+0x9e/0x160 mm/page_alloc.c:6572
+ destroy_args+0x8a/0x890 mm/debug_vm_pgtable.c:1036
+ debug_vm_pgtable+0x4be/0x550 mm/debug_vm_pgtable.c:1416
+ do_one_initcall+0x248/0x880 init/main.c:1245
+ do_initcall_level+0x157/0x210 init/main.c:1307
+ do_initcalls+0x3f/0x80 init/main.c:1323
+ kernel_init_freeable+0x435/0x5d0 init/main.c:1555
+ kernel_init+0x1d/0x2b0 init/main.c:1444
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Memory state around the buggy address:
+ ffff88807ef60f80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88807ef61000: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff88807ef61080: fb fb fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+                   ^
+ ffff88807ef61100: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88807ef61180: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

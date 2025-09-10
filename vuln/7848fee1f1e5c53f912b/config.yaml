@@ -1,0 +1,28 @@
+id: 7848fee1f1e5c53f912b
+bug_link: https://syzkaller.appspot.com/bug?extid=7848fee1f1e5c53f912b
+title: WARNING in __proc_create (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3ff93c5935610f1f53f4b730d9b7b76a9559968a
+fix_commit: 8fd56ad6e7c90ac2bddb0741c6b248c8c5d56ac8
+datetime: '2025-01-07T15:55:25+01:00'
+fix_commit_message: "afs: Fix the maximum cell name length\n\nThe kafs filesystem\
+  \ limits the maximum length of a cell to 256 bytes, but a\nproblem occurs if someone\
+  \ actually does that: kafs tries to create a\ndirectory under /proc/net/afs/ with\
+  \ the name of the cell, but that fails\nwith a warning:\n\n        WARNING: CPU:\
+  \ 0 PID: 9 at fs/proc/generic.c:405\n\nbecause procfs limits the maximum filename\
+  \ length to 255.\n\nHowever, the DNS limits the maximum lookup length and, by extension,\
+  \ the\nmaximum cell name, to 255 less two (length count and trailing NUL).\n\nFix\
+  \ this by limiting the maximum acceptable cellname length to 253.  This\nalso allows\
+  \ us to be sure we can create the \"/afs/.<cell>/\" mountpoint too.\n\nFurther,\
+  \ split the YFS VL record cell name maximum to be the 256 allowed by\nthe protocol\
+  \ and ignore the record retrieved by YFSVL.GetCellName if it\nexceeds 253.\n\nFixes:\
+  \ c3e9f888263b (\"afs: Implement client support for the YFSVL.GetCellName RPC op\"\
+  )\nReported-by: syzbot+7848fee1f1e5c53f912b@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/r/6776d25d.050a0220.3a8527.0048.GAE@google.com/\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\nLink: https://lore.kernel.org/r/376236.1736180460@warthog.procyon.org.uk\n\
+  Tested-by: syzbot+7848fee1f1e5c53f912b@syzkaller.appspotmail.com\ncc: Marc Dionne\
+  \ <marc.dionne@auristor.com>\ncc: linux-afs@lists.infradead.org\nSigned-off-by:\
+  \ Christian Brauner <brauner@kernel.org>\n"
+submodule:
+- fs/afs
+hunk_count: 5
+covered_count: 0

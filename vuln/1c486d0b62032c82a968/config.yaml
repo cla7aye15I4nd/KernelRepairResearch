@@ -1,0 +1,21 @@
+id: 1c486d0b62032c82a968
+bug_link: https://syzkaller.appspot.com/bug?extid=1c486d0b62032c82a968
+title: 'KCSAN: data-race in bprm_execve / copy_fs (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8661bb9c717a07b7636224339fe8818b65db6ddf
+fix_commit: af7bb0d2ca459f15cb5ca604dab5d9af103643f0
+datetime: '2025-03-25T14:59:05+01:00'
+fix_commit_message: "exec: fix the racy usage of fs_struct->in_exec\n\ncheck_unsafe_exec()\
+  \ sets fs->in_exec under cred_guard_mutex, then execve()\npaths clear fs->in_exec\
+  \ lockless. This is fine if exec succeeds, but if it\nfails we have the following\
+  \ race:\n\n\tT1 sets fs->in_exec = 1, fails, drops cred_guard_mutex\n\n\tT2 sets\
+  \ fs->in_exec = 1\n\n\tT1 clears fs->in_exec\n\n\tT2 continues with fs->in_exec\
+  \ == 0\n\nChange fs/exec.c to clear fs->in_exec with cred_guard_mutex held.\n\n\
+  Reported-by: syzbot+1c486d0b62032c82a968@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/all/67dc67f0.050a0220.25ae54.001f.GAE@google.com/\n\
+  Cc: stable@vger.kernel.org\nSigned-off-by: Oleg Nesterov <oleg@redhat.com>\nLink:\
+  \ https://lore.kernel.org/r/20250324160003.GA8878@redhat.com\nSigned-off-by: Christian\
+  \ Brauner <brauner@kernel.org>\n"
+submodule:
+- fs
+hunk_count: 5
+covered_count: 2

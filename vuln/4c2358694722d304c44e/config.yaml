@@ -1,0 +1,148 @@
+id: 4c2358694722d304c44e
+bug_link: https://syzkaller.appspot.com/bug?extid=4c2358694722d304c44e
+title: 'UBSAN: array-index-out-of-bounds in ip6_route_info_create'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1264971017b4d7141352a7fe29021bdfce5d885d
+fix_commit: b3979e3d2fc92bf1a2da614fc383b75b9859ef58
+datetime: '2025-06-12T08:12:35-07:00'
+fix_commit_message: 'ipv6: Move fib6_config_validate() to ip6_route_add().
+
+
+  syzkaller created an IPv6 route from a malformed packet, which has
+
+  a prefix len > 128, triggering the splat below. [0]
+
+
+  This is a similar issue fixed by commit 586ceac9acb7 ("ipv6: Restore
+
+  fib6_config validation for SIOCADDRT.").
+
+
+  The cited commit removed fib6_config validation from some callers
+
+  of ip6_add_route().
+
+
+  Let''s move the validation back to ip6_route_add() and
+
+  ip6_route_multipath_add().
+
+
+  [0]:
+
+  UBSAN: array-index-out-of-bounds in ./include/net/ipv6.h:616:34
+
+  index 20 is out of range for type ''__u8 [16]''
+
+  CPU: 1 UID: 0 PID: 7444 Comm: syz.0.708 Not tainted 6.16.0-rc1-syzkaller-g19272b37aa4f
+  #0 PREEMPT
+
+  Hardware name: riscv-virtio,qemu (DT)
+
+  Call Trace:
+
+  [<ffffffff80078a80>] dump_backtrace+0x2e/0x3c arch/riscv/kernel/stacktrace.c:132
+
+  [<ffffffff8000327a>] show_stack+0x30/0x3c arch/riscv/kernel/stacktrace.c:138
+
+  [<ffffffff80061012>] __dump_stack lib/dump_stack.c:94 [inline]
+
+  [<ffffffff80061012>] dump_stack_lvl+0x12e/0x1a6 lib/dump_stack.c:120
+
+  [<ffffffff800610a6>] dump_stack+0x1c/0x24 lib/dump_stack.c:129
+
+  [<ffffffff8001c0ea>] ubsan_epilogue+0x14/0x46 lib/ubsan.c:233
+
+  [<ffffffff819ba290>] __ubsan_handle_out_of_bounds+0xf6/0xf8 lib/ubsan.c:455
+
+  [<ffffffff85b363a4>] ipv6_addr_prefix include/net/ipv6.h:616 [inline]
+
+  [<ffffffff85b363a4>] ip6_route_info_create+0x8f8/0x96e net/ipv6/route.c:3793
+
+  [<ffffffff85b635da>] ip6_route_add+0x2a/0x1aa net/ipv6/route.c:3889
+
+  [<ffffffff85b02e08>] addrconf_prefix_route+0x2c4/0x4e8 net/ipv6/addrconf.c:2487
+
+  [<ffffffff85b23bb2>] addrconf_prefix_rcv+0x1720/0x1e62 net/ipv6/addrconf.c:2878
+
+  [<ffffffff85b92664>] ndisc_router_discovery+0x1a06/0x3504 net/ipv6/ndisc.c:1570
+
+  [<ffffffff85b99038>] ndisc_rcv+0x500/0x600 net/ipv6/ndisc.c:1874
+
+  [<ffffffff85bc2c18>] icmpv6_rcv+0x145e/0x1e0a net/ipv6/icmp.c:988
+
+  [<ffffffff85af6798>] ip6_protocol_deliver_rcu+0x18a/0x1976 net/ipv6/ip6_input.c:436
+
+  [<ffffffff85af8078>] ip6_input_finish+0xf4/0x174 net/ipv6/ip6_input.c:480
+
+  [<ffffffff85af8262>] NF_HOOK include/linux/netfilter.h:317 [inline]
+
+  [<ffffffff85af8262>] NF_HOOK include/linux/netfilter.h:311 [inline]
+
+  [<ffffffff85af8262>] ip6_input+0x16a/0x70c net/ipv6/ip6_input.c:491
+
+  [<ffffffff85af8dcc>] ip6_mc_input+0x5c8/0x1268 net/ipv6/ip6_input.c:588
+
+  [<ffffffff85af6112>] dst_input include/net/dst.h:469 [inline]
+
+  [<ffffffff85af6112>] ip6_rcv_finish net/ipv6/ip6_input.c:79 [inline]
+
+  [<ffffffff85af6112>] NF_HOOK include/linux/netfilter.h:317 [inline]
+
+  [<ffffffff85af6112>] NF_HOOK include/linux/netfilter.h:311 [inline]
+
+  [<ffffffff85af6112>] ipv6_rcv+0x5ae/0x6e0 net/ipv6/ip6_input.c:309
+
+  [<ffffffff85087e84>] __netif_receive_skb_one_core+0x106/0x16e net/core/dev.c:5977
+
+  [<ffffffff85088104>] __netif_receive_skb+0x2c/0x144 net/core/dev.c:6090
+
+  [<ffffffff850883c6>] netif_receive_skb_internal net/core/dev.c:6176 [inline]
+
+  [<ffffffff850883c6>] netif_receive_skb+0x1aa/0xbf2 net/core/dev.c:6235
+
+  [<ffffffff8328656e>] tun_rx_batched.isra.0+0x430/0x686 drivers/net/tun.c:1485
+
+  [<ffffffff8329ed3a>] tun_get_user+0x2952/0x3d6c drivers/net/tun.c:1938
+
+  [<ffffffff832a21e0>] tun_chr_write_iter+0xc4/0x21c drivers/net/tun.c:1984
+
+  [<ffffffff80b9b9ae>] new_sync_write fs/read_write.c:593 [inline]
+
+  [<ffffffff80b9b9ae>] vfs_write+0x56c/0xa9a fs/read_write.c:686
+
+  [<ffffffff80b9c2be>] ksys_write+0x126/0x228 fs/read_write.c:738
+
+  [<ffffffff80b9c42e>] __do_sys_write fs/read_write.c:749 [inline]
+
+  [<ffffffff80b9c42e>] __se_sys_write fs/read_write.c:746 [inline]
+
+  [<ffffffff80b9c42e>] __riscv_sys_write+0x6e/0x94 fs/read_write.c:746
+
+  [<ffffffff80076912>] syscall_handler+0x94/0x118 arch/riscv/include/asm/syscall.h:112
+
+  [<ffffffff8637e31e>] do_trap_ecall_u+0x396/0x530 arch/riscv/kernel/traps.c:341
+
+  [<ffffffff863a69e2>] handle_exception+0x146/0x152 arch/riscv/kernel/entry.S:197
+
+
+  Fixes: fa76c1674f2e ("ipv6: Move some validation from ip6_route_info_create() to
+  rtm_to_fib6_config().")
+
+  Reported-by: syzbot+4c2358694722d304c44e@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/netdev/6849b8c3.a00a0220.1eb5f5.00f0.GAE@google.com/
+
+  Signed-off-by: Kuniyuki Iwashima <kuniyu@google.com>
+
+  Reviewed-by: Eric Dumazet <edumazet@google.com>
+
+  Link: https://patch.msgid.link/20250611193551.2999991-1-kuni1840@gmail.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/ipv6
+hunk_count: 6
+covered_count: 1

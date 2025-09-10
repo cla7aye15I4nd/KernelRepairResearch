@@ -1,0 +1,28 @@
+id: 65761fc25a137b9c8c6e
+bug_link: https://syzkaller.appspot.com/bug?extid=65761fc25a137b9c8c6e
+title: 'UBSAN: shift-out-of-bounds in squashfs_bio_read'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fe6f600c43e0931f4fb5e1debb2311b7a6ebabd8
+fix_commit: 734aa85390ea693bb7eaf2240623d41b03705c84
+datetime: '2025-05-11T17:54:07-07:00'
+fix_commit_message: "Squashfs: check return result of sb_min_blocksize\n\nSyzkaller\
+  \ reports an \"UBSAN: shift-out-of-bounds in squashfs_bio_read\" bug.\n\nSyzkaller\
+  \ forks multiple processes which after mounting the Squashfs\nfilesystem, issues\
+  \ an ioctl(\"/dev/loop0\", LOOP_SET_BLOCK_SIZE, 0x8000). \nNow if this ioctl occurs\
+  \ at the same time another process is in the\nprocess of mounting a Squashfs filesystem\
+  \ on /dev/loop0, the failure\noccurs.  When this happens the following code in squashfs_fill_super()\n\
+  fails.\n\n----\nmsblk->devblksize = sb_min_blocksize(sb, SQUASHFS_DEVBLK_SIZE);\n\
+  msblk->devblksize_log2 = ffz(~msblk->devblksize);\n----\n\nsb_min_blocksize() returns\
+  \ 0, which means msblk->devblksize is set to 0.\n\nAs a result, ffz(~msblk->devblksize)\
+  \ returns 64, and msblk->devblksize_log2\nis set to 64.\n\nThis subsequently causes\
+  \ the\n\nUBSAN: shift-out-of-bounds in fs/squashfs/block.c:195:36\nshift exponent\
+  \ 64 is too large for 64-bit type 'u64' (aka\n'unsigned long long')\n\nThis commit\
+  \ adds a check for a 0 return by sb_min_blocksize().\n\nLink: https://lkml.kernel.org/r/20250409024747.876480-1-phillip@squashfs.org.uk\n\
+  Fixes: 0aa666190509 (\"Squashfs: super block operations\")\nReported-by: syzbot+65761fc25a137b9c8c6e@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/all/67f0dd7a.050a0220.0a13.0230.GAE@google.com/\n\
+  Signed-off-by: Phillip Lougher <phillip@squashfs.org.uk>\nSigned-off-by: Andrew\
+  \ Morton <akpm@linux-foundation.org>\n"
+submodule:
+- fs/squashfs
+hunk_count: 1
+covered_count: 1

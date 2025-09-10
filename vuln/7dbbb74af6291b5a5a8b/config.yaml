@@ -1,0 +1,42 @@
+id: 7dbbb74af6291b5a5a8b
+bug_link: https://syzkaller.appspot.com/bug?extid=7dbbb74af6291b5a5a8b
+title: 'WARNING: bad unlock balance in btrfs_direct_write'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1e7bec1f7d6533f08bc1c4ee94930c02361db86c
+fix_commit: e0391e92f9ab4fb3dbdeb139c967dcfa7ac4b115
+datetime: '2024-08-02T22:32:40+02:00'
+fix_commit_message: 'btrfs: fix double inode unlock for direct IO sync writes
+
+
+  If we do a direct IO sync write, at btrfs_sync_file(), and we need to skip
+
+  inode logging or we get an error starting a transaction or an error when
+
+  flushing delalloc, we end up unlocking the inode when we shouldn''t under
+
+  the ''out_release_extents'' label, and then unlock it again at
+
+  btrfs_direct_write().
+
+
+  Fix that by checking if we have to skip inode unlocking under that label.
+
+
+  Reported-by: syzbot+7dbbb74af6291b5a5a8b@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/linux-btrfs/000000000000dfd631061eaeb4bc@google.com/
+
+  Fixes: 939b656bc8ab ("btrfs: fix corruption after buffer fault in during direct
+  IO append write")
+
+  Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+
+  Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+  Signed-off-by: David Sterba <dsterba@suse.com>
+
+  '
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 0

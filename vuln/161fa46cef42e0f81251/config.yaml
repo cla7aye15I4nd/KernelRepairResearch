@@ -1,0 +1,106 @@
+id: 161fa46cef42e0f81251
+bug_link: https://syzkaller.appspot.com/bug?extid=161fa46cef42e0f81251
+title: 'INFO: task can''t die in d_alloc_parallel'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 87005394e14aa2f886581fb51e5e2022dc77ea05
+fix_commit: 0ce20dd840897b12ae70869c69f1ba34d6d16965
+datetime: '2021-02-26T09:41:02-08:00'
+fix_commit_message: "mm: add Kernel Electric-Fence infrastructure\n\nPatch series\
+  \ \"KFENCE: A low-overhead sampling-based memory safety error detector\", v7.\n\n\
+  This adds the Kernel Electric-Fence (KFENCE) infrastructure. KFENCE is a\nlow-overhead\
+  \ sampling-based memory safety error detector of heap\nuse-after-free, invalid-free,\
+  \ and out-of-bounds access errors.  This\nseries enables KFENCE for the x86 and\
+  \ arm64 architectures, and adds\nKFENCE hooks to the SLAB and SLUB allocators.\n\
+  \nKFENCE is designed to be enabled in production kernels, and has near\nzero performance\
+  \ overhead. Compared to KASAN, KFENCE trades performance\nfor precision. The main\
+  \ motivation behind KFENCE's design, is that with\nenough total uptime KFENCE will\
+  \ detect bugs in code paths not typically\nexercised by non-production test workloads.\
+  \ One way to quickly achieve a\nlarge enough total uptime is when the tool is deployed\
+  \ across a large\nfleet of machines.\n\nKFENCE objects each reside on a dedicated\
+  \ page, at either the left or\nright page boundaries. The pages to the left and\
+  \ right of the object\npage are \"guard pages\", whose attributes are changed to\
+  \ a protected\nstate, and cause page faults on any attempted access to them. Such\
+  \ page\nfaults are then intercepted by KFENCE, which handles the fault\ngracefully\
+  \ by reporting a memory access error.\n\nGuarded allocations are set up based on\
+  \ a sample interval (can be set\nvia kfence.sample_interval). After expiration of\
+  \ the sample interval,\nthe next allocation through the main allocator (SLAB or\
+  \ SLUB) returns a\nguarded allocation from the KFENCE object pool. At this point,\
+  \ the timer\nis reset, and the next allocation is set up after the expiration of\
+  \ the\ninterval.\n\nTo enable/disable a KFENCE allocation through the main allocator's\n\
+  fast-path without overhead, KFENCE relies on static branches via the\nstatic keys\
+  \ infrastructure. The static branch is toggled to redirect the\nallocation to KFENCE.\n\
+  \nThe KFENCE memory pool is of fixed size, and if the pool is exhausted no\nfurther\
+  \ KFENCE allocations occur. The default config is conservative\nwith only 255 objects,\
+  \ resulting in a pool size of 2 MiB (with 4 KiB\npages).\n\nWe have verified by\
+  \ running synthetic benchmarks (sysbench I/O,\nhackbench) and production server-workload\
+  \ benchmarks that a kernel with\nKFENCE (using sample intervals 100-500ms) is performance-neutral\n\
+  compared to a non-KFENCE baseline kernel.\n\nKFENCE is inspired by GWP-ASan [1],\
+  \ a userspace tool with similar\nproperties. The name \"KFENCE\" is a homage to\
+  \ the Electric Fence Malloc\nDebugger [2].\n\nFor more details, see Documentation/dev-tools/kfence.rst\
+  \ added in the\nseries -- also viewable here:\n\n\thttps://raw.githubusercontent.com/google/kasan/kfence/Documentation/dev-tools/kfence.rst\n\
+  \n[1] http://llvm.org/docs/GwpAsan.html\n[2] https://linux.die.net/man/3/efence\n\
+  \nThis patch (of 9):\n\nThis adds the Kernel Electric-Fence (KFENCE) infrastructure.\
+  \ KFENCE is a\nlow-overhead sampling-based memory safety error detector of heap\n\
+  use-after-free, invalid-free, and out-of-bounds access errors.\n\nKFENCE is designed\
+  \ to be enabled in production kernels, and has near\nzero performance overhead.\
+  \ Compared to KASAN, KFENCE trades performance\nfor precision. The main motivation\
+  \ behind KFENCE's design, is that with\nenough total uptime KFENCE will detect bugs\
+  \ in code paths not typically\nexercised by non-production test workloads. One way\
+  \ to quickly achieve a\nlarge enough total uptime is when the tool is deployed across\
+  \ a large\nfleet of machines.\n\nKFENCE objects each reside on a dedicated page,\
+  \ at either the left or\nright page boundaries. The pages to the left and right\
+  \ of the object\npage are \"guard pages\", whose attributes are changed to a protected\n\
+  state, and cause page faults on any attempted access to them. Such page\nfaults\
+  \ are then intercepted by KFENCE, which handles the fault\ngracefully by reporting\
+  \ a memory access error. To detect out-of-bounds\nwrites to memory within the object's\
+  \ page itself, KFENCE also uses\npattern-based redzones. The following figure illustrates\
+  \ the page\nlayout:\n\n  ---+-----------+-----------+-----------+-----------+-----------+---\n\
+  \     | xxxxxxxxx | O :       | xxxxxxxxx |       : O | xxxxxxxxx |\n     | xxxxxxxxx\
+  \ | B :       | xxxxxxxxx |       : B | xxxxxxxxx |\n     | x GUARD x | J : RED-\
+  \  | x GUARD x | RED-  : J | x GUARD x |\n     | xxxxxxxxx | E :  ZONE | xxxxxxxxx\
+  \ |  ZONE : E | xxxxxxxxx |\n     | xxxxxxxxx | C :       | xxxxxxxxx |       :\
+  \ C | xxxxxxxxx |\n     | xxxxxxxxx | T :       | xxxxxxxxx |       : T | xxxxxxxxx\
+  \ |\n  ---+-----------+-----------+-----------+-----------+-----------+---\n\nGuarded\
+  \ allocations are set up based on a sample interval (can be set\nvia kfence.sample_interval).\
+  \ After expiration of the sample interval, a\nguarded allocation from the KFENCE\
+  \ object pool is returned to the main\nallocator (SLAB or SLUB). At this point,\
+  \ the timer is reset, and the\nnext allocation is set up after the expiration of\
+  \ the interval.\n\nTo enable/disable a KFENCE allocation through the main allocator's\n\
+  fast-path without overhead, KFENCE relies on static branches via the\nstatic keys\
+  \ infrastructure. The static branch is toggled to redirect the\nallocation to KFENCE.\
+  \ To date, we have verified by running synthetic\nbenchmarks (sysbench I/O, hackbench)\
+  \ that a kernel compiled with KFENCE\nis performance-neutral compared to the non-KFENCE\
+  \ baseline.\n\nFor more details, see Documentation/dev-tools/kfence.rst (added later\
+  \ in\nthe series).\n\n[elver@google.com: fix parameter description for kfence_object_start()]\n\
+  \  Link: https://lkml.kernel.org/r/20201106092149.GA2851373@elver.google.com\n[elver@google.com:\
+  \ avoid stalling work queue task without allocations]\n  Link: https://lkml.kernel.org/r/CADYN=9J0DQhizAGB0-jz4HOBBh+05kMBXb4c0cXMS7Qi5NAJiw@mail.gmail.com\n\
+  \  Link: https://lkml.kernel.org/r/20201110135320.3309507-1-elver@google.com\n[elver@google.com:\
+  \ fix potential deadlock due to wake_up()]\n  Link: https://lkml.kernel.org/r/000000000000c0645805b7f982e4@google.com\n\
+  \  Link: https://lkml.kernel.org/r/20210104130749.1768991-1-elver@google.com\n[elver@google.com:\
+  \ add option to use KFENCE without static keys]\n  Link: https://lkml.kernel.org/r/20210111091544.3287013-1-elver@google.com\n\
+  [elver@google.com: add missing copyright and description headers]\n  Link: https://lkml.kernel.org/r/20210118092159.145934-1-elver@google.com\n\
+  \nLink: https://lkml.kernel.org/r/20201103175841.3495947-2-elver@google.com\nSigned-off-by:\
+  \ Marco Elver <elver@google.com>\nSigned-off-by: Alexander Potapenko <glider@google.com>\n\
+  Reviewed-by: Dmitry Vyukov <dvyukov@google.com>\nReviewed-by: SeongJae Park <sjpark@amazon.de>\n\
+  Co-developed-by: Marco Elver <elver@google.com>\nReviewed-by: Jann Horn <jannh@google.com>\n\
+  Cc: \"H. Peter Anvin\" <hpa@zytor.com>\nCc: Paul E. McKenney <paulmck@kernel.org>\n\
+  Cc: Andrey Konovalov <andreyknvl@google.com>\nCc: Andrey Ryabinin <aryabinin@virtuozzo.com>\n\
+  Cc: Andy Lutomirski <luto@kernel.org>\nCc: Borislav Petkov <bp@alien8.de>\nCc: Catalin\
+  \ Marinas <catalin.marinas@arm.com>\nCc: Christopher Lameter <cl@linux.com>\nCc:\
+  \ Dave Hansen <dave.hansen@linux.intel.com>\nCc: David Rientjes <rientjes@google.com>\n\
+  Cc: Eric Dumazet <edumazet@google.com>\nCc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n\
+  Cc: Hillf Danton <hdanton@sina.com>\nCc: Ingo Molnar <mingo@redhat.com>\nCc: Jonathan\
+  \ Corbet <corbet@lwn.net>\nCc: Joonsoo Kim <iamjoonsoo.kim@lge.com>\nCc: Joern Engel\
+  \ <joern@purestorage.com>\nCc: Kees Cook <keescook@chromium.org>\nCc: Mark Rutland\
+  \ <mark.rutland@arm.com>\nCc: Pekka Enberg <penberg@kernel.org>\nCc: Peter Zijlstra\
+  \ <peterz@infradead.org>\nCc: Thomas Gleixner <tglx@linutronix.de>\nCc: Vlastimil\
+  \ Babka <vbabka@suse.cz>\nCc: Will Deacon <will@kernel.org>\nSigned-off-by: Andrew\
+  \ Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- include/linux
+- init
+- lib
+- mm
+- mm/kfence
+hunk_count: 11
+covered_count: 0

@@ -1,0 +1,35 @@
+id: 1e46a0864c1a6e9bd3d8
+bug_link: https://syzkaller.appspot.com/bug?extid=1e46a0864c1a6e9bd3d8
+title: WARNING in md_ioctl
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4d063e646b4bfe8e74c0b4b78bf11c3a7b5d962a
+fix_commit: c731b84b51bf7fe83448bea8f56a6d55006b0615
+datetime: '2020-11-30T10:12:18-08:00'
+fix_commit_message: "md: fix a warning caused by a race between concurrent md_ioctl()s\n\
+  \nSyzkaller reports a warning as belows.\nWARNING: CPU: 0 PID: 9647 at drivers/md/md.c:7169\n\
+  ...\nCall Trace:\n...\nRIP: 0010:md_ioctl+0x4017/0x5980 drivers/md/md.c:7169\nRSP:\
+  \ 0018:ffff888096027950 EFLAGS: 00010293\nRAX: ffff88809322c380 RBX: 0000000000000932\
+  \ RCX: ffffffff84e266f2\nRDX: 0000000000000000 RSI: ffffffff84e299f7 RDI: 0000000000000007\n\
+  RBP: ffff888096027bc0 R08: ffff88809322c380 R09: ffffed101341a482\nR10: ffff888096027940\
+  \ R11: ffff88809a0d240f R12: 0000000000000932\nR13: ffff8880a2c14100 R14: ffff88809a0d2268\
+  \ R15: ffff88809a0d2408\n __blkdev_driver_ioctl block/ioctl.c:304 [inline]\n blkdev_ioctl+0xece/0x1c10\
+  \ block/ioctl.c:606\n block_ioctl+0xee/0x130 fs/block_dev.c:1930\n vfs_ioctl fs/ioctl.c:46\
+  \ [inline]\n file_ioctl fs/ioctl.c:509 [inline]\n do_vfs_ioctl+0xd5f/0x1380 fs/ioctl.c:696\n\
+  \ ksys_ioctl+0xab/0xd0 fs/ioctl.c:713\n __do_sys_ioctl fs/ioctl.c:720 [inline]\n\
+  \ __se_sys_ioctl fs/ioctl.c:718 [inline]\n __x64_sys_ioctl+0x73/0xb0 fs/ioctl.c:718\n\
+  \ do_syscall_64+0xfd/0x680 arch/x86/entry/common.c:301\n entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nThis is caused by a race between two concurrenct md_ioctl()s closing\nthe array.\n\
+  CPU1 (md_ioctl())                   CPU2 (md_ioctl())\n------                  \
+  \            ------\nset_bit(MD_CLOSING, &mddev->flags);\ndid_set_md_closing = true;\n\
+  \                                    WARN_ON_ONCE(test_bit(MD_CLOSING,\n       \
+  \                                     &mddev->flags));\nif(did_set_md_closing)\n\
+  \    clear_bit(MD_CLOSING, &mddev->flags);\n\nFix the warning by returning immediately\
+  \ if the MD_CLOSING bit is set\nin &mddev->flags which indicates that the array\
+  \ is being closed.\n\nFixes: 065e519e71b2 (\"md: MD_CLOSING needs to be cleared\
+  \ after called md_set_readonly or do_md_stop\")\nReported-by: syzbot+1e46a0864c1a6e9bd3d8@syzkaller.appspotmail.com\n\
+  Cc: stable@vger.kernel.org\nSigned-off-by: Dae R. Jeong <dae.r.jeong@kaist.ac.kr>\n\
+  Signed-off-by: Song Liu <songliubraving@fb.com>\n"
+submodule:
+- drivers/md
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,60 @@
+batman_adv: batadv0: Not using interface batadv_slave_1 (retrying later): interface not active
+hsr_slave_0: entered promiscuous mode
+hsr_slave_1: entered promiscuous mode
+------------[ cut here ]------------
+DEBUG_LOCKS_WARN_ON(lock->magic != lock)
+WARNING: CPU: 0 PID: 5938 at kernel/locking/mutex.c:564 __mutex_lock_common kernel/locking/mutex.c:564 [inline]
+WARNING: CPU: 0 PID: 5938 at kernel/locking/mutex.c:564 __mutex_lock+0xdac/0xee0 kernel/locking/mutex.c:735
+Modules linked in:
+CPU: 0 UID: 0 PID: 5938 Comm: syz-executor Not tainted 6.13.0-rc7-syzkaller-01160-g41c5d104f338 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+RIP: 0010:__mutex_lock_common kernel/locking/mutex.c:564 [inline]
+RIP: 0010:__mutex_lock+0xdac/0xee0 kernel/locking/mutex.c:735
+Code: 0f b6 04 38 84 c0 0f 85 1a 01 00 00 83 3d ef 33 4c 04 00 75 19 90 48 c7 c7 60 84 0a 8c 48 c7 c6 00 85 0a 8c e8 f5 cc 91 f5 90 <0f> 0b 90 90 90 e9 c7 f3 ff ff 90 0f 0b 90 e9 29 f8 ff ff 90 0f 0b
+RSP: 0018:ffffc90010597580 EFLAGS: 00010246
+RAX: d814f1726666a600 RBX: ffff88802a81ecb0 RCX: ffff888025bcda00
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc90010597710 R08: ffffffff81602ac2 R09: 1ffff110170c519a
+R10: dffffc0000000000 R11: ffffed10170c519b R12: 0000000000000000
+R13: 0000000000000000 R14: 1ffff920020b2ec4 R15: dffffc0000000000
+FS:  00005555772c7500(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f612ec75cbd CR3: 00000000327f6000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ netdev_lock include/linux/netdevice.h:2691 [inline]
+ __netif_napi_del include/linux/netdevice.h:2829 [inline]
+ netif_napi_del include/linux/netdevice.h:2848 [inline]
+ free_netdev+0x2d9/0x610 net/core/dev.c:11608
+ netdev_run_todo+0xf21/0x10d0 net/core/dev.c:11176
+ nsim_destroy+0x3c3/0x620 drivers/net/netdevsim/netdev.c:1028
+ __nsim_dev_port_del+0x14b/0x1b0 drivers/net/netdevsim/dev.c:1428
+ nsim_dev_port_del_all drivers/net/netdevsim/dev.c:1440 [inline]
+ nsim_dev_reload_destroy+0x28a/0x490 drivers/net/netdevsim/dev.c:1661
+ nsim_drv_remove+0x58/0x160 drivers/net/netdevsim/dev.c:1676
+ device_remove drivers/base/dd.c:567 [inline]
+ __device_release_driver drivers/base/dd.c:1273 [inline]
+ device_release_driver_internal+0x4a9/0x7c0 drivers/base/dd.c:1296
+ bus_remove_device+0x34f/0x420 drivers/base/bus.c:576
+ device_del+0x57a/0x9b0 drivers/base/core.c:3854
+ device_unregister+0x20/0xc0 drivers/base/core.c:3895
+ nsim_bus_dev_del drivers/net/netdevsim/bus.c:462 [inline]
+ del_device_store+0x363/0x480 drivers/net/netdevsim/bus.c:226
+ kernfs_fop_write_iter+0x3a0/0x500 fs/kernfs/file.c:334
+ new_sync_write fs/read_write.c:586 [inline]
+ vfs_write+0xaeb/0xd30 fs/read_write.c:679
+ ksys_write+0x18f/0x2b0 fs/read_write.c:731
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fc3ff1847df
+Code: 89 54 24 18 48 89 74 24 10 89 7c 24 08 e8 f9 92 02 00 48 8b 54 24 18 48 8b 74 24 10 41 89 c0 8b 7c 24 08 b8 01 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 31 44 89 c7 48 89 44 24 08 e8 4c 93 02 00 48
+RSP: 002b:00007ffc1a1ea330 EFLAGS: 00000293 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 0000000000000005 RCX: 00007fc3ff1847df
+RDX: 0000000000000001 RSI: 00007ffc1a1ea380 RDI: 0000000000000005
+RBP: 00007fc3ff202d15 R08: 0000000000000000 R09: 00007ffc1a1ea187
+R10: 0000000000000000 R11: 0000000000000293 R12: 0000000000000001
+R13: 00007ffc1a1ea380 R14: 00007fc3ffea4620 R15: 0000000000000003
+ </TASK>

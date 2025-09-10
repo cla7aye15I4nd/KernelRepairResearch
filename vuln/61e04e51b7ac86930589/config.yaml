@@ -1,0 +1,25 @@
+id: 61e04e51b7ac86930589
+bug_link: https://syzkaller.appspot.com/bug?extid=61e04e51b7ac86930589
+title: possible deadlock in del_gendisk
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 41fe8d088e96472f63164e213de44ec77be69478
+fix_commit: 990e78116d38059c9306cf0560c1c4ed1cf358d3
+datetime: '2021-06-11T11:50:54-06:00'
+fix_commit_message: "block: loop: fix deadlock between open and remove\n\nCommit c76f48eb5c08\
+  \ (\"block: take bd_mutex around delete_partitions in\ndel_gendisk\") adds disk->part0->bd_mutex\
+  \ in del_gendisk(), this way\ncauses the following AB/BA deadlock between removing\
+  \ loop and opening\nloop:\n\n 1) loop_control_ioctl(LOOP_CTL_REMOVE)\n     -> mutex_lock(&loop_ctl_mutex)\n\
+  \     -> del_gendisk\n         -> mutex_lock(&disk->part0->bd_mutex)\n\n 2) blkdev_get_by_dev\n\
+  \     -> mutex_lock(&disk->part0->bd_mutex)\n     -> lo_open\n         -> mutex_lock(&loop_ctl_mutex)\n\
+  \nAdd a new Lo_deleting state to remove the need for clearing\n->private_data and\
+  \ thus holding loop_ctl_mutex in the ioctl\nLOOP_CTL_REMOVE path.\n\nBased on an\
+  \ analysis and earlier patch from\nMing Lei <ming.lei@redhat.com>.\n\nReported-by:\
+  \ Colin Ian King <colin.king@canonical.com>\nFixes: c76f48eb5c08 (\"block: take\
+  \ bd_mutex around delete_partitions in del_gendisk\")\nSigned-off-by: Christoph\
+  \ Hellwig <hch@lst.de>\nTested-by: Colin Ian King <colin.king@canonical.com>\nReviewed-by:\
+  \ Ming Lei <ming.lei@redhat.com>\nLink: https://lore.kernel.org/r/20210605140950.5800-1-hch@lst.de\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 3
+covered_count: 0

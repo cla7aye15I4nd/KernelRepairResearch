@@ -1,0 +1,165 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.14.0-rc5-syzkaller-00023-gbb2281fb05e5 #0 Not tainted
+------------------------------------------------------
+kworker/1:5/22170 is trying to acquire lock:
+ffffffff8ec423a8 (scomp_lock){+.+.}-{4:4}, at: crypto_exit_scomp_ops_async+0x42/0x90 crypto/scompress.c:201
+
+but task is already holding lock:
+ffffe8ffffc21250 (&per_cpu_ptr(pool->acomp_ctx, cpu)->mutex){+.+.}-{4:4}, at: zswap_cpu_comp_dead+0x80/0x210 mm/zswap.c:885
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (&per_cpu_ptr(pool->acomp_ctx, cpu)->mutex){+.+.}-{4:4}:
+       __mutex_lock_common kernel/locking/mutex.c:585 [inline]
+       __mutex_lock+0x19b/0xb10 kernel/locking/mutex.c:730
+       acomp_ctx_get_cpu_lock mm/zswap.c:905 [inline]
+       zswap_compress mm/zswap.c:937 [inline]
+       zswap_store_page mm/zswap.c:1462 [inline]
+       zswap_store+0x8fc/0x2690 mm/zswap.c:1571
+       swap_writepage+0x3b6/0x1120 mm/page_io.c:278
+       pageout+0x3b2/0xaa0 mm/vmscan.c:696
+       shrink_folio_list+0x2f7f/0x40c0 mm/vmscan.c:1402
+       evict_folios+0x774/0x1ab0 mm/vmscan.c:4660
+       try_to_shrink_lruvec+0x5a2/0x9a0 mm/vmscan.c:4821
+       shrink_one+0x3e3/0x7b0 mm/vmscan.c:4866
+       shrink_many mm/vmscan.c:4929 [inline]
+       lru_gen_shrink_node mm/vmscan.c:5007 [inline]
+       shrink_node+0x2761/0x3e60 mm/vmscan.c:5978
+       kswapd_shrink_node mm/vmscan.c:6807 [inline]
+       balance_pgdat+0xbab/0x19c0 mm/vmscan.c:6999
+       kswapd+0x590/0xb70 mm/vmscan.c:7264
+       kthread+0x3af/0x750 kernel/kthread.c:464
+       ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:148
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+-> #1 (fs_reclaim){+.+.}-{0:0}:
+       __fs_reclaim_acquire mm/page_alloc.c:3853 [inline]
+       fs_reclaim_acquire+0x102/0x150 mm/page_alloc.c:3867
+       might_alloc include/linux/sched/mm.h:318 [inline]
+       slab_pre_alloc_hook mm/slub.c:4066 [inline]
+       slab_alloc_node mm/slub.c:4144 [inline]
+       __kmalloc_cache_node_noprof+0x54/0x420 mm/slub.c:4333
+       kmalloc_node_noprof include/linux/slab.h:924 [inline]
+       __get_vm_area_node+0x101/0x2f0 mm/vmalloc.c:3127
+       __vmalloc_node_range_noprof+0x26a/0x1530 mm/vmalloc.c:3806
+       __vmalloc_node_noprof mm/vmalloc.c:3911 [inline]
+       vmalloc_node_noprof+0x6f/0x90 mm/vmalloc.c:4022
+       crypto_scomp_alloc_scratches crypto/scompress.c:86 [inline]
+       crypto_scomp_init_tfm+0x122/0x270 crypto/scompress.c:107
+       crypto_create_tfm_node+0x100/0x320 crypto/api.c:539
+       crypto_create_tfm crypto/internal.h:120 [inline]
+       crypto_init_scomp_ops_async+0x5d/0x1d0 crypto/scompress.c:217
+       crypto_acomp_init_tfm+0x240/0x2e0 crypto/acompress.c:70
+       crypto_create_tfm_node+0x100/0x320 crypto/api.c:539
+       crypto_alloc_tfm_node+0x102/0x260 crypto/api.c:640
+       zswap_cpu_comp_prepare+0xe2/0x420 mm/zswap.c:834
+       cpuhp_invoke_callback+0x20c/0xa10 kernel/cpu.c:204
+       cpuhp_issue_call+0x1c0/0x980 kernel/cpu.c:2376
+       __cpuhp_state_add_instance_cpuslocked+0x1a4/0x3c0 kernel/cpu.c:2438
+       __cpuhp_state_add_instance+0xd7/0x2e0 kernel/cpu.c:2459
+       cpuhp_state_add_instance include/linux/cpuhotplug.h:387 [inline]
+       zswap_pool_create+0x59a/0x7b0 mm/zswap.c:291
+       __zswap_pool_create_fallback mm/zswap.c:359 [inline]
+       zswap_setup+0x402/0x810 mm/zswap.c:1814
+       zswap_init+0x2c/0x40 mm/zswap.c:1850
+       do_one_initcall+0x128/0x700 init/main.c:1257
+       do_initcall_level init/main.c:1319 [inline]
+       do_initcalls init/main.c:1335 [inline]
+       do_basic_setup init/main.c:1354 [inline]
+       kernel_init_freeable+0x5c7/0x900 init/main.c:1568
+       kernel_init+0x1c/0x2b0 init/main.c:1457
+       ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:148
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+-> #0 (scomp_lock){+.+.}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3163 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3282 [inline]
+       validate_chain kernel/locking/lockdep.c:3906 [inline]
+       __lock_acquire+0x249e/0x3c40 kernel/locking/lockdep.c:5228
+       lock_acquire.part.0+0x11b/0x380 kernel/locking/lockdep.c:5851
+       __mutex_lock_common kernel/locking/mutex.c:585 [inline]
+       __mutex_lock+0x19b/0xb10 kernel/locking/mutex.c:730
+       crypto_exit_scomp_ops_async+0x42/0x90 crypto/scompress.c:201
+       crypto_exit_ops crypto/api.c:370 [inline]
+       crypto_destroy_tfm crypto/api.c:681 [inline]
+       crypto_destroy_tfm+0x135/0x2b0 crypto/api.c:668
+       crypto_free_acomp include/crypto/acompress.h:159 [inline]
+       zswap_cpu_comp_dead+0x169/0x210 mm/zswap.c:891
+       cpuhp_invoke_callback+0x528/0xa10 kernel/cpu.c:216
+       __cpuhp_invoke_callback_range+0x101/0x200 kernel/cpu.c:966
+       cpuhp_invoke_callback_range kernel/cpu.c:990 [inline]
+       cpuhp_down_callbacks kernel/cpu.c:1383 [inline]
+       _cpu_down+0x422/0xf20 kernel/cpu.c:1444
+       __cpu_down_maps_locked+0x6c/0x90 kernel/cpu.c:1474
+       work_for_cpu_fn+0x52/0xa0 kernel/workqueue.c:6733
+       process_one_work+0x9c5/0x1ba0 kernel/workqueue.c:3238
+       process_scheduled_works kernel/workqueue.c:3319 [inline]
+       worker_thread+0x6c8/0xf00 kernel/workqueue.c:3400
+       kthread+0x3af/0x750 kernel/kthread.c:464
+       ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:148
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+other info that might help us debug this:
+
+Chain exists of:
+  scomp_lock --> fs_reclaim --> &per_cpu_ptr(pool->acomp_ctx, cpu)->mutex
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&per_cpu_ptr(pool->acomp_ctx, cpu)->mutex);
+                               lock(fs_reclaim);
+                               lock(&per_cpu_ptr(pool->acomp_ctx, cpu)->mutex);
+  lock(scomp_lock);
+
+ *** DEADLOCK ***
+
+4 locks held by kworker/1:5/22170:
+ #0: ffff88801b080d48 ((wq_completion)events){+.+.}-{0:0}, at: process_one_work+0x1293/0x1ba0 kernel/workqueue.c:3213
+ #1: ffffc90005627d18 ((work_completion)(&wfc.work)){+.+.}-{0:0}, at: process_one_work+0x921/0x1ba0 kernel/workqueue.c:3214
+ #2: ffffffff8e060fd0 (cpu_hotplug_lock){++++}-{0:0}, at: cpus_write_lock kernel/cpu.c:508 [inline]
+ #2: ffffffff8e060fd0 (cpu_hotplug_lock){++++}-{0:0}, at: _cpu_down+0xe5/0xf20 kernel/cpu.c:1412
+ #3: ffffe8ffffc21250 (&per_cpu_ptr(pool->acomp_ctx, cpu)->mutex){+.+.}-{4:4}, at: zswap_cpu_comp_dead+0x80/0x210 mm/zswap.c:885
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 22170 Comm: kworker/1:5 Not tainted 6.14.0-rc5-syzkaller-00023-gbb2281fb05e5 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Workqueue: events work_for_cpu_fn
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_circular_bug+0x490/0x760 kernel/locking/lockdep.c:2076
+ check_noncircular+0x31a/0x400 kernel/locking/lockdep.c:2208
+ check_prev_add kernel/locking/lockdep.c:3163 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3282 [inline]
+ validate_chain kernel/locking/lockdep.c:3906 [inline]
+ __lock_acquire+0x249e/0x3c40 kernel/locking/lockdep.c:5228
+ lock_acquire.part.0+0x11b/0x380 kernel/locking/lockdep.c:5851
+ __mutex_lock_common kernel/locking/mutex.c:585 [inline]
+ __mutex_lock+0x19b/0xb10 kernel/locking/mutex.c:730
+ crypto_exit_scomp_ops_async+0x42/0x90 crypto/scompress.c:201
+ crypto_exit_ops crypto/api.c:370 [inline]
+ crypto_destroy_tfm crypto/api.c:681 [inline]
+ crypto_destroy_tfm+0x135/0x2b0 crypto/api.c:668
+ crypto_free_acomp include/crypto/acompress.h:159 [inline]
+ zswap_cpu_comp_dead+0x169/0x210 mm/zswap.c:891
+ cpuhp_invoke_callback+0x528/0xa10 kernel/cpu.c:216
+ __cpuhp_invoke_callback_range+0x101/0x200 kernel/cpu.c:966
+ cpuhp_invoke_callback_range kernel/cpu.c:990 [inline]
+ cpuhp_down_callbacks kernel/cpu.c:1383 [inline]
+ _cpu_down+0x422/0xf20 kernel/cpu.c:1444
+ __cpu_down_maps_locked+0x6c/0x90 kernel/cpu.c:1474
+ work_for_cpu_fn+0x52/0xa0 kernel/workqueue.c:6733
+ process_one_work+0x9c5/0x1ba0 kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3319 [inline]
+ worker_thread+0x6c8/0xf00 kernel/workqueue.c:3400
+ kthread+0x3af/0x750 kernel/kthread.c:464
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

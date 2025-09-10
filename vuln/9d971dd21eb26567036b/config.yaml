@@ -1,0 +1,50 @@
+id: 9d971dd21eb26567036b
+bug_link: https://syzkaller.appspot.com/bug?extid=9d971dd21eb26567036b
+title: 'KASAN: use-after-free Write in __xfrm_policy_unlink'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7a474c36586f4277f930ab7e6865c97e44dfc3bc
+fix_commit: 1548bc4e0512700cf757192c106b3a20ab639223
+datetime: '2019-01-09T13:58:23+01:00'
+fix_commit_message: 'xfrm: policy: delete inexact policies from inexact list on hash
+  rebuild
+
+
+  An xfrm hash rebuild has to reset the inexact policy list before the
+
+  policies get re-inserted: A change of hash thresholds will result in
+
+  policies to get moved from inexact tree to the policy hash table.
+
+
+  If the thresholds are increased again later, they get moved from hash
+
+  table to inexact tree.
+
+
+  We must unlink all policies from the inexact tree before re-insertion.
+
+
+  Otherwise ''migrate'' may find policies that are in main hash table a
+
+  second time, when it searches the inexact lists.
+
+
+  Furthermore, re-insertion without deletion can cause elements ->next to
+
+  point back to itself, causing soft lockups or double-frees.
+
+
+  Reported-by: syzbot+9d971dd21eb26567036b@syzkaller.appspotmail.com
+
+  Fixes: 9cf545ebd591da ("xfrm: policy: store inexact policies in a tree ordered by
+  destination address")
+
+  Signed-off-by: Florian Westphal <fw@strlen.de>
+
+  Signed-off-by: Steffen Klassert <steffen.klassert@secunet.com>
+
+  '
+submodule:
+- net/xfrm
+hunk_count: 3
+covered_count: 0

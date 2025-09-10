@@ -1,0 +1,53 @@
+id: 5f8dcabe4a3b2c51c607
+bug_link: https://syzkaller.appspot.com/bug?extid=5f8dcabe4a3b2c51c607
+title: 'KASAN: use-after-free Read in ntfs_attr_find'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d85a1bec8e8d552ab13163ca1874dcd82f3d1550
+fix_commit: 36a4d82dddbbd421d2b8e79e1cab68c8126d5075
+datetime: '2022-09-11T21:55:11-07:00'
+fix_commit_message: "ntfs: fix out-of-bounds read in ntfs_attr_find()\n\nKernel iterates\
+  \ over ATTR_RECORDs in mft record in ntfs_attr_find().  To\nensure access on these\
+  \ ATTR_RECORDs are within bounds, kernel will do some\nchecking during iteration.\n\
+  \nThe problem is that during checking whether ATTR_RECORD's name is within\nbounds,\
+  \ kernel will dereferences the ATTR_RECORD name_offset field, before\nchecking this\
+  \ ATTR_RECORD strcture is within bounds.  This problem may\nresult out-of-bounds\
+  \ read in ntfs_attr_find(), reported by Syzkaller:\n\n==================================================================\n\
+  BUG: KASAN: use-after-free in ntfs_attr_find+0xc02/0xce0 fs/ntfs/attrib.c:597\n\
+  Read of size 2 at addr ffff88807e352009 by task syz-executor153/3607\n\n[...]\n\
+  Call Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:88 [inline]\n dump_stack_lvl+0xcd/0x134\
+  \ lib/dump_stack.c:106\n print_address_description mm/kasan/report.c:317 [inline]\n\
+  \ print_report.cold+0x2ba/0x719 mm/kasan/report.c:433\n kasan_report+0xb1/0x1e0\
+  \ mm/kasan/report.c:495\n ntfs_attr_find+0xc02/0xce0 fs/ntfs/attrib.c:597\n ntfs_attr_lookup+0x1056/0x2070\
+  \ fs/ntfs/attrib.c:1193\n ntfs_read_inode_mount+0x89a/0x2580 fs/ntfs/inode.c:1845\n\
+  \ ntfs_fill_super+0x1799/0x9320 fs/ntfs/super.c:2854\n mount_bdev+0x34d/0x410 fs/super.c:1400\n\
+  \ legacy_get_tree+0x105/0x220 fs/fs_context.c:610\n vfs_get_tree+0x89/0x2f0 fs/super.c:1530\n\
+  \ do_new_mount fs/namespace.c:3040 [inline]\n path_mount+0x1326/0x1e20 fs/namespace.c:3370\n\
+  \ do_mount fs/namespace.c:3383 [inline]\n __do_sys_mount fs/namespace.c:3591 [inline]\n\
+  \ __se_sys_mount fs/namespace.c:3568 [inline]\n __x64_sys_mount+0x27f/0x300 fs/namespace.c:3568\n\
+  \ do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n\
+  \ entry_SYSCALL_64_after_hwframe+0x63/0xcd\n [...]\n </TASK>\n\nThe buggy address\
+  \ belongs to the physical page:\npage:ffffea0001f8d400 refcount:1 mapcount:0 mapping:0000000000000000\
+  \ index:0x0 pfn:0x7e350\nhead:ffffea0001f8d400 order:3 compound_mapcount:0 compound_pincount:0\n\
+  flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)\nraw: 00fff00000010200\
+  \ 0000000000000000 dead000000000122 ffff888011842140\nraw: 0000000000000000 0000000000040004\
+  \ 00000001ffffffff 0000000000000000\npage dumped because: kasan: bad access detected\n\
+  Memory state around the buggy address:\n ffff88807e351f00: fc fc fc fc fc fc fc\
+  \ fc fc fc fc fc fc fc fc fc\n ffff88807e351f80: fc fc fc fc fc fc fc fc fc fc fc\
+  \ fc fc fc fc fc\n>ffff88807e352000: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb\
+  \ fb\n                      ^\n ffff88807e352080: fb fb fb fb fb fb fb fb fb fb\
+  \ fb fb fb fb fb fb\n ffff88807e352100: fb fb fb fb fb fb fb fb fb fb fb fb fb fb\
+  \ fb fb\n==================================================================\n\n\
+  This patch solves it by moving the ATTR_RECORD strcture's bounds checking\nearlier,\
+  \ then checking whether ATTR_RECORD's name is within bounds. \nWhat's more, this\
+  \ patch also add some comments to improve its\nmaintainability.\n\nLink: https://lkml.kernel.org/r/20220831160935.3409-3-yin31149@gmail.com\n\
+  Link: https://lore.kernel.org/all/1636796c-c85e-7f47-e96f-e074fee3c7d3@huawei.com/\n\
+  Link: https://groups.google.com/g/syzkaller-bugs/c/t_XdeKPGTR4/m/LECAuIGcBgAJ\n\
+  Signed-off-by: chenxiaosong (A) <chenxiaosong2@huawei.com>\nSigned-off-by: Dan Carpenter\
+  \ <dan.carpenter@oracle.com>\nSigned-off-by: Hawkins Jiawei <yin31149@gmail.com>\n\
+  Reported-by: syzbot+5f8dcabe4a3b2c51c607@syzkaller.appspotmail.com\nTested-by: syzbot+5f8dcabe4a3b2c51c607@syzkaller.appspotmail.com\n\
+  Cc: Anton Altaparmakov <anton@tuxera.com>\nCc: syzkaller-bugs <syzkaller-bugs@googlegroups.com>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- fs/ntfs
+hunk_count: 1
+covered_count: 1

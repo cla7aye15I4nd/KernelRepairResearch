@@ -1,0 +1,157 @@
+==================================================================
+BUG: KASAN: stack-out-of-bounds in profile_pc+0xd2/0x170 arch/x86/kernel/time.c:42
+Read of size 8 at addr ffffc9000303f2c0 by task syz-executor135/5086
+
+CPU: 0 PID: 5086 Comm: syz-executor135 Not tainted 6.9.0-rc7-syzkaller-00136-gf4345f05c0df #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ profile_pc+0xd2/0x170 arch/x86/kernel/time.c:42
+ profile_tick+0xd7/0x150 kernel/profile.c:339
+ tick_sched_handle kernel/time/tick-sched.c:277 [inline]
+ tick_nohz_handler+0x386/0x500 kernel/time/tick-sched.c:297
+ __run_hrtimer kernel/time/hrtimer.c:1692 [inline]
+ __hrtimer_run_queues+0x55d/0xd50 kernel/time/hrtimer.c:1756
+ hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1818
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0x112/0x3f0 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:__raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152 [inline]
+RIP: 0010:_raw_spin_unlock_irqrestore+0xd8/0x140 kernel/locking/spinlock.c:194
+Code: 9c 8f 44 24 20 42 80 3c 23 00 74 08 4c 89 f7 e8 de 98 6f f6 f6 44 24 21 02 75 52 41 f7 c7 00 02 00 00 74 01 fb bf 01 00 00 00 <e8> d3 94 da f5 65 8b 05 74 b8 78 74 85 c0 74 43 48 c7 04 24 0e 36
+RSP: 0018:ffffc9000303f2c0 EFLAGS: 00000206
+RAX: b47298a3a4473200 RBX: 1ffff92000607e5c RCX: ffffffff8172f77a
+RDX: dffffc0000000000 RSI: ffffffff8bcab8a0 RDI: 0000000000000001
+RBP: ffffc9000303f350 R08: ffffffff92f35507 R09: 1ffffffff25e6aa0
+R10: dffffc0000000000 R11: fffffbfff25e6aa1 R12: dffffc0000000000
+R13: 1ffff92000607e58 R14: ffffc9000303f2e0 R15: 0000000000000246
+ spin_unlock_irqrestore include/linux/spinlock.h:406 [inline]
+ rmqueue_bulk mm/page_alloc.c:2155 [inline]
+ __rmqueue_pcplist+0x216d/0x2620 mm/page_alloc.c:2826
+ rmqueue_pcplist mm/page_alloc.c:2868 [inline]
+ rmqueue mm/page_alloc.c:2905 [inline]
+ get_page_from_freelist+0x856/0x35b0 mm/page_alloc.c:3314
+ __alloc_pages+0x256/0x6c0 mm/page_alloc.c:4575
+ alloc_pages_mpol+0x3e8/0x680 mm/mempolicy.c:2264
+ vm_area_alloc_pages mm/vmalloc.c:3561 [inline]
+ __vmalloc_area_node mm/vmalloc.c:3637 [inline]
+ __vmalloc_node_range+0x9a4/0x1490 mm/vmalloc.c:3818
+ __vmalloc_node mm/vmalloc.c:3883 [inline]
+ vzalloc+0x79/0x90 mm/vmalloc.c:3956
+ profile_init+0xee/0x130 kernel/profile.c:131
+ profiling_store+0x5e/0xc0 kernel/ksysfs.c:104
+ kernfs_fop_write_iter+0x3a3/0x500 fs/kernfs/file.c:334
+ call_write_iter include/linux/fs.h:2110 [inline]
+ new_sync_write fs/read_write.c:497 [inline]
+ vfs_write+0xa86/0xcb0 fs/read_write.c:590
+ ksys_write+0x1a0/0x2c0 fs/read_write.c:643
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f91aed33329
+Code: 48 83 c4 28 c3 e8 37 17 00 00 0f 1f 80 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff4b5bbb18 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 00007fff4b5bbce8 RCX: 00007f91aed33329
+RDX: 000000000000003b RSI: 0000000020000000 RDI: 0000000000000003
+RBP: 00007f91aeda6610 R08: 0000000000000000 R09: 00007fff4b5bbce8
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007fff4b5bbcd8 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+The buggy address belongs to stack of task syz-executor135/5086
+ and is located at offset 0 in frame:
+ _raw_spin_unlock_irqrestore+0x0/0x140 kernel/locking/spinlock.c:187
+
+This frame has 1 object:
+ [32, 40) 'flags.i.i.i.i'
+
+The buggy address belongs to the virtual mapping at
+ [ffffc90003038000, ffffc90003041000) created by:
+ copy_process+0x5d1/0x3df0 kernel/fork.c:2220
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x79908
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000000 0000000000000000 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000000000 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x2dc2(GFP_KERNEL|__GFP_HIGHMEM|__GFP_NOWARN|__GFP_ZERO), pid 5083, tgid 1553892075 (strace-static-x), ts 5083, free_ts 68213325275
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1ea/0x210 mm/page_alloc.c:1534
+ prep_new_page mm/page_alloc.c:1541 [inline]
+ get_page_from_freelist+0x3410/0x35b0 mm/page_alloc.c:3317
+ __alloc_pages+0x256/0x6c0 mm/page_alloc.c:4575
+ alloc_pages_mpol+0x3e8/0x680 mm/mempolicy.c:2264
+ vm_area_alloc_pages mm/vmalloc.c:3561 [inline]
+ __vmalloc_area_node mm/vmalloc.c:3637 [inline]
+ __vmalloc_node_range+0x9a4/0x1490 mm/vmalloc.c:3818
+ alloc_thread_stack_node kernel/fork.c:309 [inline]
+ dup_task_struct+0x3e9/0x7d0 kernel/fork.c:1115
+ copy_process+0x5d1/0x3df0 kernel/fork.c:2220
+ kernel_clone+0x226/0x8f0 kernel/fork.c:2797
+ __do_sys_clone kernel/fork.c:2940 [inline]
+ __se_sys_clone kernel/fork.c:2924 [inline]
+ __x64_sys_clone+0x258/0x2a0 kernel/fork.c:2924
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+page last free pid 5077 tgid 5077 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1141 [inline]
+ free_unref_page_prepare+0x986/0xab0 mm/page_alloc.c:2347
+ free_unref_page+0x37/0x3f0 mm/page_alloc.c:2487
+ __folio_put_small mm/swap.c:119 [inline]
+ __folio_put+0x22b/0x390 mm/swap.c:142
+ pipe_buf_release include/linux/pipe_fs_i.h:219 [inline]
+ pipe_update_tail fs/pipe.c:224 [inline]
+ pipe_read+0x6f4/0x13e0 fs/pipe.c:344
+ call_read_iter include/linux/fs.h:2104 [inline]
+ new_sync_read fs/read_write.c:395 [inline]
+ vfs_read+0x97d/0xb70 fs/read_write.c:476
+ ksys_read+0x1a0/0x2c0 fs/read_write.c:619
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffffc9000303f180: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffffc9000303f200: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffffc9000303f280: 00 00 00 00 00 00 00 00 f1 f1 f1 f1 00 f3 f3 f3
+                                           ^
+ ffffc9000303f300: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffffc9000303f380: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+==================================================================
+----------------
+Code disassembly (best guess):
+   0:	9c                   	pushf
+   1:	8f 44 24 20          	pop    0x20(%rsp)
+   5:	42 80 3c 23 00       	cmpb   $0x0,(%rbx,%r12,1)
+   a:	74 08                	je     0x14
+   c:	4c 89 f7             	mov    %r14,%rdi
+   f:	e8 de 98 6f f6       	call   0xf66f98f2
+  14:	f6 44 24 21 02       	testb  $0x2,0x21(%rsp)
+  19:	75 52                	jne    0x6d
+  1b:	41 f7 c7 00 02 00 00 	test   $0x200,%r15d
+  22:	74 01                	je     0x25
+  24:	fb                   	sti
+  25:	bf 01 00 00 00       	mov    $0x1,%edi
+* 2a:	e8 d3 94 da f5       	call   0xf5da9502 <-- trapping instruction
+  2f:	65 8b 05 74 b8 78 74 	mov    %gs:0x7478b874(%rip),%eax        # 0x7478b8aa
+  36:	85 c0                	test   %eax,%eax
+  38:	74 43                	je     0x7d
+  3a:	48                   	rex.W
+  3b:	c7                   	.byte 0xc7
+  3c:	04 24                	add    $0x24,%al
+  3e:	0e                   	(bad)
+  3f:	36                   	ss

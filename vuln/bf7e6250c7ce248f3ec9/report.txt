@@ -1,0 +1,52 @@
+UDPLite: UDP-Lite is deprecated and scheduled to be removed in 2025, please contact the netdev mailing list
+hsr0: VLAN not yet supported
+=====================================================
+BUG: KMSAN: uninit-value in fill_frame_info net/hsr/hsr_forward.c:601 [inline]
+BUG: KMSAN: uninit-value in hsr_forward_skb+0x9bd/0x30f0 net/hsr/hsr_forward.c:616
+ fill_frame_info net/hsr/hsr_forward.c:601 [inline]
+ hsr_forward_skb+0x9bd/0x30f0 net/hsr/hsr_forward.c:616
+ hsr_dev_xmit+0x192/0x330 net/hsr/hsr_device.c:223
+ __netdev_start_xmit include/linux/netdevice.h:4910 [inline]
+ netdev_start_xmit include/linux/netdevice.h:4924 [inline]
+ xmit_one net/core/dev.c:3537 [inline]
+ dev_hard_start_xmit+0x247/0xa10 net/core/dev.c:3553
+ __dev_queue_xmit+0x34eb/0x50f0 net/core/dev.c:4203
+ dev_queue_xmit include/linux/netdevice.h:3088 [inline]
+ packet_xmit+0x9c/0x6b0 net/packet/af_packet.c:276
+ packet_snd net/packet/af_packet.c:3085 [inline]
+ packet_sendmsg+0x8a5d/0x9de0 net/packet/af_packet.c:3117
+ sock_sendmsg_nosec net/socket.c:725 [inline]
+ sock_sendmsg net/socket.c:748 [inline]
+ __sys_sendto+0x781/0xa30 net/socket.c:2134
+ __do_sys_sendto net/socket.c:2146 [inline]
+ __se_sys_sendto net/socket.c:2142 [inline]
+ __x64_sys_sendto+0x125/0x1c0 net/socket.c:2142
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Uninit was created at:
+ slab_post_alloc_hook+0x12f/0xb70 mm/slab.h:767
+ slab_alloc_node mm/slub.c:3470 [inline]
+ kmem_cache_alloc_node+0x577/0xa80 mm/slub.c:3515
+ kmalloc_reserve+0x148/0x470 net/core/skbuff.c:559
+ __alloc_skb+0x318/0x740 net/core/skbuff.c:644
+ alloc_skb include/linux/skbuff.h:1289 [inline]
+ alloc_skb_with_frags+0xbd/0xbb0 net/core/skbuff.c:6233
+ sock_alloc_send_pskb+0xa80/0xbf0 net/core/sock.c:2793
+ packet_alloc_skb net/packet/af_packet.c:2934 [inline]
+ packet_snd net/packet/af_packet.c:3028 [inline]
+ packet_sendmsg+0x6fc2/0x9de0 net/packet/af_packet.c:3117
+ sock_sendmsg_nosec net/socket.c:725 [inline]
+ sock_sendmsg net/socket.c:748 [inline]
+ __sys_sendto+0x781/0xa30 net/socket.c:2134
+ __do_sys_sendto net/socket.c:2146 [inline]
+ __se_sys_sendto net/socket.c:2142 [inline]
+ __x64_sys_sendto+0x125/0x1c0 net/socket.c:2142
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+CPU: 1 PID: 5012 Comm: syz-executor296 Not tainted 6.5.0-rc7-syzkaller-00164-g382d4cd18475 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
+=====================================================

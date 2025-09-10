@@ -1,0 +1,26 @@
+id: 38e6c55d4969a14c1534
+bug_link: https://syzkaller.appspot.com/bug?extid=38e6c55d4969a14c1534
+title: 'INFO: task hung in blk_freeze_queue (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 48c033314f372478548203c583529f53080fd078
+fix_commit: 1de7c3cf48fc41cd95adb12bd1ea9033a917798a
+datetime: '2022-09-08T08:41:36-06:00'
+fix_commit_message: "nbd: Fix hung when signal interrupts nbd_start_device_ioctl()\n\
+  \nsyzbot reported hung task [1].  The following program is a simplified\nversion\
+  \ of the reproducer:\n\nint main(void)\n{\n\tint sv[2], fd;\n\n\tif (socketpair(AF_UNIX,\
+  \ SOCK_STREAM, 0, sv) < 0)\n\t\treturn 1;\n\tif ((fd = open(\"/dev/nbd0\", 0)) <\
+  \ 0)\n\t\treturn 1;\n\tif (ioctl(fd, NBD_SET_SIZE_BLOCKS, 0x81) < 0)\n\t\treturn\
+  \ 1;\n\tif (ioctl(fd, NBD_SET_SOCK, sv[0]) < 0)\n\t\treturn 1;\n\tif (ioctl(fd,\
+  \ NBD_DO_IT) < 0)\n\t\treturn 1;\n\treturn 0;\n}\n\nWhen signal interrupt nbd_start_device_ioctl()\
+  \ waiting the condition\natomic_read(&config->recv_threads) == 0, the task can hung\
+  \ because it\nwaits the completion of the inflight IOs.\n\nThis patch fixes the\
+  \ issue by clearing queue, not just shutdown, when\nsignal interrupt nbd_start_device_ioctl().\n\
+  \nLink: https://syzkaller.appspot.com/bug?id=7d89a3ffacd2b83fdd39549bc4d8e0a89ef21239\
+  \ [1]\nReported-by: syzbot+38e6c55d4969a14c1534@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Shigeru Yoshida <syoshida@redhat.com>\nReviewed-by: Josef Bacik <josef@toxicpanda.com>\n\
+  Link: https://lore.kernel.org/r/20220907163502.577561-1-syoshida@redhat.com\nSigned-off-by:\
+  \ Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 1
+covered_count: 1

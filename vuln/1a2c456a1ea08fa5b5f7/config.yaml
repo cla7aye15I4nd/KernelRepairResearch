@@ -1,0 +1,26 @@
+id: 1a2c456a1ea08fa5b5f7
+bug_link: https://syzkaller.appspot.com/bug?extid=1a2c456a1ea08fa5b5f7
+title: general protection fault in ax25cmp
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6571ebce112a21ec9be68ef2f53b96fcd41fd81b
+fix_commit: b0cf029234f9b18e10703ba5147f0389c382bccc
+datetime: '2019-01-27T10:40:01-08:00'
+fix_commit_message: "net/rose: fix NULL ax25_cb kernel panic\n\nWhen an internally\
+  \ generated frame is handled by rose_xmit(),\nrose_route_frame() is called:\n\n\
+  \        if (!rose_route_frame(skb, NULL)) {\n                dev_kfree_skb(skb);\n\
+  \                stats->tx_errors++;\n                return NETDEV_TX_OK;\n   \
+  \     }\n\nWe have the same code sequence in Net/Rom where an internally generated\n\
+  frame is handled by nr_xmit() calling nr_route_frame(skb, NULL).\nHowever, in this\
+  \ function NULL argument is tested while it is not in\nrose_route_frame().\nThen\
+  \ kernel panic occurs later on when calling ax25cmp() with a NULL\nax25_cb argument\
+  \ as reported many times and recently with syzbot.\n\nWe need to test if ax25 is\
+  \ NULL before using it.\n\nTesting:\nBuilt kernel with CONFIG_ROSE=y.\n\nSigned-off-by:\
+  \ Bernard Pidoux <f6bvp@free.fr>\nAcked-by: Dmitry Vyukov <dvyukov@google.com>\n\
+  Reported-by: syzbot+1a2c456a1ea08fa5b5f7@syzkaller.appspotmail.com\nCc: \"David\
+  \ S. Miller\" <davem@davemloft.net>\nCc: Ralf Baechle <ralf@linux-mips.org>\nCc:\
+  \ Bernard Pidoux <f6bvp@free.fr>\nCc: linux-hams@vger.kernel.org\nCc: netdev@vger.kernel.org\n\
+  Cc: linux-kernel@vger.kernel.org\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/rose
+hunk_count: 2
+covered_count: 2

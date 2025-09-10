@@ -1,0 +1,52 @@
+id: 47479b71cdfc78f56d30
+bug_link: https://syzkaller.appspot.com/bug?extid=47479b71cdfc78f56d30
+title: WARNING in ext4_dio_write_end_io
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6a3afb6ac6dfab158ebdd4b87941178f58c8939f
+fix_commit: 619f75dae2cf117b1d07f27b046b9ffb071c4685
+datetime: '2023-11-30T23:29:34-05:00'
+fix_commit_message: 'ext4: fix warning in ext4_dio_write_end_io()
+
+
+  The syzbot has reported that it can hit the warning in
+
+  ext4_dio_write_end_io() because i_size < i_disksize. Indeed the
+
+  reproducer creates a race between DIO IO completion and truncate
+
+  expanding the file and thus ext4_dio_write_end_io() sees an inconsistent
+
+  inode state where i_disksize is already updated but i_size is not
+
+  updated yet. Since we are careful when setting up DIO write and consider
+
+  it extending (and thus performing the IO synchronously with i_rwsem held
+
+  exclusively) whenever it goes past either of i_size or i_disksize, we
+
+  can use the same test during IO completion without risking entering
+
+  ext4_handle_inode_extension() without i_rwsem held. This way we make it
+
+  obvious both i_size and i_disksize are large enough when we report DIO
+
+  completion without relying on unreliable WARN_ON.
+
+
+  Reported-by:  <syzbot+47479b71cdfc78f56d30@syzkaller.appspotmail.com>
+
+  Fixes: 91562895f803 ("ext4: properly sync file size update after O_SYNC direct IO")
+
+  Signed-off-by: Jan Kara <jack@suse.cz>
+
+  Reviewed-by: Ritesh Harjani (IBM) <ritesh.list@gmail.com>
+
+  Link: https://lore.kernel.org/r/20231130095653.22679-1-jack@suse.cz
+
+  Signed-off-by: Theodore Ts''o <tytso@mit.edu>
+
+  '
+submodule:
+- fs/ext4
+hunk_count: 2
+covered_count: 2

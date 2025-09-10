@@ -1,0 +1,52 @@
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/checksum.c:424!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5323 Comm: bch-rebalance/l Not tainted 6.12.0-rc6-syzkaller #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:bch2_rechecksum_bio+0x148c/0x14b0 fs/bcachefs/checksum.c:424
+Code: 48 89 df e8 76 b9 d7 fd e9 4d f9 ff ff 89 f9 80 e1 07 38 c1 0f 8c 1c fd ff ff e8 4f ba d7 fd e9 12 fd ff ff e8 e5 f3 6d fd 90 <0f> 0b e8 dd f3 6d fd 90 0f 0b e8 d5 f3 6d fd 90 0f 0b e8 1d 50 a0
+RSP: 0018:ffffc9000d186b20 EFLAGS: 00010293
+RAX: ffffffff8426e67b RBX: 0000000000000007 RCX: ffff88801e00c880
+RDX: 0000000000000000 RSI: 0000000000000018 RDI: 0000000000000008
+RBP: ffffc9000d186e70 R08: ffffffff8426d688 R09: 0000000000000000
+R10: ffffc9000d186d40 R11: fffff52001a30dae R12: 0000000000000018
+R13: dffffc0000000000 R14: 0000000000000008 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055bb8ac5e0b8 CR3: 0000000011c00000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_write_rechecksum fs/bcachefs/io_write.c:776 [inline]
+ bch2_write_prep_encoded_data fs/bcachefs/io_write.c:877 [inline]
+ bch2_write_extent fs/bcachefs/io_write.c:909 [inline]
+ __bch2_write+0x2f7b/0x5dd0 fs/bcachefs/io_write.c:1461
+ bch2_write+0x9b5/0x1760 fs/bcachefs/io_write.c:1634
+ closure_queue include/linux/closure.h:270 [inline]
+ closure_call include/linux/closure.h:432 [inline]
+ bch2_data_update_read_done+0x22e/0x330 fs/bcachefs/data_update.c:426
+ move_write fs/bcachefs/move.c:133 [inline]
+ bch2_moving_ctxt_do_pending_writes+0x44c/0x8d0 fs/bcachefs/move.c:164
+ bch2_moving_ctxt_flush_all+0x1c3/0x2f0 fs/bcachefs/move.c:179
+ do_rebalance fs/bcachefs/rebalance.c:379 [inline]
+ bch2_rebalance_thread+0x1a87/0x1fc0 fs/bcachefs/rebalance.c:401
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_rechecksum_bio+0x148c/0x14b0 fs/bcachefs/checksum.c:424
+Code: 48 89 df e8 76 b9 d7 fd e9 4d f9 ff ff 89 f9 80 e1 07 38 c1 0f 8c 1c fd ff ff e8 4f ba d7 fd e9 12 fd ff ff e8 e5 f3 6d fd 90 <0f> 0b e8 dd f3 6d fd 90 0f 0b e8 d5 f3 6d fd 90 0f 0b e8 1d 50 a0
+RSP: 0018:ffffc9000d186b20 EFLAGS: 00010293
+RAX: ffffffff8426e67b RBX: 0000000000000007 RCX: ffff88801e00c880
+RDX: 0000000000000000 RSI: 0000000000000018 RDI: 0000000000000008
+RBP: ffffc9000d186e70 R08: ffffffff8426d688 R09: 0000000000000000
+R10: ffffc9000d186d40 R11: fffff52001a30dae R12: 0000000000000018
+R13: dffffc0000000000 R14: 0000000000000008 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fbfaf9ff000 CR3: 000000001fb7e000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

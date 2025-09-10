@@ -1,0 +1,30 @@
+id: 20eae20afcbd851b8601
+bug_link: https://syzkaller.appspot.com/bug?extid=20eae20afcbd851b8601
+title: general protection fault in kvm_ioapic_scan_entry
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c2dd5146e9fe1f22c77c1b011adf84eea0245806
+fix_commit: dcbd3e49c2f0b2c2d8a321507ff8f3de4af76d7c
+datetime: '2018-12-18T22:15:44+01:00'
+fix_commit_message: "KVM: X86: Fix NULL deref in vcpu_scan_ioapic\n\nReported by syzkaller:\n\
+  \n    CPU: 1 PID: 5962 Comm: syz-executor118 Not tainted 4.20.0-rc6+ #374\n    Hardware\
+  \ name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n\
+  \    RIP: 0010:kvm_apic_hw_enabled arch/x86/kvm/lapic.h:169 [inline]\n    RIP: 0010:vcpu_scan_ioapic\
+  \ arch/x86/kvm/x86.c:7449 [inline]\n    RIP: 0010:vcpu_enter_guest arch/x86/kvm/x86.c:7602\
+  \ [inline]\n    RIP: 0010:vcpu_run arch/x86/kvm/x86.c:7874 [inline]\n    RIP: 0010:kvm_arch_vcpu_ioctl_run+0x5296/0x7320\
+  \ arch/x86/kvm/x86.c:8074\n    Call Trace:\n\t kvm_vcpu_ioctl+0x5c8/0x1150 arch/x86/kvm/../../../virt/kvm/kvm_main.c:2596\n\
+  \t vfs_ioctl fs/ioctl.c:46 [inline]\n\t file_ioctl fs/ioctl.c:509 [inline]\n\t do_vfs_ioctl+0x1de/0x1790\
+  \ fs/ioctl.c:696\n\t ksys_ioctl+0xa9/0xd0 fs/ioctl.c:713\n\t __do_sys_ioctl fs/ioctl.c:720\
+  \ [inline]\n\t __se_sys_ioctl fs/ioctl.c:718 [inline]\n\t __x64_sys_ioctl+0x73/0xb0\
+  \ fs/ioctl.c:718\n\t do_syscall_64+0x1b9/0x820 arch/x86/entry/common.c:290\n\t entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nThe reason is that the testcase writes hyperv synic HV_X64_MSR_SINT14 msr\nand\
+  \ triggers scan ioapic logic to load synic vectors into EOI exit bitmap.\nHowever,\
+  \ irqchip is not initialized by this simple testcase, ioapic/apic\nobjects should\
+  \ not be accessed.\n\nThis patch fixes it by also considering whether or not apic\
+  \ is present.\n\nReported-by: syzbot+39810e6c400efadfef71@syzkaller.appspotmail.com\n\
+  Cc: stable@vger.kernel.org\nCc: Paolo Bonzini <pbonzini@redhat.com>\nCc: Radim Krčmář\
+  \ <rkrcmar@redhat.com>\nSigned-off-by: Wanpeng Li <wanpengli@tencent.com>\nSigned-off-by:\
+  \ Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 1
+covered_count: 1

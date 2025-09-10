@@ -1,0 +1,45 @@
+id: 8ed8fc4c57e9dcf23ca6
+bug_link: https://syzkaller.appspot.com/bug?extid=8ed8fc4c57e9dcf23ca6
+title: 'UBSAN: shift-out-of-bounds in tcf_pedit_init'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: dbd5f5d8685ff4b9bf236e381b49851a667f0a66
+fix_commit: 4d42d54a7d6aa6d29221d3fd4f2ae9503e94f011
+datetime: '2022-05-16T11:48:30+01:00'
+fix_commit_message: "net/sched: act_pedit: sanitize shift argument before usage\n\n\
+  syzbot was able to trigger an Out-of-Bound on the pedit action:\n\nUBSAN: shift-out-of-bounds\
+  \ in net/sched/act_pedit.c:238:43\nshift exponent 1400735974 is too large for 32-bit\
+  \ type 'unsigned int'\nCPU: 0 PID: 3606 Comm: syz-executor151 Not tainted 5.18.0-rc5-syzkaller-00165-g810c2f0a3f86\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/01/2011\nCall Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:88 [inline]\n\
+  \ dump_stack_lvl+0xcd/0x134 lib/dump_stack.c:106\n ubsan_epilogue+0xb/0x50 lib/ubsan.c:151\n\
+  \ __ubsan_handle_shift_out_of_bounds.cold+0xb1/0x187 lib/ubsan.c:322\n tcf_pedit_init.cold+0x1a/0x1f\
+  \ net/sched/act_pedit.c:238\n tcf_action_init_1+0x414/0x690 net/sched/act_api.c:1367\n\
+  \ tcf_action_init+0x530/0x8d0 net/sched/act_api.c:1432\n tcf_action_add+0xf9/0x480\
+  \ net/sched/act_api.c:1956\n tc_ctl_action+0x346/0x470 net/sched/act_api.c:2015\n\
+  \ rtnetlink_rcv_msg+0x413/0xb80 net/core/rtnetlink.c:5993\n netlink_rcv_skb+0x153/0x420\
+  \ net/netlink/af_netlink.c:2502\n netlink_unicast_kernel net/netlink/af_netlink.c:1319\
+  \ [inline]\n netlink_unicast+0x543/0x7f0 net/netlink/af_netlink.c:1345\n netlink_sendmsg+0x904/0xe00\
+  \ net/netlink/af_netlink.c:1921\n sock_sendmsg_nosec net/socket.c:705 [inline]\n\
+  \ sock_sendmsg+0xcf/0x120 net/socket.c:725\n ____sys_sendmsg+0x6e2/0x800 net/socket.c:2413\n\
+  \ ___sys_sendmsg+0xf3/0x170 net/socket.c:2467\n __sys_sendmsg+0xe5/0x1b0 net/socket.c:2496\n\
+  \ do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n\
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xae\nRIP: 0033:0x7fe36e9e1b59\nCode: 28 c3\
+  \ e8 2a 14 00 00 66 2e 0f 1f 84 00 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89\
+  \ ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1\
+  \ c0 ff ff ff f7 d8 64 89 01 48\nRSP: 002b:00007ffef796fe88 EFLAGS: 00000246 ORIG_RAX:\
+  \ 000000000000002e\nRAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fe36e9e1b59\n\
+  RDX: 0000000000000000 RSI: 0000000020000300 RDI: 0000000000000003\nRBP: 00007fe36e9a5d00\
+  \ R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000 R11: 0000000000000246\
+  \ R12: 00007fe36e9a5d90\nR13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000\n\
+  \ </TASK>\n\nThe 'shift' field is not validated, and any value above 31 will\ntrigger\
+  \ out-of-bounds. The issue predates the git history, but\nsyzbot was able to trigger\
+  \ it only after the commit mentioned in\nthe fixes tag, and this change only applies\
+  \ on top of such commit.\n\nAddress the issue bounding the 'shift' value to the\
+  \ maximum allowed\nby the relevant operator.\n\nReported-and-tested-by: syzbot+8ed8fc4c57e9dcf23ca6@syzkaller.appspotmail.com\n\
+  Fixes: 8b796475fd78 (\"net/sched: act_pedit: really ensure the skb is writable\"\
+  )\nSigned-off-by: Paolo Abeni <pabeni@redhat.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/sched
+hunk_count: 1
+covered_count: 1

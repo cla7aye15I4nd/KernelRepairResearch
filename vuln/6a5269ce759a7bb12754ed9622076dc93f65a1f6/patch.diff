@@ -1,0 +1,30 @@
+diff --git a/arch/x86/mm/fault.c b/arch/x86/mm/fault.c
+index e2baeaa053a5..7101c281c7ce 100644
+--- a/arch/x86/mm/fault.c
++++ b/arch/x86/mm/fault.c
+@@ -1440,7 +1440,17 @@ __do_page_fault(struct pt_regs *regs, unsigned long error_code,
+ 	 * make sure we exit gracefully rather than endlessly redo
+ 	 * the fault.  Since we never set FAULT_FLAG_RETRY_NOWAIT, if
+ 	 * we get VM_FAULT_RETRY back, the mmap_sem has been unlocked.
++	 *
++	 * Note that handle_userfault() may also release and reacquire mmap_sem
++	 * (and not return with VM_FAULT_RETRY), when returning to userland to
++	 * repeat the page fault later with a VM_FAULT_NOPAGE retval
++	 * (potentially after handling any pending signal during the return to
++	 * userland). The return to userland is identified whenever
++	 * FAULT_FLAG_USER|FAULT_FLAG_KILLABLE are both set in flags.
++	 * Thus we have to be careful about not touching vma after handling the
++	 * fault, so we read the pkey beforehand.
+ 	 */
++	pkey = vma_pkey(vma);
+ 	fault = handle_mm_fault(vma, address, flags);
+ 	major |= fault & VM_FAULT_MAJOR;
+ 
+@@ -1467,7 +1477,6 @@ __do_page_fault(struct pt_regs *regs, unsigned long error_code,
+ 		return;
+ 	}
+ 
+-	pkey = vma_pkey(vma);
+ 	up_read(&mm->mmap_sem);
+ 	if (unlikely(fault & VM_FAULT_ERROR)) {
+ 		mm_fault_error(regs, error_code, address, &pkey, fault);

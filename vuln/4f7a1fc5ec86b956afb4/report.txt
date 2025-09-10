@@ -1,0 +1,113 @@
+loop0: detected capacity change from 0 to 64
+hfs: unable to locate alternate MDB
+hfs: continuing without an alternate MDB
+==================================================================
+BUG: KASAN: slab-out-of-bounds in memcpy_from_page include/linux/highmem.h:417 [inline]
+BUG: KASAN: slab-out-of-bounds in hfs_bnode_read fs/hfs/bnode.c:35 [inline]
+BUG: KASAN: slab-out-of-bounds in hfs_bnode_read_key+0x310/0x454 fs/hfs/bnode.c:70
+Write of size 256 at addr ffff0000cb525900 by task syz-executor248/5973
+
+CPU: 1 PID: 5973 Comm: syz-executor248 Not tainted 6.4.0-rc3-syzkaller-geb0f1697d729 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/28/2023
+Call trace:
+ dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:233
+ show_stack+0x2c/0x44 arch/arm64/kernel/stacktrace.c:240
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:351 [inline]
+ print_report+0x174/0x514 mm/kasan/report.c:462
+ kasan_report+0xd4/0x130 mm/kasan/report.c:572
+ kasan_check_range+0x264/0x2a4 mm/kasan/generic.c:187
+ __asan_memcpy+0x54/0x84 mm/kasan/shadow.c:106
+ memcpy_from_page include/linux/highmem.h:417 [inline]
+ hfs_bnode_read fs/hfs/bnode.c:35 [inline]
+ hfs_bnode_read_key+0x310/0x454 fs/hfs/bnode.c:70
+ hfs_brec_insert+0x508/0x97c fs/hfs/brec.c:141
+ hfs_cat_create+0x4f0/0x844 fs/hfs/catalog.c:131
+ hfs_create+0x70/0xe4 fs/hfs/dir.c:202
+ lookup_open fs/namei.c:3492 [inline]
+ open_last_lookups fs/namei.c:3560 [inline]
+ path_openat+0xf80/0x27f8 fs/namei.c:3788
+ do_filp_open+0x1bc/0x3cc fs/namei.c:3818
+ do_sys_openat2+0x128/0x3d8 fs/open.c:1356
+ do_sys_open fs/open.c:1372 [inline]
+ __do_sys_openat fs/open.c:1388 [inline]
+ __se_sys_openat fs/open.c:1383 [inline]
+ __arm64_sys_openat+0x1f0/0x240 fs/open.c:1383
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+ el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+
+Allocated by task 5973:
+ kasan_save_stack mm/kasan/common.c:45 [inline]
+ kasan_set_track+0x4c/0x7c mm/kasan/common.c:52
+ kasan_save_alloc_info+0x24/0x30 mm/kasan/generic.c:510
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0xac/0xc4 mm/kasan/common.c:383
+ kasan_kmalloc include/linux/kasan.h:196 [inline]
+ __do_kmalloc_node mm/slab_common.c:966 [inline]
+ __kmalloc+0xcc/0x1b8 mm/slab_common.c:979
+ kmalloc include/linux/slab.h:563 [inline]
+ hfs_find_init+0x88/0x1c8 fs/hfs/bfind.c:21
+ hfs_cat_create+0x168/0x844 fs/hfs/catalog.c:96
+ hfs_create+0x70/0xe4 fs/hfs/dir.c:202
+ lookup_open fs/namei.c:3492 [inline]
+ open_last_lookups fs/namei.c:3560 [inline]
+ path_openat+0xf80/0x27f8 fs/namei.c:3788
+ do_filp_open+0x1bc/0x3cc fs/namei.c:3818
+ do_sys_openat2+0x128/0x3d8 fs/open.c:1356
+ do_sys_open fs/open.c:1372 [inline]
+ __do_sys_openat fs/open.c:1388 [inline]
+ __se_sys_openat fs/open.c:1383 [inline]
+ __arm64_sys_openat+0x1f0/0x240 fs/open.c:1383
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+ el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+
+Last potentially related work creation:
+ kasan_save_stack+0x40/0x6c mm/kasan/common.c:45
+ __kasan_record_aux_stack+0xcc/0xe8 mm/kasan/generic.c:491
+ kasan_record_aux_stack_noalloc+0x14/0x20 mm/kasan/generic.c:501
+ kvfree_call_rcu+0xa8/0x688 kernel/rcu/tree.c:3332
+ kernfs_unlink_open_file+0x398/0x448 fs/kernfs/file.c:633
+ kernfs_fop_release+0x130/0x198 fs/kernfs/file.c:805
+ __fput+0x30c/0x7bc fs/file_table.c:321
+ ____fput+0x20/0x30 fs/file_table.c:349
+ task_work_run+0x230/0x2e0 kernel/task_work.c:179
+ resume_user_mode_work include/linux/resume_user_mode.h:49 [inline]
+ do_notify_resume+0x2180/0x3c90 arch/arm64/kernel/signal.c:1305
+ prepare_exit_to_user_mode arch/arm64/kernel/entry-common.c:137 [inline]
+ exit_to_user_mode arch/arm64/kernel/entry-common.c:142 [inline]
+ el0_svc+0x90/0x15c arch/arm64/kernel/entry-common.c:638
+ el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+
+The buggy address belongs to the object at ffff0000cb525900
+ which belongs to the cache kmalloc-128 of size 128
+The buggy address is located 0 bytes inside of
+ allocated 78-byte region [ffff0000cb525900, ffff0000cb52594e)
+
+The buggy address belongs to the physical page:
+page:00000000d14ce93e refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x10b525
+flags: 0x5ffc00000000200(slab|node=0|zone=2|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 05ffc00000000200 ffff0000c0002300 fffffc00032d7d40 dead000000000004
+raw: 0000000000000000 0000000080100010 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+
+Memory state around the buggy address:
+ ffff0000cb525800: 00 00 00 00 00 01 fc fc fc fc fc fc fc fc fc fc
+ ffff0000cb525880: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+>ffff0000cb525900: 00 00 00 00 00 00 00 00 00 06 fc fc fc fc fc fc
+                                              ^
+ ffff0000cb525980: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff0000cb525a00: 00 00 01 fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

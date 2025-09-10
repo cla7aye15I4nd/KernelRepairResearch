@@ -1,0 +1,29 @@
+id: 80dccaee7c6630fa9dcf
+bug_link: https://syzkaller.appspot.com/bug?extid=80dccaee7c6630fa9dcf
+title: WARNING in __alloc_skb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5db4f74ec86440fc8c9e391416f3b146d63fef9f
+fix_commit: 093b036aa94e01a0bea31a38d7f0ee28a2749023
+datetime: '2021-03-01T13:24:03-08:00'
+fix_commit_message: "net/qrtr: fix __netdev_alloc_skb call\n\nsyzbot found WARNING\
+  \ in __alloc_pages_nodemask()[1] when order >= MAX_ORDER.\nIt was caused by a huge\
+  \ length value passed from userspace to qrtr_tun_write_iter(),\nwhich tries to allocate\
+  \ skb. Since the value comes from the untrusted source\nthere is no need to raise\
+  \ a warning in __alloc_pages_nodemask().\n\n[1] WARNING in __alloc_pages_nodemask+0x5f8/0x730\
+  \ mm/page_alloc.c:5014\nCall Trace:\n __alloc_pages include/linux/gfp.h:511 [inline]\n\
+  \ __alloc_pages_node include/linux/gfp.h:524 [inline]\n alloc_pages_node include/linux/gfp.h:538\
+  \ [inline]\n kmalloc_large_node+0x60/0x110 mm/slub.c:3999\n __kmalloc_node_track_caller+0x319/0x3f0\
+  \ mm/slub.c:4496\n __kmalloc_reserve net/core/skbuff.c:150 [inline]\n __alloc_skb+0x4e4/0x5a0\
+  \ net/core/skbuff.c:210\n __netdev_alloc_skb+0x70/0x400 net/core/skbuff.c:446\n\
+  \ netdev_alloc_skb include/linux/skbuff.h:2832 [inline]\n qrtr_endpoint_post+0x84/0x11b0\
+  \ net/qrtr/qrtr.c:442\n qrtr_tun_write_iter+0x11f/0x1a0 net/qrtr/tun.c:98\n call_write_iter\
+  \ include/linux/fs.h:1901 [inline]\n new_sync_write+0x426/0x650 fs/read_write.c:518\n\
+  \ vfs_write+0x791/0xa30 fs/read_write.c:605\n ksys_write+0x12d/0x250 fs/read_write.c:658\n\
+  \ do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \nReported-by: syzbot+80dccaee7c6630fa9dcf@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Pavel Skripkin <paskripkin@gmail.com>\nAcked-by: Alexander Lobakin <alobakin@pm.me>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/qrtr
+hunk_count: 1
+covered_count: 1

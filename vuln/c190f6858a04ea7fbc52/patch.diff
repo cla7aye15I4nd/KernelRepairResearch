@@ -1,0 +1,26 @@
+diff --git a/sound/usb/line6/capture.c b/sound/usb/line6/capture.c
+index 663d608c4287..970c9bdce0b2 100644
+--- a/sound/usb/line6/capture.c
++++ b/sound/usb/line6/capture.c
+@@ -286,6 +286,8 @@ int line6_create_audio_in_urbs(struct snd_line6_pcm *line6pcm)
+ 		urb->interval = LINE6_ISO_INTERVAL;
+ 		urb->error_count = 0;
+ 		urb->complete = audio_in_callback;
++		if (usb_urb_ep_type_check(urb))
++			return -EINVAL;
+ 	}
+ 
+ 	return 0;
+diff --git a/sound/usb/line6/playback.c b/sound/usb/line6/playback.c
+index 01930ce7bd75..8233c61e23f1 100644
+--- a/sound/usb/line6/playback.c
++++ b/sound/usb/line6/playback.c
+@@ -431,6 +431,8 @@ int line6_create_audio_out_urbs(struct snd_line6_pcm *line6pcm)
+ 		urb->interval = LINE6_ISO_INTERVAL;
+ 		urb->error_count = 0;
+ 		urb->complete = audio_out_callback;
++		if (usb_urb_ep_type_check(urb))
++			return -EINVAL;
+ 	}
+ 
+ 	return 0;

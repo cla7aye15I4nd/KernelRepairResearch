@@ -1,0 +1,17 @@
+diff --git a/net/qrtr/af_qrtr.c b/net/qrtr/af_qrtr.c
+index 5c2fb992803b..3a70255c8d02 100644
+--- a/net/qrtr/af_qrtr.c
++++ b/net/qrtr/af_qrtr.c
+@@ -393,10 +393,12 @@ static struct qrtr_node *qrtr_node_lookup(unsigned int nid)
+ 	struct qrtr_node *node;
+ 	unsigned long flags;
+ 
++	mutex_lock(&qrtr_node_lock);
+ 	spin_lock_irqsave(&qrtr_nodes_lock, flags);
+ 	node = radix_tree_lookup(&qrtr_nodes, nid);
+ 	node = qrtr_node_acquire(node);
+ 	spin_unlock_irqrestore(&qrtr_nodes_lock, flags);
++	mutex_unlock(&qrtr_node_lock);
+ 
+ 	return node;
+ }

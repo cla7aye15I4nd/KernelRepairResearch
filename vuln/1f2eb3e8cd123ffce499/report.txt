@@ -1,0 +1,36 @@
+================================================================================
+UBSAN: array-index-out-of-bounds in lib/zstd/common/fse_decompress.c:345:30
+index 33 is out of range for type 'FSE_DTable[1]' (aka 'unsigned int[1]')
+CPU: 0 PID: 2895 Comm: kworker/u4:7 Not tainted 6.5.0-rc7-syzkaller-00164-g382d4cd18475 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
+Workqueue: btrfs-endio btrfs_end_bio_work
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2d0 lib/dump_stack.c:106
+ ubsan_epilogue lib/ubsan.c:217 [inline]
+ __ubsan_handle_out_of_bounds+0x11c/0x150 lib/ubsan.c:348
+ FSE_decompress_wksp_body lib/zstd/common/fse_decompress.c:345 [inline]
+ FSE_decompress_wksp_body_bmi2+0x2e8/0x3790 lib/zstd/common/fse_decompress.c:370
+ FSE_decompress_wksp_bmi2+0xc7/0x3670 lib/zstd/common/fse_decompress.c:378
+ HUF_readStats_body lib/zstd/common/entropy_common.c:289 [inline]
+ HUF_readStats_body_bmi2+0xba/0x620 lib/zstd/common/entropy_common.c:340
+ HUF_readDTableX1_wksp_bmi2+0x161/0x2740 lib/zstd/decompress/huf_decompress.c:353
+ HUF_decompress1X1_DCtx_wksp_bmi2+0x4e/0xe0 lib/zstd/decompress/huf_decompress.c:1693
+ ZSTD_decodeLiteralsBlock+0x1009/0x1560 lib/zstd/decompress/zstd_decompress_block.c:195
+ ZSTD_decompressBlock_internal+0x106/0xacc0 lib/zstd/decompress/zstd_decompress_block.c:1995
+ ZSTD_decompressContinue+0x571/0x1690 lib/zstd/decompress/zstd_decompress.c:1184
+ ZSTD_decompressContinueStream lib/zstd/decompress/zstd_decompress.c:1855 [inline]
+ ZSTD_decompressStream+0x208f/0x3080 lib/zstd/decompress/zstd_decompress.c:2036
+ zstd_decompress_bio+0x22b/0x570 fs/btrfs/zstd.c:573
+ compression_decompress_bio fs/btrfs/compression.c:131 [inline]
+ btrfs_decompress_bio fs/btrfs/compression.c:930 [inline]
+ end_compressed_bio_read+0x145/0x400 fs/btrfs/compression.c:178
+ btrfs_check_read_bio+0x138f/0x19b0 fs/btrfs/bio.c:324
+ process_one_work+0x92c/0x12c0 kernel/workqueue.c:2600
+ worker_thread+0xa63/0x1210 kernel/workqueue.c:2751
+ kthread+0x2b8/0x350 kernel/kthread.c:389
+ ret_from_fork+0x2e/0x60 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+ </TASK>
+================================================================================

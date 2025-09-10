@@ -1,0 +1,56 @@
+id: eac39cba052f2e750dbe
+bug_link: https://syzkaller.appspot.com/bug?extid=eac39cba052f2e750dbe
+title: WARNING in try_queue_bulk_in/usb_submit_urb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ad899c301c880766cc709aad277991b3ab671b66
+fix_commit: 2374bf7558de915edc6ec8cb10ec3291dfab9594
+datetime: '2024-08-16T09:57:56+02:00'
+fix_commit_message: 'char: xillybus: Check USB endpoints when probing device
+
+
+  Ensure, as the driver probes the device, that all endpoints that the
+
+  driver may attempt to access exist and are of the correct type.
+
+
+  All XillyUSB devices must have a Bulk IN and Bulk OUT endpoint at
+
+  address 1. This is verified in xillyusb_setup_base_eps().
+
+
+  On top of that, a XillyUSB device may have additional Bulk OUT
+
+  endpoints. The information about these endpoints'' addresses is deduced
+
+  from a data structure (the IDT) that the driver fetches from the device
+
+  while probing it. These endpoints are checked in setup_channels().
+
+
+  A XillyUSB device never has more than one IN endpoint, as all data
+
+  towards the host is multiplexed in this single Bulk IN endpoint. This is
+
+  why setup_channels() only checks OUT endpoints.
+
+
+  Reported-by: syzbot+eac39cba052f2e750dbe@syzkaller.appspotmail.com
+
+  Cc: stable <stable@kernel.org>
+
+  Closes: https://lore.kernel.org/all/0000000000001d44a6061f7a54ee@google.com/T/
+
+  Fixes: a53d1202aef1 ("char: xillybus: Add driver for XillyUSB (Xillybus variant
+  for USB)").
+
+  Signed-off-by: Eli Billauer <eli.billauer@gmail.com>
+
+  Link: https://lore.kernel.org/r/20240816070200.50695-2-eli.billauer@gmail.com
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/char/xillybus
+hunk_count: 4
+covered_count: 3

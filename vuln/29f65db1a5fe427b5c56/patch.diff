@@ -1,0 +1,31 @@
+diff --git a/fs/bcachefs/bcachefs_format.h b/fs/bcachefs/bcachefs_format.h
+index 1bebba881d89..d801e19cb489 100644
+--- a/fs/bcachefs/bcachefs_format.h
++++ b/fs/bcachefs/bcachefs_format.h
+@@ -1555,6 +1555,12 @@ enum btree_id {
+ 	BTREE_ID_NR
+ };
+ 
++/*
++ * Maximum number of btrees that we will _ever_ have under the current scheme,
++ * where we refer to them with bitfields
++ */
++#define BTREE_ID_NR_MAX		64
++
+ static inline bool btree_id_is_alloc(enum btree_id id)
+ {
+ 	switch (id) {
+diff --git a/fs/bcachefs/recovery.c b/fs/bcachefs/recovery.c
+index 1266916ac03f..63f990f5c63a 100644
+--- a/fs/bcachefs/recovery.c
++++ b/fs/bcachefs/recovery.c
+@@ -35,6 +35,9 @@
+ 
+ void bch2_btree_lost_data(struct bch_fs *c, enum btree_id btree)
+ {
++	if (btree >= BTREE_ID_NR_MAX)
++		return;
++
+ 	u64 b = BIT_ULL(btree);
+ 
+ 	if (!(c->sb.btrees_lost_data & b)) {

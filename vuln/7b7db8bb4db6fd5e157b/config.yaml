@@ -1,0 +1,49 @@
+id: 7b7db8bb4db6fd5e157b
+bug_link: https://syzkaller.appspot.com/bug?extid=7b7db8bb4db6fd5e157b
+title: kernel BUG in kvm_read_guest_offset_cached
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d5d1cf47d17d33bc958c6f2fd6fa586e17c08509
+fix_commit: 8503fea6761de32b72585001ac94e5f81ce8ca44
+datetime: '2021-11-26T06:43:28-05:00'
+fix_commit_message: 'KVM: VMX: do not use uninitialized gfn_to_hva_cache
+
+
+  An uninitialized gfn_to_hva_cache has ghc->len == 0, which causes
+
+  the accessors to croak very loudly.  While a BUG_ON is definitely
+
+  _too_ loud and a bug on its own, there is indeed an issue of using
+
+  the caches in such a way that they could not have been initialized,
+
+  because ghc->gpa == 0 might match and thus kvm_gfn_to_hva_cache_init
+
+  would not be called.
+
+
+  For the vmcs12_cache, the solution is simply to invoke
+
+  kvm_gfn_to_hva_cache_init unconditionally: we already know
+
+  that the cache does not match the current VMCS pointer.
+
+  For the shadow_vmcs12_cache, there is no similar condition
+
+  that checks the VMCS link pointer, so invalidate the cache
+
+  on VMXON.
+
+
+  Fixes: cee66664dcd6 ("KVM: nVMX: Use a gfn_to_hva_cache for vmptrld")
+
+  Acked-by: David Woodhouse <dwmw@amazon.co.uk>
+
+  Reported-by: syzbot+7b7db8bb4db6fd5e157b@syzkaller.appspotmail.com
+
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  '
+submodule:
+- arch/x86/kvm/vmx
+hunk_count: 2
+covered_count: 1

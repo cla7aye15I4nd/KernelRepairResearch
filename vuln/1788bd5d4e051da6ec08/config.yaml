@@ -1,0 +1,54 @@
+id: 1788bd5d4e051da6ec08
+bug_link: https://syzkaller.appspot.com/bug?extid=1788bd5d4e051da6ec08
+title: 'BUG: corrupted list in p9_write_work'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 43cbcbee9938b17f77cf34f1bc12d302f456810f
+fix_commit: 728356dedeff8ef999cb436c71333ef4ac51a81c
+datetime: '2018-09-08T01:39:47+09:00'
+fix_commit_message: '9p: Add refcount to p9_req_t
+
+
+  To avoid use-after-free(s), use a refcount to keep track of the
+
+  usable references to any instantiated struct p9_req_t.
+
+
+  This commit adds p9_req_put(), p9_req_get() and p9_req_try_get() as
+
+  wrappers to kref_put(), kref_get() and kref_get_unless_zero().
+
+  These are used by the client and the transports to keep track of
+
+  valid requests'' references.
+
+
+  p9_free_req() is added back and used as callback by kref_put().
+
+
+  Add SLAB_TYPESAFE_BY_RCU as it ensures that the memory freed by
+
+  kmem_cache_free() will not be reused for another type until the rcu
+
+  synchronisation period is over, so an address gotten under rcu read
+
+  lock is safe to inc_ref() without corrupting random memory while
+
+  the lock is held.
+
+
+  Link: http://lkml.kernel.org/r/1535626341-20693-1-git-send-email-asmadeus@codewreck.org
+
+  Co-developed-by: Dominique Martinet <dominique.martinet@cea.fr>
+
+  Signed-off-by: Tomas Bortoli <tomasbortoli@gmail.com>
+
+  Reported-by: syzbot+467050c1ce275af2a5b8@syzkaller.appspotmail.com
+
+  Signed-off-by: Dominique Martinet <dominique.martinet@cea.fr>
+
+  '
+submodule:
+- include/net/9p
+- net/9p
+hunk_count: 27
+covered_count: 2

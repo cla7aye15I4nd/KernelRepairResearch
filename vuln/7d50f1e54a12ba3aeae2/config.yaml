@@ -1,0 +1,27 @@
+id: 7d50f1e54a12ba3aeae2
+bug_link: https://syzkaller.appspot.com/bug?extid=7d50f1e54a12ba3aeae2
+title: 'INFO: task hung in sync_inodes_sb (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 50d927880e0f90d5cb25e897e9d03e5edacc79a8
+fix_commit: 92c5d1b860e9581d64baca76779576c0ab0d943d
+datetime: '2023-06-12T11:31:51-07:00'
+fix_commit_message: "nilfs2: reject devices with insufficient block count\n\nThe current\
+  \ sanity check for nilfs2 geometry information lacks checks for\nthe number of segments\
+  \ stored in superblocks, so even for device images\nthat have been destructively\
+  \ truncated or have an unusually high number of\nsegments, the mount operation may\
+  \ succeed.\n\nThis causes out-of-bounds block I/O on file system block reads or\
+  \ log\nwrites to the segments, the latter in particular causing\n\"a_ops->writepages\"\
+  \ to repeatedly fail, resulting in sync_inodes_sb() to\nhang.\n\nFix this issue\
+  \ by checking the number of segments stored in the superblock\nand avoiding mounting\
+  \ devices that can cause out-of-bounds accesses.  To\neliminate the possibility\
+  \ of overflow when calculating the number of\nblocks required for the device from\
+  \ the number of segments, this also adds\na helper function to calculate the upper\
+  \ bound on the number of segments\nand inserts a check using it.\n\nLink: https://lkml.kernel.org/r/20230526021332.3431-1-konishi.ryusuke@gmail.com\n\
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>\nReported-by: syzbot+7d50f1e54a12ba3aeae2@syzkaller.appspotmail.com\n\
+  \  Link: https://syzkaller.appspot.com/bug?extid=7d50f1e54a12ba3aeae2\nTested-by:\
+  \ Ryusuke Konishi <konishi.ryusuke@gmail.com>\nCc: <stable@vger.kernel.org>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- fs/nilfs2
+hunk_count: 3
+covered_count: 0

@@ -1,0 +1,51 @@
+id: 062317ea1d0a6d5e29e7
+bug_link: https://syzkaller.appspot.com/bug?extid=062317ea1d0a6d5e29e7
+title: possible deadlock in super_lock
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6306ff39a7fcb7e9c59a00e6860b933b71a2ed3e
+fix_commit: fd1464105cb37a3b50a72c1d2902e97a71950af8
+datetime: '2023-10-28T13:29:22+02:00'
+fix_commit_message: 'fs: Avoid grabbing sb->s_umount under bdev->bd_holder_lock
+
+
+  The implementation of bdev holder operations such as fs_bdev_mark_dead()
+
+  and fs_bdev_sync() grab sb->s_umount semaphore under
+
+  bdev->bd_holder_lock. This is problematic because it leads to
+
+  disk->open_mutex -> sb->s_umount lock ordering which is counterintuitive
+
+  (usually we grab higher level (e.g. filesystem) locks first and lower
+
+  level (e.g. block layer) locks later) and indeed makes lockdep complain
+
+  about possible locking cycles whenever we open a block device while
+
+  holding sb->s_umount semaphore. Implement a function
+
+  bdev_super_lock_shared() which safely transitions from holding
+
+  bdev->bd_holder_lock to holding sb->s_umount on alive superblock without
+
+  introducing the problematic lock dependency. We use this function
+
+  fs_bdev_sync() and fs_bdev_mark_dead().
+
+
+  Signed-off-by: Jan Kara <jack@suse.cz>
+
+  Link: https://lore.kernel.org/r/20231018152924.3858-1-jack@suse.cz
+
+  Link: https://lore.kernel.org/r/20231017184823.1383356-1-hch@lst.de
+
+  Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- block
+- fs
+hunk_count: 4
+covered_count: 3

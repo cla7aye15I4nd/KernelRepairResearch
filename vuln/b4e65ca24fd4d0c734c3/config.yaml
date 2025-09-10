@@ -1,0 +1,37 @@
+id: b4e65ca24fd4d0c734c3
+bug_link: https://syzkaller.appspot.com/bug?extid=b4e65ca24fd4d0c734c3
+title: 'KMSAN: uninit-value in array_map_lookup_elem'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e478cf26c556e4ab572ab0ab2306c986901dcd61
+fix_commit: e8742081db7d01f980c6161ae1e8a1dbc1e30979
+datetime: '2024-03-28T19:00:59-07:00'
+fix_commit_message: "bpf: Mark bpf prog stack with kmsan_unposion_memory in interpreter\
+  \ mode\n\nsyzbot reported uninit memory usages during map_{lookup,delete}_elem.\n\
+  \n==========\nBUG: KMSAN: uninit-value in __dev_map_lookup_elem kernel/bpf/devmap.c:441\
+  \ [inline]\nBUG: KMSAN: uninit-value in dev_map_lookup_elem+0xf3/0x170 kernel/bpf/devmap.c:796\n\
+  __dev_map_lookup_elem kernel/bpf/devmap.c:441 [inline]\ndev_map_lookup_elem+0xf3/0x170\
+  \ kernel/bpf/devmap.c:796\n____bpf_map_lookup_elem kernel/bpf/helpers.c:42 [inline]\n\
+  bpf_map_lookup_elem+0x5c/0x80 kernel/bpf/helpers.c:38\n___bpf_prog_run+0x13fe/0xe0f0\
+  \ kernel/bpf/core.c:1997\n__bpf_prog_run256+0xb5/0xe0 kernel/bpf/core.c:2237\n==========\n\
+  \nThe reproducer should be in the interpreter mode.\n\nThe C reproducer is trying\
+  \ to run the following bpf prog:\n\n    0: (18) r0 = 0x0\n    2: (18) r1 = map[id:49]\n\
+  \    4: (b7) r8 = 16777216\n    5: (7b) *(u64 *)(r10 -8) = r8\n    6: (bf) r2 =\
+  \ r10\n    7: (07) r2 += -229\n            ^^^^^^^^^^\n\n    8: (b7) r3 = 8\n  \
+  \  9: (b7) r4 = 0\n   10: (85) call dev_map_lookup_elem#1543472\n   11: (95) exit\n\
+  \nIt is due to the \"void *key\" (r2) passed to the helper. bpf allows uninit\n\
+  stack memory access for bpf prog with the right privileges. This patch\nuses kmsan_unpoison_memory()\
+  \ to mark the stack as initialized.\n\nThis should address different syzbot reports\
+  \ on the uninit \"void *key\"\nargument during map_{lookup,delete}_elem.\n\nReported-by:\
+  \ syzbot+603bcd9b0bf1d94dbb9b@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/bpf/000000000000f9ce6d061494e694@google.com/\n\
+  Reported-by: syzbot+eb02dc7f03dce0ef39f3@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/bpf/000000000000a5c69c06147c2238@google.com/\n\
+  Reported-by: syzbot+b4e65ca24fd4d0c734c3@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/bpf/000000000000ac56fb06143b6cfa@google.com/\n\
+  Reported-by: syzbot+d2b113dc9fea5e1d2848@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/bpf/0000000000000d69b206142d1ff7@google.com/\n\
+  Reported-by: syzbot+1a3cf6f08d68868f9db3@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/bpf/0000000000006f876b061478e878@google.com/\n\
+  Tested-by: syzbot+1a3cf6f08d68868f9db3@syzkaller.appspotmail.com\nSuggested-by:\
+  \ Yonghong Song <yonghong.song@linux.dev>\nSuggested-by: Alexei Starovoitov <ast@kernel.org>\n\
+  Signed-off-by: Martin KaFai Lau <martin.lau@kernel.org>\nLink: https://lore.kernel.org/r/20240328185801.1843078-1-martin.lau@linux.dev\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 2
+covered_count: 2

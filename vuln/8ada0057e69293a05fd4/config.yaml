@@ -1,0 +1,57 @@
+id: 8ada0057e69293a05fd4
+bug_link: https://syzkaller.appspot.com/bug?extid=8ada0057e69293a05fd4
+title: 'WARNING: refcount bug in xp_put_pool'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 999f6631866e9ea81add935b9c6ebaab0579d259
+fix_commit: 85c2c79a07302fe68a1ad5cc449458cc559e314d
+datetime: '2023-08-09T20:08:04-07:00'
+fix_commit_message: 'xsk: fix refcount underflow in error path
+
+
+  Fix a refcount underflow problem reported by syzbot that can happen
+
+  when a system is running out of memory. If xp_alloc_tx_descs() fails,
+
+  and it can only fail due to not having enough memory, then the error
+
+  path is triggered. In this error path, the refcount of the pool is
+
+  decremented as it has incremented before. However, the reference to
+
+  the pool in the socket was not nulled. This means that when the socket
+
+  is closed later, the socket teardown logic will think that there is a
+
+  pool attached to the socket and try to decrease the refcount again,
+
+  leading to a refcount underflow.
+
+
+  I chose this fix as it involved adding just a single line. Another
+
+  option would have been to move xp_get_pool() and the assignment of
+
+  xs->pool to after the if-statement and using xs_umem->pool instead of
+
+  xs->pool in the whole if-statement resulting in somewhat simpler code,
+
+  but this would have led to much more churn in the code base perhaps
+
+  making it harder to backport.
+
+
+  Fixes: ba3beec2ec1d ("xsk: Fix possible crash when multiple sockets are created")
+
+  Reported-by: syzbot+8ada0057e69293a05fd4@syzkaller.appspotmail.com
+
+  Signed-off-by: Magnus Karlsson <magnus.karlsson@intel.com>
+
+  Link: https://lore.kernel.org/r/20230809142843.13944-1-magnus.karlsson@gmail.com
+
+  Signed-off-by: Martin KaFai Lau <martin.lau@kernel.org>
+
+  '
+submodule:
+- net/xdp
+hunk_count: 1
+covered_count: 0

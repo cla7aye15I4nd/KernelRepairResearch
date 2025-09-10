@@ -1,0 +1,50 @@
+gfs2: fsid=syz:syz.0: first mount done, others may mount
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 6099 at fs/gfs2/rgrp.c:2630 gfs2_check_blk_type+0x378/0x57c
+Modules linked in:
+CPU: 1 PID: 6099 Comm: syz-executor119 Not tainted 6.7.0-rc6-syzkaller-gaafe7ad77b91 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/10/2023
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : gfs2_check_blk_type+0x378/0x57c
+lr : rgrp_contains_block fs/gfs2/rgrp.h:89 [inline]
+lr : gfs2_rbm_from_block fs/gfs2/rgrp.c:279 [inline]
+lr : gfs2_check_blk_type+0x2f4/0x57c fs/gfs2/rgrp.c:2629
+sp : ffff8000970c7680
+x29: ffff8000970c7740 x28: ffff0000d1b08000 x27: dfff800000000000
+x26: ffff700012e18ed4 x25: ffff8000970c76c0 x24: 0000000000000013
+x23: ffff0000d1b08034 x22: 00000000fffffff9 x21: 0000000000000012
+x20: 1fffe0001a361006 x19: 1fffe0001a361005 x18: 1fffe0003682a5ce
+x17: ffff80008e4ed000 x16: ffff8000802ef928 x15: 0000000000000001
+x14: 1fffe0001bd903e8 x13: 0000000000000000 x12: ffff8000802efce8
+x11: ffff80008db89461 x10: 0000000000ff0100 x9 : 0000000000000000
+x8 : ffff0000d3ec1e00 x7 : ffff80008028df50 x6 : 0000000000000000
+x5 : 0000000000000001 x4 : 0000000000000001 x3 : ffff800082462f0c
+x2 : 000000000000000c x1 : 0000000000000012 x0 : 0000000000000013
+Call trace:
+ gfs2_check_blk_type+0x378/0x57c
+ gfs2_inode_lookup+0x90c/0xa48 fs/gfs2/inode.c:178
+ gfs2_lookup_by_inum+0x60/0xf8 fs/gfs2/inode.c:251
+ gfs2_get_dentry fs/gfs2/export.c:139 [inline]
+ gfs2_fh_to_dentry+0x128/0x1f4 fs/gfs2/export.c:162
+ exportfs_decode_fh_raw+0x128/0x4ac fs/exportfs/expfs.c:444
+ exportfs_decode_fh+0x50/0x80 fs/exportfs/expfs.c:584
+ do_handle_to_path fs/fhandle.c:155 [inline]
+ handle_to_path fs/fhandle.c:210 [inline]
+ do_handle_open+0x534/0x718 fs/fhandle.c:226
+ __do_sys_open_by_handle_at fs/fhandle.c:267 [inline]
+ __se_sys_open_by_handle_at fs/fhandle.c:258 [inline]
+ __arm64_sys_open_by_handle_at+0x80/0x94 fs/fhandle.c:258
+ __invoke_syscall arch/arm64/kernel/syscall.c:37 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:51
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:136
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:155
+ el0_svc+0x54/0x158 arch/arm64/kernel/entry-common.c:678
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:696
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:595
+irq event stamp: 92282
+hardirqs last  enabled at (92281): [<ffff80008028dff0>] raw_spin_rq_unlock_irq kernel/sched/sched.h:1361 [inline]
+hardirqs last  enabled at (92281): [<ffff80008028dff0>] finish_lock_switch+0xbc/0x1e4 kernel/sched/core.c:5130
+hardirqs last disabled at (92282): [<ffff80008a826c2c>] el1_dbg+0x24/0x80 arch/arm64/kernel/entry-common.c:436
+softirqs last  enabled at (92022): [<ffff80008003144c>] local_bh_enable+0x10/0x34 include/linux/bottom_half.h:32
+softirqs last disabled at (92020): [<ffff800080031418>] local_bh_disable+0x10/0x34 include/linux/bottom_half.h:19
+---[ end trace 0000000000000000 ]---

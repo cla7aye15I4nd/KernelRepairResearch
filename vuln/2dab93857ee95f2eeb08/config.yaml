@@ -1,0 +1,45 @@
+id: 2dab93857ee95f2eeb08
+bug_link: https://syzkaller.appspot.com/bug?extid=2dab93857ee95f2eeb08
+title: 'KASAN: slab-use-after-free Read in hugetlb_fault (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2a058ab3286d6475b2082b90c2d2182d2fea4b39
+fix_commit: 98b74bb4d7e96b4da5ef3126511febe55b76b807
+datetime: '2024-09-17T00:58:04-07:00'
+fix_commit_message: 'mm/hugetlb.c: fix UAF of vma in hugetlb fault pathway
+
+
+  Syzbot reports a UAF in hugetlb_fault().  This happens because
+
+  vmf_anon_prepare() could drop the per-VMA lock and allow the current VMA
+
+  to be freed before hugetlb_vma_unlock_read() is called.
+
+
+  We can fix this by using a modified version of vmf_anon_prepare() that
+
+  doesn''t release the VMA lock on failure, and then release it ourselves
+
+  after hugetlb_vma_unlock_read().
+
+
+  Link: https://lkml.kernel.org/r/20240914194243.245-2-vishal.moola@gmail.com
+
+  Fixes: 9acad7ba3e25 ("hugetlb: use vmf_anon_prepare() instead of anon_vma_prepare()")
+
+  Reported-by: syzbot+2dab93857ee95f2eeb08@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/linux-mm/00000000000067c20b06219fbc26@google.com/
+
+  Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
+
+  Cc: Muchun Song <muchun.song@linux.dev>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 4
+covered_count: 1

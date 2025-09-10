@@ -1,0 +1,47 @@
+id: 9e707f43f54a997a3d24
+bug_link: https://syzkaller.appspot.com/bug?extid=9e707f43f54a997a3d24
+title: 'KASAN: slab-use-after-free Write in nilfs_inode_sub_blocks'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 04fc7816089c5a32c29a04ec94b998e219dfb946
+fix_commit: 9b5a04ac3ad9898c4745cba46ea26de74ba56a8e
+datetime: '2023-05-17T15:24:34-07:00'
+fix_commit_message: 'nilfs2: fix use-after-free bug of nilfs_root in nilfs_evict_inode()
+
+
+  During unmount process of nilfs2, nothing holds nilfs_root structure after
+
+  nilfs2 detaches its writer in nilfs_detach_log_writer().  However, since
+
+  nilfs_evict_inode() uses nilfs_root for some cleanup operations, it may
+
+  cause use-after-free read if inodes are left in "garbage_list" and
+
+  released by nilfs_dispose_list() at the end of nilfs_detach_log_writer().
+
+
+  Fix this issue by modifying nilfs_evict_inode() to only clear inode
+
+  without additional metadata changes that use nilfs_root if the file system
+
+  is degraded to read-only or the writer is detached.
+
+
+  Link: https://lkml.kernel.org/r/20230509152956.8313-1-konishi.ryusuke@gmail.com
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+78d4495558999f55d1da@syzkaller.appspotmail.com
+
+  Closes: https://lkml.kernel.org/r/00000000000099e5ac05fb1c3b85@google.com
+
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 2
+covered_count: 2

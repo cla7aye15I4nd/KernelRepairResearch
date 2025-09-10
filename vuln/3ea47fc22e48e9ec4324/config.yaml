@@ -1,0 +1,44 @@
+id: 3ea47fc22e48e9ec4324
+bug_link: https://syzkaller.appspot.com/bug?extid=3ea47fc22e48e9ec4324
+title: upstream build error (20)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b81fac906a8f9e682e513ddd95697ec7a20878d4
+fix_commit: 0a9567ac5e6a40cdd9c8cd15b19a62a15250f450
+datetime: '2023-06-16T22:23:27+02:00'
+fix_commit_message: 'x86/mem_encrypt: Unbreak the AMD_MEM_ENCRYPT=n build
+
+
+  Moving mem_encrypt_init() broke the AMD_MEM_ENCRYPT=n because the
+
+  declaration of that function was under #ifdef CONFIG_AMD_MEM_ENCRYPT and
+
+  the obvious placement for the inline stub was the #else path.
+
+
+  This is a leftover of commit 20f07a044a76 ("x86/sev: Move common memory
+
+  encryption code to mem_encrypt.c") which made mem_encrypt_init() depend on
+
+  X86_MEM_ENCRYPT without moving the prototype. That did not fail back then
+
+  because there was no stub inline as the core init code had a weak function.
+
+
+  Move both the declaration and the stub out of the CONFIG_AMD_MEM_ENCRYPT
+
+  section and guard it with CONFIG_X86_MEM_ENCRYPT.
+
+
+  Fixes: 439e17576eb4 ("init, x86: Move mem_encrypt_init() into arch_cpu_finalize_init()")
+
+  Reported-by: kernel test robot <lkp@intel.com>
+
+  Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+  Closes: https://lore.kernel.org/oe-kbuild-all/202306170247.eQtCJPE8-lkp@intel.com/
+
+  '
+submodule:
+- arch/x86/include/asm
+hunk_count: 3
+covered_count: 2

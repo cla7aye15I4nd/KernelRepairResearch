@@ -1,0 +1,19 @@
+id: 898115bc6d7140437215
+bug_link: https://syzkaller.appspot.com/bug?extid=898115bc6d7140437215
+title: 'KASAN: slab-out-of-bounds Read in __xfs_xattr_put_listent'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2ee8333529857a702475ce36d3af3ecbbcf5af5a
+fix_commit: dd07bb8b6baf2389caff221f043d9188ce6bab8c
+datetime: '2023-02-10T09:06:06-08:00'
+fix_commit_message: "xfs: revert commit 8954c44ff477\n\nThe name passed into __xfs_xattr_put_listent\
+  \ is exactly namelen bytes\nlong and not null-terminated.  Passing namelen+1 to\
+  \ the strscpy function\n\n    strscpy(offset, (char *)name, namelen + 1);\n\nis\
+  \ therefore wrong.  Go back to the old code, which works fine because\nstrncpy won't\
+  \ find a null in @name and stops after namelen bytes.  It\nreally could be a memcpy\
+  \ call, but it worked for years.\n\nReported-by: syzbot+898115bc6d7140437215@syzkaller.appspotmail.com\n\
+  Fixes: 8954c44ff477 (\"xfs: use strscpy() to instead of strncpy()\")\nSigned-off-by:\
+  \ Darrick J. Wong <djwong@kernel.org>\n"
+submodule:
+- fs/xfs
+hunk_count: 1
+covered_count: 1

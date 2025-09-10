@@ -1,0 +1,39 @@
+id: 459a5dce0b4cb70fd076
+bug_link: https://syzkaller.appspot.com/bug?extid=459a5dce0b4cb70fd076
+title: general protection fault in strncasecmp
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bbf5c979011a099af5dc76498918ed7df445635b
+fix_commit: 92e3cc91d8f51ce64a8b7c696377180953dd316e
+datetime: '2020-10-16T14:04:59+01:00'
+fix_commit_message: "afs: Fix rapid cell addition/removal by not using RCU on cells\
+  \ tree\n\nThere are a number of problems that are being seen by the rapidly mounting\n\
+  and unmounting an afs dynamic root with an explicit cell and volume\nspecified (which\
+  \ should probably be rejected, but that's a separate issue):\n\nWhat the tests are\
+  \ doing is to look up/create a cell record for the name\ngiven and then tear it\
+  \ down again without actually using it to try to talk\nto a server.  This is repeated\
+  \ endlessly, very fast, and the new cell\ncollides with the old one if it's not\
+  \ quick enough to reuse it.\n\nIt appears (as suggested by Hillf Danton) that the\
+  \ search through the RB\ntree under a read_seqbegin_or_lock() under RCU conditions\
+  \ isn't safe and\nthat it's not blocking the write_seqlock(), despite taking two\
+  \ passes at\nit.  He suggested that the code should take a ref on the cell it's\n\
+  attempting to look at - but this shouldn't be necessary until we've\ncompared the\
+  \ cell names.  It's possible that I'm missing a barrier\nsomewhere.\n\nHowever,\
+  \ using an RCU search for this is overkill, really - we only need to\naccess the\
+  \ cell name in a few places, and they're places where we're may\nend up sleeping\
+  \ anyway.\n\nFix this by switching to an R/W semaphore instead.\n\nAdditionally,\
+  \ draw the down_read() call inside the function (renamed to\nafs_find_cell()) since\
+  \ all the callers were taking the RCU read lock (or\nshould've been[*]).\n\n[*]\
+  \ afs_probe_cell_name() should have been, but that doesn't appear to be\ninvolved\
+  \ in the bug reports.\n\nThe symptoms of this look like:\n\n\tgeneral protection\
+  \ fault, probably for non-canonical address 0xf27d208691691fdb: 0000 [#1] PREEMPT\
+  \ SMP KASAN\n\tKASAN: maybe wild-memory-access in range [0x93e924348b48fed8-0x93e924348b48fedf]\n\
+  \t...\n\tRIP: 0010:strncasecmp lib/string.c:52 [inline]\n\tRIP: 0010:strncasecmp+0x5f/0x240\
+  \ lib/string.c:43\n\t afs_lookup_cell_rcu+0x313/0x720 fs/afs/cell.c:88\n\t afs_lookup_cell+0x2ee/0x1440\
+  \ fs/afs/cell.c:249\n\t afs_parse_source fs/afs/super.c:290 [inline]\n\t...\n\n\
+  Fixes: 989782dcdc91 (\"afs: Overhaul cell database management\")\nReported-by: syzbot+459a5dce0b4cb70fd076@syzkaller.appspotmail.com\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\ncc: Hillf Danton <hdanton@sina.com>\n\
+  cc: syzkaller-bugs@googlegroups.com\n"
+submodule:
+- fs/afs
+hunk_count: 18
+covered_count: 5

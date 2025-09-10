@@ -1,0 +1,68 @@
+loop0: detected capacity change from 0 to 32768
+bcachefs (loop0): mounting version 1.7: mi_btree_bitmap opts=metadata_checksum=crc64,data_checksum=none,nojournal_transaction_names
+bcachefs (loop0): recovering from clean shutdown, journal seq 10
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/backpointers.h:75!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 PID: 5095 Comm: syz-executor372 Not tainted 6.9.0-rc6-next-20240503-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+RIP: 0010:bucket_pos_to_bp fs/bcachefs/backpointers.h:75 [inline]
+RIP: 0010:bch2_backpointer_invalid+0x9cc/0x9d0 fs/bcachefs/backpointers.c:65
+Code: fc ff ff e8 f6 19 8d fd 48 c7 c7 40 7f 91 8e 48 89 de e8 87 e9 e2 00 e9 fc f7 ff ff e8 dd 19 8d fd 90 0f 0b e8 d5 19 8d fd 90 <0f> 0b 66 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 53 e8
+RSP: 0018:ffffc9000344e600 EFLAGS: 00010293
+RAX: ffffffff8408fc0b RBX: 00000000002d3cb6 RCX: ffff88807db18000
+RDX: 0000000000000000 RSI: 00000000002d3cb6 RDI: 000000000000001b
+RBP: 000000b4f2d90000 R08: ffffffff8408f5aa R09: 1ffffffff25f54b0
+R10: dffffc0000000000 R11: fffffbfff25f54b1 R12: 1ffff92000689d58
+R13: ffffc9000344eaa0 R14: ffff8880747000bb R15: 000000000000001b
+FS:  0000555571535380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000561aa32c7360 CR3: 0000000077a0a000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_btree_node_read_done+0x3e7d/0x5ed0 fs/bcachefs/btree_io.c:1234
+ btree_node_read_work+0x665/0x1300 fs/bcachefs/btree_io.c:1345
+ bch2_btree_node_read+0x2637/0x2c80 fs/bcachefs/btree_io.c:1730
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1769 [inline]
+ bch2_btree_root_read+0x61e/0x970 fs/bcachefs/btree_io.c:1793
+ read_btree_roots+0x22d/0x7b0 fs/bcachefs/recovery.c:472
+ bch2_fs_recovery+0x2334/0x36e0 fs/bcachefs/recovery.c:800
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1030
+ bch2_fs_open+0xa8d/0xdf0 fs/bcachefs/super.c:2105
+ bch2_mount+0x71d/0x1320 fs/bcachefs/fs.c:1917
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2a0 fs/super.c:1780
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3352
+ do_mount fs/namespace.c:3692 [inline]
+ __do_sys_mount fs/namespace.c:3898 [inline]
+ __se_sys_mount+0x2d9/0x3c0 fs/namespace.c:3875
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f754d2be98a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fffdfc823d8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007fffdfc823f0 RCX: 00007f754d2be98a
+RDX: 0000000020011a00 RSI: 0000000020011a40 RDI: 00007fffdfc823f0
+RBP: 0000000000000004 R08: 00007fffdfc82430 R09: 00000000000119f7
+R10: 0000000002000000 R11: 0000000000000282 R12: 0000000002000000
+R13: 00007fffdfc82430 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bucket_pos_to_bp fs/bcachefs/backpointers.h:75 [inline]
+RIP: 0010:bch2_backpointer_invalid+0x9cc/0x9d0 fs/bcachefs/backpointers.c:65
+Code: fc ff ff e8 f6 19 8d fd 48 c7 c7 40 7f 91 8e 48 89 de e8 87 e9 e2 00 e9 fc f7 ff ff e8 dd 19 8d fd 90 0f 0b e8 d5 19 8d fd 90 <0f> 0b 66 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 53 e8
+RSP: 0018:ffffc9000344e600 EFLAGS: 00010293
+RAX: ffffffff8408fc0b RBX: 00000000002d3cb6 RCX: ffff88807db18000
+RDX: 0000000000000000 RSI: 00000000002d3cb6 RDI: 000000000000001b
+RBP: 000000b4f2d90000 R08: ffffffff8408f5aa R09: 1ffffffff25f54b0
+R10: dffffc0000000000 R11: fffffbfff25f54b1 R12: 1ffff92000689d58
+R13: ffffc9000344eaa0 R14: ffff8880747000bb R15: 000000000000001b
+FS:  0000555571535380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000561aa3246638 CR3: 0000000077a0a000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

@@ -1,0 +1,27 @@
+id: 8a5fc6416c175cecea34
+bug_link: https://syzkaller.appspot.com/bug?extid=8a5fc6416c175cecea34
+title: general protection fault in gfs2_evict_inode (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e0fcc9c68d1147ca33159d57332b02ca8bac6ab9
+fix_commit: 504a10d9e46bc37b23d0a1ae2f28973c8516e636
+datetime: '2023-05-10T17:15:18+02:00'
+fix_commit_message: "gfs2: Don't deref jdesc in evict\n\nOn corrupt gfs2 file systems\
+  \ the evict code can try to reference the\njournal descriptor structure, jdesc,\
+  \ after it has been freed and set to\nNULL. The sequence of events is:\n\ninit_journal()\n\
+  ...\nfail_jindex:\n   gfs2_jindex_free(sdp); <------frees journals, sets jdesc =\
+  \ NULL\n      if (gfs2_holder_initialized(&ji_gh))\n         gfs2_glock_dq_uninit(&ji_gh);\n\
+  fail:\n   iput(sdp->sd_jindex); <--references jdesc in evict_linked_inode\n    \
+  \  evict()\n         gfs2_evict_inode()\n            evict_linked_inode()\n    \
+  \           ret = gfs2_trans_begin(sdp, 0, sdp->sd_jdesc->jd_blocks);\n<------references\
+  \ the now freed/zeroed sd_jdesc pointer.\n\nThe call to gfs2_trans_begin is done\
+  \ because the truncate_inode_pages\ncall can cause gfs2 events that require a transaction,\
+  \ such as removing\njournaled data (jdata) blocks from the journal.\n\nThis patch\
+  \ fixes the problem by adding a check for sdp->sd_jdesc to\nfunction gfs2_evict_inode.\
+  \ In theory, this should only happen to corrupt\ngfs2 file systems, when gfs2 detects\
+  \ the problem, reports it, then tries\nto evict all the system inodes it has read\
+  \ in up to that point.\n\nReported-by: Yang Lan <lanyang0908@gmail.com>\nSigned-off-by:\
+  \ Bob Peterson <rpeterso@redhat.com>\nSigned-off-by: Andreas Gruenbacher <agruenba@redhat.com>\n"
+submodule:
+- fs/gfs2
+hunk_count: 1
+covered_count: 1

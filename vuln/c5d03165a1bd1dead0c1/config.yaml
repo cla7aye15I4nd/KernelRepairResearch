@@ -1,0 +1,33 @@
+id: c5d03165a1bd1dead0c1
+bug_link: https://syzkaller.appspot.com/bug?extid=c5d03165a1bd1dead0c1
+title: 'KCSAN: data-race in taskstats_exit / taskstats_exit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 219d54332a09e8d8741c1e1982f5eae56099de85
+fix_commit: 0b8d616fb5a8ffa307b1d3af37f55c15dae14f28
+datetime: '2019-12-04T15:18:39+01:00'
+fix_commit_message: "taskstats: fix data-race\n\nWhen assiging and testing taskstats\
+  \ in taskstats_exit() there's a race\nwhen setting up and reading sig->stats when\
+  \ a thread-group with more\nthan one thread exits:\n\nwrite to 0xffff8881157bbe10\
+  \ of 8 bytes by task 7951 on cpu 0:\n taskstats_tgid_alloc kernel/taskstats.c:567\
+  \ [inline]\n taskstats_exit+0x6b7/0x717 kernel/taskstats.c:596\n do_exit+0x2c2/0x18e0\
+  \ kernel/exit.c:864\n do_group_exit+0xb4/0x1c0 kernel/exit.c:983\n get_signal+0x2a2/0x1320\
+  \ kernel/signal.c:2734\n do_signal+0x3b/0xc00 arch/x86/kernel/signal.c:815\n exit_to_usermode_loop+0x250/0x2c0\
+  \ arch/x86/entry/common.c:159\n prepare_exit_to_usermode arch/x86/entry/common.c:194\
+  \ [inline]\n syscall_return_slowpath arch/x86/entry/common.c:274 [inline]\n do_syscall_64+0x2d7/0x2f0\
+  \ arch/x86/entry/common.c:299\n entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nread\
+  \ to 0xffff8881157bbe10 of 8 bytes by task 7949 on cpu 1:\n taskstats_tgid_alloc\
+  \ kernel/taskstats.c:559 [inline]\n taskstats_exit+0xb2/0x717 kernel/taskstats.c:596\n\
+  \ do_exit+0x2c2/0x18e0 kernel/exit.c:864\n do_group_exit+0xb4/0x1c0 kernel/exit.c:983\n\
+  \ __do_sys_exit_group kernel/exit.c:994 [inline]\n __se_sys_exit_group kernel/exit.c:992\
+  \ [inline]\n __x64_sys_exit_group+0x2e/0x30 kernel/exit.c:992\n do_syscall_64+0xcf/0x2f0\
+  \ arch/x86/entry/common.c:296\n entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nFix\
+  \ this by using smp_load_acquire() and smp_store_release().\n\nReported-by: syzbot+c5d03165a1bd1dead0c1@syzkaller.appspotmail.com\n\
+  Fixes: 34ec12349c8a (\"taskstats: cleanup ->signal->stats allocation\")\nCc: stable@vger.kernel.org\n\
+  Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>\nAcked-by: Marco\
+  \ Elver <elver@google.com>\nReviewed-by: Will Deacon <will@kernel.org>\nReviewed-by:\
+  \ Andrea Parri <parri.andrea@gmail.com>\nReviewed-by: Dmitry Vyukov <dvyukov@google.com>\n\
+  Link: https://lore.kernel.org/r/20191009114809.8643-1-christian.brauner@ubuntu.com\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 1

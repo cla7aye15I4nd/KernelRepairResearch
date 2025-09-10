@@ -1,0 +1,54 @@
+id: 50bcc3c92dc2516c4ca7
+bug_link: https://syzkaller.appspot.com/bug?extid=50bcc3c92dc2516c4ca7
+title: WARNING in __replicas_deltas_realloc
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5d9667d1d6eaca3f6cd3c63cd6a0f309147c7f5c
+fix_commit: 1d16c605cc55ef26f0c65b362665a6c99080ccbc
+datetime: '2024-07-14T19:00:13-04:00'
+fix_commit_message: 'bcachefs: Disk space accounting rewrite
+
+
+  Main part of the disk accounting rewrite.
+
+
+  This is a wholesale rewrite of the existing disk space accounting, which
+
+  relies on percepu counters that are sharded by journal buffer, and
+
+  rolled up and added to each journal write.
+
+
+  With the new scheme, every set of counters is a distinct key in the
+
+  accounting btree; this fixes scaling limitations of the old scheme,
+
+  where counters took up space in each journal entry and required multiple
+
+  percpu counters.
+
+
+  Now, in memory accounting requires a single set of percpu counters - not
+
+  multiple for each in flight journal buffer - and in the future we''ll
+
+  probably also have counters that don''t use in memory percpu counters,
+
+  they''re not strictly required.
+
+
+  An accounting update is now a normal btree update, using the btree write
+
+  buffer path. At transaction commit time, we apply accounting updates to
+
+  the in memory counters, which are percpu counters indexed in an
+
+  eytzinger tree by the accounting key.
+
+
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>
+
+  '
+submodule:
+- fs/bcachefs
+hunk_count: 86
+covered_count: 12

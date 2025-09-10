@@ -1,0 +1,29 @@
+id: 9ec037722d2603a9f52e
+bug_link: https://syzkaller.appspot.com/bug?extid=9ec037722d2603a9f52e
+title: 'KASAN: use-after-free Read in cipso_v4_genopt'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 67eb211487f0c993d9f402d1c196ef159fd6a3b5
+fix_commit: ad5d07f4a9cd671233ae20983848874731102c08
+datetime: '2021-03-04T15:26:57-08:00'
+fix_commit_message: "cipso,calipso: resolve a number of problems with the DOI refcounts\n\
+  \nThe current CIPSO and CALIPSO refcounting scheme for the DOI\ndefinitions is a\
+  \ bit flawed in that we:\n\n1. Don't correctly match gets/puts in netlbl_cipsov4_list().\n\
+  2. Decrement the refcount on each attempt to remove the DOI from the\n   DOI list,\
+  \ only removing it from the list once the refcount drops\n   to zero.\n\nThis patch\
+  \ fixes these problems by adding the missing \"puts\" to\nnetlbl_cipsov4_list()\
+  \ and introduces a more conventional, i.e.\nnot-buggy, refcounting mechanism to\
+  \ the DOI definitions.  Upon the\naddition of a DOI to the DOI list, it is initialized\
+  \ with a refcount\nof one, removing a DOI from the list removes it from the list\
+  \ and\ndrops the refcount by one; \"gets\" and \"puts\" behave as expected with\n\
+  respect to refcounts, increasing and decreasing the DOI's refcount by\none.\n\n\
+  Fixes: b1edeb102397 (\"netlabel: Replace protocol/NetLabel linking with refrerence\
+  \ counts\")\nFixes: d7cce01504a0 (\"netlabel: Add support for removing a CALIPSO\
+  \ DOI.\")\nReported-by: syzbot+9ec037722d2603a9f52e@syzkaller.appspotmail.com\n\
+  Signed-off-by: Paul Moore <paul@paul-moore.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/ipv4
+- net/ipv6
+- net/netlabel
+hunk_count: 7
+covered_count: 1

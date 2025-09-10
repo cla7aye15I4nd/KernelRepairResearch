@@ -1,0 +1,53 @@
+id: e5bd32b79413e86f389e
+bug_link: https://syzkaller.appspot.com/bug?extid=e5bd32b79413e86f389e
+title: 'KCSAN: data-race in pcpu_balance_workfn / pcpu_nr_pages (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 603cb4aa09a14157ba412ba4db9dffebb79eb598
+fix_commit: b112a4e0a1af5745f987a1692553bf02c890babc
+datetime: '2025-07-13T16:38:21-07:00'
+fix_commit_message: 'mm/percpu: prevent concurrency problem for pcpu_nr_populated
+  read with spin lock
+
+
+  pcpu_nr_pages() reads pcpu_nr_populated without any protection, which
+
+  causes a data race between read/write.
+
+
+  However, since this is an intended race, we should add a data_race
+
+  annotation instead of add a spin lock.
+
+
+  [akpm@linux-foundation.org: move pcpu_nr_units multiplication outside data_race(),
+  per Vlastimil]
+
+  Link: https://lkml.kernel.org/r/20250703065600.132221-1-aha310510@gmail.com
+
+  Fixes: 7e8a6304d541 ("/proc/meminfo: add percpu populated pages count")
+
+  Signed-off-by: Jeongjun Park <aha310510@gmail.com>
+
+  Reported-by: syzbot+e5bd32b79413e86f389e@syzkaller.appspotmail.com
+
+  Suggested-by: Shakeel Butt <shakeel.butt@linux.dev>
+
+  Cc: Christoph Lameter (Ampere) <cl@gentwo.org>
+
+  Cc: David Rientjes <rientjes@google.com>
+
+  Cc: Dennis Zhou <dennis@kernel.org>
+
+  Cc: Roman Gushchin <roman.gushchin@linux.dev>
+
+  Cc: Tejun Heo <tj@kernel.org>
+
+  Cc: Vlastimil Babka <vbabka@suse.cz>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,50 @@
+id: e8b902c3c3fadf0a9dba
+bug_link: https://syzkaller.appspot.com/bug?extid=e8b902c3c3fadf0a9dba
+title: 'BUG: spinlock bad magic in tun_do_read'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9d6b4bfb59a036d0da6406295481cdb3a5f4ffba
+fix_commit: b196d88aba8ac72b775137854121097f4c4c6862
+datetime: '2018-05-14T14:47:08-04:00'
+fix_commit_message: 'tun: fix use after free for ptr_ring
+
+
+  We used to initialize ptr_ring during TUNSETIFF, this is because its
+
+  size depends on the tx_queue_len of netdevice. And we try to clean it
+
+  up when socket were detached from netdevice. A race were spotted when
+
+  trying to do uninit during a read which will lead a use after free for
+
+  pointer ring. Solving this by always initialize a zero size ptr_ring
+
+  in open() and do resizing during TUNSETIFF, and then we can safely do
+
+  cleanup during close(). With this, there''s no need for the workaround
+
+  that was introduced by commit 4df0bfc79904 ("tun: fix a memory leak
+
+  for tfile->tx_array").
+
+
+  Reported-by: syzbot+e8b902c3c3fadf0a9dba@syzkaller.appspotmail.com
+
+  Cc: Eric Dumazet <eric.dumazet@gmail.com>
+
+  Cc: Cong Wang <xiyou.wangcong@gmail.com>
+
+  Cc: Michael S. Tsirkin <mst@redhat.com>
+
+  Fixes: 1576d9860599 ("tun: switch to use skb array for tx")
+
+  Signed-off-by: Jason Wang <jasowang@redhat.com>
+
+  Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- drivers/net
+hunk_count: 7
+covered_count: 0

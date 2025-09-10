@@ -1,0 +1,29 @@
+id: 6a8a0d93c91e8fbf2e80
+bug_link: https://syzkaller.appspot.com/bug?extid=6a8a0d93c91e8fbf2e80
+title: possible deadlock in loop_probe
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 14f97f0b8e2b9950c028d0cb7311ffe26a3cc1c0
+fix_commit: 962bf783ef65d15b0f8ca9c33342cf3b20bf0d2e
+datetime: '2021-07-16T00:49:17+02:00'
+fix_commit_message: "mtd: break circular locks in register_mtd_blktrans\n\nSyzbot\
+  \ reported a circular locking dependency:\nhttps://syzkaller.appspot.com/bug?id=7bd106c28e846d1023d4ca915718b1a0905444cb\n\
+  \nThis happens because of the following lock dependencies:\n\n1. loop_ctl_mutex\
+  \ -> bdev->bd_mutex (when loop_control_ioctl calls\nloop_remove, which then calls\
+  \ del_gendisk; this also happens in\nloop_exit which eventually calls loop_remove)\n\
+  \n2. bdev->bd_mutex -> mtd_table_mutex (when blkdev_get_by_dev calls\n__blkdev_get,\
+  \ which then calls blktrans_open)\n\n3. mtd_table_mutex -> major_names_lock (when\
+  \ register_mtd_blktrans\ncalls __register_blkdev)\n\n4. major_names_lock -> loop_ctl_mutex\
+  \ (when blk_request_module calls\nloop_probe)\n\nHence there's an overall dependency\
+  \ of:\n\nloop_ctl_mutex   ----------> bdev->bd_mutex\n      ^                  \
+  \          |\n      |                            |\n      |                    \
+  \        v\nmajor_names_lock <---------  mtd_table_mutex\n\nWe can break this circular\
+  \ dependency by holding mtd_table_mutex only\nfor the required critical section\
+  \ in register_mtd_blktrans. This\navoids the mtd_table_mutex -> major_names_lock\
+  \ dependency.\n\nReported-and-tested-by: syzbot+6a8a0d93c91e8fbf2e80@syzkaller.appspotmail.com\n\
+  Co-developed-by: Christoph Hellwig <hch@lst.de>\nSigned-off-by: Christoph Hellwig\
+  \ <hch@lst.de>\nSigned-off-by: Desmond Cheong Zhi Xi <desmondcheongzx@gmail.com>\n\
+  Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>\nLink: https://lore.kernel.org/linux-mtd/20210617160904.570111-1-desmondcheongzx@gmail.com\n"
+submodule:
+- drivers/mtd
+hunk_count: 2
+covered_count: 2

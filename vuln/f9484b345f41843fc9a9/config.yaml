@@ -1,0 +1,25 @@
+id: f9484b345f41843fc9a9
+bug_link: https://syzkaller.appspot.com/bug?extid=f9484b345f41843fc9a9
+title: 'WARNING: ODEBUG bug in netdev_run_todo'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 44c026a73be8038f03dbdeef028b642880cf1511
+fix_commit: abac3ac97fe8734b620e7322a116450d7f90aa43
+datetime: '2023-05-26T23:14:49+02:00'
+fix_commit_message: "batman-adv: Broken sync while rescheduling delayed work\n\nSyzkaller\
+  \ got a lot of crashes like:\nKASAN: use-after-free Write in *_timers*\n\nAll of\
+  \ these crashes point to the same memory area:\n\nThe buggy address belongs to the\
+  \ object at ffff88801f870000\n which belongs to the cache kmalloc-8k of size 8192\n\
+  The buggy address is located 5320 bytes inside of\n 8192-byte region [ffff88801f870000,\
+  \ ffff88801f872000)\n\nThis area belongs to :\n        batadv_priv->batadv_priv_dat->delayed_work->timer_list\n\
+  \nThe reason for these issues is the lack of synchronization. Delayed\nwork (batadv_dat_purge)\
+  \ schedules new timer/work while the device\nis being deleted. As the result new\
+  \ timer/delayed work is set after\ncancel_delayed_work_sync() was called. So after\
+  \ the device is freed\nthe timer list contains pointer to already freed memory.\n\
+  \nFound by Linux Verification Center (linuxtesting.org) with syzkaller.\n\nCc: stable@kernel.org\n\
+  Fixes: 2f1dfbe18507 (\"batman-adv: Distributed ARP Table - implement local storage\"\
+  )\nSigned-off-by: Vladislav Efanov <VEfanov@ispras.ru>\nAcked-by: Sven Eckelmann\
+  \ <sven@narfation.org>\nSigned-off-by: Simon Wunderlich <sw@simonwunderlich.de>\n"
+submodule:
+- net/batman-adv
+hunk_count: 2
+covered_count: 0

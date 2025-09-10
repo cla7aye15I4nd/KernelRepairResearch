@@ -1,0 +1,48 @@
+id: 7229071b47908b19d5b7
+bug_link: https://syzkaller.appspot.com/bug?extid=7229071b47908b19d5b7
+title: WARNING in fsnotify_file_area_perm
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 27773ce1776279ed3220a34d2e6bfcecaee7fc66
+fix_commit: 955fbe0ef19df4197595a98d0906c94025c4beef
+datetime: '2025-03-13T16:30:55+01:00'
+fix_commit_message: 'Revert "fsnotify: generate pre-content permission event on page
+  fault"
+
+
+  This reverts commit 8392bc2ff8c8bf7c4c5e6dfa71ccd893a3c046f6.
+
+
+  In the use case of buffered write whose input buffer is mmapped file on a
+
+  filesystem with a pre-content mark, the prefaulting of the buffer can
+
+  happen under the filesystem freeze protection (obtained in vfs_write())
+
+  which breaks assumptions of pre-content hook and introduces potential
+
+  deadlock of HSM handler in userspace with filesystem freezing.
+
+
+  Now that we have pre-content hooks at file mmap() time, disable the
+
+  pre-content event hooks on page fault to avoid the potential deadlock.
+
+
+  Reported-by: syzbot+7229071b47908b19d5b7@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/linux-fsdevel/7ehxrhbvehlrjwvrduoxsao5k3x4aw275patsb3krkwuq573yv@o2hskrfawbnc/
+
+  Fixes: 8392bc2ff8c8 ("fsnotify: generate pre-content permission event on page fault")
+
+  Signed-off-by: Amir Goldstein <amir73il@gmail.com>
+
+  Signed-off-by: Jan Kara <jack@suse.cz>
+
+  Link: https://patch.msgid.link/20250312073852.2123409-5-amir73il@gmail.com
+
+  '
+submodule:
+- include/linux
+- mm
+hunk_count: 5
+covered_count: 2

@@ -1,0 +1,41 @@
+id: 50680ced9e98a61f7698
+bug_link: https://syzkaller.appspot.com/bug?extid=50680ced9e98a61f7698
+title: inconsistent lock state in l2tp_tunnel_register
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bac81f40c2c1484a2bd416b3fbf983f6e76488cd
+fix_commit: af295e854a4e3813ffbdef26dbb6a4d6226c3ea1
+datetime: '2022-11-23T12:45:19+00:00'
+fix_commit_message: "l2tp: Don't sleep and disable BH under writer-side sk_callback_lock\n\
+  \nWhen holding a reader-writer spin lock we cannot sleep. Calling\nsetup_udp_tunnel_sock()\
+  \ with write lock held violates this rule, because we\nend up calling percpu_down_read(),\
+  \ which might sleep, as syzbot reports\n[1]:\n\n __might_resched.cold+0x222/0x26b\
+  \ kernel/sched/core.c:9890\n percpu_down_read include/linux/percpu-rwsem.h:49 [inline]\n\
+  \ cpus_read_lock+0x1b/0x140 kernel/cpu.c:310\n static_key_slow_inc+0x12/0x20 kernel/jump_label.c:158\n\
+  \ udp_tunnel_encap_enable include/net/udp_tunnel.h:187 [inline]\n setup_udp_tunnel_sock+0x43d/0x550\
+  \ net/ipv4/udp_tunnel_core.c:81\n l2tp_tunnel_register+0xc51/0x1210 net/l2tp/l2tp_core.c:1509\n\
+  \ pppol2tp_connect+0xcdc/0x1a10 net/l2tp/l2tp_ppp.c:723\n\nTrim the writer-side\
+  \ critical section for sk_callback_lock down to the\nminimum, so that it covers\
+  \ only operations on sk_user_data.\n\nAlso, when grabbing the sk_callback_lock,\
+  \ we always need to disable BH, as\nEric points out. Failing to do so leads to deadlocks\
+  \ because we acquire\nsk_callback_lock in softirq context, which can get stuck waiting\
+  \ on us if:\n\n1) it runs on the same CPU, or\n\n       CPU0\n       ----\n  lock(clock-AF_INET6);\n\
+  \  <Interrupt>\n    lock(clock-AF_INET6);\n\n2) lock ordering leads to priority\
+  \ inversion\n\n       CPU0                    CPU1\n       ----                \
+  \    ----\n  lock(clock-AF_INET6);\n                               local_irq_disable();\n\
+  \                               lock(&tcp_hashinfo.bhash[i].lock);\n           \
+  \                    lock(clock-AF_INET6);\n  <Interrupt>\n    lock(&tcp_hashinfo.bhash[i].lock);\n\
+  \n... as syzbot reports [2,3]. Use the _bh variants for write_(un)lock.\n\n[1] https://lore.kernel.org/netdev/0000000000004e78ec05eda79749@google.com/\n\
+  [2] https://lore.kernel.org/netdev/000000000000e38b6605eda76f98@google.com/\n[3]\
+  \ https://lore.kernel.org/netdev/000000000000dfa31e05eda76f75@google.com/\n\nv2:\n\
+  - Check and set sk_user_data while holding sk_callback_lock for both\n  L2TP encapsulation\
+  \ types (IP and UDP) (Tetsuo)\n\nCc: Tom Parkin <tparkin@katalix.com>\nCc: Tetsuo\
+  \ Handa <penguin-kernel@i-love.sakura.ne.jp>\nFixes: b68777d54fac (\"l2tp: Serialize\
+  \ access to sk_user_data with sk_callback_lock\")\nReported-by: Eric Dumazet <edumazet@google.com>\n\
+  Reported-by: syzbot+703d9e154b3b58277261@syzkaller.appspotmail.com\nReported-by:\
+  \ syzbot+50680ced9e98a61f7698@syzkaller.appspotmail.com\nReported-by: syzbot+de987172bb74a381879b@syzkaller.appspotmail.com\n\
+  Signed-off-by: Jakub Sitnicki <jakub@cloudflare.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/l2tp
+hunk_count: 3
+covered_count: 3

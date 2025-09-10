@@ -1,0 +1,27 @@
+id: 796d767eb376810256f5
+bug_link: https://syzkaller.appspot.com/bug?extid=796d767eb376810256f5
+title: 'WARNING: still has locks held in io_sq_thread'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 51520426f4bc3e61cbbf7a39ccf4e411b665002d
+fix_commit: 82734c5b1b24c020d701cf90ccb075e43a5ccb07
+datetime: '2021-03-30T14:36:46-06:00'
+fix_commit_message: "io_uring: drop sqd lock before handling signals for SQPOLL\n\n\
+  Don't call into get_signal() with the sqd mutex held, it'll fail if we're\nfreezing\
+  \ the task and we'll get complaints on locks still being held:\n\n====================================\n\
+  WARNING: iou-sqp-8386/8387 still has locks held!\n5.12.0-rc4-syzkaller #0 Not tainted\n\
+  ------------------------------------\n1 lock held by iou-sqp-8386/8387:\n #0: ffff88801e1d2470\
+  \ (&sqd->lock){+.+.}-{3:3}, at: io_sq_thread+0x24c/0x13a0 fs/io_uring.c:6731\n\n\
+  \ stack backtrace:\n CPU: 1 PID: 8387 Comm: iou-sqp-8386 Not tainted 5.12.0-rc4-syzkaller\
+  \ #0\n Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/01/2011\n Call Trace:\n  __dump_stack lib/dump_stack.c:79 [inline]\n  dump_stack+0x141/0x1d7\
+  \ lib/dump_stack.c:120\n  try_to_freeze include/linux/freezer.h:66 [inline]\n  get_signal+0x171a/0x2150\
+  \ kernel/signal.c:2576\n  io_sq_thread+0x8d2/0x13a0 fs/io_uring.c:6748\n\nFold the\
+  \ get_signal() case in with the parking checks, as we need to drop\nthe lock in\
+  \ both cases, and since we need to be checking for parking when\njuggling the lock\
+  \ anyway.\n\nReported-by: syzbot+796d767eb376810256f5@syzkaller.appspotmail.com\n\
+  Fixes: dbe1bdbb39db (\"io_uring: handle signals for IO threads like a normal thread\"\
+  )\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

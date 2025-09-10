@@ -1,0 +1,32 @@
+id: 5f29dc6a889fc42bd896
+bug_link: https://syzkaller.appspot.com/bug?extid=5f29dc6a889fc42bd896
+title: WARNING in vmk80xx_auto_attach/usb_submit_urb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f6085a96c97387154be7eaebd1a5420eb3cd55dc
+fix_commit: d1718530e3f640b7d5f0050e725216eab57a85d8
+datetime: '2024-04-11T15:16:23+02:00'
+fix_commit_message: "comedi: vmk80xx: fix incomplete endpoint checking\n\nWhile vmk80xx\
+  \ does have endpoint checking implemented, some things\ncan fall through the cracks.\
+  \ Depending on the hardware model,\nURBs can have either bulk or interrupt type,\
+  \ and current version\nof vmk80xx_find_usb_endpoints() function does not take that\
+  \ fully\ninto account. While this warning does not seem to be too harmful,\nat the\
+  \ very least it will crash systems with 'panic_on_warn' set on\nthem.\n\nFix the\
+  \ issue found by Syzkaller [1] by somewhat simplifying the\nendpoint checking process\
+  \ with usb_find_common_endpoints() and\nensuring that only expected endpoint types\
+  \ are present.\n\nThis patch has not been tested on real hardware.\n\n[1] Syzkaller\
+  \ report:\nusb 1-1: BOGUS urb xfer, pipe 1 != type 3\nWARNING: CPU: 0 PID: 781 at\
+  \ drivers/usb/core/urb.c:504 usb_submit_urb+0xc4e/0x18c0 drivers/usb/core/urb.c:503\n\
+  ...\nCall Trace:\n <TASK>\n usb_start_wait_urb+0x113/0x520 drivers/usb/core/message.c:59\n\
+  \ vmk80xx_reset_device drivers/comedi/drivers/vmk80xx.c:227 [inline]\n vmk80xx_auto_attach+0xa1c/0x1a40\
+  \ drivers/comedi/drivers/vmk80xx.c:818\n comedi_auto_config+0x238/0x380 drivers/comedi/drivers.c:1067\n\
+  \ usb_probe_interface+0x5cd/0xb00 drivers/usb/core/driver.c:399\n...\n\nSimilar\
+  \ issue also found by Syzkaller:\nLink: https://syzkaller.appspot.com/bug?extid=5205eb2f17de3e01946e\n\
+  \nReported-and-tested-by: syzbot+5f29dc6a889fc42bd896@syzkaller.appspotmail.com\n\
+  Cc: stable <stable@kernel.org>\nFixes: 49253d542cc0 (\"staging: comedi: vmk80xx:\
+  \ factor out usb endpoint detection\")\nReviewed-by: Ian Abbott <abbotti@mev.co.uk>\n\
+  Signed-off-by: Nikita Zhandarovich <n.zhandarovich@fintech.ru>\nLink: https://lore.kernel.org/r/20240408171633.31649-1-n.zhandarovich@fintech.ru\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/comedi/drivers
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,53 @@
+id: 0e91362d99386dc5de99
+bug_link: https://syzkaller.appspot.com/bug?extid=0e91362d99386dc5de99
+title: 'BUG: missing reserved tailroom'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6789ab9668d920d7be636cb994d85be9a816f9d5
+fix_commit: b6f1f780b3932ae497ed85e79bc8a1e513883624
+datetime: '2022-03-11T22:01:26+01:00'
+fix_commit_message: 'bpf, test_run: Fix packet size check for live packet mode
+
+
+  The live packet mode uses some extra space at the start of each page to
+
+  cache data structures so they don''t have to be rebuilt at every repetition.
+
+  This space wasn''t correctly accounted for in the size checking of the
+
+  arguments supplied to userspace. In addition, the definition of the frame
+
+  size should include the size of the skb_shared_info (as there is other
+
+  logic that subtracts the size of this).
+
+
+  Together, these mistakes resulted in userspace being able to trip the
+
+  XDP_WARN() in xdp_update_frame_from_buff(), which syzbot discovered in
+
+  short order. Fix this by changing the frame size define and adding the
+
+  extra headroom to the bpf_prog_test_run_xdp() function. Also drop the
+
+  max_len parameter to the page_pool init, since this is related to DMA which
+
+  is not used for the page pool instance in PROG_TEST_RUN.
+
+
+  Fixes: b530e9e1063e ("bpf: Add "live packet" mode for XDP in BPF_PROG_RUN")
+
+  Reported-by: syzbot+0e91362d99386dc5de99@syzkaller.appspotmail.com
+
+  Signed-off-by: Toke Høiland-Jørgensen <toke@redhat.com>
+
+  Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+
+  Acked-by: Martin KaFai Lau <kafai@fb.com>
+
+  Link: https://lore.kernel.org/bpf/20220310225621.53374-1-toke@redhat.com
+
+  '
+submodule:
+- net/bpf
+hunk_count: 3
+covered_count: 2

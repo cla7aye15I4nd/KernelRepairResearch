@@ -1,0 +1,33 @@
+diff --git a/drivers/net/tun.c b/drivers/net/tun.c
+index c54f967e2c66..b0ab882c021e 100644
+--- a/drivers/net/tun.c
++++ b/drivers/net/tun.c
+@@ -1872,8 +1872,11 @@ static ssize_t tun_get_user(struct tun_struct *tun, struct tun_file *tfile,
+ 		skb->dev = tun->dev;
+ 		break;
+ 	case IFF_TAP:
+-		if (!frags)
+-			skb->protocol = eth_type_trans(skb, tun->dev);
++		if (frags && !pskb_may_pull(skb, ETH_HLEN)) {
++			err = -ENOMEM;
++			goto drop;
++		}
++		skb->protocol = eth_type_trans(skb, tun->dev);
+ 		break;
+ 	}
+ 
+@@ -1930,9 +1933,12 @@ static ssize_t tun_get_user(struct tun_struct *tun, struct tun_file *tfile,
+ 	}
+ 
+ 	if (frags) {
++		u32 headlen;
++
+ 		/* Exercise flow dissector code path. */
+-		u32 headlen = eth_get_headlen(tun->dev, skb->data,
+-					      skb_headlen(skb));
++		skb_push(skb, ETH_HLEN);
++		headlen = eth_get_headlen(tun->dev, skb->data,
++					  skb_headlen(skb));
+ 
+ 		if (unlikely(headlen > skb_headlen(skb))) {
+ 			this_cpu_inc(tun->pcpu_stats->rx_dropped);

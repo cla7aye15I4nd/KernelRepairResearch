@@ -1,0 +1,69 @@
+bcachefs (loop0): Ratelimiting new instances of previous error
+ done
+bcachefs (loop0): going read-write
+bcachefs (loop0): journal_replay...
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/bset.c:1308!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5309 Comm: syz-executor423 Not tainted 6.14.0-rc2-syzkaller-00228-g04f41cbf03ec #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:bch2_btree_node_iter_init+0x4252/0x4280 fs/bcachefs/bset.c:1308
+Code: 84 a7 7b fd 90 0f 0b e8 7c a7 7b fd 90 0f 0b e8 74 a7 7b fd 90 0f 0b e8 4c 0c c2 07 e8 67 a7 7b fd 90 0f 0b e8 5f a7 7b fd 90 <0f> 0b e8 57 a7 7b fd 90 0f 0b e8 4f a7 7b fd 90 0f 0b e8 47 a7 7b
+RSP: 0018:ffffc9000d40e7a0 EFLAGS: 00010293
+RAX: ffffffff844610e1 RBX: 0203010100000000 RCX: ffff88801fa88000
+RDX: 0000000000000000 RSI: 0203010100000000 RDI: 0000000000000000
+RBP: ffffc9000d40ea10 R08: ffffffff8445d281 R09: 0000000000000000
+R10: ffffc9000d40e930 R11: fffff52001a81d29 R12: ffff888045760040
+R13: dffffc0000000000 R14: dffffc0000000000 R15: 0000000000000000
+FS:  000055558ab90380(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00005586f103f0b8 CR3: 0000000043fda000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __btree_path_level_init fs/bcachefs/btree_iter.c:617 [inline]
+ bch2_btree_path_level_init+0x4d2/0x9f0 fs/bcachefs/btree_iter.c:637
+ btree_path_lock_root fs/bcachefs/btree_iter.c:787 [inline]
+ bch2_btree_path_traverse_one+0x108b/0x2930 fs/bcachefs/btree_iter.c:1203
+ bch2_btree_path_traverse fs/bcachefs/btree_iter.h:249 [inline]
+ bch2_btree_iter_traverse+0x6fa/0xce0 fs/bcachefs/btree_iter.c:1913
+ bch2_journal_replay_key+0x259/0xeb0 fs/bcachefs/recovery.c:264
+ bch2_journal_replay+0x1a46/0x2b10 fs/bcachefs/recovery.c:373
+ bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:226
+ bch2_run_recovery_passes+0x2ad/0xa90 fs/bcachefs/recovery_passes.c:291
+ bch2_fs_recovery+0x265a/0x3de0 fs/bcachefs/recovery.c:936
+ bch2_fs_start+0x37c/0x610 fs/bcachefs/super.c:1041
+ bch2_fs_get_tree+0xdb7/0x17a0 fs/bcachefs/fs.c:2203
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3560
+ do_mount fs/namespace.c:3900 [inline]
+ __do_sys_mount fs/namespace.c:4111 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4088
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fc35c659eaa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffeb96ed7d8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffeb96ed7f0 RCX: 00007fc35c659eaa
+RDX: 00004000000058c0 RSI: 0000400000000140 RDI: 00007ffeb96ed7f0
+RBP: 0000400000000140 R08: 00007ffeb96ed830 R09: 000000000000590c
+R10: 0000000000010000 R11: 0000000000000282 R12: 00004000000058c0
+R13: 00007ffeb96ed830 R14: 0000000000000003 R15: 0000000000010000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_btree_node_iter_init+0x4252/0x4280 fs/bcachefs/bset.c:1308
+Code: 84 a7 7b fd 90 0f 0b e8 7c a7 7b fd 90 0f 0b e8 74 a7 7b fd 90 0f 0b e8 4c 0c c2 07 e8 67 a7 7b fd 90 0f 0b e8 5f a7 7b fd 90 <0f> 0b e8 57 a7 7b fd 90 0f 0b e8 4f a7 7b fd 90 0f 0b e8 47 a7 7b
+RSP: 0018:ffffc9000d40e7a0 EFLAGS: 00010293
+RAX: ffffffff844610e1 RBX: 0203010100000000 RCX: ffff88801fa88000
+RDX: 0000000000000000 RSI: 0203010100000000 RDI: 0000000000000000
+RBP: ffffc9000d40ea10 R08: ffffffff8445d281 R09: 0000000000000000
+R10: ffffc9000d40e930 R11: fffff52001a81d29 R12: ffff888045760040
+R13: dffffc0000000000 R14: dffffc0000000000 R15: 0000000000000000
+FS:  000055558ab90380(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00005586f103f0b8 CR3: 0000000043fda000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

@@ -1,0 +1,106 @@
+ntfs3: loop0: ino=0, ntfs_iget5
+ntfs3: loop0: Mark volume as dirty due to NTFS errors
+INFO: trying to register non-static key.
+The code is fine but needs lockdep annotation, or maybe
+you didn't initialize this object before use?
+turning off the locking correctness validator.
+CPU: 0 PID: 4996 Comm: syz-executor332 Not tainted 6.4.0-rc6-syzkaller-00269-g1b29d271614a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/27/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2d0 lib/dump_stack.c:106
+ assign_lock_key+0x222/0x230 kernel/locking/lockdep.c:982
+ register_lock_class+0x28e/0x990 kernel/locking/lockdep.c:1295
+ __lock_acquire+0xd3/0x2070 kernel/locking/lockdep.c:4965
+ lock_acquire+0x1e3/0x520 kernel/locking/lockdep.c:5705
+ down_read+0x47/0x2f0 kernel/locking/rwsem.c:1520
+ attr_data_get_block+0x2e7/0x2da0 fs/ntfs3/attrib.c:902
+ ntfs_get_block_vbo+0x36a/0xd00 fs/ntfs3/inode.c:585
+ do_mpage_readpage+0x911/0x1fa0 fs/mpage.c:234
+ mpage_readahead+0x454/0x930 fs/mpage.c:382
+ read_pages+0x183/0x830 mm/readahead.c:161
+ page_cache_ra_unbounded+0x697/0x7c0 mm/readahead.c:270
+ page_cache_sync_readahead include/linux/pagemap.h:1211 [inline]
+ filemap_get_pages+0x49c/0x20c0 mm/filemap.c:2601
+ filemap_read+0x45a/0x1170 mm/filemap.c:2696
+ __kernel_read+0x422/0x8a0 fs/read_write.c:428
+ integrity_kernel_read+0xb0/0xf0 security/integrity/iint.c:192
+ ima_calc_file_hash_tfm security/integrity/ima/ima_crypto.c:485 [inline]
+ ima_calc_file_shash security/integrity/ima/ima_crypto.c:516 [inline]
+ ima_calc_file_hash+0x1643/0x1d20 security/integrity/ima/ima_crypto.c:573
+ ima_collect_measurement+0x3a7/0x880 security/integrity/ima/ima_api.c:293
+ process_measurement+0xfdb/0x1ce0 security/integrity/ima/ima_main.c:341
+ ima_file_check+0xf1/0x170 security/integrity/ima/ima_main.c:539
+ do_open fs/namei.c:3638 [inline]
+ path_openat+0x280a/0x3170 fs/namei.c:3791
+ do_file_open_root+0x376/0x7c0 fs/namei.c:3843
+ file_open_root+0x247/0x2a0 fs/open.c:1336
+ do_handle_open+0x582/0x960 fs/fhandle.c:232
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f386ad79869
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 51 14 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 c0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd3fe34198 EFLAGS: 00000246 ORIG_RAX: 0000000000000130
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f386ad79869
+RDX: 0000000000000000 RSI: 0000000020000100 RDI: 0000000000000004
+RBP: 00007f386ad39100 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f386ad39190
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+------------[ cut here ]------------
+DEBUG_RWSEMS_WARN_ON(sem->magic != sem): count = 0x100, magic = 0x0, owner = 0xffff888026ad8001, curr 0xffff888026ad8000, list not empty
+WARNING: CPU: 1 PID: 4996 at kernel/locking/rwsem.c:1342 __up_read+0x505/0x690 kernel/locking/rwsem.c:1342
+Modules linked in:
+CPU: 1 PID: 4996 Comm: syz-executor332 Not tainted 6.4.0-rc6-syzkaller-00269-g1b29d271614a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/27/2023
+RIP: 0010:__up_read+0x505/0x690 kernel/locking/rwsem.c:1342
+Code: 44 c1 48 c7 c7 60 82 ea 8a 48 c7 c6 00 84 ea 8a 4c 89 fa 48 8b 4c 24 08 49 89 d8 4c 8b 4c 24 10 50 e8 ff 82 e8 ff 48 83 c4 08 <0f> 0b 48 bb 00 00 00 00 00 fc ff df 4c 8b 2c 24 e9 ac fb ff ff c6
+RSP: 0018:ffffc900039fde00 EFLAGS: 00010296
+RAX: ff58872ffde1cc00 RBX: ffff888026ad8001 RCX: ffff888026ad8000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc900039fdeb0 R08: ffffffff81530142 R09: fffff5200073fb75
+R10: 0000000000000000 R11: dffffc0000000001 R12: ffff888076677048
+R13: ffff888076677038 R14: 1ffff1100eccee09 R15: 0000000000000100
+FS:  00005555569ac300(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055b2247adff0 CR3: 0000000079391000 CR4: 00000000003506e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ attr_data_get_block+0x34b/0x2da0 fs/ntfs3/attrib.c:905
+ ntfs_get_block_vbo+0x36a/0xd00 fs/ntfs3/inode.c:585
+ do_mpage_readpage+0x911/0x1fa0 fs/mpage.c:234
+ mpage_readahead+0x454/0x930 fs/mpage.c:382
+ read_pages+0x183/0x830 mm/readahead.c:161
+ page_cache_ra_unbounded+0x697/0x7c0 mm/readahead.c:270
+ page_cache_sync_readahead include/linux/pagemap.h:1211 [inline]
+ filemap_get_pages+0x49c/0x20c0 mm/filemap.c:2601
+ filemap_read+0x45a/0x1170 mm/filemap.c:2696
+ __kernel_read+0x422/0x8a0 fs/read_write.c:428
+ integrity_kernel_read+0xb0/0xf0 security/integrity/iint.c:192
+ ima_calc_file_hash_tfm security/integrity/ima/ima_crypto.c:485 [inline]
+ ima_calc_file_shash security/integrity/ima/ima_crypto.c:516 [inline]
+ ima_calc_file_hash+0x1643/0x1d20 security/integrity/ima/ima_crypto.c:573
+ ima_collect_measurement+0x3a7/0x880 security/integrity/ima/ima_api.c:293
+ process_measurement+0xfdb/0x1ce0 security/integrity/ima/ima_main.c:341
+ ima_file_check+0xf1/0x170 security/integrity/ima/ima_main.c:539
+ do_open fs/namei.c:3638 [inline]
+ path_openat+0x280a/0x3170 fs/namei.c:3791
+ do_file_open_root+0x376/0x7c0 fs/namei.c:3843
+ file_open_root+0x247/0x2a0 fs/open.c:1336
+ do_handle_open+0x582/0x960 fs/fhandle.c:232
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f386ad79869
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 51 14 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 c0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd3fe34198 EFLAGS: 00000246 ORIG_RAX: 0000000000000130
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f386ad79869
+RDX: 0000000000000000 RSI: 0000000020000100 RDI: 0000000000000004
+RBP: 00007f386ad39100 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f386ad39190
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>

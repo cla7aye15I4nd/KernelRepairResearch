@@ -1,0 +1,80 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000003: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000018-0x000000000000001f]
+CPU: 1 UID: 0 PID: 5845 Comm: syz-executor865 Not tainted 6.13.0-syzkaller-09685-gc2933b2befe2 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+RIP: 0010:__lock_acquire+0x6a/0x2100 kernel/locking/lockdep.c:5091
+Code: b6 04 30 84 c0 0f 85 f8 16 00 00 45 31 f6 83 3d 2b 98 80 0e 00 0f 84 c8 13 00 00 89 54 24 60 89 5c 24 38 4c 89 f8 48 c1 e8 03 <80> 3c 30 00 74 12 4c 89 ff e8 88 26 8b 00 48 be 00 00 00 00 00 fc
+RSP: 0018:ffffc9000407f870 EFLAGS: 00010006
+RAX: 0000000000000003 RBX: 0000000000000000 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: dffffc0000000000 RDI: 0000000000000018
+RBP: 0000000000000001 R08: 0000000000000001 R09: 0000000000000001
+R10: dffffc0000000000 R11: fffffbfff203680f R12: ffff888035760000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000018
+FS:  000055555c9b3380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000002000044c CR3: 00000000352c0000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5851
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+ _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+ add_wait_queue+0x46/0x180 kernel/sched/wait.c:22
+ virtio_transport_wait_close net/vmw_vsock/virtio_transport_common.c:1200 [inline]
+ virtio_transport_close net/vmw_vsock/virtio_transport_common.c:1282 [inline]
+ virtio_transport_release+0x4c4/0xce0 net/vmw_vsock/virtio_transport_common.c:1302
+ __vsock_release+0xf1/0x4f0 net/vmw_vsock/af_vsock.c:830
+ vsock_release+0x97/0x100 net/vmw_vsock/af_vsock.c:941
+ __sock_release net/socket.c:642 [inline]
+ sock_close+0xbc/0x240 net/socket.c:1393
+ __fput+0x3e9/0x9f0 fs/file_table.c:450
+ __do_sys_close fs/open.c:1579 [inline]
+ __se_sys_close fs/open.c:1564 [inline]
+ __x64_sys_close+0x7f/0x110 fs/open.c:1564
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f2406c95400
+Code: ff f7 d8 64 89 02 48 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 80 3d 81 8c 07 00 00 74 17 b8 03 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 48 c3 0f 1f 80 00 00 00 00 48 83 ec 18 89 7c
+RSP: 002b:00007ffe044a2b28 EFLAGS: 00000202 ORIG_RAX: 0000000000000003
+RAX: ffffffffffffffda RBX: 0000000000000005 RCX: 00007f2406c95400
+RDX: 000000000000000d RSI: 0000000000000001 RDI: 0000000000000004
+RBP: 00000000000f4240 R08: 0000000000000008 R09: 000000005c9b4610
+R10: 0000000020000180 R11: 0000000000000202 R12: 000000000000e3ae
+R13: 00007ffe044a2b34 R14: 00007ffe044a2b50 R15: 00007ffe044a2b40
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__lock_acquire+0x6a/0x2100 kernel/locking/lockdep.c:5091
+Code: b6 04 30 84 c0 0f 85 f8 16 00 00 45 31 f6 83 3d 2b 98 80 0e 00 0f 84 c8 13 00 00 89 54 24 60 89 5c 24 38 4c 89 f8 48 c1 e8 03 <80> 3c 30 00 74 12 4c 89 ff e8 88 26 8b 00 48 be 00 00 00 00 00 fc
+RSP: 0018:ffffc9000407f870 EFLAGS: 00010006
+RAX: 0000000000000003 RBX: 0000000000000000 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: dffffc0000000000 RDI: 0000000000000018
+RBP: 0000000000000001 R08: 0000000000000001 R09: 0000000000000001
+R10: dffffc0000000000 R11: fffffbfff203680f R12: ffff888035760000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000018
+FS:  000055555c9b3380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000002000044c CR3: 00000000352c0000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	b6 04                	mov    $0x4,%dh
+   2:	30 84 c0 0f 85 f8 16 	xor    %al,0x16f8850f(%rax,%rax,8)
+   9:	00 00                	add    %al,(%rax)
+   b:	45 31 f6             	xor    %r14d,%r14d
+   e:	83 3d 2b 98 80 0e 00 	cmpl   $0x0,0xe80982b(%rip)        # 0xe809840
+  15:	0f 84 c8 13 00 00    	je     0x13e3
+  1b:	89 54 24 60          	mov    %edx,0x60(%rsp)
+  1f:	89 5c 24 38          	mov    %ebx,0x38(%rsp)
+  23:	4c 89 f8             	mov    %r15,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	80 3c 30 00          	cmpb   $0x0,(%rax,%rsi,1) <-- trapping instruction
+  2e:	74 12                	je     0x42
+  30:	4c 89 ff             	mov    %r15,%rdi
+  33:	e8 88 26 8b 00       	call   0x8b26c0
+  38:	48                   	rex.W
+  39:	be 00 00 00 00       	mov    $0x0,%esi
+  3e:	00 fc                	add    %bh,%ah

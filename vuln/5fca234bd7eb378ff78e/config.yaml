@@ -1,0 +1,41 @@
+id: 5fca234bd7eb378ff78e
+bug_link: https://syzkaller.appspot.com/bug?extid=5fca234bd7eb378ff78e
+title: 'INFO: rcu detected stall in sys_io_uring_enter (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: eed138d67d99312f07ed3bc326903b6808885571
+fix_commit: eac2ca2d682f94f46b1973bdf5e77d85d77b8e53
+datetime: '2024-09-20T02:51:20-06:00'
+fix_commit_message: 'io_uring: check if we need to reschedule during overflow flush
+
+
+  In terms of normal application usage, this list will always be empty.
+
+  And if an application does overflow a bit, it''ll have a few entries.
+
+  However, nothing obviously prevents syzbot from running a test case
+
+  that generates a ton of overflow entries, and then flushing them can
+
+  take quite a while.
+
+
+  Check for needing to reschedule while flushing, and drop our locks and
+
+  do so if necessary. There''s no state to maintain here as overflows
+
+  always prune from head-of-list, hence it''s fine to drop and reacquire
+
+  the locks at the end of the loop.
+
+
+  Link: https://lore.kernel.org/io-uring/66ed061d.050a0220.29194.0053.GAE@google.com/
+
+  Reported-by: syzbot+5fca234bd7eb378ff78e@syzkaller.appspotmail.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 1
+covered_count: 1

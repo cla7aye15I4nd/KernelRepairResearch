@@ -1,0 +1,42 @@
+id: c8504affd4fdd0c1b626
+bug_link: https://syzkaller.appspot.com/bug?extid=c8504affd4fdd0c1b626
+title: 'KASAN: use-after-free Read in skb_ensure_writable'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1c8c5a9d38f607c0b6fd12c91cbe1a4418762a21
+fix_commit: 58990d1ff3f7896ee341030e9a7c2e4002570683
+datetime: '2018-06-07T12:37:17-07:00'
+fix_commit_message: "bpf: reject passing modified ctx to helper functions\n\nAs commit\
+  \ 28e33f9d78ee (\"bpf: disallow arithmetic operations on\ncontext pointer\") already\
+  \ describes, f1174f77b50c (\"bpf/verifier:\nrework value tracking\") removed the\
+  \ specific white-listed cases\nwe had previously where we would allow for pointer\
+  \ arithmetic in\norder to further generalize it, and allow e.g. context access via\n\
+  modified registers. While the dereferencing of modified context\npointers had been\
+  \ forbidden through 28e33f9d78ee, syzkaller did\nrecently manage to trigger several\
+  \ KASAN splats for slab out of\nbounds access and use after frees by simply passing\
+  \ a modified\ncontext pointer to a helper function which would then do the bad\n\
+  access since verifier allowed it in adjust_ptr_min_max_vals().\n\nRejecting arithmetic\
+  \ on ctx pointer in adjust_ptr_min_max_vals()\ngenerally could break existing programs\
+  \ as there's a valid use\ncase in tracing in combination with passing the ctx to\
+  \ helpers as\nbpf_probe_read(), where the register then becomes unknown at\nverification\
+  \ time due to adding a non-constant offset to it. An\naccess sequence may look like\
+  \ the following:\n\n  offset = args->filename;  /* field __data_loc filename */\n\
+  \  bpf_probe_read(&dst, len, (char *)args + offset); // args is ctx\n\nThere are\
+  \ two options: i) we could special case the ctx and as\nsoon as we add a constant\
+  \ or bounded offset to it (hence ctx type\nwouldn't change) we could turn the ctx\
+  \ into an unknown scalar, or\nii) we generalize the sanity test for ctx member access\
+  \ into a\nsmall helper and assert it on the ctx register that was passed\nas a function\
+  \ argument. Fwiw, latter is more obvious and less\ncomplex at the same time, and\
+  \ one case that may potentially be\nlegitimate in future for ctx member access at\
+  \ least would be for\nctx to carry a const offset. Therefore, fix follows approach\n\
+  from ii) and adds test cases to BPF kselftests.\n\nFixes: f1174f77b50c (\"bpf/verifier:\
+  \ rework value tracking\")\nReported-by: syzbot+3d0b2441dbb71751615e@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+c8504affd4fdd0c1b626@syzkaller.appspotmail.com\nReported-by:\
+  \ syzbot+e5190cb881d8660fb1a3@syzkaller.appspotmail.com\nReported-by: syzbot+efae31b384d5badbd620@syzkaller.appspotmail.com\n\
+  Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>\nAcked-by: Alexei Starovoitov\
+  \ <ast@kernel.org>\nAcked-by: Yonghong Song <yhs@fb.com>\nAcked-by: Edward Cree\
+  \ <ecree@solarflare.com>\nSigned-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- kernel/bpf
+- tools/testing/selftests/bpf
+hunk_count: 5
+covered_count: 0

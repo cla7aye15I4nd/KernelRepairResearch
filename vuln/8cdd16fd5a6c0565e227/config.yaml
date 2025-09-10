@@ -1,0 +1,32 @@
+id: 8cdd16fd5a6c0565e227
+bug_link: https://syzkaller.appspot.com/bug?extid=8cdd16fd5a6c0565e227
+title: 'BUG: unable to handle kernel paging request in vmx_handle_exit_irqoff'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bde258d97409f2a45243cb393a55ea9ecfc7aba5
+fix_commit: 1cfaac2400c73378e78182a706be0f3ac8b93cd7
+datetime: '2022-12-15T10:37:28-08:00'
+fix_commit_message: "x86/kasan: Populate shadow for shared chunk of the CPU entry\
+  \ area\n\nPopuplate the shadow for the shared portion of the CPU entry area, i.e.\n\
+  the read-only IDT mapping, during KASAN initialization.  A recent change\nmodified\
+  \ KASAN to map the per-CPU areas on-demand, but forgot to keep a\nshadow for the\
+  \ common area that is shared amongst all CPUs.\n\nMap the common area in KASAN init\
+  \ instead of letting idt_map_in_cea() do\nthe dirty work so that it Just Works in\
+  \ the unlikely event more shared\ndata is shoved into the CPU entry area.\n\nThe\
+  \ bug manifests as a not-present #PF when software attempts to lookup\nan IDT entry,\
+  \ e.g. when KVM is handling IRQs on Intel CPUs (KVM performs\ndirect CALL to the\
+  \ IRQ handler to avoid the overhead of INTn):\n\n BUG: unable to handle page fault\
+  \ for address: fffffbc0000001d8\n #PF: supervisor read access in kernel mode\n #PF:\
+  \ error_code(0x0000) - not-present page\n PGD 16c03a067 P4D 16c03a067 PUD 0\n Oops:\
+  \ 0000 [#1] PREEMPT SMP KASAN\n CPU: 5 PID: 901 Comm: repro Tainted: G        W\
+  \          6.1.0-rc3+ #410\n Hardware name: QEMU Standard PC (Q35 + ICH9, 2009),\
+  \ BIOS 0.0.0 02/06/2015\n RIP: 0010:kasan_check_range+0xdf/0x190\n  vmx_handle_exit_irqoff+0x152/0x290\
+  \ [kvm_intel]\n  vcpu_run+0x1d89/0x2bd0 [kvm]\n  kvm_arch_vcpu_ioctl_run+0x3ce/0xa70\
+  \ [kvm]\n  kvm_vcpu_ioctl+0x349/0x900 [kvm]\n  __x64_sys_ioctl+0xb8/0xf0\n  do_syscall_64+0x2b/0x50\n\
+  \  entry_SYSCALL_64_after_hwframe+0x46/0xb0\n\nFixes: 9fd429c28073 (\"x86/kasan:\
+  \ Map shadow for percpu pages on demand\")\nReported-by: syzbot+8cdd16fd5a6c0565e227@syzkaller.appspotmail.com\n\
+  Signed-off-by: Sean Christopherson <seanjc@google.com>\nSigned-off-by: Peter Zijlstra\
+  \ (Intel) <peterz@infradead.org>\nLink: https://lkml.kernel.org/r/20221110203504.1985010-6-seanjc@google.com\n"
+submodule:
+- arch/x86/mm
+hunk_count: 3
+covered_count: 0

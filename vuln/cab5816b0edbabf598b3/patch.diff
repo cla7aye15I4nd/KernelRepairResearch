@@ -1,0 +1,26 @@
+diff --git a/kernel/bpf/core.c b/kernel/bpf/core.c
+index 29ca9208dcfa..d315b393abdd 100644
+--- a/kernel/bpf/core.c
++++ b/kernel/bpf/core.c
+@@ -1590,7 +1590,7 @@ int bpf_prog_array_copy_to_user(struct bpf_prog_array __rcu *progs,
+ 	 * so always copy 'cnt' prog_ids to the user.
+ 	 * In a rare race the user will see zero prog_ids
+ 	 */
+-	ids = kcalloc(cnt, sizeof(u32), GFP_USER);
++	ids = kcalloc(cnt, sizeof(u32), GFP_USER | __GFP_NOWARN);
+ 	if (!ids)
+ 		return -ENOMEM;
+ 	rcu_read_lock();
+diff --git a/kernel/trace/bpf_trace.c b/kernel/trace/bpf_trace.c
+index fc2838ac8b78..c0a9e310d715 100644
+--- a/kernel/trace/bpf_trace.c
++++ b/kernel/trace/bpf_trace.c
+@@ -872,6 +872,8 @@ int perf_event_query_prog_array(struct perf_event *event, void __user *info)
+ 		return -EINVAL;
+ 	if (copy_from_user(&query, uquery, sizeof(query)))
+ 		return -EFAULT;
++	if (query.ids_len > BPF_TRACE_MAX_PROGS)
++		return -E2BIG;
+ 
+ 	mutex_lock(&bpf_event_mutex);
+ 	ret = bpf_prog_array_copy_info(event->tp_event->prog_array,

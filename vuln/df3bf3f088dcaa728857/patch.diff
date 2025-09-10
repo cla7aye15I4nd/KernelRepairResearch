@@ -1,0 +1,145 @@
+diff --git a/fs/bcachefs/alloc_background.c b/fs/bcachefs/alloc_background.c
+index d2241f2b40fe..e258de704578 100644
+--- a/fs/bcachefs/alloc_background.c
++++ b/fs/bcachefs/alloc_background.c
+@@ -259,6 +259,14 @@ int bch2_alloc_v4_invalid(struct bch_fs *c, struct bkey_s_c k,
+ 			 "invalid data type (got %u should be %u)",
+ 			 a.v->data_type, alloc_data_type(*a.v, a.v->data_type));
+ 
++	for (unsigned i = 0; i < 2; i++)
++		bkey_fsck_err_on(a.v->io_time[i] > LRU_TIME_MAX,
++				 c, err,
++				 alloc_key_io_time_bad,
++				 "invalid io_time[%s]: %llu, max %llu",
++				 i == READ ? "read" : "write",
++				 a.v->io_time[i], LRU_TIME_MAX);
++
+ 	switch (a.v->data_type) {
+ 	case BCH_DATA_free:
+ 	case BCH_DATA_need_gc_gens:
+@@ -757,8 +765,8 @@ int bch2_trigger_alloc(struct btree_trans *trans,
+ 		alloc_data_type_set(new_a, new_a->data_type);
+ 
+ 		if (bch2_bucket_sectors_total(*new_a) > bch2_bucket_sectors_total(*old_a)) {
+-			new_a->io_time[READ] = max_t(u64, 1, atomic64_read(&c->io_clock[READ].now));
+-			new_a->io_time[WRITE]= max_t(u64, 1, atomic64_read(&c->io_clock[WRITE].now));
++			new_a->io_time[READ] = bch2_current_io_time(c, READ);
++			new_a->io_time[WRITE]= bch2_current_io_time(c, WRITE);
+ 			SET_BCH_ALLOC_V4_NEED_INC_GEN(new_a, true);
+ 			SET_BCH_ALLOC_V4_NEED_DISCARD(new_a, true);
+ 		}
+@@ -781,7 +789,7 @@ int bch2_trigger_alloc(struct btree_trans *trans,
+ 
+ 		if (new_a->data_type == BCH_DATA_cached &&
+ 		    !new_a->io_time[READ])
+-			new_a->io_time[READ] = max_t(u64, 1, atomic64_read(&c->io_clock[READ].now));
++			new_a->io_time[READ] = bch2_current_io_time(c, READ);
+ 
+ 		u64 old_lru = alloc_lru_idx_read(*old_a);
+ 		u64 new_lru = alloc_lru_idx_read(*new_a);
+@@ -1579,7 +1587,7 @@ static int bch2_check_alloc_to_lru_ref(struct btree_trans *trans,
+ 		if (ret)
+ 			goto err;
+ 
+-		a_mut->v.io_time[READ] = atomic64_read(&c->io_clock[READ].now);
++		a_mut->v.io_time[READ] = bch2_current_io_time(c, READ);
+ 		ret = bch2_trans_update(trans, alloc_iter,
+ 					&a_mut->k_i, BTREE_TRIGGER_norun);
+ 		if (ret)
+@@ -1975,8 +1983,8 @@ static int invalidate_one_bucket(struct btree_trans *trans,
+ 	a->v.data_type		= 0;
+ 	a->v.dirty_sectors	= 0;
+ 	a->v.cached_sectors	= 0;
+-	a->v.io_time[READ]	= atomic64_read(&c->io_clock[READ].now);
+-	a->v.io_time[WRITE]	= atomic64_read(&c->io_clock[WRITE].now);
++	a->v.io_time[READ]	= bch2_current_io_time(c, READ);
++	a->v.io_time[WRITE]	= bch2_current_io_time(c, WRITE);
+ 
+ 	ret = bch2_trans_commit(trans, NULL, NULL,
+ 				BCH_WATERMARK_btree|
+@@ -2204,7 +2212,7 @@ int bch2_bucket_io_time_reset(struct btree_trans *trans, unsigned dev,
+ 	if (ret)
+ 		return ret;
+ 
+-	now = atomic64_read(&c->io_clock[rw].now);
++	now = bch2_current_io_time(c, rw);
+ 	if (a->v.io_time[rw] == now)
+ 		goto out;
+ 
+diff --git a/fs/bcachefs/alloc_background.h b/fs/bcachefs/alloc_background.h
+index ae31a94be6f9..c3cc3c5ba5b6 100644
+--- a/fs/bcachefs/alloc_background.h
++++ b/fs/bcachefs/alloc_background.h
+@@ -141,7 +141,13 @@ static inline u64 alloc_lru_idx_fragmentation(struct bch_alloc_v4 a,
+ 	    !bch2_bucket_sectors_fragmented(ca, a))
+ 		return 0;
+ 
+-	u64 d = bch2_bucket_sectors_dirty(a);
++	/*
++	 * avoid overflowing LRU_TIME_BITS on a corrupted fs, when
++	 * bucket_sectors_dirty is (much) bigger than bucket_size
++	 */
++	u64 d = min(bch2_bucket_sectors_dirty(a),
++		    ca->mi.bucket_size);
++
+ 	return div_u64(d * (1ULL << 31), ca->mi.bucket_size);
+ }
+ 
+diff --git a/fs/bcachefs/bcachefs.h b/fs/bcachefs/bcachefs.h
+index 2992a644d822..a6b83ecab7ce 100644
+--- a/fs/bcachefs/bcachefs.h
++++ b/fs/bcachefs/bcachefs.h
+@@ -1214,6 +1214,11 @@ static inline s64 bch2_current_time(const struct bch_fs *c)
+ 	return timespec_to_bch2_time(c, now);
+ }
+ 
++static inline u64 bch2_current_io_time(const struct bch_fs *c, int rw)
++{
++	return max(1ULL, (u64) atomic64_read(&c->io_clock[rw].now) & LRU_TIME_MAX);
++}
++
+ static inline struct stdio_redirect *bch2_fs_stdio_redirect(struct bch_fs *c)
+ {
+ 	struct stdio_redirect *stdio = c->stdio;
+diff --git a/fs/bcachefs/bcachefs_format.h b/fs/bcachefs/bcachefs_format.h
+index 5d3c5b5e34af..4b98fed1ee9a 100644
+--- a/fs/bcachefs/bcachefs_format.h
++++ b/fs/bcachefs/bcachefs_format.h
+@@ -476,6 +476,9 @@ struct bch_lru {
+ 
+ #define LRU_ID_STRIPES		(1U << 16)
+ 
++#define LRU_TIME_BITS	48
++#define LRU_TIME_MAX	((1ULL << LRU_TIME_BITS) - 1)
++
+ /* Optional/variable size superblock sections: */
+ 
+ struct bch_sb_field {
+diff --git a/fs/bcachefs/lru.h b/fs/bcachefs/lru.h
+index fb11ab0dd00e..bd71ba77de07 100644
+--- a/fs/bcachefs/lru.h
++++ b/fs/bcachefs/lru.h
+@@ -2,9 +2,6 @@
+ #ifndef _BCACHEFS_LRU_H
+ #define _BCACHEFS_LRU_H
+ 
+-#define LRU_TIME_BITS	48
+-#define LRU_TIME_MAX	((1ULL << LRU_TIME_BITS) - 1)
+-
+ static inline u64 lru_pos_id(struct bpos pos)
+ {
+ 	return pos.inode >> LRU_TIME_BITS;
+diff --git a/fs/bcachefs/sb-errors_format.h b/fs/bcachefs/sb-errors_format.h
+index 1d1251f1bb20..1768e5c49f99 100644
+--- a/fs/bcachefs/sb-errors_format.h
++++ b/fs/bcachefs/sb-errors_format.h
+@@ -277,7 +277,8 @@
+ 	x(alloc_key_stripe_sectors_wrong,			271)	\
+ 	x(accounting_mismatch,					272)	\
+ 	x(accounting_replicas_not_marked,			273)	\
+-	x(invalid_btree_id,					274)
++	x(invalid_btree_id,					274)	\
++	x(alloc_key_io_time_bad,				275)
+ 
+ enum bch_sb_error_id {
+ #define x(t, n) BCH_FSCK_ERR_##t = n,

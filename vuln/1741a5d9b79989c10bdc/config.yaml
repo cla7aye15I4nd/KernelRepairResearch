@@ -1,0 +1,32 @@
+id: 1741a5d9b79989c10bdc
+bug_link: https://syzkaller.appspot.com/bug?extid=1741a5d9b79989c10bdc
+title: possible deadlock in lock_mm_and_find_vma
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d42334578eba1390859012ebb91e1e556d51db49
+fix_commit: ff84772fd45d486e4fc78c82e2f70ce5333543e6
+datetime: '2023-07-15T08:34:19+09:00'
+fix_commit_message: "exfat: release s_lock before calling dir_emit()\n\nThere is a\
+  \ potential deadlock reported by syzbot as below:\n\n======================================================\n\
+  WARNING: possible circular locking dependency detected\n6.4.0-next-20230707-syzkaller\
+  \ #0 Not tainted\n------------------------------------------------------\nsyz-executor330/5073\
+  \ is trying to acquire lock:\nffff8880218527a0 (&mm->mmap_lock){++++}-{3:3}, at:\
+  \ mmap_read_lock_killable include/linux/mmap_lock.h:151 [inline]\nffff8880218527a0\
+  \ (&mm->mmap_lock){++++}-{3:3}, at: get_mmap_lock_carefully mm/memory.c:5293 [inline]\n\
+  ffff8880218527a0 (&mm->mmap_lock){++++}-{3:3}, at: lock_mm_and_find_vma+0x369/0x510\
+  \ mm/memory.c:5344\nbut task is already holding lock:\nffff888019f760e0 (&sbi->s_lock){+.+.}-{3:3},\
+  \ at: exfat_iterate+0x117/0xb50 fs/exfat/dir.c:232\n\nwhich lock already depends\
+  \ on the new lock.\n\nChain exists of:\n  &mm->mmap_lock --> mapping.invalidate_lock#3\
+  \ --> &sbi->s_lock\n\n Possible unsafe locking scenario:\n\n       CPU0        \
+  \            CPU1\n       ----                    ----\n  lock(&sbi->s_lock);\n\
+  \                               lock(mapping.invalidate_lock#3);\n             \
+  \                  lock(&sbi->s_lock);\n  rlock(&mm->mmap_lock);\n\nLet's try to\
+  \ avoid above potential deadlock condition by moving dir_emit*()\nout of sbi->s_lock\
+  \ coverage.\n\nFixes: ca06197382bd (\"exfat: add directory operations\")\nCc: stable@vger.kernel.org\
+  \ #v5.7+\nReported-by: syzbot+1741a5d9b79989c10bdc@syzkaller.appspotmail.com\nLink:\
+  \ https://lore.kernel.org/lkml/00000000000078ee7e060066270b@google.com/T/#u\nTested-by:\
+  \ syzbot+1741a5d9b79989c10bdc@syzkaller.appspotmail.com\nSigned-off-by: Sungjong\
+  \ Seo <sj1557.seo@samsung.com>\nSigned-off-by: Namjae Jeon <linkinjeon@kernel.org>\n"
+submodule:
+- fs/exfat
+hunk_count: 5
+covered_count: 4

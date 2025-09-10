@@ -1,0 +1,46 @@
+audit: type=1400 audit(1713177029.269:92): avc:  denied  { perfmon } for  pid=5070 comm="syz-executor304" capability=38  scontext=root:sysadm_r:sysadm_t tcontext=root:sysadm_r:sysadm_t tclass=capability2 permissive=1
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 28 at kernel/softirq.c:362 __local_bh_enable_ip+0xc3/0x120 kernel/softirq.c:362
+Modules linked in:
+CPU: 0 PID: 28 Comm: kauditd Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+RIP: 0010:__local_bh_enable_ip+0xc3/0x120 kernel/softirq.c:362
+Code: 00 e8 81 6c 0b 00 e8 4c 69 42 00 fb 65 8b 05 cc 34 b2 7e 85 c0 74 52 5b 5d c3 cc cc cc cc 65 8b 05 4e e9 b0 7e 85 c0 75 9e 90 <0f> 0b 90 eb 98 e8 73 67 42 00 eb 99 48 89 ef e8 f9 df 19 00 eb a2
+RSP: 0018:ffffc90000a47758 EFLAGS: 00010046
+RAX: 0000000000000000 RBX: 0000000000000201 RCX: 1ffffffff1f3d467
+RDX: 0000000000000000 RSI: 0000000000000201 RDI: ffffffff88cb2754
+RBP: ffffffff88cb2754 R08: 0000000000000000 R09: ffffed1005e46e01
+R10: ffff88802f23700b R11: 0000000000000001 R12: fffffffffffffffe
+R13: ffff88802f237008 R14: ffff88802f237000 R15: 00000000049396b8
+FS:  0000000000000000(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000001a092a48 CR3: 000000000d57a000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ spin_unlock_bh include/linux/spinlock.h:396 [inline]
+ sock_hash_delete_elem+0x1f4/0x260 net/core/sock_map.c:947
+ ___bpf_prog_run+0x3e51/0xae80 kernel/bpf/core.c:1997
+ __bpf_prog_run32+0xc1/0x100 kernel/bpf/core.c:2236
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run2+0x151/0x420 kernel/trace/bpf_trace.c:2420
+ __bpf_trace_console+0xc7/0x100 include/trace/events/printk.h:10
+ trace_console include/trace/events/printk.h:10 [inline]
+ printk_sprint+0x1e9/0x300 kernel/printk/printk.c:2178
+ vprintk_store+0x4e4/0xb70 kernel/printk/printk.c:2273
+ vprintk_emit kernel/printk/printk.c:2323 [inline]
+ vprintk_emit+0xac/0x5a0 kernel/printk/printk.c:2297
+ vprintk+0x7f/0xa0 kernel/printk/printk_safe.c:45
+ _printk+0xc8/0x100 kernel/printk/printk.c:2367
+ kauditd_printk_skb kernel/audit.c:546 [inline]
+ kauditd_hold_skb+0x1fb/0x240 kernel/audit.c:581
+ kauditd_send_queue+0x236/0x290 kernel/audit.c:766
+ kauditd_thread+0x61e/0xa80 kernel/audit.c:890
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+ </TASK>

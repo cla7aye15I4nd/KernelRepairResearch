@@ -1,0 +1,36 @@
+id: 2deb10b8dc9aae6fab67
+bug_link: https://syzkaller.appspot.com/bug?extid=2deb10b8dc9aae6fab67
+title: 'KASAN: slab-use-after-free Read in bchfs_read'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4a22a7332341f49e60b804811fee7edf87909e9e
+fix_commit: 34b47e3d73a21ef992905746cdb044ce02d3b29a
+datetime: '2025-04-06T19:13:43-04:00'
+fix_commit_message: 'bcachefs: Fix UAF in bchfs_read()
+
+
+  Commit 3ba0240a8789 fixed a bug in the read retry path in __bch2_read(),
+
+  and changed bchfs_read() to match - to avoid a landmine if
+
+  bch2_read_extent() ever starts returning transaction restarts.
+
+
+  But that was incorrect, because bchfs_read() doesn''t use a separate
+
+  stack allocated bvec_iter, it uses the one in the rbio being submitted.
+
+
+  Add a comment explaining the issue, and revert the buggy change.
+
+
+  Fixes: 3ba0240a8789 ("bcachefs: Fix silent short reads in data read retry path")
+
+  Reported-by: syzbot+2deb10b8dc9aae6fab67@syzkaller.appspotmail.com
+
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>
+
+  '
+submodule:
+- fs/bcachefs
+hunk_count: 1
+covered_count: 1

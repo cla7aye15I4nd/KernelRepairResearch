@@ -1,0 +1,55 @@
+id: f1ceaa1a09ab891e1934
+bug_link: https://syzkaller.appspot.com/bug?extid=f1ceaa1a09ab891e1934
+title: 'KASAN: invalid-access Read in neon_aes_ctr_encrypt'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7cfc2ab3f0259212ecd130937893cb1d5c25ecc9
+fix_commit: 1c0cf6d19690141002889d72622b90fc01562ce4
+datetime: '2024-02-24T08:37:24+08:00'
+fix_commit_message: 'crypto: arm64/neonbs - fix out-of-bounds access on short input
+
+
+  The bit-sliced implementation of AES-CTR operates on blocks of 128
+
+  bytes, and will fall back to the plain NEON version for tail blocks or
+
+  inputs that are shorter than 128 bytes to begin with.
+
+
+  It will call straight into the plain NEON asm helper, which performs all
+
+  memory accesses in granules of 16 bytes (the size of a NEON register).
+
+  For this reason, the associated plain NEON glue code will copy inputs
+
+  shorter than 16 bytes into a temporary buffer, given that this is a rare
+
+  occurrence and it is not worth the effort to work around this in the asm
+
+  code.
+
+
+  The fallback from the bit-sliced NEON version fails to take this into
+
+  account, potentially resulting in out-of-bounds accesses. So clone the
+
+  same workaround, and use a temp buffer for short in/outputs.
+
+
+  Fixes: fc074e130051 ("crypto: arm64/aes-neonbs-ctr - fallback to plain NEON for
+  final chunk")
+
+  Cc: <stable@vger.kernel.org>
+
+  Reported-by: syzbot+f1ceaa1a09ab891e1934@syzkaller.appspotmail.com
+
+  Reviewed-by: Eric Biggers <ebiggers@google.com>
+
+  Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
+
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  '
+submodule:
+- arch/arm64/crypto
+hunk_count: 1
+covered_count: 1

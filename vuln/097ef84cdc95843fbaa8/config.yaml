@@ -1,0 +1,43 @@
+id: 097ef84cdc95843fbaa8
+bug_link: https://syzkaller.appspot.com/bug?extid=097ef84cdc95843fbaa8
+title: general protection fault in send_hsr_supervision_frame
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aa4c0c9091b0bb4cb261bbe0718d17c2834c4690
+fix_commit: 311633b604063a8a5d3fbc74d0565b42df721f68
+datetime: '2019-07-11T14:37:45-07:00'
+fix_commit_message: 'hsr: switch ->dellink() to ->ndo_uninit()
+
+
+  Switching from ->priv_destructor to dellink() has an unexpected
+
+  consequence: existing RCU readers, that is, hsr_port_get_hsr()
+
+  callers, may still be able to read the port list.
+
+
+  Instead of checking the return value of each hsr_port_get_hsr(),
+
+  we can just move it to ->ndo_uninit() which is called after
+
+  device unregister and synchronize_net(), and we still have RTNL
+
+  lock there.
+
+
+  Fixes: b9a1e627405d ("hsr: implement dellink to clean up resources")
+
+  Fixes: edf070a0fb45 ("hsr: fix a NULL pointer deref in hsr_dev_xmit()")
+
+  Reported-by: syzbot+097ef84cdc95843fbaa8@syzkaller.appspotmail.com
+
+  Cc: Arvid Brodin <arvid.brodin@alten.se>
+
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/hsr
+hunk_count: 7
+covered_count: 4

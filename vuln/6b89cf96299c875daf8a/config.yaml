@@ -1,0 +1,24 @@
+id: 6b89cf96299c875daf8a
+bug_link: https://syzkaller.appspot.com/bug?extid=6b89cf96299c875daf8a
+title: 'bpf test error: KASAN: null-ptr-deref Write in x25_disconnect'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: caec66198d137c26f0d234abc498866a58c64150
+fix_commit: 8999dc89497ab1c80d0718828e838c7cd5f6bffe
+datetime: '2020-04-28T14:08:59-07:00'
+fix_commit_message: "net/x25: Fix null-ptr-deref in x25_disconnect\n\nWe should check\
+  \ null before do x25_neigh_put in x25_disconnect,\notherwise may cause null-ptr-deref\
+  \ like this:\n\n #include <sys/socket.h>\n #include <linux/x25.h>\n\n int main()\
+  \ {\n    int sck_x25;\n    sck_x25 = socket(AF_X25, SOCK_SEQPACKET, 0);\n    close(sck_x25);\n\
+  \    return 0;\n }\n\nBUG: kernel NULL pointer dereference, address: 00000000000000d8\n\
+  CPU: 0 PID: 4817 Comm: t2 Not tainted 5.7.0-rc3+ #159\nHardware name: QEMU Standard\
+  \ PC (i440FX + PIIX, 1996), BIOS rel-1.9.3-\nRIP: 0010:x25_disconnect+0x91/0xe0\n\
+  Call Trace:\n x25_release+0x18a/0x1b0\n __sock_release+0x3d/0xc0\n sock_close+0x13/0x20\n\
+  \ __fput+0x107/0x270\n ____fput+0x9/0x10\n task_work_run+0x6d/0xb0\n exit_to_usermode_loop+0x102/0x110\n\
+  \ do_syscall_64+0x23c/0x260\n entry_SYSCALL_64_after_hwframe+0x49/0xb3\n\nReported-by:\
+  \ syzbot+6db548b615e5aeefdce2@syzkaller.appspotmail.com\nFixes: 4becb7ee5b3d (\"\
+  net/x25: Fix x25_neigh refcnt leak when x25 disconnect\")\nSigned-off-by: YueHaibing\
+  \ <yuehaibing@huawei.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/x25
+hunk_count: 1
+covered_count: 1

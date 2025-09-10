@@ -1,0 +1,52 @@
+id: 7ea9413ea6749baf5574
+bug_link: https://syzkaller.appspot.com/bug?extid=7ea9413ea6749baf5574
+title: 'KMSAN: uninit-value in nci_dev_up'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cba9ffdb9913dfe6be29f049ce920ce451ce7cc4
+fix_commit: d24b03535e5eb82e025219c2f632b485409c898f
+datetime: '2024-03-22T09:41:39+00:00'
+fix_commit_message: 'nfc: nci: Fix uninit-value in nci_dev_up and nci_ntf_packet
+
+
+  syzbot reported the following uninit-value access issue [1][2]:
+
+
+  nci_rx_work() parses and processes received packet. When the payload
+
+  length is zero, each message type handler reads uninitialized payload
+
+  and KMSAN detects this issue. The receipt of a packet with a zero-size
+
+  payload is considered unexpected, and therefore, such packets should be
+
+  silently discarded.
+
+
+  This patch resolved this issue by checking payload size before calling
+
+  each message type handler codes.
+
+
+  Fixes: 6a2968aaf50c ("NFC: basic NCI protocol implementation")
+
+  Reported-and-tested-by: syzbot+7ea9413ea6749baf5574@syzkaller.appspotmail.com
+
+  Reported-and-tested-by: syzbot+29b5ca705d2e0f4a44d2@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=7ea9413ea6749baf5574 [1]
+
+  Closes: https://syzkaller.appspot.com/bug?extid=29b5ca705d2e0f4a44d2 [2]
+
+  Signed-off-by: Ryosuke Yasuoka <ryasuoka@redhat.com>
+
+  Reviewed-by: Jeremy Cline <jeremy@jcline.org>
+
+  Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/nfc
+hunk_count: 1
+covered_count: 1

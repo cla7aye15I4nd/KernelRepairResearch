@@ -1,0 +1,63 @@
+id: 40b7287c2dc987c48c81
+bug_link: https://syzkaller.appspot.com/bug?extid=40b7287c2dc987c48c81
+title: kernel BUG at drivers/tty/tty_ldisc.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 17a16542b88e753cc3bd54cf30b74df3d547421e
+fix_commit: 598c2d41ff44889dd8eced4f117403e472158d85
+datetime: '2018-04-23T11:05:52+02:00'
+fix_commit_message: 'tty: Avoid possible error pointer dereference at tty_ldisc_restore().
+
+
+  syzbot is reporting crashes [1] triggered by memory allocation failure at
+
+  tty_ldisc_get() from tty_ldisc_restore(). While syzbot stops at WARN_ON()
+
+  due to panic_on_warn == true, panic_on_warn == false will after all trigger
+
+  an OOPS by dereferencing old->ops->num if IS_ERR(old) == true.
+
+
+  We can simplify tty_ldisc_restore() as three calls (old->ops->num, N_TTY,
+
+  N_NULL) to tty_ldisc_failto() in addition to avoiding possible error
+
+  pointer dereference.
+
+
+  If someone reports kernel panic triggered by forcing all memory allocations
+
+  for tty_ldisc_restore() to fail, we can consider adding __GFP_NOFAIL for
+
+  tty_ldisc_restore() case.
+
+
+  [1] https://syzkaller.appspot.com/bug?id=6ac359c61e71d22e06db7f8f88243feb11d927e7
+
+
+  Reported-by: syzbot+40b7287c2dc987c48c81@syzkaller.appspotmail.com
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  Cc: Jiri Slaby <jslaby@suse.com>
+
+  Cc: Dmitry Vyukov <dvyukov@google.com>
+
+  Cc: Johannes Weiner <hannes@cmpxchg.org>
+
+  Cc: Alan Cox <alan@llwyncelyn.cymru>
+
+  Cc: Christoph Hellwig <hch@lst.de>
+
+  Cc: Michal Hocko <mhocko@suse.com>
+
+  Cc: stable <stable@vger.kernel.org>
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/tty
+hunk_count: 1
+covered_count: 0

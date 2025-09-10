@@ -1,0 +1,171 @@
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6ee7252f51c0..d9188ecf863d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3068,7 +3068,6 @@ void btrfs_writepage_endio_finish_ordered(struct page *page, u64 start,
+ extern const struct dentry_operations btrfs_dentry_operations;
+ extern const struct iomap_ops btrfs_dio_iomap_ops;
+ extern const struct iomap_dio_ops btrfs_dio_ops;
+-extern const struct iomap_dio_ops btrfs_sync_dops;
+ 
+ /* Inode locking type flags, by default the exclusive lock is taken */
+ #define BTRFS_ILOCK_SHARED	(1U << 0)
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 40b7886c23f5..5b93f0bb8654 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2018,44 +2018,10 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 	if (sync)
+ 		atomic_inc(&BTRFS_I(inode)->sync_writers);
+ 
+-	if (iocb->ki_flags & IOCB_DIRECT) {
+-		/*
+-		 * 1. We must always clear IOCB_DSYNC in order to not deadlock
+-		 *    in iomap, as it calls generic_write_sync() in this case.
+-		 * 2. If we are async, we can call iomap_dio_complete() either
+-		 *    in
+-		 *
+-		 *    2.1. A worker thread from the last bio completed.  In this
+-		 *	   case we need to mark the btrfs_dio_data that it is
+-		 *	   async in order to call generic_write_sync() properly.
+-		 *	   This is handled by setting BTRFS_DIO_SYNC_STUB in the
+-		 *	   current->journal_info.
+-		 *    2.2  The submitter context, because all IO completed
+-		 *         before we exited iomap_dio_rw().  In this case we can
+-		 *         just re-set the IOCB_DSYNC on the iocb and we'll do
+-		 *         the sync below.  If our ->end_io() gets called and
+-		 *         current->journal_info is set, then we know we're in
+-		 *         our current context and we will clear
+-		 *         current->journal_info to indicate that we need to
+-		 *         sync below.
+-		 */
+-		if (sync) {
+-			ASSERT(current->journal_info == NULL);
+-			iocb->ki_flags &= ~IOCB_DSYNC;
+-			current->journal_info = BTRFS_DIO_SYNC_STUB;
+-		}
++	if (iocb->ki_flags & IOCB_DIRECT)
+ 		num_written = btrfs_direct_write(iocb, from);
+-
+-		/*
+-		 * As stated above, we cleared journal_info, so we need to do
+-		 * the sync ourselves.
+-		 */
+-		if (sync && current->journal_info == NULL)
+-			iocb->ki_flags |= IOCB_DSYNC;
+-		current->journal_info = NULL;
+-	} else {
++	else
+ 		num_written = btrfs_buffered_write(iocb, from);
+-	}
+ 
+ 	/*
+ 	 * We also have to set last_sub_trans to the current log transid,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c4e00027f0f8..9c0bf692a362 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -62,7 +62,6 @@ struct btrfs_dio_data {
+ 	loff_t length;
+ 	ssize_t submitted;
+ 	struct extent_changeset *data_reserved;
+-	bool sync;
+ };
+ 
+ static const struct inode_operations btrfs_dir_inode_operations;
+@@ -7431,17 +7430,6 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
+ 	int ret = 0;
+ 	u64 len = length;
+ 	bool unlock_extents = false;
+-	bool sync = (current->journal_info == BTRFS_DIO_SYNC_STUB);
+-
+-	/*
+-	 * We used current->journal_info here to see if we were sync, but
+-	 * there's a lot of tests in the enospc machinery to not do flushing if
+-	 * we have a journal_info set, so we need to clear this out and re-set
+-	 * it in iomap_end.
+-	 */
+-	ASSERT(current->journal_info == NULL ||
+-	       current->journal_info == BTRFS_DIO_SYNC_STUB);
+-	current->journal_info = NULL;
+ 
+ 	if (!write)
+ 		len = min_t(u64, len, fs_info->sectorsize);
+@@ -7467,7 +7455,6 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
+ 	if (!dio_data)
+ 		return -ENOMEM;
+ 
+-	dio_data->sync = sync;
+ 	dio_data->length = length;
+ 	if (write) {
+ 		dio_data->reserve = round_up(length, fs_info->sectorsize);
+@@ -7615,14 +7602,6 @@ static int btrfs_dio_iomap_end(struct inode *inode, loff_t pos, loff_t length,
+ 		extent_changeset_free(dio_data->data_reserved);
+ 	}
+ out:
+-	/*
+-	 * We're all done, we can re-set the current->journal_info now safely
+-	 * for our endio.
+-	 */
+-	if (dio_data->sync) {
+-		ASSERT(current->journal_info == NULL);
+-		current->journal_info = BTRFS_DIO_SYNC_STUB;
+-	}
+ 	kfree(dio_data);
+ 	iomap->private = NULL;
+ 
+@@ -7999,30 +7978,6 @@ static blk_qc_t btrfs_submit_direct(struct inode *inode, struct iomap *iomap,
+ 	return BLK_QC_T_NONE;
+ }
+ 
+-static inline int btrfs_maybe_fsync_end_io(struct kiocb *iocb, ssize_t size,
+-					   int error, unsigned flags)
+-{
+-	/*
+-	 * Now if we're still in the context of our submitter we know we can't
+-	 * safely run generic_write_sync(), so clear our flag here so that the
+-	 * caller knows to follow up with a sync.
+-	 */
+-	if (current->journal_info == BTRFS_DIO_SYNC_STUB) {
+-		current->journal_info = NULL;
+-		return error;
+-	}
+-
+-	if (error)
+-		return error;
+-
+-	if (size) {
+-		iocb->ki_flags |= IOCB_DSYNC;
+-		return generic_write_sync(iocb, size);
+-	}
+-
+-	return 0;
+-}
+-
+ const struct iomap_ops btrfs_dio_iomap_ops = {
+ 	.iomap_begin            = btrfs_dio_iomap_begin,
+ 	.iomap_end              = btrfs_dio_iomap_end,
+@@ -8032,11 +7987,6 @@ const struct iomap_dio_ops btrfs_dio_ops = {
+ 	.submit_io		= btrfs_submit_direct,
+ };
+ 
+-const struct iomap_dio_ops btrfs_sync_dops = {
+-	.submit_io		= btrfs_submit_direct,
+-	.end_io			= btrfs_maybe_fsync_end_io,
+-};
+-
+ static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			u64 start, u64 len)
+ {
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 858d9153a1cd..8241c050ba71 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -112,7 +112,6 @@ struct btrfs_transaction {
+ #define TRANS_EXTWRITERS	(__TRANS_START | __TRANS_ATTACH)
+ 
+ #define BTRFS_SEND_TRANS_STUB	((void *)1)
+-#define BTRFS_DIO_SYNC_STUB	((void *)2)
+ 
+ struct btrfs_trans_handle {
+ 	u64 transid;

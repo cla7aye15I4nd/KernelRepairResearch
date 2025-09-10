@@ -1,0 +1,45 @@
+id: 23843634c323e144fd0b
+bug_link: https://syzkaller.appspot.com/bug?extid=23843634c323e144fd0b
+title: WARNING in perf_pending_event
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 136057256686de39cc3a07c2e39ef6bc43003ff6
+fix_commit: 73743c3b092277febbf69b250ce8ebbca0525aa2
+datetime: '2021-11-23T09:45:37+01:00'
+fix_commit_message: "perf: Ignore sigtrap for tracepoints destined for other tasks\n\
+  \nsyzbot reported that the warning in perf_sigtrap() fires, saying that\nthe event's\
+  \ task does not match current:\n\n | WARNING: CPU: 0 PID: 9090 at kernel/events/core.c:6446\
+  \ perf_pending_event+0x40d/0x4b0 kernel/events/core.c:6513\n | Modules linked in:\n\
+  \ | CPU: 0 PID: 9090 Comm: syz-executor.1 Not tainted 5.15.0-syzkaller #0\n | Hardware\
+  \ name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n\
+  \ | RIP: 0010:perf_sigtrap kernel/events/core.c:6446 [inline]\n | RIP: 0010:perf_pending_event_disable\
+  \ kernel/events/core.c:6470 [inline]\n | RIP: 0010:perf_pending_event+0x40d/0x4b0\
+  \ kernel/events/core.c:6513\n | ...\n | Call Trace:\n |  <IRQ>\n |  irq_work_single+0x106/0x220\
+  \ kernel/irq_work.c:211\n |  irq_work_run_list+0x6a/0x90 kernel/irq_work.c:242\n\
+  \ |  irq_work_run+0x4f/0xd0 kernel/irq_work.c:251\n |  __sysvec_irq_work+0x95/0x3d0\
+  \ arch/x86/kernel/irq_work.c:22\n |  sysvec_irq_work+0x8e/0xc0 arch/x86/kernel/irq_work.c:17\n\
+  \ |  </IRQ>\n |  <TASK>\n |  asm_sysvec_irq_work+0x12/0x20 arch/x86/include/asm/idtentry.h:664\n\
+  \ | RIP: 0010:__raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152\
+  \ [inline]\n | RIP: 0010:_raw_spin_unlock_irqrestore+0x38/0x70 kernel/locking/spinlock.c:194\n\
+  \ | ...\n |  coredump_task_exit kernel/exit.c:371 [inline]\n |  do_exit+0x1865/0x25c0\
+  \ kernel/exit.c:771\n |  do_group_exit+0xe7/0x290 kernel/exit.c:929\n |  get_signal+0x3b0/0x1ce0\
+  \ kernel/signal.c:2820\n |  arch_do_signal_or_restart+0x2a9/0x1c40 arch/x86/kernel/signal.c:868\n\
+  \ |  handle_signal_work kernel/entry/common.c:148 [inline]\n |  exit_to_user_mode_loop\
+  \ kernel/entry/common.c:172 [inline]\n |  exit_to_user_mode_prepare+0x17d/0x290\
+  \ kernel/entry/common.c:207\n |  __syscall_exit_to_user_mode_work kernel/entry/common.c:289\
+  \ [inline]\n |  syscall_exit_to_user_mode+0x19/0x60 kernel/entry/common.c:300\n\
+  \ |  do_syscall_64+0x42/0xb0 arch/x86/entry/common.c:86\n |  entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \nOn x86 this shouldn't happen, which has arch_irq_work_raise().\n\nThe test program\
+  \ sets up a perf event with sigtrap set to fire on the\n'sched_wakeup' tracepoint,\
+  \ which fired in ttwu_do_wakeup().\n\nThis happened because the 'sched_wakeup' tracepoint\
+  \ also takes a task\nargument passed on to perf_tp_event(), which is used to deliver\
+  \ the\nevent to that other task.\n\nSince we cannot deliver synchronous signals\
+  \ to other tasks, skip an event if\nperf_tp_event() is targeted at another task\
+  \ and perf_event_attr::sigtrap is\nset, which will avoid ever entering perf_sigtrap()\
+  \ for such events.\n\nFixes: 97ba62b27867 (\"perf: Add support for SIGTRAP on perf\
+  \ events\")\nReported-by: syzbot+663359e32ce6f1a305ad@syzkaller.appspotmail.com\n\
+  Signed-off-by: Marco Elver <elver@google.com>\nSigned-off-by: Peter Zijlstra (Intel)\
+  \ <peterz@infradead.org>\nLink: https://lkml.kernel.org/r/YYpoCOBmC/kJWfmI@elver.google.com\n"
+submodule:
+- kernel/events
+hunk_count: 1
+covered_count: 0

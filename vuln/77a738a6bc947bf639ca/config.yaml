@@ -1,0 +1,45 @@
+id: 77a738a6bc947bf639ca
+bug_link: https://syzkaller.appspot.com/bug?extid=77a738a6bc947bf639ca
+title: WARNING in io_wq_put
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a185f1db59f13de73aa470559030e90e50b34d93
+fix_commit: f5d2d23bf0d948ce0b9307b7bacae7ff0bc03c71
+datetime: '2021-03-25T10:16:12-06:00'
+fix_commit_message: "io-wq: fix race around pending work on teardown\n\nsyzbot reports\
+  \ that it's triggering the warning condition on having\npending work on shutdown:\n\
+  \nWARNING: CPU: 1 PID: 12346 at fs/io-wq.c:1061 io_wq_destroy fs/io-wq.c:1061 [inline]\n\
+  WARNING: CPU: 1 PID: 12346 at fs/io-wq.c:1061 io_wq_put+0x153/0x260 fs/io-wq.c:1072\n\
+  Modules linked in:\nCPU: 1 PID: 12346 Comm: syz-executor.5 Not tainted 5.12.0-rc2-syzkaller\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/01/2011\nRIP: 0010:io_wq_destroy fs/io-wq.c:1061 [inline]\nRIP: 0010:io_wq_put+0x153/0x260\
+  \ fs/io-wq.c:1072\nCode: 8d e8 71 90 ea 01 49 89 c4 41 83 fc 40 7d 4f e8 33 4d 97\
+  \ ff 42 80 7c 2d 00 00 0f 85 77 ff ff ff e9 7a ff ff ff e8 1d 4d 97 ff <0f> 0b eb\
+  \ b9 8d 6b ff 89 ee 09 de bf ff ff ff ff e8 18 51 97 ff 09\nRSP: 0018:ffffc90001ebfb08\
+  \ EFLAGS: 00010293\nRAX: ffffffff81e16083 RBX: ffff888019038040 RCX: ffff88801e86b780\n\
+  RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000040\nRBP: 1ffff1100b2f8a80\
+  \ R08: ffffffff81e15fce R09: ffffed100b2f8a82\nR10: ffffed100b2f8a82 R11: 0000000000000000\
+  \ R12: 0000000000000000\nR13: dffffc0000000000 R14: ffff8880597c5400 R15: ffff888019038000\n\
+  FS:  00007f8dcd89c700(0000) GS:ffff8880b9c00000(0000) knlGS:0000000000000000\nCS:\
+  \  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 000055e9a054e160 CR3: 000000001dfb8000\
+  \ CR4: 00000000001506f0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \ io_uring_clean_tctx+0x1b7/0x210 fs/io_uring.c:8802\n __io_uring_files_cancel+0x13c/0x170\
+  \ fs/io_uring.c:8820\n io_uring_files_cancel include/linux/io_uring.h:47 [inline]\n\
+  \ do_exit+0x258/0x2340 kernel/exit.c:780\n do_group_exit+0x168/0x2d0 kernel/exit.c:922\n\
+  \ get_signal+0x1734/0x1ef0 kernel/signal.c:2773\n arch_do_signal_or_restart+0x3c/0x610\
+  \ arch/x86/kernel/signal.c:811\n handle_signal_work kernel/entry/common.c:147 [inline]\n\
+  \ exit_to_user_mode_loop kernel/entry/common.c:171 [inline]\n exit_to_user_mode_prepare+0xac/0x1e0\
+  \ kernel/entry/common.c:208\n __syscall_exit_to_user_mode_work kernel/entry/common.c:290\
+  \ [inline]\n syscall_exit_to_user_mode+0x48/0x180 kernel/entry/common.c:301\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  RIP: 0033:0x465f69\n\nwhich shouldn't happen, but seems to be possible due to a\
+  \ race on whether\nor not the io-wq manager sees a fatal signal first, or whether\
+  \ the io-wq\nworkers do. If we race with queueing work and then send a fatal signal\
+  \ to\nthe owning task, and the io-wq worker sees that before the manager sets\n\
+  IO_WQ_BIT_EXIT, then it's possible to have the worker exit and leave work\nbehind.\n\
+  \nJust turn the WARN_ON_ONCE() into a cancelation condition instead.\n\nReported-by:\
+  \ syzbot+77a738a6bc947bf639ca@syzkaller.appspotmail.com\nSigned-off-by: Jens Axboe\
+  \ <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

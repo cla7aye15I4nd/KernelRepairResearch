@@ -1,0 +1,22 @@
+id: 802a5abb8abae86eb6de
+bug_link: https://syzkaller.appspot.com/bug?extid=802a5abb8abae86eb6de
+title: 'BUG: MAX_LOCK_DEPTH too low! (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8b7008620b8452728cadead460a36f64ed78c460
+fix_commit: bab2c80e5a6c855657482eac9e97f5f3eedb509a
+datetime: '2018-07-12T16:55:29-07:00'
+fix_commit_message: "nsh: set mac len based on inner packet\n\nWhen pulling the NSH\
+  \ header in nsh_gso_segment, set the mac length\nbased on the encapsulated packet\
+  \ type.\n\nskb_reset_mac_len computes an offset to the network header, which\nhere\
+  \ still points to the outer packet:\n\n  >     skb_reset_network_header(skb);\n\
+  \  >     [...]\n  >     __skb_pull(skb, nsh_len);\n  >     skb_reset_mac_header(skb);\
+  \    // now mac hdr starts nsh_len == 8B after net hdr\n  >     skb_reset_mac_len(skb);\
+  \       // mac len = net hdr - mac hdr == (u16) -8 == 65528\n  >     [..]\n  > \
+  \    skb_mac_gso_segment(skb, ..)\n\nLink: http://lkml.kernel.org/r/CAF=yD-KeAcTSOn4AxirAxL8m7QAS8GBBe1w09eziYwvPbbUeYA@mail.gmail.com\n\
+  Reported-by: syzbot+7b9ed9872dab8c32305d@syzkaller.appspotmail.com\nFixes: c411ed854584\
+  \ (\"nsh: add GSO support\")\nSigned-off-by: Willem de Bruijn <willemb@google.com>\n\
+  Acked-by: Jiri Benc <jbenc@redhat.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/nsh
+hunk_count: 1
+covered_count: 1

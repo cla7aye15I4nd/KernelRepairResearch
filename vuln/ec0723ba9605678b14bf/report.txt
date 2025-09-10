@@ -1,0 +1,44 @@
+=====================================================
+BUG: KMSAN: uninit-value in ppp_async_encode drivers/net/ppp/ppp_async.c:548 [inline]
+BUG: KMSAN: uninit-value in ppp_async_push+0xc05/0x2660 drivers/net/ppp/ppp_async.c:675
+ ppp_async_encode drivers/net/ppp/ppp_async.c:548 [inline]
+ ppp_async_push+0xc05/0x2660 drivers/net/ppp/ppp_async.c:675
+ ppp_async_send+0x130/0x1b0 drivers/net/ppp/ppp_async.c:634
+ ppp_push+0x220/0x22b0 drivers/net/ppp/ppp_generic.c:1883
+ ppp_send_frame drivers/net/ppp/ppp_generic.c:1846 [inline]
+ __ppp_xmit_process+0x123a/0x2780 drivers/net/ppp/ppp_generic.c:1646
+ ppp_xmit_process+0x100/0x2b0 drivers/net/ppp/ppp_generic.c:1667
+ ppp_write+0x63a/0x7d0 drivers/net/ppp/ppp_generic.c:521
+ do_loop_readv_writev fs/read_write.c:764 [inline]
+ vfs_writev+0xb0e/0x1450 fs/read_write.c:973
+ do_pwritev fs/read_write.c:1072 [inline]
+ __do_sys_pwritev fs/read_write.c:1119 [inline]
+ __se_sys_pwritev fs/read_write.c:1114 [inline]
+ __x64_sys_pwritev+0x2e5/0x500 fs/read_write.c:1114
+ x64_sys_call+0x3539/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:297
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ slab_post_alloc_hook mm/slub.c:3877 [inline]
+ slab_alloc_node mm/slub.c:3918 [inline]
+ kmem_cache_alloc_node+0x622/0xc90 mm/slub.c:3961
+ kmalloc_reserve+0x13d/0x4a0 net/core/skbuff.c:577
+ __alloc_skb+0x35b/0x7a0 net/core/skbuff.c:668
+ alloc_skb include/linux/skbuff.h:1319 [inline]
+ ppp_write+0xe5/0x7d0 drivers/net/ppp/ppp_generic.c:509
+ do_loop_readv_writev fs/read_write.c:764 [inline]
+ vfs_writev+0xb0e/0x1450 fs/read_write.c:973
+ do_pwritev fs/read_write.c:1072 [inline]
+ __do_sys_pwritev fs/read_write.c:1119 [inline]
+ __se_sys_pwritev fs/read_write.c:1114 [inline]
+ __x64_sys_pwritev+0x2e5/0x500 fs/read_write.c:1114
+ x64_sys_call+0x3539/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:297
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 1 PID: 5049 Comm: syz-executor420 Not tainted 6.9.0-syzkaller-02707-g614da38e2f7a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+=====================================================

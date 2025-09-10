@@ -1,0 +1,31 @@
+id: e7a125aff38791d8cb65
+bug_link: https://syzkaller.appspot.com/bug?extid=e7a125aff38791d8cb65
+title: WARNING in ptrace_stop
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ba47d845d715a010f7b51f6f89bae32845e6acb7
+fix_commit: d136122f58458479fd8926020ba2937de61d7f65
+datetime: '2020-07-22T10:22:00+02:00'
+fix_commit_message: "sched: Fix race against ptrace_freeze_trace()\n\nThere is apparently\
+  \ one site that violates the rule that only current\nand ttwu() will modify task->state,\
+  \ namely ptrace_{,un}freeze_traced()\nwill change task->state for a remote task.\n\
+  \nOleg explains:\n\n  \"TASK_TRACED/TASK_STOPPED was always protected by siglock.\
+  \ In\nparticular, ttwu(__TASK_TRACED) must be always called with siglock\nheld.\
+  \ That is why ptrace_freeze_traced() assumes it can safely do\ns/TASK_TRACED/__TASK_TRACED/\
+  \ under spin_lock(siglock).\"\n\nThis breaks the ordering scheme introduced by commit:\n\
+  \n  dbfb089d360b (\"sched: Fix loadavg accounting race\")\n\nSpecifically, the reload\
+  \ not matching no longer implies we don't have\nto block.\n\nSimply things by noting\
+  \ that what we need is a LOAD->STORE ordering\nand this can be provided by a control\
+  \ dependency.\n\nSo replace:\n\n\tprev_state = prev->state;\n\traw_spin_lock(&rq->lock);\n\
+  \tsmp_mb__after_spinlock(); /* SMP-MB */\n\tif (... && prev_state && prev_state\
+  \ == prev->state)\n\t\tdeactivate_task();\n\nwith:\n\n\tprev_state = prev->state;\n\
+  \tif (... && prev_state) /* CTRL-DEP */\n\t\tdeactivate_task();\n\nSince that already\
+  \ implies the 'prev->state' load must be complete\nbefore allowing the 'prev->on_rq\
+  \ = 0' store to become visible.\n\nFixes: dbfb089d360b (\"sched: Fix loadavg accounting\
+  \ race\")\nReported-by: Jiri Slaby <jirislaby@kernel.org>\nSigned-off-by: Peter\
+  \ Zijlstra (Intel) <peterz@infradead.org>\nAcked-by: Oleg Nesterov <oleg@redhat.com>\n\
+  Tested-by: Paul Gortmaker <paul.gortmaker@windriver.com>\nTested-by: Christian Brauner\
+  \ <christian.brauner@ubuntu.com>\n"
+submodule:
+- kernel/sched
+hunk_count: 3
+covered_count: 0

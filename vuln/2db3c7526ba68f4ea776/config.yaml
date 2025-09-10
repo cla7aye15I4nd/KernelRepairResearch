@@ -1,0 +1,53 @@
+id: 2db3c7526ba68f4ea776
+bug_link: https://syzkaller.appspot.com/bug?extid=2db3c7526ba68f4ea776
+title: 'KMSAN: uninit-value in hfs_read_inode'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 40384c840ea1944d7c5a392e8975ed088ecf0b37
+fix_commit: b905bafdea21a75d75a96855edd9e0b6051eee30
+datetime: '2024-12-02T15:32:19+01:00'
+fix_commit_message: 'hfs: Sanity check the root record
+
+
+  In the syzbot reproducer, the hfs_cat_rec for the root dir has type
+
+  HFS_CDR_FIL after being read with hfs_bnode_read() in hfs_super_fill().
+
+  This indicates it should be used as an hfs_cat_file, which is 102 bytes.
+
+  Only the first 70 bytes of that struct are initialized, however,
+
+  because the entrylength passed into hfs_bnode_read() is still the length of
+
+  a directory record. This causes uninitialized values to be used later on,
+
+  when the hfs_cat_rec union is treated as the larger hfs_cat_file struct.
+
+
+  Add a check to make sure the retrieved record has the correct type
+
+  for the root directory (HFS_CDR_DIR), and make sure we load the correct
+
+  number of bytes for a directory record.
+
+
+  Reported-by: syzbot+2db3c7526ba68f4ea776@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=2db3c7526ba68f4ea776
+
+  Tested-by: syzbot+2db3c7526ba68f4ea776@syzkaller.appspotmail.com
+
+  Tested-by: Leo Stone <leocstone@gmail.com>
+
+  Signed-off-by: Leo Stone <leocstone@gmail.com>
+
+  Link: https://lore.kernel.org/r/20241201051420.77858-1-leocstone@gmail.com
+
+  Reviewed-by: Jan Kara <jack@suse.cz>
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs/hfs
+hunk_count: 1
+covered_count: 1

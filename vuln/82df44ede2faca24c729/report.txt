@@ -1,0 +1,100 @@
+loop0: detected capacity change from 0 to 2048
+UDF-fs: warning (device loop0): udf_load_vrs: No anchor found
+UDF-fs: Scanning with blocksize 512 failed
+UDF-fs: INFO Mounting volume 'LinuxUDF', timestamp 2022/11/22 14:59 (1000)
+==================================================================
+BUG: KASAN: use-after-free in crc_itu_t+0x21c/0x2a0 lib/crc-itu-t.c:60
+Read of size 1 at addr ffff888066830000 by task syz-executor150/5056
+
+CPU: 1 PID: 5056 Comm: syz-executor150 Not tainted 6.7.0-rc6-syzkaller-00022-g55cb5f43689d #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2d0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0x163/0x540 mm/kasan/report.c:475
+ kasan_report+0x142/0x170 mm/kasan/report.c:588
+ crc_itu_t+0x21c/0x2a0 lib/crc-itu-t.c:60
+ udf_finalize_lvid fs/udf/super.c:1984 [inline]
+ udf_sync_fs+0x1d2/0x380 fs/udf/super.c:2340
+ sync_filesystem+0xec/0x220 fs/sync.c:56
+ generic_shutdown_super+0x72/0x2c0 fs/super.c:669
+ kill_block_super+0x44/0x90 fs/super.c:1667
+ deactivate_locked_super+0xc1/0x130 fs/super.c:484
+ cleanup_mnt+0x426/0x4c0 fs/namespace.c:1256
+ task_work_run+0x24a/0x300 kernel/task_work.c:180
+ exit_task_work include/linux/task_work.h:38 [inline]
+ do_exit+0xa2c/0x2740 kernel/exit.c:869
+ do_group_exit+0x206/0x2c0 kernel/exit.c:1018
+ __do_sys_exit_group kernel/exit.c:1029 [inline]
+ __se_sys_exit_group kernel/exit.c:1027 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1027
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x45/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7fdf7c50f349
+Code: Unable to access opcode bytes at 0x7fdf7c50f31f.
+RSP: 002b:00007ffe168fc088 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007fdf7c50f349
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000001
+RBP: 00007fdf7c59b390 R08: ffffffffffffffb0 R09: 00007ffe168fc150
+R10: 000080001d00c0d0 R11: 0000000000000246 R12: 00007fdf7c59b390
+R13: 0000000000000000 R14: 00007fdf7c59c100 R15: 00007fdf7c4d99f0
+ </TASK>
+
+The buggy address belongs to the physical page:
+page:ffffea00019a0c00 refcount:0 mapcount:0 mapping:0000000000000000 index:0x1 pfn:0x66830
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000000 ffffea00019a0c48 ffffea00019915c8 0000000000000000
+raw: 0000000000000001 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as freed
+page last allocated via order 0, migratetype Movable, gfp_mask 0x140cca(GFP_HIGHUSER_MOVABLE|__GFP_COMP), pid 5056, tgid 5056 (syz-executor150), ts 70180314734, free_ts 70181726484
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x1e6/0x210 mm/page_alloc.c:1537
+ prep_new_page mm/page_alloc.c:1544 [inline]
+ get_page_from_freelist+0x33ea/0x3570 mm/page_alloc.c:3312
+ __alloc_pages+0x255/0x680 mm/page_alloc.c:4568
+ alloc_pages_mpol+0x3de/0x640 mm/mempolicy.c:2133
+ vma_alloc_folio+0xf3/0x3f0 mm/mempolicy.c:2172
+ wp_page_copy mm/memory.c:3120 [inline]
+ do_wp_page+0x125e/0x4d40 mm/memory.c:3511
+ handle_pte_fault mm/memory.c:5055 [inline]
+ __handle_mm_fault mm/memory.c:5180 [inline]
+ handle_mm_fault+0x1b1c/0x6680 mm/memory.c:5345
+ do_user_addr_fault arch/x86/mm/fault.c:1364 [inline]
+ handle_page_fault arch/x86/mm/fault.c:1505 [inline]
+ exc_page_fault+0x456/0x870 arch/x86/mm/fault.c:1561
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:570
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1137 [inline]
+ free_unref_page_prepare+0x931/0xa60 mm/page_alloc.c:2347
+ free_unref_page_list+0x5a0/0x840 mm/page_alloc.c:2533
+ release_pages+0x2117/0x2400 mm/swap.c:1042
+ tlb_batch_pages_flush mm/mmu_gather.c:98 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:293 [inline]
+ tlb_flush_mmu+0x34c/0x4e0 mm/mmu_gather.c:300
+ tlb_finish_mmu+0xd4/0x1f0 mm/mmu_gather.c:392
+ exit_mmap+0x4d3/0xc60 mm/mmap.c:3321
+ __mmput+0x115/0x3c0 kernel/fork.c:1349
+ exit_mm+0x21f/0x300 kernel/exit.c:567
+ do_exit+0x9af/0x2740 kernel/exit.c:856
+ do_group_exit+0x206/0x2c0 kernel/exit.c:1018
+ __do_sys_exit_group kernel/exit.c:1029 [inline]
+ __se_sys_exit_group kernel/exit.c:1027 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1027
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x45/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Memory state around the buggy address:
+ ffff88806682ff00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff88806682ff80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff888066830000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+                   ^
+ ffff888066830080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff888066830100: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+==================================================================

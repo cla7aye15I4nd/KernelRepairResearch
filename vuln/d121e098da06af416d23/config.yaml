@@ -1,0 +1,52 @@
+id: d121e098da06af416d23
+bug_link: https://syzkaller.appspot.com/bug?extid=d121e098da06af416d23
+title: 'BUG: Bad page state in bpf_test_run_xdp_live'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 053b212b3a356e47fe7772fbf19e07721393ba72
+fix_commit: c40dd8c4732551605712985bc5b7045094c6458d
+datetime: '2024-10-31T16:15:21+01:00'
+fix_commit_message: 'bpf, test_run: Fix LIVE_FRAME frame update after a page has been
+  recycled
+
+
+  The test_run code detects whether a page has been modified and
+
+  re-initialises the xdp_frame structure if it has, using
+
+  xdp_update_frame_from_buff(). However, xdp_update_frame_from_buff()
+
+  doesn''t touch frame->mem, so that wasn''t correctly re-initialised, which
+
+  led to the pages from page_pool not being returned correctly. Syzbot
+
+  noticed this as a memory leak.
+
+
+  Fix this by also copying the frame->mem structure when re-initialising
+
+  the frame, like we do on initialisation of a new page from page_pool.
+
+
+  Fixes: e5995bc7e2ba ("bpf, test_run: fix crashes due to XDP frame overwriting/corruption")
+
+  Fixes: b530e9e1063e ("bpf: Add "live packet" mode for XDP in BPF_PROG_RUN")
+
+  Reported-by: syzbot+d121e098da06af416d23@syzkaller.appspotmail.com
+
+  Signed-off-by: Toke Høiland-Jørgensen <toke@redhat.com>
+
+  Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+
+  Tested-by: syzbot+d121e098da06af416d23@syzkaller.appspotmail.com
+
+  Reviewed-by: Alexander Lobakin <aleksander.lobakin@intel.com>
+
+  Acked-by: Stanislav Fomichev <sdf@fomichev.me>
+
+  Link: https://lore.kernel.org/bpf/20241030-test-run-mem-fix-v1-1-41e88e8cae43@redhat.com
+
+  '
+submodule:
+- net/bpf
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,32 @@
+id: c028095236fcb6f4348811565b75084c754dc729
+bug_link: https://syzkaller.appspot.com/bug?extid=c028095236fcb6f4348811565b75084c754dc729
+title: 'KASAN: slab-out-of-bounds Read in xfrm_hash_rebuild'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 257a4b018d1b514a1cc738e3ca11b566d8f3a3d8
+fix_commit: 862591bf4f519d1b8d859af720fafeaebdd0162a
+datetime: '2017-12-30T09:18:47+01:00'
+fix_commit_message: "xfrm: skip policies marked as dead while rehashing\n\nsyzkaller\
+  \ triggered following KASAN splat:\n\nBUG: KASAN: slab-out-of-bounds in xfrm_hash_rebuild+0xdbe/0xf00\
+  \ net/xfrm/xfrm_policy.c:618\nread of size 2 at addr ffff8801c8e92fe4 by task kworker/1:1/23\
+  \ [..]\nWorkqueue: events xfrm_hash_rebuild [..]\n __asan_report_load2_noabort+0x14/0x20\
+  \ mm/kasan/report.c:428\n xfrm_hash_rebuild+0xdbe/0xf00 net/xfrm/xfrm_policy.c:618\n\
+  \ process_one_work+0xbbf/0x1b10 kernel/workqueue.c:2112\n worker_thread+0x223/0x1990\
+  \ kernel/workqueue.c:2246 [..]\n\nThe reproducer triggers:\n1016               \
+  \  if (error) {\n1017                         list_move_tail(&walk->walk.all, &x->all);\n\
+  1018                         goto out;\n1019                 }\n\nin xfrm_policy_walk()\
+  \ via pfkey (it sets tiny rcv space, dump\ncallback returns -ENOBUFS).\n\nIn this\
+  \ case, *walk is located the pfkey socket struct, so this socket\nbecomes visible\
+  \ in the global policy list.\n\nIt looks like this is intentional -- phony walker\
+  \ has walk.dead set to 1\nand all other places skip such \"policies\".\n\nCcing\
+  \ original authors of the two commits that seem to expose this\nissue (first patch\
+  \ missed ->dead check, second patch adds pfkey\nsockets to policies dumper list).\n\
+  \nFixes: 880a6fab8f6ba5b (\"xfrm: configure policy hash table thresholds by netlink\"\
+  )\nFixes: 12a169e7d8f4b1c (\"ipsec: Put dumpers on the dump list\")\nCc: Herbert\
+  \ Xu <herbert@gondor.apana.org.au>\nCc: Timo Teras <timo.teras@iki.fi>\nCc: Christophe\
+  \ Gouault <christophe.gouault@6wind.com>\nReported-by: syzbot <bot+c028095236fcb6f4348811565b75084c754dc729@syzkaller.appspotmail.com>\n\
+  Signed-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Steffen Klassert\
+  \ <steffen.klassert@secunet.com>\n"
+submodule:
+- net/xfrm
+hunk_count: 1
+covered_count: 1

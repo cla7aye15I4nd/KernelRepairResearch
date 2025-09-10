@@ -1,0 +1,35 @@
+id: 5e5a981ad7cc54c4b2b4
+bug_link: https://syzkaller.appspot.com/bug?extid=5e5a981ad7cc54c4b2b4
+title: kernel BUG in llc_sap_action_send_xid_c
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fcef709c2c4baf758950bd7395e4b10527b81e2c
+fix_commit: c7c9d2102c9c098916ab9e0ab248006107d00d6c
+datetime: '2021-07-27T13:05:56+01:00'
+fix_commit_message: "net: llc: fix skb_over_panic\n\nSyzbot reported skb_over_panic()\
+  \ in llc_pdu_init_as_xid_cmd(). The\nproblem was in wrong LCC header manipulations.\n\
+  \nSyzbot's reproducer tries to send XID packet. llc_ui_sendmsg() is\ndoing following\
+  \ steps:\n\n\t1. skb allocation with size = len + header size\n\t\tlen is passed\
+  \ from userpace and header size\n\t\tis 3 since addr->sllc_xid is set.\n\n\t2. skb_reserve()\
+  \ for header_len = 3\n\t3. filling all other space with memcpy_from_msg()\n\nOk,\
+  \ at this moment we have fully loaded skb, only headers needs to be\nfilled.\n\n\
+  Then code comes to llc_sap_action_send_xid_c(). This function pushes 3\nbytes for\
+  \ LLC PDU header and initializes it. Then comes\nllc_pdu_init_as_xid_cmd(). It initalizes\
+  \ next 3 bytes *AFTER* LLC PDU\nheader and call skb_push(skb, 3). This looks wrong\
+  \ for 2 reasons:\n\n\t1. Bytes rigth after LLC header are user data, so this function\n\
+  \t   was overwriting payload.\n\n\t2. skb_push(skb, 3) call can cause skb_over_panic()\
+  \ since\n\t   all free space was filled in llc_ui_sendmsg(). (This can\n\t   happen\
+  \ is user passed 686 len: 686 + 14 (eth header) + 3 (LLC\n\t   header) = 703. SKB_DATA_ALIGN(703)\
+  \ = 704)\n\nSo, in this patch I added 2 new private constansts: LLC_PDU_TYPE_U_XID\n\
+  and LLC_PDU_LEN_U_XID. LLC_PDU_LEN_U_XID is used to correctly reserve\nheader size\
+  \ to handle LLC + XID case. LLC_PDU_TYPE_U_XID is used by\nllc_pdu_header_init()\
+  \ function to push 6 bytes instead of 3. And finally\nI removed skb_push() call\
+  \ from llc_pdu_init_as_xid_cmd().\n\nThis changes should not affect other parts\
+  \ of LLC, since after\nall steps we just transmit buffer.\n\nFixes: 1da177e4c3f4\
+  \ (\"Linux-2.6.12-rc2\")\nReported-and-tested-by: syzbot+5e5a981ad7cc54c4b2b4@syzkaller.appspotmail.com\n\
+  Signed-off-by: Pavel Skripkin <paskripkin@gmail.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- include/net
+- net/llc
+hunk_count: 6
+covered_count: 5

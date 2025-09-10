@@ -1,0 +1,63 @@
+id: cdfcae656bac88ba0e2d
+bug_link: https://syzkaller.appspot.com/bug?extid=cdfcae656bac88ba0e2d
+title: WARNING in mark_buffer_dirty (5)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 198430f7f785e072d5d70fe522b6c7abdf41068a
+fix_commit: cdaac8e7e5a059f9b5e816cda257f08d0abffacd
+datetime: '2023-08-21T13:46:25-07:00'
+fix_commit_message: 'nilfs2: fix WARNING in mark_buffer_dirty due to discarded buffer
+  reuse
+
+
+  A syzbot stress test using a corrupted disk image reported that
+
+  mark_buffer_dirty() called from __nilfs_mark_inode_dirty() or
+
+  nilfs_palloc_commit_alloc_entry() may output a kernel warning, and can
+
+  panic if the kernel is booted with panic_on_warn.
+
+
+  This is because nilfs2 keeps buffer pointers in local structures for some
+
+  metadata and reuses them, but such buffers may be forcibly discarded by
+
+  nilfs_clear_dirty_page() in some critical situations.
+
+
+  This issue is reported to appear after commit 28a65b49eb53 ("nilfs2: do
+
+  not write dirty data after degenerating to read-only"), but the issue has
+
+  potentially existed before.
+
+
+  Fix this issue by checking the uptodate flag when attempting to reuse an
+
+  internally held buffer, and reloading the metadata instead of reusing the
+
+  buffer if the flag was lost.
+
+
+  Link: https://lkml.kernel.org/r/20230818131804.7758-1-konishi.ryusuke@gmail.com
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+cdfcae656bac88ba0e2d@syzkaller.appspotmail.com
+
+  Closes: https://lkml.kernel.org/r/0000000000003da75f05fdeffd12@google.com
+
+  Fixes: 8c26c4e2694a ("nilfs2: fix issue with flush kernel thread after remount in
+  RO mode because of driver''s internal error or metadata corruption")
+
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Cc: <stable@vger.kernel.org> # 3.10+
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 3
+covered_count: 0

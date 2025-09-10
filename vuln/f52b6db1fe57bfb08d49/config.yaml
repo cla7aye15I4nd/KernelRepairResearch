@@ -1,0 +1,29 @@
+id: f52b6db1fe57bfb08d49
+bug_link: https://syzkaller.appspot.com/bug?extid=f52b6db1fe57bfb08d49
+title: WARNING in __hci_cmd_sync_sk
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1cc18c2ab2e8c54c355ea7c0423a636e415a0c23
+fix_commit: f1a8f402f13f94263cf349216c257b2985100927
+datetime: '2024-06-28T14:32:02-04:00'
+fix_commit_message: "Bluetooth: L2CAP: Fix deadlock\n\nThis fixes the following deadlock\
+  \ introduced by 39a92a55be13\n(\"bluetooth/l2cap: sync sock recv cb and release\"\
+  )\n\n============================================\nWARNING: possible recursive locking\
+  \ detected\n6.10.0-rc3-g4029dba6b6f1 #6823 Not tainted\n--------------------------------------------\n\
+  kworker/u5:0/35 is trying to acquire lock:\nffff888002ec2510 (&chan->lock#2/1){+.+.}-{3:3},\
+  \ at:\nl2cap_sock_recv_cb+0x44/0x1e0\n\nbut task is already holding lock:\nffff888002ec2510\
+  \ (&chan->lock#2/1){+.+.}-{3:3}, at:\nl2cap_get_chan_by_scid+0xaf/0xd0\n\nother\
+  \ info that might help us debug this:\n Possible unsafe locking scenario:\n\n  \
+  \     CPU0\n       ----\n  lock(&chan->lock#2/1);\n  lock(&chan->lock#2/1);\n\n\
+  \ *** DEADLOCK ***\n\n May be due to missing lock nesting notation\n\n3 locks held\
+  \ by kworker/u5:0/35:\n #0: ffff888002b8a940 ((wq_completion)hci0#2){+.+.}-{0:0},\
+  \ at:\nprocess_one_work+0x750/0x930\n #1: ffff888002c67dd0 ((work_completion)(&hdev->rx_work)){+.+.}-{0:0},\n\
+  at: process_one_work+0x44e/0x930\n #2: ffff888002ec2510 (&chan->lock#2/1){+.+.}-{3:3},\
+  \ at:\nl2cap_get_chan_by_scid+0xaf/0xd0\n\nTo fix the original problem this introduces\
+  \ l2cap_chan_lock at\nl2cap_conless_channel to ensure that l2cap_sock_recv_cb is\
+  \ called with\nchan->lock held.\n\nFixes: 89e856e124f9 (\"bluetooth/l2cap: sync\
+  \ sock recv cb and release\")\nSigned-off-by: Luiz Augusto von Dentz <luiz.von.dentz@intel.com>\n"
+submodule:
+- include/net/bluetooth
+- net/bluetooth
+hunk_count: 11
+covered_count: 6

@@ -1,0 +1,45 @@
+id: d8f72178ab6783a7daea
+bug_link: https://syzkaller.appspot.com/bug?extid=d8f72178ab6783a7daea
+title: 'WARNING: ODEBUG bug in snd_rawmidi_free'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ff05770d7baeac9dbbc84956119a4b119b5b242b
+fix_commit: 0718a78f6a9f04b88d0dc9616cc216b31c5f3cf1
+datetime: '2025-05-19T23:21:29+02:00'
+fix_commit_message: 'ALSA: usb-audio: Kill timer properly at removal
+
+
+  The USB-audio MIDI code initializes the timer, but in a rare case, the
+
+  driver might be freed without the disconnect call.  This leaves the
+
+  timer in an active state while the assigned object is released via
+
+  snd_usbmidi_free(), which ends up with a kernel warning when the debug
+
+  configuration is enabled, as spotted by fuzzer.
+
+
+  For avoiding the problem, put timer_shutdown_sync() at
+
+  snd_usbmidi_free(), so that the timer can be killed properly.
+
+  While we''re at it, replace the existing timer_delete_sync() at the
+
+  disconnect callback with timer_shutdown_sync(), too.
+
+
+  Reported-by: syzbot+d8f72178ab6783a7daea@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/681c70d7.050a0220.a19a9.00c6.GAE@google.com
+
+  Cc: <stable@vger.kernel.org>
+
+  Link: https://patch.msgid.link/20250519212031.14436-1-tiwai@suse.de
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/usb
+hunk_count: 2
+covered_count: 0

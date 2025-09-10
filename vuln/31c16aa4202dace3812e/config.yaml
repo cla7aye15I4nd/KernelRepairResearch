@@ -1,0 +1,37 @@
+id: 31c16aa4202dace3812e
+bug_link: https://syzkaller.appspot.com/bug?extid=31c16aa4202dace3812e
+title: memory leak in llc_ui_sendmsg
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 503c9addef613c872679e24fc8a78f3febeb5a08
+fix_commit: c6ee11c39fcc1fb55130748990a8f199e76263b4
+datetime: '2019-10-08T13:23:05-07:00'
+fix_commit_message: "llc: fix sk_buff leak in llc_sap_state_process()\n\nsyzbot reported:\n\
+  \n    BUG: memory leak\n    unreferenced object 0xffff888116270800 (size 224):\n\
+  \       comm \"syz-executor641\", pid 7047, jiffies 4294947360 (age 13.860s)\n \
+  \      hex dump (first 32 bytes):\n         00 00 00 00 00 00 00 00 00 00 00 00\
+  \ 00 00 00 00  ................\n         00 20 e1 2a 81 88 ff ff 00 40 3d 2a 81\
+  \ 88 ff ff  . .*.....@=*....\n       backtrace:\n         [<000000004d41b4cc>] kmemleak_alloc_recursive\
+  \  include/linux/kmemleak.h:55 [inline]\n         [<000000004d41b4cc>] slab_post_alloc_hook\
+  \ mm/slab.h:439 [inline]\n         [<000000004d41b4cc>] slab_alloc_node mm/slab.c:3269\
+  \ [inline]\n         [<000000004d41b4cc>] kmem_cache_alloc_node+0x153/0x2a0 mm/slab.c:3579\n\
+  \         [<00000000506a5965>] __alloc_skb+0x6e/0x210 net/core/skbuff.c:198\n  \
+  \       [<000000001ba5a161>] alloc_skb include/linux/skbuff.h:1058 [inline]\n  \
+  \       [<000000001ba5a161>] alloc_skb_with_frags+0x5f/0x250  net/core/skbuff.c:5327\n\
+  \         [<0000000047d9c78b>] sock_alloc_send_pskb+0x269/0x2a0  net/core/sock.c:2225\n\
+  \         [<000000003828fe54>] sock_alloc_send_skb+0x32/0x40 net/core/sock.c:2242\n\
+  \         [<00000000e34d94f9>] llc_ui_sendmsg+0x10a/0x540 net/llc/af_llc.c:933\n\
+  \         [<00000000de2de3fb>] sock_sendmsg_nosec net/socket.c:652 [inline]\n  \
+  \       [<00000000de2de3fb>] sock_sendmsg+0x54/0x70 net/socket.c:671\n         [<000000008fe16e7a>]\
+  \ __sys_sendto+0x148/0x1f0 net/socket.c:1964\n\t [...]\n\nThe bug is that llc_sap_state_process()\
+  \ always takes an extra reference\nto the skb, but sometimes neither llc_sap_next_state()\
+  \ nor\nllc_sap_state_process() itself drops this reference.\n\nFix it by changing\
+  \ llc_sap_next_state() to never consume a reference to\nthe skb, rather than sometimes\
+  \ do so and sometimes not.  Then remove the\nextra skb_get() and kfree_skb() from\
+  \ llc_sap_state_process().\n\nReported-by: syzbot+6bf095f9becf5efef645@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+31c16aa4202dace3812e@syzkaller.appspotmail.com\nFixes: 1da177e4c3f4\
+  \ (\"Linux-2.6.12-rc2\")\nSigned-off-by: Eric Biggers <ebiggers@google.com>\nSigned-off-by:\
+  \ Jakub Kicinski <jakub.kicinski@netronome.com>\n"
+submodule:
+- net/llc
+hunk_count: 4
+covered_count: 0

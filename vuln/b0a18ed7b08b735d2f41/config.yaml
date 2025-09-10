@@ -1,0 +1,31 @@
+id: b0a18ed7b08b735d2f41
+bug_link: https://syzkaller.appspot.com/bug?extid=b0a18ed7b08b735d2f41
+title: WARNING in devlink_port_type_warn
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9827c0634e461703abf81e8cc8b7adf5da5886d0
+fix_commit: 4c582234ab3948d08a24c82eb1e00436aabacbc6
+datetime: '2020-01-10T16:45:40-08:00'
+fix_commit_message: "devlink: Wait longer before warning about unset port type\n\n\
+  The commit cited below causes devlink to emit a warning if a type was\nnot set on\
+  \ a devlink port for longer than 30 seconds to \"prevent\nmisbehavior of drivers\"\
+  . This proved to be problematic when\nunregistering the backing netdev. The flow\
+  \ is always:\n\ndevlink_port_type_clear()\t// schedules the warning\nunregister_netdev()\t\
+  \t// blocking\ndevlink_port_unregister()\t// cancels the warning\n\nThe call to\
+  \ unregister_netdev() can block for long periods of time for\nvarious reasons: RTNL\
+  \ lock is contended, large amounts of configuration\nto unroll following dismantle\
+  \ of the netdev, etc. This results in\ndevlink emitting a warning despite the driver\
+  \ behaving correctly.\n\nIn emulated environments (of future hardware) which are\
+  \ usually very\nslow, the warning can also be emitted during port creation as more\
+  \ than\n30 seconds can pass between the time the devlink port is registered and\n\
+  when its type is set.\n\nIn addition, syzbot has hit this warning [1] 1974 times\
+  \ since 07/11/19\nwithout being able to produce a reproducer. Probably because\n\
+  reproduction depends on the load or other bugs (e.g., RTNL not being\nreleased).\n\
+  \nTo prevent bogus warnings, increase the timeout to 1 hour.\n\n[1] https://syzkaller.appspot.com/bug?id=e99b59e9c024a666c9f7450dc162a4b74d09d9cb\n\
+  \nFixes: 136bf27fc0e9 (\"devlink: add warning in case driver does not set port type\"\
+  )\nSigned-off-by: Ido Schimmel <idosch@mellanox.com>\nReported-by: syzbot+b0a18ed7b08b735d2f41@syzkaller.appspotmail.com\n\
+  Reported-by: Alex Veber <alexve@mellanox.com>\nTested-by: Alex Veber <alexve@mellanox.com>\n\
+  Acked-by: Jiri Pirko <jiri@mellanox.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 1

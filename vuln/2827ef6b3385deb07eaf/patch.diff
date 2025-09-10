@@ -1,0 +1,90 @@
+diff --git a/ipc/msg.c b/ipc/msg.c
+index 7cb89a9b24e2..3132aa27ff88 100644
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -163,7 +163,7 @@ static int newque(struct ipc_namespace *ns, struct ipc_params *params)
+ 	/* ipc_addid() locks msq upon success. */
+ 	retval = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni);
+ 	if (retval < 0) {
+-		call_rcu(&msq->q_perm.rcu, msg_rcu_free);
++		ipc_rcu_putref(&msq->q_perm, msg_rcu_free);
+ 		return retval;
+ 	}
+ 
+diff --git a/ipc/sem.c b/ipc/sem.c
+index 18e50f464f76..8e72037b894a 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -557,7 +557,7 @@ static int newary(struct ipc_namespace *ns, struct ipc_params *params)
+ 	/* ipc_addid() locks sma upon success. */
+ 	retval = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni);
+ 	if (retval < 0) {
+-		call_rcu(&sma->sem_perm.rcu, sem_rcu_free);
++		ipc_rcu_putref(&sma->sem_perm, sem_rcu_free);
+ 		return retval;
+ 	}
+ 	ns->used_sems += nsems;
+diff --git a/ipc/shm.c b/ipc/shm.c
+index b3b089315d3b..6e7bd9830549 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -684,6 +684,8 @@ static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
+ 	if (is_file_hugepages(file) && shp->mlock_user)
+ 		user_shm_unlock(size, shp->mlock_user);
+ 	fput(file);
++	ipc_rcu_putref(&shp->shm_perm, shm_rcu_free);
++	return error;
+ no_file:
+ 	call_rcu(&shp->shm_perm.rcu, shm_rcu_free);
+ 	return error;
+diff --git a/ipc/util.c b/ipc/util.c
+index e5c9e2b2e4c4..465bbd21d234 100644
+--- a/ipc/util.c
++++ b/ipc/util.c
+@@ -251,7 +251,9 @@ static inline int ipc_idr_alloc(struct ipc_ids *ids, struct kern_ipc_perm *new)
+  * Add an entry 'new' to the ipc ids idr. The permissions object is
+  * initialised and the first free entry is set up and the id assigned
+  * is returned. The 'new' entry is returned in a locked state on success.
++ *
+  * On failure the entry is not locked and a negative err-code is returned.
++ * The caller must use ipc_rcu_putref() to free the identifier.
+  *
+  * Called with writer ipc_ids.rwsem held.
+  */
+@@ -261,6 +263,9 @@ int ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int limit)
+ 	kgid_t egid;
+ 	int idx, err;
+ 
++	/* 1) Initialize the refcount so that ipc_rcu_putref works */
++	refcount_set(&new->refcount, 1);
++
+ 	if (limit > IPCMNI)
+ 		limit = IPCMNI;
+ 
+@@ -269,9 +274,7 @@ int ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int limit)
+ 
+ 	idr_preload(GFP_KERNEL);
+ 
+-	refcount_set(&new->refcount, 1);
+ 	spin_lock_init(&new->lock);
+-	new->deleted = false;
+ 	rcu_read_lock();
+ 	spin_lock(&new->lock);
+ 
+@@ -279,6 +282,8 @@ int ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int limit)
+ 	new->cuid = new->uid = euid;
+ 	new->gid = new->cgid = egid;
+ 
++	new->deleted = false;
++
+ 	idx = ipc_idr_alloc(ids, new);
+ 	idr_preload_end();
+ 
+@@ -291,6 +296,7 @@ int ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int limit)
+ 		}
+ 	}
+ 	if (idx < 0) {
++		new->deleted = true;
+ 		spin_unlock(&new->lock);
+ 		rcu_read_unlock();
+ 		return idx;

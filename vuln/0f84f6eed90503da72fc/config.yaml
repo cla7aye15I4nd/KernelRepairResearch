@@ -1,0 +1,34 @@
+id: 0f84f6eed90503da72fc
+bug_link: https://syzkaller.appspot.com/bug?extid=0f84f6eed90503da72fc
+title: 'WARNING: suspicious RCU usage in qrtr_ns_worker'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0ba56b89fabc139849cf27e475287b0361f550d3
+fix_commit: a7809ff90ce6c48598d3c4ab54eb599bec1e9c42
+datetime: '2020-09-28T15:54:57-07:00'
+fix_commit_message: "net: qrtr: ns: Protect radix_tree_deref_slot() using rcu read\
+  \ locks\n\nThe rcu read locks are needed to avoid potential race condition while\n\
+  dereferencing radix tree from multiple threads. The issue was identified\nby syzbot.\
+  \ Below is the crash report:\n\n=============================\nWARNING: suspicious\
+  \ RCU usage\n5.7.0-syzkaller #0 Not tainted\n-----------------------------\ninclude/linux/radix-tree.h:176\
+  \ suspicious rcu_dereference_check() usage!\n\nother info that might help us debug\
+  \ this:\n\nrcu_scheduler_active = 2, debug_locks = 1\n2 locks held by kworker/u4:1/21:\n\
+  \ #0: ffff88821b097938 ((wq_completion)qrtr_ns_handler){+.+.}-{0:0}, at: spin_unlock_irq\
+  \ include/linux/spinlock.h:403 [inline]\n #0: ffff88821b097938 ((wq_completion)qrtr_ns_handler){+.+.}-{0:0},\
+  \ at: process_one_work+0x6df/0xfd0 kernel/workqueue.c:2241\n #1: ffffc90000dd7d80\
+  \ ((work_completion)(&qrtr_ns.work)){+.+.}-{0:0}, at: process_one_work+0x71e/0xfd0\
+  \ kernel/workqueue.c:2243\n\nstack backtrace:\nCPU: 0 PID: 21 Comm: kworker/u4:1\
+  \ Not tainted 5.7.0-syzkaller #0\nHardware name: Google Google Compute Engine/Google\
+  \ Compute Engine, BIOS Google 01/01/2011\nWorkqueue: qrtr_ns_handler qrtr_ns_worker\n\
+  Call Trace:\n __dump_stack lib/dump_stack.c:77 [inline]\n dump_stack+0x1e9/0x30e\
+  \ lib/dump_stack.c:118\n radix_tree_deref_slot include/linux/radix-tree.h:176 [inline]\n\
+  \ ctrl_cmd_new_lookup net/qrtr/ns.c:558 [inline]\n qrtr_ns_worker+0x2aff/0x4500\
+  \ net/qrtr/ns.c:674\n process_one_work+0x76e/0xfd0 kernel/workqueue.c:2268\n worker_thread+0xa7f/0x1450\
+  \ kernel/workqueue.c:2414\n kthread+0x353/0x380 kernel/kthread.c:268\n\nFixes: 0c2204a4ad71\
+  \ (\"net: qrtr: Migrate nameservice to kernel from userspace\")\nReported-and-tested-by:\
+  \ syzbot+0f84f6eed90503da72fc@syzkaller.appspotmail.com\nSigned-off-by: Manivannan\
+  \ Sadhasivam <manivannan.sadhasivam@linaro.org>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/qrtr
+hunk_count: 11
+covered_count: 2

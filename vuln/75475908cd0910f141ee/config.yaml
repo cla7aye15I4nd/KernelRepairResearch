@@ -1,0 +1,27 @@
+id: 75475908cd0910f141ee
+bug_link: https://syzkaller.appspot.com/bug?extid=75475908cd0910f141ee
+title: 'WARNING: suspicious RCU usage in kvm_dev_ioctl'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8a44119a98bee4381d28f3ed1e41dfacf5c3aa6d
+fix_commit: e2d3fcaf939dded3da604a25ebbea9fb954c2280
+datetime: '2019-11-11T15:48:03+01:00'
+fix_commit_message: "KVM: fix placement of refcount initialization\n\nReported by\
+  \ syzkaller:\n\n   =============================\n   WARNING: suspicious RCU usage\n\
+  \   -----------------------------\n   ./include/linux/kvm_host.h:536 suspicious\
+  \ rcu_dereference_check() usage!\n\n   other info that might help us debug this:\n\
+  \n   rcu_scheduler_active = 2, debug_locks = 1\n   no locks held by repro_11/12688.\n\
+  \n   stack backtrace:\n   Call Trace:\n    dump_stack+0x7d/0xc5\n    lockdep_rcu_suspicious+0x123/0x170\n\
+  \    kvm_dev_ioctl+0x9a9/0x1260 [kvm]\n    do_vfs_ioctl+0x1a1/0xfb0\n    ksys_ioctl+0x6d/0x80\n\
+  \    __x64_sys_ioctl+0x73/0xb0\n    do_syscall_64+0x108/0xaa0\n    entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nCommit a97b0e773e4 (kvm: call kvm_arch_destroy_vm if vm creation fails)\nsets\
+  \ users_count to 1 before kvm_arch_init_vm(), however, if kvm_arch_init_vm()\nfails,\
+  \ we need to decrease this count.  By moving it earlier, we can push\nthe decrease\
+  \ to out_err_no_arch_destroy_vm without introducing yet another\nerror label.\n\n\
+  syzkaller source: https://syzkaller.appspot.com/x/repro.c?x=15209b84e00000\n\nReported-by:\
+  \ syzbot+75475908cd0910f141ee@syzkaller.appspotmail.com\nFixes: a97b0e773e49 (\"\
+  kvm: call kvm_arch_destroy_vm if vm creation fails\")\nCc: Jim Mattson <jmattson@google.com>\n\
+  Analyzed-by: Wanpeng Li <wanpengli@tencent.com>\nSigned-off-by: Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- virt/kvm
+hunk_count: 3
+covered_count: 2

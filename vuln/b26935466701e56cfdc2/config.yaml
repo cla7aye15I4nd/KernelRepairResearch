@@ -1,0 +1,33 @@
+id: b26935466701e56cfdc2
+bug_link: https://syzkaller.appspot.com/bug?extid=b26935466701e56cfdc2
+title: 'BUG: sleeping function called from invalid context in static_key_slow_dec'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f36b01994d68ffc253c8296e2228dfe6e6431c03
+fix_commit: b04df3da1b5c6f6dc7cdccc37941740c078c4043
+datetime: '2024-12-11T23:27:50+01:00'
+fix_commit_message: "netfilter: nf_tables: do not defer rule destruction via call_rcu\n\
+  \nnf_tables_chain_destroy can sleep, it can't be used from call_rcu\ncallbacks.\n\
+  \nMoreover, nf_tables_rule_release() is only safe for error unwinding,\nwhile transaction\
+  \ mutex is held and the to-be-desroyed rule was not\nexposed to either dataplane\
+  \ or dumps, as it deactives+frees without\nthe required synchronize_rcu() in-between.\n\
+  \nnft_rule_expr_deactivate() callbacks will change ->use counters\nof other chains/sets,\
+  \ see e.g. nft_lookup .deactivate callback, these\nmust be serialized via transaction\
+  \ mutex.\n\nAlso add a few lockdep asserts to make this more explicit.\n\nCalling\
+  \ synchronize_rcu() isn't ideal, but fixing this without is hard\nand way more intrusive.\
+  \  As-is, we can get:\n\nWARNING: .. net/netfilter/nf_tables_api.c:5515 nft_set_destroy+0x..\n\
+  Workqueue: events nf_tables_trans_destroy_work\nRIP: 0010:nft_set_destroy+0x3fe/0x5c0\n\
+  Call Trace:\n <TASK>\n nf_tables_trans_destroy_work+0x6b7/0xad0\n process_one_work+0x64a/0xce0\n\
+  \ worker_thread+0x613/0x10d0\n\nIn case the synchronize_rcu becomes an issue, we\
+  \ can explore alternatives.\n\nOne way would be to allocate nft_trans_rule objects\
+  \ + one nft_trans_chain\nobject, deactivate the rules + the chain and then defer\
+  \ the freeing to the\nnft destroy workqueue.  We'd still need to keep the synchronize_rcu\
+  \ path as\na fallback to handle -ENOMEM corner cases though.\n\nReported-by: syzbot+b26935466701e56cfdc2@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/all/67478d92.050a0220.253251.0062.GAE@google.com/T/\n\
+  Fixes: c03d278fdf35 (\"netfilter: nf_tables: wait for rcu grace period on net_device\
+  \ removal\")\nSigned-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Pablo\
+  \ Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- include/net/netfilter
+- net/netfilter
+hunk_count: 9
+covered_count: 2

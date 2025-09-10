@@ -1,0 +1,22 @@
+id: d850c266e3df14da1d31
+bug_link: https://syzkaller.appspot.com/bug?extid=d850c266e3df14da1d31
+title: 'KASAN: use-after-free Read in rxrpc_send_keepalive'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 57acce317311632b86e3f06a42a6bdef62b2fee3
+fix_commit: c48fc11b69e95007109206311b0187a3090591f3
+datetime: '2019-10-07T10:58:28+01:00'
+fix_commit_message: "rxrpc: Fix call ref leak\n\nWhen sendmsg() finds a call to continue\
+  \ on with, if the call is in an\ninappropriate state, it doesn't release the ref\
+  \ it just got on that call\nbefore returning an error.\n\nThis causes the following\
+  \ symptom to show up with kasan:\n\n\tBUG: KASAN: use-after-free in rxrpc_send_keepalive+0x8a2/0x940\n\
+  \tnet/rxrpc/output.c:635\n\tRead of size 8 at addr ffff888064219698 by task kworker/0:3/11077\n\
+  \nwhere line 635 is:\n\n\twhdr.epoch\t= htonl(peer->local->rxnet->epoch);\n\nThe\
+  \ local endpoint (which cannot be pinned by the call) has been released,\nbut not\
+  \ the peer (which is pinned by the call).\n\nFix this by releasing the call in the\
+  \ error path.\n\nFixes: 37411cad633f (\"rxrpc: Fix potential NULL-pointer exception\"\
+  )\nReported-by: syzbot+d850c266e3df14da1d31@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ David Howells <dhowells@redhat.com>\n"
+submodule:
+- net/rxrpc
+hunk_count: 1
+covered_count: 1

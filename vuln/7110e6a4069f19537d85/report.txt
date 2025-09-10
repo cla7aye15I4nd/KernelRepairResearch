@@ -1,0 +1,109 @@
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 16 at kernel/kcov.c:871 kcov_remote_start+0x274/0x6e0 kernel/kcov.c:871
+Modules linked in:
+CPU: 0 PID: 16 Comm: ksoftirqd/0 Not tainted 6.10.0-rc7-syzkaller-00012-g34afb82a3c67 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+RIP: 0010:kcov_remote_start+0x274/0x6e0 kernel/kcov.c:871
+Code: c0 22 49 89 47 08 e9 87 00 00 00 f6 c4 01 0f 85 06 fe ff ff e9 dc fd ff ff 44 8b 95 1c 16 00 00 45 85 d2 0f 84 d5 fe ff ff 90 <0f> 0b 90 e9 b9 00 00 00 65 8b 05 55 e4 75 7e 49 c7 c0 d2 d4 3a 8d
+RSP: 0018:ffffc90000007b48 EFLAGS: 00010002
+RAX: 0000000080010101 RBX: 000000000002d648 RCX: ffffffff816ae7ce
+RDX: 0000000000000002 RSI: ffffffff8b2cb200 RDI: ffffffff8b8ff640
+RBP: ffff8880172fda00 R08: 0000000000000000 R09: fffffbfff284ca66
+R10: 0000000000000001 R11: 0000000000000001 R12: ffff8880b922d648
+R13: 0000000000000000 R14: 0100000000000005 R15: ffff8880172fda00
+FS:  0000000000000000(0000) GS:ffff8880b9200000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f584d156578 CR3: 0000000041f12000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ kcov_remote_start_usb include/linux/kcov.h:55 [inline]
+ kcov_remote_start_usb_softirq include/linux/kcov.h:89 [inline]
+ __usb_hcd_giveback_urb+0x35b/0x6e0 drivers/usb/core/hcd.c:1649
+ usb_hcd_giveback_urb+0x396/0x450 drivers/usb/core/hcd.c:1734
+ dummy_timer+0x17f6/0x3900 drivers/usb/gadget/udc/dummy_hcd.c:1987
+ __run_hrtimer kernel/time/hrtimer.c:1689 [inline]
+ __hrtimer_run_queues+0x20c/0xcc0 kernel/time/hrtimer.c:1753
+ hrtimer_interrupt+0x31b/0x800 kernel/time/hrtimer.c:1815
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0x10f/0x450 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0x90/0xb0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:__sanitizer_cov_trace_pc+0x0/0x60 kernel/kcov.c:200
+Code: be b0 01 00 00 e8 a0 ff ff ff 31 c0 c3 cc cc cc cc 66 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 <f3> 0f 1e fa 65 48 8b 15 64 f4 75 7e 65 8b 05 65 f4 75 7e a9 00 01
+RSP: 0018:ffffc90000156f70 EFLAGS: 00000283
+RAX: 0000000000000002 RBX: ffffc90000156ff8 RCX: ffffffff813cd93d
+RDX: ffff8880172fda00 RSI: 000000000009352a RDI: 0000000000000004
+RBP: 0000000000000001 R08: 0000000000000004 R09: 000000000009352a
+R10: 00000000000a2000 R11: 0000000000000001 R12: ffffffff8a352a0c
+R13: 000000000009352a R14: 00000000000a2000 R15: ffffc9000015702d
+ orc_find arch/x86/kernel/unwind_orc.c:217 [inline]
+ unwind_next_frame+0x24b/0x23a0 arch/x86/kernel/unwind_orc.c:494
+ arch_stack_walk+0x100/0x170 arch/x86/kernel/stacktrace.c:25
+ stack_trace_save+0x95/0xd0 kernel/stacktrace.c:122
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:370 [inline]
+ __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:387
+ kasan_kmalloc include/linux/kasan.h:211 [inline]
+ __do_kmalloc_node mm/slub.c:4123 [inline]
+ __kmalloc_noprof+0x1ec/0x410 mm/slub.c:4136
+ kmalloc_noprof include/linux/slab.h:664 [inline]
+ kzalloc_noprof include/linux/slab.h:778 [inline]
+ cfg80211_inform_single_bss_data+0x51d/0x2080 net/wireless/scan.c:2265
+ cfg80211_inform_bss_data+0x205/0x39d0 net/wireless/scan.c:3117
+ cfg80211_inform_bss_frame_data+0x271/0x7c0 net/wireless/scan.c:3207
+ ieee80211_bss_info_update+0x311/0xab0 net/mac80211/scan.c:226
+ ieee80211_scan_rx+0x47c/0xad0 net/mac80211/scan.c:340
+ __ieee80211_rx_handle_packet net/mac80211/rx.c:5222 [inline]
+ ieee80211_rx_list+0x1be1/0x2e90 net/mac80211/rx.c:5459
+ ieee80211_rx_napi+0xdd/0x400 net/mac80211/rx.c:5482
+ ieee80211_rx include/net/mac80211.h:5093 [inline]
+ ieee80211_handle_queued_frames+0xd5/0x130 net/mac80211/main.c:438
+ tasklet_action_common.constprop.0+0x24c/0x3e0 kernel/softirq.c:785
+ handle_softirqs+0x216/0x8f0 kernel/softirq.c:554
+ run_ksoftirqd kernel/softirq.c:928 [inline]
+ run_ksoftirqd+0x3a/0x60 kernel/softirq.c:920
+ smpboot_thread_fn+0x661/0xa10 kernel/smpboot.c:164
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+----------------
+Code disassembly (best guess):
+   0:	be b0 01 00 00       	mov    $0x1b0,%esi
+   5:	e8 a0 ff ff ff       	call   0xffffffaa
+   a:	31 c0                	xor    %eax,%eax
+   c:	c3                   	ret
+   d:	cc                   	int3
+   e:	cc                   	int3
+   f:	cc                   	int3
+  10:	cc                   	int3
+  11:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+  18:	00 00
+  1a:	90                   	nop
+  1b:	90                   	nop
+  1c:	90                   	nop
+  1d:	90                   	nop
+  1e:	90                   	nop
+  1f:	90                   	nop
+  20:	90                   	nop
+  21:	90                   	nop
+  22:	90                   	nop
+  23:	90                   	nop
+  24:	90                   	nop
+  25:	90                   	nop
+  26:	90                   	nop
+  27:	90                   	nop
+  28:	90                   	nop
+  29:	90                   	nop
+* 2a:	f3 0f 1e fa          	endbr64 <-- trapping instruction
+  2e:	65 48 8b 15 64 f4 75 	mov    %gs:0x7e75f464(%rip),%rdx        # 0x7e75f49a
+  35:	7e
+  36:	65 8b 05 65 f4 75 7e 	mov    %gs:0x7e75f465(%rip),%eax        # 0x7e75f4a2
+  3d:	a9                   	.byte 0xa9
+  3e:	00 01                	add    %al,(%rcx)

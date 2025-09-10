@@ -1,0 +1,53 @@
+id: f5f6080811c849739212
+bug_link: https://syzkaller.appspot.com/bug?extid=f5f6080811c849739212
+title: 'KMSAN: uninit-value in pppoe_rcv'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f025571e96caa95ffc3c1792f762a584893de582
+fix_commit: 8540827ebac6b654ab2f69c8fbce9e4fbd6304a0
+datetime: '2018-09-17T07:50:26-07:00'
+fix_commit_message: "pppoe: fix reception of frames with no mac header\n\npppoe_rcv()\
+  \ needs to look back at the Ethernet header in order to\nlookup the PPPoE session.\
+  \ Therefore we need to ensure that the mac\nheader is big enough to contain an Ethernet\
+  \ header. Otherwise\neth_hdr(skb)->h_source might access invalid data.\n\n==================================================================\n\
+  BUG: KMSAN: uninit-value in __get_item drivers/net/ppp/pppoe.c:172 [inline]\nBUG:\
+  \ KMSAN: uninit-value in get_item drivers/net/ppp/pppoe.c:236 [inline]\nBUG: KMSAN:\
+  \ uninit-value in pppoe_rcv+0xcef/0x10e0 drivers/net/ppp/pppoe.c:450\nCPU: 0 PID:\
+  \ 4543 Comm: syz-executor355 Not tainted 4.16.0+ #87\nHardware name: Google Google\
+  \ Compute Engine/Google Compute Engine, BIOS Google\n01/01/2011\nCall Trace:\n __dump_stack\
+  \ lib/dump_stack.c:17 [inline]\n dump_stack+0x185/0x1d0 lib/dump_stack.c:53\n kmsan_report+0x142/0x240\
+  \ mm/kmsan/kmsan.c:1067\n __msan_warning_32+0x6c/0xb0 mm/kmsan/kmsan_instr.c:683\n\
+  \ __get_item drivers/net/ppp/pppoe.c:172 [inline]\n get_item drivers/net/ppp/pppoe.c:236\
+  \ [inline]\n pppoe_rcv+0xcef/0x10e0 drivers/net/ppp/pppoe.c:450\n __netif_receive_skb_core+0x47df/0x4a90\
+  \ net/core/dev.c:4562\n __netif_receive_skb net/core/dev.c:4627 [inline]\n netif_receive_skb_internal+0x49d/0x630\
+  \ net/core/dev.c:4701\n netif_receive_skb+0x230/0x240 net/core/dev.c:4725\n tun_rx_batched\
+  \ drivers/net/tun.c:1555 [inline]\n tun_get_user+0x740f/0x7c60 drivers/net/tun.c:1962\n\
+  \ tun_chr_write_iter+0x1d4/0x330 drivers/net/tun.c:1990\n call_write_iter include/linux/fs.h:1782\
+  \ [inline]\n new_sync_write fs/read_write.c:469 [inline]\n __vfs_write+0x7fb/0x9f0\
+  \ fs/read_write.c:482\n vfs_write+0x463/0x8d0 fs/read_write.c:544\n SYSC_write+0x172/0x360\
+  \ fs/read_write.c:589\n SyS_write+0x55/0x80 fs/read_write.c:581\n do_syscall_64+0x309/0x430\
+  \ arch/x86/entry/common.c:287\n entry_SYSCALL_64_after_hwframe+0x3d/0xa2\nRIP: 0033:0x4447c9\n\
+  RSP: 002b:00007fff64c8fc28 EFLAGS: 00000297 ORIG_RAX: 0000000000000001\nRAX: ffffffffffffffda\
+  \ RBX: 0000000000000000 RCX: 00000000004447c9\nRDX: 000000000000fd87 RSI: 0000000020000600\
+  \ RDI: 0000000000000004\nRBP: 00000000006cf018 R08: 00007fff64c8fda8 R09: 00007fff00006bda\n\
+  R10: 0000000000005fe7 R11: 0000000000000297 R12: 00000000004020d0\nR13: 0000000000402160\
+  \ R14: 0000000000000000 R15: 0000000000000000\n\nUninit was created at:\n kmsan_save_stack_with_flags\
+  \ mm/kmsan/kmsan.c:278 [inline]\n kmsan_internal_poison_shadow+0xb8/0x1b0 mm/kmsan/kmsan.c:188\n\
+  \ kmsan_kmalloc+0x94/0x100 mm/kmsan/kmsan.c:314\n kmsan_slab_alloc+0x11/0x20 mm/kmsan/kmsan.c:321\n\
+  \ slab_post_alloc_hook mm/slab.h:445 [inline]\n slab_alloc_node mm/slub.c:2737 [inline]\n\
+  \ __kmalloc_node_track_caller+0xaed/0x11c0 mm/slub.c:4369\n __kmalloc_reserve net/core/skbuff.c:138\
+  \ [inline]\n __alloc_skb+0x2cf/0x9f0 net/core/skbuff.c:206\n alloc_skb include/linux/skbuff.h:984\
+  \ [inline]\n alloc_skb_with_frags+0x1d4/0xb20 net/core/skbuff.c:5234\n sock_alloc_send_pskb+0xb56/0x1190\
+  \ net/core/sock.c:2085\n tun_alloc_skb drivers/net/tun.c:1532 [inline]\n tun_get_user+0x2242/0x7c60\
+  \ drivers/net/tun.c:1829\n tun_chr_write_iter+0x1d4/0x330 drivers/net/tun.c:1990\n\
+  \ call_write_iter include/linux/fs.h:1782 [inline]\n new_sync_write fs/read_write.c:469\
+  \ [inline]\n __vfs_write+0x7fb/0x9f0 fs/read_write.c:482\n vfs_write+0x463/0x8d0\
+  \ fs/read_write.c:544\n SYSC_write+0x172/0x360 fs/read_write.c:589\n SyS_write+0x55/0x80\
+  \ fs/read_write.c:581\n do_syscall_64+0x309/0x430 arch/x86/entry/common.c:287\n\
+  \ entry_SYSCALL_64_after_hwframe+0x3d/0xa2\n==================================================================\n\
+  \nFixes: 224cf5ad14c0 (\"ppp: Move the PPP drivers\")\nReported-by: syzbot+f5f6080811c849739212@syzkaller.appspotmail.com\n\
+  Signed-off-by: Guillaume Nault <g.nault@alphalink.fr>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- drivers/net/ppp
+hunk_count: 1
+covered_count: 1

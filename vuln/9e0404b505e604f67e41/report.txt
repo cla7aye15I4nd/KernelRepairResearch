@@ -1,0 +1,145 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in __ref_is_percpu include/linux/percpu-refcount.h:174 [inline]
+BUG: KASAN: slab-use-after-free in percpu_ref_put_many include/linux/percpu-refcount.h:332 [inline]
+BUG: KASAN: slab-use-after-free in percpu_ref_put+0xda/0x250 include/linux/percpu-refcount.h:351
+Read of size 8 at addr ffff88804bd4e0b0 by task kworker/u4:8/1034
+
+CPU: 0 UID: 0 PID: 1034 Comm: kworker/u4:8 Not tainted 6.12.0-rc1-syzkaller-00031-ge32cde8d2bd7 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: loop0 loop_rootcg_workfn
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ __ref_is_percpu include/linux/percpu-refcount.h:174 [inline]
+ percpu_ref_put_many include/linux/percpu-refcount.h:332 [inline]
+ percpu_ref_put+0xda/0x250 include/linux/percpu-refcount.h:351
+ blk_update_request+0x5e5/0x1160 block/blk-mq.c:923
+ blk_mq_end_request+0x3e/0x70 block/blk-mq.c:1051
+ loop_handle_cmd drivers/block/loop.c:1927 [inline]
+ loop_process_work+0x1c10/0x2170 drivers/block/loop.c:1945
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa63/0x1850 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+
+Allocated by task 5112:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:257 [inline]
+ __kmalloc_cache_noprof+0x19c/0x2c0 mm/slub.c:4296
+ kmalloc_noprof include/linux/slab.h:878 [inline]
+ kzalloc_noprof include/linux/slab.h:1014 [inline]
+ __bch2_dev_alloc+0x57/0xa60 fs/bcachefs/super.c:1289
+ bch2_dev_alloc+0xd4/0x170 fs/bcachefs/super.c:1359
+ bch2_fs_alloc fs/bcachefs/super.c:939 [inline]
+ bch2_fs_open+0x2e3f/0x2f80 fs/bcachefs/super.c:2050
+ bch2_fs_get_tree+0x738/0x1710 fs/bcachefs/fs.c:2058
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1800
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4055 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4032
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 5112:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:579
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x59/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:230 [inline]
+ slab_free_hook mm/slub.c:2343 [inline]
+ slab_free mm/slub.c:4580 [inline]
+ kfree+0x1a0/0x440 mm/slub.c:4728
+ kobject_cleanup lib/kobject.c:689 [inline]
+ kobject_release lib/kobject.c:720 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ kobject_put+0x22f/0x480 lib/kobject.c:737
+ bch2_fs_free+0x27b/0x3c0 fs/bcachefs/super.c:667
+ bch2_fs_get_tree+0xd9f/0x1710 fs/bcachefs/fs.c:2166
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1800
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4055 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4032
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88804bd4e000
+ which belongs to the cache kmalloc-4k of size 4096
+The buggy address is located 176 bytes inside of
+ freed 4096-byte region [ffff88804bd4e000, ffff88804bd4f000)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x4bd48
+head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0x4fff00000000040(head|node=1|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 04fff00000000040 ffff88801ac42140 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000040004 00000001f5000000 0000000000000000
+head: 04fff00000000040 ffff88801ac42140 dead000000000122 0000000000000000
+head: 0000000000000000 0000000000040004 00000001f5000000 0000000000000000
+head: 04fff00000000003 ffffea00012f5201 ffffffffffffffff 0000000000000000
+head: 0000000000000008 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd2820(GFP_ATOMIC|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 5109, tgid 5109 (kworker/0:5), ts 85209263212, free_ts 84741593599
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1537
+ prep_new_page mm/page_alloc.c:1545 [inline]
+ get_page_from_freelist+0x3045/0x3190 mm/page_alloc.c:3457
+ __alloc_pages_noprof+0x256/0x6c0 mm/page_alloc.c:4733
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2265
+ alloc_slab_page+0x6a/0x120 mm/slub.c:2413
+ allocate_slab+0x5a/0x2f0 mm/slub.c:2579
+ new_slab mm/slub.c:2632 [inline]
+ ___slab_alloc+0xcd1/0x14b0 mm/slub.c:3819
+ __slab_alloc+0x58/0xa0 mm/slub.c:3909
+ __slab_alloc_node mm/slub.c:3962 [inline]
+ slab_alloc_node mm/slub.c:4123 [inline]
+ __do_kmalloc_node mm/slub.c:4264 [inline]
+ __kmalloc_node_track_caller_noprof+0x281/0x440 mm/slub.c:4284
+ kmalloc_reserve+0x111/0x2a0 net/core/skbuff.c:609
+ __alloc_skb+0x1f3/0x440 net/core/skbuff.c:678
+ alloc_skb include/linux/skbuff.h:1322 [inline]
+ nsim_dev_trap_skb_build drivers/net/netdevsim/dev.c:748 [inline]
+ nsim_dev_trap_report drivers/net/netdevsim/dev.c:805 [inline]
+ nsim_dev_trap_report_work+0x254/0xaa0 drivers/net/netdevsim/dev.c:850
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa63/0x1850 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+page last free pid 5111 tgid 5110 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1108 [inline]
+ free_unref_page+0xcfb/0xf20 mm/page_alloc.c:2638
+ vfree+0x186/0x2e0 mm/vmalloc.c:3361
+ free_copy kernel/module/main.c:1998 [inline]
+ load_module+0x15da/0x3880 kernel/module/main.c:3062
+ __do_sys_init_module kernel/module/main.c:3086 [inline]
+ __se_sys_init_module+0x24f/0x310 kernel/module/main.c:3066
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff88804bd4df80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88804bd4e000: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff88804bd4e080: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                     ^
+ ffff88804bd4e100: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88804bd4e180: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

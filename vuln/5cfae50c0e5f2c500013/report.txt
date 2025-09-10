@@ -1,0 +1,122 @@
+syz_tun: entered allmulticast mode
+------------[ cut here ]------------
+UBSAN: array-index-out-of-bounds in net/ipv4/ipmr_base.c:289:10
+index -772737152 is out of range for type 'const struct vif_device[32]'
+CPU: 1 UID: 0 PID: 6411 Comm: syz-executor937 Not tainted 6.13.0-rc3-syzkaller-g573067a5a685 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call trace:
+ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:466 (C)
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0xe4/0x150 lib/dump_stack.c:120
+ dump_stack+0x1c/0x28 lib/dump_stack.c:129
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_out_of_bounds+0xf8/0x148 lib/ubsan.c:429
+ mr_mfc_uses_dev net/ipv4/ipmr_base.c:289 [inline]
+ mr_table_dump+0x694/0x8b0 net/ipv4/ipmr_base.c:334
+ mr_rtm_dumproute+0x254/0x454 net/ipv4/ipmr_base.c:382
+ ipmr_rtm_dumproute+0x248/0x4b4 net/ipv4/ipmr.c:2648
+ rtnl_dump_all+0x2e4/0x4e8 net/core/rtnetlink.c:4326
+ rtnl_dumpit+0x98/0x1d0 net/core/rtnetlink.c:6790
+ netlink_dump+0x4f0/0xbc0 net/netlink/af_netlink.c:2317
+ __netlink_dump_start+0x4d8/0x720 net/netlink/af_netlink.c:2432
+ netlink_dump_start include/linux/netlink.h:340 [inline]
+ rtnetlink_dump_start net/core/rtnetlink.c:6819 [inline]
+ rtnetlink_rcv_msg+0x8fc/0xa9c net/core/rtnetlink.c:6886
+ netlink_rcv_skb+0x214/0x3c4 net/netlink/af_netlink.c:2542
+ rtnetlink_rcv+0x28/0x38 net/core/rtnetlink.c:6948
+ netlink_unicast_kernel net/netlink/af_netlink.c:1321 [inline]
+ netlink_unicast+0x668/0x8a4 net/netlink/af_netlink.c:1347
+ netlink_sendmsg+0x7a4/0xa8c net/netlink/af_netlink.c:1891
+ sock_sendmsg_nosec net/socket.c:711 [inline]
+ __sock_sendmsg net/socket.c:726 [inline]
+ sock_write_iter+0x2d8/0x448 net/socket.c:1147
+ new_sync_write fs/read_write.c:586 [inline]
+ vfs_write+0x920/0xcf4 fs/read_write.c:679
+ ksys_write+0x15c/0x26c fs/read_write.c:731
+ __do_sys_write fs/read_write.c:742 [inline]
+ __se_sys_write fs/read_write.c:739 [inline]
+ __arm64_sys_write+0x7c/0x90 fs/read_write.c:739
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+ el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+---[ end trace ]---
+Unable to handle kernel paging request at virtual address ffff5ffd9650c113
+KASAN: maybe wild-memory-access in range [0xfffeffecb2860898-0xfffeffecb286089f]
+Mem abort info:
+  ESR = 0x0000000096000004
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x04: level 0 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000004, ISS2 = 0x00000000
+  CM = 0, WnR = 0, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+swapper pgtable: 4k pages, 48-bit VAs, pgdp=00000001a5699000
+[ffff5ffd9650c113] pgd=0000000000000000, p4d=0000000000000000
+Internal error: Oops: 0000000096000004 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 1 UID: 0 PID: 6411 Comm: syz-executor937 Not tainted 6.13.0-rc3-syzkaller-g573067a5a685 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : mr_mfc_uses_dev net/ipv4/ipmr_base.c:290 [inline]
+pc : mr_table_dump+0x5a4/0x8b0 net/ipv4/ipmr_base.c:334
+lr : mr_mfc_uses_dev net/ipv4/ipmr_base.c:289 [inline]
+lr : mr_table_dump+0x694/0x8b0 net/ipv4/ipmr_base.c:334
+sp : ffff8000a50c6e10
+x29: ffff8000a50c6ed0 x28: fffeffecb2860898 x27: ffffffffd1f0f780
+x26: ffffffffd1f0f780 x25: 0000000000000000 x24: fffeffecb2860898
+x23: dfff800000000000 x22: 00000000d1f0f780 x21: ffff00009a3377c8
+x20: dfff800000000000 x19: ffff0000c8428078 x18: 0000000000000008
+x17: 0000000000000000 x16: ffff80008b5fe85c x15: ffff7000125d8a48
+x14: 1ffff000125d8a48 x13: 0000000000000004 x12: ffffffffffffffff
+x11: ffff7000125d8a48 x10: 0000000000ff0100 x9 : 0000000000000000
+x8 : 1fffdffd9650c113 x7 : 0000000000000001 x6 : 0000000000000001
+x5 : ffff8000a50c64f8 x4 : ffff80008fa8f840 x3 : ffff8000802f4dc8
+x2 : 0000000000000001 x1 : 0000000000000001 x0 : 00000000ffffffff
+Call trace:
+ mr_mfc_uses_dev net/ipv4/ipmr_base.c:290 [inline] (P)
+ mr_table_dump+0x5a4/0x8b0 net/ipv4/ipmr_base.c:334 (P)
+ mr_rtm_dumproute+0x254/0x454 net/ipv4/ipmr_base.c:382
+ ipmr_rtm_dumproute+0x248/0x4b4 net/ipv4/ipmr.c:2648
+ rtnl_dump_all+0x2e4/0x4e8 net/core/rtnetlink.c:4326
+ rtnl_dumpit+0x98/0x1d0 net/core/rtnetlink.c:6790
+ netlink_dump+0x4f0/0xbc0 net/netlink/af_netlink.c:2317
+ __netlink_dump_start+0x4d8/0x720 net/netlink/af_netlink.c:2432
+ netlink_dump_start include/linux/netlink.h:340 [inline]
+ rtnetlink_dump_start net/core/rtnetlink.c:6819 [inline]
+ rtnetlink_rcv_msg+0x8fc/0xa9c net/core/rtnetlink.c:6886
+ netlink_rcv_skb+0x214/0x3c4 net/netlink/af_netlink.c:2542
+ rtnetlink_rcv+0x28/0x38 net/core/rtnetlink.c:6948
+ netlink_unicast_kernel net/netlink/af_netlink.c:1321 [inline]
+ netlink_unicast+0x668/0x8a4 net/netlink/af_netlink.c:1347
+ netlink_sendmsg+0x7a4/0xa8c net/netlink/af_netlink.c:1891
+ sock_sendmsg_nosec net/socket.c:711 [inline]
+ __sock_sendmsg net/socket.c:726 [inline]
+ sock_write_iter+0x2d8/0x448 net/socket.c:1147
+ new_sync_write fs/read_write.c:586 [inline]
+ vfs_write+0x920/0xcf4 fs/read_write.c:679
+ ksys_write+0x15c/0x26c fs/read_write.c:731
+ __do_sys_write fs/read_write.c:742 [inline]
+ __se_sys_write fs/read_write.c:739 [inline]
+ __arm64_sys_write+0x7c/0x90 fs/read_write.c:739
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+ el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+Code: 97759d2c d343ff08 d2d00017 f2fbfff7 (38746908) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	97759d2c 	bl	0xfffffffffdd674b0
+   4:	d343ff08 	lsr	x8, x24, #3
+   8:	d2d00017 	mov	x23, #0x800000000000        	// #140737488355328
+   c:	f2fbfff7 	movk	x23, #0xdfff, lsl #48
+* 10:	38746908 	ldrb	w8, [x8, x20] <-- trapping instruction

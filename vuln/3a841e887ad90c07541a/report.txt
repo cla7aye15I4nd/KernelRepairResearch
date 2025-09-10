@@ -1,0 +1,62 @@
+NILFS (loop0): discard dirty block: blocknr=18446744073709551615, size=1024
+NILFS (loop0): nilfs_get_block (ino=18): a race condition while inserting a data block at offset=0
+------------[ cut here ]------------
+kernel BUG at fs/buffer.c:2768!
+invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 PID: 5056 Comm: syz-executor429 Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+RIP: 0010:submit_bh_wbc+0x543/0x560 fs/buffer.c:2768
+Code: 07 7d ff be 00 10 00 00 48 c7 c7 80 f8 26 8e 4c 89 fa e8 f0 cd be 02 e9 98 fe ff ff e8 86 07 7d ff 90 0f 0b e8 7e 07 7d ff 90 <0f> 0b e8 76 07 7d ff 90 0f 0b e8 6e 07 7d ff 90 0f 0b e8 66 07 7d
+RSP: 0018:ffffc9000399f838 EFLAGS: 00010293
+RAX: ffffffff8217ecd2 RBX: 0000000000000000 RCX: ffff88807cfe3c00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff8217e833 R09: 1ffff1100f095cae
+R10: dffffc0000000000 R11: ffffed100f095caf R12: 0000000000000000
+R13: ffff8880784ae570 R14: 0000000000000000 R15: 1ffff1100f095cae
+FS:  00005555917ee380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000000066c7e0 CR3: 000000007f430000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ submit_bh fs/buffer.c:2809 [inline]
+ __bh_read fs/buffer.c:3074 [inline]
+ bh_read_nowait include/linux/buffer_head.h:417 [inline]
+ __block_write_begin_int+0x12d0/0x1a70 fs/buffer.c:2134
+ __block_write_begin fs/buffer.c:2154 [inline]
+ block_write_begin+0x9b/0x1e0 fs/buffer.c:2213
+ nilfs_write_begin+0xa0/0x110 fs/nilfs2/inode.c:262
+ generic_perform_write+0x322/0x640 mm/filemap.c:3930
+ __generic_file_write_iter+0x1b8/0x230 mm/filemap.c:4022
+ generic_file_write_iter+0xaf/0x310 mm/filemap.c:4051
+ call_write_iter include/linux/fs.h:2108 [inline]
+ new_sync_write fs/read_write.c:497 [inline]
+ vfs_write+0xa84/0xcb0 fs/read_write.c:590
+ ksys_write+0x1a0/0x2c0 fs/read_write.c:643
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f3d6ccdd9f9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc74baec58 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 0073746e6576652e RCX: 00007f3d6ccdd9f9
+RDX: 0000000000000020 RSI: 0000000020000140 RDI: 0000000000000005
+RBP: 652e79726f6d656d R08: 00000000000b15f8 R09: 00000000000b15f8
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffc74baee28 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:submit_bh_wbc+0x543/0x560 fs/buffer.c:2768
+Code: 07 7d ff be 00 10 00 00 48 c7 c7 80 f8 26 8e 4c 89 fa e8 f0 cd be 02 e9 98 fe ff ff e8 86 07 7d ff 90 0f 0b e8 7e 07 7d ff 90 <0f> 0b e8 76 07 7d ff 90 0f 0b e8 6e 07 7d ff 90 0f 0b e8 66 07 7d
+RSP: 0018:ffffc9000399f838 EFLAGS: 00010293
+RAX: ffffffff8217ecd2 RBX: 0000000000000000 RCX: ffff88807cfe3c00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff8217e833 R09: 1ffff1100f095cae
+R10: dffffc0000000000 R11: ffffed100f095caf R12: 0000000000000000
+R13: ffff8880784ae570 R14: 0000000000000000 R15: 1ffff1100f095cae
+FS:  00005555917ee380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000000066c7e0 CR3: 000000007f430000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

@@ -1,0 +1,33 @@
+diff --git a/drivers/gpu/drm/drm_modes.c b/drivers/gpu/drm/drm_modes.c
+index 6ba167a33461..71573b85d924 100644
+--- a/drivers/gpu/drm/drm_modes.c
++++ b/drivers/gpu/drm/drm_modes.c
+@@ -1287,14 +1287,11 @@ EXPORT_SYMBOL(drm_mode_set_name);
+  */
+ int drm_mode_vrefresh(const struct drm_display_mode *mode)
+ {
+-	unsigned int num, den;
++	unsigned int num = 1, den = 1;
+ 
+ 	if (mode->htotal == 0 || mode->vtotal == 0)
+ 		return 0;
+ 
+-	num = mode->clock;
+-	den = mode->htotal * mode->vtotal;
+-
+ 	if (mode->flags & DRM_MODE_FLAG_INTERLACE)
+ 		num *= 2;
+ 	if (mode->flags & DRM_MODE_FLAG_DBLSCAN)
+@@ -1302,6 +1299,12 @@ int drm_mode_vrefresh(const struct drm_display_mode *mode)
+ 	if (mode->vscan > 1)
+ 		den *= mode->vscan;
+ 
++	if (check_mul_overflow(mode->clock, num, &num))
++		return 0;
++
++	if (check_mul_overflow(mode->htotal * mode->vtotal, den, &den))
++		return 0;
++
+ 	return DIV_ROUND_CLOSEST_ULL(mul_u32_u32(num, 1000), den);
+ }
+ EXPORT_SYMBOL(drm_mode_vrefresh);

@@ -1,0 +1,30 @@
+id: cba21d50095623218389
+bug_link: https://syzkaller.appspot.com/bug?extid=cba21d50095623218389
+title: 'KMSAN: uninit-value in af_alg_free_resources'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 83874b8e97f895e62d9ab03223318176d5e78203
+fix_commit: 080aa61e370b9c5cafe71cacadbfe0e72db4d6df
+datetime: '2023-08-18T18:30:09+08:00'
+fix_commit_message: "crypto: fix uninit-value in af_alg_free_resources\n\nSyzbot was\
+  \ able to trigger use of uninitialized memory in\naf_alg_free_resources.\n\nBug\
+  \ is caused by missing initialization of rsgl->sgl.need_unpin before\nadding to\
+  \ rsgl_list. Then in case of extract_iter_to_sg() failure, rsgl\nis left with uninitialized\
+  \ need_unpin which is read during clean up\n\nBUG: KMSAN: uninit-value in af_alg_free_sg\
+  \ crypto/af_alg.c:545 [inline]\nBUG: KMSAN: uninit-value in af_alg_free_areq_sgls\
+  \ crypto/af_alg.c:778 [inline]\nBUG: KMSAN: uninit-value in af_alg_free_resources+0x3d1/0xf60\
+  \ crypto/af_alg.c:1117\n af_alg_free_sg crypto/af_alg.c:545 [inline]\n af_alg_free_areq_sgls\
+  \ crypto/af_alg.c:778 [inline]\n af_alg_free_resources+0x3d1/0xf60 crypto/af_alg.c:1117\n\
+  \ _skcipher_recvmsg crypto/algif_skcipher.c:144 [inline]\n...\n\nUninit was created\
+  \ at:\n slab_post_alloc_hook+0x12f/0xb70 mm/slab.h:767\n slab_alloc_node mm/slub.c:3470\
+  \ [inline]\n __kmem_cache_alloc_node+0x536/0x8d0 mm/slub.c:3509\n __do_kmalloc_node\
+  \ mm/slab_common.c:984 [inline]\n __kmalloc+0x121/0x3c0 mm/slab_common.c:998\n kmalloc\
+  \ include/linux/slab.h:586 [inline]\n sock_kmalloc+0x128/0x1c0 net/core/sock.c:2683\n\
+  \ af_alg_alloc_areq+0x41/0x2a0 crypto/af_alg.c:1188\n _skcipher_recvmsg crypto/algif_skcipher.c:71\
+  \ [inline]\n\nFixes: c1abe6f570af (\"crypto: af_alg: Use extract_iter_to_sg() to\
+  \ create scatterlists\")\nReported-and-tested-by: syzbot+cba21d50095623218389@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=cba21d50095623218389\nSigned-off-by:\
+  \ Pavel Skripkin <paskripkin@gmail.com>\nSigned-off-by: Herbert Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- crypto
+hunk_count: 2
+covered_count: 0

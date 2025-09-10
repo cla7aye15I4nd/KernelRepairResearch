@@ -1,0 +1,34 @@
+id: 9e4e94a2689427009d35
+bug_link: https://syzkaller.appspot.com/bug?extid=9e4e94a2689427009d35
+title: general protection fault in sys_finit_module
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b5641a5d8b8b14643bfe3d017d64da90a5c55479
+fix_commit: f1962207150c8b602e980616f04b37ea4e64bb9f
+datetime: '2023-07-04T10:17:11-07:00'
+fix_commit_message: "module: fix init_module_from_file() error handling\n\nVegard\
+  \ Nossum pointed out two different problems with the error handling\nin init_module_from_file():\n\
+  \n (a) the idempotent loading code didn't clean up properly in some error\n    \
+  \ cases, leaving the on-stack 'struct idempotent' element still in\n     the hash\
+  \ table\n\n (b) failure to read the module file would nonsensically update the\n\
+  \     'invalid_kread_bytes' stat counter with the error value\n\nThe first error\
+  \ is quite nasty, in that it can then cause subsequent\nidempotent loads of that\
+  \ same file to access stale stack contents of the\nprevious failure.  The case may\
+  \ not happen in any normal situation\n(explaining all the \"Tested-by's on the original\
+  \ change), and requires\nadmin privileges, but syzkaller triggers random bad behavior\
+  \ as a\nresult:\n\n    BUG: soft lockup in sys_finit_module\n    BUG: unable to\
+  \ handle kernel paging request in init_module_from_file\n    general protection\
+  \ fault in init_module_from_file\n    INFO: task hung in init_module_from_file\n\
+  \    KASAN: out-of-bounds Read in init_module_from_file\n    KASAN: slab-out-of-bounds\
+  \ Read in init_module_from_file\n    ...\n\nThe second error is fairly benign and\
+  \ just leads to nonsensical stats\n(and has been around since the debug stats were\
+  \ added).\n\nVegard also provided a patch for the idempotent loading issue, but\
+  \ I'd\nrather re-organize the code and make it more legible using another level\n\
+  of helper functions than add the usual \"goto out\" error handling.\n\nLink: https://lore.kernel.org/lkml/20230704100852.23452-1-vegard.nossum@oracle.com/\n\
+  Fixes: 9b9879fc0327 (\"modules: catch concurrent module loads, treat them as idempotent\"\
+  )\nReported-by: Vegard Nossum <vegard.nossum@oracle.com>\nReported-by: Harshit Mogalapalli\
+  \ <harshit.m.mogalapalli@oracle.com>\nReported-by: syzbot+9c2bdc9d24e4a7abe741@syzkaller.appspotmail.com\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- kernel/module
+hunk_count: 4
+covered_count: 4

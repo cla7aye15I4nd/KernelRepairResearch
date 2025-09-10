@@ -1,0 +1,47 @@
+id: 9fc046ab2b0cf295a063
+bug_link: https://syzkaller.appspot.com/bug?extid=9fc046ab2b0cf295a063
+title: WARNING in static_key_slow_try_dec (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: baa1e5ca172ce7bf9554070139482dd7ea919528
+fix_commit: f7d8a19f9a056a05c5c509fa65af472a322abfee
+datetime: '2021-10-18T14:07:18-04:00'
+fix_commit_message: "Revert \"KVM: x86: Open code necessary bits of kvm_lapic_set_base()\
+  \ at vCPU RESET\"\n\nRevert a change to open code bits of kvm_lapic_set_base() when\
+  \ emulating\nAPIC RESET to fix an apic_hw_disabled underflow bug due to arch.apic_base\n\
+  and apic_hw_disabled being unsyncrhonized when the APIC is created.  If\nkvm_arch_vcpu_create()\
+  \ fails after creating the APIC, kvm_free_lapic()\nwill see the initialized-to-zero\
+  \ vcpu->arch.apic_base and decrement\napic_hw_disabled without KVM ever having incremented\
+  \ apic_hw_disabled.\n\nUsing kvm_lapic_set_base() in kvm_lapic_reset() is also desirable\
+  \ for a\npotential future where KVM supports RESET outside of vCPU creation, in\n\
+  which case all the side effects of kvm_lapic_set_base() are needed, e.g.\nto handle\
+  \ the transition from x2APIC => xAPIC.\n\nAlternatively, KVM could temporarily increment\
+  \ apic_hw_disabled (and call\nkvm_lapic_set_base() at RESET), but that's a waste\
+  \ of cycles and would\nimpact the performance of other vCPUs and VMs.  The other\
+  \ subtle side\neffect is that updating the xAPIC ID needs to be done at RESET regardless\n\
+  of whether the APIC was previously enabled, i.e. kvm_lapic_reset() needs\nan explicit\
+  \ call to kvm_apic_set_xapic_id() regardless of whether or not\nkvm_lapic_set_base()\
+  \ also performs the update.  That makes stuffing the\nenable bit at vCPU creation\
+  \ slightly more palatable, as doing so affects\nonly the apic_hw_disabled key.\n\
+  \nOpportunistically tweak the comment to explicitly call out the connection\nbetween\
+  \ vcpu->arch.apic_base and apic_hw_disabled, and add a comment to\ncall out the\
+  \ need to always do kvm_apic_set_xapic_id() at RESET.\n\nUnderflow scenario:\n\n\
+  \  kvm_vm_ioctl() {\n    kvm_vm_ioctl_create_vcpu() {\n      kvm_arch_vcpu_create()\
+  \ {\n        if (something_went_wrong)\n          goto fail_free_lapic;\n      \
+  \  /* vcpu->arch.apic_base is initialized when something_went_wrong is false. */\n\
+  \        kvm_vcpu_reset() {\n          kvm_lapic_reset(struct kvm_vcpu *vcpu, bool\
+  \ init_event) {\n            vcpu->arch.apic_base = APIC_DEFAULT_PHYS_BASE | MSR_IA32_APICBASE_ENABLE;\n\
+  \          }\n        }\n        return 0;\n      fail_free_lapic:\n        kvm_free_lapic()\
+  \ {\n          /* vcpu->arch.apic_base is not yet initialized when something_went_wrong\
+  \ is true. */\n          if (!(vcpu->arch.apic_base & MSR_IA32_APICBASE_ENABLE))\n\
+  \            static_branch_slow_dec_deferred(&apic_hw_disabled); // <= underflow\
+  \ bug.\n        }\n        return r;\n      }\n    }\n  }\n\nThis (mostly) reverts\
+  \ commit 421221234ada41b4a9f0beeb08e30b07388bd4bd.\n\nFixes: 421221234ada (\"KVM:\
+  \ x86: Open code necessary bits of kvm_lapic_set_base() at vCPU RESET\")\nReported-by:\
+  \ syzbot+9fc046ab2b0cf295a063@syzkaller.appspotmail.com\nDebugged-by: Tetsuo Handa\
+  \ <penguin-kernel@i-love.sakura.ne.jp>\nSigned-off-by: Sean Christopherson <seanjc@google.com>\n\
+  Message-Id: <20211013003554.47705-2-seanjc@google.com>\nSigned-off-by: Paolo Bonzini\
+  \ <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 3
+covered_count: 0

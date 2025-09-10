@@ -1,0 +1,62 @@
+------------[ cut here ]------------
+kernel BUG at fs/inode.c:626!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 1 PID: 5273 Comm: syz-executor331 Not tainted 6.10.0-rc2-syzkaller-00222-gd30d0e49da71 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+RIP: 0010:clear_inode+0x15b/0x190 fs/inode.c:626
+Code: 00 00 00 5b 5d 41 5c c3 cc cc cc cc e8 5e c1 8c ff 90 0f 0b e8 56 c1 8c ff 90 0f 0b e8 4e c1 8c ff 90 0f 0b e8 46 c1 8c ff 90 <0f> 0b e8 3e c1 8c ff 90 0f 0b e8 e6 92 e8 ff e9 d2 fe ff ff e8 dc
+RSP: 0018:ffffc900036f7ac0 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: ffff888030369e90 RCX: ffffffff82012340
+RDX: ffff888024190000 RSI: ffffffff820123aa RDI: 0000000000000007
+RBP: 0000000000000040 R08: 0000000000000007 R09: 0000000000000000
+R10: 0000000000000040 R11: 0000000000000001 R12: 0000000000000020
+R13: ffff88802f942000 R14: 0000000000000000 R15: ffff888030369e90
+FS:  000055556268d380(0000) GS:ffff88806b100000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000555562697708 CR3: 000000001e888000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ btrfs_evict_inode+0x529/0xe80 fs/btrfs/inode.c:5262
+ evict+0x2ed/0x6c0 fs/inode.c:667
+ dispose_list+0x117/0x1e0 fs/inode.c:700
+ evict_inodes+0x34e/0x450 fs/inode.c:750
+ generic_shutdown_super+0xb5/0x3d0 fs/super.c:627
+ kill_anon_super+0x3a/0x60 fs/super.c:1226
+ btrfs_kill_super+0x3b/0x50 fs/btrfs/super.c:2096
+ deactivate_locked_super+0xbe/0x1a0 fs/super.c:473
+ deactivate_super+0xde/0x100 fs/super.c:506
+ cleanup_mnt+0x222/0x450 fs/namespace.c:1267
+ task_work_run+0x14e/0x250 kernel/task_work.c:180
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:114 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x278/0x2a0 kernel/entry/common.c:218
+ do_syscall_64+0xda/0x250 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f2ba3059777
+Code: 07 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b8 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007fff42f9ee78 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f2ba3059777
+RDX: 0000000000000000 RSI: 0000000000000009 RDI: 00007fff42f9ef30
+RBP: 00007fff42f9ef30 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007fff42f9ffa0
+R13: 000055556268f6d0 R14: 431bde82d7b634db R15: 00007fff42f9ffc0
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:clear_inode+0x15b/0x190 fs/inode.c:626
+Code: 00 00 00 5b 5d 41 5c c3 cc cc cc cc e8 5e c1 8c ff 90 0f 0b e8 56 c1 8c ff 90 0f 0b e8 4e c1 8c ff 90 0f 0b e8 46 c1 8c ff 90 <0f> 0b e8 3e c1 8c ff 90 0f 0b e8 e6 92 e8 ff e9 d2 fe ff ff e8 dc
+RSP: 0018:ffffc900036f7ac0 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: ffff888030369e90 RCX: ffffffff82012340
+RDX: ffff888024190000 RSI: ffffffff820123aa RDI: 0000000000000007
+RBP: 0000000000000040 R08: 0000000000000007 R09: 0000000000000000
+R10: 0000000000000040 R11: 0000000000000001 R12: 0000000000000020
+R13: ffff88802f942000 R14: 0000000000000000 R15: ffff888030369e90
+FS:  000055556268d380(0000) GS:ffff88806b100000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000555562697708 CR3: 000000001e888000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

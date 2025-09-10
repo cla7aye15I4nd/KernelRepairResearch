@@ -1,0 +1,24 @@
+id: 8a02104389c2e0ef5049
+bug_link: https://syzkaller.appspot.com/bug?extid=8a02104389c2e0ef5049
+title: 'KCSAN: data-race in virtqueue_disable_cb / vring_interrupt (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bc0dcbc5c2c539f37004f2cce0e6e245b2e50b6c
+fix_commit: 83c334ed521638c8dffe545ddf49d61430680308
+datetime: '2024-09-25T07:07:44-04:00'
+fix_commit_message: "virtio_ring: tag event_triggered as racy for KCSAN\n\nSetting\
+  \ event_triggered from the interrupt handler\nis fundamentally racy. There are races\
+  \ of 2 types:\n1. vq processing can read false value while interrupt\n   triggered\
+  \ and set it to true.\n   result will be a bit of extra work when disabling cbs,\
+  \ no big deal.\n\n1. vq processing can set false value then interrupt\n   immediately\
+  \ sets true value\n   since interrupt then triggers a callback which will\n   process\
+  \ buffers, this is also not an issue.\n\nHowever, looks like KCSAN can not figure\
+  \ all this out, and warns about\nthe race between the write and the read.  Tag the\
+  \ access data_racy for\nnow.  We should probably look at ways to make this more\n\
+  straight-forwardly correct.\n\nMessage-ID: <6bdd771a4fb7625a9227971b3cf4745c34c31a32.1726153334.git.mst@redhat.com>\n\
+  Reported-by: syzbot+8a02104389c2e0ef5049@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Michael S. Tsirkin <mst@redhat.com>\nAcked-by: Jason Wang <jasowang@redhat.com>\n\
+  Acked-by: Marco Elver <elver@google.com>\n"
+submodule:
+- drivers/virtio
+hunk_count: 1
+covered_count: 1

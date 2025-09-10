@@ -1,0 +1,152 @@
+================================
+WARNING: inconsistent lock state
+6.8.0-syzkaller-08951-gfe46a7dd189e #0 Not tainted
+--------------------------------
+inconsistent {HARDIRQ-ON-W} -> {IN-HARDIRQ-W} usage.
+syz-executor390/5221 [HC1[1]:SC0[0]:HE0:SE1] takes:
+ffff8880294bb948 (&timer->lock){?.+.}-{2:2}, at: spin_lock include/linux/spinlock.h:351 [inline]
+ffff8880294bb948 (&timer->lock){?.+.}-{2:2}, at: class_spinlock_constructor include/linux/spinlock.h:561 [inline]
+ffff8880294bb948 (&timer->lock){?.+.}-{2:2}, at: snd_hrtimer_callback+0x4d/0x420 sound/core/hrtimer.c:38
+{HARDIRQ-ON-W} state was registered at:
+  lock_acquire kernel/locking/lockdep.c:5754 [inline]
+  lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+  __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]
+  _raw_spin_lock+0x2e/0x40 kernel/locking/spinlock.c:154
+  spin_lock include/linux/spinlock.h:351 [inline]
+  class_spinlock_constructor include/linux/spinlock.h:561 [inline]
+  snd_timer_close_locked+0x65/0xbd0 sound/core/timer.c:412
+  snd_timer_close+0x8b/0xf0 sound/core/timer.c:464
+  snd_seq_timer_close+0xa4/0x100 sound/core/seq/seq_timer.c:302
+  queue_delete+0x49/0xa0 sound/core/seq/seq_queue.c:126
+  snd_seq_queue_delete+0x45/0x60 sound/core/seq/seq_queue.c:188
+  snd_seq_kernel_client_ctl+0x107/0x1c0 sound/core/seq/seq_clientmgr.c:2526
+  delete_seq_queue.isra.0+0xc8/0x150 sound/core/seq/oss/seq_oss_init.c:371
+  odev_release+0x52/0x80 sound/core/seq/oss/seq_oss.c:144
+  __fput+0x270/0xb80 fs/file_table.c:422
+  task_work_run+0x14e/0x250 kernel/task_work.c:180
+  exit_task_work include/linux/task_work.h:38 [inline]
+  do_exit+0xa7d/0x2be0 kernel/exit.c:878
+  do_group_exit+0xd3/0x2a0 kernel/exit.c:1027
+  __do_sys_exit_group kernel/exit.c:1038 [inline]
+  __se_sys_exit_group kernel/exit.c:1036 [inline]
+  __x64_sys_exit_group+0x3e/0x50 kernel/exit.c:1036
+  do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+  do_syscall_64+0xd2/0x260 arch/x86/entry/common.c:83
+  entry_SYSCALL_64_after_hwframe+0x6d/0x75
+irq event stamp: 1534
+hardirqs last  enabled at (1533): [<ffffffff8ad602f2>] __raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:151 [inline]
+hardirqs last  enabled at (1533): [<ffffffff8ad602f2>] _raw_spin_unlock_irqrestore+0x52/0x80 kernel/locking/spinlock.c:194
+hardirqs last disabled at (1534): [<ffffffff8ad239ae>] sysvec_apic_timer_interrupt+0xe/0xb0 arch/x86/kernel/apic/apic.c:1043
+softirqs last  enabled at (1258): [<ffffffff8ad63156>] softirq_handle_end kernel/softirq.c:400 [inline]
+softirqs last  enabled at (1258): [<ffffffff8ad63156>] __do_softirq+0x596/0x8de kernel/softirq.c:583
+softirqs last disabled at (1231): [<ffffffff8151a149>] invoke_softirq kernel/softirq.c:428 [inline]
+softirqs last disabled at (1231): [<ffffffff8151a149>] __irq_exit_rcu kernel/softirq.c:633 [inline]
+softirqs last disabled at (1231): [<ffffffff8151a149>] irq_exit_rcu+0xb9/0x120 kernel/softirq.c:645
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&timer->lock);
+  <Interrupt>
+    lock(&timer->lock);
+
+ *** DEADLOCK ***
+
+2 locks held by syz-executor390/5221:
+ #0: ffffffff8f1daaa8 (register_mutex#4){+.+.}-{3:3}, at: odev_release+0x4a/0x80 sound/core/seq/oss/seq_oss.c:143
+ #1: ffff8880290321d0 (&client->ioctl_mutex){+.+.}-{3:3}, at: snd_seq_client_ioctl_lock+0x36/0x50 sound/core/seq/seq_clientmgr.c:182
+
+stack backtrace:
+CPU: 0 PID: 5221 Comm: syz-executor390 Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ print_usage_bug kernel/locking/lockdep.c:3971 [inline]
+ valid_state kernel/locking/lockdep.c:4013 [inline]
+ mark_lock_irq kernel/locking/lockdep.c:4216 [inline]
+ mark_lock+0x923/0xc60 kernel/locking/lockdep.c:4678
+ mark_usage kernel/locking/lockdep.c:4564 [inline]
+ __lock_acquire+0x1359/0x3b30 kernel/locking/lockdep.c:5091
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+ __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]
+ _raw_spin_lock+0x2e/0x40 kernel/locking/spinlock.c:154
+ spin_lock include/linux/spinlock.h:351 [inline]
+ class_spinlock_constructor include/linux/spinlock.h:561 [inline]
+ snd_hrtimer_callback+0x4d/0x420 sound/core/hrtimer.c:38
+ __run_hrtimer kernel/time/hrtimer.c:1692 [inline]
+ __hrtimer_run_queues+0x20c/0xc20 kernel/time/hrtimer.c:1756
+ hrtimer_interrupt+0x31b/0x800 kernel/time/hrtimer.c:1818
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0x10f/0x410 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0x90/0xb0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:__raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152 [inline]
+RIP: 0010:_raw_spin_unlock_irqrestore+0x31/0x80 kernel/locking/spinlock.c:194
+Code: f5 53 48 8b 74 24 10 48 89 fb 48 83 c7 18 e8 a6 3f 95 f6 48 89 df e8 0e bb 95 f6 f7 c5 00 02 00 00 75 23 9c 58 f6 c4 02 75 37 <bf> 01 00 00 00 e8 95 08 87 f6 65 8b 05 e6 d0 2d 75 85 c0 74 16 5b
+RSP: 0018:ffffc90004507ac8 EFLAGS: 00000246
+RAX: 0000000000000002 RBX: ffffffff8f1d9240 RCX: 1ffffffff27bef1a
+RDX: 0000000000000000 RSI: ffffffff8b0cb740 RDI: ffffffff8b6e88a0
+RBP: 0000000000000293 R08: 0000000000000001 R09: fffffbfff27b4e49
+R10: ffffffff93da724f R11: 0000000000000002 R12: 0000000000000293
+R13: dffffc0000000000 R14: 0000000000000000 R15: 000000000000000f
+ spin_unlock_irqrestore include/linux/spinlock.h:406 [inline]
+ class_spinlock_irqsave_destructor include/linux/spinlock.h:574 [inline]
+ queueptr+0x9a/0xd0 sound/core/seq/seq_queue.c:201
+ snd_seq_queue_remove_cells+0x104/0x230 sound/core/seq/seq_queue.c:589
+ snd_seq_ioctl_remove_events+0xf3/0x1b0 sound/core/seq/seq_clientmgr.c:1939
+ snd_seq_kernel_client_ctl+0x107/0x1c0 sound/core/seq/seq_clientmgr.c:2526
+ snd_seq_oss_control sound/core/seq/oss/seq_oss_device.h:148 [inline]
+ snd_seq_oss_writeq_clear+0x11b/0x270 sound/core/seq/oss/seq_oss_writeq.c:73
+ snd_seq_oss_reset+0x1fc/0x290 sound/core/seq/oss/seq_oss_init.c:442
+ snd_seq_oss_release+0x7c/0x180 sound/core/seq/oss/seq_oss_init.c:407
+ odev_release+0x52/0x80 sound/core/seq/oss/seq_oss.c:144
+ __fput+0x270/0xb80 fs/file_table.c:422
+ task_work_run+0x14e/0x250 kernel/task_work.c:180
+ exit_task_work include/linux/task_work.h:38 [inline]
+ do_exit+0xa7d/0x2be0 kernel/exit.c:878
+ do_group_exit+0xd3/0x2a0 kernel/exit.c:1027
+ __do_sys_exit_group kernel/exit.c:1038 [inline]
+ __se_sys_exit_group kernel/exit.c:1036 [inline]
+ __x64_sys_exit_group+0x3e/0x50 kernel/exit.c:1036
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xd2/0x260 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f97adaa1b89
+Code: Unable to access opcode bytes at 0x7f97adaa1b5f.
+RSP: 002b:00007fff3831ad88 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f97adaa1b89
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000000
+RBP: 00007f97adb1c290 R08: ffffffffffffffb8 R09: 0000000000000006
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f97adb1c290
+R13: 0000000000000000 R14: 00007f97adb1cce0 R15: 00007f97ada72dd0
+ </TASK>
+----------------
+Code disassembly (best guess):
+   0:	f5                   	cmc
+   1:	53                   	push   %rbx
+   2:	48 8b 74 24 10       	mov    0x10(%rsp),%rsi
+   7:	48 89 fb             	mov    %rdi,%rbx
+   a:	48 83 c7 18          	add    $0x18,%rdi
+   e:	e8 a6 3f 95 f6       	call   0xf6953fb9
+  13:	48 89 df             	mov    %rbx,%rdi
+  16:	e8 0e bb 95 f6       	call   0xf695bb29
+  1b:	f7 c5 00 02 00 00    	test   $0x200,%ebp
+  21:	75 23                	jne    0x46
+  23:	9c                   	pushf
+  24:	58                   	pop    %rax
+  25:	f6 c4 02             	test   $0x2,%ah
+  28:	75 37                	jne    0x61
+* 2a:	bf 01 00 00 00       	mov    $0x1,%edi <-- trapping instruction
+  2f:	e8 95 08 87 f6       	call   0xf68708c9
+  34:	65 8b 05 e6 d0 2d 75 	mov    %gs:0x752dd0e6(%rip),%eax        # 0x752dd121
+  3b:	85 c0                	test   %eax,%eax
+  3d:	74 16                	je     0x55
+  3f:	5b                   	pop    %rbx

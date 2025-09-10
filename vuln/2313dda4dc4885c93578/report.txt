@@ -1,0 +1,101 @@
+WARNING: The mand mount option has been deprecated and
+         and is ignored by this kernel. Remove the mand
+         option from the mount to silence this warning.
+=======================================================
+JBD2: Ignoring recovery information on journal
+==================================================================
+BUG: KASAN: use-after-free in ocfs2_search_extent_list+0x155/0x200 fs/ocfs2/alloc.c:776
+Read of size 4 at addr ffff88804e0f7000 by task syz-executor327/5820
+
+CPU: 0 UID: 0 PID: 5820 Comm: syz-executor327 Not tainted 6.13.0-rc2-syzkaller-00031-gf92f4749861b #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:489
+ kasan_report+0x143/0x180 mm/kasan/report.c:602
+ ocfs2_search_extent_list+0x155/0x200 fs/ocfs2/alloc.c:776
+ ocfs2_get_clusters_nocache+0x21a/0xbf0 fs/ocfs2/extent_map.c:438
+ ocfs2_get_clusters+0x5bd/0xbd0 fs/ocfs2/extent_map.c:621
+ ocfs2_extent_map_get_blocks+0x24c/0x7d0 fs/ocfs2/extent_map.c:668
+ ocfs2_bmap+0x2b7/0x780 fs/ocfs2/aops.c:474
+ bmap+0xa8/0xe0 fs/inode.c:1997
+ jbd2_journal_bmap+0x12d/0x2b0 fs/jbd2/journal.c:926
+ do_readahead fs/jbd2/recovery.c:88 [inline]
+ jread+0x435/0xc80 fs/jbd2/recovery.c:165
+ do_one_pass+0x3cd/0x3aa0 fs/jbd2/recovery.c:646
+ jbd2_journal_skip_recovery+0x95/0x240 fs/jbd2/recovery.c:366
+ jbd2_journal_wipe+0xc9/0x110 fs/jbd2/journal.c:2517
+ ocfs2_journal_wipe+0xab/0x2a0 fs/ocfs2/journal.c:1192
+ ocfs2_check_volume fs/ocfs2/super.c:2413 [inline]
+ ocfs2_mount_volume+0xb86/0x1940 fs/ocfs2/super.c:1817
+ ocfs2_fill_super+0x476e/0x5760 fs/ocfs2/super.c:1084
+ mount_bdev+0x20a/0x2d0 fs/super.c:1693
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f71cfdb41aa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffff267f8e8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffff267f900 RCX: 00007f71cfdb41aa
+RDX: 0000000020004440 RSI: 0000000020000040 RDI: 00007ffff267f900
+RBP: 0000000000000004 R08: 00007ffff267f940 R09: 0000000000004431
+R10: 00000000000008c0 R11: 0000000000000282 R12: 00000000000008c0
+R13: 00007ffff267f940 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x4e0f7
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+raw: 00fff00000000000 ffffea0001383e08 ffff8880b8644830 0000000000000000
+raw: 0000000000000000 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as freed
+page last allocated via order 0, migratetype Movable, gfp_mask 0x8(__GFP_MOVABLE), pid 1, tgid 1 (swapper/0), ts 14558112771, free_ts 15104107640
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1556
+ split_free_pages mm/page_alloc.c:6360 [inline]
+ alloc_contig_range_noprof+0x821/0xe00 mm/page_alloc.c:6487
+ __alloc_contig_pages mm/page_alloc.c:6516 [inline]
+ alloc_contig_pages_noprof+0x4b3/0x5c0 mm/page_alloc.c:6596
+ debug_vm_pgtable_alloc_huge_page+0xaf/0x100 mm/debug_vm_pgtable.c:1084
+ init_args+0x83b/0xb20 mm/debug_vm_pgtable.c:1266
+ debug_vm_pgtable+0xe0/0x550 mm/debug_vm_pgtable.c:1304
+ do_one_initcall+0x248/0x870 init/main.c:1266
+ do_initcall_level+0x157/0x210 init/main.c:1328
+ do_initcalls+0x3f/0x80 init/main.c:1344
+ kernel_init_freeable+0x435/0x5d0 init/main.c:1577
+ kernel_init+0x1d/0x2b0 init/main.c:1466
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+page last free pid 1 tgid 1 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_page+0xd2c/0x1000 mm/page_alloc.c:2657
+ free_contig_range+0x14c/0x430 mm/page_alloc.c:6630
+ destroy_args+0x92/0x910 mm/debug_vm_pgtable.c:1017
+ debug_vm_pgtable+0x4be/0x550 mm/debug_vm_pgtable.c:1397
+ do_one_initcall+0x248/0x870 init/main.c:1266
+ do_initcall_level+0x157/0x210 init/main.c:1328
+ do_initcalls+0x3f/0x80 init/main.c:1344
+ kernel_init_freeable+0x435/0x5d0 init/main.c:1577
+ kernel_init+0x1d/0x2b0 init/main.c:1466
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Memory state around the buggy address:
+ ffff88804e0f6f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff88804e0f6f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff88804e0f7000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+                   ^
+ ffff88804e0f7080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff88804e0f7100: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+==================================================================

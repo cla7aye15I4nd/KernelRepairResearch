@@ -1,0 +1,23 @@
+id: aec9606169fbc3a12ca6
+bug_link: https://syzkaller.appspot.com/bug?extid=aec9606169fbc3a12ca6
+title: WARNING in bch2_dev_free
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 55fd97fbc4744a43fb2d134908e481266cf33bda
+fix_commit: d62922ba3cfc01dc42e853f90b93c525751e9383
+datetime: '2025-04-13T07:56:28-04:00'
+fix_commit_message: "bcachefs: Prevent granting write refs when filesystem is read-only\n\
+  \nFix a shutdown WARNING in bch2_dev_free caused by active write I/O\nreferences\
+  \ (ca->io_ref[WRITE]) on a device being freed.\n\nThe problem occurs when:\n- The\
+  \ filesystem is marked read-only (BCH_FS_rw clear in c->flags).\n- A subsequent\
+  \ operation (e.g., error handling for device removal)\n  incorrectly tries to grant\
+  \ write references back to a device.\n- During final shutdown, the read-only flag\
+  \ causes the system to skip\n  stopping write I/O references (bch2_dev_io_ref_stop(ca,\
+  \ WRITE)).\n- The leftover active write reference triggers the WARN_ON in\n  bch2_dev_free.\n\
+  \nPrevent this by checking if the filesystem is read-only before\nattempting to\
+  \ grant write references to a device in the problematic\ncode path. Ensure consistency\
+  \ between the filesystem state flag\nand the device I/O reference state during shutdown.\n\
+  \nSigned-off-by: Kent Overstreet <kent.overstreet@linux.dev>\n"
+submodule:
+- fs/bcachefs
+hunk_count: 1
+covered_count: 0

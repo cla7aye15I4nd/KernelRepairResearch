@@ -1,0 +1,50 @@
+diff --git a/include/net/netfilter/nf_tables.h b/include/net/netfilter/nf_tables.h
+index 3965ce18226f..3f7e56b1171e 100644
+--- a/include/net/netfilter/nf_tables.h
++++ b/include/net/netfilter/nf_tables.h
+@@ -14,6 +14,8 @@
+ #include <net/netlink.h>
+ #include <net/flow_offload.h>
+ 
++#define NFT_MAX_HOOKS	(NF_INET_INGRESS + 1)
++
+ struct module;
+ 
+ #define NFT_JUMP_STACK_SIZE	16
+@@ -979,7 +981,7 @@ struct nft_chain_type {
+ 	int				family;
+ 	struct module			*owner;
+ 	unsigned int			hook_mask;
+-	nf_hookfn			*hooks[NF_MAX_HOOKS];
++	nf_hookfn			*hooks[NFT_MAX_HOOKS];
+ 	int				(*ops_register)(struct net *net, const struct nf_hook_ops *ops);
+ 	void				(*ops_unregister)(struct net *net, const struct nf_hook_ops *ops);
+ };
+diff --git a/include/uapi/linux/netfilter.h b/include/uapi/linux/netfilter.h
+index 6a6179af0d7c..ef9a44286e23 100644
+--- a/include/uapi/linux/netfilter.h
++++ b/include/uapi/linux/netfilter.h
+@@ -45,8 +45,8 @@ enum nf_inet_hooks {
+ 	NF_INET_FORWARD,
+ 	NF_INET_LOCAL_OUT,
+ 	NF_INET_POST_ROUTING,
+-	NF_INET_INGRESS,
+-	NF_INET_NUMHOOKS
++	NF_INET_NUMHOOKS,
++	NF_INET_INGRESS = NF_INET_NUMHOOKS,
+ };
+ 
+ enum nf_dev_hooks {
+diff --git a/net/netfilter/nf_tables_api.c b/net/netfilter/nf_tables_api.c
+index f22ad21d0230..7f1c184c00d2 100644
+--- a/net/netfilter/nf_tables_api.c
++++ b/net/netfilter/nf_tables_api.c
+@@ -1864,7 +1864,7 @@ static int nft_chain_parse_hook(struct net *net,
+ 		if (IS_ERR(type))
+ 			return PTR_ERR(type);
+ 	}
+-	if (hook->num > NF_MAX_HOOKS || !(type->hook_mask & (1 << hook->num)))
++	if (hook->num >= NFT_MAX_HOOKS || !(type->hook_mask & (1 << hook->num)))
+ 		return -EOPNOTSUPP;
+ 
+ 	if (type->type == NFT_CHAIN_T_NAT &&

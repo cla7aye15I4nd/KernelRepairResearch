@@ -1,0 +1,37 @@
+id: cf6ea1d6bb30a4ce10b2
+bug_link: https://syzkaller.appspot.com/bug?extid=cf6ea1d6bb30a4ce10b2
+title: WARNING in io_cqring_overflow_flush
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5ad70eb27d2b87ec722fedd23638354be37ea0b0
+fix_commit: 52ea806ad983490b3132a9e526e11a10dc2fd10c
+datetime: '2022-12-21T08:43:53-07:00'
+fix_commit_message: 'io_uring: finish waiting before flushing overflow entries
+
+
+  If we have overflow entries being generated after we''ve done the
+
+  initial flush in io_cqring_wait(), then we could be flushing them in the
+
+  main wait loop as well. If that''s done after having added ourselves
+
+  to the cq_wait waitqueue, then the task state can be != TASK_RUNNING
+
+  when we enter the overflow flush.
+
+
+  Check for the need to overflow flush, and finish our wait cycle first
+
+  if we have to do so.
+
+
+  Reported-and-tested-by: syzbot+cf6ea1d6bb30a4ce10b2@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/io-uring/000000000000cb143a05f04eee15@google.com/
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,77 @@
+diff --git a/mm/kasan/generic.c b/mm/kasan/generic.c
+index 224d161a5a22..5b4c97baa656 100644
+--- a/mm/kasan/generic.c
++++ b/mm/kasan/generic.c
+@@ -488,7 +488,7 @@ static void __kasan_record_aux_stack(void *addr, bool can_alloc)
+ 		return;
+ 
+ 	alloc_meta->aux_stack[1] = alloc_meta->aux_stack[0];
+-	alloc_meta->aux_stack[0] = kasan_save_stack(GFP_NOWAIT, can_alloc);
++	alloc_meta->aux_stack[0] = kasan_save_stack(0, can_alloc);
+ }
+ 
+ void kasan_record_aux_stack(void *addr)
+@@ -518,7 +518,7 @@ void kasan_save_free_info(struct kmem_cache *cache, void *object)
+ 	if (!free_meta)
+ 		return;
+ 
+-	kasan_set_track(&free_meta->free_track, GFP_NOWAIT);
++	kasan_set_track(&free_meta->free_track, 0);
+ 	/* The object was freed and has free track set. */
+ 	*(u8 *)kasan_mem_to_shadow(object) = KASAN_SLAB_FREETRACK;
+ }
+diff --git a/mm/kasan/tags.c b/mm/kasan/tags.c
+index 67a222586846..7dcfe341d48e 100644
+--- a/mm/kasan/tags.c
++++ b/mm/kasan/tags.c
+@@ -140,5 +140,5 @@ void kasan_save_alloc_info(struct kmem_cache *cache, void *object, gfp_t flags)
+ 
+ void kasan_save_free_info(struct kmem_cache *cache, void *object)
+ {
+-	save_stack_info(cache, object, GFP_NOWAIT, true);
++	save_stack_info(cache, object, 0, true);
+ }
+diff --git a/mm/kmsan/core.c b/mm/kmsan/core.c
+index 7d1e4aa30bae..3adb4c1d3b19 100644
+--- a/mm/kmsan/core.c
++++ b/mm/kmsan/core.c
+@@ -74,7 +74,7 @@ depot_stack_handle_t kmsan_save_stack_with_flags(gfp_t flags,
+ 	nr_entries = stack_trace_save(entries, KMSAN_STACK_DEPTH, 0);
+ 
+ 	/* Don't sleep. */
+-	flags &= ~__GFP_DIRECT_RECLAIM;
++	flags &= ~(__GFP_DIRECT_RECLAIM | __GFP_KSWAPD_RECLAIM);
+ 
+ 	handle = __stack_depot_save(entries, nr_entries, flags, true);
+ 	return stack_depot_set_extra_bits(handle, extra);
+@@ -245,7 +245,7 @@ depot_stack_handle_t kmsan_internal_chain_origin(depot_stack_handle_t id)
+ 	extra_bits = kmsan_extra_bits(depth, uaf);
+ 
+ 	entries[0] = KMSAN_CHAIN_MAGIC_ORIGIN;
+-	entries[1] = kmsan_save_stack_with_flags(GFP_ATOMIC, 0);
++	entries[1] = kmsan_save_stack_with_flags(__GFP_HIGH, 0);
+ 	entries[2] = id;
+ 	/*
+ 	 * @entries is a local var in non-instrumented code, so KMSAN does not
+@@ -253,7 +253,7 @@ depot_stack_handle_t kmsan_internal_chain_origin(depot_stack_handle_t id)
+ 	 * positives when __stack_depot_save() passes it to instrumented code.
+ 	 */
+ 	kmsan_internal_unpoison_memory(entries, sizeof(entries), false);
+-	handle = __stack_depot_save(entries, ARRAY_SIZE(entries), GFP_ATOMIC,
++	handle = __stack_depot_save(entries, ARRAY_SIZE(entries), __GFP_HIGH,
+ 				    true);
+ 	return stack_depot_set_extra_bits(handle, extra_bits);
+ }
+diff --git a/mm/kmsan/instrumentation.c b/mm/kmsan/instrumentation.c
+index cf12e9616b24..cc3907a9c33a 100644
+--- a/mm/kmsan/instrumentation.c
++++ b/mm/kmsan/instrumentation.c
+@@ -282,7 +282,7 @@ void __msan_poison_alloca(void *address, uintptr_t size, char *descr)
+ 
+ 	/* stack_depot_save() may allocate memory. */
+ 	kmsan_enter_runtime();
+-	handle = stack_depot_save(entries, ARRAY_SIZE(entries), GFP_ATOMIC);
++	handle = stack_depot_save(entries, ARRAY_SIZE(entries), __GFP_HIGH);
+ 	kmsan_leave_runtime();
+ 
+ 	kmsan_internal_set_shadow_origin(address, size, -1, handle,

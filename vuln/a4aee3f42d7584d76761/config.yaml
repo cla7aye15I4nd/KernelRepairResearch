@@ -1,0 +1,24 @@
+id: a4aee3f42d7584d76761
+bug_link: https://syzkaller.appspot.com/bug?extid=a4aee3f42d7584d76761
+title: WARNING in hwsim_new_radio_nl
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0e012b4e4b5ec8e064be3502382579dd0bb43269
+fix_commit: 7ea862048317aa76d0f22334202779a25530980c
+datetime: '2020-04-14T12:31:46+02:00'
+fix_commit_message: "mac80211_hwsim: Use kstrndup() in place of kasprintf()\n\nsyzbot\
+  \ reports a warning:\n\nprecision 33020 too large\nWARNING: CPU: 0 PID: 9618 at\
+  \ lib/vsprintf.c:2471 set_precision+0x150/0x180 lib/vsprintf.c:2471\n vsnprintf+0xa7b/0x19a0\
+  \ lib/vsprintf.c:2547\n kvasprintf+0xb2/0x170 lib/kasprintf.c:22\n kasprintf+0xbb/0xf0\
+  \ lib/kasprintf.c:59\n hwsim_del_radio_nl+0x63a/0x7e0 drivers/net/wireless/mac80211_hwsim.c:3625\n\
+  \ genl_family_rcv_msg_doit net/netlink/genetlink.c:672 [inline]\n ...\n entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nThus it seems that kasprintf() with \"%.*s\" format can not be used for\nduplicating\
+  \ a string with arbitrary length. Replace it with kstrndup().\n\nNote that later\
+  \ this string is limited to NL80211_WIPHY_NAME_MAXLEN == 64,\nbut the code is simpler\
+  \ this way.\n\nReported-by: syzbot+6693adf1698864d21734@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+a4aee3f42d7584d76761@syzkaller.appspotmail.com\nCc: stable@kernel.org\n\
+  Signed-off-by: Tuomas Tynkkynen <tuomas.tynkkynen@iki.fi>\nLink: https://lore.kernel.org/r/20200410123257.14559-1-tuomas.tynkkynen@iki.fi\n\
+  [johannes: add note about length limit]\nSigned-off-by: Johannes Berg <johannes.berg@intel.com>\n"
+submodule:
+- drivers/net/wireless
+hunk_count: 2
+covered_count: 2

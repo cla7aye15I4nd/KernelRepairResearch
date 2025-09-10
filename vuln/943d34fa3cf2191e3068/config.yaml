@@ -1,0 +1,35 @@
+id: 943d34fa3cf2191e3068
+bug_link: https://syzkaller.appspot.com/bug?extid=943d34fa3cf2191e3068
+title: WARNING in kthread_unpark (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9a8da05d7ad619beb84d0c6904c3fa7022c6fb9b
+fix_commit: 214e01ad4ed7158cab66498810094fac5d09b218
+datetime: '2024-10-09T12:47:19-07:00'
+fix_commit_message: "kthread: unpark only parked kthread\n\nCalling into kthread unparking\
+  \ unconditionally is mostly harmless when\nthe kthread is already unparked. The\
+  \ wake up is then simply ignored\nbecause the target is not in TASK_PARKED state.\n\
+  \nHowever if the kthread is per CPU, the wake up is preceded by a call\nto kthread_bind()\
+  \ which expects the task to be inactive and in\nTASK_PARKED state, which obviously\
+  \ isn't the case if it is unparked.\n\nAs a result, calling kthread_stop() on an\
+  \ unparked per-cpu kthread\ntriggers such a warning:\n\n\tWARNING: CPU: 0 PID: 11\
+  \ at kernel/kthread.c:525 __kthread_bind_mask kernel/kthread.c:525\n\t <TASK>\n\t\
+  \ kthread_stop+0x17a/0x630 kernel/kthread.c:707\n\t destroy_workqueue+0x136/0xc40\
+  \ kernel/workqueue.c:5810\n\t wg_destruct+0x1e2/0x2e0 drivers/net/wireguard/device.c:257\n\
+  \t netdev_run_todo+0xe1a/0x1000 net/core/dev.c:10693\n\t default_device_exit_batch+0xa14/0xa90\
+  \ net/core/dev.c:11769\n\t ops_exit_list net/core/net_namespace.c:178 [inline]\n\
+  \t cleanup_net+0x89d/0xcc0 net/core/net_namespace.c:640\n\t process_one_work kernel/workqueue.c:3231\
+  \ [inline]\n\t process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3312\n\t\
+  \ worker_thread+0x86d/0xd70 kernel/workqueue.c:3393\n\t kthread+0x2f0/0x390 kernel/kthread.c:389\n\
+  \t ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147\n\t ret_from_fork_asm+0x1a/0x30\
+  \ arch/x86/entry/entry_64.S:244\n\t </TASK>\n\nFix this with skipping unecessary\
+  \ unparking while stopping a kthread.\n\nLink: https://lkml.kernel.org/r/20240913214634.12557-1-frederic@kernel.org\n\
+  Fixes: 5c25b5ff89f0 (\"workqueue: Tag bound workers with KTHREAD_IS_PER_CPU\")\n\
+  Signed-off-by: Frederic Weisbecker <frederic@kernel.org>\nReported-by: syzbot+943d34fa3cf2191e3068@syzkaller.appspotmail.com\n\
+  Tested-by: syzbot+943d34fa3cf2191e3068@syzkaller.appspotmail.com\nSuggested-by:\
+  \ Thomas Gleixner <tglx@linutronix.de>\nCc: Hillf Danton <hdanton@sina.com>\nCc:\
+  \ Tejun Heo <tj@kernel.org>\nCc: <stable@vger.kernel.org>\nSigned-off-by: Andrew\
+  \ Morton <akpm@linux-foundation.org>\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 1

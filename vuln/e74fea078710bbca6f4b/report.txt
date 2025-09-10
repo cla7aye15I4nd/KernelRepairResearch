@@ -1,0 +1,79 @@
+bcachefs (loop0): done starting filesystem
+=============================
+WARNING: suspicious RCU usage
+6.10.0-rc7-syzkaller #0 Not tainted
+-----------------------------
+fs/bcachefs/buckets.h:107 suspicious rcu_dereference_check() usage!
+
+other info that might help us debug this:
+
+
+rcu_scheduler_active = 2, debug_locks = 1
+9 locks held by syz-executor107/5084:
+ #0: ffff88807441c420 (sb_writers#9){.+.+}-{0:0}, at: mnt_want_write+0x3f/0x90 fs/namespace.c:409
+ #1: ffff88807441c730 (&type->s_vfs_rename_key){+.+.}-{3:3}, at: lock_rename fs/namei.c:3078 [inline]
+ #1: ffff88807441c730 (&type->s_vfs_rename_key){+.+.}-{3:3}, at: do_renameat2+0x5cf/0x13f0 fs/namei.c:4985
+ #2: ffff88807a278150 (&type->i_mutex_dir_key#6/1){+.+.}-{3:3}, at: inode_lock_nested include/linux/fs.h:826 [inline]
+ #2: ffff88807a278150 (&type->i_mutex_dir_key#6/1){+.+.}-{3:3}, at: lock_two_directories+0x145/0x220 fs/namei.c:3044
+ #3: ffff88807a2788b8 (&type->i_mutex_dir_key#6/5){+.+.}-{3:3}, at: inode_lock_nested include/linux/fs.h:826 [inline]
+ #3: ffff88807a2788b8 (&type->i_mutex_dir_key#6/5){+.+.}-{3:3}, at: lock_two_directories+0x16f/0x220 fs/namei.c:3045
+ #4: ffff888077f842d8 (&c->btree_trans_barrier){.+.+}-{0:0}, at: srcu_lock_acquire include/linux/srcu.h:116 [inline]
+ #4: ffff888077f842d8 (&c->btree_trans_barrier){.+.+}-{0:0}, at: srcu_read_lock include/linux/srcu.h:215 [inline]
+ #4: ffff888077f842d8 (&c->btree_trans_barrier){.+.+}-{0:0}, at: __bch2_trans_get+0x840/0xce0 fs/bcachefs/btree_iter.c:3193
+ #5: ffff88802fc93070 (&dev->mutex){....}-{3:3}, at: six_relock_type fs/bcachefs/six.h:289 [inline]
+ #5: ffff88802fc93070 (&dev->mutex){....}-{3:3}, at: __bch2_btree_node_relock+0x142/0x9c0 fs/bcachefs/btree_locking.c:507
+ #6: ffff88802fc93070 (&dev->mutex){....}-{3:3}, at: btree_node_lock_increment fs/bcachefs/btree_locking.h:248 [inline]
+ #6: ffff88802fc93070 (&dev->mutex){....}-{3:3}, at: __bch2_btree_node_relock+0x675/0x9c0 fs/bcachefs/btree_locking.c:509
+ #7: ffff88807a0db340 (&dev->mutex){....}-{3:3}, at: six_relock_type fs/bcachefs/six.h:289 [inline]
+ #7: ffff88807a0db340 (&dev->mutex){....}-{3:3}, at: __bch2_btree_node_relock+0x142/0x9c0 fs/bcachefs/btree_locking.c:507
+ #8: ffff88802b279870 (&dev->mutex){....}-{3:3}, at: six_relock_type fs/bcachefs/six.h:289 [inline]
+ #8: ffff88802b279870 (&dev->mutex){....}-{3:3}, at: __bch2_btree_node_relock+0x142/0x9c0 fs/bcachefs/btree_locking.c:507
+
+stack backtrace:
+CPU: 0 PID: 5084 Comm: syz-executor107 Not tainted 6.10.0-rc7-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ lockdep_rcu_suspicious+0x221/0x340 kernel/locking/lockdep.c:6712
+ bucket_gens fs/bcachefs/buckets.h:103 [inline]
+ bucket_gen fs/bcachefs/buckets.h:112 [inline]
+ bch2_bucket_ref_update+0xbe1/0x1100 fs/bcachefs/buckets.c:808
+ __mark_pointer fs/bcachefs/buckets.c:1000 [inline]
+ bch2_trigger_pointer fs/bcachefs/buckets.c:1037 [inline]
+ __trigger_extent+0x1524/0x6260 fs/bcachefs/buckets.c:1176
+ bch2_trigger_extent+0x636/0x920 fs/bcachefs/buckets.c:1261
+ bch2_key_trigger fs/bcachefs/bkey_methods.h:88 [inline]
+ bch2_key_trigger_old fs/bcachefs/bkey_methods.h:102 [inline]
+ run_one_trans_trigger fs/bcachefs/btree_trans_commit.c:514 [inline]
+ run_btree_triggers+0xadb/0x11d0 fs/bcachefs/btree_trans_commit.c:544
+ bch2_trans_commit_run_triggers fs/bcachefs/btree_trans_commit.c:576 [inline]
+ __bch2_trans_commit+0x3a6/0x88e0 fs/bcachefs/btree_trans_commit.c:1022
+ bch2_trans_commit fs/bcachefs/btree_update.h:170 [inline]
+ bch2_inode_delete_keys+0xae8/0x1440 fs/bcachefs/inode.c:845
+ bch2_inode_rm+0x165/0xd40 fs/bcachefs/inode.c:874
+ bch2_evict_inode+0x21c/0x3c0 fs/bcachefs/fs.c:1588
+ evict+0x2a8/0x630 fs/inode.c:667
+ __dentry_kill+0x20d/0x630 fs/dcache.c:603
+ dput+0x19f/0x2b0 fs/dcache.c:845
+ do_renameat2+0xda1/0x13f0 fs/namei.c:5052
+ __do_sys_renameat2 fs/namei.c:5084 [inline]
+ __se_sys_renameat2 fs/namei.c:5081 [inline]
+ __x64_sys_renameat2+0xd2/0xf0 fs/namei.c:5081
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f491fe4ad59
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff84583f28 EFLAGS: 00000246 ORIG_RAX: 000000000000013c
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f491fe4ad59
+RDX: 0000000000000004 RSI: 0000000020000080 RDI: 00000000ffffff9c
+RBP: 00007f491fec45f0 R08: 0000000000000000 R09: 000055555e2ff4c0
+R10: 0000000020000980 R11: 0000000000000246 R12: 00007fff84583f50
+R13: 00007fff84584178 R14: 431bde82d7b634db R15: 00007f491fe9403b
+ </TASK>
+bucket 0:34 gen 7 (mem gen 0) data type user: stale dirty ptr (gen 0)
+while marking u64s 7 type extent 536870913:8:U32_MAX len 8 ver 0: durability: 1 crc: c_size 8 size 8 offset 0 nonce 0 csum crc32c compress incompressible ptr: 0:34:0 gen 0, shutting down
+bcachefs (loop0): inconsistency detected - emergency read only at journal seq 11
+syz-executor107 (5084) used greatest stack depth: 18488 bytes left

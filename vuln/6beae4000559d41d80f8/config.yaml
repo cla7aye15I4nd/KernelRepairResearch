@@ -1,0 +1,23 @@
+id: 6beae4000559d41d80f8
+bug_link: https://syzkaller.appspot.com/bug?extid=6beae4000559d41d80f8
+title: possible deadlock in __queue_work
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 594b27e677b35f9734b1969d175ebc6146741109
+fix_commit: 3f804f6d201ca93adf4c3df04d1bfd152c1129d6
+datetime: '2021-05-07T06:06:21-04:00'
+fix_commit_message: "KVM: x86: Prevent deadlock against tk_core.seq\n\nsyzbot reported\
+  \ a possible deadlock in pvclock_gtod_notify():\n\nCPU 0  \t\t  \t   \t    \t  \
+  \  CPU 1\nwrite_seqcount_begin(&tk_core.seq);\n  pvclock_gtod_notify()\t\t\t   \
+  \ spin_lock(&pool->lock);\n    queue_work(..., &pvclock_gtod_work)\t    ktime_get()\n\
+  \     spin_lock(&pool->lock);\t\t      do {\n     \t\t\t\t\t\tseq = read_seqcount_begin(tk_core.seq)\n\
+  \t\t\t\t\t\t...\n\t\t\t\t              } while (read_seqcount_retry(&tk_core.seq,\
+  \ seq);\n\nWhile this is unlikely to happen, it's possible.\n\nDelegate queue_work()\
+  \ to irq_work() which postpones it until the\ntk_core.seq write held region is left\
+  \ and interrupts are reenabled.\n\nFixes: 16e8d74d2da9 (\"KVM: x86: notifier for\
+  \ clocksource changes\")\nReported-by: syzbot+6beae4000559d41d80f8@syzkaller.appspotmail.com\n\
+  Signed-off-by: Thomas Gleixner <tglx@linutronix.de>\nMessage-Id: <87h7jgm1zy.ffs@nanos.tec.linutronix.de>\n\
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 3
+covered_count: 0

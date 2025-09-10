@@ -1,0 +1,164 @@
+diff --git a/include/net/xfrm.h b/include/net/xfrm.h
+index 7298a53b9702..85386becbaea 100644
+--- a/include/net/xfrm.h
++++ b/include/net/xfrm.h
+@@ -853,7 +853,7 @@ static inline void xfrm_pols_put(struct xfrm_policy **pols, int npols)
+ 		xfrm_pol_put(pols[i]);
+ }
+ 
+-void __xfrm_state_destroy(struct xfrm_state *);
++void __xfrm_state_destroy(struct xfrm_state *, bool);
+ 
+ static inline void __xfrm_state_put(struct xfrm_state *x)
+ {
+@@ -863,7 +863,13 @@ static inline void __xfrm_state_put(struct xfrm_state *x)
+ static inline void xfrm_state_put(struct xfrm_state *x)
+ {
+ 	if (refcount_dec_and_test(&x->refcnt))
+-		__xfrm_state_destroy(x);
++		__xfrm_state_destroy(x, false);
++}
++
++static inline void xfrm_state_put_sync(struct xfrm_state *x)
++{
++	if (refcount_dec_and_test(&x->refcnt))
++		__xfrm_state_destroy(x, true);
+ }
+ 
+ static inline void xfrm_state_hold(struct xfrm_state *x)
+@@ -1590,7 +1596,7 @@ struct xfrmk_spdinfo {
+ 
+ struct xfrm_state *xfrm_find_acq_byseq(struct net *net, u32 mark, u32 seq);
+ int xfrm_state_delete(struct xfrm_state *x);
+-int xfrm_state_flush(struct net *net, u8 proto, bool task_valid);
++int xfrm_state_flush(struct net *net, u8 proto, bool task_valid, bool sync);
+ int xfrm_dev_state_flush(struct net *net, struct net_device *dev, bool task_valid);
+ void xfrm_sad_getinfo(struct net *net, struct xfrmk_sadinfo *si);
+ void xfrm_spd_getinfo(struct net *net, struct xfrmk_spdinfo *si);
+diff --git a/net/ipv6/xfrm6_tunnel.c b/net/ipv6/xfrm6_tunnel.c
+index f5b4febeaa25..bc65db782bfb 100644
+--- a/net/ipv6/xfrm6_tunnel.c
++++ b/net/ipv6/xfrm6_tunnel.c
+@@ -344,8 +344,8 @@ static void __net_exit xfrm6_tunnel_net_exit(struct net *net)
+ 	struct xfrm6_tunnel_net *xfrm6_tn = xfrm6_tunnel_pernet(net);
+ 	unsigned int i;
+ 
+-	xfrm_state_flush(net, IPSEC_PROTO_ANY, false);
+ 	xfrm_flush_gc();
++	xfrm_state_flush(net, IPSEC_PROTO_ANY, false, true);
+ 
+ 	for (i = 0; i < XFRM6_TUNNEL_SPI_BYADDR_HSIZE; i++)
+ 		WARN_ON_ONCE(!hlist_empty(&xfrm6_tn->spi_byaddr[i]));
+diff --git a/net/key/af_key.c b/net/key/af_key.c
+index 655c787f9d54..637030f43b67 100644
+--- a/net/key/af_key.c
++++ b/net/key/af_key.c
+@@ -1783,7 +1783,7 @@ static int pfkey_flush(struct sock *sk, struct sk_buff *skb, const struct sadb_m
+ 	if (proto == 0)
+ 		return -EINVAL;
+ 
+-	err = xfrm_state_flush(net, proto, true);
++	err = xfrm_state_flush(net, proto, true, false);
+ 	err2 = unicast_flush_resp(sk, hdr);
+ 	if (err || err2) {
+ 		if (err == -ESRCH) /* empty table - go quietly */
+diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
+index 23c92891758a..1bb971f46fc6 100644
+--- a/net/xfrm/xfrm_state.c
++++ b/net/xfrm/xfrm_state.c
+@@ -432,7 +432,7 @@ void xfrm_state_free(struct xfrm_state *x)
+ }
+ EXPORT_SYMBOL(xfrm_state_free);
+ 
+-static void xfrm_state_gc_destroy(struct xfrm_state *x)
++static void ___xfrm_state_destroy(struct xfrm_state *x)
+ {
+ 	tasklet_hrtimer_cancel(&x->mtimer);
+ 	del_timer_sync(&x->rtimer);
+@@ -474,7 +474,7 @@ static void xfrm_state_gc_task(struct work_struct *work)
+ 	synchronize_rcu();
+ 
+ 	hlist_for_each_entry_safe(x, tmp, &gc_list, gclist)
+-		xfrm_state_gc_destroy(x);
++		___xfrm_state_destroy(x);
+ }
+ 
+ static enum hrtimer_restart xfrm_timer_handler(struct hrtimer *me)
+@@ -598,14 +598,19 @@ struct xfrm_state *xfrm_state_alloc(struct net *net)
+ }
+ EXPORT_SYMBOL(xfrm_state_alloc);
+ 
+-void __xfrm_state_destroy(struct xfrm_state *x)
++void __xfrm_state_destroy(struct xfrm_state *x, bool sync)
+ {
+ 	WARN_ON(x->km.state != XFRM_STATE_DEAD);
+ 
+-	spin_lock_bh(&xfrm_state_gc_lock);
+-	hlist_add_head(&x->gclist, &xfrm_state_gc_list);
+-	spin_unlock_bh(&xfrm_state_gc_lock);
+-	schedule_work(&xfrm_state_gc_work);
++	if (sync) {
++		synchronize_rcu();
++		___xfrm_state_destroy(x);
++	} else {
++		spin_lock_bh(&xfrm_state_gc_lock);
++		hlist_add_head(&x->gclist, &xfrm_state_gc_list);
++		spin_unlock_bh(&xfrm_state_gc_lock);
++		schedule_work(&xfrm_state_gc_work);
++	}
+ }
+ EXPORT_SYMBOL(__xfrm_state_destroy);
+ 
+@@ -708,7 +713,7 @@ xfrm_dev_state_flush_secctx_check(struct net *net, struct net_device *dev, bool
+ }
+ #endif
+ 
+-int xfrm_state_flush(struct net *net, u8 proto, bool task_valid)
++int xfrm_state_flush(struct net *net, u8 proto, bool task_valid, bool sync)
+ {
+ 	int i, err = 0, cnt = 0;
+ 
+@@ -730,7 +735,10 @@ int xfrm_state_flush(struct net *net, u8 proto, bool task_valid)
+ 				err = xfrm_state_delete(x);
+ 				xfrm_audit_state_delete(x, err ? 0 : 1,
+ 							task_valid);
+-				xfrm_state_put(x);
++				if (sync)
++					xfrm_state_put_sync(x);
++				else
++					xfrm_state_put(x);
+ 				if (!err)
+ 					cnt++;
+ 
+@@ -2215,7 +2223,7 @@ void xfrm_state_delete_tunnel(struct xfrm_state *x)
+ 		if (atomic_read(&t->tunnel_users) == 2)
+ 			xfrm_state_delete(t);
+ 		atomic_dec(&t->tunnel_users);
+-		xfrm_state_put(t);
++		xfrm_state_put_sync(t);
+ 		x->tunnel = NULL;
+ 	}
+ }
+@@ -2375,8 +2383,8 @@ void xfrm_state_fini(struct net *net)
+ 	unsigned int sz;
+ 
+ 	flush_work(&net->xfrm.state_hash_work);
+-	xfrm_state_flush(net, IPSEC_PROTO_ANY, false);
+ 	flush_work(&xfrm_state_gc_work);
++	xfrm_state_flush(net, IPSEC_PROTO_ANY, false, true);
+ 
+ 	WARN_ON(!list_empty(&net->xfrm.state_all));
+ 
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index c6d26afcf89d..a131f9ff979e 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -1932,7 +1932,7 @@ static int xfrm_flush_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	struct xfrm_usersa_flush *p = nlmsg_data(nlh);
+ 	int err;
+ 
+-	err = xfrm_state_flush(net, p->proto, true);
++	err = xfrm_state_flush(net, p->proto, true, false);
+ 	if (err) {
+ 		if (err == -ESRCH) /* empty table */
+ 			return 0;

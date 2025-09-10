@@ -1,0 +1,29 @@
+id: 6898da502aef574c5f8a
+bug_link: https://syzkaller.appspot.com/bug?extid=6898da502aef574c5f8a
+title: possible deadlock in do_writepages
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b87c7cdf2bed4928b899e1ce91ef0d147017ba45
+fix_commit: 00d873c17e29cc32d90ca852b82685f1673acaa5
+datetime: '2023-05-13T18:05:04-04:00'
+fix_commit_message: "ext4: avoid deadlock in fs reclaim with page writeback\n\nExt4\
+  \ has a filesystem wide lock protecting ext4_writepages() calls to\navoid races\
+  \ with switching of journalled data flag or inode format. This\nlock can however\
+  \ cause a deadlock like:\n\nCPU0                            CPU1\n\next4_writepages()\n\
+  \  percpu_down_read(sbi->s_writepages_rwsem);\n                                ext4_change_inode_journal_flag()\n\
+  \                                  percpu_down_write(sbi->s_writepages_rwsem);\n\
+  \                                    - blocks, all readers block from now on\n \
+  \ ext4_do_writepages()\n    ext4_init_io_end()\n      kmem_cache_zalloc(io_end_cachep,\
+  \ GFP_KERNEL)\n        fs_reclaim frees dentry...\n          dentry_unlink_inode()\n\
+  \            iput() - last ref =>\n              iput_final() - inode dirty =>\n\
+  \                write_inode_now()...\n                  ext4_writepages() tries\
+  \ to acquire sbi->s_writepages_rwsem\n                    and blocks forever\n\n\
+  Make sure we cannot recurse into filesystem reclaim from writeback code\nto avoid\
+  \ the deadlock.\n\nReported-by: syzbot+6898da502aef574c5f8a@syzkaller.appspotmail.com\n\
+  Link: https://lore.kernel.org/all/0000000000004c66b405fa108e27@google.com\nFixes:\
+  \ c8585c6fcaf2 (\"ext4: fix races between changing inode journal mode and ext4_writepages\"\
+  )\nCC: stable@vger.kernel.org\nSigned-off-by: Jan Kara <jack@suse.cz>\nLink: https://lore.kernel.org/r/20230504124723.20205-1-jack@suse.cz\n\
+  Signed-off-by: Theodore Ts'o <tytso@mit.edu>\n"
+submodule:
+- fs/ext4
+hunk_count: 15
+covered_count: 3

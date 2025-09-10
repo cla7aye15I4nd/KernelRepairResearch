@@ -1,0 +1,37 @@
+id: 8d482d0e407f665d9d10
+bug_link: https://syzkaller.appspot.com/bug?extid=8d482d0e407f665d9d10
+title: 'KCSAN: data-race in udpv6_sendmsg / udpv6_sendmsg (6)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 08300adac3b8dab9e2fd3be0155c7d3093c755f4
+fix_commit: 482521d8e0c6520429478aa6866cd44128b33d5d
+datetime: '2024-01-13T15:46:20+00:00'
+fix_commit_message: "udp: annotate data-races around up->pending\n\nup->pending can\
+  \ be read without holding the socket lock,\nas pointed out by syzbot [1]\n\nAdd\
+  \ READ_ONCE() in lockless contexts, and WRITE_ONCE()\non write side.\n\n[1]\nBUG:\
+  \ KCSAN: data-race in udpv6_sendmsg / udpv6_sendmsg\n\nwrite to 0xffff88814e5eadf0\
+  \ of 4 bytes by task 15547 on cpu 1:\n udpv6_sendmsg+0x1405/0x1530 net/ipv6/udp.c:1596\n\
+  \ inet6_sendmsg+0x63/0x80 net/ipv6/af_inet6.c:657\n sock_sendmsg_nosec net/socket.c:730\
+  \ [inline]\n __sock_sendmsg net/socket.c:745 [inline]\n __sys_sendto+0x257/0x310\
+  \ net/socket.c:2192\n __do_sys_sendto net/socket.c:2204 [inline]\n __se_sys_sendto\
+  \ net/socket.c:2200 [inline]\n __x64_sys_sendto+0x78/0x90 net/socket.c:2200\n do_syscall_x64\
+  \ arch/x86/entry/common.c:52 [inline]\n do_syscall_64+0x44/0x110 arch/x86/entry/common.c:83\n\
+  \ entry_SYSCALL_64_after_hwframe+0x63/0x6b\n\nread to 0xffff88814e5eadf0 of 4 bytes\
+  \ by task 15551 on cpu 0:\n udpv6_sendmsg+0x22c/0x1530 net/ipv6/udp.c:1373\n inet6_sendmsg+0x63/0x80\
+  \ net/ipv6/af_inet6.c:657\n sock_sendmsg_nosec net/socket.c:730 [inline]\n __sock_sendmsg\
+  \ net/socket.c:745 [inline]\n ____sys_sendmsg+0x37c/0x4d0 net/socket.c:2586\n ___sys_sendmsg\
+  \ net/socket.c:2640 [inline]\n __sys_sendmmsg+0x269/0x500 net/socket.c:2726\n __do_sys_sendmmsg\
+  \ net/socket.c:2755 [inline]\n __se_sys_sendmmsg net/socket.c:2752 [inline]\n __x64_sys_sendmmsg+0x57/0x60\
+  \ net/socket.c:2752\n do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n do_syscall_64+0x44/0x110\
+  \ arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x63/0x6b\n\nvalue\
+  \ changed: 0x00000000 -> 0x0000000a\n\nReported by Kernel Concurrency Sanitizer\
+  \ on:\nCPU: 0 PID: 15551 Comm: syz-executor.1 Tainted: G        W          6.7.0-syzkaller\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 11/17/2023\n\nFixes: 1da177e4c3f4 (\"Linux-2.6.12-rc2\")\nReported-by: syzbot+8d482d0e407f665d9d10@syzkaller.appspotmail.com\n\
+  Link: https://lore.kernel.org/netdev/0000000000009e46c3060ebcdffd@google.com/\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nReviewed-by: Jiri Pirko <jiri@nvidia.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv4
+- net/ipv6
+hunk_count: 13
+covered_count: 4

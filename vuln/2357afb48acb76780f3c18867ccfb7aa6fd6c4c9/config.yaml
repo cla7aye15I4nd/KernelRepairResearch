@@ -1,0 +1,33 @@
+id: 2357afb48acb76780f3c18867ccfb7aa6fd6c4c9
+bug_link: https://syzkaller.appspot.com/bug?extid=2357afb48acb76780f3c18867ccfb7aa6fd6c4c9
+title: WARNING in __check_heap_object
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 93070d339d7bc6f6b07b64faf5134fd144e8ec48
+fix_commit: ab9ee8e38b292f9a6698a4fedbb6ff8d08ce2012
+datetime: '2018-01-15T12:08:00-08:00'
+fix_commit_message: "sctp: Define usercopy region in SCTP proto slab cache\n\nThe\
+  \ SCTP socket event notification subscription information need to be\ncopied to/from\
+  \ userspace. In support of usercopy hardening, this patch\ndefines a region in the\
+  \ struct proto slab cache in which userspace copy\noperations are allowed. Additionally\
+  \ moves the usercopy fields to be\nadjacent for the region to cover both.\n\nexample\
+  \ usage trace:\n\n    net/sctp/socket.c:\n        sctp_getsockopt_events(...):\n\
+  \            ...\n            copy_to_user(..., &sctp_sk(sk)->subscribe, len)\n\n\
+  \        sctp_setsockopt_events(...):\n            ...\n            copy_from_user(&sctp_sk(sk)->subscribe,\
+  \ ..., optlen)\n\n        sctp_getsockopt_initmsg(...):\n            ...\n     \
+  \       copy_to_user(..., &sctp_sk(sk)->initmsg, len)\n\nThis region is known as\
+  \ the slab cache's usercopy region. Slab caches\ncan now check that each dynamically\
+  \ sized copy operation involving\ncache-managed memory falls entirely within the\
+  \ slab's usercopy region.\n\nThis patch is modified from Brad Spengler/PaX Team's\
+  \ PAX_USERCOPY\nwhitelisting code in the last public patch of grsecurity/PaX based\
+  \ on my\nunderstanding of the code. Changes or omissions from the original code\
+  \ are\nmine and don't reflect the original grsecurity/PaX code.\n\nSigned-off-by:\
+  \ David Windsor <dave@nullcore.net>\n[kees: split from network patch, move struct\
+  \ members adjacent]\n[kees: add SCTPv6 struct whitelist, provide usage trace]\n\
+  Cc: Vlad Yasevich <vyasevich@gmail.com>\nCc: Neil Horman <nhorman@tuxdriver.com>\n\
+  Cc: \"David S. Miller\" <davem@davemloft.net>\nCc: linux-sctp@vger.kernel.org\n\
+  Cc: netdev@vger.kernel.org\nSigned-off-by: Kees Cook <keescook@chromium.org>\n"
+submodule:
+- include/net/sctp
+- net/sctp
+hunk_count: 3
+covered_count: 0

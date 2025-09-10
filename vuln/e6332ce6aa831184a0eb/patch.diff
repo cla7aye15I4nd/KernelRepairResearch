@@ -1,0 +1,43 @@
+diff --git a/fs/bcachefs/recovery.c b/fs/bcachefs/recovery.c
+index cf513fc79ce4..e632da69196c 100644
+--- a/fs/bcachefs/recovery.c
++++ b/fs/bcachefs/recovery.c
+@@ -326,6 +326,12 @@ static int journal_replay_entry_early(struct bch_fs *c,
+ 	case BCH_JSET_ENTRY_btree_root: {
+ 		struct btree_root *r;
+ 
++		if (fsck_err_on(entry->btree_id >= BTREE_ID_NR_MAX,
++				c, invalid_btree_id,
++				"invalid btree id %u (max %u)",
++				entry->btree_id, BTREE_ID_NR_MAX))
++			return 0;
++
+ 		while (entry->btree_id >= c->btree_roots_extra.nr + BTREE_ID_NR) {
+ 			ret = darray_push(&c->btree_roots_extra, (struct btree_root) { NULL });
+ 			if (ret)
+@@ -415,7 +421,7 @@ static int journal_replay_entry_early(struct bch_fs *c,
+ 		atomic64_set(&c->io_clock[clock->rw].now, le64_to_cpu(clock->time));
+ 	}
+ 	}
+-
++fsck_err:
+ 	return ret;
+ }
+ 
+diff --git a/fs/bcachefs/sb-errors_format.h b/fs/bcachefs/sb-errors_format.h
+index 84d2763bd597..1d1251f1bb20 100644
+--- a/fs/bcachefs/sb-errors_format.h
++++ b/fs/bcachefs/sb-errors_format.h
+@@ -273,7 +273,11 @@
+ 	x(sb_clean_entry_overrun,				267)	\
+ 	x(btree_ptr_v2_written_0,				268)	\
+ 	x(subvol_snapshot_bad,					269)	\
+-	x(subvol_inode_bad,					270)
++	x(subvol_inode_bad,					270)	\
++	x(alloc_key_stripe_sectors_wrong,			271)	\
++	x(accounting_mismatch,					272)	\
++	x(accounting_replicas_not_marked,			273)	\
++	x(invalid_btree_id,					274)
+ 
+ enum bch_sb_error_id {
+ #define x(t, n) BCH_FSCK_ERR_##t = n,

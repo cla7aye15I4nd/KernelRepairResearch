@@ -1,0 +1,26 @@
+id: 2827ef6b3385deb07eaf
+bug_link: https://syzkaller.appspot.com/bug?extid=2827ef6b3385deb07eaf
+title: 'KMSAN: uninit-value in do_msgrcv'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e2652ae6bd7492cdc0436817cbcd09282eb0bb03
+fix_commit: 39cfffd774a2e8818250360a3e028b5eac9d5392
+datetime: '2018-08-22T10:52:51-07:00'
+fix_commit_message: "ipc/util.c: use ipc_rcu_putref() for failues in ipc_addid()\n\
+  \nipc_addid() is impossible to use:\n- for certain failures, the caller must not\
+  \ use ipc_rcu_putref(),\n  because the reference counter is not yet initialized.\n\
+  - for other failures, the caller must use ipc_rcu_putref(),\n  because parallel\
+  \ operations could be ongoing already.\n\nThe patch cleans that up, by initializing\
+  \ the refcount early, and by\nmodifying all callers.\n\nThe issues is related to\
+  \ the finding of\nsyzbot+2827ef6b3385deb07eaf@syzkaller.appspotmail.com: syzbot\
+  \ found an\nissue with reading kern_ipc_perm.seq, here both read and write to already\n\
+  released memory could happen.\n\nLink: http://lkml.kernel.org/r/20180712185241.4017-4-manfred@colorfullife.com\n\
+  Signed-off-by: Manfred Spraul <manfred@colorfullife.com>\nCc: Dmitry Vyukov <dvyukov@google.com>\n\
+  Cc: Kees Cook <keescook@chromium.org>\nCc: Davidlohr Bueso <dave@stgolabs.net>\n\
+  Cc: Davidlohr Bueso <dbueso@suse.de>\nCc: Herbert Xu <herbert@gondor.apana.org.au>\n\
+  Cc: Michael Kerrisk <mtk.manpages@gmail.com>\nCc: Michal Hocko <mhocko@suse.com>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds\
+  \ <torvalds@linux-foundation.org>\n"
+submodule:
+- ipc
+hunk_count: 8
+covered_count: 5

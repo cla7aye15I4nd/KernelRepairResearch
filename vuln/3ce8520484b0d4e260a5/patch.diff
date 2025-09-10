@@ -1,0 +1,21 @@
+diff --git a/net/tipc/netlink_compat.c b/net/tipc/netlink_compat.c
+index 0bfd03d67fdd..340a6e7c43a7 100644
+--- a/net/tipc/netlink_compat.c
++++ b/net/tipc/netlink_compat.c
+@@ -267,8 +267,14 @@ static int tipc_nl_compat_dumpit(struct tipc_nl_compat_cmd_dump *cmd,
+ 	if (msg->rep_type)
+ 		tipc_tlv_init(msg->rep, msg->rep_type);
+ 
+-	if (cmd->header)
+-		(*cmd->header)(msg);
++	if (cmd->header) {
++		err = (*cmd->header)(msg);
++		if (err) {
++			kfree_skb(msg->rep);
++			msg->rep = NULL;
++			return err;
++		}
++	}
+ 
+ 	arg = nlmsg_new(0, GFP_KERNEL);
+ 	if (!arg) {

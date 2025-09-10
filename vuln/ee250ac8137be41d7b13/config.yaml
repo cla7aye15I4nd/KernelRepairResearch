@@ -1,0 +1,30 @@
+id: ee250ac8137be41d7b13
+bug_link: https://syzkaller.appspot.com/bug?extid=ee250ac8137be41d7b13
+title: 'INFO: task can''t die in corrupted'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d662fad143c0470ad7f46ea7b02da539f613d7d7
+fix_commit: 86f33603f8c51537265ff7ac0320638fd2cbdb1b
+datetime: '2020-10-13T23:23:29-07:00'
+fix_commit_message: "f2fs: handle errors of f2fs_get_meta_page_nofail\n\nFirst problem\
+  \ is we hit BUG_ON() in f2fs_get_sum_page given EIO on\nf2fs_get_meta_page_nofail().\n\
+  \nQuick fix was not to give any error with infinite loop, but syzbot caught\na case\
+  \ where it goes to that loop from fuzzed image. In turned out we abused\nf2fs_get_meta_page_nofail()\
+  \ like in the below call stack.\n\n- f2fs_fill_super\n - f2fs_build_segment_manager\n\
+  \  - build_sit_entries\n   - get_current_sit_page\n\nINFO: task syz-executor178:6870\
+  \ can't die for more than 143 seconds.\ntask:syz-executor178 state:R\n stack:26960\
+  \ pid: 6870 ppid:  6869 flags:0x00004006\nCall Trace:\n\nShowing all locks held\
+  \ in the system:\n1 lock held by khungtaskd/1179:\n #0: ffffffff8a554da0 (rcu_read_lock){....}-{1:2},\
+  \ at: debug_show_all_locks+0x53/0x260 kernel/locking/lockdep.c:6242\n1 lock held\
+  \ by systemd-journal/3920:\n1 lock held by in:imklog/6769:\n #0: ffff88809eebc130\
+  \ (&f->f_pos_lock){+.+.}-{3:3}, at: __fdget_pos+0xe9/0x100 fs/file.c:930\n1 lock\
+  \ held by syz-executor178/6870:\n #0: ffff8880925120e0 (&type->s_umount_key#47/1){+.+.}-{3:3},\
+  \ at: alloc_super+0x201/0xaf0 fs/super.c:229\n\nActually, we didn't have to use\
+  \ _nofail in this case, since we could return\nerror to mount(2) already with the\
+  \ error handler.\n\nAs a result, this patch tries to 1) remove _nofail callers as\
+  \ much as possible,\n2) deal with error case in last remaining caller, f2fs_get_sum_page().\n\
+  \nReported-by: syzbot+ee250ac8137be41d7b13@syzkaller.appspotmail.com\nReviewed-by:\
+  \ Chao Yu <yuchao0@huawei.com>\nSigned-off-by: Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 6
+covered_count: 0

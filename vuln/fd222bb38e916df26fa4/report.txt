@@ -1,0 +1,58 @@
+------------[ cut here ]------------
+UBSAN: array-index-out-of-bounds in net/wireless/scan.c:3288:35
+index 4 is out of range for type 'u8[0]' (aka 'unsigned char[0]')
+CPU: 0 UID: 0 PID: 5880 Comm: syz-executor169 Not tainted 6.15.0-syzkaller-12438-gd9816ec74e6d #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <IRQ>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ ubsan_epilogue+0xa/0x40 lib/ubsan.c:233
+ __ubsan_handle_out_of_bounds+0xe9/0xf0 lib/ubsan.c:455
+ cfg80211_inform_bss_frame_data+0x660/0x7b0 net/wireless/scan.c:3288
+ ieee80211_bss_info_update+0x746/0x9e0 net/mac80211/scan.c:226
+ ieee80211_scan_rx+0x593/0xa20 net/mac80211/scan.c:355
+ __ieee80211_rx_handle_packet net/mac80211/rx.c:5179 [inline]
+ ieee80211_rx_list+0x22fc/0x2d80 net/mac80211/rx.c:5416
+ ieee80211_rx_napi+0x1a8/0x3d0 net/mac80211/rx.c:5439
+ ieee80211_rx include/net/mac80211.h:5185 [inline]
+ ieee80211_handle_queued_frames+0xe8/0x1f0 net/mac80211/main.c:441
+ tasklet_action_common+0x36c/0x580 kernel/softirq.c:829
+ handle_softirqs+0x286/0x870 kernel/softirq.c:579
+ do_softirq+0xec/0x180 kernel/softirq.c:480
+ </IRQ>
+ <TASK>
+ __local_bh_enable_ip+0x17d/0x1c0 kernel/softirq.c:407
+ ieee80211_tx_skb_tid+0x266/0x420 net/mac80211/tx.c:6118
+ ieee80211_mgmt_tx+0x1c25/0x21d0 net/mac80211/offchannel.c:1023
+ rdev_mgmt_tx net/wireless/rdev-ops.h:762 [inline]
+ cfg80211_mlme_mgmt_tx+0x7ef/0x1620 net/wireless/mlme.c:938
+ nl80211_tx_mgmt+0x9fd/0xd50 net/wireless/nl80211.c:12918
+ genl_family_rcv_msg_doit+0x215/0x300 net/netlink/genetlink.c:1115
+ genl_family_rcv_msg net/netlink/genetlink.c:1195 [inline]
+ genl_rcv_msg+0x60e/0x790 net/netlink/genetlink.c:1210
+ netlink_rcv_skb+0x205/0x470 net/netlink/af_netlink.c:2534
+ genl_rcv+0x28/0x40 net/netlink/genetlink.c:1219
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x758/0x8d0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x805/0xb30 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg+0x21c/0x270 net/socket.c:727
+ ____sys_sendmsg+0x505/0x830 net/socket.c:2566
+ ___sys_sendmsg+0x21f/0x2a0 net/socket.c:2620
+ __sys_sendmsg net/socket.c:2652 [inline]
+ __do_sys_sendmsg net/socket.c:2657 [inline]
+ __se_sys_sendmsg net/socket.c:2655 [inline]
+ __x64_sys_sendmsg+0x19b/0x260 net/socket.c:2655
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fca6510a8e9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 01 1a 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd603df8e8 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007fca6510a8e9
+RDX: 0000000000000000 RSI: 0000200000000080 RDI: 0000000000000004
+RBP: 00000000000f4240 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000019549
+R13: 00007ffd603df960 R14: 00007ffd603df91c R15: 00007ffd603df950
+ </TASK>
+---[ end trace ]---

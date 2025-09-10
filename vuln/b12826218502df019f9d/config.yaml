@@ -1,0 +1,48 @@
+id: b12826218502df019f9d
+bug_link: https://syzkaller.appspot.com/bug?extid=b12826218502df019f9d
+title: 'KASAN: null-ptr-deref Read in gfs2_drop_inode'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 914873bc7df913db988284876c16257e6ab772c6
+fix_commit: 9126d2754c5e5d1818765811a10af0a14cf1fa0a
+datetime: '2025-05-30T19:20:20+02:00'
+fix_commit_message: 'gfs2: Don''t clear sb->s_fs_info in gfs2_sys_fs_add
+
+
+  When gfs2_sys_fs_add() fails, it sets sb->s_fs_info to NULL on its error
+
+  path (see commit 0d515210b696 ("GFS2: Add kobject release method")).
+
+  The intention seems to be to prevent dereferencing sb->s_fs_info once
+
+  the object pointed to has been deallocated, but that would be better
+
+  achieved by setting the pointer to NULL in free_sbd().
+
+
+  As a consequence, when the call to gfs2_sys_fs_add() fails in
+
+  gfs2_fill_super(), sdp = GFS2_SB(inode) will evaluate to NULL in iput()
+
+  -> gfs2_drop_inode(), and accessing sdp->sd_flags will be a NULL pointer
+
+  dereference.
+
+
+  Fix that by only setting sb->s_fs_info to NULL when actually freeing the
+
+  object pointed to in free_sbd().
+
+
+  Fixes: ae9f3bd8259a ("gfs2: replace sd_aspace with sd_inode")
+
+  Reported-by: syzbot+b12826218502df019f9d@syzkaller.appspotmail.com
+
+  Signed-off-by: Andrew Price <anprice@redhat.com>
+
+  Signed-off-by: Andreas Gruenbacher <agruenba@redhat.com>
+
+  '
+submodule:
+- fs/gfs2
+hunk_count: 3
+covered_count: 1

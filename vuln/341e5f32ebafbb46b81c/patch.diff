@@ -1,0 +1,32 @@
+diff --git a/fs/f2fs/segment.c b/fs/f2fs/segment.c
+index 112d58d566d4..b7c1ca51ea32 100644
+--- a/fs/f2fs/segment.c
++++ b/fs/f2fs/segment.c
+@@ -2730,6 +2730,7 @@ static int get_new_segment(struct f2fs_sb_info *sbi,
+ 								MAIN_SECS(sbi));
+ 		if (secno >= MAIN_SECS(sbi)) {
+ 			ret = -ENOSPC;
++			f2fs_bug_on(sbi, 1);
+ 			goto out_unlock;
+ 		}
+ 	}
+@@ -2740,6 +2741,7 @@ static int get_new_segment(struct f2fs_sb_info *sbi,
+ 							MAIN_SECS(sbi));
+ 		if (secno >= MAIN_SECS(sbi)) {
+ 			ret = -ENOSPC;
++			f2fs_bug_on(sbi, 1);
+ 			goto out_unlock;
+ 		}
+ 	}
+@@ -2781,10 +2783,8 @@ static int get_new_segment(struct f2fs_sb_info *sbi,
+ out_unlock:
+ 	spin_unlock(&free_i->segmap_lock);
+ 
+-	if (ret == -ENOSPC) {
++	if (ret == -ENOSPC)
+ 		f2fs_stop_checkpoint(sbi, false, STOP_CP_REASON_NO_SEGMENT);
+-		f2fs_bug_on(sbi, 1);
+-	}
+ 	return ret;
+ }
+ 

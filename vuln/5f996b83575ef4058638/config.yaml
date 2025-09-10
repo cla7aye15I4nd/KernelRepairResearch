@@ -1,0 +1,48 @@
+id: 5f996b83575ef4058638
+bug_link: https://syzkaller.appspot.com/bug?extid=5f996b83575ef4058638
+title: 'INFO: rcu detected stall in raw_ioctl'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5ceac4402f5d975e5a01c806438eb4e554771577
+fix_commit: 22f00812862564b314784167a89f27b444f82a46
+datetime: '2024-06-14T08:47:59+02:00'
+fix_commit_message: "USB: class: cdc-wdm: Fix CPU lockup caused by excessive log messages\n\
+  \nThe syzbot fuzzer found that the interrupt-URB completion callback in\nthe cdc-wdm\
+  \ driver was taking too long, and the driver's immediate\nresubmission of interrupt\
+  \ URBs with -EPROTO status combined with the\ndummy-hcd emulation to cause a CPU\
+  \ lockup:\n\ncdc_wdm 1-1:1.0: nonzero urb status received: -71\ncdc_wdm 1-1:1.0:\
+  \ wdm_int_callback - 0 bytes\nwatchdog: BUG: soft lockup - CPU#0 stuck for 26s!\
+  \ [syz-executor782:6625]\nCPU#0 Utilization every 4s during lockup:\n\t#1:  98%\
+  \ system,\t  0% softirq,\t  3% hardirq,\t  0% idle\n\t#2:  98% system,\t  0% softirq,\t\
+  \  3% hardirq,\t  0% idle\n\t#3:  98% system,\t  0% softirq,\t  3% hardirq,\t  0%\
+  \ idle\n\t#4:  98% system,\t  0% softirq,\t  3% hardirq,\t  0% idle\n\t#5:  98%\
+  \ system,\t  1% softirq,\t  3% hardirq,\t  0% idle\nModules linked in:\nirq event\
+  \ stamp: 73096\nhardirqs last  enabled at (73095): [<ffff80008037bc00>] console_emit_next_record\
+  \ kernel/printk/printk.c:2935 [inline]\nhardirqs last  enabled at (73095): [<ffff80008037bc00>]\
+  \ console_flush_all+0x650/0xb74 kernel/printk/printk.c:2994\nhardirqs last disabled\
+  \ at (73096): [<ffff80008af10b00>] __el1_irq arch/arm64/kernel/entry-common.c:533\
+  \ [inline]\nhardirqs last disabled at (73096): [<ffff80008af10b00>] el1_interrupt+0x24/0x68\
+  \ arch/arm64/kernel/entry-common.c:551\nsoftirqs last  enabled at (73048): [<ffff8000801ea530>]\
+  \ softirq_handle_end kernel/softirq.c:400 [inline]\nsoftirqs last  enabled at (73048):\
+  \ [<ffff8000801ea530>] handle_softirqs+0xa60/0xc34 kernel/softirq.c:582\nsoftirqs\
+  \ last disabled at (73043): [<ffff800080020de8>] __do_softirq+0x14/0x20 kernel/softirq.c:588\n\
+  CPU: 0 PID: 6625 Comm: syz-executor782 Tainted: G        W          6.10.0-rc2-syzkaller-g8867bbd4a056\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 04/02/2024\n\nTesting showed that the problem did not occur if the two error\n\
+  messages -- the first two lines above -- were removed; apparently adding\nmaterial\
+  \ to the kernel log takes a surprisingly large amount of time.\n\nIn any case, the\
+  \ best approach for preventing these lockups and to\navoid spamming the log with\
+  \ thousands of error messages per second is\nto ratelimit the two dev_err() calls.\
+  \  Therefore we replace them with\ndev_err_ratelimited().\n\nSigned-off-by: Alan\
+  \ Stern <stern@rowland.harvard.edu>\nSuggested-by: Greg KH <gregkh@linuxfoundation.org>\n\
+  Reported-and-tested-by: syzbot+5f996b83575ef4058638@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/linux-usb/00000000000073d54b061a6a1c65@google.com/\n\
+  Reported-and-tested-by: syzbot+1b2abad17596ad03dcff@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/linux-usb/000000000000f45085061aa9b37e@google.com/\n\
+  Fixes: 9908a32e94de (\"USB: remove err() macro from usb class drivers\")\nLink:\
+  \ https://lore.kernel.org/linux-usb/40dfa45b-5f21-4eef-a8c1-51a2f320e267@rowland.harvard.edu/\n\
+  Cc: stable@vger.kernel.org\nLink: https://lore.kernel.org/r/29855215-52f5-4385-b058-91f42c2bee18@rowland.harvard.edu\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/class
+hunk_count: 1
+covered_count: 0

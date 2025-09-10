@@ -1,0 +1,42 @@
+id: bb73e71cf4b8fd376a4f
+bug_link: https://syzkaller.appspot.com/bug?extid=bb73e71cf4b8fd376a4f
+title: 'KASAN: vmalloc-out-of-bounds Read in bpf_prog_put'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5b2c5540b8110eea0d67a78fb0ddb9654c58daeb
+fix_commit: 218d747a4142f281a256687bb513a135c905867b
+datetime: '2022-01-05T20:43:08+01:00'
+fix_commit_message: "bpf, sockmap: Fix double bpf_prog_put on error case in map_link\n\
+  \nsock_map_link() is called to update a sockmap entry with a sk. But, if the\nsock_map_init_proto()\
+  \ call fails then we return an error to the map_update\nop against the sockmap.\
+  \ In the error path though we need to cleanup psock\nand dec the refcnt on any programs\
+  \ associated with the map, because we\nrefcnt them early in the update process to\
+  \ ensure they are pinned for the\npsock. (This avoids a race where user deletes\
+  \ programs while also updating\nthe map with new socks.)\n\nIn current code we do\
+  \ the prog refcnt dec explicitely by calling\nbpf_prog_put() when the program was\
+  \ found in the map. But, after commit\n'38207a5e81230' in this error path we've\
+  \ already done the prog to psock\nassignment so the programs have a reference from\
+  \ the psock as well. This\nthen causes the psock tear down logic, invoked by sk_psock_put()\
+  \ in the\nerror path, to similarly call bpf_prog_put on the programs there.\n\n\
+  To be explicit this logic does the prog->psock assignment:\n\n  if (msg_*)\n   \
+  \ psock_set_prog(...)\n\nThen the error path under the out_progs label does a similar\
+  \ check and\ndec with:\n\n  if (msg_*)\n     bpf_prog_put(...)\n\nAnd the teardown\
+  \ logic sk_psock_put() does ...\n\n  psock_set_prog(msg_*, NULL)\n\n... triggering\
+  \ another bpf_prog_put(...). Then KASAN gives us this splat,\nfound by syzbot because\
+  \ we've created an inbalance between bpf_prog_inc and\nbpf_prog_put calling put\
+  \ twice on the program.\n\n  BUG: KASAN: vmalloc-out-of-bounds in __bpf_prog_put\
+  \ kernel/bpf/syscall.c:1812 [inline]\n  BUG: KASAN: vmalloc-out-of-bounds in __bpf_prog_put\
+  \ kernel/bpf/syscall.c:1812 [inline] kernel/bpf/syscall.c:1829\n  BUG: KASAN: vmalloc-out-of-bounds\
+  \ in bpf_prog_put+0x8c/0x4f0 kernel/bpf/syscall.c:1829 kernel/bpf/syscall.c:1829\n\
+  \  Read of size 8 at addr ffffc90000e76038 by task syz-executor020/3641\n\nTo fix\
+  \ clean up error path so it doesn't try to do the bpf_prog_put in the\nerror path\
+  \ once progs are assigned then it relies on the normal psock\ntear down logic to\
+  \ do complete cleanup.\n\nFor completness we also cover the case whereh sk_psock_init_strp()\
+  \ fails,\nbut this is not expected because it indicates an incorrect socket type\n\
+  and should be caught earlier.\n\nFixes: 38207a5e8123 (\"bpf, sockmap: Attach map\
+  \ progs to psock early for feature probes\")\nReported-by: syzbot+bb73e71cf4b8fd376a4f@syzkaller.appspotmail.com\n\
+  Signed-off-by: John Fastabend <john.fastabend@gmail.com>\nSigned-off-by: Daniel\
+  \ Borkmann <daniel@iogearbox.net>\nLink: https://lore.kernel.org/bpf/20220104214645.290900-1-john.fastabend@gmail.com\n"
+submodule:
+- net/core
+hunk_count: 3
+covered_count: 0

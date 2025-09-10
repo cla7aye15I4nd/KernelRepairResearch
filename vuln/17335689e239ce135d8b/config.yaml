@@ -1,0 +1,69 @@
+id: 17335689e239ce135d8b
+bug_link: https://syzkaller.appspot.com/bug?extid=17335689e239ce135d8b
+title: 'KASAN: use-after-free Read in alloc_workqueue'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0126574fca2ce0f0d5beb9dade6efb823ff7407b
+fix_commit: 009bb421b6ceb7916ce627023d0eb7ced04c8910
+datetime: '2019-03-09T14:15:52+01:00'
+fix_commit_message: "workqueue, lockdep: Fix an alloc_workqueue() error path\n\nThis\
+  \ patch fixes a use-after-free and a memory leak in an alloc_workqueue()\nerror\
+  \ path.\n\nRepoted by syzkaller and KASAN:\n\n  BUG: KASAN: use-after-free in __read_once_size\
+  \ include/linux/compiler.h:197 [inline]\n  BUG: KASAN: use-after-free in lockdep_register_key+0x3b9/0x490\
+  \ kernel/locking/lockdep.c:1023\n  Read of size 8 at addr ffff888090fc2698 by task\
+  \ syz-executor134/7858\n\n  CPU: 1 PID: 7858 Comm: syz-executor134 Not tainted 5.0.0-rc8-next-20190301\
+  \ #1\n  Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS\
+  \ Google 01/01/2011\n  Call Trace:\n   __dump_stack lib/dump_stack.c:77 [inline]\n\
+  \   dump_stack+0x172/0x1f0 lib/dump_stack.c:113\n   print_address_description.cold+0x7c/0x20d\
+  \ mm/kasan/report.c:187\n   kasan_report.cold+0x1b/0x40 mm/kasan/report.c:317\n\
+  \   __asan_report_load8_noabort+0x14/0x20 mm/kasan/generic_report.c:132\n   __read_once_size\
+  \ include/linux/compiler.h:197 [inline]\n   lockdep_register_key+0x3b9/0x490 kernel/locking/lockdep.c:1023\n\
+  \   wq_init_lockdep kernel/workqueue.c:3444 [inline]\n   alloc_workqueue+0x427/0xe70\
+  \ kernel/workqueue.c:4263\n   ucma_open+0x76/0x290 drivers/infiniband/core/ucma.c:1732\n\
+  \   misc_open+0x398/0x4c0 drivers/char/misc.c:141\n   chrdev_open+0x247/0x6b0 fs/char_dev.c:417\n\
+  \   do_dentry_open+0x488/0x1160 fs/open.c:771\n   vfs_open+0xa0/0xd0 fs/open.c:880\n\
+  \   do_last fs/namei.c:3416 [inline]\n   path_openat+0x10e9/0x46e0 fs/namei.c:3533\n\
+  \   do_filp_open+0x1a1/0x280 fs/namei.c:3563\n   do_sys_open+0x3fe/0x5d0 fs/open.c:1063\n\
+  \   __do_sys_openat fs/open.c:1090 [inline]\n   __se_sys_openat fs/open.c:1084 [inline]\n\
+  \   __x64_sys_openat+0x9d/0x100 fs/open.c:1084\n   do_syscall_64+0x103/0x610 arch/x86/entry/common.c:290\n\
+  \   entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\n  Allocated by task 7789:\n   save_stack+0x45/0xd0\
+  \ mm/kasan/common.c:75\n   set_track mm/kasan/common.c:87 [inline]\n   __kasan_kmalloc\
+  \ mm/kasan/common.c:497 [inline]\n   __kasan_kmalloc.constprop.0+0xcf/0xe0 mm/kasan/common.c:470\n\
+  \   kasan_kmalloc+0x9/0x10 mm/kasan/common.c:511\n   __do_kmalloc mm/slab.c:3726\
+  \ [inline]\n   __kmalloc+0x15c/0x740 mm/slab.c:3735\n   kmalloc include/linux/slab.h:553\
+  \ [inline]\n   kzalloc include/linux/slab.h:743 [inline]\n   alloc_workqueue+0x13c/0xe70\
+  \ kernel/workqueue.c:4236\n   ucma_open+0x76/0x290 drivers/infiniband/core/ucma.c:1732\n\
+  \   misc_open+0x398/0x4c0 drivers/char/misc.c:141\n   chrdev_open+0x247/0x6b0 fs/char_dev.c:417\n\
+  \   do_dentry_open+0x488/0x1160 fs/open.c:771\n   vfs_open+0xa0/0xd0 fs/open.c:880\n\
+  \   do_last fs/namei.c:3416 [inline]\n   path_openat+0x10e9/0x46e0 fs/namei.c:3533\n\
+  \   do_filp_open+0x1a1/0x280 fs/namei.c:3563\n   do_sys_open+0x3fe/0x5d0 fs/open.c:1063\n\
+  \   __do_sys_openat fs/open.c:1090 [inline]\n   __se_sys_openat fs/open.c:1084 [inline]\n\
+  \   __x64_sys_openat+0x9d/0x100 fs/open.c:1084\n   do_syscall_64+0x103/0x610 arch/x86/entry/common.c:290\n\
+  \   entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\n  Freed by task 7789:\n   save_stack+0x45/0xd0\
+  \ mm/kasan/common.c:75\n   set_track mm/kasan/common.c:87 [inline]\n   __kasan_slab_free+0x102/0x150\
+  \ mm/kasan/common.c:459\n   kasan_slab_free+0xe/0x10 mm/kasan/common.c:467\n   __cache_free\
+  \ mm/slab.c:3498 [inline]\n   kfree+0xcf/0x230 mm/slab.c:3821\n   alloc_workqueue+0xc3e/0xe70\
+  \ kernel/workqueue.c:4295\n   ucma_open+0x76/0x290 drivers/infiniband/core/ucma.c:1732\n\
+  \   misc_open+0x398/0x4c0 drivers/char/misc.c:141\n   chrdev_open+0x247/0x6b0 fs/char_dev.c:417\n\
+  \   do_dentry_open+0x488/0x1160 fs/open.c:771\n   vfs_open+0xa0/0xd0 fs/open.c:880\n\
+  \   do_last fs/namei.c:3416 [inline]\n   path_openat+0x10e9/0x46e0 fs/namei.c:3533\n\
+  \   do_filp_open+0x1a1/0x280 fs/namei.c:3563\n   do_sys_open+0x3fe/0x5d0 fs/open.c:1063\n\
+  \   __do_sys_openat fs/open.c:1090 [inline]\n   __se_sys_openat fs/open.c:1084 [inline]\n\
+  \   __x64_sys_openat+0x9d/0x100 fs/open.c:1084\n   do_syscall_64+0x103/0x610 arch/x86/entry/common.c:290\n\
+  \   entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\n  The buggy address belongs to the\
+  \ object at ffff888090fc2580\n   which belongs to the cache kmalloc-512 of size\
+  \ 512\n  The buggy address is located 280 bytes inside of\n   512-byte region [ffff888090fc2580,\
+  \ ffff888090fc2780)\n\nReported-by: syzbot+17335689e239ce135d8b@syzkaller.appspotmail.com\n\
+  Signed-off-by: Bart Van Assche <bvanassche@acm.org>\nSigned-off-by: Peter Zijlstra\
+  \ (Intel) <peterz@infradead.org>\nCc: Andrew Morton <akpm@linux-foundation.org>\n\
+  Cc: Andy Lutomirski <luto@kernel.org>\nCc: Borislav Petkov <bp@alien8.de>\nCc: Dave\
+  \ Hansen <dave.hansen@linux.intel.com>\nCc: H. Peter Anvin <hpa@zytor.com>\nCc:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\nCc: Paul E. McKenney <paulmck@linux.vnet.ibm.com>\n\
+  Cc: Peter Zijlstra <peterz@infradead.org>\nCc: Rik van Riel <riel@surriel.com>\n\
+  Cc: Thomas Gleixner <tglx@linutronix.de>\nCc: Will Deacon <will.deacon@arm.com>\n\
+  Fixes: 669de8bda87b (\"kernel/workqueue: Use dynamic lockdep keys for workqueues\"\
+  )\nLink: https://lkml.kernel.org/r/20190303220046.29448-1-bvanassche@acm.org\nSigned-off-by:\
+  \ Ingo Molnar <mingo@kernel.org>\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 1

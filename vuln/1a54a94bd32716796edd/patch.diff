@@ -1,0 +1,22 @@
+diff --git a/sound/core/seq/oss/seq_oss.c b/sound/core/seq/oss/seq_oss.c
+index 17f913657304..c8b9c0b315d8 100644
+--- a/sound/core/seq/oss/seq_oss.c
++++ b/sound/core/seq/oss/seq_oss.c
+@@ -168,10 +168,16 @@ static long
+ odev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ {
+ 	struct seq_oss_devinfo *dp;
++	long rc;
++
+ 	dp = file->private_data;
+ 	if (snd_BUG_ON(!dp))
+ 		return -ENXIO;
+-	return snd_seq_oss_ioctl(dp, cmd, arg);
++
++	mutex_lock(&register_mutex);
++	rc = snd_seq_oss_ioctl(dp, cmd, arg);
++	mutex_unlock(&register_mutex);
++	return rc;
+ }
+ 
+ #ifdef CONFIG_COMPAT

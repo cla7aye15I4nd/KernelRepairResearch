@@ -1,0 +1,103 @@
+diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+index fe05fdb92779..2ef94c74847d 100644
+--- a/include/linux/memcontrol.h
++++ b/include/linux/memcontrol.h
+@@ -57,7 +57,7 @@ enum memcg_memory_event {
+ 
+ struct mem_cgroup_reclaim_cookie {
+ 	pg_data_t *pgdat;
+-	unsigned int generation;
++	int generation;
+ };
+ 
+ #ifdef CONFIG_MEMCG
+@@ -78,7 +78,7 @@ struct lruvec_stats;
+ struct mem_cgroup_reclaim_iter {
+ 	struct mem_cgroup *position;
+ 	/* scan generation, increased every round-trip */
+-	unsigned int generation;
++	atomic_t generation;
+ };
+ 
+ /*
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 38e3251ed482..36cbc7730745 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -986,8 +986,8 @@ struct mem_cgroup *mem_cgroup_iter(struct mem_cgroup *root,
+ 				   struct mem_cgroup_reclaim_cookie *reclaim)
+ {
+ 	struct mem_cgroup_reclaim_iter *iter;
+-	struct cgroup_subsys_state *css = NULL;
+-	struct mem_cgroup *memcg = NULL;
++	struct cgroup_subsys_state *css;
++	struct mem_cgroup *memcg;
+ 	struct mem_cgroup *pos = NULL;
+ 
+ 	if (mem_cgroup_disabled())
+@@ -998,19 +998,23 @@ struct mem_cgroup *mem_cgroup_iter(struct mem_cgroup *root,
+ 
+ 	rcu_read_lock();
+ restart:
++	memcg = NULL;
++
+ 	if (reclaim) {
++		int gen;
+ 		struct mem_cgroup_per_node *mz;
+ 
+ 		mz = root->nodeinfo[reclaim->pgdat->node_id];
+ 		iter = &mz->iter;
++		gen = atomic_read(&iter->generation);
+ 
+ 		/*
+ 		 * On start, join the current reclaim iteration cycle.
+ 		 * Exit when a concurrent walker completes it.
+ 		 */
+ 		if (!prev)
+-			reclaim->generation = iter->generation;
+-		else if (reclaim->generation != iter->generation)
++			reclaim->generation = gen;
++		else if (reclaim->generation != gen)
+ 			goto out_unlock;
+ 
+ 		pos = READ_ONCE(iter->position);
+@@ -1018,8 +1022,7 @@ struct mem_cgroup *mem_cgroup_iter(struct mem_cgroup *root,
+ 		pos = prev;
+ 	}
+ 
+-	if (pos)
+-		css = &pos->css;
++	css = pos ? &pos->css : NULL;
+ 
+ 	for (;;) {
+ 		css = css_next_descendant_pre(css, &root->css);
+@@ -1033,21 +1036,26 @@ struct mem_cgroup *mem_cgroup_iter(struct mem_cgroup *root,
+ 		 * and kicking, and don't take an extra reference.
+ 		 */
+ 		if (css == &root->css || css_tryget(css)) {
+-			memcg = mem_cgroup_from_css(css);
+ 			break;
+ 		}
+ 	}
+ 
++	memcg = mem_cgroup_from_css(css);
++
+ 	if (reclaim) {
+ 		/*
+ 		 * The position could have already been updated by a competing
+ 		 * thread, so check that the value hasn't changed since we read
+ 		 * it to avoid reclaiming from the same cgroup twice.
+ 		 */
+-		(void)cmpxchg(&iter->position, pos, memcg);
++		if (cmpxchg(&iter->position, pos, memcg) != pos) {
++			if (css && css != &root->css)
++				css_put(css);
++			goto restart;
++		}
+ 
+ 		if (!memcg) {
+-			iter->generation++;
++			atomic_inc(&iter->generation);
+ 
+ 			/*
+ 			 * Reclaimers share the hierarchy walk, and a

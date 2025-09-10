@@ -1,0 +1,40 @@
+kvm_intel: L1TF CPU bug present and SMT on, data leak possible. See CVE-2018-3646 and https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/l1tf.html for details.
+kvm: vcpu 1: requested 128 ns lapic timer period limited to 200000 ns
+kvm: vcpu 1: requested lapic timer restore with starting count register 0x390=1812281087 (231971979136 ns) > initial count (200000 ns). Using initial count to start timer.
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 5004 at arch/x86/kvm/x86.c:11099 kvm_arch_vcpu_ioctl_run+0x2379/0x2820 arch/x86/kvm/x86.c:11099
+Modules linked in:
+CPU: 1 PID: 5004 Comm: syz-executor120 Not tainted 6.4.0-rc5-syzkaller-00245-g64569520920a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/25/2023
+RIP: 0010:kvm_arch_vcpu_ioctl_run+0x2379/0x2820 arch/x86/kvm/x86.c:11099
+Code: fc ff ff e8 19 64 71 00 44 89 e6 48 c7 c7 40 8a 42 8a c6 05 cd e9 51 0d 01 e8 53 1f 39 00 0f 0b e9 2a fc ff ff e8 f7 63 71 00 <0f> 0b e9 26 fb ff ff e8 eb 63 71 00 0f b6 1d aa e9 51 0d 31 ff 89
+RSP: 0018:ffffc90003a8fcb8 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: 0000000000000001 RCX: 0000000000000000
+RDX: ffff888015b9d940 RSI: ffffffff8112e2e9 RDI: 0000000000000001
+RBP: ffff88807dae8000 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000001 R12: ffffc900015a7918
+R13: ffffc900015a7908 R14: 0000000000000000 R15: ffff88807dae82ec
+FS:  00005555572d6300(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000020fe9008 CR3: 000000007be99000 CR4: 00000000003526e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ kvm_vcpu_ioctl+0x574/0xea0 arch/x86/kvm/../../../virt/kvm/kvm_main.c:4106
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:870 [inline]
+ __se_sys_ioctl fs/ioctl.c:856 [inline]
+ __x64_sys_ioctl+0x197/0x210 fs/ioctl.c:856
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x39/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0464e7ec99
+Code: 28 c3 e8 2a 14 00 00 66 2e 0f 1f 84 00 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 c0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffded877408 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f0464e7ec99
+RDX: 0000000000000000 RSI: 000000000000ae80 RDI: 0000000000000005
+RBP: 00007f0464e426f0 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f0464e42780
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>

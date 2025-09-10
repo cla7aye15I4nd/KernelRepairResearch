@@ -1,0 +1,89 @@
+id: 31837fe952932efc8fb9
+bug_link: https://syzkaller.appspot.com/bug?extid=31837fe952932efc8fb9
+title: WARNING in nilfs_btree_assign
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6a59cb5158bff13b80f116305155fbe4967a5010
+fix_commit: 679bd7ebdd315bf457a4740b306ae99f1d0a403d
+datetime: '2023-06-19T13:19:33-07:00'
+fix_commit_message: 'nilfs2: fix buffer corruption due to concurrent device reads
+
+
+  As a result of analysis of a syzbot report, it turned out that in three
+
+  cases where nilfs2 allocates block device buffers directly via sb_getblk,
+
+  concurrent reads to the device can corrupt the allocated buffers.
+
+
+  Nilfs2 uses sb_getblk for segment summary blocks, that make up a log
+
+  header, and the super root block, that is the trailer, and when moving and
+
+  writing the second super block after fs resize.
+
+
+  In any of these, since the uptodate flag is not set when storing metadata
+
+  to be written in the allocated buffers, the stored metadata will be
+
+  overwritten if a device read of the same block occurs concurrently before
+
+  the write.  This causes metadata corruption and misbehavior in the log
+
+  write itself, causing warnings in nilfs_btree_assign() as reported.
+
+
+  Fix these issues by setting an uptodate flag on the buffer head on the
+
+  first or before modifying each buffer obtained with sb_getblk, and
+
+  clearing the flag on failure.
+
+
+  When setting the uptodate flag, the lock_buffer/unlock_buffer pair is used
+
+  to perform necessary exclusive control, and the buffer is filled to ensure
+
+  that uninitialized bytes are not mixed into the data read from others.  As
+
+  for buffers for segment summary blocks, they are filled incrementally, so
+
+  if the uptodate flag was unset on their allocation, set the flag and zero
+
+  fill the buffer once at that point.
+
+
+  Also, regarding the superblock move routine, the starting point of the
+
+  memset call to zerofill the block is incorrectly specified, which can
+
+  cause a buffer overflow on file systems with block sizes greater than
+
+  4KiB.  In addition, if the superblock is moved within a large block, it is
+
+  necessary to assume the possibility that the data in the superblock will
+
+  be destroyed by zero-filling before copying.  So fix these potential
+
+  issues as well.
+
+
+  Link: https://lkml.kernel.org/r/20230609035732.20426-1-konishi.ryusuke@gmail.com
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+31837fe952932efc8fb9@syzkaller.appspotmail.com
+
+  Closes: https://lkml.kernel.org/r/00000000000030000a05e981f475@google.com
+
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 6
+covered_count: 0

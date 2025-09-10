@@ -1,0 +1,356 @@
+=====================================================
+WARNING: HARDIRQ-safe -> HARDIRQ-unsafe lock order detected
+6.8.0-syzkaller-08951-gfe46a7dd189e #0 Not tainted
+-----------------------------------------------------
+syz-executor.3/8627 [HC0[0]:SC0[2]:HE0:SE0] is trying to acquire:
+ffff88805e00d200 (&stab->lock){+.-.}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ffff88805e00d200 (&stab->lock){+.-.}-{2:2}, at: __sock_map_delete net/core/sock_map.c:414 [inline]
+ffff88805e00d200 (&stab->lock){+.-.}-{2:2}, at: sock_map_delete_elem+0x97/0x140 net/core/sock_map.c:446
+
+and this task is already holding:
+ffff888016ebf020 ((worker)->lock){-...}-{2:2}, at: kthread_queue_work+0x27/0x180 kernel/kthread.c:1019
+which would create a new lock dependency:
+ ((worker)->lock){-...}-{2:2} -> (&stab->lock){+.-.}-{2:2}
+
+but this new dependency connects a HARDIRQ-irq-safe lock:
+ ((worker)->lock){-...}-{2:2}
+
+... which became HARDIRQ-irq-safe at:
+  lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+  __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+  _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+  kthread_queue_work+0x27/0x180 kernel/kthread.c:1019
+  pit_timer_fn+0xa5/0x180 arch/x86/kvm/i8254.c:276
+  __run_hrtimer kernel/time/hrtimer.c:1692 [inline]
+  __hrtimer_run_queues+0x595/0xd00 kernel/time/hrtimer.c:1756
+  hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1818
+  local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+  __sysvec_apic_timer_interrupt+0x107/0x3a0 arch/x86/kernel/apic/apic.c:1049
+  instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+  sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1043
+  asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+  __raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152 [inline]
+  _raw_spin_unlock_irqrestore+0xd8/0x140 kernel/locking/spinlock.c:194
+  kvm_vm_ioctl_set_pit+0x83/0x130 arch/x86/kvm/x86.c:6362
+  kvm_arch_vm_ioctl+0xd4a/0x1710 arch/x86/kvm/x86.c:7098
+  kvm_vm_ioctl+0x84c/0xd30 arch/x86/kvm/../../../virt/kvm/kvm_main.c:5331
+  vfs_ioctl fs/ioctl.c:51 [inline]
+  __do_sys_ioctl fs/ioctl.c:904 [inline]
+  __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:890
+  do_syscall_64+0xfb/0x240
+  entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+to a HARDIRQ-irq-unsafe lock:
+ (&stab->lock){+.-.}-{2:2}
+
+... which became HARDIRQ-irq-unsafe at:
+...
+  lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+  __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+  _raw_spin_lock_bh+0x35/0x50 kernel/locking/spinlock.c:178
+  spin_lock_bh include/linux/spinlock.h:356 [inline]
+  __sock_map_delete net/core/sock_map.c:414 [inline]
+  sock_map_delete_elem+0x97/0x140 net/core/sock_map.c:446
+  0xffffffffa0002377
+  bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+  __bpf_prog_run include/linux/filter.h:657 [inline]
+  bpf_prog_run include/linux/filter.h:664 [inline]
+  __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+  bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+  __traceiter_kfree+0x2b/0x50 include/trace/events/kmem.h:94
+  trace_kfree include/trace/events/kmem.h:94 [inline]
+  kfree+0x291/0x380 mm/slub.c:4377
+  ext4_free_ext_path fs/ext4/extents.c:125 [inline]
+  ext4_ext_remove_space+0x435f/0x4db0 fs/ext4/extents.c:3042
+  ext4_ext_truncate+0x159/0x2b0 fs/ext4/extents.c:4440
+  ext4_truncate+0xa08/0x1130 fs/ext4/inode.c:4146
+  ext4_evict_inode+0x8ff/0xf30 fs/ext4/inode.c:258
+  evict+0x2a8/0x630 fs/inode.c:667
+  d_delete_notify include/linux/fsnotify.h:307 [inline]
+  vfs_rmdir+0x38f/0x4c0 fs/namei.c:4222
+  do_rmdir+0x3b5/0x580 fs/namei.c:4268
+  __do_sys_unlinkat fs/namei.c:4444 [inline]
+  __se_sys_unlinkat fs/namei.c:4438 [inline]
+  __x64_sys_unlinkat+0xe0/0xf0 fs/namei.c:4438
+  do_syscall_64+0xfb/0x240
+  entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+other info that might help us debug this:
+
+ Possible interrupt unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&stab->lock);
+                               local_irq_disable();
+                               lock((worker)->lock);
+                               lock(&stab->lock);
+  <Interrupt>
+    lock((worker)->lock);
+
+ *** DEADLOCK ***
+
+4 locks held by syz-executor.3/8627:
+ #0: ffff888077182010 (&sb->s_type->i_mutex_key#9){+.+.}-{3:3}, at: inode_lock include/linux/fs.h:793 [inline]
+ #0: ffff888077182010 (&sb->s_type->i_mutex_key#9){+.+.}-{3:3}, at: __sock_release net/socket.c:658 [inline]
+ #0: ffff888077182010 (&sb->s_type->i_mutex_key#9){+.+.}-{3:3}, at: sock_close+0x90/0x240 net/socket.c:1421
+ #1: ffffffff8e1373b8 (rcu_state.exp_mutex){+.+.}-{3:3}, at: exp_funnel_lock kernel/rcu/tree_exp.h:291 [inline]
+ #1: ffffffff8e1373b8 (rcu_state.exp_mutex){+.+.}-{3:3}, at: synchronize_rcu_expedited+0x39a/0x820 kernel/rcu/tree_exp.h:939
+ #2: ffff888016ebf020 ((worker)->lock){-...}-{2:2}, at: kthread_queue_work+0x27/0x180 kernel/kthread.c:1019
+ #3: ffffffff8e132020 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:298 [inline]
+ #3: ffffffff8e132020 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:750 [inline]
+ #3: ffffffff8e132020 (rcu_read_lock){....}-{1:2}, at: __bpf_trace_run kernel/trace/bpf_trace.c:2380 [inline]
+ #3: ffffffff8e132020 (rcu_read_lock){....}-{1:2}, at: bpf_trace_run2+0x114/0x420 kernel/trace/bpf_trace.c:2420
+
+the dependencies between HARDIRQ-irq-safe lock and the holding lock:
+-> ((worker)->lock){-...}-{2:2} {
+   IN-HARDIRQ-W at:
+                    lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+                    __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+                    _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+                    kthread_queue_work+0x27/0x180 kernel/kthread.c:1019
+                    pit_timer_fn+0xa5/0x180 arch/x86/kvm/i8254.c:276
+                    __run_hrtimer kernel/time/hrtimer.c:1692 [inline]
+                    __hrtimer_run_queues+0x595/0xd00 kernel/time/hrtimer.c:1756
+                    hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1818
+                    local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+                    __sysvec_apic_timer_interrupt+0x107/0x3a0 arch/x86/kernel/apic/apic.c:1049
+                    instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+                    sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1043
+                    asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+                    __raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152 [inline]
+                    _raw_spin_unlock_irqrestore+0xd8/0x140 kernel/locking/spinlock.c:194
+                    kvm_vm_ioctl_set_pit+0x83/0x130 arch/x86/kvm/x86.c:6362
+                    kvm_arch_vm_ioctl+0xd4a/0x1710 arch/x86/kvm/x86.c:7098
+                    kvm_vm_ioctl+0x84c/0xd30 arch/x86/kvm/../../../virt/kvm/kvm_main.c:5331
+                    vfs_ioctl fs/ioctl.c:51 [inline]
+                    __do_sys_ioctl fs/ioctl.c:904 [inline]
+                    __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:890
+                    do_syscall_64+0xfb/0x240
+                    entry_SYSCALL_64_after_hwframe+0x6d/0x75
+   INITIAL USE at:
+                   lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+                   __raw_spin_lock_irq include/linux/spinlock_api_smp.h:119 [inline]
+                   _raw_spin_lock_irq+0xd3/0x120 kernel/locking/spinlock.c:170
+                   kthread_worker_fn+0x236/0xab0 kernel/kthread.c:828
+                   kthread+0x2f0/0x390 kernel/kthread.c:388
+                   ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+                   ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+ }
+ ... key      at: [<ffffffff926a8120>] __kthread_create_worker.__key+0x0/0x20
+
+the dependencies between the lock to be acquired
+ and HARDIRQ-irq-unsafe lock:
+-> (&stab->lock){+.-.}-{2:2} {
+   HARDIRQ-ON-W at:
+                    lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+                    __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+                    _raw_spin_lock_bh+0x35/0x50 kernel/locking/spinlock.c:178
+                    spin_lock_bh include/linux/spinlock.h:356 [inline]
+                    __sock_map_delete net/core/sock_map.c:414 [inline]
+                    sock_map_delete_elem+0x97/0x140 net/core/sock_map.c:446
+                    0xffffffffa0002377
+                    bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+                    __bpf_prog_run include/linux/filter.h:657 [inline]
+                    bpf_prog_run include/linux/filter.h:664 [inline]
+                    __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+                    bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+                    __traceiter_kfree+0x2b/0x50 include/trace/events/kmem.h:94
+                    trace_kfree include/trace/events/kmem.h:94 [inline]
+                    kfree+0x291/0x380 mm/slub.c:4377
+                    ext4_free_ext_path fs/ext4/extents.c:125 [inline]
+                    ext4_ext_remove_space+0x435f/0x4db0 fs/ext4/extents.c:3042
+                    ext4_ext_truncate+0x159/0x2b0 fs/ext4/extents.c:4440
+                    ext4_truncate+0xa08/0x1130 fs/ext4/inode.c:4146
+                    ext4_evict_inode+0x8ff/0xf30 fs/ext4/inode.c:258
+                    evict+0x2a8/0x630 fs/inode.c:667
+                    d_delete_notify include/linux/fsnotify.h:307 [inline]
+                    vfs_rmdir+0x38f/0x4c0 fs/namei.c:4222
+                    do_rmdir+0x3b5/0x580 fs/namei.c:4268
+                    __do_sys_unlinkat fs/namei.c:4444 [inline]
+                    __se_sys_unlinkat fs/namei.c:4438 [inline]
+                    __x64_sys_unlinkat+0xe0/0xf0 fs/namei.c:4438
+                    do_syscall_64+0xfb/0x240
+                    entry_SYSCALL_64_after_hwframe+0x6d/0x75
+   IN-SOFTIRQ-W at:
+                    lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+                    __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+                    _raw_spin_lock_bh+0x35/0x50 kernel/locking/spinlock.c:178
+                    spin_lock_bh include/linux/spinlock.h:356 [inline]
+                    __sock_map_delete net/core/sock_map.c:414 [inline]
+                    sock_map_delete_elem+0x97/0x140 net/core/sock_map.c:446
+                    0xffffffffa0002377
+                    bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+                    __bpf_prog_run include/linux/filter.h:657 [inline]
+                    bpf_prog_run include/linux/filter.h:664 [inline]
+                    __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+                    bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+                    __traceiter_kfree+0x2b/0x50 include/trace/events/kmem.h:94
+                    trace_kfree include/trace/events/kmem.h:94 [inline]
+                    kfree+0x291/0x380 mm/slub.c:4377
+                    security_task_free+0xa0/0xc0 security/security.c:3026
+                    __put_task_struct+0xf9/0x290 kernel/fork.c:976
+                    put_task_struct include/linux/sched/task.h:138 [inline]
+                    delayed_put_task_struct+0x115/0x2d0 kernel/exit.c:229
+                    rcu_do_batch kernel/rcu/tree.c:2196 [inline]
+                    rcu_core+0xafd/0x1830 kernel/rcu/tree.c:2471
+                    __do_softirq+0x2bc/0x943 kernel/softirq.c:554
+                    run_ksoftirqd+0xc5/0x130 kernel/softirq.c:924
+                    smpboot_thread_fn+0x544/0xa30 kernel/smpboot.c:164
+                    kthread+0x2f0/0x390 kernel/kthread.c:388
+                    ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+                    ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+   INITIAL USE at:
+                   lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+                   __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+                   _raw_spin_lock_bh+0x35/0x50 kernel/locking/spinlock.c:178
+                   spin_lock_bh include/linux/spinlock.h:356 [inline]
+                   __sock_map_delete net/core/sock_map.c:414 [inline]
+                   sock_map_delete_elem+0x97/0x140 net/core/sock_map.c:446
+                   0xffffffffa0002377
+                   bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+                   __bpf_prog_run include/linux/filter.h:657 [inline]
+                   bpf_prog_run include/linux/filter.h:664 [inline]
+                   __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+                   bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+                   __traceiter_kfree+0x2b/0x50 include/trace/events/kmem.h:94
+                   trace_kfree include/trace/events/kmem.h:94 [inline]
+                   kfree+0x291/0x380 mm/slub.c:4377
+                   ext4_free_ext_path fs/ext4/extents.c:125 [inline]
+                   ext4_ext_remove_space+0x435f/0x4db0 fs/ext4/extents.c:3042
+                   ext4_ext_truncate+0x159/0x2b0 fs/ext4/extents.c:4440
+                   ext4_truncate+0xa08/0x1130 fs/ext4/inode.c:4146
+                   ext4_evict_inode+0x8ff/0xf30 fs/ext4/inode.c:258
+                   evict+0x2a8/0x630 fs/inode.c:667
+                   d_delete_notify include/linux/fsnotify.h:307 [inline]
+                   vfs_rmdir+0x38f/0x4c0 fs/namei.c:4222
+                   do_rmdir+0x3b5/0x580 fs/namei.c:4268
+                   __do_sys_unlinkat fs/namei.c:4444 [inline]
+                   __se_sys_unlinkat fs/namei.c:4438 [inline]
+                   __x64_sys_unlinkat+0xe0/0xf0 fs/namei.c:4438
+                   do_syscall_64+0xfb/0x240
+                   entry_SYSCALL_64_after_hwframe+0x6d/0x75
+ }
+ ... key      at: [<ffffffff948692e0>] sock_map_alloc.__key+0x0/0x20
+ ... acquired at:
+   lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+   __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+   _raw_spin_lock_bh+0x35/0x50 kernel/locking/spinlock.c:178
+   spin_lock_bh include/linux/spinlock.h:356 [inline]
+   __sock_map_delete net/core/sock_map.c:414 [inline]
+   sock_map_delete_elem+0x97/0x140 net/core/sock_map.c:446
+   bpf_prog_bc20a984d57ef3f1+0x66/0x6a
+   bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+   __bpf_prog_run include/linux/filter.h:657 [inline]
+   bpf_prog_run include/linux/filter.h:664 [inline]
+   __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+   bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+   trace_sched_kthread_work_queue_work include/trace/events/sched.h:64 [inline]
+   kthread_insert_work+0x3f4/0x460 kernel/kthread.c:993
+   kthread_queue_work+0xff/0x180 kernel/kthread.c:1021
+   synchronize_rcu_expedited_queue_work kernel/rcu/tree_exp.h:469 [inline]
+   synchronize_rcu_expedited+0x593/0x820 kernel/rcu/tree_exp.h:949
+   synchronize_rcu+0x136/0x3e0 kernel/rcu/tree.c:3611
+   packet_release+0x9ef/0xcc0 net/packet/af_packet.c:3169
+   __sock_release net/socket.c:659 [inline]
+   sock_close+0xbc/0x240 net/socket.c:1421
+   __fput+0x429/0x8a0 fs/file_table.c:422
+   __do_sys_close fs/open.c:1556 [inline]
+   __se_sys_close fs/open.c:1541 [inline]
+   __x64_sys_close+0x7f/0x110 fs/open.c:1541
+   do_syscall_64+0xfb/0x240
+   entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+
+stack backtrace:
+CPU: 1 PID: 8627 Comm: syz-executor.3 Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_bad_irq_dependency kernel/locking/lockdep.c:2626 [inline]
+ check_irq_usage kernel/locking/lockdep.c:2865 [inline]
+ check_prev_add kernel/locking/lockdep.c:3138 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain+0x4dc7/0x58e0 kernel/locking/lockdep.c:3869
+ __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+ lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+ __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+ _raw_spin_lock_bh+0x35/0x50 kernel/locking/spinlock.c:178
+ spin_lock_bh include/linux/spinlock.h:356 [inline]
+ __sock_map_delete net/core/sock_map.c:414 [inline]
+ sock_map_delete_elem+0x97/0x140 net/core/sock_map.c:446
+ bpf_prog_bc20a984d57ef3f1+0x66/0x6a
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+ trace_sched_kthread_work_queue_work include/trace/events/sched.h:64 [inline]
+ kthread_insert_work+0x3f4/0x460 kernel/kthread.c:993
+ kthread_queue_work+0xff/0x180 kernel/kthread.c:1021
+ synchronize_rcu_expedited_queue_work kernel/rcu/tree_exp.h:469 [inline]
+ synchronize_rcu_expedited+0x593/0x820 kernel/rcu/tree_exp.h:949
+ synchronize_rcu+0x136/0x3e0 kernel/rcu/tree.c:3611
+ packet_release+0x9ef/0xcc0 net/packet/af_packet.c:3169
+ __sock_release net/socket.c:659 [inline]
+ sock_close+0xbc/0x240 net/socket.c:1421
+ __fput+0x429/0x8a0 fs/file_table.c:422
+ __do_sys_close fs/open.c:1556 [inline]
+ __se_sys_close fs/open.c:1541 [inline]
+ __x64_sys_close+0x7f/0x110 fs/open.c:1541
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f6005a7cd5a
+Code: 48 3d 00 f0 ff ff 77 48 c3 0f 1f 80 00 00 00 00 48 83 ec 18 89 7c 24 0c e8 03 7f 02 00 8b 7c 24 0c 89 c2 b8 03 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 36 89 d7 89 44 24 0c e8 63 7f 02 00 8b 44 24
+RSP: 002b:00007fffdc773930 EFLAGS: 00000293 ORIG_RAX: 0000000000000003
+RAX: ffffffffffffffda RBX: 000000000000000b RCX: 00007f6005a7cd5a
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 000000000000000a
+RBP: 0000000000000032 R08: 0000001b30820000 R09: 0000000000000148
+R10: 0000000081360ad3 R11: 0000000000000293 R12: 00007f6005605530
+R13: ffffffffffffffff R14: 00007f6005600000 R15: 0000000000030916
+ </TASK>
+------------[ cut here ]------------
+raw_local_irq_restore() called with IRQs enabled
+WARNING: CPU: 1 PID: 8627 at kernel/locking/irqflag-debug.c:10 warn_bogus_irq_restore+0x29/0x40 kernel/locking/irqflag-debug.c:10
+Modules linked in:
+CPU: 1 PID: 8627 Comm: syz-executor.3 Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+RIP: 0010:warn_bogus_irq_restore+0x29/0x40 kernel/locking/irqflag-debug.c:10
+Code: 90 f3 0f 1e fa 90 80 3d bd 16 05 04 00 74 06 90 c3 cc cc cc cc c6 05 ae 16 05 04 01 90 48 c7 c7 e0 b9 aa 8b e8 88 34 ec f5 90 <0f> 0b 90 90 90 c3 cc cc cc cc 66 2e 0f 1f 84 00 00 00 00 00 0f 1f
+RSP: 0018:ffffc9000db8f838 EFLAGS: 00010246
+RAX: ebf0726e76c02900 RBX: 1ffff92001b71f0c RCX: ffff88805fac5a00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc9000db8f8d0 R08: ffffffff8157cb22 R09: fffffbfff1bf9650
+R10: dffffc0000000000 R11: fffffbfff1bf9650 R12: dffffc0000000000
+R13: 1ffff92001b71f08 R14: ffffc9000db8f860 R15: 0000000000000246
+FS:  0000555584f96480(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000001b30429000 CR3: 00000000112b6000 CR4: 00000000003506f0
+Call Trace:
+ <TASK>
+ __raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:151 [inline]
+ _raw_spin_unlock_irqrestore+0x120/0x140 kernel/locking/spinlock.c:194
+ kthread_queue_work+0x110/0x180 kernel/kthread.c:1024
+ synchronize_rcu_expedited_queue_work kernel/rcu/tree_exp.h:469 [inline]
+ synchronize_rcu_expedited+0x593/0x820 kernel/rcu/tree_exp.h:949
+ synchronize_rcu+0x136/0x3e0 kernel/rcu/tree.c:3611
+ packet_release+0x9ef/0xcc0 net/packet/af_packet.c:3169
+ __sock_release net/socket.c:659 [inline]
+ sock_close+0xbc/0x240 net/socket.c:1421
+ __fput+0x429/0x8a0 fs/file_table.c:422
+ __do_sys_close fs/open.c:1556 [inline]
+ __se_sys_close fs/open.c:1541 [inline]
+ __x64_sys_close+0x7f/0x110 fs/open.c:1541
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f6005a7cd5a
+Code: 48 3d 00 f0 ff ff 77 48 c3 0f 1f 80 00 00 00 00 48 83 ec 18 89 7c 24 0c e8 03 7f 02 00 8b 7c 24 0c 89 c2 b8 03 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 36 89 d7 89 44 24 0c e8 63 7f 02 00 8b 44 24
+RSP: 002b:00007fffdc773930 EFLAGS: 00000293 ORIG_RAX: 0000000000000003
+RAX: ffffffffffffffda RBX: 000000000000000b RCX: 00007f6005a7cd5a
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 000000000000000a
+RBP: 0000000000000032 R08: 0000001b30820000 R09: 0000000000000148
+R10: 0000000081360ad3 R11: 0000000000000293 R12: 00007f6005605530
+R13: ffffffffffffffff R14: 00007f6005600000 R15: 0000000000030916
+ </TASK>

@@ -1,0 +1,42 @@
+id: f7c41a878676b72c16a6
+bug_link: https://syzkaller.appspot.com/bug?extid=f7c41a878676b72c16a6
+title: 'WARNING: suspicious RCU usage in bch2_snapshot_tree_oldest_subvol'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 025c55a4c7f11ea38521c6e797f3192ad8768c93
+fix_commit: 39c3aad43f6f9bcddd660f5874dcd760e8c04a94
+datetime: '2024-09-21T14:54:18-04:00'
+fix_commit_message: 'bcachefs: Hold read lock in bch2_snapshot_tree_oldest_subvol()
+
+
+  Syzbot reports a problem that a warning is triggered due to suspicious
+
+  use of rcu_dereference_check(). That is triggered by a call of
+
+  bch2_snapshot_tree_oldest_subvol().
+
+
+  The cause of the warning is that inside
+
+  bch2_snapshot_tree_oldest_subvol(), snapshot_t() is called which calls
+
+  rcu_dereference() that requires a read lock to be held. Also, the call
+
+  of bch2_snapshot_tree_next() eventually calls snapshot_t().
+
+
+  To fix this, call rcu_read_lock() before calling snapshot_t(). Then,
+
+  release the lock after the termination of the while loop.
+
+
+  Reported-by: <syzbot+f7c41a878676b72c16a6@syzkaller.appspotmail.com>
+
+  Signed-off-by: Ahmed Ehab <bottaawesome633@gmail.com>
+
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>
+
+  '
+submodule:
+- fs/bcachefs
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,57 @@
+ handle_softirqs+0x283/0x870 kernel/softirq.c:579
+ run_ksoftirqd+0x9b/0x100 kernel/softirq.c:968
+ smpboot_thread_fn+0x542/0xa60 kernel/smpboot.c:164
+ kthread+0x711/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+------------[ cut here ]------------
+kernel BUG at mm/filemap.c:1498!
+Oops: invalid opcode: 0000 [#1] SMP KASAN PTI
+CPU: 0 UID: 0 PID: 36 Comm: kworker/u8:2 Not tainted 6.15.0-syzkaller-09161-g0f70f5b08a47 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Workqueue: writeback wb_workfn (flush-7:0)
+RIP: 0010:folio_unlock+0x13d/0x160 mm/filemap.c:1498
+Code: de c8 ff 48 89 df 48 c7 c6 20 2f 94 8b e8 2b 75 0e 00 90 0f 0b e8 43 de c8 ff 48 89 df 48 c7 c6 40 25 94 8b e8 14 75 0e 00 90 <0f> 0b e8 2c de c8 ff 48 89 df 48 c7 c6 20 2f 94 8b e8 fd 74 0e 00
+RSP: 0018:ffffc90000ac6e28 EFLAGS: 00010246
+RAX: da414f95d4462800 RBX: ffffea0001e1d780 RCX: 0000000000000000
+RDX: 0000000000000006 RSI: ffffffff8d95ae6e RDI: 00000000ffffffff
+RBP: ffffc90000ac7110 R08: ffffffff8f9f7ff7 R09: 1ffffffff1f3effe
+R10: dffffc0000000000 R11: fffffbfff1f3efff R12: 1ffffd40003c3af1
+R13: 00fff00000004018 R14: ffffea0001e1d788 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff888125c99000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f65e8fa0130 CR3: 000000003471a000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ f2fs_sync_node_pages+0x180a/0x1a10 fs/f2fs/node.c:2081
+ f2fs_write_node_pages+0x303/0x6e0 fs/f2fs/node.c:2183
+ do_writepages+0x32b/0x550 mm/page-writeback.c:2635
+ __writeback_single_inode+0x145/0xff0 fs/fs-writeback.c:1680
+ writeback_sb_inodes+0x6b5/0x1000 fs/fs-writeback.c:1976
+ wb_writeback+0x43b/0xaf0 fs/fs-writeback.c:2156
+ wb_do_writeback fs/fs-writeback.c:2303 [inline]
+ wb_workfn+0x409/0xef0 fs/fs-writeback.c:2343
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xade/0x17b0 kernel/workqueue.c:3321
+ worker_thread+0x8a0/0xda0 kernel/workqueue.c:3402
+ kthread+0x711/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:folio_unlock+0x13d/0x160 mm/filemap.c:1498
+Code: de c8 ff 48 89 df 48 c7 c6 20 2f 94 8b e8 2b 75 0e 00 90 0f 0b e8 43 de c8 ff 48 89 df 48 c7 c6 40 25 94 8b e8 14 75 0e 00 90 <0f> 0b e8 2c de c8 ff 48 89 df 48 c7 c6 20 2f 94 8b e8 fd 74 0e 00
+RSP: 0018:ffffc90000ac6e28 EFLAGS: 00010246
+RAX: da414f95d4462800 RBX: ffffea0001e1d780 RCX: 0000000000000000
+RDX: 0000000000000006 RSI: ffffffff8d95ae6e RDI: 00000000ffffffff
+RBP: ffffc90000ac7110 R08: ffffffff8f9f7ff7 R09: 1ffffffff1f3effe
+R10: dffffc0000000000 R11: fffffbfff1f3efff R12: 1ffffd40003c3af1
+R13: 00fff00000004018 R14: ffffea0001e1d788 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff888125c99000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f65e8fa0130 CR3: 00000000338e4000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

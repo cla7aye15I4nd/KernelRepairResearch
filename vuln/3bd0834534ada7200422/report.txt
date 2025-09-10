@@ -1,0 +1,73 @@
+bucket 0:42 gen 0 data type btree has wrong dirty_sectors: got 0, should be 256, fixing
+ done
+bcachefs (loop0): going read-write
+bcachefs (loop0): journal_replay...
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/journal_reclaim.h:30!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5839 Comm: syz-executor780 Not tainted 6.12.0-syzkaller-09073-g9f16d5e6f220 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:journal_seq_pin fs/bcachefs/journal_reclaim.h:30 [inline]
+RIP: 0010:bch2_journal_pin_set_locked fs/bcachefs/journal_reclaim.c:389 [inline]
+RIP: 0010:bch2_journal_pin_set+0x766/0x780 fs/bcachefs/journal_reclaim.c:449
+Code: c1 0f 8c fe f9 ff ff 48 89 df e8 c5 28 c8 fd e9 f1 f9 ff ff e8 5b 71 60 fd 90 0f 0b e8 53 71 60 fd 90 0f 0b e8 4b 71 60 fd 90 <0f> 0b e8 43 71 60 fd 90 0f 0b e8 3b 71 60 fd 90 0f 0b e8 33 71 60
+RSP: 0018:ffffc9000394ee50 EFLAGS: 00010293
+RAX: ffffffff84356e75 RBX: 0000000000000000 RCX: ffff88802c313c00
+RDX: 0000000000000000 RSI: ffffffffffffffff RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff84356bc2 R09: fffff52000729db8
+R10: dffffc0000000000 R11: fffff52000729db8 R12: ffff88802766c901
+R13: ffff8880789ca500 R14: ffff88802766c940 R15: ffffffffffffffff
+FS:  00005555718ec380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000557704c1da48 CR3: 000000007a91c000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_journal_pin_add fs/bcachefs/journal_reclaim.h:48 [inline]
+ bch2_btree_add_journal_pin fs/bcachefs/btree_trans_commit.c:274 [inline]
+ bch2_btree_insert_key_leaf+0x800/0xa90 fs/bcachefs/btree_trans_commit.c:306
+ bch2_trans_commit_write_locked fs/bcachefs/btree_trans_commit.c:820 [inline]
+ do_bch2_trans_commit fs/bcachefs/btree_trans_commit.c:900 [inline]
+ __bch2_trans_commit+0x7163/0x93c0 fs/bcachefs/btree_trans_commit.c:1121
+ bch2_trans_commit fs/bcachefs/btree_update.h:184 [inline]
+ bch2_journal_replay+0x1a3a/0x2a40 fs/bcachefs/recovery.c:317
+ bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:191
+ bch2_run_recovery_passes+0x3a7/0x880 fs/bcachefs/recovery_passes.c:244
+ bch2_fs_recovery+0x25cc/0x39d0 fs/bcachefs/recovery.c:861
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1037
+ bch2_fs_get_tree+0xd68/0x1710 fs/bcachefs/fs.c:2170
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fc6f34c6dea
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc6a712b88 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffc6a712ba0 RCX: 00007fc6f34c6dea
+RDX: 0000000020000000 RSI: 0000000020000080 RDI: 00007ffc6a712ba0
+RBP: 0000000000000004 R08: 00007ffc6a712be0 R09: 0000000000005983
+R10: 0000000000000000 R11: 0000000000000282 R12: 0000000000000000
+R13: 00007ffc6a712be0 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:journal_seq_pin fs/bcachefs/journal_reclaim.h:30 [inline]
+RIP: 0010:bch2_journal_pin_set_locked fs/bcachefs/journal_reclaim.c:389 [inline]
+RIP: 0010:bch2_journal_pin_set+0x766/0x780 fs/bcachefs/journal_reclaim.c:449
+Code: c1 0f 8c fe f9 ff ff 48 89 df e8 c5 28 c8 fd e9 f1 f9 ff ff e8 5b 71 60 fd 90 0f 0b e8 53 71 60 fd 90 0f 0b e8 4b 71 60 fd 90 <0f> 0b e8 43 71 60 fd 90 0f 0b e8 3b 71 60 fd 90 0f 0b e8 33 71 60
+RSP: 0018:ffffc9000394ee50 EFLAGS: 00010293
+RAX: ffffffff84356e75 RBX: 0000000000000000 RCX: ffff88802c313c00
+RDX: 0000000000000000 RSI: ffffffffffffffff RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff84356bc2 R09: fffff52000729db8
+R10: dffffc0000000000 R11: fffff52000729db8 R12: ffff88802766c901
+R13: ffff8880789ca500 R14: ffff88802766c940 R15: ffffffffffffffff
+FS:  00005555718ec380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000557704c1da48 CR3: 000000007a91c000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

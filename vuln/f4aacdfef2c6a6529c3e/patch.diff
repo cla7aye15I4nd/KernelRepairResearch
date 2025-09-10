@@ -1,0 +1,84 @@
+diff --git a/net/mptcp/mib.c b/net/mptcp/mib.c
+index ad88bd3c58df..19eb9292bd60 100644
+--- a/net/mptcp/mib.c
++++ b/net/mptcp/mib.c
+@@ -17,6 +17,7 @@ static const struct snmp_mib mptcp_snmp_list[] = {
+ 	SNMP_MIB_ITEM("MPCapableFallbackSYNACK", MPTCP_MIB_MPCAPABLEACTIVEFALLBACK),
+ 	SNMP_MIB_ITEM("MPCapableSYNTXDrop", MPTCP_MIB_MPCAPABLEACTIVEDROP),
+ 	SNMP_MIB_ITEM("MPCapableSYNTXDisabled", MPTCP_MIB_MPCAPABLEACTIVEDISABLED),
++	SNMP_MIB_ITEM("MPCapableEndpAttempt", MPTCP_MIB_MPCAPABLEENDPATTEMPT),
+ 	SNMP_MIB_ITEM("MPFallbackTokenInit", MPTCP_MIB_TOKENFALLBACKINIT),
+ 	SNMP_MIB_ITEM("MPTCPRetrans", MPTCP_MIB_RETRANSSEGS),
+ 	SNMP_MIB_ITEM("MPJoinNoTokenFound", MPTCP_MIB_JOINNOTOKEN),
+diff --git a/net/mptcp/mib.h b/net/mptcp/mib.h
+index 3206cdda8bb1..128282982843 100644
+--- a/net/mptcp/mib.h
++++ b/net/mptcp/mib.h
+@@ -12,6 +12,7 @@ enum linux_mptcp_mib_field {
+ 	MPTCP_MIB_MPCAPABLEACTIVEFALLBACK, /* Client-side fallback during 3-way handshake */
+ 	MPTCP_MIB_MPCAPABLEACTIVEDROP,	/* Client-side fallback due to a MPC drop */
+ 	MPTCP_MIB_MPCAPABLEACTIVEDISABLED, /* Client-side disabled due to past issues */
++	MPTCP_MIB_MPCAPABLEENDPATTEMPT,	/* Prohibited MPC to port-based endp */
+ 	MPTCP_MIB_TOKENFALLBACKINIT,	/* Could not init/allocate token */
+ 	MPTCP_MIB_RETRANSSEGS,		/* Segments retransmitted at the MPTCP-level */
+ 	MPTCP_MIB_JOINNOTOKEN,		/* Received MP_JOIN but the token was not found */
+diff --git a/net/mptcp/pm_netlink.c b/net/mptcp/pm_netlink.c
+index f6f0a38a0750..1a78998fe1f4 100644
+--- a/net/mptcp/pm_netlink.c
++++ b/net/mptcp/pm_netlink.c
+@@ -1121,6 +1121,7 @@ static int mptcp_pm_nl_create_listen_socket(struct sock *sk,
+ 	 */
+ 	inet_sk_state_store(newsk, TCP_LISTEN);
+ 	lock_sock(ssk);
++	WRITE_ONCE(mptcp_subflow_ctx(ssk)->pm_listener, true);
+ 	err = __inet_listen_sk(ssk, backlog);
+ 	if (!err)
+ 		mptcp_event_pm_listener(ssk, MPTCP_EVENT_LISTENER_CREATED);
+diff --git a/net/mptcp/protocol.h b/net/mptcp/protocol.h
+index 74417aae08d0..568a72702b08 100644
+--- a/net/mptcp/protocol.h
++++ b/net/mptcp/protocol.h
+@@ -535,6 +535,7 @@ struct mptcp_subflow_context {
+ 		__unused : 8;
+ 	bool	data_avail;
+ 	bool	scheduled;
++	bool	pm_listener;	    /* a listener managed by the kernel PM? */
+ 	u32	remote_nonce;
+ 	u64	thmac;
+ 	u32	local_nonce;
+diff --git a/net/mptcp/subflow.c b/net/mptcp/subflow.c
+index 25dde81bcb75..6170f2fff71e 100644
+--- a/net/mptcp/subflow.c
++++ b/net/mptcp/subflow.c
+@@ -132,6 +132,13 @@ static void subflow_add_reset_reason(struct sk_buff *skb, u8 reason)
+ 	}
+ }
+ 
++static int subflow_reset_req_endp(struct request_sock *req, struct sk_buff *skb)
++{
++	SUBFLOW_REQ_INC_STATS(req, MPTCP_MIB_MPCAPABLEENDPATTEMPT);
++	subflow_add_reset_reason(skb, MPTCP_RST_EPROHIBIT);
++	return -EPERM;
++}
++
+ /* Init mptcp request socket.
+  *
+  * Returns an error code if a JOIN has failed and a TCP reset
+@@ -165,6 +172,8 @@ static int subflow_check_req(struct request_sock *req,
+ 	if (opt_mp_capable) {
+ 		SUBFLOW_REQ_INC_STATS(req, MPTCP_MIB_MPCAPABLEPASSIVE);
+ 
++		if (unlikely(listener->pm_listener))
++			return subflow_reset_req_endp(req, skb);
+ 		if (opt_mp_join)
+ 			return 0;
+ 	} else if (opt_mp_join) {
+@@ -172,6 +181,8 @@ static int subflow_check_req(struct request_sock *req,
+ 
+ 		if (mp_opt.backup)
+ 			SUBFLOW_REQ_INC_STATS(req, MPTCP_MIB_JOINSYNBACKUPRX);
++	} else if (unlikely(listener->pm_listener)) {
++		return subflow_reset_req_endp(req, skb);
+ 	}
+ 
+ 	if (opt_mp_capable && listener->request_mptcp) {

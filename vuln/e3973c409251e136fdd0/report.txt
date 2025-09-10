@@ -1,0 +1,83 @@
+INFO: task syz-executor272:5093 blocked for more than 143 seconds.
+      Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+task:syz-executor272 state:D stack:23184 pid:5093  tgid:5093  ppid:5091   flags:0x00004002
+Call Trace:
+ <TASK>
+ context_switch kernel/sched/core.c:5409 [inline]
+ __schedule+0x1781/0x49d0 kernel/sched/core.c:6736
+ __schedule_loop kernel/sched/core.c:6813 [inline]
+ schedule+0x14b/0x320 kernel/sched/core.c:6828
+ schedule_timeout+0xb0/0x310 kernel/time/timer.c:2548
+ do_wait_for_common kernel/sched/completion.c:95 [inline]
+ __wait_for_common kernel/sched/completion.c:116 [inline]
+ wait_for_common kernel/sched/completion.c:127 [inline]
+ wait_for_completion+0x355/0x620 kernel/sched/completion.c:148
+ __flush_work+0xa7b/0xc90 kernel/workqueue.c:4205
+ nilfs_segctor_destroy fs/nilfs2/segment.c:2769 [inline]
+ nilfs_detach_log_writer+0x47d/0xbe0 fs/nilfs2/segment.c:2853
+ nilfs_put_super+0x4d/0x160 fs/nilfs2/super.c:499
+ generic_shutdown_super+0x136/0x2d0 fs/super.c:641
+ kill_block_super+0x44/0x90 fs/super.c:1675
+ deactivate_locked_super+0xc4/0x130 fs/super.c:472
+ cleanup_mnt+0x426/0x4c0 fs/namespace.c:1267
+ task_work_run+0x24f/0x310 kernel/task_work.c:180
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:108 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:201 [inline]
+ syscall_exit_to_user_mode+0x168/0x360 kernel/entry/common.c:212
+ do_syscall_64+0x10a/0x240 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f7bd0b4f347
+RSP: 002b:00007ffe653ed1d8 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f7bd0b4f347
+RDX: 0000000000000000 RSI: 0000000000000009 RDI: 00007ffe653ed290
+RBP: 00007ffe653ed290 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffe653ee2f0
+R13: 000055558aab36c0 R14: 0000000000000063 R15: 431bde82d7b634db
+ </TASK>
+
+Showing all locks held in the system:
+1 lock held by khungtaskd/29:
+ #0: ffffffff8e132020 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:298 [inline]
+ #0: ffffffff8e132020 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:750 [inline]
+ #0: ffffffff8e132020 (rcu_read_lock){....}-{1:2}, at: debug_show_all_locks+0x55/0x2a0 kernel/locking/lockdep.c:6614
+3 locks held by kworker/1:2/1783:
+ #0: ffff888014c78948 ((wq_completion)events){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3229 [inline]
+ #0: ffff888014c78948 ((wq_completion)events){+.+.}-{0:0}, at: process_scheduled_works+0x8e0/0x1770 kernel/workqueue.c:3335
+ #1: ffffc90004ff7d00 ((work_completion)(&sci->sc_iput_work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3230 [inline]
+ #1: ffffc90004ff7d00 ((work_completion)(&sci->sc_iput_work)){+.+.}-{0:0}, at: process_scheduled_works+0x91b/0x1770 kernel/workqueue.c:3335
+ #2: ffff88807c026610 (sb_internal#2){.+.+}-{0:0}, at: nilfs_evict_inode+0x167/0x500 fs/nilfs2/inode.c:930
+1 lock held by klogd/4502:
+ #0: ffff8880b943e318 (&rq->__lock){-.-.}-{2:2}, at: raw_spin_rq_lock_nested+0x2a/0x140 kernel/sched/core.c:559
+2 locks held by getty/4815:
+ #0: ffff88802ea9a0a0 (&tty->ldisc_sem){++++}-{0:0}, at: tty_ldisc_ref_wait+0x25/0x70 drivers/tty/tty_ldisc.c:243
+ #1: ffffc90002f0e2f0 (&ldata->atomic_read_lock){+.+.}-{3:3}, at: n_tty_read+0x6b5/0x1e10 drivers/tty/n_tty.c:2201
+1 lock held by syz-executor272/5093:
+ #0: ffff88807c0260e0 (&type->s_umount_key#44){+.+.}-{3:3}, at: __super_lock fs/super.c:56 [inline]
+ #0: ffff88807c0260e0 (&type->s_umount_key#44){+.+.}-{3:3}, at: __super_lock_excl fs/super.c:71 [inline]
+ #0: ffff88807c0260e0 (&type->s_umount_key#44){+.+.}-{3:3}, at: deactivate_super+0xb5/0xf0 fs/super.c:504
+
+=============================================
+
+NMI backtrace for cpu 1
+CPU: 1 PID: 29 Comm: khungtaskd Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ nmi_cpu_backtrace+0x49c/0x4d0 lib/nmi_backtrace.c:113
+ nmi_trigger_cpumask_backtrace+0x198/0x320 lib/nmi_backtrace.c:62
+ trigger_all_cpu_backtrace include/linux/nmi.h:160 [inline]
+ check_hung_uninterruptible_tasks kernel/hung_task.c:222 [inline]
+ watchdog+0xfb0/0xff0 kernel/hung_task.c:379
+ kthread+0x2f0/0x390 kernel/kthread.c:388
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+ </TASK>
+Sending NMI from CPU 1 to CPUs 0:
+NMI backtrace for cpu 0 skipped: idling at native_safe_halt arch/x86/include/asm/irqflags.h:48 [inline]
+NMI backtrace for cpu 0 skipped: idling at arch_safe_halt arch/x86/include/asm/irqflags.h:86 [inline]
+NMI backtrace for cpu 0 skipped: idling at acpi_safe_halt+0x21/0x30 drivers/acpi/processor_idle.c:112

@@ -1,0 +1,66 @@
+diff --git a/fs/bcachefs/journal.c b/fs/bcachefs/journal.c
+index 51c2fa09d951..0f4ad9e64ad1 100644
+--- a/fs/bcachefs/journal.c
++++ b/fs/bcachefs/journal.c
+@@ -1095,7 +1095,7 @@ int bch2_set_nr_journal_buckets(struct bch_fs *c, struct bch_dev *ca,
+ 	return ret;
+ }
+ 
+-int bch2_dev_journal_alloc(struct bch_dev *ca)
++int bch2_dev_journal_alloc(struct bch_dev *ca, bool new_fs)
+ {
+ 	unsigned nr;
+ 	int ret;
+@@ -1117,7 +1117,7 @@ int bch2_dev_journal_alloc(struct bch_dev *ca)
+ 		     min(1 << 13,
+ 			 (1 << 24) / ca->mi.bucket_size));
+ 
+-	ret = __bch2_set_nr_journal_buckets(ca, nr, true, NULL);
++	ret = __bch2_set_nr_journal_buckets(ca, nr, new_fs, NULL);
+ err:
+ 	bch_err_fn(ca, ret);
+ 	return ret;
+@@ -1129,7 +1129,7 @@ int bch2_fs_journal_alloc(struct bch_fs *c)
+ 		if (ca->journal.nr)
+ 			continue;
+ 
+-		int ret = bch2_dev_journal_alloc(ca);
++		int ret = bch2_dev_journal_alloc(ca, true);
+ 		if (ret) {
+ 			percpu_ref_put(&ca->io_ref);
+ 			return ret;
+diff --git a/fs/bcachefs/journal.h b/fs/bcachefs/journal.h
+index fd1f7cdaa8bc..bc6b9c39dcb4 100644
+--- a/fs/bcachefs/journal.h
++++ b/fs/bcachefs/journal.h
+@@ -433,7 +433,7 @@ bool bch2_journal_seq_pins_to_text(struct printbuf *, struct journal *, u64 *);
+ 
+ int bch2_set_nr_journal_buckets(struct bch_fs *, struct bch_dev *,
+ 				unsigned nr);
+-int bch2_dev_journal_alloc(struct bch_dev *);
++int bch2_dev_journal_alloc(struct bch_dev *, bool);
+ int bch2_fs_journal_alloc(struct bch_fs *);
+ 
+ void bch2_dev_journal_stop(struct journal *, struct bch_dev *);
+diff --git a/fs/bcachefs/super.c b/fs/bcachefs/super.c
+index 24953cd9bbbc..da735608d47c 100644
+--- a/fs/bcachefs/super.c
++++ b/fs/bcachefs/super.c
+@@ -1772,7 +1772,7 @@ int bch2_dev_add(struct bch_fs *c, const char *path)
+ 	if (ret)
+ 		goto err;
+ 
+-	ret = bch2_dev_journal_alloc(ca);
++	ret = bch2_dev_journal_alloc(ca, true);
+ 	bch_err_msg(c, ret, "allocating journal");
+ 	if (ret)
+ 		goto err;
+@@ -1932,7 +1932,7 @@ int bch2_dev_online(struct bch_fs *c, const char *path)
+ 	}
+ 
+ 	if (!ca->journal.nr) {
+-		ret = bch2_dev_journal_alloc(ca);
++		ret = bch2_dev_journal_alloc(ca, false);
+ 		bch_err_msg(ca, ret, "allocating journal");
+ 		if (ret)
+ 			goto err;

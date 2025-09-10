@@ -1,0 +1,26 @@
+id: b7f6f8c9303466e16c8a
+bug_link: https://syzkaller.appspot.com/bug?extid=b7f6f8c9303466e16c8a
+title: general protection fault in l2cap_sock_recv_cb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 015d79c96d62cd8a4a359fcf5be40d58088c936b
+fix_commit: 89e856e124f9ae548572c56b1b70c2255705f8fe
+datetime: '2024-06-28T14:30:43-04:00'
+fix_commit_message: "bluetooth/l2cap: sync sock recv cb and release\n\nThe problem\
+  \ occurs between the system call to close the sock and hci_rx_work,\nwhere the former\
+  \ releases the sock and the latter accesses it without lock protection.\n\n    \
+  \       CPU0                       CPU1\n           ----                       ----\n\
+  \           sock_close                 hci_rx_work\n\t   l2cap_sock_release    \
+  \     hci_acldata_packet\n\t   l2cap_sock_kill            l2cap_recv_frame\n\t \
+  \  sk_free                    l2cap_conless_channel\n\t                        \
+  \      l2cap_sock_recv_cb\n\nIf hci_rx_work processes the data that needs to be\
+  \ received before the sock is\nclosed, then everything is normal; Otherwise, the\
+  \ work thread may access the\nreleased sock when receiving data.\n\nAdd a chan mutex\
+  \ in the rx callback of the sock to achieve synchronization between\nthe sock release\
+  \ and recv cb.\n\nSock is dead, so set chan data to NULL, avoid others use invalid\
+  \ sock pointer.\n\nReported-and-tested-by: syzbot+b7f6f8c9303466e16c8a@syzkaller.appspotmail.com\n\
+  Signed-off-by: Edward Adam Davis <eadavis@qq.com>\nSigned-off-by: Luiz Augusto von\
+  \ Dentz <luiz.von.dentz@intel.com>\n"
+submodule:
+- net/bluetooth
+hunk_count: 3
+covered_count: 2

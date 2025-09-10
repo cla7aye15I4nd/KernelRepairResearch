@@ -1,0 +1,72 @@
+------------[ cut here ]------------
+Looking for class "ACCESS_PRIVATE(sdp, lock)" with key __key.6, but found a different class "&ACCESS_PRIVATE(sdp, lock)" with the same key
+WARNING: CPU: 0 PID: 5549 at kernel/locking/lockdep.c:932 look_up_lock_class+0x133/0x140 kernel/locking/lockdep.c:932
+Modules linked in:
+CPU: 0 PID: 5549 Comm: syz-executor.0 Not tainted 6.10.0-rc3-syzkaller-00021-g2ef5971ff345 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+RIP: 0010:look_up_lock_class+0x133/0x140 kernel/locking/lockdep.c:932
+Code: c7 c7 20 b9 2c 8b e8 ec 63 74 f6 90 0f 0b 90 90 90 31 db eb be c6 05 55 94 ef 04 01 90 48 c7 c7 40 bc 2c 8b e8 ce 63 74 f6 90 <0f> 0b 90 90 e9 62 ff ff ff 0f 1f 40 00 90 90 90 90 90 90 90 90 90
+RSP: 0000:ffffc90002ad6d50 EFLAGS: 00010086
+RAX: 0000000000000000 RBX: ffffffff941feec0 RCX: ffffc9000c202000
+RDX: 0000000000040000 RSI: ffffffff81511296 RDI: 0000000000000001
+RBP: ffffffff94ad9b40 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 20676e696b6f6f4c R12: ffffe8ffad06c898
+R13: 0000000000000000 R14: 0000000000000000 R15: ffffffff94ad8be0
+FS:  0000000000000000(0000) GS:ffff88802c000000(0063) knlGS:00000000f5e81b40
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 0000000056fe7480 CR3: 0000000061748000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ register_lock_class+0xb1/0x1230 kernel/locking/lockdep.c:1284
+ __lock_acquire+0x111/0x3b30 kernel/locking/lockdep.c:5014
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+ __raw_spin_trylock include/linux/spinlock_api_smp.h:90 [inline]
+ _raw_spin_trylock+0x63/0x80 kernel/locking/spinlock.c:138
+ spin_lock_irqsave_sdp_contention kernel/rcu/srcutree.c:373 [inline]
+ srcu_gp_start_if_needed+0x75e/0xf00 kernel/rcu/srcutree.c:1233
+ __call_srcu kernel/rcu/srcutree.c:1347 [inline]
+ __synchronize_srcu+0x261/0x2a0 kernel/rcu/srcutree.c:1395
+ kvm_set_irq_routing+0x6af/0x990 arch/x86/kvm/../../../virt/kvm/irqchip.c:227
+ kvm_arch_vm_ioctl+0x97f/0x1c10 arch/x86/kvm/x86.c:7066
+ kvm_vm_ioctl+0x1a71/0x3de0 arch/x86/kvm/../../../virt/kvm/kvm_main.c:5308
+ kvm_vm_compat_ioctl+0x39f/0x400 arch/x86/kvm/../../../virt/kvm/kvm_main.c:5388
+ __do_compat_sys_ioctl+0x2c3/0x330 fs/ioctl.c:1007
+ do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]
+ __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386
+ do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+ entry_SYSENTER_compat_after_hwframe+0x84/0x8e
+RIP: 0023:0xf728f579
+Code: b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
+RSP: 002b:00000000f5e815ac EFLAGS: 00000292 ORIG_RAX: 0000000000000036
+RAX: ffffffffffffffda RBX: 0000000000000004 RCX: 000000000000ae60
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000292 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+----------------
+Code disassembly (best guess), 2 bytes skipped:
+   0:	10 06                	adc    %al,(%rsi)
+   2:	03 74 b4 01          	add    0x1(%rsp,%rsi,4),%esi
+   6:	10 07                	adc    %al,(%rdi)
+   8:	03 74 b0 01          	add    0x1(%rax,%rsi,4),%esi
+   c:	10 08                	adc    %cl,(%rax)
+   e:	03 74 d8 01          	add    0x1(%rax,%rbx,8),%esi
+  1e:	00 51 52             	add    %dl,0x52(%rcx)
+  21:	55                   	push   %rbp
+  22:	89 e5                	mov    %esp,%ebp
+  24:	0f 34                	sysenter
+  26:	cd 80                	int    $0x80
+* 28:	5d                   	pop    %rbp <-- trapping instruction
+  29:	5a                   	pop    %rdx
+  2a:	59                   	pop    %rcx
+  2b:	c3                   	ret
+  2c:	90                   	nop
+  2d:	90                   	nop
+  2e:	90                   	nop
+  2f:	90                   	nop
+  30:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi
+  37:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi

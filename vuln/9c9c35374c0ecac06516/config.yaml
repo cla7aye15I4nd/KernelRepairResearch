@@ -1,0 +1,26 @@
+id: 9c9c35374c0ecac06516
+bug_link: https://syzkaller.appspot.com/bug?extid=9c9c35374c0ecac06516
+title: WARNING in io_ring_ctx_wait_and_kill
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b4411616c26f26c4017b8fa4d3538b1a02028733
+fix_commit: 06585c497b55045ec21aa8128e340f6a6587351c
+datetime: '2021-01-13T08:29:17-07:00'
+fix_commit_message: "io_uring: do sqo disable on install_fd error\n\nWARNING: CPU:\
+  \ 0 PID: 8494 at fs/io_uring.c:8717\n\tio_ring_ctx_wait_and_kill+0x4f2/0x600 fs/io_uring.c:8717\n\
+  Call Trace:\n io_uring_release+0x3e/0x50 fs/io_uring.c:8759\n __fput+0x283/0x920\
+  \ fs/file_table.c:280\n task_work_run+0xdd/0x190 kernel/task_work.c:140\n tracehook_notify_resume\
+  \ include/linux/tracehook.h:189 [inline]\n exit_to_user_mode_loop kernel/entry/common.c:174\
+  \ [inline]\n exit_to_user_mode_prepare+0x249/0x250 kernel/entry/common.c:201\n __syscall_exit_to_user_mode_work\
+  \ kernel/entry/common.c:291 [inline]\n syscall_exit_to_user_mode+0x19/0x50 kernel/entry/common.c:302\n\
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nfailed io_uring_install_fd() is a\
+  \ special case, we don't do\nio_ring_ctx_wait_and_kill() directly but defer it to\
+  \ fput, though still\nneed to io_disable_sqo_submit() before.\n\nnote: it doesn't\
+  \ fix any real problem, just a warning. That's because\nsqring won't be available\
+  \ to the userspace in this case and so SQPOLL\nwon't submit anything.\n\nReported-by:\
+  \ syzbot+9c9c35374c0ecac06516@syzkaller.appspotmail.com\nFixes: d9d05217cb69 (\"\
+  io_uring: stop SQPOLL submit on creator's death\")\nSigned-off-by: Pavel Begunkov\
+  \ <asml.silence@gmail.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 0

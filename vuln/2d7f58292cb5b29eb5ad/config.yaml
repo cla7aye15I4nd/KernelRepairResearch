@@ -1,0 +1,45 @@
+id: 2d7f58292cb5b29eb5ad
+bug_link: https://syzkaller.appspot.com/bug?extid=2d7f58292cb5b29eb5ad
+title: 'BUG: unable to handle kernel paging request in can_rcv_filter'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1799c1b85e292fbfad99892bbea0beee925149e8
+fix_commit: 0acc442309a0a1b01bcdaa135e56e6398a49439c
+datetime: '2022-12-07T10:30:47+01:00'
+fix_commit_message: 'can: af_can: fix NULL pointer dereference in can_rcv_filter
+
+
+  Analogue to commit 8aa59e355949 ("can: af_can: fix NULL pointer
+
+  dereference in can_rx_register()") we need to check for a missing
+
+  initialization of ml_priv in the receive path of CAN frames.
+
+
+  Since commit 4e096a18867a ("net: introduce CAN specific pointer in the
+
+  struct net_device") the check for dev->type to be ARPHRD_CAN is not
+
+  sufficient anymore since bonding or tun netdevices claim to be CAN
+
+  devices but do not initialize ml_priv accordingly.
+
+
+  Fixes: 4e096a18867a ("net: introduce CAN specific pointer in the struct net_device")
+
+  Reported-by: syzbot+2d7f58292cb5b29eb5ad@syzkaller.appspotmail.com
+
+  Reported-by: Wei Chen <harperchen1110@gmail.com>
+
+  Signed-off-by: Oliver Hartkopp <socketcan@hartkopp.net>
+
+  Link: https://lore.kernel.org/all/20221206201259.3028-1-socketcan@hartkopp.net
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+
+  '
+submodule:
+- net/can
+hunk_count: 3
+covered_count: 3

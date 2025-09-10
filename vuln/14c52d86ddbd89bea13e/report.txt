@@ -1,0 +1,53 @@
+bcachefs (loop0): bucket 0:26 gen 0 data type btree sector count overflow: 0 + -256 > U32_MAX
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq ac62141f8dc7e261 written 24 min_key POS_MIN durability: 1 ptr: 0:26:0 gen 0
+  
+------------[ cut here ]------------
+UBSAN: array-index-out-of-bounds in fs/bcachefs/sb-downgrade.c:268:4
+index 0 is out of range for type '__le16[] __counted_by(nr_errors)' (aka 'unsigned short[]')
+CPU: 0 UID: 0 PID: 1037 Comm: kworker/u4:6 Not tainted 6.15.0-rc3-syzkaller-00076-ge72e9e693307 #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: btree_update btree_interior_update_work
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ ubsan_epilogue+0xa/0x40 lib/ubsan.c:231
+ __ubsan_handle_out_of_bounds+0xe9/0xf0 lib/ubsan.c:453
+ downgrade_table_extra fs/bcachefs/sb-downgrade.c:268 [inline]
+ bch2_sb_downgrade_update+0xb10/0xcc0 fs/bcachefs/sb-downgrade.c:388
+ bch2_write_super+0xbf4/0x2cc0 fs/bcachefs/super-io.c:1071
+ btree_update_new_nodes_mark_sb fs/bcachefs/btree_update_interior.c:608 [inline]
+ btree_update_nodes_written fs/bcachefs/btree_update_interior.c:678 [inline]
+ btree_interior_update_work+0x441/0x25e0 fs/bcachefs/btree_update_interior.c:843
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xadb/0x17a0 kernel/workqueue.c:3319
+ worker_thread+0x8a0/0xda0 kernel/workqueue.c:3400
+ kthread+0x70e/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+---[ end trace ]---
+Kernel panic - not syncing: UBSAN: panic_on_warn set ...
+CPU: 0 UID: 0 PID: 1037 Comm: kworker/u4:6 Not tainted 6.15.0-rc3-syzkaller-00076-ge72e9e693307 #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: btree_update btree_interior_update_work
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x99/0x250 lib/dump_stack.c:120
+ panic+0x2db/0x790 kernel/panic.c:354
+ check_panic_on_warn+0x89/0xb0 kernel/panic.c:243
+ __ubsan_handle_out_of_bounds+0xe9/0xf0 lib/ubsan.c:453
+ downgrade_table_extra fs/bcachefs/sb-downgrade.c:268 [inline]
+ bch2_sb_downgrade_update+0xb10/0xcc0 fs/bcachefs/sb-downgrade.c:388
+ bch2_write_super+0xbf4/0x2cc0 fs/bcachefs/super-io.c:1071
+ btree_update_new_nodes_mark_sb fs/bcachefs/btree_update_interior.c:608 [inline]
+ btree_update_nodes_written fs/bcachefs/btree_update_interior.c:678 [inline]
+ btree_interior_update_work+0x441/0x25e0 fs/bcachefs/btree_update_interior.c:843
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xadb/0x17a0 kernel/workqueue.c:3319
+ worker_thread+0x8a0/0xda0 kernel/workqueue.c:3400
+ kthread+0x70e/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Kernel Offset: disabled
+Rebooting in 86400 seconds..

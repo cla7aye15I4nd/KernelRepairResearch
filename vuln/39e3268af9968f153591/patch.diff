@@ -1,0 +1,14 @@
+diff --git a/sound/usb/midi.c b/sound/usb/midi.c
+index 7c6ca2b433a5..344fbeadf161 100644
+--- a/sound/usb/midi.c
++++ b/sound/usb/midi.c
+@@ -1145,6 +1145,9 @@ static int snd_usbmidi_output_open(struct snd_rawmidi_substream *substream)
+ 
+ static int snd_usbmidi_output_close(struct snd_rawmidi_substream *substream)
+ {
++	struct usbmidi_out_port *port = substream->runtime->private_data;
++
++	cancel_work_sync(&port->ep->work);
+ 	return substream_open(substream, 0, 0);
+ }
+ 

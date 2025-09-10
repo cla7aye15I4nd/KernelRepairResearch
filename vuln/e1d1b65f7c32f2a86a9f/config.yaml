@@ -1,0 +1,37 @@
+id: e1d1b65f7c32f2a86a9f
+bug_link: https://syzkaller.appspot.com/bug?extid=e1d1b65f7c32f2a86a9f
+title: 'BUG: unable to handle kernel NULL pointer dereference in __build_skb_around'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 082cdc69a4651dd2a77539d69416a359ed1214f5
+fix_commit: e5995bc7e2ba1a0d444f806016d2e4ea91c032d0
+datetime: '2023-03-16T22:20:09-07:00'
+fix_commit_message: "bpf, test_run: fix crashes due to XDP frame overwriting/corruption\n\
+  \nsyzbot and Ilya faced the splats when %XDP_PASS happens for bpf_test_run\nafter\
+  \ skb PP recycling was enabled for {__,}xdp_build_skb_from_frame():\n\nBUG: kernel\
+  \ NULL pointer dereference, address: 0000000000000d28\nRIP: 0010:memset_erms+0xd/0x20\
+  \ arch/x86/lib/memset_64.S:66\n[...]\nCall Trace:\n <TASK>\n __finalize_skb_around\
+  \ net/core/skbuff.c:321 [inline]\n __build_skb_around+0x232/0x3a0 net/core/skbuff.c:379\n\
+  \ build_skb_around+0x32/0x290 net/core/skbuff.c:444\n __xdp_build_skb_from_frame+0x121/0x760\
+  \ net/core/xdp.c:622\n xdp_recv_frames net/bpf/test_run.c:248 [inline]\n xdp_test_run_batch\
+  \ net/bpf/test_run.c:334 [inline]\n bpf_test_run_xdp_live+0x1289/0x1930 net/bpf/test_run.c:362\n\
+  \ bpf_prog_test_run_xdp+0xa05/0x14e0 net/bpf/test_run.c:1418\n[...]\n\nThis happens\
+  \ due to that it calls xdp_scrub_frame(), which nullifies\nxdpf->data. bpf_test_run\
+  \ code doesn't reinit the frame when the XDP\nprogram doesn't adjust head or tail.\
+  \ Previously, %XDP_PASS meant the\npage will be released from the pool and returned\
+  \ to the MM layer, but\nnow it does return to the Pool with the nullified xdpf->data,\
+  \ which\ndoesn't get reinitialized then.\nSo, in addition to checking whether the\
+  \ head and/or tail have been\nadjusted, check also for a potential XDP frame corruption.\
+  \ xdpf->data\nis 100% affected and also xdpf->flags is the field closest to the\n\
+  metadata / frame start. Checking for these two should be enough for\nnon-extreme\
+  \ cases.\n\nFixes: 9c94bbf9a87b (\"xdp: recycle Page Pool backed skbs built from\
+  \ XDP frames\")\nReported-by: syzbot+e1d1b65f7c32f2a86a9f@syzkaller.appspotmail.com\n\
+  Link: https://lore.kernel.org/bpf/000000000000f1985705f6ef2243@google.com\nReported-by:\
+  \ Ilya Leoshkevich <iii@linux.ibm.com>\nLink: https://lore.kernel.org/bpf/e07dd94022ad5731705891b9487cc9ed66328b94.camel@linux.ibm.com\n\
+  Signed-off-by: Alexander Lobakin <aleksander.lobakin@intel.com>\nAcked-by: Toke\
+  \ Høiland-Jørgensen <toke@redhat.com>\nTested-by: Ilya Leoshkevich <iii@linux.ibm.com>\n\
+  Link: https://lore.kernel.org/r/20230316175051.922550-2-aleksander.lobakin@intel.com\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- net/bpf
+hunk_count: 2
+covered_count: 2

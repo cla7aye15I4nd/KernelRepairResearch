@@ -1,0 +1,44 @@
+id: fe0c72f0ccbb93786380
+bug_link: https://syzkaller.appspot.com/bug?extid=fe0c72f0ccbb93786380
+title: possible deadlock in __mod_timer (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0cce06ba859a515bd06224085d3addb870608b6d
+fix_commit: eb799279fb1f9c63c520fe8c1c41cb9154252db6
+datetime: '2023-05-22T14:52:58+02:00'
+fix_commit_message: 'debugobjects: Don''t wake up kswapd from fill_pool()
+
+
+  syzbot is reporting a lockdep warning in fill_pool() because the allocation
+
+  from debugobjects is using GFP_ATOMIC, which is (__GFP_HIGH | __GFP_KSWAPD_RECLAIM)
+
+  and therefore tries to wake up kswapd, which acquires kswapd_wait::lock.
+
+
+  Since fill_pool() might be called with arbitrary locks held, fill_pool()
+
+  should not assume that acquiring kswapd_wait::lock is safe.
+
+
+  Use __GFP_HIGH instead and remove __GFP_NORETRY as it is pointless for
+
+  !__GFP_DIRECT_RECLAIM allocation.
+
+
+  Fixes: 3ac7fe5a4aab ("infrastructure to debug (dynamic) objects")
+
+  Reported-by: syzbot <syzbot+fe0c72f0ccbb93786380@syzkaller.appspotmail.com>
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+  Link: https://lore.kernel.org/r/6577e1fa-b6ee-f2be-2414-a2b51b1c5e30@I-love.SAKURA.ne.jp
+
+  Closes: https://syzkaller.appspot.com/bug?extid=fe0c72f0ccbb93786380
+
+  '
+submodule:
+- lib
+hunk_count: 1
+covered_count: 1

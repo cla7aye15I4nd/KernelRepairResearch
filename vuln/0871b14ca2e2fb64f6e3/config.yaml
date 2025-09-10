@@ -1,0 +1,70 @@
+id: 0871b14ca2e2fb64f6e3
+bug_link: https://syzkaller.appspot.com/bug?extid=0871b14ca2e2fb64f6e3
+title: WARNING in vkms_vblank_simulate
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 948de84233d32be56e0b7ee5c1c4b2d960efee27
+fix_commit: 51f644b40b4b794b28b982fdd5d0dd8ee63f9272
+datetime: '2020-07-02T20:25:51+02:00'
+fix_commit_message: "drm/atomic-helper: reset vblank on crtc reset\n\nOnly when vblanks\
+  \ are supported ofc.\n\nSome drivers do this already, but most unfortunately missed\
+  \ it. This\nopens up bugs after driver load, before the crtc is enabled for the\n\
+  first time. syzbot spotted this when loading vkms as a secondary\noutput. Given\
+  \ how many drivers are buggy it's best to solve this once\nand for all in shared\
+  \ helper code.\n\nAside from moving the few existing calls to drm_crtc_vblank_reset\
+  \ into\nhelpers (i915 doesn't use helpers, so keeps its own) I think the\nregression\
+  \ risk is minimal: atomic helpers already rely on drivers\ncalling drm_crtc_vblank_on/off\
+  \ correctly in their hooks when they\nsupport vblanks. And driver that's failing\
+  \ to handle vblanks after\nthis is missing those calls already, and vblanks could\
+  \ only work by\naccident when enabling a CRTC for the first time right after boot.\n\
+  \nBig thanks to Tetsuo for helping track down what's going wrong here.\n\nThere's\
+  \ only a few drivers which already had the necessary call and\nneeded some updating:\n\
+  - komeda, atmel and tidss also needed to be changed to call\n  __drm_atomic_helper_crtc_reset()\
+  \ intead of open coding it\n- tegra and msm even had it in the same place already,\
+  \ just code\n  motion, and malidp already uses __drm_atomic_helper_crtc_reset().\n\
+  - Laurent noticed that rcar-du and omap open-code their crtc reset and\n  hence\
+  \ would actually be broken by this patch now. So fix them up by\n  reusing the helpers,\
+  \ which brings the drm_crtc_vblank_reset() back.\n\nOnly call left is in i915, which\
+  \ doesn't use drm_mode_config_reset,\nbut has its own fastboot infrastructure. So\
+  \ that's the only case where\nwe actually want this in the driver still.\n\nI've\
+  \ also reviewed all other drivers which set up vblank support with\ndrm_vblank_init.\
+  \ After the previous patch fixing mxsfb all atomic\ndrivers do call drm_crtc_vblank_on/off\
+  \ as they should, the remaining\ndrivers are either legacy kms or legacy dri1 drivers,\
+  \ so not affected\nby this change to atomic helpers.\n\nv2: Use the drm_dev_has_vblank()\
+  \ helper.\n\nv3: Laurent pointed out that omap and rcar-du used drm_crtc_vblank_off\n\
+  instead of drm_crtc_vblank_reset. Adjust them too.\n\nv4: Laurent noticed that rcar-du\
+  \ and omap open-code their crtc reset\nand hence would actually be broken by this\
+  \ patch now. So fix them up\nby reusing the helpers, which brings the drm_crtc_vblank_reset()\
+  \ back.\n\nv5: also mention rcar-du and ompadrm in the proper commit message\nabove\
+  \ (Laurent).\n\nReviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>\n\
+  Acked-by: Maxime Ripard <mripard@kernel.org>\nCc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>\n\
+  Reviewed-by: Boris Brezillon <boris.brezillon@collabora.com>\nAcked-by: Liviu Dudau\
+  \ <liviu.dudau@arm.com>\nAcked-by: Thierry Reding <treding@nvidia.com>\nLink: https://syzkaller.appspot.com/bug?id=0ba17d70d062b2595e1f061231474800f076c7cb\n\
+  Reported-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nReported-by: syzbot+0871b14ca2e2fb64f6e3@syzkaller.appspotmail.com\n\
+  Cc: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nCc: \"James (Qian) Wang\"\
+  \ <james.qian.wang@arm.com>\nCc: Liviu Dudau <liviu.dudau@arm.com>\nCc: Mihail Atanassov\
+  \ <mihail.atanassov@arm.com>\nCc: Brian Starkey <brian.starkey@arm.com>\nCc: Sam\
+  \ Ravnborg <sam@ravnborg.org>\nCc: Boris Brezillon <bbrezillon@kernel.org>\nCc:\
+  \ Nicolas Ferre <nicolas.ferre@microchip.com>\nCc: Alexandre Belloni <alexandre.belloni@bootlin.com>\n\
+  Cc: Ludovic Desroches <ludovic.desroches@microchip.com>\nCc: Maarten Lankhorst <maarten.lankhorst@linux.intel.com>\n\
+  Cc: Maxime Ripard <mripard@kernel.org>\nCc: Thomas Zimmermann <tzimmermann@suse.de>\n\
+  Cc: David Airlie <airlied@linux.ie>\nCc: Daniel Vetter <daniel@ffwll.ch>\nCc: Thierry\
+  \ Reding <thierry.reding@gmail.com>\nCc: Jonathan Hunter <jonathanh@nvidia.com>\n\
+  Cc: Jyri Sarha <jsarha@ti.com>\nCc: Tomi Valkeinen <tomi.valkeinen@ti.com>\nCc:\
+  \ Rob Clark <robdclark@gmail.com>\nCc: Sean Paul <seanpaul@chromium.org>\nCc: Brian\
+  \ Masney <masneyb@onstation.org>\nCc: Emil Velikov <emil.velikov@collabora.com>\n\
+  Cc: zhengbin <zhengbin13@huawei.com>\nCc: Thomas Gleixner <tglx@linutronix.de>\n\
+  Cc: linux-tegra@vger.kernel.org\nCc: Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>\n\
+  Cc: linux-arm-kernel@lists.infradead.org\nCc: linux-renesas-soc@vger.kernel.org\n\
+  Signed-off-by: Daniel Vetter <daniel.vetter@intel.com>\nLink: https://patchwork.freedesktop.org/patch/msgid/20200612160056.2082681-1-daniel.vetter@ffwll.ch\n"
+submodule:
+- drivers/gpu/drm
+- drivers/gpu/drm/arm
+- drivers/gpu/drm/arm/display/komeda
+- drivers/gpu/drm/atmel-hlcdc
+- drivers/gpu/drm/msm/disp/mdp5
+- drivers/gpu/drm/omapdrm
+- drivers/gpu/drm/rcar-du
+- drivers/gpu/drm/tegra
+- drivers/gpu/drm/tidss
+hunk_count: 17
+covered_count: 0

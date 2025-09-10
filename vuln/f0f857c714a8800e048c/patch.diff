@@ -1,0 +1,67 @@
+diff --git a/fs/afs/cell.c b/fs/afs/cell.c
+index 1944be78e9b0..bc7ed46aaca9 100644
+--- a/fs/afs/cell.c
++++ b/fs/afs/cell.c
+@@ -291,11 +291,11 @@ struct afs_cell *afs_lookup_cell(struct afs_net *net,
+ 	wait_var_event(&cell->state,
+ 		       ({
+ 			       state = smp_load_acquire(&cell->state); /* vs error */
+-			       state == AFS_CELL_ACTIVE || state == AFS_CELL_FAILED;
++			       state == AFS_CELL_ACTIVE || state == AFS_CELL_REMOVED;
+ 		       }));
+ 
+ 	/* Check the state obtained from the wait check. */
+-	if (state == AFS_CELL_FAILED) {
++	if (state == AFS_CELL_REMOVED) {
+ 		ret = cell->error;
+ 		goto error;
+ 	}
+@@ -700,7 +700,6 @@ static void afs_deactivate_cell(struct afs_net *net, struct afs_cell *cell)
+ static void afs_manage_cell(struct afs_cell *cell)
+ {
+ 	struct afs_net *net = cell->net;
+-	bool deleted;
+ 	int ret, active;
+ 
+ 	_enter("%s", cell->name);
+@@ -712,13 +711,15 @@ static void afs_manage_cell(struct afs_cell *cell)
+ 	case AFS_CELL_FAILED:
+ 		down_write(&net->cells_lock);
+ 		active = 1;
+-		deleted = atomic_try_cmpxchg_relaxed(&cell->active, &active, 0);
+-		if (deleted) {
++		if (atomic_try_cmpxchg_relaxed(&cell->active, &active, 0)) {
+ 			rb_erase(&cell->net_node, &net->cells);
++			smp_store_release(&cell->state, AFS_CELL_REMOVED);
+ 		}
+ 		up_write(&net->cells_lock);
+-		if (deleted)
++		if (cell->state == AFS_CELL_REMOVED) {
++			wake_up_var(&cell->state);
+ 			goto final_destruction;
++		}
+ 		if (cell->state == AFS_CELL_FAILED)
+ 			goto done;
+ 		smp_store_release(&cell->state, AFS_CELL_UNSET);
+@@ -760,6 +761,9 @@ static void afs_manage_cell(struct afs_cell *cell)
+ 		wake_up_var(&cell->state);
+ 		goto again;
+ 
++	case AFS_CELL_REMOVED:
++		goto done;
++
+ 	default:
+ 		break;
+ 	}
+diff --git a/fs/afs/internal.h b/fs/afs/internal.h
+index 0363511290c8..06e617ee4cd1 100644
+--- a/fs/afs/internal.h
++++ b/fs/afs/internal.h
+@@ -326,6 +326,7 @@ enum afs_cell_state {
+ 	AFS_CELL_DEACTIVATING,
+ 	AFS_CELL_INACTIVE,
+ 	AFS_CELL_FAILED,
++	AFS_CELL_REMOVED,
+ };
+ 
+ /*

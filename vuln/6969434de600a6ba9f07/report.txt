@@ -1,0 +1,78 @@
+rcu: INFO: rcu_preempt detected stalls on CPUs/tasks:
+rcu: 	0-...!: (1 ticks this GP) idle=e314/1/0x4000000000000000 softirq=5879/5879 fqs=0
+rcu: 	(detected by 1, t=10505 jiffies, g=6797, q=86 ncpus=2)
+Sending NMI from CPU 1 to CPUs 0:
+NMI backtrace for cpu 0
+CPU: 0 PID: 5083 Comm: syz-executor176 Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+RIP: 0010:__raw_spin_lock_irq include/linux/spinlock_api_smp.h:120 [inline]
+RIP: 0010:_raw_spin_lock_irq+0xd7/0x120 kernel/locking/spinlock.c:170
+Code: bf 01 00 00 00 e8 69 e1 e5 f5 49 8d 7c 24 18 31 f6 31 d2 31 c9 41 b8 01 00 00 00 45 31 c9 ff 75 08 e8 1d 90 f2 f5 48 83 c4 08 <4c> 89 e7 e8 c1 f0 f3 f5 48 c7 04 24 0e 36 e0 45 4b c7 04 2f 00 00
+RSP: 0018:ffffc90000007cc0 EFLAGS: 00000096
+RAX: c05eb13d16091700 RBX: 1ffff92000000f9c RCX: 0000000000000001
+RDX: dffffc0000000000 RSI: ffffffff8baad360 RDI: ffffffff8bfed300
+RBP: ffffc90000007d50 R08: ffffffff92ce550f R09: 1ffffffff259caa1
+R10: dffffc0000000000 R11: fffffbfff259caa2 R12: ffff8880b942c8c0
+R13: 1ffff92000000f98 R14: ffffc90000007ce0 R15: dffffc0000000000
+FS:  000055556b411380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055556b411ca8 CR3: 000000002dd76000 CR4: 0000000000350ef0
+Call Trace:
+ <NMI>
+ </NMI>
+ <IRQ>
+ __run_hrtimer kernel/time/hrtimer.c:1696 [inline]
+ __hrtimer_run_queues+0x65a/0xd00 kernel/time/hrtimer.c:1756
+ hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1818
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0x109/0x3a0 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:__raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152 [inline]
+RIP: 0010:_raw_spin_unlock_irqrestore+0xd8/0x140 kernel/locking/spinlock.c:194
+Code: 9c 8f 44 24 20 42 80 3c 23 00 74 08 4c 89 f7 e8 4e 39 79 f6 f6 44 24 21 02 75 52 41 f7 c7 00 02 00 00 74 01 fb bf 01 00 00 00 <e8> f3 e0 e5 f5 65 8b 05 44 c5 84 74 85 c0 74 43 48 c7 04 24 0e 36
+RSP: 0018:ffffc900042f7b40 EFLAGS: 00000206
+RAX: c05eb13d16091700 RBX: 1ffff9200085ef6c RCX: ffffffff944dd603
+RDX: dffffc0000000000 RSI: ffffffff8baac1e0 RDI: 0000000000000001
+RBP: ffffc900042f7bd8 R08: ffffffff8f873a6f R09: 1ffffffff1f0e74d
+R10: dffffc0000000000 R11: fffffbfff1f0e74e R12: dffffc0000000000
+R13: 1ffff9200085ef68 R14: ffffc900042f7b60 R15: 0000000000000246
+ do_wait+0x16e/0x540 kernel/exit.c:1627
+ kernel_wait4+0x2a7/0x3e0 kernel/exit.c:1790
+ __do_sys_wait4 kernel/exit.c:1818 [inline]
+ __se_sys_wait4 kernel/exit.c:1814 [inline]
+ __x64_sys_wait4+0x134/0x1e0 kernel/exit.c:1814
+ do_syscall_64+0xfd/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f6df57cd893
+Code: fe ff e9 41 ff ff ff 31 c9 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 80 3d 11 f8 07 00 00 49 89 ca 74 14 b8 3d 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 5d c3 0f 1f 40 00 48 83 ec 28 89 54 24 14 48
+RSP: 002b:00007ffe2065f398 EFLAGS: 00000202 ORIG_RAX: 000000000000003d
+RAX: ffffffffffffffda RBX: 000000000000000b RCX: 00007f6df57cd893
+RDX: 0000000040000001 RSI: 00007ffe2065f3bc RDI: 00000000ffffffff
+RBP: 00000000000f4240 R08: 0000000000000010 R09: 00007f6df578b0b0
+R10: 0000000000000000 R11: 0000000000000202 R12: 00007ffe2065f3f0
+R13: 00000000000306b6 R14: 00007ffe2065f3bc R15: 0000000000000003
+ </TASK>
+INFO: NMI handler (nmi_cpu_backtrace_handler) took too long to run: 1.866 msecs
+rcu: rcu_preempt kthread timer wakeup didn't happen for 10504 jiffies! g6797 f0x0 RCU_GP_WAIT_FQS(5) ->state=0x402
+rcu: 	Possible timer handling issue on cpu=0 timer-softirq=7994
+rcu: rcu_preempt kthread starved for 10505 jiffies! g6797 f0x0 RCU_GP_WAIT_FQS(5) ->state=0x402 ->cpu=0
+rcu: 	Unless rcu_preempt kthread gets sufficient CPU time, OOM is now expected behavior.
+rcu: RCU grace-period kthread stack dump:
+task:rcu_preempt     state:I stack:25400 pid:16    tgid:16    ppid:2      flags:0x00004000
+Call Trace:
+ <TASK>
+ context_switch kernel/sched/core.c:5409 [inline]
+ __schedule+0x17d3/0x4a20 kernel/sched/core.c:6736
+ __schedule_loop kernel/sched/core.c:6813 [inline]
+ schedule+0x14b/0x320 kernel/sched/core.c:6828
+ schedule_timeout+0x1be/0x310 kernel/time/timer.c:2572
+ rcu_gp_fqs_loop+0x2df/0x1370 kernel/rcu/tree.c:1663
+ rcu_gp_kthread+0xa7/0x3b0 kernel/rcu/tree.c:1862
+ kthread+0x2f2/0x390 kernel/kthread.c:388
+ ret_from_fork+0x4d/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+ </TASK>

@@ -1,0 +1,29 @@
+id: 690cb1e51970435f9775
+bug_link: https://syzkaller.appspot.com/bug?extid=690cb1e51970435f9775
+title: general protection fault in reiserfs_security_init
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6ac86aae89289121db784161fe318819778f7f2a
+fix_commit: 5e46d1b78a03d52306f21f77a4e4a144b6d31486
+datetime: '2021-03-30T14:27:32-07:00'
+fix_commit_message: "reiserfs: update reiserfs_xattrs_initialized() condition\n\n\
+  syzbot is reporting NULL pointer dereference at reiserfs_security_init()\n[1], for\
+  \ commit ab17c4f02156c4f7 (\"reiserfs: fixup xattr_root caching\")\nis assuming\
+  \ that REISERFS_SB(s)->xattr_root != NULL in\nreiserfs_xattr_jcreate_nblocks() despite\
+  \ that commit made\nREISERFS_SB(sb)->priv_root != NULL && REISERFS_SB(s)->xattr_root\
+  \ == NULL\ncase possible.\n\nI guess that commit 6cb4aff0a77cc0e6 (\"reiserfs: fix\
+  \ oops while creating\nprivroot with selinux enabled\") wanted to check xattr_root\
+  \ != NULL\nbefore reiserfs_xattr_jcreate_nblocks(), for the changelog is talking\n\
+  about the xattr root.\n\n  The issue is that while creating the privroot during\
+  \ mount\n  reiserfs_security_init calls reiserfs_xattr_jcreate_nblocks which\n \
+  \ dereferences the xattr root. The xattr root doesn't exist, so we get\n  an oops.\n\
+  \nTherefore, update reiserfs_xattrs_initialized() to check both the\nprivroot and\
+  \ the xattr root.\n\nLink: https://syzkaller.appspot.com/bug?id=8abaedbdeb32c861dc5340544284167dd0e46cde\
+  \ # [1]\nReported-and-tested-by: syzbot <syzbot+690cb1e51970435f9775@syzkaller.appspotmail.com>\n\
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nFixes: 6cb4aff0a77c\
+  \ (\"reiserfs: fix oops while creating privroot with selinux enabled\")\nAcked-by:\
+  \ Jeff Mahoney <jeffm@suse.com>\nAcked-by: Jan Kara <jack@suse.com>\nSigned-off-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs/reiserfs
+hunk_count: 1
+covered_count: 1

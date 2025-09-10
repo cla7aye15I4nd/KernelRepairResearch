@@ -1,0 +1,56 @@
+id: fa43f1b63e3aa6f66329
+bug_link: https://syzkaller.appspot.com/bug?extid=fa43f1b63e3aa6f66329
+title: 'KCSAN: data-race in __delete_from_swap_cache / __try_to_reclaim_swap'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d60fcaf00d752c52fdf566d4184e6d04d9d08879
+fix_commit: 818f916e3a07bf0c64bbf5e250ad209eebe21c85
+datetime: '2024-10-17T00:28:11-07:00'
+fix_commit_message: "mm: swap: prevent possible data-race in __try_to_reclaim_swap\n\
+  \nA report [1] was uploaded from syzbot.\n\nIn the previous commit 862590ac3708\
+  \ (\"mm: swap: allow cache reclaim to\nskip slot cache\"), the __try_to_reclaim_swap()\
+  \ function reads offset and\nfolio->entry from folio without folio_lock protection.\n\
+  \nIn the currently reported KCSAN log, it is assumed that the actual\ndata-race\
+  \ will not occur because the calltrace that does WRITE already\nobtains the folio_lock\
+  \ and then writes.\n\nHowever, the existing __try_to_reclaim_swap() function was\
+  \ already\nimplemented to perform reads under folio_lock protection [1], and there\
+  \ is\na risk of a data-race occurring through a function other than the one\nshown\
+  \ in the KCSAN log.\n\nTherefore, I think it is appropriate to change\nread operations\
+  \ for folio to be performed under folio_lock.\n\n[1]\n\n==================================================================\n\
+  BUG: KCSAN: data-race in __delete_from_swap_cache / __try_to_reclaim_swap\n\nwrite\
+  \ to 0xffffea0004c90328 of 8 bytes by task 5186 on cpu 0:\n __delete_from_swap_cache+0x1f0/0x290\
+  \ mm/swap_state.c:163\n delete_from_swap_cache+0x72/0xe0 mm/swap_state.c:243\n folio_free_swap+0x1d8/0x1f0\
+  \ mm/swapfile.c:1850\n free_swap_cache mm/swap_state.c:293 [inline]\n free_pages_and_swap_cache+0x1fc/0x410\
+  \ mm/swap_state.c:325\n __tlb_batch_free_encoded_pages mm/mmu_gather.c:136 [inline]\n\
+  \ tlb_batch_pages_flush mm/mmu_gather.c:149 [inline]\n tlb_flush_mmu_free mm/mmu_gather.c:366\
+  \ [inline]\n tlb_flush_mmu+0x2cf/0x440 mm/mmu_gather.c:373\n zap_pte_range mm/memory.c:1700\
+  \ [inline]\n zap_pmd_range mm/memory.c:1739 [inline]\n zap_pud_range mm/memory.c:1768\
+  \ [inline]\n zap_p4d_range mm/memory.c:1789 [inline]\n unmap_page_range+0x1f3c/0x22d0\
+  \ mm/memory.c:1810\n unmap_single_vma+0x142/0x1d0 mm/memory.c:1856\n unmap_vmas+0x18d/0x2b0\
+  \ mm/memory.c:1900\n exit_mmap+0x18a/0x690 mm/mmap.c:1864\n __mmput+0x28/0x1b0 kernel/fork.c:1347\n\
+  \ mmput+0x4c/0x60 kernel/fork.c:1369\n exit_mm+0xe4/0x190 kernel/exit.c:571\n do_exit+0x55e/0x17f0\
+  \ kernel/exit.c:926\n do_group_exit+0x102/0x150 kernel/exit.c:1088\n get_signal+0xf2a/0x1070\
+  \ kernel/signal.c:2917\n arch_do_signal_or_restart+0x95/0x4b0 arch/x86/kernel/signal.c:337\n\
+  \ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]\n exit_to_user_mode_prepare\
+  \ include/linux/entry-common.h:328 [inline]\n __syscall_exit_to_user_mode_work kernel/entry/common.c:207\
+  \ [inline]\n syscall_exit_to_user_mode+0x59/0x130 kernel/entry/common.c:218\n do_syscall_64+0xd6/0x1c0\
+  \ arch/x86/entry/common.c:89\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\nread\
+  \ to 0xffffea0004c90328 of 8 bytes by task 5189 on cpu 1:\n __try_to_reclaim_swap+0x9d/0x510\
+  \ mm/swapfile.c:198\n free_swap_and_cache_nr+0x45d/0x8a0 mm/swapfile.c:1915\n zap_pte_range\
+  \ mm/memory.c:1656 [inline]\n zap_pmd_range mm/memory.c:1739 [inline]\n zap_pud_range\
+  \ mm/memory.c:1768 [inline]\n zap_p4d_range mm/memory.c:1789 [inline]\n unmap_page_range+0xcf8/0x22d0\
+  \ mm/memory.c:1810\n unmap_single_vma+0x142/0x1d0 mm/memory.c:1856\n unmap_vmas+0x18d/0x2b0\
+  \ mm/memory.c:1900\n exit_mmap+0x18a/0x690 mm/mmap.c:1864\n __mmput+0x28/0x1b0 kernel/fork.c:1347\n\
+  \ mmput+0x4c/0x60 kernel/fork.c:1369\n exit_mm+0xe4/0x190 kernel/exit.c:571\n do_exit+0x55e/0x17f0\
+  \ kernel/exit.c:926\n __do_sys_exit kernel/exit.c:1055 [inline]\n __se_sys_exit\
+  \ kernel/exit.c:1053 [inline]\n __x64_sys_exit+0x1f/0x20 kernel/exit.c:1053\n x64_sys_call+0x2d46/0x2d60\
+  \ arch/x86/include/generated/asm/syscalls_64.h:61\n do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \nvalue changed: 0x0000000000000242 -> 0x0000000000000000\n\nLink: https://lkml.kernel.org/r/20241007070623.23340-1-aha310510@gmail.com\n\
+  Reported-by: syzbot+fa43f1b63e3aa6f66329@syzkaller.appspotmail.com\nFixes: 862590ac3708\
+  \ (\"mm: swap: allow cache reclaim to skip slot cache\")\nSigned-off-by: Jeongjun\
+  \ Park <aha310510@gmail.com>\nAcked-by: Chris Li <chrisl@kernel.org>\nReviewed-by:\
+  \ Kairui Song <kasong@tencent.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 2
+covered_count: 2

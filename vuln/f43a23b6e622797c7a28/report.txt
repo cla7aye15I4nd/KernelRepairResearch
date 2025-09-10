@@ -1,0 +1,124 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in nla_ok include/net/netlink.h:1230 [inline]
+BUG: KASAN: slab-use-after-free in nla_find+0x120/0x130 lib/nlattr.c:746
+Read of size 2 at addr ffff88807bc42ca0 by task syz-executor426/5060
+
+CPU: 1 PID: 5060 Comm: syz-executor426 Not tainted 6.7.0-rc5-syzkaller-01062-g358105ab92fc #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ nla_ok include/net/netlink.h:1230 [inline]
+ nla_find+0x120/0x130 lib/nlattr.c:746
+ nla_find_nested include/net/netlink.h:1260 [inline]
+ ____bpf_skb_get_nlattr_nest net/core/filter.c:209 [inline]
+ bpf_skb_get_nlattr_nest+0x178/0x1f0 net/core/filter.c:192
+ </TASK>
+
+Allocated by task 4521:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0xa2/0xb0 mm/kasan/common.c:383
+ kasan_kmalloc include/linux/kasan.h:198 [inline]
+ __do_kmalloc_node mm/slab_common.c:1007 [inline]
+ __kmalloc_node+0x5c/0x90 mm/slab_common.c:1014
+ kmalloc_node include/linux/slab.h:620 [inline]
+ kvmalloc_node+0x99/0x1a0 mm/util.c:617
+ kvmalloc include/linux/slab.h:738 [inline]
+ seq_buf_alloc fs/seq_file.c:38 [inline]
+ seq_read_iter+0x80b/0x1280 fs/seq_file.c:210
+ kernfs_fop_read_iter+0x410/0x580 fs/kernfs/file.c:279
+ call_read_iter include/linux/fs.h:2014 [inline]
+ new_sync_read fs/read_write.c:389 [inline]
+ vfs_read+0x4d4/0x8f0 fs/read_write.c:470
+ ksys_read+0x12f/0x250 fs/read_write.c:613
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x40/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+The buggy address belongs to the object at ffff88807bc42000
+ which belongs to the cache kmalloc-cg-4k of size 4096
+The buggy address is located 3232 bytes inside of
+ freed 4096-byte region [ffff88807bc42000, ffff88807bc43000)
+
+The buggy address belongs to the physical page:
+page:ffffea0001ef1000 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x7bc40
+head:ffffea0001ef1000 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000000840(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000840 ffff88801304f500 ffffea0001dc3000 dead000000000002
+raw: 0000000000000000 0000000080040004 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 4525, tgid 4525 (udevd), ts 40899198633, free_ts 40892363839
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d0/0x350 mm/page_alloc.c:1544
+ prep_new_page mm/page_alloc.c:1551 [inline]
+ get_page_from_freelist+0xa28/0x3730 mm/page_alloc.c:3319
+ __alloc_pages+0x22e/0x2420 mm/page_alloc.c:4575
+ alloc_pages_mpol+0x258/0x5f0 mm/mempolicy.c:2133
+ alloc_slab_page mm/slub.c:1870 [inline]
+ allocate_slab mm/slub.c:2017 [inline]
+ new_slab+0x283/0x3c0 mm/slub.c:2070
+ ___slab_alloc+0x979/0x1500 mm/slub.c:3223
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3322
+ __slab_alloc_node mm/slub.c:3375 [inline]
+ slab_alloc_node mm/slub.c:3468 [inline]
+ __kmem_cache_alloc_node+0x131/0x310 mm/slub.c:3517
+ __do_kmalloc_node mm/slab_common.c:1006 [inline]
+ __kmalloc_node+0x4c/0x90 mm/slab_common.c:1014
+ kmalloc_node include/linux/slab.h:620 [inline]
+ kvmalloc_node+0x99/0x1a0 mm/util.c:617
+ kvmalloc include/linux/slab.h:738 [inline]
+ seq_buf_alloc fs/seq_file.c:38 [inline]
+ seq_read_iter+0x80b/0x1280 fs/seq_file.c:210
+ kernfs_fop_read_iter+0x410/0x580 fs/kernfs/file.c:279
+ call_read_iter include/linux/fs.h:2014 [inline]
+ new_sync_read fs/read_write.c:389 [inline]
+ vfs_read+0x4d4/0x8f0 fs/read_write.c:470
+ ksys_read+0x12f/0x250 fs/read_write.c:613
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x40/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1144 [inline]
+ free_unref_page_prepare+0x53c/0xb80 mm/page_alloc.c:2354
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2494
+ qlink_free mm/kasan/quarantine.c:168 [inline]
+ qlist_free_all+0x6a/0x170 mm/kasan/quarantine.c:187
+ kasan_quarantine_reduce+0x18e/0x1d0 mm/kasan/quarantine.c:294
+ __kasan_slab_alloc+0x65/0x90 mm/kasan/common.c:305
+ kasan_slab_alloc include/linux/kasan.h:188 [inline]
+ slab_post_alloc_hook mm/slab.h:763 [inline]
+ slab_alloc_node mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_node+0x195/0x310 mm/slub.c:3517
+ __do_kmalloc_node mm/slab_common.c:1006 [inline]
+ __kmalloc_node+0x4c/0x90 mm/slab_common.c:1014
+ kmalloc_node include/linux/slab.h:620 [inline]
+ kvmalloc_node+0x99/0x1a0 mm/util.c:617
+ kvmalloc include/linux/slab.h:738 [inline]
+ seq_buf_alloc fs/seq_file.c:38 [inline]
+ seq_read_iter+0x80b/0x1280 fs/seq_file.c:210
+ kernfs_fop_read_iter+0x410/0x580 fs/kernfs/file.c:279
+ call_read_iter include/linux/fs.h:2014 [inline]
+ new_sync_read fs/read_write.c:389 [inline]
+ vfs_read+0x4d4/0x8f0 fs/read_write.c:470
+ ksys_read+0x12f/0x250 fs/read_write.c:613
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x40/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Memory state around the buggy address:
+ ffff88807bc42b80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88807bc42c00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff88807bc42c80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                               ^
+ ffff88807bc42d00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88807bc42d80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

@@ -1,0 +1,40 @@
+id: 00ce7332120071df39b1
+bug_link: https://syzkaller.appspot.com/bug?extid=00ce7332120071df39b1
+title: general protection fault in ieee80211_chanctx_num_assigned
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1aa3b2207e889a948049c9a8016cedb0218c2389
+fix_commit: 563fbefed46ae4c1f70cffb8eb54c02df480b2c2
+datetime: '2021-11-15T10:51:13+01:00'
+fix_commit_message: 'cfg80211: call cfg80211_stop_ap when switch from P2P_GO type
+
+
+  If the userspace tools switch from NL80211_IFTYPE_P2P_GO to
+
+  NL80211_IFTYPE_ADHOC via send_msg(NL80211_CMD_SET_INTERFACE), it
+
+  does not call the cleanup cfg80211_stop_ap(), this leads to the
+
+  initialization of in-use data. For example, this path re-init the
+
+  sdata->assigned_chanctx_list while it is still an element of
+
+  assigned_vifs list, and makes that linked list corrupt.
+
+
+  Signed-off-by: Nguyen Dinh Phi <phind.uet@gmail.com>
+
+  Reported-by: syzbot+bbf402b783eeb6d908db@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/20211027173722.777287-1-phind.uet@gmail.com
+
+  Cc: stable@vger.kernel.org
+
+  Fixes: ac800140c20e ("cfg80211: .stop_ap when interface is going down")
+
+  Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+  '
+submodule:
+- net/wireless
+hunk_count: 1
+covered_count: 1

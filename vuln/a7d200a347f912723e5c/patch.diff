@@ -1,0 +1,57 @@
+diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
+index 3a1e0fd5bf14..5968b6450d82 100644
+--- a/net/netlink/af_netlink.c
++++ b/net/netlink/af_netlink.c
+@@ -1600,6 +1600,7 @@ static int do_one_set_err(struct sock *sk, struct netlink_set_err_data *p)
+ int netlink_set_err(struct sock *ssk, u32 portid, u32 group, int code)
+ {
+ 	struct netlink_set_err_data info;
++	unsigned long flags;
+ 	struct sock *sk;
+ 	int ret = 0;
+ 
+@@ -1609,12 +1610,12 @@ int netlink_set_err(struct sock *ssk, u32 portid, u32 group, int code)
+ 	/* sk->sk_err wants a positive error value */
+ 	info.code = -code;
+ 
+-	read_lock(&nl_table_lock);
++	read_lock_irqsave(&nl_table_lock, flags);
+ 
+ 	sk_for_each_bound(sk, &nl_table[ssk->sk_protocol].mc_list)
+ 		ret += do_one_set_err(sk, &info);
+ 
+-	read_unlock(&nl_table_lock);
++	read_unlock_irqrestore(&nl_table_lock, flags);
+ 	return ret;
+ }
+ EXPORT_SYMBOL(netlink_set_err);
+diff --git a/net/netlink/diag.c b/net/netlink/diag.c
+index c6255eac305c..4143b2ea4195 100644
+--- a/net/netlink/diag.c
++++ b/net/netlink/diag.c
+@@ -94,6 +94,7 @@ static int __netlink_diag_dump(struct sk_buff *skb, struct netlink_callback *cb,
+ 	struct net *net = sock_net(skb->sk);
+ 	struct netlink_diag_req *req;
+ 	struct netlink_sock *nlsk;
++	unsigned long flags;
+ 	struct sock *sk;
+ 	int num = 2;
+ 	int ret = 0;
+@@ -152,7 +153,7 @@ static int __netlink_diag_dump(struct sk_buff *skb, struct netlink_callback *cb,
+ 	num++;
+ 
+ mc_list:
+-	read_lock(&nl_table_lock);
++	read_lock_irqsave(&nl_table_lock, flags);
+ 	sk_for_each_bound(sk, &tbl->mc_list) {
+ 		if (sk_hashed(sk))
+ 			continue;
+@@ -173,7 +174,7 @@ static int __netlink_diag_dump(struct sk_buff *skb, struct netlink_callback *cb,
+ 		}
+ 		num++;
+ 	}
+-	read_unlock(&nl_table_lock);
++	read_unlock_irqrestore(&nl_table_lock, flags);
+ 
+ done:
+ 	cb->args[0] = num;

@@ -1,0 +1,29 @@
+id: b0c9d1588ae92866515f
+bug_link: https://syzkaller.appspot.com/bug?extid=b0c9d1588ae92866515f
+title: WARNING in io_try_cancel_userdata
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 126180b95f27ef6cc536da57115e06665254b0d7
+fix_commit: dadebc350da2bef62593b1df007a6e0b90baf42a
+datetime: '2021-08-23T13:41:56-06:00'
+fix_commit_message: "io_uring: fix io_try_cancel_userdata race for iowq\n\nWARNING:\
+  \ CPU: 1 PID: 5870 at fs/io_uring.c:5975 io_try_cancel_userdata+0x30f/0x540 fs/io_uring.c:5975\n\
+  CPU: 0 PID: 5870 Comm: iou-wrk-5860 Not tainted 5.14.0-rc6-next-20210820-syzkaller\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/01/2011\nRIP: 0010:io_try_cancel_userdata+0x30f/0x540 fs/io_uring.c:5975\n\
+  Call Trace:\n io_async_cancel fs/io_uring.c:6014 [inline]\n io_issue_sqe+0x22d5/0x65a0\
+  \ fs/io_uring.c:6407\n io_wq_submit_work+0x1dc/0x300 fs/io_uring.c:6511\n io_worker_handle_work+0xa45/0x1840\
+  \ fs/io-wq.c:533\n io_wqe_worker+0x2cc/0xbb0 fs/io-wq.c:582\n ret_from_fork+0x1f/0x30\
+  \ arch/x86/entry/entry_64.S:295\n\nio_try_cancel_userdata() can be called from io_async_cancel()\
+  \ executing\nin the io-wq context, so the warning fires, which is there to alert\n\
+  anyone accessing task->io_uring->io_wq in a racy way. However,\nio_wq_put_and_exit()\
+  \ always first waits for all threads to complete,\nso the only detail left is to\
+  \ zero tctx->io_wq after the context is\nremoved.\n\nnote: one little assumption\
+  \ is that when IO_WQ_WORK_CANCEL, the executor\nwon't touch ->io_wq, because io_wq_destroy()\
+  \ might cancel left pending\nrequests in such a way.\n\nCc: stable@vger.kernel.org\n\
+  Reported-by: syzbot+b0c9d1588ae92866515f@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Pavel Begunkov <asml.silence@gmail.com>\nLink: https://lore.kernel.org/r/dfdd37a80cfa9ffd3e59538929c99cdd55d8699e.1629721757.git.asml.silence@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 3
+covered_count: 0

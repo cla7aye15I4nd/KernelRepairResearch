@@ -1,0 +1,46 @@
+=====================================================
+BUG: KMSAN: uninit-value in __dev_map_lookup_elem kernel/bpf/devmap.c:441 [inline]
+BUG: KMSAN: uninit-value in dev_map_lookup_elem+0xf3/0x170 kernel/bpf/devmap.c:796
+ __dev_map_lookup_elem kernel/bpf/devmap.c:441 [inline]
+ dev_map_lookup_elem+0xf3/0x170 kernel/bpf/devmap.c:796
+ ____bpf_map_lookup_elem kernel/bpf/helpers.c:42 [inline]
+ bpf_map_lookup_elem+0x5c/0x80 kernel/bpf/helpers.c:38
+ ___bpf_prog_run+0x13fe/0xe0f0 kernel/bpf/core.c:1997
+ __bpf_prog_run256+0xb5/0xe0 kernel/bpf/core.c:2237
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run5+0x16f/0x350 kernel/trace/bpf_trace.c:2423
+ __bpf_trace_ext4_remove_blocks+0x45/0x60 include/trace/events/ext4.h:1984
+ __traceiter_ext4_remove_blocks+0xb5/0x170 include/trace/events/ext4.h:1984
+ trace_ext4_remove_blocks include/trace/events/ext4.h:1984 [inline]
+ ext4_remove_blocks fs/ext4/extents.c:2463 [inline]
+ ext4_ext_rm_leaf fs/ext4/extents.c:2686 [inline]
+ ext4_ext_remove_space+0x4e30/0x7e00 fs/ext4/extents.c:2934
+ ext4_ext_truncate+0x1e3/0x390 fs/ext4/extents.c:4440
+ ext4_truncate+0x14c6/0x1e10 fs/ext4/inode.c:4146
+ ext4_evict_inode+0x1886/0x24d0 fs/ext4/inode.c:258
+ evict+0x3ae/0xa60 fs/inode.c:667
+ iput_final fs/inode.c:1741 [inline]
+ iput+0x9ca/0xe10 fs/inode.c:1767
+ d_delete_notify include/linux/fsnotify.h:307 [inline]
+ vfs_rmdir+0x53c/0x790 fs/namei.c:4222
+ do_rmdir+0x630/0x8b0 fs/namei.c:4268
+ __do_sys_rmdir fs/namei.c:4287 [inline]
+ __se_sys_rmdir fs/namei.c:4285 [inline]
+ __x64_sys_rmdir+0x78/0xb0 fs/namei.c:4285
+ do_syscall_64+0xd5/0x1f0
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+Local variable stack created at:
+ __bpf_prog_run256+0x45/0xe0 kernel/bpf/core.c:2237
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run5+0x16f/0x350 kernel/trace/bpf_trace.c:2423
+
+CPU: 0 PID: 5017 Comm: syz-executor365 Not tainted 6.8.0-syzkaller-13236-g5e74df2f8f15 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+=====================================================

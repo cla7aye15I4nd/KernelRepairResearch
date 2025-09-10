@@ -1,0 +1,37 @@
+id: e9aebef558e3ed673934
+bug_link: https://syzkaller.appspot.com/bug?extid=e9aebef558e3ed673934
+title: WARNING in xfrm6_tunnel_net_exit (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 09db51241118aeb06e1c8cd393b45879ce099b36
+fix_commit: f75a2804da391571563c4b6b29e7797787332673
+datetime: '2019-02-05T06:29:20+01:00'
+fix_commit_message: "xfrm: destroy xfrm_state synchronously on net exit path\n\nxfrm_state_put()\
+  \ moves struct xfrm_state to the GC list\nand schedules the GC work to clean it\
+  \ up. On net exit call\npath, xfrm_state_flush() is called to clean up and\nxfrm_flush_gc()\
+  \ is called to wait for the GC work to complete\nbefore exit.\n\nHowever, this doesn't\
+  \ work because one of the ->destructor(),\nipcomp_destroy(), schedules the same\
+  \ GC work again inside\nthe GC work. It is hard to wait for such a nested async\n\
+  callback. This is also why syzbot still reports the following\nwarning:\n\n WARNING:\
+  \ CPU: 1 PID: 33 at net/ipv6/xfrm6_tunnel.c:351 xfrm6_tunnel_net_exit+0x2cb/0x500\
+  \ net/ipv6/xfrm6_tunnel.c:351\n ...\n  ops_exit_list.isra.0+0xb0/0x160 net/core/net_namespace.c:153\n\
+  \  cleanup_net+0x51d/0xb10 net/core/net_namespace.c:551\n  process_one_work+0xd0c/0x1ce0\
+  \ kernel/workqueue.c:2153\n  worker_thread+0x143/0x14a0 kernel/workqueue.c:2296\n\
+  \  kthread+0x357/0x430 kernel/kthread.c:246\n  ret_from_fork+0x3a/0x50 arch/x86/entry/entry_64.S:352\n\
+  \nIn fact, it is perfectly fine to bypass GC and destroy xfrm_state\nsynchronously\
+  \ on net exit call path, because it is in process context\nand doesn't need a work\
+  \ struct to do any blocking work.\n\nThis patch introduces xfrm_state_put_sync()\
+  \ which simply bypasses\nGC, and lets its callers to decide whether to use this\
+  \ synchronous\nversion. On net exit path, xfrm_state_fini() and\nxfrm6_tunnel_net_exit()\
+  \ use it. And, as ipcomp_destroy() itself is\nblocking, it can use xfrm_state_put_sync()\
+  \ directly too.\n\nAlso rename xfrm_state_gc_destroy() to ___xfrm_state_destroy()\
+  \ to\nreflect this change.\n\nFixes: b48c05ab5d32 (\"xfrm: Fix warning in xfrm6_tunnel_net_exit.\"\
+  )\nReported-and-tested-by: syzbot+e9aebef558e3ed673934@syzkaller.appspotmail.com\n\
+  Cc: Steffen Klassert <steffen.klassert@secunet.com>\nSigned-off-by: Cong Wang <xiyou.wangcong@gmail.com>\n\
+  Signed-off-by: Steffen Klassert <steffen.klassert@secunet.com>\n"
+submodule:
+- include/net
+- net/ipv6
+- net/key
+- net/xfrm
+hunk_count: 13
+covered_count: 1

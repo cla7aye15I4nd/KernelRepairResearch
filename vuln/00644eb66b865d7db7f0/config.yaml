@@ -1,0 +1,36 @@
+id: 00644eb66b865d7db7f0
+bug_link: https://syzkaller.appspot.com/bug?extid=00644eb66b865d7db7f0
+title: kernel BUG in bch2_bkey_cmp_packed (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6a1c4323defd18ca732c13d9abf4204ea1a4182f
+fix_commit: 9fe8ec866442b6ee7eac8d5ceda18f88aaa7f78d
+datetime: '2025-07-16T17:32:33-04:00'
+fix_commit_message: 'bcachefs: Don''t build aux search tree when still repairing node
+
+
+  bch2_btree_node_drop_keys_outside_node() will (re)build aux search
+
+  trees, because it''s also called by topology repair.
+
+
+  bch2_btree_node_read_done() was calling it before validating individual
+
+  keys; invalid ones have to be dropped.
+
+
+  If we call drop_keys_outside_node() first, then
+
+  bch2_bset_build_aux_tree() doesn''t run because the node already has an
+
+  aux search tree - which was invalidated by the repair.
+
+
+  Reported-by: syzbot+c5e7a66b3b23ae65d44f@syzkaller.appspotmail.com
+
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>
+
+  '
+submodule:
+- fs/bcachefs
+hunk_count: 2
+covered_count: 0

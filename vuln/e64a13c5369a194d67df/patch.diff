@@ -1,0 +1,24 @@
+diff --git a/mm/mempolicy.c b/mm/mempolicy.c
+index b2920ae87a61..977c641f78cf 100644
+--- a/mm/mempolicy.c
++++ b/mm/mempolicy.c
+@@ -2821,6 +2821,9 @@ int mpol_parse_str(char *str, struct mempolicy **mpol)
+ 	char *flags = strchr(str, '=');
+ 	int err = 1, mode;
+ 
++	if (flags)
++		*flags++ = '\0';	/* terminate mode string */
++
+ 	if (nodelist) {
+ 		/* NUL-terminate mode or flags string */
+ 		*nodelist++ = '\0';
+@@ -2831,9 +2834,6 @@ int mpol_parse_str(char *str, struct mempolicy **mpol)
+ 	} else
+ 		nodes_clear(nodes);
+ 
+-	if (flags)
+-		*flags++ = '\0';	/* terminate mode string */
+-
+ 	mode = match_string(policy_modes, MPOL_MAX, str);
+ 	if (mode < 0)
+ 		goto out;

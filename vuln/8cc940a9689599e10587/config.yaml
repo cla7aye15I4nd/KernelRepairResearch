@@ -1,0 +1,24 @@
+id: 8cc940a9689599e10587
+bug_link: https://syzkaller.appspot.com/bug?extid=8cc940a9689599e10587
+title: 'KASAN: use-after-free Read in nf_tables_dump_sets'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cb89f63ba662d2b56583f4dd3dd2b7f03b6d6587
+fix_commit: a499b03bf36b0c2e3b958a381d828678ab0ffc5e
+datetime: '2021-09-21T03:46:55+02:00'
+fix_commit_message: "netfilter: nf_tables: unlink table before deleting it\n\nsyzbot\
+  \ reports following UAF:\nBUG: KASAN: use-after-free in memcmp+0x18f/0x1c0 lib/string.c:955\n\
+  \ nla_strcmp+0xf2/0x130 lib/nlattr.c:836\n nft_table_lookup.part.0+0x1a2/0x460 net/netfilter/nf_tables_api.c:570\n\
+  \ nft_table_lookup net/netfilter/nf_tables_api.c:4064 [inline]\n nf_tables_getset+0x1b3/0x860\
+  \ net/netfilter/nf_tables_api.c:4064\n nfnetlink_rcv_msg+0x659/0x13f0 net/netfilter/nfnetlink.c:285\n\
+  \ netlink_rcv_skb+0x153/0x420 net/netlink/af_netlink.c:2504\n\nProblem is that all\
+  \ get operations are lockless, so the commit_mutex\nheld by nft_rcv_nl_event() isn't\
+  \ enough to stop a parallel GET request\nfrom doing read-accesses to the table object\
+  \ even after synchronize_rcu().\n\nTo avoid this, unlink the table first and store\
+  \ the table objects in\non-stack scratch space.\n\nFixes: 6001a930ce03 (\"netfilter:\
+  \ nftables: introduce table ownership\")\nReported-and-tested-by: syzbot+f31660cf279b0557160c@syzkaller.appspotmail.com\n\
+  Signed-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Pablo Neira Ayuso\
+  \ <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 3
+covered_count: 3

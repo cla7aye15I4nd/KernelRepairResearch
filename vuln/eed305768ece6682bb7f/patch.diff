@@ -1,0 +1,107 @@
+diff --git a/net/rxrpc/ar-internal.h b/net/rxrpc/ar-internal.h
+index 1091bf35a199..ecc17dabec8f 100644
+--- a/net/rxrpc/ar-internal.h
++++ b/net/rxrpc/ar-internal.h
+@@ -556,6 +556,7 @@ struct rxrpc_call {
+ 	struct rxrpc_peer	*peer;		/* Peer record for remote address */
+ 	struct rxrpc_sock __rcu	*socket;	/* socket responsible */
+ 	struct rxrpc_net	*rxnet;		/* Network namespace to which call belongs */
++	const struct rxrpc_security *security;	/* applied security module */
+ 	struct mutex		user_mutex;	/* User access mutex */
+ 	unsigned long		ack_at;		/* When deferred ACK needs to happen */
+ 	unsigned long		ack_lost_at;	/* When ACK is figured as lost */
+diff --git a/net/rxrpc/call_accept.c b/net/rxrpc/call_accept.c
+index 1f778102ed8d..135bf5cd8dd5 100644
+--- a/net/rxrpc/call_accept.c
++++ b/net/rxrpc/call_accept.c
+@@ -307,6 +307,7 @@ static struct rxrpc_call *rxrpc_alloc_incoming_call(struct rxrpc_sock *rx,
+ 
+ 	rxrpc_see_call(call);
+ 	call->conn = conn;
++	call->security = conn->security;
+ 	call->peer = rxrpc_get_peer(conn->params.peer);
+ 	call->cong_cwnd = call->peer->cong_cwnd;
+ 	return call;
+diff --git a/net/rxrpc/call_object.c b/net/rxrpc/call_object.c
+index 6dace078971a..a31c18c09894 100644
+--- a/net/rxrpc/call_object.c
++++ b/net/rxrpc/call_object.c
+@@ -493,10 +493,10 @@ void rxrpc_release_call(struct rxrpc_sock *rx, struct rxrpc_call *call)
+ 
+ 	_debug("RELEASE CALL %p (%d CONN %p)", call, call->debug_id, conn);
+ 
+-	if (conn) {
++	if (conn)
+ 		rxrpc_disconnect_call(call);
+-		conn->security->free_call_crypto(call);
+-	}
++	if (call->security)
++		call->security->free_call_crypto(call);
+ 
+ 	rxrpc_cleanup_ring(call);
+ 	_leave("");
+diff --git a/net/rxrpc/conn_client.c b/net/rxrpc/conn_client.c
+index 700eb77173fc..376370cd9285 100644
+--- a/net/rxrpc/conn_client.c
++++ b/net/rxrpc/conn_client.c
+@@ -353,6 +353,7 @@ static int rxrpc_get_client_conn(struct rxrpc_sock *rx,
+ 
+ 	if (cp->exclusive) {
+ 		call->conn = candidate;
++		call->security = candidate->security;
+ 		call->security_ix = candidate->security_ix;
+ 		call->service_id = candidate->service_id;
+ 		_leave(" = 0 [exclusive %d]", candidate->debug_id);
+@@ -404,6 +405,7 @@ static int rxrpc_get_client_conn(struct rxrpc_sock *rx,
+ candidate_published:
+ 	set_bit(RXRPC_CONN_IN_CLIENT_CONNS, &candidate->flags);
+ 	call->conn = candidate;
++	call->security = candidate->security;
+ 	call->security_ix = candidate->security_ix;
+ 	call->service_id = candidate->service_id;
+ 	spin_unlock(&local->client_conns_lock);
+@@ -426,6 +428,7 @@ static int rxrpc_get_client_conn(struct rxrpc_sock *rx,
+ 
+ 	spin_lock(&conn->channel_lock);
+ 	call->conn = conn;
++	call->security = conn->security;
+ 	call->security_ix = conn->security_ix;
+ 	call->service_id = conn->service_id;
+ 	list_add_tail(&call->chan_wait_link, &conn->waiting_calls);
+diff --git a/net/rxrpc/recvmsg.c b/net/rxrpc/recvmsg.c
+index 3b0becb12041..a4090797c9b2 100644
+--- a/net/rxrpc/recvmsg.c
++++ b/net/rxrpc/recvmsg.c
+@@ -251,8 +251,8 @@ static int rxrpc_verify_packet(struct rxrpc_call *call, struct sk_buff *skb,
+ 		seq += subpacket;
+ 	}
+ 
+-	return call->conn->security->verify_packet(call, skb, offset, len,
+-						   seq, cksum);
++	return call->security->verify_packet(call, skb, offset, len,
++					     seq, cksum);
+ }
+ 
+ /*
+@@ -291,7 +291,7 @@ static int rxrpc_locate_data(struct rxrpc_call *call, struct sk_buff *skb,
+ 
+ 	*_offset = offset;
+ 	*_len = len;
+-	call->conn->security->locate_data(call, skb, _offset, _len);
++	call->security->locate_data(call, skb, _offset, _len);
+ 	return 0;
+ }
+ 
+diff --git a/net/rxrpc/sendmsg.c b/net/rxrpc/sendmsg.c
+index 22f51a7e356e..813fd6888142 100644
+--- a/net/rxrpc/sendmsg.c
++++ b/net/rxrpc/sendmsg.c
+@@ -419,7 +419,7 @@ static int rxrpc_send_data(struct rxrpc_sock *rx,
+ 				 call->tx_winsize)
+ 				sp->hdr.flags |= RXRPC_MORE_PACKETS;
+ 
+-			ret = conn->security->secure_packet(
++			ret = call->security->secure_packet(
+ 				call, skb, skb->mark, skb->head);
+ 			if (ret < 0)
+ 				goto out;

@@ -1,0 +1,54 @@
+id: d37abaade33a934f16f2
+bug_link: https://syzkaller.appspot.com/bug?extid=d37abaade33a934f16f2
+title: kernel BUG at fs/pipe.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3c0edea9b29f9be6c093f236f762202b30ac9431
+fix_commit: 8c7b8c34ae952cc062c12d7db9ee2f298c09dca4
+datetime: '2019-12-05T15:33:50-08:00'
+fix_commit_message: 'pipe: Remove assertion from pipe_poll()
+
+
+  An assertion check was added to pipe_poll() to make sure that the ring
+
+  occupancy isn''t seen to overflow the ring size.  However, since no locks
+
+  are held when the three values are read, it is possible for F_SETPIPE_SZ
+
+  to intervene and muck up the calculation, thereby causing the oops.
+
+
+  Fix this by simply removing the assertion and accepting that the
+
+  calculation might be approximate.
+
+
+  Note that the previous code also had a similar issue, though there was
+
+  no assertion check, since the occupancy counter and the ring size were
+
+  not read with a lock held, so it''s possible that the poll check might
+
+  have malfunctioned then too.
+
+
+  Also wake up all the waiters so that they can reissue their checks if
+
+  there was a competing read or write.
+
+
+  Fixes: 8cefc107ca54 ("pipe: Use head and tail pointers for the ring, not cursor
+  and length")
+
+  Reported-by: syzbot+d37abaade33a934f16f2@syzkaller.appspotmail.com
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  cc: Eric Biggers <ebiggers@kernel.org>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- fs
+hunk_count: 2
+covered_count: 1

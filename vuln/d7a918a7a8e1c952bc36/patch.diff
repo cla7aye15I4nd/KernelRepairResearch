@@ -1,0 +1,24 @@
+diff --git a/drivers/staging/android/ashmem.c b/drivers/staging/android/ashmem.c
+index d5450365769c..86580b6df33d 100644
+--- a/drivers/staging/android/ashmem.c
++++ b/drivers/staging/android/ashmem.c
+@@ -701,16 +701,14 @@ static int ashmem_pin_unpin(struct ashmem_area *asma, unsigned long cmd,
+ 	size_t pgstart, pgend;
+ 	int ret = -EINVAL;
+ 
++	if (unlikely(copy_from_user(&pin, p, sizeof(pin))))
++		return -EFAULT;
++
+ 	mutex_lock(&ashmem_mutex);
+ 
+ 	if (unlikely(!asma->file))
+ 		goto out_unlock;
+ 
+-	if (unlikely(copy_from_user(&pin, p, sizeof(pin)))) {
+-		ret = -EFAULT;
+-		goto out_unlock;
+-	}
+-
+ 	/* per custom, you can pass zero for len to mean "everything onward" */
+ 	if (!pin.len)
+ 		pin.len = PAGE_ALIGN(asma->size) - pin.offset;

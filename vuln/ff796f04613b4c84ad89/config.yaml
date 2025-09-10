@@ -1,0 +1,43 @@
+id: ff796f04613b4c84ad89
+bug_link: https://syzkaller.appspot.com/bug?extid=ff796f04613b4c84ad89
+title: 'KASAN: use-after-free Read in register_shrinker_prepared (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 243a5263014a30436c93ed3f1f864c1da845455e
+fix_commit: bd86c69dae65de30f6d47249418ba7889809e31a
+datetime: '2022-10-11T10:08:26-04:00'
+fix_commit_message: 'NFSD: unregister shrinker when nfsd_init_net() fails
+
+
+  syzbot is reporting UAF read at register_shrinker_prepared() [1], for
+
+  commit 7746b32f467b3813 ("NFSD: add shrinker to reap courtesy clients on
+
+  low memory condition") missed that nfsd4_leases_net_shutdown() from
+
+  nfsd_exit_net() is called only when nfsd_init_net() succeeded.
+
+  If nfsd_init_net() fails due to nfsd_reply_cache_init() failure,
+
+  register_shrinker() from nfsd4_init_leases_net() has to be undone
+
+  before nfsd_init_net() returns.
+
+
+  Link: https://syzkaller.appspot.com/bug?extid=ff796f04613b4c84ad89 [1]
+
+  Reported-by: syzbot <syzbot+ff796f04613b4c84ad89@syzkaller.appspotmail.com>
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Fixes: 7746b32f467b3813 ("NFSD: add shrinker to reap courtesy clients on low memory
+  condition")
+
+  Reviewed-by: Jeff Layton <jlayton@kernel.org>
+
+  Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
+
+  '
+submodule:
+- fs/nfsd
+hunk_count: 1
+covered_count: 0

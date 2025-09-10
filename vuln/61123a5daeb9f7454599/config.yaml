@@ -1,0 +1,34 @@
+id: 61123a5daeb9f7454599
+bug_link: https://syzkaller.appspot.com/bug?extid=61123a5daeb9f7454599
+title: 'KASAN: out-of-bounds Read in copy_from_kernel_nofault'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 908378a30b0972e5bf8fae3cf38affc162fe8e3b
+fix_commit: e4137f08816bbf91fe76d1b60fa16862a4827ac1
+datetime: '2024-11-06T20:11:14-08:00'
+fix_commit_message: "mm, kasan, kmsan: instrument copy_from/to_kernel_nofault\n\n\
+  Instrument copy_from_kernel_nofault() with KMSAN for uninitialized kernel\nmemory\
+  \ check and copy_to_kernel_nofault() with KASAN, KCSAN to detect the\nmemory corruption.\n\
+  \nsyzbot reported that bpf_probe_read_kernel() kernel helper triggered KASAN\nreport\
+  \ via kasan_check_range() which is not the expected behaviour as\ncopy_from_kernel_nofault()\
+  \ is meant to be a non-faulting helper.\n\nSolution is, suggested by Marco Elver,\
+  \ to replace KASAN, KCSAN check in\ncopy_from_kernel_nofault() with KMSAN detection\
+  \ of copying uninitilaized\nkernel memory.  In copy_to_kernel_nofault() we can retain\n\
+  instrument_write() explicitly for the memory corruption instrumentation.\n\ncopy_to_kernel_nofault()\
+  \ is tested on x86_64 and arm64 with\nCONFIG_KASAN_SW_TAGS.  On arm64 with CONFIG_KASAN_HW_TAGS,\
+  \ kunit test\ncurrently fails.  Need more clarification on it.\n\n[akpm@linux-foundation.org:\
+  \ fix comment layout, per checkpatch\nLink: https://lore.kernel.org/linux-mm/CANpmjNMAVFzqnCZhEity9cjiqQ9CVN1X7qeeeAp_6yKjwKo8iw@mail.gmail.com/\n\
+  Link: https://lkml.kernel.org/r/20241011035310.2982017-1-snovitoll@gmail.com\nSigned-off-by:\
+  \ Sabyrzhan Tasbolatov <snovitoll@gmail.com>\nReviewed-by: Marco Elver <elver@google.com>\n\
+  Reported-by: syzbot+61123a5daeb9f7454599@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=61123a5daeb9f7454599\n\
+  Reported-by: Andrey Konovalov <andreyknvl@gmail.com>\nCloses: https://bugzilla.kernel.org/show_bug.cgi?id=210505\n\
+  Reviewed-by: Andrey Konovalov <andreyknvl@gmail.com>\t[KASAN]\nTested-by: Andrey\
+  \ Konovalov <andreyknvl@gmail.com>\t[KASAN]\nCc: Alexander Potapenko <glider@google.com>\n\
+  Cc: Andrey Ryabinin <ryabinin.a.a@gmail.com>\nCc: Dmitry Vyukov <dvyukov@google.com>\n\
+  Cc: Vincenzo Frascino <vincenzo.frascino@arm.com>\nSigned-off-by: Andrew Morton\
+  \ <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+- mm/kasan
+- mm/kmsan
+hunk_count: 6
+covered_count: 2

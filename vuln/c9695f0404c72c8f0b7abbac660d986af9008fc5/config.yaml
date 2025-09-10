@@ -1,0 +1,32 @@
+id: c9695f0404c72c8f0b7abbac660d986af9008fc5
+bug_link: https://syzkaller.appspot.com/bug?extid=c9695f0404c72c8f0b7abbac660d986af9008fc5
+title: possible deadlock in perf_trace_destroy (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1f07476ec143bbed7bf0b641749783b1094b4c4f
+fix_commit: 82d94856fa221b5173eefd56bcd1057c037e9b07
+datetime: '2018-01-25T14:48:29+01:00'
+fix_commit_message: "perf/core: Fix lock inversion between perf,trace,cpuhp\n\nLockdep\
+  \ gifted us with noticing the following 4-way lockup scenario:\n\n        perf_trace_init()\n\
+  \ #0       mutex_lock(&event_mutex)\n          perf_trace_event_init()\n       \
+  \     perf_trace_event_reg()\n              tp_event->class->reg() := tracepoint_probe_register\n\
+  \ #1             mutex_lock(&tracepoints_mutex)\n                  trace_point_add_func()\n\
+  \ #2                 static_key_enable()\n\n #2     do_cpu_up()\n          perf_event_init_cpu()\n\
+  \ #3         mutex_lock(&pmus_lock)\n #4         mutex_lock(&ctx->mutex)\n\n   \
+  \     perf_event_task_disable()\n          mutex_lock(&current->perf_event_mutex)\n\
+  \ #4       ctx = perf_event_ctx_lock()\n #5       perf_event_for_each_child()\n\n\
+  \        do_exit()\n          task_work_run()\n            __fput()\n          \
+  \    perf_release()\n                perf_event_release_kernel()\n #4          \
+  \     mutex_lock(&ctx->mutex)\n #5               mutex_lock(&event->child_mutex)\n\
+  \                  free_event()\n                    _free_event()\n           \
+  \           event->destroy() := perf_trace_destroy\n #0                     mutex_lock(&event_mutex);\n\
+  \nFix that by moving the free_event() out from under the locks.\n\nSigned-off-by:\
+  \ Peter Zijlstra (Intel) <peterz@infradead.org>\nCc: Alexander Shishkin <alexander.shishkin@linux.intel.com>\n\
+  Cc: Arnaldo Carvalho de Melo <acme@redhat.com>\nCc: Jiri Olsa <jolsa@redhat.com>\n\
+  Cc: Linus Torvalds <torvalds@linux-foundation.org>\nCc: Peter Zijlstra <peterz@infradead.org>\n\
+  Cc: Stephane Eranian <eranian@google.com>\nCc: Steven Rostedt (VMware) <rostedt@goodmis.org>\n\
+  Cc: Thomas Gleixner <tglx@linutronix.de>\nCc: Vince Weaver <vincent.weaver@maine.edu>\n\
+  Cc: linux-kernel@vger.kernel.org\nSigned-off-by: Ingo Molnar <mingo@kernel.org>\n"
+submodule:
+- kernel/events
+hunk_count: 4
+covered_count: 2

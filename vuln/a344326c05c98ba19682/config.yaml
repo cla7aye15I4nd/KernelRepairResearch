@@ -1,0 +1,42 @@
+id: a344326c05c98ba19682
+bug_link: https://syzkaller.appspot.com/bug?extid=a344326c05c98ba19682
+title: 'WARNING: suspicious RCU usage in __ethtool_get_ts_info'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3f8f2e93cdfb96c77bf381590dd697867e89d9e7
+fix_commit: 4c61d809cf608842112c77880f50810a564cd9cb
+datetime: '2024-12-23T10:38:46-08:00'
+fix_commit_message: 'net: ethtool: Fix suspicious rcu_dereference usage
+
+
+  The __ethtool_get_ts_info function can be called with or without the
+
+  rtnl lock held. When the rtnl lock is not held, using rtnl_dereference()
+
+  triggers a warning due to the lack of lock context.
+
+
+  Add an rcu_read_lock() to ensure the lock is acquired and to maintain
+
+  synchronization.
+
+
+  Reported-by: syzbot+a344326c05c98ba19682@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/netdev/676147f8.050a0220.37aaf.0154.GAE@google.com/
+
+  Fixes: b9e3f7dc9ed9 ("net: ethtool: tsinfo: Enhance tsinfo to support several hwtstamp
+  by net topology")
+
+  Signed-off-by: Kory Maincent <kory.maincent@bootlin.com>
+
+  Reviewed-by: Eric Dumazet <edumazet@google.com>
+
+  Link: https://patch.msgid.link/20241220083741.175329-1-kory.maincent@bootlin.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/ethtool
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,53 @@
+ do_initcall_level+0x104/0x190 init/main.c:1331
+ do_initcalls+0x59/0xa0 init/main.c:1347
+ kernel_init_freeable+0x334/0x4b0 init/main.c:1579
+ kernel_init+0x1d/0x1d0 init/main.c:1469
+ ret_from_fork+0x3f9/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 5866 at mm/gup.c:869 follow_page_pte+0xe3c/0x13e0 mm/gup.c:868
+Modules linked in:
+CPU: 0 UID: 0 PID: 5866 Comm: syz-executor302 Not tainted 6.16.0-syzkaller-11699-g7e161a991ea7 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2025
+RIP: 0010:follow_page_pte+0xe3c/0x13e0 mm/gup.c:868
+Code: ff e8 f8 7a b7 ff 48 ff cb e9 a2 fc ff ff e8 eb 7a b7 ff 4c 89 f7 48 c7 c6 c0 11 96 8b e8 5c cb 1f ff c6 05 75 f7 84 0d 01 90 <0f> 0b 90 e9 0c fd ff ff e8 d7 46 70 09 89 d9 80 e1 07 80 c1 03 38
+RSP: 0018:ffffc90003ddf8a0 EFLAGS: 00010246
+RAX: 308c9254a9bba300 RBX: 0000000000000000 RCX: 308c9254a9bba300
+RDX: 0000000000000004 RSI: ffffffff8dba2d77 RDI: ffff8880322c9e00
+RBP: ffffc90003ddf988 R08: 0000000000000003 R09: 0000000000000004
+R10: dffffc0000000000 R11: fffffbfff1bfa1ec R12: dffffc0000000000
+R13: 0000000000080101 R14: ffffea0001c20240 R15: 0000000070809867
+FS:  0000555557f15380(0000) GS:ffff888125c24000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000200000004340 CR3: 0000000072ff4000 CR4: 00000000003526f0
+Call Trace:
+ <TASK>
+ follow_pmd_mask mm/gup.c:-1 [inline]
+ follow_pud_mask mm/gup.c:981 [inline]
+ follow_p4d_mask mm/gup.c:998 [inline]
+ follow_page_mask mm/gup.c:1041 [inline]
+ __get_user_pages+0xa8e/0x2ce0 mm/gup.c:1444
+ __get_user_pages_locked mm/gup.c:1712 [inline]
+ __gup_longterm_locked+0x3dc/0x1660 mm/gup.c:2493
+ pin_user_pages+0x9e/0xd0 mm/gup.c:3406
+ xdp_umem_pin_pages+0x117/0x340 net/xdp/xdp_umem.c:105
+ xdp_umem_reg net/xdp/xdp_umem.c:230 [inline]
+ xdp_umem_create+0x677/0x8e0 net/xdp/xdp_umem.c:263
+ xsk_setsockopt+0x7b0/0x8d0 net/xdp/xsk.c:1409
+ do_sock_setsockopt+0x179/0x1b0 net/socket.c:2344
+ __sys_setsockopt net/socket.c:2369 [inline]
+ __do_sys_setsockopt net/socket.c:2375 [inline]
+ __se_sys_setsockopt net/socket.c:2372 [inline]
+ __x64_sys_setsockopt+0x13f/0x1b0 net/socket.c:2372
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f9ea1cc05b9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 c1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc94f86308 EFLAGS: 00000206 ORIG_RAX: 0000000000000036
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f9ea1cc05b9
+RDX: 0000000000000004 RSI: 000000000000011b RDI: 0000000000000004
+RBP: 00007f9ea1d335f0 R08: 000000000000001c R09: 0000000000000006
+R10: 00002000000000c0 R11: 0000000000000206 R12: 0000000000000001
+R13: 431bde82d7b634db R14: 0000000000000001 R15: 0000000000000001
+ </TASK>

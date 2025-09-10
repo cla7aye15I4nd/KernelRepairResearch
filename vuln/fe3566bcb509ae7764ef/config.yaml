@@ -1,0 +1,35 @@
+id: fe3566bcb509ae7764ef
+bug_link: https://syzkaller.appspot.com/bug?extid=fe3566bcb509ae7764ef
+title: WARNING in __btrfs_free_extent (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 56e6f2687521390bead4e4ea279ca4eec15579ef
+fix_commit: a776bf5f3c2300cfdf8a195663460b1793ac9847
+datetime: '2024-07-11T15:33:19+02:00'
+fix_commit_message: "btrfs: slightly loosen the requirement for qgroup removal\n\n\
+  [BUG]\nCurrently if one is utilizing \"qgroups/drop_subtree_threshold\" sysfs,\n\
+  and a snapshot with level higher than that value is dropped, we will\nnot be able\
+  \ to delete the qgroup until next qgroup rescan:\n\n  uuid=ffffffff-eeee-dddd-cccc-000000000000\n\
+  \n  wipefs -fa $dev\n  mkfs.btrfs -f $dev -O quota -s 4k -n 4k -U $uuid\n  mount\
+  \ $dev $mnt\n\n  btrfs subvolume create $mnt/subv1/\n  for (( i = 0; i < 1024; i++\
+  \ )); do\n  \txfs_io -f -c \"pwrite 0 2k\" $mnt/subv1/file_$i > /dev/null\n  done\n\
+  \  sync\n  btrfs subvolume snapshot $mnt/subv1 $mnt/snapshot\n  btrfs quota enable\
+  \ $mnt\n  btrfs quota rescan -w $mnt\n  sync\n  echo 1 > /sys/fs/btrfs/$uuid/qgroups/drop_subtree_threshold\n\
+  \  btrfs subvolume delete $mnt/snapshot\n  btrfs subvolume sync $mnt\n  btrfs qgroup\
+  \ show -prce --sync $mnt\n  btrfs qgroup destroy 0/257 $mnt\n  umount $mnt\n\nThe\
+  \ final qgroup removal would fail with the following error:\n\n  ERROR: unable to\
+  \ destroy quota group: Device or resource busy\n\n[CAUSE]\nThe above script would\
+  \ generate a subvolume of level 2, then snapshot\nit, enable qgroup, set the drop_subtree_threshold,\
+  \ then drop the\nsnapshot.\n\nSince the subvolume drop would meet the threshold,\
+  \ qgroup would be\nmarked inconsistent and skip accounting to avoid hanging the\
+  \ system at\ntransaction commit.\n\nBut currently we do not allow a qgroup with\
+  \ any rfer/excl numbers to be\ndropped, and this is not really compatible with the\
+  \ new\ndrop_subtree_threshold behavior.\n\n[FIX]\nOnly require the strict zero rfer/excl/rfer_cmpr/excl_cmpr\
+  \ for squota\nmode.  This is due to the fact that squota can never go inconsistent,\n\
+  and it can have dropped subvolume but with non-zero qgroup numbers for\nfuture accounting.\n\
+  \nFor full qgroup mode, we only check if there is a subvolume for it.\n\nReviewed-by:\
+  \ Boris Burkov <boris@bur.io>\nSigned-off-by: Qu Wenruo <wqu@suse.com>\nReviewed-by:\
+  \ David Sterba <dsterba@suse.com>\nSigned-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 3
+covered_count: 0

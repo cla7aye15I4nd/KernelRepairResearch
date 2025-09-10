@@ -1,0 +1,39 @@
+id: b1fc199a40b65d601b65
+bug_link: https://syzkaller.appspot.com/bug?extid=b1fc199a40b65d601b65
+title: 'WARNING: locking bug in eventfd_signal_mask'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 38fc96a58ce40257aec79b32e9b310c86907c63c
+fix_commit: a9c83a0ab66a5b02e914daed502fb8d3a8d3d619
+datetime: '2024-12-30T14:15:17-07:00'
+fix_commit_message: "io_uring/timeout: flush timeouts outside of the timeout lock\n\
+  \nsyzbot reports that a recent fix causes nesting issues between the (now)\nraw\
+  \ timeoutlock and the eventfd locking:\n\n=============================\n[ BUG:\
+  \ Invalid wait context ]\n6.13.0-rc4-00080-g9828a4c0901f #29 Not tainted\n-----------------------------\n\
+  kworker/u32:0/68094 is trying to lock:\nffff000014d7a520 (&ctx->wqh#2){..-.}-{3:3},\
+  \ at: eventfd_signal_mask+0x64/0x180\nother info that might help us debug this:\n\
+  context-{5:5}\n6 locks held by kworker/u32:0/68094:\n #0: ffff0000c1d98148 ((wq_completion)iou_exit){+.+.}-{0:0},\
+  \ at: process_one_work+0x4e8/0xfc0\n #1: ffff80008d927c78 ((work_completion)(&ctx->exit_work)){+.+.}-{0:0},\
+  \ at: process_one_work+0x53c/0xfc0\n #2: ffff0000c59bc3d8 (&ctx->completion_lock){+.+.}-{3:3},\
+  \ at: io_kill_timeouts+0x40/0x180\n #3: ffff0000c59bc358 (&ctx->timeout_lock){-.-.}-{2:2},\
+  \ at: io_kill_timeouts+0x48/0x180\n #4: ffff800085127aa0 (rcu_read_lock){....}-{1:3},\
+  \ at: rcu_lock_acquire+0x8/0x38\n #5: ffff800085127aa0 (rcu_read_lock){....}-{1:3},\
+  \ at: rcu_lock_acquire+0x8/0x38\nstack backtrace:\nCPU: 7 UID: 0 PID: 68094 Comm:\
+  \ kworker/u32:0 Not tainted 6.13.0-rc4-00080-g9828a4c0901f #29\nHardware name: linux,dummy-virt\
+  \ (DT)\nWorkqueue: iou_exit io_ring_exit_work\nCall trace:\n show_stack+0x1c/0x30\
+  \ (C)\n __dump_stack+0x24/0x30\n dump_stack_lvl+0x60/0x80\n dump_stack+0x14/0x20\n\
+  \ __lock_acquire+0x19f8/0x60c8\n lock_acquire+0x1a4/0x540\n _raw_spin_lock_irqsave+0x90/0xd0\n\
+  \ eventfd_signal_mask+0x64/0x180\n io_eventfd_signal+0x64/0x108\n io_req_local_work_add+0x294/0x430\n\
+  \ __io_req_task_work_add+0x1c0/0x270\n io_kill_timeout+0x1f0/0x288\n io_kill_timeouts+0xd4/0x180\n\
+  \ io_uring_try_cancel_requests+0x2e8/0x388\n io_ring_exit_work+0x150/0x550\n process_one_work+0x5e8/0xfc0\n\
+  \ worker_thread+0x7ec/0xc80\n kthread+0x24c/0x300\n ret_from_fork+0x10/0x20\n\n\
+  because after the preempt-rt fix for the timeout lock nesting inside\nthe io-wq\
+  \ lock, we now have the eventfd spinlock nesting inside the\nraw timeout spinlock.\n\
+  \nRather than play whack-a-mole with other nesting on the timeout lock,\nsplit the\
+  \ deletion and killing of timeouts so queueing the task_work\nfor the timeout cancelations\
+  \ can get done outside of the timeout lock.\n\nReported-by: syzbot+b1fc199a40b65d601b65@syzkaller.appspotmail.com\n\
+  Fixes: 020b40f35624 (\"io_uring: make ctx->timeout_lock a raw spinlock\")\nSigned-off-by:\
+  \ Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- io_uring
+hunk_count: 5
+covered_count: 5

@@ -1,0 +1,61 @@
+syz-executor341 uses obsolete (PF_INET,SOCK_PACKET)
+=====================================================
+BUG: KMSAN: uninit-value in sctp_sf_ootb+0x7f5/0xce0 net/sctp/sm_statefuns.c:3712
+ sctp_sf_ootb+0x7f5/0xce0 net/sctp/sm_statefuns.c:3712
+ sctp_do_sm+0x181/0x93d0 net/sctp/sm_sideeffect.c:1166
+ sctp_endpoint_bh_rcv+0xc38/0xf90 net/sctp/endpointola.c:407
+ sctp_inq_push+0x2ef/0x380 net/sctp/inqueue.c:88
+ sctp_rcv+0x3831/0x3b20 net/sctp/input.c:243
+ sctp4_rcv+0x42/0x50 net/sctp/protocol.c:1159
+ ip_protocol_deliver_rcu+0xb51/0x13d0 net/ipv4/ip_input.c:205
+ ip_local_deliver_finish+0x336/0x500 net/ipv4/ip_input.c:233
+ NF_HOOK include/linux/netfilter.h:314 [inline]
+ ip_local_deliver+0x21f/0x490 net/ipv4/ip_input.c:254
+ dst_input include/net/dst.h:460 [inline]
+ ip_rcv_finish+0x4a2/0x520 net/ipv4/ip_input.c:449
+ NF_HOOK include/linux/netfilter.h:314 [inline]
+ ip_rcv+0xcd/0x380 net/ipv4/ip_input.c:569
+ __netif_receive_skb_one_core net/core/dev.c:5666 [inline]
+ __netif_receive_skb+0x319/0xa00 net/core/dev.c:5779
+ netif_receive_skb_internal net/core/dev.c:5865 [inline]
+ netif_receive_skb+0x58/0x660 net/core/dev.c:5924
+ tun_rx_batched+0x3ee/0x980 drivers/net/tun.c:1550
+ tun_get_user+0x5783/0x6c60 drivers/net/tun.c:2007
+ tun_chr_write_iter+0x3ac/0x5d0 drivers/net/tun.c:2053
+ new_sync_write fs/read_write.c:590 [inline]
+ vfs_write+0xb2b/0x1540 fs/read_write.c:683
+ ksys_write+0x24f/0x4c0 fs/read_write.c:736
+ __do_sys_write fs/read_write.c:748 [inline]
+ __se_sys_write fs/read_write.c:745 [inline]
+ __x64_sys_write+0x93/0xe0 fs/read_write.c:745
+ x64_sys_call+0x306a/0x3ba0 arch/x86/include/generated/asm/syscalls_64.h:2
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ slab_post_alloc_hook mm/slub.c:4091 [inline]
+ slab_alloc_node mm/slub.c:4134 [inline]
+ kmem_cache_alloc_node_noprof+0x6bf/0xb80 mm/slub.c:4186
+ kmalloc_reserve+0x13d/0x4a0 net/core/skbuff.c:587
+ __alloc_skb+0x363/0x7b0 net/core/skbuff.c:678
+ alloc_skb include/linux/skbuff.h:1322 [inline]
+ alloc_skb_with_frags+0xc8/0xd00 net/core/skbuff.c:6612
+ sock_alloc_send_pskb+0xa81/0xbf0 net/core/sock.c:2883
+ tun_alloc_skb drivers/net/tun.c:1526 [inline]
+ tun_get_user+0x20f4/0x6c60 drivers/net/tun.c:1851
+ tun_chr_write_iter+0x3ac/0x5d0 drivers/net/tun.c:2053
+ new_sync_write fs/read_write.c:590 [inline]
+ vfs_write+0xb2b/0x1540 fs/read_write.c:683
+ ksys_write+0x24f/0x4c0 fs/read_write.c:736
+ __do_sys_write fs/read_write.c:748 [inline]
+ __se_sys_write fs/read_write.c:745 [inline]
+ __x64_sys_write+0x93/0xe0 fs/read_write.c:745
+ x64_sys_call+0x306a/0x3ba0 arch/x86/include/generated/asm/syscalls_64.h:2
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 0 UID: 0 PID: 5818 Comm: syz-executor341 Not tainted 6.12.0-rc5-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+=====================================================

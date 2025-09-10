@@ -1,0 +1,29 @@
+id: 6bdfd184eac7709e5cc9
+bug_link: https://syzkaller.appspot.com/bug?extid=6bdfd184eac7709e5cc9
+title: memory leak in pppoe_sendmsg
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4e45170d9acc2d5ae8f545bf3f2f67504a361338
+fix_commit: dc34ebd5c018b0edf47f39d11083ad8312733034
+datetime: '2024-02-15T07:50:32-08:00'
+fix_commit_message: "pppoe: Fix memory leak in pppoe_sendmsg()\n\nsyzbot reports a\
+  \ memory leak in pppoe_sendmsg [1].\n\nThe problem is in the pppoe_recvmsg() function\
+  \ that handles errors\nin the wrong order. For the skb_recv_datagram() function,\
+  \ check\nthe pointer to skb for NULL first, and then check the 'error' variable,\n\
+  because the skb_recv_datagram() function can set 'error'\nto -EAGAIN in a loop but\
+  \ return a correct pointer to socket buffer\nafter a number of attempts, though\
+  \ 'error' remains set to -EAGAIN.\n\nskb_recv_datagram\n      __skb_recv_datagram\
+  \          // Loop. if (err == -EAGAIN) then\n                                 \
+  \  // go to the next loop iteration\n          __skb_try_recv_datagram  // if (skb\
+  \ != NULL) then return 'skb'\n                                   // else if a signal\
+  \ is received then\n                                   // return -EAGAIN\n\nFound\
+  \ by InfoTeCS on behalf of Linux Verification Center\n(linuxtesting.org) with Syzkaller.\n\
+  \nLink: https://syzkaller.appspot.com/bug?extid=6bdfd184eac7709e5cc9 [1]\n\nFixes:\
+  \ 1da177e4c3f4 (\"Linux-2.6.12-rc2\")\nReported-by: syzbot+6bdfd184eac7709e5cc9@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=6bdfd184eac7709e5cc9\nSigned-off-by:\
+  \ Gavrilov Ilia <Ilia.Gavrilov@infotecs.ru>\nReviewed-by: Guillaume Nault <gnault@redhat.com>\n\
+  Link: https://lore.kernel.org/r/20240214085814.3894917-1-Ilia.Gavrilov@infotecs.ru\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net/ppp
+hunk_count: 1
+covered_count: 0

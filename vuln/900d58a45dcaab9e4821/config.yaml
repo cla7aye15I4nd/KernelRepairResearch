@@ -1,0 +1,55 @@
+id: 900d58a45dcaab9e4821
+bug_link: https://syzkaller.appspot.com/bug?extid=900d58a45dcaab9e4821
+title: WARNING in clear_dirty_gfn_range
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1bc26cb9090246190e8c540f5aa201cea2f895a1
+fix_commit: 2673dfb591a359c75080dd5af3da484b89320d22
+datetime: '2024-04-11T12:58:50-07:00'
+fix_commit_message: 'KVM: x86/mmu: Write-protect L2 SPTEs in TDP MMU when clearing
+  dirty status
+
+
+  Check kvm_mmu_page_ad_need_write_protect() when deciding whether to
+
+  write-protect or clear D-bits on TDP MMU SPTEs, so that the TDP MMU
+
+  accounts for any role-specific reasons for disabling D-bit dirty logging.
+
+
+  Specifically, TDP MMU SPTEs must be write-protected when the TDP MMU is
+
+  being used to run an L2 (i.e. L1 has disabled EPT) and PML is enabled.
+
+  KVM always disables PML when running L2, even when L1 and L2 GPAs are in
+
+  the some domain, so failing to write-protect TDP MMU SPTEs will cause
+
+  writes made by L2 to not be reflected in the dirty log.
+
+
+  Reported-by: syzbot+900d58a45dcaab9e4821@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=900d58a45dcaab9e4821
+
+  Fixes: 5982a5392663 ("KVM: x86/mmu: Use kvm_ad_enabled() to determine if TDP MMU
+  SPTEs need wrprot")
+
+  Cc: stable@vger.kernel.org
+
+  Cc: Vipin Sharma <vipinsh@google.com>
+
+  Cc: Sean Christopherson <seanjc@google.com>
+
+  Signed-off-by: David Matlack <dmatlack@google.com>
+
+  Link: https://lore.kernel.org/r/20240315230541.1635322-2-dmatlack@google.com
+
+  [sean: massage shortlog and changelog, tweak ternary op formatting]
+
+  Signed-off-by: Sean Christopherson <seanjc@google.com>
+
+  '
+submodule:
+- arch/x86/kvm/mmu
+hunk_count: 5
+covered_count: 3

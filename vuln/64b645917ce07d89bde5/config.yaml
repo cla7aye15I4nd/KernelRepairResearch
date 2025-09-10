@@ -1,0 +1,53 @@
+id: 64b645917ce07d89bde5
+bug_link: https://syzkaller.appspot.com/bug?extid=64b645917ce07d89bde5
+title: WARNING in kvfree (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 463808f237cf73e98a1a45ff7460c2406a150a0b
+fix_commit: b87c7cdf2bed4928b899e1ce91ef0d147017ba45
+datetime: '2023-05-13T18:05:04-04:00'
+fix_commit_message: 'ext4: fix invalid free tracking in ext4_xattr_move_to_block()
+
+
+  In ext4_xattr_move_to_block(), the value of the extended attribute
+
+  which we need to move to an external block may be allocated by
+
+  kvmalloc() if the value is stored in an external inode.  So at the end
+
+  of the function the code tried to check if this was the case by
+
+  testing entry->e_value_inum.
+
+
+  However, at this point, the pointer to the xattr entry is no longer
+
+  valid, because it was removed from the original location where it had
+
+  been stored.  So we could end up calling kvfree() on a pointer which
+
+  was not allocated by kvmalloc(); or we could also potentially leak
+
+  memory by not freeing the buffer when it should be freed.  Fix this by
+
+  storing whether it should be freed in a separate variable.
+
+
+  Cc: stable@kernel.org
+
+  Link: https://lore.kernel.org/r/20230430160426.581366-1-tytso@mit.edu
+
+  Link: https://syzkaller.appspot.com/bug?id=5c2aee8256e30b55ccf57312c16d88417adbd5e1
+
+  Link: https://syzkaller.appspot.com/bug?id=41a6b5d4917c0412eb3b3c3c604965bed7d7420b
+
+  Reported-by: syzbot+64b645917ce07d89bde5@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+0d042627c4f2ad332195@syzkaller.appspotmail.com
+
+  Signed-off-by: Theodore Ts''o <tytso@mit.edu>
+
+  '
+submodule:
+- fs/ext4
+hunk_count: 3
+covered_count: 2

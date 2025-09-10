@@ -1,0 +1,51 @@
+id: 6105ffc1ded71d194d6d
+bug_link: https://syzkaller.appspot.com/bug?extid=6105ffc1ded71d194d6d
+title: 'KASAN: slab-use-after-free Read in key_put'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 88d324e69ea9f3ae1c1905ea75d717c08bdb8e15
+fix_commit: 75845c6c1a64483e9985302793dbf0dfa5f71e32
+datetime: '2025-03-22T15:36:49+02:00'
+fix_commit_message: 'keys: Fix UAF in key_put()
+
+
+  Once a key''s reference count has been reduced to 0, the garbage collector
+
+  thread may destroy it at any time and so key_put() is not allowed to touch
+
+  the key after that point.  The most key_put() is normally allowed to do is
+
+  to touch key_gc_work as that''s a static global variable.
+
+
+  However, in an effort to speed up the reclamation of quota, this is now
+
+  done in key_put() once the key''s usage is reduced to 0 - but now the code
+
+  is looking at the key after the deadline, which is forbidden.
+
+
+  Fix this by using a flag to indicate that a key can be gc''d now rather than
+
+  looking at the key''s refcount in the garbage collector.
+
+
+  Fixes: 9578e327b2b4 ("keys: update key quotas in key_put()")
+
+  Reported-by: syzbot+6105ffc1ded71d194d6d@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/all/673b6aec.050a0220.87769.004a.GAE@google.com/
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  Tested-by: syzbot+6105ffc1ded71d194d6d@syzkaller.appspotmail.com
+
+  Reviewed-by: Oleg Nesterov <oleg@redhat.com>
+
+  Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
+
+  '
+submodule:
+- include/linux
+- security/keys
+hunk_count: 3
+covered_count: 1

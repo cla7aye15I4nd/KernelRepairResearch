@@ -1,0 +1,13 @@
+diff --git a/drivers/usb/class/usbtmc.c b/drivers/usb/class/usbtmc.c
+index 4bb6d304eb4b..311007b1d904 100644
+--- a/drivers/usb/class/usbtmc.c
++++ b/drivers/usb/class/usbtmc.c
+@@ -1928,6 +1928,8 @@ static int usbtmc_ioctl_request(struct usbtmc_device_data *data,
+ 
+ 	if (request.req.wLength > USBTMC_BUFSIZE)
+ 		return -EMSGSIZE;
++	if (request.req.wLength == 0)	/* Length-0 requests are never IN */
++		request.req.bRequestType &= ~USB_DIR_IN;
+ 
+ 	is_in = request.req.bRequestType & USB_DIR_IN;
+ 

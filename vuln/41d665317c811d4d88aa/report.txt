@@ -1,0 +1,270 @@
+usb 1-1: config 0 interface 0 altsetting 0 has 1 endpoint descriptor, different from the interface descriptor's value: 21
+usb 1-1: New USB device found, idVendor=047f, idProduct=ffff, bcdDevice= 0.00
+usb 1-1: New USB device strings: Mfr=0, Product=0, SerialNumber=0
+usb 1-1: config 0 descriptor??
+plantronics 0003:047F:FFFF.0024: No inputs registered, leaving
+==================================================================
+BUG: KASAN: slab-use-after-free in lockdep_register_key+0x396/0x410 kernel/locking/lockdep.c:1231
+Read of size 8 at addr ffff88807dba8b60 by task kworker/0:3/4748
+
+CPU: 0 PID: 4748 Comm: kworker/0:3 Not tainted 6.3.0-rc4-next-20230330-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/02/2023
+Workqueue: usb_hub_wq hub_event
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x150 lib/dump_stack.c:106
+ print_address_description.constprop.0+0x2c/0x3c0 mm/kasan/report.c:351
+ print_report mm/kasan/report.c:462 [inline]
+ kasan_report+0x11c/0x130 mm/kasan/report.c:572
+ lockdep_register_key+0x396/0x410 kernel/locking/lockdep.c:1231
+ class_register+0xed/0x530 drivers/base/class.c:172
+ class_create+0x99/0x100 drivers/base/class.c:249
+ init_usb_class drivers/usb/core/file.c:91 [inline]
+ usb_register_dev+0x4e7/0x860 drivers/usb/core/file.c:179
+ hiddev_connect+0x3bd/0x610 drivers/hid/usbhid/hiddev.c:903
+ hid_connect+0x271/0x18c0 drivers/hid/hid-core.c:2192
+ hid_hw_start drivers/hid/hid-core.c:2302 [inline]
+ hid_hw_start+0xa6/0x130 drivers/hid/hid-core.c:2293
+ plantronics_probe+0x304/0x400 drivers/hid/hid-plantronics.c:191
+ hid_device_probe+0x2aa/0x3d0 drivers/hid/hid-core.c:2633
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x240/0xca0 drivers/base/dd.c:658
+ __driver_probe_device+0x1df/0x4d0 drivers/base/dd.c:795
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:825
+ __device_attach_driver+0x1d4/0x2e0 drivers/base/dd.c:953
+ bus_for_each_drv+0x149/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1025
+ bus_probe_device+0x17c/0x1c0 drivers/base/bus.c:532
+ device_add+0x11c4/0x1c50 drivers/base/core.c:3616
+ hid_add_device+0x377/0xa60 drivers/hid/hid-core.c:2785
+ usbhid_probe+0xc43/0x1100 drivers/hid/usbhid/hid-core.c:1429
+ usb_probe_interface+0x30f/0x960 drivers/usb/core/driver.c:396
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x240/0xca0 drivers/base/dd.c:658
+ __driver_probe_device+0x1df/0x4d0 drivers/base/dd.c:795
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:825
+ __device_attach_driver+0x1d4/0x2e0 drivers/base/dd.c:953
+ bus_for_each_drv+0x149/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1025
+ bus_probe_device+0x17c/0x1c0 drivers/base/bus.c:532
+ device_add+0x11c4/0x1c50 drivers/base/core.c:3616
+ usb_set_configuration+0x10ee/0x1af0 drivers/usb/core/message.c:2171
+ usb_generic_driver_probe+0xcf/0x130 drivers/usb/core/generic.c:238
+ usb_probe_device+0xd8/0x2c0 drivers/usb/core/driver.c:293
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x240/0xca0 drivers/base/dd.c:658
+ __driver_probe_device+0x1df/0x4d0 drivers/base/dd.c:795
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:825
+ __device_attach_driver+0x1d4/0x2e0 drivers/base/dd.c:953
+ bus_for_each_drv+0x149/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1025
+ bus_probe_device+0x17c/0x1c0 drivers/base/bus.c:532
+ device_add+0x11c4/0x1c50 drivers/base/core.c:3616
+ usb_new_device+0xcb2/0x19d0 drivers/usb/core/hub.c:2575
+ hub_port_connect drivers/usb/core/hub.c:5407 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5551 [inline]
+ port_event drivers/usb/core/hub.c:5711 [inline]
+ hub_event+0x2d9e/0x4e40 drivers/usb/core/hub.c:5793
+ process_one_work+0x99a/0x15e0 kernel/workqueue.c:2405
+ worker_thread+0x67d/0x10c0 kernel/workqueue.c:2552
+ kthread+0x33e/0x440 kernel/kthread.c:379
+ ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308
+ </TASK>
+
+Allocated by task 26:
+ kasan_save_stack+0x22/0x40 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ ____kasan_kmalloc mm/kasan/common.c:333 [inline]
+ __kasan_kmalloc+0xa2/0xb0 mm/kasan/common.c:383
+ kmalloc include/linux/slab.h:559 [inline]
+ kzalloc include/linux/slab.h:680 [inline]
+ class_register+0x55/0x530 drivers/base/class.c:165
+ class_create+0x99/0x100 drivers/base/class.c:249
+ init_usb_class drivers/usb/core/file.c:91 [inline]
+ usb_register_dev+0x4e7/0x860 drivers/usb/core/file.c:179
+ hiddev_connect+0x3bd/0x610 drivers/hid/usbhid/hiddev.c:903
+ hid_connect+0x271/0x18c0 drivers/hid/hid-core.c:2192
+ hid_hw_start drivers/hid/hid-core.c:2302 [inline]
+ hid_hw_start+0xa6/0x130 drivers/hid/hid-core.c:2293
+ plantronics_probe+0x304/0x400 drivers/hid/hid-plantronics.c:191
+ hid_device_probe+0x2aa/0x3d0 drivers/hid/hid-core.c:2633
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x240/0xca0 drivers/base/dd.c:658
+ __driver_probe_device+0x1df/0x4d0 drivers/base/dd.c:795
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:825
+ __device_attach_driver+0x1d4/0x2e0 drivers/base/dd.c:953
+ bus_for_each_drv+0x149/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1025
+ bus_probe_device+0x17c/0x1c0 drivers/base/bus.c:532
+ device_add+0x11c4/0x1c50 drivers/base/core.c:3616
+ hid_add_device+0x377/0xa60 drivers/hid/hid-core.c:2785
+ usbhid_probe+0xc43/0x1100 drivers/hid/usbhid/hid-core.c:1429
+ usb_probe_interface+0x30f/0x960 drivers/usb/core/driver.c:396
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x240/0xca0 drivers/base/dd.c:658
+ __driver_probe_device+0x1df/0x4d0 drivers/base/dd.c:795
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:825
+ __device_attach_driver+0x1d4/0x2e0 drivers/base/dd.c:953
+ bus_for_each_drv+0x149/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1025
+ bus_probe_device+0x17c/0x1c0 drivers/base/bus.c:532
+ device_add+0x11c4/0x1c50 drivers/base/core.c:3616
+ usb_set_configuration+0x10ee/0x1af0 drivers/usb/core/message.c:2171
+ usb_generic_driver_probe+0xcf/0x130 drivers/usb/core/generic.c:238
+ usb_probe_device+0xd8/0x2c0 drivers/usb/core/driver.c:293
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x240/0xca0 drivers/base/dd.c:658
+ __driver_probe_device+0x1df/0x4d0 drivers/base/dd.c:795
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:825
+ __device_attach_driver+0x1d4/0x2e0 drivers/base/dd.c:953
+ bus_for_each_drv+0x149/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1025
+ bus_probe_device+0x17c/0x1c0 drivers/base/bus.c:532
+ device_add+0x11c4/0x1c50 drivers/base/core.c:3616
+ usb_new_device+0xcb2/0x19d0 drivers/usb/core/hub.c:2575
+ hub_port_connect drivers/usb/core/hub.c:5407 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5551 [inline]
+ port_event drivers/usb/core/hub.c:5711 [inline]
+ hub_event+0x2d9e/0x4e40 drivers/usb/core/hub.c:5793
+ process_one_work+0x99a/0x15e0 kernel/workqueue.c:2405
+ worker_thread+0x67d/0x10c0 kernel/workqueue.c:2552
+ kthread+0x33e/0x440 kernel/kthread.c:379
+ ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308
+
+Freed by task 26:
+ kasan_save_stack+0x22/0x40 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2e/0x40 mm/kasan/generic.c:521
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x160/0x1c0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1781 [inline]
+ slab_free_freelist_hook+0x8b/0x1c0 mm/slub.c:1807
+ slab_free mm/slub.c:3787 [inline]
+ __kmem_cache_free+0xaf/0x2d0 mm/slub.c:3800
+ kobject_cleanup lib/kobject.c:683 [inline]
+ kobject_release lib/kobject.c:714 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ kobject_put+0x1c2/0x4d0 lib/kobject.c:731
+ kset_unregister+0x64/0x80 lib/kobject.c:880
+ class_destroy+0x3c/0x50 drivers/base/class.c:273
+ release_usb_class drivers/usb/core/file.c:108 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ destroy_usb_class drivers/usb/core/file.c:116 [inline]
+ usb_deregister_dev+0x274/0x320 drivers/usb/core/file.c:245
+ hiddev_disconnect+0x95/0x1c0 drivers/hid/usbhid/hiddev.c:932
+ hid_disconnect+0xb8/0x1b0 drivers/hid/hid-core.c:2275
+ hid_hw_stop drivers/hid/hid-core.c:2322 [inline]
+ hid_device_remove+0x174/0x210 drivers/hid/hid-core.c:2664
+ device_remove+0xc8/0x170 drivers/base/dd.c:567
+ __device_release_driver drivers/base/dd.c:1267 [inline]
+ device_release_driver_internal+0x443/0x610 drivers/base/dd.c:1290
+ bus_remove_device+0x22c/0x420 drivers/base/bus.c:574
+ device_del+0x48a/0xb80 drivers/base/core.c:3802
+ hid_remove_device drivers/hid/hid-core.c:2835 [inline]
+ hid_destroy_device+0xe5/0x150 drivers/hid/hid-core.c:2855
+ usbhid_disconnect+0xa3/0xe0 drivers/hid/usbhid/hid-core.c:1456
+ usb_unbind_interface+0x1dc/0x8e0 drivers/usb/core/driver.c:458
+ device_remove drivers/base/dd.c:569 [inline]
+ device_remove+0x11f/0x170 drivers/base/dd.c:561
+ __device_release_driver drivers/base/dd.c:1267 [inline]
+ device_release_driver_internal+0x443/0x610 drivers/base/dd.c:1290
+ bus_remove_device+0x22c/0x420 drivers/base/bus.c:574
+ device_del+0x48a/0xb80 drivers/base/core.c:3802
+ usb_disable_device+0x35a/0x7b0 drivers/usb/core/message.c:1420
+ usb_disconnect+0x2db/0x8a0 drivers/usb/core/hub.c:2238
+ hub_port_connect drivers/usb/core/hub.c:5246 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5551 [inline]
+ port_event drivers/usb/core/hub.c:5711 [inline]
+ hub_event+0x1fbf/0x4e40 drivers/usb/core/hub.c:5793
+ process_one_work+0x99a/0x15e0 kernel/workqueue.c:2405
+ worker_thread+0x67d/0x10c0 kernel/workqueue.c:2552
+ kthread+0x33e/0x440 kernel/kthread.c:379
+ ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308
+
+The buggy address belongs to the object at ffff88807dba8800
+ which belongs to the cache kmalloc-1k of size 1024
+The buggy address is located 864 bytes inside of
+ freed 1024-byte region [ffff88807dba8800, ffff88807dba8c00)
+
+The buggy address belongs to the physical page:
+page:ffffea0001f6ea00 refcount:1 mapcount:0 mapping:0000000000000000 index:0xffff88807dbac800 pfn:0x7dba8
+head:ffffea0001f6ea00 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888012441dc0 ffffea000080e010 ffff888012440888
+raw: ffff88807dbac800 0000000000100005 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 4690, tgid 4690 (dhcpcd-run-hook), ts 47997655504, free_ts 47946041743
+ prep_new_page mm/page_alloc.c:1729 [inline]
+ get_page_from_freelist+0xf75/0x2aa0 mm/page_alloc.c:3493
+ __alloc_pages+0x1cb/0x4a0 mm/page_alloc.c:4759
+ alloc_pages+0x1aa/0x270 mm/mempolicy.c:2283
+ alloc_slab_page mm/slub.c:1851 [inline]
+ allocate_slab+0x28e/0x380 mm/slub.c:1998
+ new_slab mm/slub.c:2051 [inline]
+ ___slab_alloc+0xa91/0x1400 mm/slub.c:3193
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3292
+ __slab_alloc_node mm/slub.c:3345 [inline]
+ slab_alloc_node mm/slub.c:3442 [inline]
+ __kmem_cache_alloc_node+0x136/0x320 mm/slub.c:3491
+ __do_kmalloc_node mm/slab_common.c:965 [inline]
+ __kmalloc+0x4e/0x190 mm/slab_common.c:979
+ kmalloc include/linux/slab.h:563 [inline]
+ load_elf_phdrs+0x103/0x210 fs/binfmt_elf.c:486
+ load_elf_binary+0x17f0/0x4ff0 fs/binfmt_elf.c:960
+ search_binary_handler fs/exec.c:1736 [inline]
+ exec_binprm fs/exec.c:1778 [inline]
+ bprm_execve fs/exec.c:1853 [inline]
+ bprm_execve+0x7fd/0x1980 fs/exec.c:1809
+ do_execveat_common+0x72c/0x8e0 fs/exec.c:1960
+ do_execve fs/exec.c:2034 [inline]
+ __do_sys_execve fs/exec.c:2110 [inline]
+ __se_sys_execve fs/exec.c:2105 [inline]
+ __x64_sys_execve+0x93/0xc0 fs/exec.c:2105
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x39/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1302 [inline]
+ free_unref_page_prepare+0x4d8/0xb80 mm/page_alloc.c:2555
+ free_unref_page+0x33/0x370 mm/page_alloc.c:2650
+ __unfreeze_partials+0x17c/0x1a0 mm/slub.c:2637
+ qlink_free mm/kasan/quarantine.c:166 [inline]
+ qlist_free_all+0x6a/0x170 mm/kasan/quarantine.c:185
+ kasan_quarantine_reduce+0x195/0x220 mm/kasan/quarantine.c:292
+ __kasan_slab_alloc+0x63/0x90 mm/kasan/common.c:305
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:711 [inline]
+ slab_alloc_node mm/slub.c:3452 [inline]
+ __kmem_cache_alloc_node+0x17c/0x320 mm/slub.c:3491
+ __do_kmalloc_node mm/slab_common.c:965 [inline]
+ __kmalloc+0x4e/0x190 mm/slab_common.c:979
+ kmalloc include/linux/slab.h:563 [inline]
+ load_elf_phdrs+0x103/0x210 fs/binfmt_elf.c:486
+ load_elf_binary+0x1db/0x4ff0 fs/binfmt_elf.c:860
+ search_binary_handler fs/exec.c:1736 [inline]
+ exec_binprm fs/exec.c:1778 [inline]
+ bprm_execve fs/exec.c:1853 [inline]
+ bprm_execve+0x7fd/0x1980 fs/exec.c:1809
+ do_execveat_common+0x72c/0x8e0 fs/exec.c:1960
+ do_execve fs/exec.c:2034 [inline]
+ __do_sys_execve fs/exec.c:2110 [inline]
+ __se_sys_execve fs/exec.c:2105 [inline]
+ __x64_sys_execve+0x93/0xc0 fs/exec.c:2105
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x39/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Memory state around the buggy address:
+ ffff88807dba8a00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88807dba8a80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff88807dba8b00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                                       ^
+ ffff88807dba8b80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88807dba8c00: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

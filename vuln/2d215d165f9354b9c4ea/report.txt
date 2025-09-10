@@ -1,0 +1,141 @@
+==================================================================
+BUG: KASAN: slab-out-of-bounds in fuse_retrieve fs/fuse/dev.c:1911 [inline]
+BUG: KASAN: slab-out-of-bounds in fuse_notify_retrieve fs/fuse/dev.c:1959 [inline]
+BUG: KASAN: slab-out-of-bounds in fuse_notify fs/fuse/dev.c:2067 [inline]
+BUG: KASAN: slab-out-of-bounds in fuse_dev_do_write+0x308b/0x3420 fs/fuse/dev.c:2158
+Write of size 4 at addr ffff88803b07fcdc by task syz.0.17/6132
+
+CPU: 3 UID: 0 PID: 6132 Comm: syz.0.17 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0xcd/0x630 mm/kasan/report.c:482
+ kasan_report+0xe0/0x110 mm/kasan/report.c:595
+ fuse_retrieve fs/fuse/dev.c:1911 [inline]
+ fuse_notify_retrieve fs/fuse/dev.c:1959 [inline]
+ fuse_notify fs/fuse/dev.c:2067 [inline]
+ fuse_dev_do_write+0x308b/0x3420 fs/fuse/dev.c:2158
+ fuse_dev_write+0x155/0x1e0 fs/fuse/dev.c:2242
+ new_sync_write fs/read_write.c:593 [inline]
+ vfs_write+0x7d3/0x11d0 fs/read_write.c:686
+ ksys_write+0x12a/0x250 fs/read_write.c:738
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7ff87658ebe9
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ff8773f4038 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 00007ff8767b5fa0 RCX: 00007ff87658ebe9
+RDX: 0000000000000030 RSI: 0000200000000140 RDI: 0000000000000004
+RBP: 00007ff876611e19 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007ff8767b6038 R14: 00007ff8767b5fa0 R15: 00007ffee247e838
+ </TASK>
+
+Allocated by task 6132:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:388 [inline]
+ __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:405
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __do_kmalloc_node mm/slub.c:4365 [inline]
+ __kmalloc_noprof+0x223/0x510 mm/slub.c:4377
+ kmalloc_noprof include/linux/slab.h:909 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ fuse_retrieve fs/fuse/dev.c:1879 [inline]
+ fuse_notify_retrieve fs/fuse/dev.c:1959 [inline]
+ fuse_notify fs/fuse/dev.c:2067 [inline]
+ fuse_dev_do_write+0x1c50/0x3420 fs/fuse/dev.c:2158
+ fuse_dev_write+0x155/0x1e0 fs/fuse/dev.c:2242
+ new_sync_write fs/read_write.c:593 [inline]
+ vfs_write+0x7d3/0x11d0 fs/read_write.c:686
+ ksys_write+0x12a/0x250 fs/read_write.c:738
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88803b07fc00
+ which belongs to the cache kmalloc-256 of size 256
+The buggy address is located 4 bytes to the right of
+ allocated 216-byte region [ffff88803b07fc00, ffff88803b07fcd8)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x3b07e
+head: order:1 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000000040(head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000040 ffff88801b842b40 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000080100010 00000000f5000000 0000000000000000
+head: 00fff00000000040 ffff88801b842b40 dead000000000122 0000000000000000
+head: 0000000000000000 0000000080100010 00000000f5000000 0000000000000000
+head: 00fff00000000001 ffffea0000ec1f81 00000000ffffffff 00000000ffffffff
+head: ffffffffffffffff 0000000000000000 00000000ffffffff 0000000000000002
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 1, migratetype Unmovable, gfp_mask 0x52820(GFP_ATOMIC|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 841, tgid 841 (kworker/3:2), ts 75782189854, free_ts 69282332674
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1c0/0x230 mm/page_alloc.c:1851
+ prep_new_page mm/page_alloc.c:1859 [inline]
+ get_page_from_freelist+0x132b/0x38e0 mm/page_alloc.c:3858
+ __alloc_frozen_pages_noprof+0x261/0x23f0 mm/page_alloc.c:5148
+ alloc_pages_mpol+0x1fb/0x550 mm/mempolicy.c:2416
+ alloc_slab_page mm/slub.c:2487 [inline]
+ allocate_slab mm/slub.c:2655 [inline]
+ new_slab+0x247/0x330 mm/slub.c:2709
+ ___slab_alloc+0xcf2/0x1740 mm/slub.c:3891
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3981
+ __slab_alloc_node mm/slub.c:4056 [inline]
+ slab_alloc_node mm/slub.c:4217 [inline]
+ __kmalloc_cache_noprof+0xfb/0x3e0 mm/slub.c:4391
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ batadv_bla_get_backbone_gw+0xbe/0xc40 net/batman-adv/bridge_loop_avoidance.c:508
+ batadv_bla_update_own_backbone_gw.isra.0+0x4e/0x170 net/batman-adv/bridge_loop_avoidance.c:571
+ batadv_bla_tx+0x144/0x21b0 net/batman-adv/bridge_loop_avoidance.c:2105
+ batadv_interface_tx+0x5e7/0x1b80 net/batman-adv/mesh-interface.c:227
+ __netdev_start_xmit include/linux/netdevice.h:5222 [inline]
+ netdev_start_xmit include/linux/netdevice.h:5231 [inline]
+ xmit_one net/core/dev.c:3839 [inline]
+ dev_hard_start_xmit+0x94/0x740 net/core/dev.c:3855
+ __dev_queue_xmit+0xa46/0x4490 net/core/dev.c:4725
+ dev_queue_xmit include/linux/netdevice.h:3361 [inline]
+ neigh_hh_output include/net/neighbour.h:531 [inline]
+ neigh_output include/net/neighbour.h:545 [inline]
+ ip6_finish_output2+0xe98/0x2020 net/ipv6/ip6_output.c:141
+ __ip6_finish_output+0x3cd/0x1010 net/ipv6/ip6_output.c:215
+page last free pid 5992 tgid 5992 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1395 [inline]
+ __free_frozen_pages+0x7d5/0x10f0 mm/page_alloc.c:2895
+ qlink_free mm/kasan/quarantine.c:163 [inline]
+ qlist_free_all+0x4d/0x120 mm/kasan/quarantine.c:179
+ kasan_quarantine_reduce+0x195/0x1e0 mm/kasan/quarantine.c:286
+ __kasan_slab_alloc+0x69/0x90 mm/kasan/common.c:340
+ kasan_slab_alloc include/linux/kasan.h:250 [inline]
+ slab_post_alloc_hook mm/slub.c:4180 [inline]
+ slab_alloc_node mm/slub.c:4229 [inline]
+ kmem_cache_alloc_node_noprof+0x1d5/0x3b0 mm/slub.c:4281
+ __alloc_skb+0x2b2/0x380 net/core/skbuff.c:659
+ alloc_skb include/linux/skbuff.h:1336 [inline]
+ netlink_alloc_large_skb+0x69/0x130 net/netlink/af_netlink.c:1186
+ netlink_sendmsg+0x6a1/0xdd0 net/netlink/af_netlink.c:1871
+ sock_sendmsg_nosec net/socket.c:714 [inline]
+ __sock_sendmsg net/socket.c:729 [inline]
+ ____sys_sendmsg+0xa95/0xc70 net/socket.c:2614
+ ___sys_sendmsg+0x134/0x1d0 net/socket.c:2668
+ __sys_sendmsg+0x16d/0x220 net/socket.c:2700
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff88803b07fb80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88803b07fc00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff88803b07fc80: 00 00 00 00 00 00 00 00 00 00 00 fc fc fc fc fc
+                                                    ^
+ ffff88803b07fd00: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88803b07fd80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

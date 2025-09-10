@@ -1,0 +1,45 @@
+id: a6abcf08bad8b18fd198
+bug_link: https://syzkaller.appspot.com/bug?extid=a6abcf08bad8b18fd198
+title: general protection fault in __aria_aesni_avx_gfni_crypt_16way
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b8969a1b69672b163d057e7745ebc915df689211
+fix_commit: 6ab39f99927eed605728b02d512438d828183c97
+datetime: '2023-05-24T18:10:27+08:00'
+fix_commit_message: 'crypto: x86/aria - Use 16 byte alignment for GFNI constant vectors
+
+
+  The GFNI routines in the AVX version of the ARIA implementation now use
+
+  explicit VMOVDQA instructions to load the constant input vectors, which
+
+  means they must be 16 byte aligned. So ensure that this is the case, by
+
+  dropping the section split and the incorrect .align 8 directive, and
+
+  emitting the constants into the 16-byte aligned section instead.
+
+
+  Note that the AVX2 version of this code deviates from this pattern, and
+
+  does not require a similar fix, given that it loads these contants as
+
+  8-byte memory operands, for which AVX2 permits any alignment.
+
+
+  Cc: Taehee Yoo <ap420073@gmail.com>
+
+  Fixes: 8b84475318641c2b ("crypto: x86/aria-avx - Do not use avx2 instructions")
+
+  Reported-by: syzbot+a6abcf08bad8b18fd198@syzkaller.appspotmail.com
+
+  Tested-by: syzbot+a6abcf08bad8b18fd198@syzkaller.appspotmail.com
+
+  Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
+
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  '
+submodule:
+- arch/x86/crypto
+hunk_count: 1
+covered_count: 0

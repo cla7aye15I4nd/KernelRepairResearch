@@ -1,0 +1,53 @@
+============================================
+WARNING: possible recursive locking detected
+6.11.0-rc1-syzkaller-00033-g25f51b76f90f #0 Not tainted
+--------------------------------------------
+kworker/0:1H/1251 is trying to acquire lock:
+ffff888111e8f548 ((wq_completion)xillyusb){+.+.}-{0:0}, at: touch_wq_lockdep_map+0x6e/0x120 kernel/workqueue.c:3876
+
+but task is already holding lock:
+ffff888111e8f548 ((wq_completion)xillyusb){+.+.}-{0:0}, at: process_one_work+0x1277/0x1b40 kernel/workqueue.c:3206
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock((wq_completion)xillyusb);
+  lock((wq_completion)xillyusb);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+2 locks held by kworker/0:1H/1251:
+ #0: ffff888111e8f548 ((wq_completion)xillyusb){+.+.}-{0:0}, at: process_one_work+0x1277/0x1b40 kernel/workqueue.c:3206
+ #1: ffffc9000250fd80 ((work_completion)(&xdev->wakeup_workitem)){+.+.}-{0:0}, at: process_one_work+0x921/0x1b40 kernel/workqueue.c:3207
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 1251 Comm: kworker/0:1H Not tainted 6.11.0-rc1-syzkaller-00033-g25f51b76f90f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/27/2024
+Workqueue: xillyusb wakeup_all
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:93 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:119
+ check_deadlock kernel/locking/lockdep.c:3061 [inline]
+ validate_chain kernel/locking/lockdep.c:3855 [inline]
+ __lock_acquire+0x2167/0x3cb0 kernel/locking/lockdep.c:5142
+ lock_acquire kernel/locking/lockdep.c:5759 [inline]
+ lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5724
+ touch_wq_lockdep_map+0x78/0x120 kernel/workqueue.c:3876
+ __flush_workqueue+0x129/0x1200 kernel/workqueue.c:3918
+ drain_workqueue+0x18f/0x3d0 kernel/workqueue.c:4082
+ destroy_workqueue+0xc2/0xaa0 kernel/workqueue.c:5781
+ cleanup_dev+0xc5/0x150 drivers/char/xillybus/xillyusb.c:558
+ kref_put include/linux/kref.h:65 [inline]
+ wakeup_all+0x28c/0x300 drivers/char/xillybus/xillyusb.c:612
+ process_one_work+0x9c5/0x1b40 kernel/workqueue.c:3231
+ process_scheduled_works kernel/workqueue.c:3312 [inline]
+ worker_thread+0x6c8/0xf20 kernel/workqueue.c:3390
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

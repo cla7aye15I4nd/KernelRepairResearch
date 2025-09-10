@@ -1,0 +1,44 @@
+diff --git a/include/linux/pid.h b/include/linux/pid.h
+index b75de288a8c2..653a527574c4 100644
+--- a/include/linux/pid.h
++++ b/include/linux/pid.h
+@@ -67,7 +67,7 @@ struct pid
+ 	/* wait queue for pidfd notifications */
+ 	wait_queue_head_t wait_pidfd;
+ 	struct rcu_head rcu;
+-	struct upid numbers[1];
++	struct upid numbers[];
+ };
+ 
+ extern struct pid init_struct_pid;
+diff --git a/kernel/pid.c b/kernel/pid.c
+index f93954a0384d..8bce3aebc949 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -656,8 +656,11 @@ void __init pid_idr_init(void)
+ 
+ 	idr_init(&init_pid_ns.idr);
+ 
+-	init_pid_ns.pid_cachep = KMEM_CACHE(pid,
+-			SLAB_HWCACHE_ALIGN | SLAB_PANIC | SLAB_ACCOUNT);
++	init_pid_ns.pid_cachep = kmem_cache_create("pid",
++			struct_size((struct pid *)NULL, numbers, 1),
++			__alignof__(struct pid),
++			SLAB_HWCACHE_ALIGN | SLAB_PANIC | SLAB_ACCOUNT,
++			NULL);
+ }
+ 
+ static struct file *__pidfd_fget(struct task_struct *task, int fd)
+diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+index b43eee07b00c..70a929784a5d 100644
+--- a/kernel/pid_namespace.c
++++ b/kernel/pid_namespace.c
+@@ -48,7 +48,7 @@ static struct kmem_cache *create_pid_cachep(unsigned int level)
+ 		return kc;
+ 
+ 	snprintf(name, sizeof(name), "pid_%u", level + 1);
+-	len = sizeof(struct pid) + level * sizeof(struct upid);
++	len = struct_size((struct pid *)NULL, numbers, level + 1);
+ 	mutex_lock(&pid_caches_mutex);
+ 	/* Name collision forces to do allocation under mutex. */
+ 	if (!*pkc)

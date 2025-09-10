@@ -1,0 +1,96 @@
+==================================================================
+BUG: KASAN: use-after-free in crc_itu_t+0xd7/0xe0 lib/crc-itu-t.c:60
+Read of size 1 at addr ffff88807faf2000 by task syz-executor298/5055
+
+CPU: 1 PID: 5055 Comm: syz-executor298 Not tainted 6.7.0-rc7-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ crc_itu_t+0xd7/0xe0 lib/crc-itu-t.c:60
+ udf_finalize_lvid+0xf2/0x1f0 fs/udf/super.c:1984
+ udf_sync_fs+0xea/0x150 fs/udf/super.c:2340
+ sync_filesystem+0x109/0x280 fs/sync.c:56
+ generic_shutdown_super+0x7e/0x3d0 fs/super.c:669
+ kill_block_super+0x3b/0x90 fs/super.c:1667
+ deactivate_locked_super+0xbc/0x1a0 fs/super.c:484
+ deactivate_super+0xde/0x100 fs/super.c:517
+ cleanup_mnt+0x222/0x450 fs/namespace.c:1256
+ task_work_run+0x14d/0x240 kernel/task_work.c:180
+ ptrace_notify+0x10d/0x130 kernel/signal.c:2399
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:251 [inline]
+ syscall_exit_to_user_mode_prepare+0x126/0x230 kernel/entry/common.c:278
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:283 [inline]
+ syscall_exit_to_user_mode+0xe/0x60 kernel/entry/common.c:296
+ do_syscall_64+0x4d/0x110 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7fb8a5744547
+Code: 09 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b8 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffe57296f08 EFLAGS: 00000202 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007fb8a5744547
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffe57296fc0
+RBP: 00007ffe57296fc0 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000202 R12: 00007ffe57298030
+R13: 00005555572ee6c0 R14: 431bde82d7b634db R15: 00007ffe57298050
+ </TASK>
+
+The buggy address belongs to the physical page:
+page:ffffea0001febc80 refcount:0 mapcount:0 mapping:0000000000000000 index:0x1 pfn:0x7faf2
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000000 ffffea0001c40788 ffffea0001cd1088 0000000000000000
+raw: 0000000000000001 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as freed
+page last allocated via order 0, migratetype Movable, gfp_mask 0x140dca(GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO), pid 5056, tgid 5056 (syz-executor298), ts 74222370651, free_ts 74268579702
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d0/0x350 mm/page_alloc.c:1537
+ prep_new_page mm/page_alloc.c:1544 [inline]
+ get_page_from_freelist+0xa25/0x36d0 mm/page_alloc.c:3312
+ __alloc_pages+0x22e/0x2420 mm/page_alloc.c:4568
+ alloc_pages_mpol+0x258/0x5f0 mm/mempolicy.c:2133
+ vma_alloc_folio+0xad/0x220 mm/mempolicy.c:2172
+ do_anonymous_page mm/memory.c:4172 [inline]
+ do_pte_missing mm/memory.c:3729 [inline]
+ handle_pte_fault mm/memory.c:5039 [inline]
+ __handle_mm_fault+0xe07/0x3d70 mm/memory.c:5180
+ handle_mm_fault+0x47a/0xa10 mm/memory.c:5345
+ do_user_addr_fault+0x30b/0x1000 arch/x86/mm/fault.c:1364
+ handle_page_fault arch/x86/mm/fault.c:1505 [inline]
+ exc_page_fault+0x5d/0xc0 arch/x86/mm/fault.c:1561
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:570
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1137 [inline]
+ free_unref_page_prepare+0x4fa/0xaa0 mm/page_alloc.c:2347
+ free_unref_page_list+0xe6/0xb40 mm/page_alloc.c:2533
+ release_pages+0x32a/0x14f0 mm/swap.c:1042
+ tlb_batch_pages_flush+0x9a/0x190 mm/mmu_gather.c:98
+ tlb_flush_mmu_free mm/mmu_gather.c:293 [inline]
+ tlb_flush_mmu mm/mmu_gather.c:300 [inline]
+ tlb_finish_mmu+0x14b/0x6f0 mm/mmu_gather.c:392
+ unmap_region.constprop.0+0x2e6/0x3b0 mm/mmap.c:2341
+ do_vmi_align_munmap+0xde6/0x1600 mm/mmap.c:2657
+ do_vmi_munmap+0x20e/0x450 mm/mmap.c:2725
+ __vm_munmap+0x144/0x390 mm/mmap.c:3012
+ __do_sys_munmap mm/mmap.c:3029 [inline]
+ __se_sys_munmap mm/mmap.c:3026 [inline]
+ __x64_sys_munmap+0x62/0x80 mm/mmap.c:3026
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x40/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Memory state around the buggy address:
+ ffff88807faf1f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff88807faf1f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff88807faf2000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+                   ^
+ ffff88807faf2080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff88807faf2100: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+==================================================================

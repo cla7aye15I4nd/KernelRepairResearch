@@ -1,0 +1,24 @@
+id: 0e905eb8228070c457a0
+bug_link: https://syzkaller.appspot.com/bug?extid=0e905eb8228070c457a0
+title: general protection fault in io_commit_cqring (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5a978dcfc0f054e4f6983a0a26355a65e34708cb
+fix_commit: 51520426f4bc3e61cbbf7a39ccf4e411b665002d
+datetime: '2021-03-29T06:48:26-06:00'
+fix_commit_message: "io_uring: handle setup-failed ctx in kill_timeouts\n\ngeneral\
+  \ protection fault, probably for non-canonical address\n\t0xdffffc0000000018: 0000\
+  \ [#1] KASAN: null-ptr-deref\n\tin range [0x00000000000000c0-0x00000000000000c7]\n\
+  RIP: 0010:io_commit_cqring+0x37f/0xc10 fs/io_uring.c:1318\nCall Trace:\n io_kill_timeouts+0x2b5/0x320\
+  \ fs/io_uring.c:8606\n io_ring_ctx_wait_and_kill+0x1da/0x400 fs/io_uring.c:8629\n\
+  \ io_uring_create fs/io_uring.c:9572 [inline]\n io_uring_setup+0x10da/0x2ae0 fs/io_uring.c:9599\n\
+  \ do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \nIt can get into wait_and_kill() before setting up ctx->rings, and hence\nio_commit_cqring()\
+  \ fails. Mimic poll cancel and do it only when we\ncompleted events, there can't\
+  \ be any requests if it failed before\ninitialising rings.\n\nFixes: 80c4cbdb5ee60\
+  \ (\"io_uring: do post-completion chore on t-out cancel\")\nReported-by: syzbot+0e905eb8228070c457a0@syzkaller.appspotmail.com\n\
+  Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>\nLink: https://lore.kernel.org/r/660261a48f0e7abf260c8e43c87edab3c16736fa.1617014345.git.asml.silence@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

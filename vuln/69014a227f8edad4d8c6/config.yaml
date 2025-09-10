@@ -1,0 +1,34 @@
+id: 69014a227f8edad4d8c6
+bug_link: https://syzkaller.appspot.com/bug?extid=69014a227f8edad4d8c6
+title: WARNING in check_helper_call
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7ec899ac90a205090275cd4a5c96c9606a93f3a1
+fix_commit: 65fdafd6765f677494ab0cb35b8237eb742a18e5
+datetime: '2025-07-02T10:43:38-07:00'
+fix_commit_message: "bpf: Avoid warning on multiple referenced args in call\n\nThe\
+  \ description of full helper calls in syzkaller [1] and the addition of\nkernel\
+  \ warnings in commit 0df1a55afa83 (\"bpf: Warn on internal verifier\nerrors\") allowed\
+  \ syzbot to reach a verifier state that was thought to\nindicate a verifier bug\
+  \ [2]:\n\n    12: (85) call bpf_tcp_raw_gen_syncookie_ipv4#204\n    verifier bug:\
+  \ more than one arg with ref_obj_id R2 2 2\n\nThis error can be reproduced with\
+  \ the program from the previous commit:\n\n    0: (b7) r2 = 20\n    1: (b7) r3 =\
+  \ 0\n    2: (18) r1 = 0xffff92cee3cbc600\n    4: (85) call bpf_ringbuf_reserve#131\n\
+  \    5: (55) if r0 == 0x0 goto pc+3\n    6: (bf) r1 = r0\n    7: (bf) r2 = r0\n\
+  \    8: (85) call bpf_tcp_raw_gen_syncookie_ipv4#204\n    9: (95) exit\n\nbpf_tcp_raw_gen_syncookie_ipv4\
+  \ expects R1 and R2 to be\nARG_PTR_TO_FIXED_SIZE_MEM (with a size of at least sizeof(struct\
+  \ iphdr)\nfor R1). R0 is a ring buffer payload of 20B and therefore matches this\n\
+  requirement.\n\nThe verifier reaches the check on ref_obj_id while verifying R2\
+  \ and\nrejects the program because the helper isn't supposed to take two\nreferenced\
+  \ arguments.\n\nThis case is a legitimate rejection and doesn't indicate a kernel\
+  \ bug,\nso we shouldn't log it as such and shouldn't emit a kernel warning.\n\n\
+  Link: https://github.com/google/syzkaller/pull/4313 [1]\nLink: https://lore.kernel.org/all/686491d6.a70a0220.3b7e22.20ea.GAE@google.com/T/\
+  \ [2]\nFixes: 457f44363a88 (\"bpf: Implement BPF ring buffer and verifier support\
+  \ for it\")\nFixes: 0df1a55afa83 (\"bpf: Warn on internal verifier errors\")\nReported-by:\
+  \ syzbot+69014a227f8edad4d8c6@syzkaller.appspotmail.com\nSigned-off-by: Paul Chaignon\
+  \ <paul.chaignon@gmail.com>\nLink: https://lore.kernel.org/r/cd09afbfd7bef10bbc432d72693f78ffdc1e8ee5.1751463262.git.paul.chaignon@gmail.com\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\nSigned-off-by: Andrii Nakryiko\
+  \ <andrii@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 1

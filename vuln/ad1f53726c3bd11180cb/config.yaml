@@ -1,0 +1,31 @@
+id: ad1f53726c3bd11180cb
+bug_link: https://syzkaller.appspot.com/bug?extid=ad1f53726c3bd11180cb
+title: 'KASAN: use-after-free Write in vcs_read'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 377c0d7ea5bb93251e71559c115d2f94650c00d6
+fix_commit: 52c3c3a59234a9725b5dcfe9729ed737d7843980
+datetime: '2020-08-24T19:51:56+02:00'
+fix_commit_message: "Revert \"vc_screen: extract vcs_read_buf_header\"\n\nThis reverts\
+  \ commit b1c32fcfadf5593ab7a63261cc8a5747c36e627e, because\nSyzkaller reports a\
+  \ use-after-free, a write in vcs_read:\n\nBUG: KASAN: use-after-free in vcs_read_buf\
+  \ drivers/tty/vt/vc_screen.c:357 [inline]\nBUG: KASAN: use-after-free in vcs_read+0xaa7/0xb40\
+  \ drivers/tty/vt/vc_screen.c:449\nWrite of size 2 at addr ffff8880a8014000 by task\
+  \ syz-executor.5/16936\nCPU: 1 PID: 16936 Comm: syz-executor.5 Not tainted 5.9.0-rc1-next-20200820-syzkaller\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/01/2011\nCall Trace:\n...\n kasan_report.cold+0x1f/0x37 mm/kasan/report.c:530\n\
+  \ vcs_read_buf drivers/tty/vt/vc_screen.c:357 [inline]\n vcs_read+0xaa7/0xb40 drivers/tty/vt/vc_screen.c:449\n\
+  \nThere are two issues with the patch:\n1) vcs_read rounds the 'count' *up* to an\
+  \ even number. So if we read odd\n   bytes from the header (3 bytes in the reproducer),\
+  \ the second byte of\n   a (2-byte/ushort) write to temporary con_buf won't fit.\
+  \ It is because\n   with the patch applied, we only subtract the real number read\
+  \ (3 bytes)\n   and not the whole header (4 bytes).\n\n2) in this scenario, we perform\
+  \ unaligned accesses now: there are\n   2-byte/ushort writes to odd addresses. Due\
+  \ to the same reason as\n   above.\n\nRevert this for now, re-think and retry later.\n\
+  \nSigned-off-by: Jiri Slaby <jslaby@suse.cz>\nReported-by: syzbot+ad1f53726c3bd11180cb@syzkaller.appspotmail.com\n\
+  Fixes: b1c32fcfadf5 (\"vc_screen: extract vcs_read_buf_header\")\nCc: akpm@linux-foundation.org\n\
+  Cc: nico@fluxnic.net\nLink: https://lore.kernel.org/r/20200824095425.4376-1-jslaby@suse.cz\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty/vt
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,51 @@
+diff --git a/drivers/staging/rtl8712/rtl871x_xmit.c b/drivers/staging/rtl8712/rtl871x_xmit.c
+index 6353dbe554d3..408616e9afcf 100644
+--- a/drivers/staging/rtl8712/rtl871x_xmit.c
++++ b/drivers/staging/rtl8712/rtl871x_xmit.c
+@@ -117,12 +117,9 @@ int _r8712_init_xmit_priv(struct xmit_priv *pxmitpriv,
+ 	/*init xmit_buf*/
+ 	_init_queue(&pxmitpriv->free_xmitbuf_queue);
+ 	_init_queue(&pxmitpriv->pending_xmitbuf_queue);
+-	pxmitpriv->pallocated_xmitbuf =
+-		kmalloc(NR_XMITBUFF * sizeof(struct xmit_buf) + 4, GFP_ATOMIC);
+-	if (!pxmitpriv->pallocated_xmitbuf)
++	pxmitpriv->pxmitbuf = kmalloc(NR_XMITBUFF * sizeof(struct xmit_buf), GFP_ATOMIC);
++	if (!pxmitpriv->pxmitbuf)
+ 		goto clean_up_frame_buf;
+-	pxmitpriv->pxmitbuf = pxmitpriv->pallocated_xmitbuf + 4 -
+-			      ((addr_t)(pxmitpriv->pallocated_xmitbuf) & 3);
+ 	pxmitbuf = (struct xmit_buf *)pxmitpriv->pxmitbuf;
+ 	for (i = 0; i < NR_XMITBUFF; i++) {
+ 		INIT_LIST_HEAD(&pxmitbuf->list);
+@@ -165,8 +162,8 @@ int _r8712_init_xmit_priv(struct xmit_priv *pxmitpriv,
+ 		for (k = 0; k < 8; k++)		/* delete xmit urb's */
+ 			usb_free_urb(pxmitbuf->pxmit_urb[k]);
+ 	}
+-	kfree(pxmitpriv->pallocated_xmitbuf);
+-	pxmitpriv->pallocated_xmitbuf = NULL;
++	kfree(pxmitpriv->pxmitbuf);
++	pxmitpriv->pxmitbuf = NULL;
+ clean_up_frame_buf:
+ 	kfree(pxmitpriv->pallocated_frame_buf);
+ 	pxmitpriv->pallocated_frame_buf = NULL;
+@@ -193,7 +190,7 @@ void _free_xmit_priv(struct xmit_priv *pxmitpriv)
+ 		pxmitbuf++;
+ 	}
+ 	kfree(pxmitpriv->pallocated_frame_buf);
+-	kfree(pxmitpriv->pallocated_xmitbuf);
++	kfree(pxmitpriv->pxmitbuf);
+ 	free_hwxmits(padapter);
+ }
+ 
+diff --git a/drivers/staging/rtl8712/rtl871x_xmit.h b/drivers/staging/rtl8712/rtl871x_xmit.h
+index cdcbc87a3cad..784172c385e3 100644
+--- a/drivers/staging/rtl8712/rtl871x_xmit.h
++++ b/drivers/staging/rtl8712/rtl871x_xmit.h
+@@ -244,7 +244,6 @@ struct	xmit_priv {
+ 	int cmdseq;
+ 	struct  __queue free_xmitbuf_queue;
+ 	struct  __queue pending_xmitbuf_queue;
+-	u8 *pallocated_xmitbuf;
+ 	u8 *pxmitbuf;
+ 	uint free_xmitbuf_cnt;
+ };

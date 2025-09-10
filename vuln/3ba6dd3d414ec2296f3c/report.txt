@@ -1,0 +1,78 @@
+  invalid data type (got 3 should be 9), deleting
+bcachefs (loop0): accounting_read... done
+bcachefs (loop0): alloc_read... done
+bcachefs (loop0): snapshots_read... done
+bcachefs (loop0): check_allocations...
+bcachefs (loop0): bucket 0:26 data type btree ptr gen 0 missing in alloc btree
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq ac62141f8dc7e261 written 24 min_key POS_MIN durability: 1 ptr: 0:26:0 gen 0, fixing
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/bset.h:287!
+Oops: invalid opcode: 0000 [#1] SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5839 Comm: syz-executor153 Not tainted 6.16.0-rc5-syzkaller-00038-g733923397fd9 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:bkey_cmp_p_or_unp fs/bcachefs/bset.h:287 [inline]
+RIP: 0010:bset_search_tree fs/bcachefs/bset.c:1129 [inline]
+RIP: 0010:__bch2_bset_search fs/bcachefs/bset.c:1181 [inline]
+RIP: 0010:bch2_btree_node_iter_init+0x3961/0x3a50 fs/bcachefs/bset.c:1334
+Code: fd 90 0f 0b e8 a0 d7 a5 fd 90 0f 0b e8 98 d7 a5 fd 90 0f 0b e8 90 d7 a5 fd 90 0f 0b e8 88 d7 a5 fd 90 0f 0b e8 80 d7 a5 fd 90 <0f> 0b e8 78 d7 a5 fd 90 0f 0b e8 70 d7 a5 fd 90 0f 0b e8 68 d7 a5
+RSP: 0018:ffffc90003f8e300 EFLAGS: 00010293
+RAX: ffffffff841a4dd0 RBX: 000000000000004e RCX: ffff8880273dda00
+RDX: 0000000000000000 RSI: 000000000000004e RDI: 0000000000000001
+RBP: ffffc90003f8e530 R08: ffff8880273dda00 R09: 0000000000000002
+R10: 000000000000ffff R11: 0000000000000000 R12: dffffc0000000000
+R13: ffff888064897108 R14: ffff888073a80288 R15: 0000000000000001
+FS:  000055555ca77380(0000) GS:ffff888125d4f000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055c391632a50 CR3: 0000000033876000 CR4: 00000000003526f0
+Call Trace:
+ <TASK>
+ __btree_path_level_init fs/bcachefs/btree_iter.c:617 [inline]
+ bch2_btree_path_level_init+0x50b/0xa20 fs/bcachefs/btree_iter.c:637
+ btree_path_lock_root fs/bcachefs/btree_iter.c:787 [inline]
+ bch2_btree_path_traverse_one+0xfec/0x21d0 fs/bcachefs/btree_iter.c:1203
+ bch2_btree_path_traverse fs/bcachefs/btree_iter.h:250 [inline]
+ __bch2_btree_iter_peek fs/bcachefs/btree_iter.c:2267 [inline]
+ bch2_btree_iter_peek_max+0x9e8/0x58f0 fs/bcachefs/btree_iter.c:2384
+ bch2_btree_iter_peek_max_type fs/bcachefs/btree_iter.h:743 [inline]
+ bch2_gc_btree fs/bcachefs/btree_gc.c:729 [inline]
+ bch2_gc_btrees fs/bcachefs/btree_gc.c:792 [inline]
+ bch2_check_allocations+0x120d/0x57b0 fs/bcachefs/btree_gc.c:1094
+ bch2_run_recovery_pass fs/bcachefs/recovery_passes.c:484 [inline]
+ __bch2_run_recovery_passes+0x395/0x1010 fs/bcachefs/recovery_passes.c:539
+ bch2_run_recovery_passes+0x184/0x210 fs/bcachefs/recovery_passes.c:610
+ bch2_fs_recovery+0x2690/0x3a50 fs/bcachefs/recovery.c:1005
+ bch2_fs_start+0xaaf/0xda0 fs/bcachefs/super.c:1213
+ bch2_fs_get_tree+0xb39/0x1520 fs/bcachefs/fs.c:2488
+ vfs_get_tree+0x92/0x2b0 fs/super.c:1804
+ do_new_mount+0x24a/0xa40 fs/namespace.c:3902
+ do_mount fs/namespace.c:4239 [inline]
+ __do_sys_mount fs/namespace.c:4450 [inline]
+ __se_sys_mount+0x317/0x410 fs/namespace.c:4427
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f0310f000aa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffce0310ec8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffce0310ee0 RCX: 00007f0310f000aa
+RDX: 00002000000058c0 RSI: 0000200000005900 RDI: 00007ffce0310ee0
+RBP: 0000200000005900 R08: 00007ffce0310f20 R09: 000000000000591d
+R10: 0000000000010000 R11: 0000000000000282 R12: 00002000000058c0
+R13: 00007ffce0310f20 R14: 0000000000000003 R15: 0000000000010000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bkey_cmp_p_or_unp fs/bcachefs/bset.h:287 [inline]
+RIP: 0010:bset_search_tree fs/bcachefs/bset.c:1129 [inline]
+RIP: 0010:__bch2_bset_search fs/bcachefs/bset.c:1181 [inline]
+RIP: 0010:bch2_btree_node_iter_init+0x3961/0x3a50 fs/bcachefs/bset.c:1334
+Code: fd 90 0f 0b e8 a0 d7 a5 fd 90 0f 0b e8 98 d7 a5 fd 90 0f 0b e8 90 d7 a5 fd 90 0f 0b e8 88 d7 a5 fd 90 0f 0b e8 80 d7 a5 fd 90 <0f> 0b e8 78 d7 a5 fd 90 0f 0b e8 70 d7 a5 fd 90 0f 0b e8 68 d7 a5
+RSP: 0018:ffffc90003f8e300 EFLAGS: 00010293
+RAX: ffffffff841a4dd0 RBX: 000000000000004e RCX: ffff8880273dda00
+RDX: 0000000000000000 RSI: 000000000000004e RDI: 0000000000000001
+RBP: ffffc90003f8e530 R08: ffff8880273dda00 R09: 0000000000000002
+R10: 000000000000ffff R11: 0000000000000000 R12: dffffc0000000000
+R13: ffff888064897108 R14: ffff888073a80288 R15: 0000000000000001
+FS:  000055555ca77380(0000) GS:ffff888125d4f000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055c391632a50 CR3: 0000000033876000 CR4: 00000000003526f0

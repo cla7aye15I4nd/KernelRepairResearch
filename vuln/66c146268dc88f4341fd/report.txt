@@ -1,0 +1,107 @@
+loop0: detected capacity change from 0 to 32768
+==================================================================
+BUG: KASAN: use-after-free in __ocfs2_find_path+0x203/0x7e0 fs/ocfs2/alloc.c:1824
+Read of size 4 at addr ffff888071538000 by task syz-executor399/5841
+
+CPU: 1 UID: 0 PID: 5841 Comm: syz-executor399 Not tainted 6.12.0-syzkaller-03657-g43fb83c17ba2 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/30/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ __ocfs2_find_path+0x203/0x7e0 fs/ocfs2/alloc.c:1824
+ ocfs2_find_leaf+0xcf/0x230 fs/ocfs2/alloc.c:1938
+ ocfs2_get_clusters_nocache+0x1ad/0xbf0 fs/ocfs2/extent_map.c:418
+ ocfs2_get_clusters+0x5bd/0xbd0 fs/ocfs2/extent_map.c:621
+ ocfs2_extent_map_get_blocks+0x24c/0x7d0 fs/ocfs2/extent_map.c:668
+ ocfs2_read_virt_blocks+0x313/0xb20 fs/ocfs2/extent_map.c:983
+ ocfs2_read_dir_block fs/ocfs2/dir.c:508 [inline]
+ ocfs2_find_entry_el fs/ocfs2/dir.c:715 [inline]
+ ocfs2_find_entry+0x43b/0x2780 fs/ocfs2/dir.c:1080
+ ocfs2_find_files_on_disk+0xff/0x360 fs/ocfs2/dir.c:1981
+ ocfs2_lookup_ino_from_name+0xb1/0x1e0 fs/ocfs2/dir.c:2003
+ _ocfs2_get_system_file_inode fs/ocfs2/sysfile.c:136 [inline]
+ ocfs2_get_system_file_inode+0x305/0x7b0 fs/ocfs2/sysfile.c:112
+ ocfs2_init_global_system_inodes+0x32c/0x730 fs/ocfs2/super.c:457
+ ocfs2_initialize_super fs/ocfs2/super.c:2248 [inline]
+ ocfs2_fill_super+0x2f5b/0x5760 fs/ocfs2/super.c:994
+ mount_bdev+0x20a/0x2d0 fs/super.c:1693
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7faac5353dea
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe4ce13ad8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffe4ce13af0 RCX: 00007faac5353dea
+RDX: 0000000020004440 RSI: 0000000020000780 RDI: 00007ffe4ce13af0
+RBP: 0000000000000004 R08: 00007ffe4ce13b30 R09: 0000000000004444
+R10: 0000000001000000 R11: 0000000000000282 R12: 0000000001000000
+R13: 00007ffe4ce13b30 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x71538
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: f0(buddy)
+raw: 00fff00000000000 ffff88813fffc590 ffff88813fffc590 0000000000000000
+raw: 0000000000000000 0000000000000000 00000000f0000000 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as freed
+page last allocated via order 0, migratetype Movable, gfp_mask 0x140cca(GFP_HIGHUSER_MOVABLE|__GFP_COMP), pid 5839, tgid 5839 (udevd), ts 77247450455, free_ts 77249677157
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1556
+ prep_new_page mm/page_alloc.c:1564 [inline]
+ get_page_from_freelist+0x363e/0x3790 mm/page_alloc.c:3474
+ __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4751
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2265
+ folio_alloc_mpol_noprof+0x36/0x50 mm/mempolicy.c:2283
+ shmem_alloc_folio mm/shmem.c:1774 [inline]
+ shmem_alloc_and_add_folio+0x49b/0x13d0 mm/shmem.c:1813
+ shmem_get_folio_gfp+0x5a9/0x20a0 mm/shmem.c:2335
+ shmem_get_folio mm/shmem.c:2441 [inline]
+ shmem_write_begin+0x17e/0x460 mm/shmem.c:3094
+ generic_perform_write+0x344/0x6d0 mm/filemap.c:4056
+ shmem_file_write_iter+0xf9/0x120 mm/shmem.c:3269
+ new_sync_write fs/read_write.c:586 [inline]
+ vfs_write+0xaeb/0xd30 fs/read_write.c:679
+ ksys_write+0x18f/0x2b0 fs/read_write.c:731
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+page last free pid 5839 tgid 5839 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_folios+0xf21/0x1a10 mm/page_alloc.c:2704
+ folios_put_refs+0x76c/0x860 mm/swap.c:993
+ folio_batch_release include/linux/pagevec.h:101 [inline]
+ shmem_undo_range+0x64c/0x1cf0 mm/shmem.c:1037
+ shmem_truncate_range mm/shmem.c:1149 [inline]
+ shmem_evict_inode+0x29b/0xa80 mm/shmem.c:1277
+ evict+0x4e8/0x9a0 fs/inode.c:796
+ __dentry_kill+0x20d/0x630 fs/dcache.c:625
+ dput+0x19f/0x2b0 fs/dcache.c:867
+ do_renameat2+0xda1/0x13f0 fs/namei.c:5226
+ __do_sys_rename fs/namei.c:5271 [inline]
+ __se_sys_rename fs/namei.c:5269 [inline]
+ __x64_sys_rename+0x82/0x90 fs/namei.c:5269
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff888071537f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff888071537f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff888071538000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+                   ^
+ ffff888071538080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff888071538100: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+==================================================================

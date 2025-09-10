@@ -1,0 +1,40 @@
+==================================================================
+BUG: KCSAN: data-race in __ep_remove / __fput
+
+write to 0xffff888117ce4690 of 8 bytes by task 3797 on cpu 1:
+ __ep_remove+0x3c8/0x450 fs/eventpoll.c:826
+ ep_remove_safe fs/eventpoll.c:864 [inline]
+ ep_clear_and_put+0x158/0x260 fs/eventpoll.c:900
+ ep_eventpoll_release+0x2c/0x40 fs/eventpoll.c:937
+ __fput+0x17a/0x6d0 fs/file_table.c:431
+ ____fput+0x1c/0x30 fs/file_table.c:459
+ task_work_run+0x13a/0x1a0 kernel/task_work.c:228
+ get_signal+0xf87/0x1100 kernel/signal.c:2690
+ arch_do_signal_or_restart+0x95/0x4b0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x59/0x130 kernel/entry/common.c:218
+ do_syscall_64+0xd6/0x1c0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff888117ce4690 of 8 bytes by task 3795 on cpu 0:
+ eventpoll_release include/linux/eventpoll.h:45 [inline]
+ __fput+0xee/0x6d0 fs/file_table.c:422
+ ____fput+0x1c/0x30 fs/file_table.c:459
+ task_work_run+0x13a/0x1a0 kernel/task_work.c:228
+ get_signal+0xf87/0x1100 kernel/signal.c:2690
+ arch_do_signal_or_restart+0x95/0x4b0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x59/0x130 kernel/entry/common.c:218
+ do_syscall_64+0xd6/0x1c0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0xffff888103209140 -> 0x0000000000000000
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 3795 Comm: syz.3.142 Not tainted 6.11.0-syzkaller-07341-gbaeb9a7d8b60 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+==================================================================

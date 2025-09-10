@@ -1,0 +1,55 @@
+id: d6ca2daf692c7a82f959
+bug_link: https://syzkaller.appspot.com/bug?extid=d6ca2daf692c7a82f959
+title: kernel BUG in __block_write_begin_int (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d95fb348f0160f562ac07fa201dbbaf14524381f
+fix_commit: 41e192ad2779cae0102879612dfe46726e4396aa
+datetime: '2024-10-28T21:40:40-07:00'
+fix_commit_message: 'nilfs2: fix kernel bug due to missing clearing of checked flag
+
+
+  Syzbot reported that in directory operations after nilfs2 detects
+
+  filesystem corruption and degrades to read-only,
+
+  __block_write_begin_int(), which is called to prepare block writes, may
+
+  fail the BUG_ON check for accesses exceeding the folio/page size,
+
+  triggering a kernel bug.
+
+
+  This was found to be because the "checked" flag of a page/folio was not
+
+  cleared when it was discarded by nilfs2''s own routine, which causes the
+
+  sanity check of directory entries to be skipped when the directory
+
+  page/folio is reloaded.  So, fix that.
+
+
+  This was necessary when the use of nilfs2''s own page discard routine was
+
+  applied to more than just metadata files.
+
+
+  Link: https://lkml.kernel.org/r/20241017193359.5051-1-konishi.ryusuke@gmail.com
+
+  Fixes: 8c26c4e2694a ("nilfs2: fix issue with flush kernel thread after remount in
+  RO mode because of driver''s internal error or metadata corruption")
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+d6ca2daf692c7a82f959@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=d6ca2daf692c7a82f959
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 1
+covered_count: 0

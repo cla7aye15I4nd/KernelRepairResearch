@@ -1,0 +1,31 @@
+diff --git a/net/bridge/netfilter/ebtables.c b/net/bridge/netfilter/ebtables.c
+index 5f459c8b7937..08a65e4a77d0 100644
+--- a/net/bridge/netfilter/ebtables.c
++++ b/net/bridge/netfilter/ebtables.c
+@@ -396,6 +396,12 @@ ebt_check_watcher(struct ebt_entry_watcher *w, struct xt_tgchk_param *par,
+ 	watcher = xt_request_find_target(NFPROTO_BRIDGE, w->u.name, 0);
+ 	if (IS_ERR(watcher))
+ 		return PTR_ERR(watcher);
++
++	if (watcher->family != NFPROTO_BRIDGE) {
++		module_put(watcher->me);
++		return -ENOENT;
++	}
++
+ 	w->u.watcher = watcher;
+ 
+ 	par->target   = watcher;
+@@ -715,6 +721,13 @@ ebt_check_entry(struct ebt_entry *e, struct net *net,
+ 		goto cleanup_watchers;
+ 	}
+ 
++	/* Reject UNSPEC, xtables verdicts/return values are incompatible */
++	if (target->family != NFPROTO_BRIDGE) {
++		module_put(target->me);
++		ret = -ENOENT;
++		goto cleanup_watchers;
++	}
++
+ 	t->u.target = target;
+ 	if (t->u.target == &ebt_standard_target) {
+ 		if (gap < sizeof(struct ebt_standard_target)) {

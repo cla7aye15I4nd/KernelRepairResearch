@@ -1,0 +1,39 @@
+id: 48240bab47e705c53126
+bug_link: https://syzkaller.appspot.com/bug?extid=48240bab47e705c53126
+title: 'KASAN: slab-use-after-free Write in recv_work (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 454706f1f8698eecc6cc00493c6dffbccdbbd416
+fix_commit: aa9552438ebf015fc5f9f890dbfe39f0c53cf37e
+datetime: '2025-07-07T11:58:08-06:00'
+fix_commit_message: "nbd: fix uaf in nbd_genl_connect() error path\n\nThere is a use-after-free\
+  \ issue in nbd:\n\nblock nbd6: Receive control failed (result -104)\nblock nbd6:\
+  \ shutting down sockets\n==================================================================\n\
+  BUG: KASAN: slab-use-after-free in recv_work+0x694/0xa80 drivers/block/nbd.c:1022\n\
+  Write of size 4 at addr ffff8880295de478 by task kworker/u33:0/67\n\nCPU: 2 UID:\
+  \ 0 PID: 67 Comm: kworker/u33:0 Not tainted 6.15.0-rc5-syzkaller-00123-g2c89c1b655c0\
+  \ #0 PREEMPT(full)\nHardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1\
+  \ 04/01/2014\nWorkqueue: nbd6-recv recv_work\nCall Trace:\n <TASK>\n __dump_stack\
+  \ lib/dump_stack.c:94 [inline]\n dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120\n\
+  \ print_address_description mm/kasan/report.c:408 [inline]\n print_report+0xc3/0x670\
+  \ mm/kasan/report.c:521\n kasan_report+0xe0/0x110 mm/kasan/report.c:634\n check_region_inline\
+  \ mm/kasan/generic.c:183 [inline]\n kasan_check_range+0xef/0x1a0 mm/kasan/generic.c:189\n\
+  \ instrument_atomic_read_write include/linux/instrumented.h:96 [inline]\n atomic_dec\
+  \ include/linux/atomic/atomic-instrumented.h:592 [inline]\n recv_work+0x694/0xa80\
+  \ drivers/block/nbd.c:1022\n process_one_work+0x9cc/0x1b70 kernel/workqueue.c:3238\n\
+  \ process_scheduled_works kernel/workqueue.c:3319 [inline]\n worker_thread+0x6c8/0xf10\
+  \ kernel/workqueue.c:3400\n kthread+0x3c2/0x780 kernel/kthread.c:464\n ret_from_fork+0x45/0x80\
+  \ arch/x86/kernel/process.c:153\n ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245\n\
+  \ </TASK>\n\nnbd_genl_connect() does not properly stop the device on certain\nerror\
+  \ paths after nbd_start_device() has been called. This causes\nthe error path to\
+  \ put nbd->config while recv_work continue to use\nthe config after putting it,\
+  \ leading to use-after-free in recv_work.\n\nThis patch moves nbd_start_device()\
+  \ after the backend file creation.\n\nReported-by: syzbot+48240bab47e705c53126@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/all/68227a04.050a0220.f2294.00b5.GAE@google.com/T/\n\
+  Fixes: 6497ef8df568 (\"nbd: provide a way for userspace processes to identify device\
+  \ backends\")\nSigned-off-by: Zheng Qixing <zhengqixing@huawei.com>\nReviewed-by:\
+  \ Yu Kuai <yukuai3@huawei.com>\nLink: https://lore.kernel.org/r/20250612132405.364904-1-zhengqixing@huaweicloud.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 2
+covered_count: 0

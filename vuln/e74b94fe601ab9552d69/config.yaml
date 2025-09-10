@@ -1,0 +1,32 @@
+id: e74b94fe601ab9552d69
+bug_link: https://syzkaller.appspot.com/bug?extid=e74b94fe601ab9552d69
+title: 'BUG: unable to handle kernel access to user memory in schedule_tail'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 23c1075ae83adaf14ea3f727c40368799f80bccc
+fix_commit: 285a76bb2cf51b0c74c634f2aaccdb93e1f2a359
+datetime: '2021-04-01T21:37:04-07:00'
+fix_commit_message: "riscv: evaluate put_user() arg before enabling user access\n\n\
+  The <asm/uaccess.h> header has a problem with put_user(a, ptr) if\nthe 'a' is not\
+  \ a simple variable, such as a function. This can lead\nto the compiler producing\
+  \ code as so:\n\n1:\tenable_user_access()\n2:\tevaluate 'a' into register 'r'\n\
+  3:\tput 'r' to 'ptr'\n4:\tdisable_user_acess()\n\nThe issue is that 'a' is now being\
+  \ evaluated with the user memory\nprotections disabled. So we try and force the\
+  \ evaulation by assigning\n'x' to __val at the start, and hoping the compiler barriers\
+  \ in\n enable_user_access() do the job of ordering step 2 before step 1.\n\nThis\
+  \ has shown up in a bug where 'a' sleeps and thus schedules out\nand loses the SR_SUM\
+  \ flag. This isn't sufficient to fully fix, but\nshould reduce the window of opportunity.\
+  \ The first instance of this\nwe found is in scheudle_tail() where the code does:\n\
+  \n$ less -N kernel/sched/core.c\n\n4263  if (current->set_child_tid)\n4264     \
+  \    put_user(task_pid_vnr(current), current->set_child_tid);\n\nHere, the task_pid_vnr(current)\
+  \ is called within the block that has\nenabled the user memory access. This can\
+  \ be made worse with KASAN\nwhich makes task_pid_vnr() a rather large call with\
+  \ plenty of\nopportunity to sleep.\n\nSigned-off-by: Ben Dooks <ben.dooks@codethink.co.uk>\n\
+  Reported-by: syzbot+e74b94fe601ab9552d69@syzkaller.appspotmail.com\nSuggested-by:\
+  \ Arnd Bergman <arnd@arndb.de>\n\n--\nChanges since v1:\n- fixed formatting and\
+  \ updated the patch description with more info\n\nChanges since v2:\n- fixed commenting\
+  \ on __put_user() (schwab@linux-m68k.org)\n\nChange since v3:\n- fixed RFC in patch\
+  \ title. Should be ready to merge.\n\nSigned-off-by: Palmer Dabbelt <palmerdabbelt@google.com>\n"
+submodule:
+- arch/riscv/include/asm
+hunk_count: 2
+covered_count: 0

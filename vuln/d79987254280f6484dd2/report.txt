@@ -1,0 +1,85 @@
+BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!
+turning off the locking correctness validator.
+CPU: 1 PID: 5233 Comm: kworker/1:1 Not tainted 6.10.0-rc3-syzkaller-00044-g2ccbdf43d5e7 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+Workqueue: bcachefs_write_ref bch2_delete_dead_snapshots_work
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ add_chain_cache kernel/locking/lockdep.c:3735 [inline]
+ lookup_chain_cache_add kernel/locking/lockdep.c:3816 [inline]
+ validate_chain kernel/locking/lockdep.c:3837 [inline]
+ __lock_acquire+0x2ea6/0x3b30 kernel/locking/lockdep.c:5137
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+ _raw_spin_lock_nested+0x31/0x40 kernel/locking/spinlock.c:378
+ raw_spin_rq_lock_nested+0x29/0x130 kernel/sched/core.c:559
+ raw_spin_rq_lock kernel/sched/sched.h:1406 [inline]
+ rq_lock kernel/sched/sched.h:1702 [inline]
+ ttwu_queue kernel/sched/core.c:4055 [inline]
+ try_to_wake_up+0x514/0x13e0 kernel/sched/core.c:4378
+ kick_pool+0x2a0/0x7a0 kernel/workqueue.c:1279
+ __queue_work+0x94d/0x1020 kernel/workqueue.c:2360
+ queue_work_on+0x11a/0x140 kernel/workqueue.c:2410
+ queue_work include/linux/workqueue.h:621 [inline]
+ __bch2_btree_node_write+0x1fc1/0x2d60 fs/bcachefs/btree_io.c:2232
+ bch2_btree_node_write+0x127/0x2f0 fs/bcachefs/btree_io.c:2307
+ btree_split+0x1087/0x3010 fs/bcachefs/btree_update_interior.c:1706
+ bch2_btree_split_leaf+0x108/0x770 fs/bcachefs/btree_update_interior.c:1857
+ bch2_trans_commit_error+0x327/0xd00 fs/bcachefs/btree_trans_commit.c:918
+ __bch2_trans_commit+0x4eb1/0x7ad0 fs/bcachefs/btree_trans_commit.c:1138
+ bch2_trans_commit fs/bcachefs/btree_update.h:170 [inline]
+ bch2_delete_dead_snapshots+0x1b07/0x4e50 fs/bcachefs/snapshot.c:1617
+ bch2_delete_dead_snapshots_work+0x20/0x160 fs/bcachefs/snapshot.c:1690
+ process_one_work+0x9fb/0x1b60 kernel/workqueue.c:3231
+ process_scheduled_works kernel/workqueue.c:3312 [inline]
+ worker_thread+0x6c8/0xf70 kernel/workqueue.c:3393
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting keys from dying snapshots erofs_trans_commit
+bcachefs (loop0): bch2_delete_dead_snapshots(): error erofs_trans_commit
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting keys from dying snapshots erofs_trans_commit
+bcachefs (loop0): bch2_delete_dead_snapshots(): error erofs_trans_commit
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting keys from dying snapshots erofs_trans_commit
+bcachefs (loop0): bch2_delete_dead_snapshots(): error erofs_trans_commit
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting keys from dying snapshots erofs_trans_commit
+bcachefs (loop0): bch2_delete_dead_snapshots(): error erofs_trans_commit
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error deleting snapshot 4294967295 ENOENT_bkey_type_mismatch
+bcachefs (loop0): bch2_delete_dead_snapshots(): error ENOENT_bkey_type_mismatch

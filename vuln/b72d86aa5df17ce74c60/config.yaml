@@ -1,0 +1,101 @@
+id: b72d86aa5df17ce74c60
+bug_link: https://syzkaller.appspot.com/bug?extid=b72d86aa5df17ce74c60
+title: 'KASAN: slab-use-after-free Read in kcm_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ce335db0621648472f9bb4b7191eb2e13a5793cf
+fix_commit: 807067bf014d4a3ae2cc55bd3de16f22a01eb580
+datetime: '2024-08-19T18:36:12-07:00'
+fix_commit_message: "kcm: Serialise kcm_sendmsg() for the same socket.\n\nsyzkaller\
+  \ reported UAF in kcm_release(). [0]\n\nThe scenario is\n\n  1. Thread A builds\
+  \ a skb with MSG_MORE and sets kcm->seq_skb.\n\n  2. Thread A resumes building skb\
+  \ from kcm->seq_skb but is blocked\n     by sk_stream_wait_memory()\n\n  3. Thread\
+  \ B calls sendmsg() concurrently, finishes building kcm->seq_skb\n     and puts\
+  \ the skb to the write queue\n\n  4. Thread A faces an error and finally frees skb\
+  \ that is already in the\n     write queue\n\n  5. kcm_release() does double-free\
+  \ the skb in the write queue\n\nWhen a thread is building a MSG_MORE skb, another\
+  \ thread must not touch it.\n\nLet's add a per-sk mutex and serialise kcm_sendmsg().\n\
+  \n[0]:\nBUG: KASAN: slab-use-after-free in __skb_unlink include/linux/skbuff.h:2366\
+  \ [inline]\nBUG: KASAN: slab-use-after-free in __skb_dequeue include/linux/skbuff.h:2385\
+  \ [inline]\nBUG: KASAN: slab-use-after-free in __skb_queue_purge_reason include/linux/skbuff.h:3175\
+  \ [inline]\nBUG: KASAN: slab-use-after-free in __skb_queue_purge include/linux/skbuff.h:3181\
+  \ [inline]\nBUG: KASAN: slab-use-after-free in kcm_release+0x170/0x4c8 net/kcm/kcmsock.c:1691\n\
+  Read of size 8 at addr ffff0000ced0fc80 by task syz-executor329/6167\n\nCPU: 1 PID:\
+  \ 6167 Comm: syz-executor329 Tainted: G    B              6.8.0-rc5-syzkaller-g9abbc24128bc\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/25/2024\nCall trace:\n dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:291\n\
+  \ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:298\n __dump_stack lib/dump_stack.c:88\
+  \ [inline]\n dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106\n print_address_description\
+  \ mm/kasan/report.c:377 [inline]\n print_report+0x178/0x518 mm/kasan/report.c:488\n\
+  \ kasan_report+0xd8/0x138 mm/kasan/report.c:601\n __asan_report_load8_noabort+0x20/0x2c\
+  \ mm/kasan/report_generic.c:381\n __skb_unlink include/linux/skbuff.h:2366 [inline]\n\
+  \ __skb_dequeue include/linux/skbuff.h:2385 [inline]\n __skb_queue_purge_reason\
+  \ include/linux/skbuff.h:3175 [inline]\n __skb_queue_purge include/linux/skbuff.h:3181\
+  \ [inline]\n kcm_release+0x170/0x4c8 net/kcm/kcmsock.c:1691\n __sock_release net/socket.c:659\
+  \ [inline]\n sock_close+0xa4/0x1e8 net/socket.c:1421\n __fput+0x30c/0x738 fs/file_table.c:376\n\
+  \ ____fput+0x20/0x30 fs/file_table.c:404\n task_work_run+0x230/0x2e0 kernel/task_work.c:180\n\
+  \ exit_task_work include/linux/task_work.h:38 [inline]\n do_exit+0x618/0x1f64 kernel/exit.c:871\n\
+  \ do_group_exit+0x194/0x22c kernel/exit.c:1020\n get_signal+0x1500/0x15ec kernel/signal.c:2893\n\
+  \ do_signal+0x23c/0x3b44 arch/arm64/kernel/signal.c:1249\n do_notify_resume+0x74/0x1f4\
+  \ arch/arm64/kernel/entry-common.c:148\n exit_to_user_mode_prepare arch/arm64/kernel/entry-common.c:169\
+  \ [inline]\n exit_to_user_mode arch/arm64/kernel/entry-common.c:178 [inline]\n el0_svc+0xac/0x168\
+  \ arch/arm64/kernel/entry-common.c:713\n el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:730\n\
+  \ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:598\n\nAllocated by task 6166:\n\
+  \ kasan_save_stack mm/kasan/common.c:47 [inline]\n kasan_save_track+0x40/0x78 mm/kasan/common.c:68\n\
+  \ kasan_save_alloc_info+0x70/0x84 mm/kasan/generic.c:626\n unpoison_slab_object\
+  \ mm/kasan/common.c:314 [inline]\n __kasan_slab_alloc+0x74/0x8c mm/kasan/common.c:340\n\
+  \ kasan_slab_alloc include/linux/kasan.h:201 [inline]\n slab_post_alloc_hook mm/slub.c:3813\
+  \ [inline]\n slab_alloc_node mm/slub.c:3860 [inline]\n kmem_cache_alloc_node+0x204/0x4c0\
+  \ mm/slub.c:3903\n __alloc_skb+0x19c/0x3d8 net/core/skbuff.c:641\n alloc_skb include/linux/skbuff.h:1296\
+  \ [inline]\n kcm_sendmsg+0x1d3c/0x2124 net/kcm/kcmsock.c:783\n sock_sendmsg_nosec\
+  \ net/socket.c:730 [inline]\n __sock_sendmsg net/socket.c:745 [inline]\n sock_sendmsg+0x220/0x2c0\
+  \ net/socket.c:768\n splice_to_socket+0x7cc/0xd58 fs/splice.c:889\n do_splice_from\
+  \ fs/splice.c:941 [inline]\n direct_splice_actor+0xec/0x1d8 fs/splice.c:1164\n splice_direct_to_actor+0x438/0xa0c\
+  \ fs/splice.c:1108\n do_splice_direct_actor fs/splice.c:1207 [inline]\n do_splice_direct+0x1e4/0x304\
+  \ fs/splice.c:1233\n do_sendfile+0x460/0xb3c fs/read_write.c:1295\n __do_sys_sendfile64\
+  \ fs/read_write.c:1362 [inline]\n __se_sys_sendfile64 fs/read_write.c:1348 [inline]\n\
+  \ __arm64_sys_sendfile64+0x160/0x3b4 fs/read_write.c:1348\n __invoke_syscall arch/arm64/kernel/syscall.c:37\
+  \ [inline]\n invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:51\n el0_svc_common+0x130/0x23c\
+  \ arch/arm64/kernel/syscall.c:136\n do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:155\n\
+  \ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:712\n el0t_64_sync_handler+0x84/0xfc\
+  \ arch/arm64/kernel/entry-common.c:730\n el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:598\n\
+  \nFreed by task 6167:\n kasan_save_stack mm/kasan/common.c:47 [inline]\n kasan_save_track+0x40/0x78\
+  \ mm/kasan/common.c:68\n kasan_save_free_info+0x5c/0x74 mm/kasan/generic.c:640\n\
+  \ poison_slab_object+0x124/0x18c mm/kasan/common.c:241\n __kasan_slab_free+0x3c/0x78\
+  \ mm/kasan/common.c:257\n kasan_slab_free include/linux/kasan.h:184 [inline]\n slab_free_hook\
+  \ mm/slub.c:2121 [inline]\n slab_free mm/slub.c:4299 [inline]\n kmem_cache_free+0x15c/0x3d4\
+  \ mm/slub.c:4363\n kfree_skbmem+0x10c/0x19c\n __kfree_skb net/core/skbuff.c:1109\
+  \ [inline]\n kfree_skb_reason+0x240/0x6f4 net/core/skbuff.c:1144\n kfree_skb include/linux/skbuff.h:1244\
+  \ [inline]\n kcm_release+0x104/0x4c8 net/kcm/kcmsock.c:1685\n __sock_release net/socket.c:659\
+  \ [inline]\n sock_close+0xa4/0x1e8 net/socket.c:1421\n __fput+0x30c/0x738 fs/file_table.c:376\n\
+  \ ____fput+0x20/0x30 fs/file_table.c:404\n task_work_run+0x230/0x2e0 kernel/task_work.c:180\n\
+  \ exit_task_work include/linux/task_work.h:38 [inline]\n do_exit+0x618/0x1f64 kernel/exit.c:871\n\
+  \ do_group_exit+0x194/0x22c kernel/exit.c:1020\n get_signal+0x1500/0x15ec kernel/signal.c:2893\n\
+  \ do_signal+0x23c/0x3b44 arch/arm64/kernel/signal.c:1249\n do_notify_resume+0x74/0x1f4\
+  \ arch/arm64/kernel/entry-common.c:148\n exit_to_user_mode_prepare arch/arm64/kernel/entry-common.c:169\
+  \ [inline]\n exit_to_user_mode arch/arm64/kernel/entry-common.c:178 [inline]\n el0_svc+0xac/0x168\
+  \ arch/arm64/kernel/entry-common.c:713\n el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:730\n\
+  \ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:598\n\nThe buggy address belongs\
+  \ to the object at ffff0000ced0fc80\n which belongs to the cache skbuff_head_cache\
+  \ of size 240\nThe buggy address is located 0 bytes inside of\n freed 240-byte region\
+  \ [ffff0000ced0fc80, ffff0000ced0fd70)\n\nThe buggy address belongs to the physical\
+  \ page:\npage:00000000d35f4ae4 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0\
+  \ pfn:0x10ed0f\nflags: 0x5ffc00000000800(slab|node=0|zone=2|lastcpupid=0x7ff)\n\
+  page_type: 0xffffffff()\nraw: 05ffc00000000800 ffff0000c1cbf640 fffffdffc3423100\
+  \ dead000000000004\nraw: 0000000000000000 00000000000c000c 00000001ffffffff 0000000000000000\n\
+  page dumped because: kasan: bad access detected\n\nMemory state around the buggy\
+  \ address:\n ffff0000ced0fb80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n\
+  \ ffff0000ced0fc00: fb fb fb fb fb fb fc fc fc fc fc fc fc fc fc fc\n>ffff0000ced0fc80:\
+  \ fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n                   ^\n ffff0000ced0fd00:\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb fb fb fc fc\n ffff0000ced0fd80: fc fc fc fc\
+  \ fc fc fc fc fa fb fb fb fb fb fb fb\n\nFixes: ab7ac4eb9832 (\"kcm: Kernel Connection\
+  \ Multiplexor module\")\nReported-by: syzbot+b72d86aa5df17ce74c60@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=b72d86aa5df17ce74c60\nTested-by:\
+  \ syzbot+b72d86aa5df17ce74c60@syzkaller.appspotmail.com\nSigned-off-by: Kuniyuki\
+  \ Iwashima <kuniyu@amazon.com>\nReviewed-by: Eric Dumazet <edumazet@google.com>\n\
+  Link: https://patch.msgid.link/20240815220437.69511-1-kuniyu@amazon.com\nSigned-off-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- include/net
+- net/kcm
+hunk_count: 5
+covered_count: 1

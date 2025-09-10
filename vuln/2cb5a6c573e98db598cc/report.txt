@@ -1,0 +1,153 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in __bpf_trace_run kernel/trace/bpf_trace.c:2382 [inline]
+BUG: KASAN: slab-use-after-free in bpf_trace_run2+0xfa/0x530 kernel/trace/bpf_trace.c:2437
+Read of size 8 at addr ffff88801ae9a918 by task syz-executor812/7482
+
+CPU: 0 PID: 7482 Comm: syz-executor812 Not tainted 6.8.0-syzkaller-05243-g14bb1e8c8d4a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2e0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ __bpf_trace_run kernel/trace/bpf_trace.c:2382 [inline]
+ bpf_trace_run2+0xfa/0x530 kernel/trace/bpf_trace.c:2437
+ __traceiter_kfree+0x2b/0x50 include/trace/events/kmem.h:94
+ trace_kfree include/trace/events/kmem.h:94 [inline]
+ kfree+0x291/0x380 mm/slub.c:4396
+ clear_jmp_history kernel/bpf/verifier.c:1376 [inline]
+ free_verifier_state+0x1a7/0x240 kernel/bpf/verifier.c:1390
+ do_check_common+0x14f5/0x1dd0 kernel/bpf/verifier.c:20507
+ do_check_main kernel/bpf/verifier.c:20592 [inline]
+ bpf_check+0x136ab/0x190c0 kernel/bpf/verifier.c:21262
+ bpf_prog_load+0x1667/0x20f0 kernel/bpf/syscall.c:2895
+ __sys_bpf+0x4ee/0x810 kernel/bpf/syscall.c:5631
+ __do_sys_bpf kernel/bpf/syscall.c:5738 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5736 [inline]
+ __x64_sys_bpf+0x7c/0x90 kernel/bpf/syscall.c:5736
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7fa194052cd9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 a1 1a 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe9835daf8 EFLAGS: 00000246 ORIG_RAX: 0000000000000141
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fa194052cd9
+RDX: 0000000000000090 RSI: 00000000200000c0 RDI: 0000000000000005
+RBP: 00000000000f4240 R08: 0000000000000000 R09: 00007ffe9835dbe0
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffe9835dbe0
+R13: 00007ffe9835dbc0 R14: 0000000000018188 R15: 00007ffe9835dbbc
+ </TASK>
+
+Allocated by task 7481:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:370 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:387
+ kasan_kmalloc include/linux/kasan.h:211 [inline]
+ kmalloc_trace+0x1d9/0x360 mm/slub.c:4012
+ kmalloc include/linux/slab.h:590 [inline]
+ kzalloc include/linux/slab.h:711 [inline]
+ bpf_raw_tp_link_attach+0x2a0/0x6e0 kernel/bpf/syscall.c:3816
+ bpf_raw_tracepoint_open+0x1c2/0x240 kernel/bpf/syscall.c:3863
+ __sys_bpf+0x3c0/0x810 kernel/bpf/syscall.c:5673
+ __do_sys_bpf kernel/bpf/syscall.c:5738 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5736 [inline]
+ __x64_sys_bpf+0x7c/0x90 kernel/bpf/syscall.c:5736
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+Freed by task 7481:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:589
+ poison_slab_object+0xa6/0xe0 mm/kasan/common.c:240
+ __kasan_slab_free+0x37/0x60 mm/kasan/common.c:256
+ kasan_slab_free include/linux/kasan.h:184 [inline]
+ slab_free_hook mm/slub.c:2121 [inline]
+ slab_free mm/slub.c:4299 [inline]
+ kfree+0x14a/0x380 mm/slub.c:4409
+ bpf_link_release+0x3b/0x50 kernel/bpf/syscall.c:3071
+ __fput+0x429/0x8a0 fs/file_table.c:423
+ task_work_run+0x24f/0x310 kernel/task_work.c:180
+ exit_task_work include/linux/task_work.h:38 [inline]
+ do_exit+0xa1b/0x27e0 kernel/exit.c:878
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1027
+ __do_sys_exit_group kernel/exit.c:1038 [inline]
+ __se_sys_exit_group kernel/exit.c:1036 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1036
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+The buggy address belongs to the object at ffff88801ae9a900
+ which belongs to the cache kmalloc-128 of size 128
+The buggy address is located 24 bytes inside of
+ freed 128-byte region [ffff88801ae9a900, ffff88801ae9a980)
+
+The buggy address belongs to the physical page:
+page:ffffea00006ba680 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x1ae9a
+flags: 0xfff00000000800(slab|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000800 ffff888014c418c0 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000100010 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x112cc0(GFP_USER|__GFP_NOWARN|__GFP_NORETRY), pid 7480, tgid 7480 (syz-executor812), ts 98783367030, free_ts 98665474910
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x1ea/0x210 mm/page_alloc.c:1533
+ prep_new_page mm/page_alloc.c:1540 [inline]
+ get_page_from_freelist+0x33ea/0x3580 mm/page_alloc.c:3311
+ __alloc_pages+0x256/0x680 mm/page_alloc.c:4569
+ __alloc_pages_node include/linux/gfp.h:238 [inline]
+ alloc_pages_node include/linux/gfp.h:261 [inline]
+ alloc_slab_page+0x5f/0x160 mm/slub.c:2190
+ allocate_slab mm/slub.c:2354 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2407
+ ___slab_alloc+0xd1b/0x13e0 mm/slub.c:3540
+ __slab_alloc mm/slub.c:3625 [inline]
+ __slab_alloc_node mm/slub.c:3678 [inline]
+ slab_alloc_node mm/slub.c:3850 [inline]
+ __do_kmalloc_node mm/slub.c:3980 [inline]
+ __kmalloc_node+0x2d9/0x4e0 mm/slub.c:3988
+ kmalloc_node include/linux/slab.h:610 [inline]
+ kvmalloc_node+0x72/0x190 mm/util.c:634
+ kvmalloc include/linux/slab.h:728 [inline]
+ kvmalloc_array include/linux/slab.h:746 [inline]
+ kvcalloc include/linux/slab.h:751 [inline]
+ bpf_check+0xd82/0x190c0 kernel/bpf/verifier.c:21221
+ bpf_prog_load+0x1667/0x20f0 kernel/bpf/syscall.c:2895
+ __sys_bpf+0x4ee/0x810 kernel/bpf/syscall.c:5631
+ __do_sys_bpf kernel/bpf/syscall.c:5738 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5736 [inline]
+ __x64_sys_bpf+0x7c/0x90 kernel/bpf/syscall.c:5736
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+page last free pid 7470 tgid 7470 stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1140 [inline]
+ free_unref_page_prepare+0x968/0xa90 mm/page_alloc.c:2346
+ free_unref_page_list+0x5a3/0x850 mm/page_alloc.c:2532
+ release_pages+0x2744/0x2a80 mm/swap.c:1042
+ tlb_batch_pages_flush mm/mmu_gather.c:98 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:293 [inline]
+ tlb_flush_mmu+0x34d/0x4e0 mm/mmu_gather.c:300
+ tlb_finish_mmu+0xd4/0x200 mm/mmu_gather.c:392
+ exit_mmap+0x4b6/0xd40 mm/mmap.c:3300
+ __mmput+0x115/0x3c0 kernel/fork.c:1345
+ exit_mm+0x220/0x310 kernel/exit.c:569
+ do_exit+0x99e/0x27e0 kernel/exit.c:865
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1027
+ __do_sys_exit_group kernel/exit.c:1038 [inline]
+ __se_sys_exit_group kernel/exit.c:1036 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1036
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+Memory state around the buggy address:
+ ffff88801ae9a800: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88801ae9a880: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+>ffff88801ae9a900: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                            ^
+ ffff88801ae9a980: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88801ae9aa00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 fc fc
+==================================================================

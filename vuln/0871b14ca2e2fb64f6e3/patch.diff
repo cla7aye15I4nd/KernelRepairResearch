@@ -1,0 +1,216 @@
+diff --git a/drivers/gpu/drm/arm/display/komeda/komeda_crtc.c b/drivers/gpu/drm/arm/display/komeda/komeda_crtc.c
+index 56bd938961ee..f33418d6e1a0 100644
+--- a/drivers/gpu/drm/arm/display/komeda/komeda_crtc.c
++++ b/drivers/gpu/drm/arm/display/komeda/komeda_crtc.c
+@@ -492,10 +492,8 @@ static void komeda_crtc_reset(struct drm_crtc *crtc)
+ 	crtc->state = NULL;
+ 
+ 	state = kzalloc(sizeof(*state), GFP_KERNEL);
+-	if (state) {
+-		crtc->state = &state->base;
+-		crtc->state->crtc = crtc;
+-	}
++	if (state)
++		__drm_atomic_helper_crtc_reset(crtc, &state->base);
+ }
+ 
+ static struct drm_crtc_state *
+@@ -616,7 +614,6 @@ static int komeda_crtc_add(struct komeda_kms_dev *kms,
+ 		return err;
+ 
+ 	drm_crtc_helper_add(crtc, &komeda_crtc_helper_funcs);
+-	drm_crtc_vblank_reset(crtc);
+ 
+ 	crtc->port = kcrtc->master->of_output_port;
+ 
+diff --git a/drivers/gpu/drm/arm/malidp_drv.c b/drivers/gpu/drm/arm/malidp_drv.c
+index a76aa3fb8d3c..69fee05c256c 100644
+--- a/drivers/gpu/drm/arm/malidp_drv.c
++++ b/drivers/gpu/drm/arm/malidp_drv.c
+@@ -848,7 +848,6 @@ static int malidp_bind(struct device *dev)
+ 	drm->irq_enabled = true;
+ 
+ 	ret = drm_vblank_init(drm, drm->mode_config.num_crtc);
+-	drm_crtc_vblank_reset(&malidp->crtc);
+ 	if (ret < 0) {
+ 		DRM_ERROR("failed to initialise vblank\n");
+ 		goto vblank_fail;
+diff --git a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_crtc.c b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_crtc.c
+index 10985134ce0b..ce246b96330b 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_crtc.c
++++ b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_crtc.c
+@@ -411,10 +411,8 @@ static void atmel_hlcdc_crtc_reset(struct drm_crtc *crtc)
+ 	}
+ 
+ 	state = kzalloc(sizeof(*state), GFP_KERNEL);
+-	if (state) {
+-		crtc->state = &state->base;
+-		crtc->state->crtc = crtc;
+-	}
++	if (state)
++		__drm_atomic_helper_crtc_reset(crtc, &state->base);
+ }
+ 
+ static struct drm_crtc_state *
+@@ -528,7 +526,6 @@ int atmel_hlcdc_crtc_create(struct drm_device *dev)
+ 	}
+ 
+ 	drm_crtc_helper_add(&crtc->base, &lcdc_crtc_helper_funcs);
+-	drm_crtc_vblank_reset(&crtc->base);
+ 
+ 	drm_mode_crtc_set_gamma_size(&crtc->base, ATMEL_HLCDC_CLUT_SIZE);
+ 	drm_crtc_enable_color_mgmt(&crtc->base, 0, false,
+diff --git a/drivers/gpu/drm/drm_atomic_state_helper.c b/drivers/gpu/drm/drm_atomic_state_helper.c
+index 8fce6a115dfe..9ad74045158e 100644
+--- a/drivers/gpu/drm/drm_atomic_state_helper.c
++++ b/drivers/gpu/drm/drm_atomic_state_helper.c
+@@ -32,6 +32,7 @@
+ #include <drm/drm_device.h>
+ #include <drm/drm_plane.h>
+ #include <drm/drm_print.h>
++#include <drm/drm_vblank.h>
+ #include <drm/drm_writeback.h>
+ 
+ #include <linux/slab.h>
+@@ -93,6 +94,9 @@ __drm_atomic_helper_crtc_reset(struct drm_crtc *crtc,
+ 	if (crtc_state)
+ 		__drm_atomic_helper_crtc_state_reset(crtc_state, crtc);
+ 
++	if (drm_dev_has_vblank(crtc->dev))
++		drm_crtc_vblank_reset(crtc);
++
+ 	crtc->state = crtc_state;
+ }
+ EXPORT_SYMBOL(__drm_atomic_helper_crtc_reset);
+diff --git a/drivers/gpu/drm/msm/disp/mdp5/mdp5_crtc.c b/drivers/gpu/drm/msm/disp/mdp5/mdp5_crtc.c
+index e152016a6a7d..c39dad151bb6 100644
+--- a/drivers/gpu/drm/msm/disp/mdp5/mdp5_crtc.c
++++ b/drivers/gpu/drm/msm/disp/mdp5/mdp5_crtc.c
+@@ -1117,8 +1117,6 @@ static void mdp5_crtc_reset(struct drm_crtc *crtc)
+ 		mdp5_crtc_destroy_state(crtc, crtc->state);
+ 
+ 	__drm_atomic_helper_crtc_reset(crtc, &mdp5_cstate->base);
+-
+-	drm_crtc_vblank_reset(crtc);
+ }
+ 
+ static const struct drm_crtc_funcs mdp5_crtc_funcs = {
+diff --git a/drivers/gpu/drm/omapdrm/omap_crtc.c b/drivers/gpu/drm/omapdrm/omap_crtc.c
+index fce7e944a280..6d40914675da 100644
+--- a/drivers/gpu/drm/omapdrm/omap_crtc.c
++++ b/drivers/gpu/drm/omapdrm/omap_crtc.c
+@@ -697,14 +697,16 @@ static int omap_crtc_atomic_get_property(struct drm_crtc *crtc,
+ 
+ static void omap_crtc_reset(struct drm_crtc *crtc)
+ {
++	struct omap_crtc_state *state;
++
+ 	if (crtc->state)
+ 		__drm_atomic_helper_crtc_destroy_state(crtc->state);
+ 
+ 	kfree(crtc->state);
+-	crtc->state = kzalloc(sizeof(struct omap_crtc_state), GFP_KERNEL);
+ 
+-	if (crtc->state)
+-		crtc->state->crtc = crtc;
++	state = kzalloc(sizeof(*state), GFP_KERNEL);
++	if (state)
++		__drm_atomic_helper_crtc_reset(crtc, &state->base);
+ }
+ 
+ static struct drm_crtc_state *
+diff --git a/drivers/gpu/drm/omapdrm/omap_drv.c b/drivers/gpu/drm/omapdrm/omap_drv.c
+index 242d28281784..4526967978b7 100644
+--- a/drivers/gpu/drm/omapdrm/omap_drv.c
++++ b/drivers/gpu/drm/omapdrm/omap_drv.c
+@@ -595,7 +595,6 @@ static int omapdrm_init(struct omap_drm_private *priv, struct device *dev)
+ {
+ 	const struct soc_device_attribute *soc;
+ 	struct drm_device *ddev;
+-	unsigned int i;
+ 	int ret;
+ 
+ 	DBG("%s", dev_name(dev));
+@@ -642,9 +641,6 @@ static int omapdrm_init(struct omap_drm_private *priv, struct device *dev)
+ 		goto err_cleanup_modeset;
+ 	}
+ 
+-	for (i = 0; i < priv->num_pipes; i++)
+-		drm_crtc_vblank_off(priv->pipes[i].crtc);
+-
+ 	omap_fbdev_init(ddev);
+ 
+ 	drm_kms_helper_poll_init(ddev);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index d73e88ddecd0..fe86a3e67757 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -975,8 +975,7 @@ static void rcar_du_crtc_reset(struct drm_crtc *crtc)
+ 	state->crc.source = VSP1_DU_CRC_NONE;
+ 	state->crc.index = 0;
+ 
+-	crtc->state = &state->state;
+-	crtc->state->crtc = crtc;
++	__drm_atomic_helper_crtc_reset(crtc, &state->state);
+ }
+ 
+ static int rcar_du_crtc_enable_vblank(struct drm_crtc *crtc)
+@@ -1271,9 +1270,6 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int swindex,
+ 
+ 	drm_crtc_helper_add(crtc, &crtc_helper_funcs);
+ 
+-	/* Start with vertical blanking interrupt reporting disabled. */
+-	drm_crtc_vblank_off(crtc);
+-
+ 	/* Register the interrupt handler. */
+ 	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_CRTC_IRQ_CLOCK)) {
+ 		/* The IRQ's are associated with the CRTC (sw)index. */
+diff --git a/drivers/gpu/drm/tegra/dc.c b/drivers/gpu/drm/tegra/dc.c
+index 83f31c6e891c..9b308b572eac 100644
+--- a/drivers/gpu/drm/tegra/dc.c
++++ b/drivers/gpu/drm/tegra/dc.c
+@@ -1168,7 +1168,6 @@ static void tegra_crtc_reset(struct drm_crtc *crtc)
+ 		tegra_crtc_atomic_destroy_state(crtc, crtc->state);
+ 
+ 	__drm_atomic_helper_crtc_reset(crtc, &state->base);
+-	drm_crtc_vblank_reset(crtc);
+ }
+ 
+ static struct drm_crtc_state *
+diff --git a/drivers/gpu/drm/tidss/tidss_crtc.c b/drivers/gpu/drm/tidss/tidss_crtc.c
+index 89a226912de8..4d01c4af61cd 100644
+--- a/drivers/gpu/drm/tidss/tidss_crtc.c
++++ b/drivers/gpu/drm/tidss/tidss_crtc.c
+@@ -352,8 +352,7 @@ static void tidss_crtc_reset(struct drm_crtc *crtc)
+ 		return;
+ 	}
+ 
+-	crtc->state = &tcrtc->base;
+-	crtc->state->crtc = crtc;
++	__drm_atomic_helper_crtc_reset(crtc, &tcrtc->base);
+ }
+ 
+ static struct drm_crtc_state *tidss_crtc_duplicate_state(struct drm_crtc *crtc)
+diff --git a/drivers/gpu/drm/tidss/tidss_kms.c b/drivers/gpu/drm/tidss/tidss_kms.c
+index 4b99e9fa84a5..b6e61d6cf60f 100644
+--- a/drivers/gpu/drm/tidss/tidss_kms.c
++++ b/drivers/gpu/drm/tidss/tidss_kms.c
+@@ -253,7 +253,6 @@ static int tidss_dispc_modeset_init(struct tidss_device *tidss)
+ int tidss_modeset_init(struct tidss_device *tidss)
+ {
+ 	struct drm_device *ddev = &tidss->ddev;
+-	unsigned int i;
+ 	int ret;
+ 
+ 	dev_dbg(tidss->dev, "%s\n", __func__);
+@@ -278,10 +277,6 @@ int tidss_modeset_init(struct tidss_device *tidss)
+ 	if (ret)
+ 		return ret;
+ 
+-	/* Start with vertical blanking interrupt reporting disabled. */
+-	for (i = 0; i < tidss->num_crtcs; ++i)
+-		drm_crtc_vblank_reset(tidss->crtcs[i]);
+-
+ 	drm_mode_config_reset(ddev);
+ 
+ 	dev_dbg(tidss->dev, "%s done\n", __func__);

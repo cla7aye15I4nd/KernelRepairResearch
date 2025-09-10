@@ -1,0 +1,48 @@
+------------[ cut here ]------------
+BUG: Dentry ffff88801b3b3780{i=1a,n=#3}  still in use (1) [unmount of f2fs loop0]
+WARNING: CPU: 1 PID: 5066 at fs/dcache.c:1675 umount_check+0x189/0x1e0 fs/dcache.c:1667
+Modules linked in:
+CPU: 1 PID: 5066 Comm: syz-executor112 Not tainted 6.7.0-rc5-syzkaller-00200-g3bd7d7488169 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+RIP: 0010:umount_check+0x189/0x1e0 fs/dcache.c:1667
+Code: e8 ff 4c 8b 0b 48 81 c5 60 06 00 00 48 c7 c7 c0 c7 77 8b 4c 89 fe 4c 89 f2 4c 89 f9 45 89 e8 55 e8 8c c8 52 ff 48 83 c4 08 90 <0f> 0b 90 90 31 c0 5b 41 5c 41 5d 41 5e 41 5f 5d c3 89 f9 80 e1 07
+RSP: 0018:ffffc90003907978 EFLAGS: 00010286
+RAX: 5c88eadd9c337600 RBX: ffffffff8dec05e0 RCX: ffff888066840000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffff88801d672660 R08: ffffffff81545d52 R09: 1ffff92000720e80
+R10: dffffc0000000000 R11: fffff52000720e81 R12: dffffc0000000000
+R13: 0000000000000001 R14: 000000000000001a R15: ffff88801b3b3780
+FS:  0000000000000000(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000000045bcf0 CR3: 0000000016ba9000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ d_walk+0x1f6/0x6e0 fs/dcache.c:1386
+ do_one_tree+0x35/0xe0 fs/dcache.c:1682
+ shrink_dcache_for_umount+0x7d/0x130 fs/dcache.c:1698
+ generic_shutdown_super+0x6a/0x2c0 fs/super.c:668
+ kill_block_super+0x44/0x90 fs/super.c:1667
+ kill_f2fs_super+0x303/0x3b0 fs/f2fs/super.c:4933
+ deactivate_locked_super+0xc1/0x130 fs/super.c:484
+ cleanup_mnt+0x426/0x4c0 fs/namespace.c:1256
+ task_work_run+0x24a/0x300 kernel/task_work.c:180
+ exit_task_work include/linux/task_work.h:38 [inline]
+ do_exit+0xa34/0x2750 kernel/exit.c:871
+ do_group_exit+0x206/0x2c0 kernel/exit.c:1021
+ __do_sys_exit_group kernel/exit.c:1032 [inline]
+ __se_sys_exit_group kernel/exit.c:1030 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1030
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x45/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7f401ccb3a49
+Code: Unable to access opcode bytes at 0x7f401ccb3a1f.
+RSP: 002b:00007ffc063484e8 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007f401ccb3a49
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000001
+RBP: 00007f401cd342d0 R08: ffffffffffffffb8 R09: 00007ffc063485c0
+R10: 00007ffc063485c0 R11: 0000000000000246 R12: 00007f401cd342d0
+R13: 0000000000000000 R14: 00007f401cd35040 R15: 00007f401cc81f70
+ </TASK>

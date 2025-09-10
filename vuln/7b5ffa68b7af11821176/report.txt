@@ -1,0 +1,166 @@
+bcachefs (loop1): hash table key at wrong offset: should be at 4330382808765833931
+  u64s 7 type dirent 4096:4330211319311639243:U32_MAX len 0 ver 0: file1 -> 536870912 type reg, fixing
+==================================================================
+BUG: KASAN: slab-use-after-free in bch2_str_hash_repair_key+0x2d42/0x3fa0 fs/bcachefs/str_hash.c:335
+Read of size 8 at addr ffff88805aa92128 by task syz-executor/5818
+
+CPU: 0 UID: 0 PID: 5818 Comm: syz-executor Not tainted 6.16.0-rc3-syzkaller-00121-gf02769e7f272 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0xd2/0x2b0 mm/kasan/report.c:521
+ kasan_report+0x118/0x150 mm/kasan/report.c:634
+ bch2_str_hash_repair_key+0x2d42/0x3fa0 fs/bcachefs/str_hash.c:335
+ __bch2_str_hash_check_key+0xa65/0xd40 fs/bcachefs/str_hash.c:394
+ bch2_str_hash_check_key fs/bcachefs/str_hash.h:429 [inline]
+ bch2_readdir+0x11cd/0x16f0 fs/bcachefs/dirent.c:685
+ bch2_vfs_readdir+0x4d0/0x6c0 fs/bcachefs/fs.c:1581
+ iterate_dir+0x5af/0x770 fs/readdir.c:108
+ __do_sys_getdents64 fs/readdir.c:410 [inline]
+ __se_sys_getdents64+0xe4/0x260 fs/readdir.c:396
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f01945c1293
+Code: c1 66 0f 1f 44 00 00 48 83 c4 08 48 89 ef 5b 5d e9 72 3e f8 ff 66 90 b8 ff ff ff 7f 48 39 c2 48 0f 47 d0 b8 d9 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 05 c3 0f 1f 40 00 48 c7 c2 a8 ff ff ff f7 d8
+RSP: 002b:00007ffce4a510a8 EFLAGS: 00000293 ORIG_RAX: 00000000000000d9
+RAX: ffffffffffffffda RBX: 0000555595089600 RCX: 00007f01945c1293
+RDX: 0000000000008000 RSI: 0000555595089600 RDI: 0000000000000005
+RBP: 00005555950895d4 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000001000 R11: 0000000000000293 R12: ffffffffffffffa8
+R13: 0000000000000010 R14: 00005555950895d0 R15: 00007ffce4a53360
+ </TASK>
+
+Allocated by task 5818:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3e/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0x93/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __do_kmalloc_node mm/slub.c:4328 [inline]
+ __kmalloc_node_track_caller_noprof+0x271/0x4e0 mm/slub.c:4347
+ __do_krealloc mm/slub.c:4905 [inline]
+ krealloc_noprof+0x124/0x340 mm/slub.c:4958
+ __bch2_trans_kmalloc+0x26c/0xc80 fs/bcachefs/btree_iter.c:3187
+ bch2_trans_kmalloc_ip fs/bcachefs/btree_iter.h:604 [inline]
+ bch2_trans_kmalloc fs/bcachefs/btree_iter.h:616 [inline]
+ bch2_str_hash_repair_key+0x2a65/0x3fa0 fs/bcachefs/str_hash.c:251
+ __bch2_str_hash_check_key+0xa65/0xd40 fs/bcachefs/str_hash.c:394
+ bch2_str_hash_check_key fs/bcachefs/str_hash.h:429 [inline]
+ bch2_readdir+0x11cd/0x16f0 fs/bcachefs/dirent.c:685
+ bch2_vfs_readdir+0x4d0/0x6c0 fs/bcachefs/fs.c:1581
+ iterate_dir+0x5af/0x770 fs/readdir.c:108
+ __do_sys_getdents64 fs/readdir.c:410 [inline]
+ __se_sys_getdents64+0xe4/0x260 fs/readdir.c:396
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 5818:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3e/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x46/0x50 mm/kasan/generic.c:576
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x62/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2381 [inline]
+ slab_free mm/slub.c:4643 [inline]
+ kfree+0x18e/0x440 mm/slub.c:4842
+ krealloc_noprof+0x1cd/0x340 mm/slub.c:-1
+ __bch2_trans_kmalloc+0x26c/0xc80 fs/bcachefs/btree_iter.c:3187
+ bch2_trans_kmalloc_ip fs/bcachefs/btree_iter.h:604 [inline]
+ bch2_trans_kmalloc fs/bcachefs/btree_iter.h:616 [inline]
+ bch2_hash_delete_at fs/bcachefs/str_hash.h:364 [inline]
+ bch2_str_hash_repair_key+0x2fde/0x3fa0 fs/bcachefs/str_hash.c:289
+ __bch2_str_hash_check_key+0xa65/0xd40 fs/bcachefs/str_hash.c:394
+ bch2_str_hash_check_key fs/bcachefs/str_hash.h:429 [inline]
+ bch2_readdir+0x11cd/0x16f0 fs/bcachefs/dirent.c:685
+ bch2_vfs_readdir+0x4d0/0x6c0 fs/bcachefs/fs.c:1581
+ iterate_dir+0x5af/0x770 fs/readdir.c:108
+ __do_sys_getdents64 fs/readdir.c:410 [inline]
+ __se_sys_getdents64+0xe4/0x260 fs/readdir.c:396
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88805aa92100
+ which belongs to the cache kmalloc-128 of size 128
+The buggy address is located 40 bytes inside of
+ freed 128-byte region [ffff88805aa92100, ffff88805aa92180)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x5aa92
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000000 ffff88801a441a00 ffffea00009c8a00 dead000000000002
+raw: 0000000000000000 0000000000100010 00000000f5000000 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x52c40(GFP_NOFS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 5993, tgid 5989 (syz.2.9), ts 101533203849, free_ts 101481270952
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x240/0x2a0 mm/page_alloc.c:1704
+ prep_new_page mm/page_alloc.c:1712 [inline]
+ get_page_from_freelist+0x21d5/0x22b0 mm/page_alloc.c:3669
+ __alloc_frozen_pages_noprof+0x181/0x370 mm/page_alloc.c:4959
+ alloc_pages_mpol+0x232/0x4a0 mm/mempolicy.c:2419
+ alloc_slab_page mm/slub.c:2451 [inline]
+ allocate_slab+0x8a/0x3b0 mm/slub.c:2619
+ new_slab mm/slub.c:2673 [inline]
+ ___slab_alloc+0xbfc/0x1480 mm/slub.c:3859
+ __slab_alloc mm/slub.c:3949 [inline]
+ __slab_alloc_node mm/slub.c:4024 [inline]
+ slab_alloc_node mm/slub.c:4185 [inline]
+ __do_kmalloc_node mm/slub.c:4327 [inline]
+ __kmalloc_node_track_caller_noprof+0x2f8/0x4e0 mm/slub.c:4347
+ __do_krealloc mm/slub.c:4905 [inline]
+ krealloc_noprof+0x124/0x340 mm/slub.c:4958
+ bch2_printbuf_make_room+0x1f5/0x360 fs/bcachefs/printbuf.c:59
+ bch2_prt_printf+0x282/0x740 fs/bcachefs/printbuf.c:186
+ bch2_bpos_to_text+0x2c9/0x3d0 fs/bcachefs/bkey_methods.c:-1
+ bch2_btree_path_to_text_short+0x529/0xde0 fs/bcachefs/btree_iter.c:1528
+ __bch2_trans_paths_to_text+0xe5/0x190 fs/bcachefs/btree_iter.c:1589
+ bch2_trans_update_max_paths+0x14e/0x340 fs/bcachefs/btree_iter.c:1625
+ btree_path_alloc+0x89a/0xa70 fs/bcachefs/btree_iter.c:1722
+ btree_path_clone fs/bcachefs/btree_iter.c:1262 [inline]
+ __bch2_btree_path_make_mut+0x1cc/0x520 fs/bcachefs/btree_iter.c:1277
+page last free pid 6015 tgid 6014 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1248 [inline]
+ __free_frozen_pages+0xc65/0xe60 mm/page_alloc.c:2706
+ discard_slab mm/slub.c:2717 [inline]
+ __put_partials+0x161/0x1c0 mm/slub.c:3186
+ put_cpu_partial+0x17c/0x250 mm/slub.c:3261
+ __slab_free+0x2f7/0x400 mm/slub.c:4513
+ qlink_free mm/kasan/quarantine.c:163 [inline]
+ qlist_free_all+0x97/0x140 mm/kasan/quarantine.c:179
+ kasan_quarantine_reduce+0x148/0x160 mm/kasan/quarantine.c:286
+ __kasan_slab_alloc+0x22/0x80 mm/kasan/common.c:329
+ kasan_slab_alloc include/linux/kasan.h:250 [inline]
+ slab_post_alloc_hook mm/slub.c:4148 [inline]
+ slab_alloc_node mm/slub.c:4197 [inline]
+ __do_kmalloc_node mm/slub.c:4327 [inline]
+ __kmalloc_noprof+0x224/0x4f0 mm/slub.c:4340
+ kmalloc_noprof include/linux/slab.h:909 [inline]
+ tomoyo_realpath_from_path+0xe3/0x5d0 security/tomoyo/realpath.c:251
+ tomoyo_get_realpath security/tomoyo/file.c:151 [inline]
+ tomoyo_path_number_perm+0x1e8/0x5a0 security/tomoyo/file.c:723
+ tomoyo_path_mkdir+0xa8/0xe0 security/tomoyo/tomoyo.c:179
+ security_path_mkdir+0x171/0x380 security/security.c:1932
+ do_mkdirat+0x1bd/0x590 fs/namei.c:4405
+ __do_sys_mkdirat fs/namei.c:4425 [inline]
+ __se_sys_mkdirat fs/namei.c:4423 [inline]
+ __x64_sys_mkdirat+0x87/0xa0 fs/namei.c:4423
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff88805aa92000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff88805aa92080: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+>ffff88805aa92100: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                  ^
+ ffff88805aa92180: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88805aa92200: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

@@ -1,0 +1,84 @@
+BUG: sleeping function called from invalid context at ./include/linux/sched/mm.h:321
+in_atomic(): 0, irqs_disabled(): 0, non_block: 0, pid: 5832, name: syz-executor109
+preempt_count: 0, expected: 0
+RCU nest depth: 1, expected: 0
+4 locks held by syz-executor109/5832:
+ #0: ffff8880757069b8 (&f->f_pos_lock){+.+.}-{4:4}, at: fdget_pos+0x247/0x310 fs/file.c:1213
+ #1: ffff888034628148 (&type->i_mutex_dir_key#6){.+.+}-{4:4}, at: iterate_dir+0x4a6/0x760 fs/readdir.c:101
+ #2: ffffffff8ed3dfa0 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:331 [inline]
+ #2: ffffffff8ed3dfa0 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:841 [inline]
+ #2: ffffffff8ed3dfa0 (rcu_read_lock){....}-{1:3}, at: afs_dynroot_readdir+0x466/0xbe0 fs/afs/dynroot.c:351
+ #3: ffff88807c10a9e0 (&mm->mmap_lock){++++}-{4:4}, at: mmap_read_trylock include/linux/mmap_lock.h:203 [inline]
+ #3: ffff88807c10a9e0 (&mm->mmap_lock){++++}-{4:4}, at: get_mmap_lock_carefully mm/memory.c:6346 [inline]
+ #3: ffff88807c10a9e0 (&mm->mmap_lock){++++}-{4:4}, at: lock_mm_and_find_vma+0x32/0x2f0 mm/memory.c:6406
+CPU: 1 UID: 0 PID: 5832 Comm: syz-executor109 Not tainted 6.15.0-rc1-syzkaller-00325-g7cdabafc0012 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ __might_resched+0x558/0x6c0 kernel/sched/core.c:8818
+ might_alloc include/linux/sched/mm.h:321 [inline]
+ prepare_alloc_pages+0x1eb/0x610 mm/page_alloc.c:4702
+ __alloc_frozen_pages_noprof+0x162/0x5b0 mm/page_alloc.c:4923
+ alloc_pages_mpol+0x339/0x690 mm/mempolicy.c:2301
+ folio_alloc_mpol_noprof mm/mempolicy.c:2320 [inline]
+ vma_alloc_folio_noprof+0x12d/0x260 mm/mempolicy.c:2355
+ folio_prealloc+0x2e/0x170 mm/memory.c:-1
+ alloc_anon_folio mm/memory.c:4943 [inline]
+ do_anonymous_page mm/memory.c:5000 [inline]
+ do_pte_missing mm/memory.c:4158 [inline]
+ handle_pte_fault+0x2e45/0x61c0 mm/memory.c:5997
+ __handle_mm_fault mm/memory.c:6140 [inline]
+ handle_mm_fault+0x1030/0x1aa0 mm/memory.c:6309
+ do_user_addr_fault arch/x86/mm/fault.c:1388 [inline]
+ handle_page_fault arch/x86/mm/fault.c:1480 [inline]
+ exc_page_fault+0x2bb/0x920 arch/x86/mm/fault.c:1538
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+RIP: 0010:filldir+0x2c4/0x6a0 fs/readdir.c:292
+Code: 87 55 02 00 00 0f 01 cb 0f ae e8 48 8b 44 24 30 49 89 46 08 48 8b 4c 24 10 48 8b 44 24 60 48 89 01 48 8b 44 24 18 8b 6c 24 3c <66> 89 41 10 48 98 40 88 6c 01 ff 48 89 44 24 30 4d 63 f5 42 c6 44
+RSP: 0018:ffffc90003f7fbe0 EFLAGS: 00050283
+RAX: 0000000000000020 RBX: 0000200000002010 RCX: 0000200000001ff0
+RDX: 0000000000000000 RSI: 0000200000001fd8 RDI: 0000200000002010
+RBP: 0000000000000004 R08: ffffffff82429e7d R09: 1ffff11006a39000
+R10: dffffc0000000000 R11: ffffed1006a39001 R12: ffff888029488781
+R13: 0000000000000006 R14: 0000200000001fd8 R15: 00007ffffffff000
+ dir_emit include/linux/fs.h:3861 [inline]
+ afs_dynroot_readdir_cells fs/afs/dynroot.c:310 [inline]
+ afs_dynroot_readdir+0x814/0xbe0 fs/afs/dynroot.c:352
+ iterate_dir+0x5a9/0x760 fs/readdir.c:108
+ __do_sys_getdents fs/readdir.c:322 [inline]
+ __se_sys_getdents+0x1ff/0x4e0 fs/readdir.c:308
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f8416c0bc19
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc6757cc88 EFLAGS: 00000246 ORIG_RAX: 000000000000004e
+RAX: ffffffffffffffda RBX: 0030656c69662f2e RCX: 00007f8416c0bc19
+RDX: 00000000000000b8 RSI: 0000200000001fc0 RDI: 0000000000000004
+RBP: 00007f8416c885f0 R08: 00005555710444c0 R09: 00005555710444c0
+R10: 00005555710444c0 R11: 0000000000000246 R12: 00007ffc6757ccb0
+R13: 00007ffc6757ced8 R14: 431bde82d7b634db R15: 00007f8416c5403b
+ </TASK>
+----------------
+Code disassembly (best guess):
+   0:	87 55 02             	xchg   %edx,0x2(%rbp)
+   3:	00 00                	add    %al,(%rax)
+   5:	0f 01 cb             	stac
+   8:	0f ae e8             	lfence
+   b:	48 8b 44 24 30       	mov    0x30(%rsp),%rax
+  10:	49 89 46 08          	mov    %rax,0x8(%r14)
+  14:	48 8b 4c 24 10       	mov    0x10(%rsp),%rcx
+  19:	48 8b 44 24 60       	mov    0x60(%rsp),%rax
+  1e:	48 89 01             	mov    %rax,(%rcx)
+  21:	48 8b 44 24 18       	mov    0x18(%rsp),%rax
+  26:	8b 6c 24 3c          	mov    0x3c(%rsp),%ebp
+* 2a:	66 89 41 10          	mov    %ax,0x10(%rcx) <-- trapping instruction
+  2e:	48 98                	cltq
+  30:	40 88 6c 01 ff       	mov    %bpl,-0x1(%rcx,%rax,1)
+  35:	48 89 44 24 30       	mov    %rax,0x30(%rsp)
+  3a:	4d 63 f5             	movslq %r13d,%r14
+  3d:	42                   	rex.X
+  3e:	c6                   	.byte 0xc6
+  3f:	44                   	rex.R

@@ -1,0 +1,22 @@
+id: 66243bb7126c410cefe6
+bug_link: https://syzkaller.appspot.com/bug?extid=66243bb7126c410cefe6
+title: 'INFO: rcu detected stall in io_uring_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: dd461af65946de060bff2dab08a63676d2731afe
+fix_commit: 3fd44c86711f71156b586c22b0495c58f69358bb
+datetime: '2020-04-30T22:24:27-06:00'
+fix_commit_message: "io_uring: use cond_resched() in io_ring_ctx_wait_and_kill()\n\
+  \nWhile working on to make io_uring sqpoll mode support syscalls that need\nstruct\
+  \ files_struct, I got cpu soft lockup in io_ring_ctx_wait_and_kill(),\n\n    while\
+  \ (ctx->sqo_thread && !wq_has_sleeper(&ctx->sqo_wait))\n        cpu_relax();\n\n\
+  above loop never has an chance to exit, it's because preempt isn't enabled\nin the\
+  \ kernel, and the context calling io_ring_ctx_wait_and_kill() and\nio_sq_thread()\
+  \ run in the same cpu, if io_sq_thread calls a cond_resched()\nyield cpu and another\
+  \ context enters above loop, then io_sq_thread() will\nalways in runqueue and never\
+  \ exit.\n\nUse cond_resched() can fix this issue.\n\n Reported-by: syzbot+66243bb7126c410cefe6@syzkaller.appspotmail.com\n\
+  Signed-off-by: Xiaoguang Wang <xiaoguang.wang@linux.alibaba.com>\nSigned-off-by:\
+  \ Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

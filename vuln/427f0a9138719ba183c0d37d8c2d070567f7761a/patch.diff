@@ -1,0 +1,26 @@
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index 983b0233767b..c2cfcc6fdb34 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -1445,6 +1445,21 @@ static int validate_tmpl(int nr, struct xfrm_user_tmpl *ut, u16 family)
+ 		default:
+ 			return -EINVAL;
+ 		}
++
++		switch (ut[i].id.proto) {
++		case IPPROTO_AH:
++		case IPPROTO_ESP:
++		case IPPROTO_COMP:
++#if IS_ENABLED(CONFIG_IPV6)
++		case IPPROTO_ROUTING:
++		case IPPROTO_DSTOPTS:
++#endif
++		case IPSEC_PROTO_ANY:
++			break;
++		default:
++			return -EINVAL;
++		}
++
+ 	}
+ 
+ 	return 0;

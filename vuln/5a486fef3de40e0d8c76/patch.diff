@@ -1,0 +1,16 @@
+diff --git a/io_uring/register.c b/io_uring/register.c
+index 1a60f4916649..1e99c783abdf 100644
+--- a/io_uring/register.c
++++ b/io_uring/register.c
+@@ -905,9 +905,10 @@ SYSCALL_DEFINE4(io_uring_register, unsigned int, fd, unsigned int, opcode,
+ 
+ 	mutex_lock(&ctx->uring_lock);
+ 	ret = __io_uring_register(ctx, opcode, arg, nr_args);
+-	mutex_unlock(&ctx->uring_lock);
++
+ 	trace_io_uring_register(ctx, opcode, ctx->file_table.data.nr,
+ 				ctx->buf_table.nr, ret);
++	mutex_unlock(&ctx->uring_lock);
+ 	if (!use_registered_ring)
+ 		fput(file);
+ 	return ret;

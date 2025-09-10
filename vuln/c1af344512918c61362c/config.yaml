@@ -1,0 +1,27 @@
+id: c1af344512918c61362c
+bug_link: https://syzkaller.appspot.com/bug?extid=c1af344512918c61362c
+title: 'linux-next boot error: general protection fault in tomoyo_get_local_path'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2dd8083f6d8acd1371ccabedef1c9f1ad272a90d
+fix_commit: 9d78edeaec759f997c303f286ecd39daee166f2a
+datetime: '2020-05-19T07:07:50-05:00'
+fix_commit_message: "proc: proc_pid_ns takes super_block as an argument\n\nsyzbot\
+  \ found that\n\n  touch /proc/testfile\n\ncauses NULL pointer dereference at tomoyo_get_local_path()\n\
+  because inode of the dentry is NULL.\n\nBefore c59f415a7cb6, Tomoyo received pid_ns\
+  \ from proc's s_fs_info\ndirectly. Since proc_pid_ns() can only work with inode,\
+  \ using it in\nthe tomoyo_get_local_path() was wrong.\n\nTo avoid creating more\
+  \ functions for getting proc_ns, change the\nargument type of the proc_pid_ns()\
+  \ function. Then, Tomoyo can use\nthe existing super_block to get pid_ns.\n\nLink:\
+  \ https://lkml.kernel.org/r/0000000000002f0c7505a5b0e04c@google.com\nLink: https://lkml.kernel.org/r/20200518180738.2939611-1-gladkov.alexey@gmail.com\n\
+  Reported-by: syzbot+c1af344512918c61362c@syzkaller.appspotmail.com\nFixes: c59f415a7cb6\
+  \ (\"Use proc_pid_ns() to get pid_namespace from the proc superblock\")\nSigned-off-by:\
+  \ Alexey Gladkov <gladkov.alexey@gmail.com>\nSigned-off-by: Eric W. Biederman <ebiederm@xmission.com>\n"
+submodule:
+- fs
+- fs/proc
+- include/linux
+- kernel
+- net/ipv6
+- security/tomoyo
+hunk_count: 14
+covered_count: 1

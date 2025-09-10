@@ -1,0 +1,84 @@
+ntfs3: loop0: Mark volume as dirty due to NTFS errors
+ntfs3: loop0: Failed to load $Extend (-22).
+ntfs3: loop0: Failed to initialize $Extend.
+==================================================================
+BUG: KASAN: slab-out-of-bounds in ntfs_list_ea fs/ntfs3/xattr.c:232 [inline]
+BUG: KASAN: slab-out-of-bounds in ntfs_listxattr+0x354/0x50c fs/ntfs3/xattr.c:733
+Read of size 48 at addr ffff0000d76354b0 by task syz-executor360/6097
+
+CPU: 0 PID: 6097 Comm: syz-executor360 Not tainted 6.7.0-rc6-syzkaller-gaafe7ad77b91 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/10/2023
+Call trace:
+ dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:291
+ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:298
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0x174/0x514 mm/kasan/report.c:475
+ kasan_report+0xd8/0x138 mm/kasan/report.c:588
+ kasan_check_range+0x254/0x294 mm/kasan/generic.c:187
+ __asan_memcpy+0x3c/0x84 mm/kasan/shadow.c:105
+ ntfs_list_ea fs/ntfs3/xattr.c:232 [inline]
+ ntfs_listxattr+0x354/0x50c fs/ntfs3/xattr.c:733
+ vfs_listxattr fs/xattr.c:494 [inline]
+ listxattr+0x108/0x368 fs/xattr.c:841
+ path_listxattr fs/xattr.c:865 [inline]
+ __do_sys_listxattr fs/xattr.c:877 [inline]
+ __se_sys_listxattr fs/xattr.c:874 [inline]
+ __arm64_sys_listxattr+0x13c/0x21c fs/xattr.c:874
+ __invoke_syscall arch/arm64/kernel/syscall.c:37 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:51
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:136
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:155
+ el0_svc+0x54/0x158 arch/arm64/kernel/entry-common.c:678
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:696
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:595
+
+Allocated by task 6097:
+ kasan_save_stack mm/kasan/common.c:45 [inline]
+ kasan_set_track+0x4c/0x7c mm/kasan/common.c:52
+ kasan_save_alloc_info+0x24/0x30 mm/kasan/generic.c:511
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0xac/0xc4 mm/kasan/common.c:383
+ kasan_kmalloc include/linux/kasan.h:198 [inline]
+ __do_kmalloc_node mm/slab_common.c:1007 [inline]
+ __kmalloc+0xcc/0x1b8 mm/slab_common.c:1020
+ kmalloc include/linux/slab.h:604 [inline]
+ ntfs_read_ea+0x3c0/0x808 fs/ntfs3/xattr.c:118
+ ntfs_list_ea fs/ntfs3/xattr.c:204 [inline]
+ ntfs_listxattr+0x14c/0x50c fs/ntfs3/xattr.c:733
+ vfs_listxattr fs/xattr.c:494 [inline]
+ listxattr+0x108/0x368 fs/xattr.c:841
+ path_listxattr fs/xattr.c:865 [inline]
+ __do_sys_listxattr fs/xattr.c:877 [inline]
+ __se_sys_listxattr fs/xattr.c:874 [inline]
+ __arm64_sys_listxattr+0x13c/0x21c fs/xattr.c:874
+ __invoke_syscall arch/arm64/kernel/syscall.c:37 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:51
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:136
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:155
+ el0_svc+0x54/0x158 arch/arm64/kernel/entry-common.c:678
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:696
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:595
+
+The buggy address belongs to the object at ffff0000d7635480
+ which belongs to the cache kmalloc-64 of size 64
+The buggy address is located 48 bytes inside of
+ allocated 60-byte region [ffff0000d7635480, ffff0000d76354bc)
+
+The buggy address belongs to the physical page:
+page:000000004ec57951 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x117635
+flags: 0x5ffc00000000800(slab|node=0|zone=2|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 05ffc00000000800 ffff0000c0001640 dead000000000100 dead000000000122
+raw: 0000000000000000 0000000080200020 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+
+Memory state around the buggy address:
+ ffff0000d7635380: 00 00 00 00 00 fc fc fc fc fc fc fc fc fc fc fc
+ ffff0000d7635400: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+>ffff0000d7635480: 00 00 00 00 00 00 00 04 fc fc fc fc fc fc fc fc
+                                        ^
+ ffff0000d7635500: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+ ffff0000d7635580: 00 00 00 00 00 00 fc fc fc fc fc fc fc fc fc fc
+==================================================================

@@ -1,0 +1,46 @@
+diff --git a/drivers/mfd/da9063-core.c b/drivers/mfd/da9063-core.c
+index 6c2870d4e754..2647bb371d86 100644
+--- a/drivers/mfd/da9063-core.c
++++ b/drivers/mfd/da9063-core.c
+@@ -238,7 +238,6 @@ int da9063_device_init(struct da9063 *da9063, unsigned int irq)
+ void da9063_device_exit(struct da9063 *da9063)
+ {
+ 	mfd_remove_devices(da9063->dev);
+-	da9063_irq_exit(da9063);
+ }
+ 
+ MODULE_DESCRIPTION("PMIC driver for Dialog DA9063");
+diff --git a/drivers/mfd/da9063-irq.c b/drivers/mfd/da9063-irq.c
+index 207bbfe55449..da6ceb41f0d1 100644
+--- a/drivers/mfd/da9063-irq.c
++++ b/drivers/mfd/da9063-irq.c
+@@ -170,7 +170,8 @@ int da9063_irq_init(struct da9063 *da9063)
+ 		return -EINVAL;
+ 	}
+ 
+-	ret = regmap_add_irq_chip(da9063->regmap, da9063->chip_irq,
++	ret = devm_regmap_add_irq_chip(da9063->dev, da9063->regmap,
++			da9063->chip_irq,
+ 			IRQF_TRIGGER_LOW | IRQF_ONESHOT | IRQF_SHARED,
+ 			da9063->irq_base, &da9063_irq_chip,
+ 			&da9063->regmap_irq);
+@@ -182,8 +183,3 @@ int da9063_irq_init(struct da9063 *da9063)
+ 
+ 	return 0;
+ }
+-
+-void da9063_irq_exit(struct da9063 *da9063)
+-{
+-	regmap_del_irq_chip(da9063->chip_irq, da9063->regmap_irq);
+-}
+diff --git a/include/linux/mfd/da9063/core.h b/include/linux/mfd/da9063/core.h
+index f3ae65db4c86..9ab7049977aa 100644
+--- a/include/linux/mfd/da9063/core.h
++++ b/include/linux/mfd/da9063/core.h
+@@ -95,6 +95,5 @@ int da9063_device_init(struct da9063 *da9063, unsigned int irq);
+ int da9063_irq_init(struct da9063 *da9063);
+ 
+ void da9063_device_exit(struct da9063 *da9063);
+-void da9063_irq_exit(struct da9063 *da9063);
+ 
+ #endif /* __MFD_DA9063_CORE_H__ */

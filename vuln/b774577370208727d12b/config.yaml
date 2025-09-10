@@ -1,0 +1,25 @@
+id: b774577370208727d12b
+bug_link: https://syzkaller.appspot.com/bug?extid=b774577370208727d12b
+title: 'KASAN: use-after-free Write in sctp_auth_shkey_hold'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e9a72f874d5b95cef0765bafc56005a50f72c5fe
+fix_commit: 58acd10092268831e49de279446c314727101292
+datetime: '2021-07-21T08:44:44-07:00'
+fix_commit_message: "sctp: update active_key for asoc when old key is being replaced\n\
+  \nsyzbot reported a call trace:\n\n  BUG: KASAN: use-after-free in sctp_auth_shkey_hold+0x22/0xa0\
+  \ net/sctp/auth.c:112\n  Call Trace:\n   sctp_auth_shkey_hold+0x22/0xa0 net/sctp/auth.c:112\n\
+  \   sctp_set_owner_w net/sctp/socket.c:131 [inline]\n   sctp_sendmsg_to_asoc+0x152e/0x2180\
+  \ net/sctp/socket.c:1865\n   sctp_sendmsg+0x103b/0x1d30 net/sctp/socket.c:2027\n\
+  \   inet_sendmsg+0x99/0xe0 net/ipv4/af_inet.c:821\n   sock_sendmsg_nosec net/socket.c:703\
+  \ [inline]\n   sock_sendmsg+0xcf/0x120 net/socket.c:723\n\nThis is an use-after-free\
+  \ issue caused by not updating asoc->shkey after\nit was replaced in the key list\
+  \ asoc->endpoint_shared_keys, and the old\nkey was freed.\n\nThis patch is to fix\
+  \ by also updating active_key for asoc when old key is\nbeing replaced with a new\
+  \ one. Note that this issue doesn't exist in\nsctp_auth_del_key_id(), as it's not\
+  \ allowed to delete the active_key\nfrom the asoc.\n\nFixes: 1b1e0bc99474 (\"sctp:\
+  \ add refcnt support for sh_key\")\nReported-by: syzbot+b774577370208727d12b@syzkaller.appspotmail.com\n\
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,29 @@
+==================================================================
+BUG: KCSAN: data-race in p9_conn_cancel / p9_write_work
+
+write to 0xffff888117ec8a28 of 4 bytes by task 3378 on cpu 1:
+ p9_conn_cancel+0x89/0x400 net/9p/trans_fd.c:199
+ p9_read_work+0x765/0x8c0 net/9p/trans_fd.c:406
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0x4db/0xa20 kernel/workqueue.c:3319
+ worker_thread+0x51d/0x6f0 kernel/workqueue.c:3400
+ kthread+0x4ae/0x520 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+read to 0xffff888117ec8a28 of 4 bytes by task 3381 on cpu 0:
+ p9_write_work+0x26/0x750 net/9p/trans_fd.c:453
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0x4db/0xa20 kernel/workqueue.c:3319
+ worker_thread+0x51d/0x6f0 kernel/workqueue.c:3400
+ kthread+0x4ae/0x520 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+value changed: 0x00000000 -> 0xfffffffb
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 3381 Comm: kworker/0:4 Not tainted 6.14.0-rc5-syzkaller-00214-g21e4543a2e2f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Workqueue: events p9_write_work
+==================================================================

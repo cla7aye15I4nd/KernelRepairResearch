@@ -1,0 +1,67 @@
+id: 28abd693db9e92c160d8
+bug_link: https://syzkaller.appspot.com/bug?extid=28abd693db9e92c160d8
+title: possible deadlock in io_poll_double_wake (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3ebba796fa251d042be42b929a2d916ee5c34a49
+fix_commit: 1c3b3e6527e57156bf4082f11c2151957560fe6a
+datetime: '2021-03-04T06:37:14-07:00'
+fix_commit_message: "io_uring: ignore double poll add on the same waitqueue head\n\
+  \nsyzbot reports a deadlock, attempting to lock the same spinlock twice:\n\n============================================\n\
+  WARNING: possible recursive locking detected\n5.11.0-syzkaller #0 Not tainted\n\
+  --------------------------------------------\nswapper/1/0 is trying to acquire lock:\n\
+  ffff88801b2b1130 (&runtime->sleep){..-.}-{2:2}, at: spin_lock include/linux/spinlock.h:354\
+  \ [inline]\nffff88801b2b1130 (&runtime->sleep){..-.}-{2:2}, at: io_poll_double_wake+0x25f/0x6a0\
+  \ fs/io_uring.c:4960\n\nbut task is already holding lock:\nffff88801b2b3130 (&runtime->sleep){..-.}-{2:2},\
+  \ at: __wake_up_common_lock+0xb4/0x130 kernel/sched/wait.c:137\n\nother info that\
+  \ might help us debug this:\n Possible unsafe locking scenario:\n\n       CPU0\n\
+  \       ----\n  lock(&runtime->sleep);\n  lock(&runtime->sleep);\n\n *** DEADLOCK\
+  \ ***\n\n May be due to missing lock nesting notation\n\n2 locks held by swapper/1/0:\n\
+  \ #0: ffff888147474908 (&group->lock){..-.}-{2:2}, at: _snd_pcm_stream_lock_irqsave+0x9f/0xd0\
+  \ sound/core/pcm_native.c:170\n #1: ffff88801b2b3130 (&runtime->sleep){..-.}-{2:2},\
+  \ at: __wake_up_common_lock+0xb4/0x130 kernel/sched/wait.c:137\n\nstack backtrace:\n\
+  CPU: 1 PID: 0 Comm: swapper/1 Not tainted 5.11.0-syzkaller #0\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\nCall Trace:\n\
+  \ <IRQ>\n __dump_stack lib/dump_stack.c:79 [inline]\n dump_stack+0xfa/0x151 lib/dump_stack.c:120\n\
+  \ print_deadlock_bug kernel/locking/lockdep.c:2829 [inline]\n check_deadlock kernel/locking/lockdep.c:2872\
+  \ [inline]\n validate_chain kernel/locking/lockdep.c:3661 [inline]\n __lock_acquire.cold+0x14c/0x3b4\
+  \ kernel/locking/lockdep.c:4900\n lock_acquire kernel/locking/lockdep.c:5510 [inline]\n\
+  \ lock_acquire+0x1ab/0x730 kernel/locking/lockdep.c:5475\n __raw_spin_lock include/linux/spinlock_api_smp.h:142\
+  \ [inline]\n _raw_spin_lock+0x2a/0x40 kernel/locking/spinlock.c:151\n spin_lock\
+  \ include/linux/spinlock.h:354 [inline]\n io_poll_double_wake+0x25f/0x6a0 fs/io_uring.c:4960\n\
+  \ __wake_up_common+0x147/0x650 kernel/sched/wait.c:108\n __wake_up_common_lock+0xd0/0x130\
+  \ kernel/sched/wait.c:138\n snd_pcm_update_state+0x46a/0x540 sound/core/pcm_lib.c:203\n\
+  \ snd_pcm_update_hw_ptr0+0xa75/0x1a50 sound/core/pcm_lib.c:464\n snd_pcm_period_elapsed+0x160/0x250\
+  \ sound/core/pcm_lib.c:1805\n dummy_hrtimer_callback+0x94/0x1b0 sound/drivers/dummy.c:378\n\
+  \ __run_hrtimer kernel/time/hrtimer.c:1519 [inline]\n __hrtimer_run_queues+0x609/0xe40\
+  \ kernel/time/hrtimer.c:1583\n hrtimer_run_softirq+0x17b/0x360 kernel/time/hrtimer.c:1600\n\
+  \ __do_softirq+0x29b/0x9f6 kernel/softirq.c:345\n invoke_softirq kernel/softirq.c:221\
+  \ [inline]\n __irq_exit_rcu kernel/softirq.c:422 [inline]\n irq_exit_rcu+0x134/0x200\
+  \ kernel/softirq.c:434\n sysvec_apic_timer_interrupt+0x93/0xc0 arch/x86/kernel/apic/apic.c:1100\n\
+  \ </IRQ>\n asm_sysvec_apic_timer_interrupt+0x12/0x20 arch/x86/include/asm/idtentry.h:632\n\
+  RIP: 0010:native_save_fl arch/x86/include/asm/irqflags.h:29 [inline]\nRIP: 0010:arch_local_save_flags\
+  \ arch/x86/include/asm/irqflags.h:70 [inline]\nRIP: 0010:arch_irqs_disabled arch/x86/include/asm/irqflags.h:137\
+  \ [inline]\nRIP: 0010:acpi_safe_halt drivers/acpi/processor_idle.c:111 [inline]\n\
+  RIP: 0010:acpi_idle_do_entry+0x1c9/0x250 drivers/acpi/processor_idle.c:516\nCode:\
+  \ dd 38 6e f8 84 db 75 ac e8 54 32 6e f8 e8 0f 1c 74 f8 e9 0c 00 00 00 e8 45 32\
+  \ 6e f8 0f 00 2d 4e 4a c5 00 e8 39 32 6e f8 fb f4 <9c> 5b 81 e3 00 02 00 00 fa 31\
+  \ ff 48 89 de e8 14 3a 6e f8 48 85 db\nRSP: 0018:ffffc90000d47d18 EFLAGS: 00000293\n\
+  RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000000000\nRDX: ffff8880115c3780\
+  \ RSI: ffffffff89052537 RDI: 0000000000000000\nRBP: ffff888141127064 R08: 0000000000000001\
+  \ R09: 0000000000000001\nR10: ffffffff81794168 R11: 0000000000000000 R12: 0000000000000001\n\
+  R13: ffff888141127000 R14: ffff888141127064 R15: ffff888143331804\n acpi_idle_enter+0x361/0x500\
+  \ drivers/acpi/processor_idle.c:647\n cpuidle_enter_state+0x1b1/0xc80 drivers/cpuidle/cpuidle.c:237\n\
+  \ cpuidle_enter+0x4a/0xa0 drivers/cpuidle/cpuidle.c:351\n call_cpuidle kernel/sched/idle.c:158\
+  \ [inline]\n cpuidle_idle_call kernel/sched/idle.c:239 [inline]\n do_idle+0x3e1/0x590\
+  \ kernel/sched/idle.c:300\n cpu_startup_entry+0x14/0x20 kernel/sched/idle.c:397\n\
+  \ start_secondary+0x274/0x350 arch/x86/kernel/smpboot.c:272\n secondary_startup_64_no_verify+0xb0/0xbb\n\
+  \nwhich is due to the driver doing poll_wait() twice on the same\nwait_queue_head.\
+  \ That is perfectly valid, but from checking the rest\nof the kernel tree, it's\
+  \ the only driver that does this.\n\nWe can handle this just fine, we just need\
+  \ to ignore the second addition\nas we'll get woken just fine on the first one.\n\
+  \nCc: stable@vger.kernel.org # 5.8+\nFixes: 18bceab101ad (\"io_uring: allow POLL_ADD\
+  \ with double poll_wait() users\")\nReported-by: syzbot+28abd693db9e92c160d8@syzkaller.appspotmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

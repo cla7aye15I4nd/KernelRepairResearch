@@ -1,0 +1,73 @@
+id: 3538a6a72efa8b059c38
+bug_link: https://syzkaller.appspot.com/bug?extid=3538a6a72efa8b059c38
+title: 'KASAN: use-after-free Read in rxrpc_lookup_local'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: eaa02390adb03b82f04babebf0cdd233793aecf5
+fix_commit: 8fbcc83334a7b5b42b6bc1fae2458bf25eb57768
+datetime: '2022-12-19T09:51:31+00:00'
+fix_commit_message: 'rxrpc: Fix I/O thread startup getting skipped
+
+
+  When starting a kthread, the __kthread_create_on_node() function, as called
+
+  from kthread_run(), waits for a completion to indicate that the task_struct
+
+  (or failure state) of the new kernel thread is available before continuing.
+
+
+  This does not wait, however, for the thread function to be invoked and,
+
+  indeed, will skip it if kthread_stop() gets called before it gets there.
+
+
+  If this happens, though, kthread_run() will have returned successfully,
+
+  indicating that the thread was started and returning the task_struct
+
+  pointer.  The actual error indication is returned by kthread_stop().
+
+
+  Note that this is ambiguous, as the caller cannot tell whether the -EINTR
+
+  error code came from kthread() or from the thread function.
+
+
+  This was encountered in the new rxrpc I/O thread, where if the system is
+
+  being pounded hard by, say, syzbot, the check of KTHREAD_SHOULD_STOP can be
+
+  delayed long enough for kthread_stop() to get called when rxrpc releases a
+
+  socket - and this causes an oops because the I/O thread function doesn''t
+
+  get started and thus doesn''t remove the rxrpc_local struct from the
+
+  local_endpoints list.
+
+
+  Fix this by using a completion to wait for the thread to actually enter
+
+  rxrpc_io_thread().  This makes sure the thread can''t be prematurely
+
+  stopped and makes sure the relied-upon cleanup is done.
+
+
+  Fixes: a275da62e8c1 ("rxrpc: Create a per-local endpoint receive queue and I/O thread")
+
+  Reported-by: syzbot+3538a6a72efa8b059c38@syzkaller.appspotmail.com
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  cc: Marc Dionne <marc.dionne@auristor.com>
+
+  cc: Hillf Danton <hdanton@sina.com>
+
+  Link: https://lore.kernel.org/r/000000000000229f1505ef2b6159@google.com/
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/rxrpc
+hunk_count: 4
+covered_count: 2

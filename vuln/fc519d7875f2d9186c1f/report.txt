@@ -1,0 +1,102 @@
+==================================================================
+BUG: KASAN: slab-out-of-bounds in strlen+0x93/0xa0 lib/string.c:413
+Read of size 1 at addr ffff888143aa1800 by task syz-executor141/5831
+
+CPU: 1 UID: 0 PID: 5831 Comm: syz-executor141 Not tainted 6.13.0-rc5-syzkaller-00006-g56e6a3499e14 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0xc3/0x620 mm/kasan/report.c:489
+ kasan_report+0xd9/0x110 mm/kasan/report.c:602
+ strlen+0x93/0xa0 lib/string.c:413
+ kstrdup+0x29/0xb0 mm/util.c:81
+ debug_string_to_mask+0x82/0x570 fs/orangefs/orangefs-debugfs.c:836
+ orangefs_debug_write+0x22e/0x780 fs/orangefs/orangefs-debugfs.c:423
+ full_proxy_write+0xfb/0x1b0 fs/debugfs/file.c:356
+ vfs_write+0x24c/0x1150 fs/read_write.c:677
+ ksys_write+0x12b/0x250 fs/read_write.c:731
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa074700a39
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 c1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffdd551d6e8 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fa074700a39
+RDX: 0000000000000802 RSI: 0000000020000680 RDI: 0000000000000003
+RBP: 00007fa0747745f0 R08: 0000000000000006 R09: 0000000000000006
+R10: 0000000000000006 R11: 0000000000000246 R12: 0000000000000001
+R13: 431bde82d7b634db R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+Allocated by task 5831:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:394
+ kmalloc_noprof include/linux/slab.h:901 [inline]
+ kzalloc_noprof include/linux/slab.h:1037 [inline]
+ orangefs_debug_write+0x14c/0x780 fs/orangefs/orangefs-debugfs.c:401
+ full_proxy_write+0xfb/0x1b0 fs/debugfs/file.c:356
+ vfs_write+0x24c/0x1150 fs/read_write.c:677
+ ksys_write+0x12b/0x250 fs/read_write.c:731
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff888143aa1000
+ which belongs to the cache kmalloc-2k of size 2048
+The buggy address is located 0 bytes to the right of
+ allocated 2048-byte region [ffff888143aa1000, ffff888143aa1800)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x143aa0
+head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+anon flags: 0x57ff00000000040(head|node=1|zone=2|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 057ff00000000040 ffff88801ac42000 0000000000000000 dead000000000001
+raw: 0000000000000000 0000000080080008 00000001f5000000 0000000000000000
+head: 057ff00000000040 ffff88801ac42000 0000000000000000 dead000000000001
+head: 0000000000000000 0000000080080008 00000001f5000000 0000000000000000
+head: 057ff00000000003 ffffea00050ea801 ffffffffffffffff 0000000000000000
+head: 0000000000000008 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 1, tgid 1 (swapper/0), ts 3230018671, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x2d1/0x350 mm/page_alloc.c:1558
+ prep_new_page mm/page_alloc.c:1566 [inline]
+ get_page_from_freelist+0xfce/0x2f80 mm/page_alloc.c:3476
+ __alloc_pages_noprof+0x223/0x25b0 mm/page_alloc.c:4753
+ alloc_pages_mpol_noprof+0x2c9/0x610 mm/mempolicy.c:2269
+ alloc_slab_page mm/slub.c:2423 [inline]
+ allocate_slab mm/slub.c:2589 [inline]
+ new_slab+0x2c9/0x410 mm/slub.c:2642
+ ___slab_alloc+0xce2/0x1650 mm/slub.c:3830
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3920
+ __slab_alloc_node mm/slub.c:3995 [inline]
+ slab_alloc_node mm/slub.c:4156 [inline]
+ __kmalloc_cache_noprof+0xf6/0x420 mm/slub.c:4324
+ kmalloc_noprof include/linux/slab.h:901 [inline]
+ kzalloc_noprof include/linux/slab.h:1037 [inline]
+ acpi_ds_create_walk_state+0x78/0x250 drivers/acpi/acpica/dswstate.c:518
+ acpi_ds_execute_arguments+0x1bb/0x2c0 drivers/acpi/acpica/dsargs.c:107
+ acpi_ds_get_package_arguments+0xdf/0x150 drivers/acpi/acpica/dsargs.c:312
+ acpi_ns_init_one_package+0x82/0x110 drivers/acpi/acpica/nsinit.c:279
+ acpi_ns_init_one_object+0x269/0x4d0 drivers/acpi/acpica/nsinit.c:403
+ acpi_ns_walk_namespace+0x405/0x5b0 drivers/acpi/acpica/nswalk.c:233
+ acpi_walk_namespace drivers/acpi/acpica/nsxfeval.c:606 [inline]
+ acpi_walk_namespace+0x110/0x130 drivers/acpi/acpica/nsxfeval.c:554
+ acpi_ns_initialize_objects+0x95/0x110 drivers/acpi/acpica/nsinit.c:71
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff888143aa1700: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff888143aa1780: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff888143aa1800: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+                   ^
+ ffff888143aa1880: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff888143aa1900: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

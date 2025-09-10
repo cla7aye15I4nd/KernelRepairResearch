@@ -1,0 +1,56 @@
+bcachefs (loop0): bch2_write_super(): fatal error  loop0: Superblock write was silently dropped! (seq 0 expected 53)
+bcachefs (loop0): fatal error - emergency read only
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/journal.h:375!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 1081 Comm: kworker/u8:5 Not tainted 6.12.0-rc7-syzkaller-00070-g0a9b9d17f3a7 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/30/2024
+Workqueue: btree_update btree_interior_update_work
+RIP: 0010:bch2_journal_res_get fs/bcachefs/journal.h:375 [inline]
+RIP: 0010:bch2_trans_journal_res_get fs/bcachefs/btree_trans_commit.c:350 [inline]
+RIP: 0010:bch2_trans_commit_write_locked fs/bcachefs/btree_trans_commit.c:668 [inline]
+RIP: 0010:do_bch2_trans_commit fs/bcachefs/btree_trans_commit.c:900 [inline]
+RIP: 0010:__bch2_trans_commit+0x9232/0x93c0 fs/bcachefs/btree_trans_commit.c:1121
+Code: fd 90 0f 0b e8 ef 56 78 fd 90 0f 0b e8 e7 56 78 fd 90 0f 0b e8 df 56 78 fd 90 0f 0b e8 d7 56 78 fd 90 0f 0b e8 cf 56 78 fd 90 <0f> 0b e8 c7 56 78 fd 90 0f 0b e8 bf 56 78 fd 90 0f 0b e8 b7 56 78
+RSP: 0018:ffffc90003d676c0 EFLAGS: 00010293
+RAX: ffffffff841c92e1 RBX: 0000000000000000 RCX: ffff888027211e00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc90003d67890 R08: ffffffff841c3618 R09: 1ffff1100dfa94a8
+R10: dffffc0000000000 R11: ffffed100dfa94a9 R12: ffff88806fd00000
+R13: ffff88806fd4a500 R14: 0000000000000044 R15: ffff88807b4480d0
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffe3f6c3c28 CR3: 000000007d4a6000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_trans_commit fs/bcachefs/btree_update.h:184 [inline]
+ btree_update_nodes_written fs/bcachefs/btree_update_interior.c:723 [inline]
+ btree_interior_update_work+0x1492/0x2b10 fs/bcachefs/btree_update_interior.c:861
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa63/0x1850 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_journal_res_get fs/bcachefs/journal.h:375 [inline]
+RIP: 0010:bch2_trans_journal_res_get fs/bcachefs/btree_trans_commit.c:350 [inline]
+RIP: 0010:bch2_trans_commit_write_locked fs/bcachefs/btree_trans_commit.c:668 [inline]
+RIP: 0010:do_bch2_trans_commit fs/bcachefs/btree_trans_commit.c:900 [inline]
+RIP: 0010:__bch2_trans_commit+0x9232/0x93c0 fs/bcachefs/btree_trans_commit.c:1121
+Code: fd 90 0f 0b e8 ef 56 78 fd 90 0f 0b e8 e7 56 78 fd 90 0f 0b e8 df 56 78 fd 90 0f 0b e8 d7 56 78 fd 90 0f 0b e8 cf 56 78 fd 90 <0f> 0b e8 c7 56 78 fd 90 0f 0b e8 bf 56 78 fd 90 0f 0b e8 b7 56 78
+RSP: 0018:ffffc90003d676c0 EFLAGS: 00010293
+RAX: ffffffff841c92e1 RBX: 0000000000000000 RCX: ffff888027211e00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc90003d67890 R08: ffffffff841c3618 R09: 1ffff1100dfa94a8
+R10: dffffc0000000000 R11: ffffed100dfa94a9 R12: ffff88806fd00000
+R13: ffff88806fd4a500 R14: 0000000000000044 R15: ffff88807b4480d0
+FS:  0000000000000000(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffe3f6c6000 CR3: 000000000e734000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

@@ -1,0 +1,145 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in __do_sys_io_cancel fs/aio.c:2207 [inline]
+BUG: KASAN: slab-use-after-free in __se_sys_io_cancel+0x2c7/0x2d0 fs/aio.c:2174
+Read of size 4 at addr ffff88802003f020 by task syz-executor404/5066
+
+CPU: 0 PID: 5066 Comm: syz-executor404 Not tainted 6.8.0-rc6-syzkaller-00238-g5ad3cb0ed525 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/25/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2e0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x167/0x540 mm/kasan/report.c:488
+ kasan_report+0x142/0x180 mm/kasan/report.c:601
+ __do_sys_io_cancel fs/aio.c:2207 [inline]
+ __se_sys_io_cancel+0x2c7/0x2d0 fs/aio.c:2174
+ do_syscall_64+0xf9/0x240
+ entry_SYSCALL_64_after_hwframe+0x6f/0x77
+RIP: 0033:0x7fe408759539
+Code: d8 5b c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc49f74d48 EFLAGS: 00000246 ORIG_RAX: 00000000000000d2
+RAX: ffffffffffffffda RBX: 00007ffc49f74d50 RCX: 00007fe408759539
+RDX: 0000000000000000 RSI: 0000000020000180 RDI: 00007fe40871f000
+RBP: 00007fe4087cd5f0 R08: 6c616b7a79732f2e R09: 6c616b7a79732f2e
+R10: 6c616b7a79732f2e R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffc49f74f28 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+Allocated by task 5066:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ unpoison_slab_object mm/kasan/common.c:312 [inline]
+ __kasan_slab_alloc+0x66/0x80 mm/kasan/common.c:338
+ kasan_slab_alloc include/linux/kasan.h:201 [inline]
+ slab_post_alloc_hook mm/slub.c:3813 [inline]
+ slab_alloc_node mm/slub.c:3860 [inline]
+ kmem_cache_alloc+0x16f/0x340 mm/slub.c:3867
+ aio_get_req fs/aio.c:1060 [inline]
+ io_submit_one+0x154/0x18b0 fs/aio.c:2050
+ __do_sys_io_submit fs/aio.c:2113 [inline]
+ __se_sys_io_submit+0x17f/0x300 fs/aio.c:2083
+ do_syscall_64+0xf9/0x240
+ entry_SYSCALL_64_after_hwframe+0x6f/0x77
+
+Freed by task 4537:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:589
+ poison_slab_object+0xa6/0xe0 mm/kasan/common.c:240
+ __kasan_slab_free+0x37/0x60 mm/kasan/common.c:256
+ kasan_slab_free include/linux/kasan.h:184 [inline]
+ slab_free_hook mm/slub.c:2121 [inline]
+ slab_free mm/slub.c:4299 [inline]
+ kmem_cache_free+0x102/0x2a0 mm/slub.c:4363
+ aio_poll_complete_work+0x467/0x670 fs/aio.c:1767
+ process_one_work kernel/workqueue.c:2633 [inline]
+ process_scheduled_works+0x913/0x1420 kernel/workqueue.c:2706
+ worker_thread+0xa5f/0x1000 kernel/workqueue.c:2787
+ kthread+0x2ef/0x390 kernel/kthread.c:388
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1b/0x30 arch/x86/entry/entry_64.S:243
+
+Last potentially related work creation:
+ kasan_save_stack+0x3f/0x60 mm/kasan/common.c:47
+ __kasan_record_aux_stack+0xac/0xc0 mm/kasan/generic.c:551
+ insert_work+0x3e/0x330 kernel/workqueue.c:1653
+ __queue_work+0xbf4/0x1000 kernel/workqueue.c:1802
+ queue_work_on+0x14f/0x250 kernel/workqueue.c:1837
+ queue_work include/linux/workqueue.h:548 [inline]
+ schedule_work include/linux/workqueue.h:609 [inline]
+ aio_poll_cancel+0xbb/0x130 fs/aio.c:1779
+ __do_sys_io_cancel fs/aio.c:2196 [inline]
+ __se_sys_io_cancel+0x126/0x2d0 fs/aio.c:2174
+ do_syscall_64+0xf9/0x240
+ entry_SYSCALL_64_after_hwframe+0x6f/0x77
+
+The buggy address belongs to the object at ffff88802003f000
+ which belongs to the cache aio_kiocb of size 216
+The buggy address is located 32 bytes inside of
+ freed 216-byte region [ffff88802003f000, ffff88802003f0d8)
+
+The buggy address belongs to the physical page:
+page:ffffea0000800fc0 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x2003f
+flags: 0xfff00000000800(slab|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000800 ffff888018fc1140 dead000000000122 0000000000000000
+raw: 0000000000000000 00000000800c000c 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x12cc0(GFP_KERNEL|__GFP_NOWARN|__GFP_NORETRY), pid 5066, tgid 5066 (syz-executor404), ts 71468405408, free_ts 71458582831
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x1ea/0x210 mm/page_alloc.c:1533
+ prep_new_page mm/page_alloc.c:1540 [inline]
+ get_page_from_freelist+0x33ea/0x3580 mm/page_alloc.c:3311
+ __alloc_pages+0x255/0x680 mm/page_alloc.c:4567
+ __alloc_pages_node include/linux/gfp.h:238 [inline]
+ alloc_pages_node include/linux/gfp.h:261 [inline]
+ alloc_slab_page+0x5f/0x160 mm/slub.c:2190
+ allocate_slab mm/slub.c:2354 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2407
+ ___slab_alloc+0xd17/0x13e0 mm/slub.c:3540
+ __slab_alloc mm/slub.c:3625 [inline]
+ __slab_alloc_node mm/slub.c:3678 [inline]
+ slab_alloc_node mm/slub.c:3850 [inline]
+ kmem_cache_alloc+0x24d/0x340 mm/slub.c:3867
+ aio_get_req fs/aio.c:1060 [inline]
+ io_submit_one+0x154/0x18b0 fs/aio.c:2050
+ __do_sys_io_submit fs/aio.c:2113 [inline]
+ __se_sys_io_submit+0x17f/0x300 fs/aio.c:2083
+ do_syscall_64+0xf9/0x240
+ entry_SYSCALL_64_after_hwframe+0x6f/0x77
+page last free pid 5066 tgid 5066 stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1140 [inline]
+ free_unref_page_prepare+0x968/0xa90 mm/page_alloc.c:2346
+ free_unref_page_list+0x5a3/0x850 mm/page_alloc.c:2532
+ release_pages+0x2744/0x2a80 mm/swap.c:1042
+ tlb_batch_pages_flush mm/mmu_gather.c:98 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:293 [inline]
+ tlb_flush_mmu+0x34c/0x4e0 mm/mmu_gather.c:300
+ tlb_finish_mmu+0xd4/0x200 mm/mmu_gather.c:392
+ exit_mmap+0x4b6/0xd40 mm/mmap.c:3292
+ __mmput+0x115/0x3c0 kernel/fork.c:1343
+ exec_mmap+0x69c/0x730 fs/exec.c:1051
+ begin_new_exec+0x119a/0x1ce0 fs/exec.c:1310
+ load_elf_binary+0x961/0x2590 fs/binfmt_elf.c:996
+ search_binary_handler fs/exec.c:1783 [inline]
+ exec_binprm fs/exec.c:1825 [inline]
+ bprm_execve+0xaf7/0x1790 fs/exec.c:1877
+ do_execveat_common+0x552/0x6f0 fs/exec.c:1984
+ do_execve fs/exec.c:2058 [inline]
+ __do_sys_execve fs/exec.c:2134 [inline]
+ __se_sys_execve fs/exec.c:2129 [inline]
+ __x64_sys_execve+0x92/0xb0 fs/exec.c:2129
+ do_syscall_64+0xf9/0x240
+ entry_SYSCALL_64_after_hwframe+0x6f/0x77
+
+Memory state around the buggy address:
+ ffff88802003ef00: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88802003ef80: fb fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+>ffff88802003f000: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                               ^
+ ffff88802003f080: fb fb fb fb fb fb fb fb fb fb fb fc fc fc fc fc
+ ffff88802003f100: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

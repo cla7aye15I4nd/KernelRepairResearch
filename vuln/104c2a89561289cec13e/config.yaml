@@ -1,0 +1,43 @@
+id: 104c2a89561289cec13e
+bug_link: https://syzkaller.appspot.com/bug?extid=104c2a89561289cec13e
+title: memory leak in crypto_create_tfm_node
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9abf2313adc1ca1b6180c508c25f22f9395cc780
+fix_commit: ccd30a476f8e864732de220bd50e6f372f5ebcab
+datetime: '2022-10-19T20:54:43-07:00'
+fix_commit_message: 'fscrypt: fix keyring memory leak on mount failure
+
+
+  Commit d7e7b9af104c ("fscrypt: stop using keyrings subsystem for
+
+  fscrypt_master_key") moved the keyring destruction from __put_super() to
+
+  generic_shutdown_super() so that the filesystem''s block device(s) are
+
+  still available.  Unfortunately, this causes a memory leak in the case
+
+  where a mount is attempted with the test_dummy_encryption mount option,
+
+  but the mount fails after the option has already been processed.
+
+
+  To fix this, attempt the keyring destruction in both places.
+
+
+  Reported-by: syzbot+104c2a89561289cec13e@syzkaller.appspotmail.com
+
+  Fixes: d7e7b9af104c ("fscrypt: stop using keyrings subsystem for fscrypt_master_key")
+
+  Signed-off-by: Eric Biggers <ebiggers@google.com>
+
+  Reviewed-by: Christian Brauner (Microsoft) <brauner@kernel.org>
+
+  Link: https://lore.kernel.org/r/20221011213838.209879-1-ebiggers@kernel.org
+
+  '
+submodule:
+- fs
+- fs/crypto
+- include/linux
+hunk_count: 5
+covered_count: 1

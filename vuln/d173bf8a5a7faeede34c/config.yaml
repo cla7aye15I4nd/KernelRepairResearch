@@ -1,0 +1,72 @@
+id: d173bf8a5a7faeede34c
+bug_link: https://syzkaller.appspot.com/bug?extid=d173bf8a5a7faeede34c
+title: 'KASAN: slab-use-after-free Read in ocfs2_lock_global_qf'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3754137d263f52f4b507cf9ae913f8f0497d1b0e
+fix_commit: 5f3fd772d152229d94602bca243fbb658068a597
+datetime: '2024-12-30T17:59:09-08:00'
+fix_commit_message: 'ocfs2: fix slab-use-after-free due to dangling pointer dqi_priv
+
+
+  When mounting ocfs2 and then remounting it as read-only, a
+
+  slab-use-after-free occurs after the user uses a syscall to
+
+  quota_getnextquota.  Specifically, sb_dqinfo(sb, type)->dqi_priv is the
+
+  dangling pointer.
+
+
+  During the remounting process, the pointer dqi_priv is freed but is never
+
+  set as null leaving it to be accessed.  Additionally, the read-only option
+
+  for remounting sets the DQUOT_SUSPENDED flag instead of setting the
+
+  DQUOT_USAGE_ENABLED flags.  Moreover, later in the process of getting the
+
+  next quota, the function ocfs2_get_next_id is called and only checks the
+
+  quota usage flags and not the quota suspended flags.
+
+
+  To fix this, I set dqi_priv to null when it is freed after remounting with
+
+  read-only and put a check for DQUOT_SUSPENDED in ocfs2_get_next_id.
+
+
+  [akpm@linux-foundation.org: coding-style cleanups]
+
+  Link: https://lkml.kernel.org/r/20241218023924.22821-2-dennis.lamerice@gmail.com
+
+  Fixes: 8f9e8f5fcc05 ("ocfs2: Fix Q_GETNEXTQUOTA for filesystem without quotas")
+
+  Signed-off-by: Dennis Lam <dennis.lamerice@gmail.com>
+
+  Reported-by: syzbot+d173bf8a5a7faeede34c@syzkaller.appspotmail.com
+
+  Tested-by: syzbot+d173bf8a5a7faeede34c@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/all/6731d26f.050a0220.1fb99c.014b.GAE@google.com/T/
+
+  Reviewed-by: Joseph Qi <joseph.qi@linux.alibaba.com>
+
+  Cc: Mark Fasheh <mark@fasheh.com>
+
+  Cc: Joel Becker <jlbec@evilplan.org>
+
+  Cc: Junxiao Bi <junxiao.bi@oracle.com>
+
+  Cc: Changwei Ge <gechangwei@live.cn>
+
+  Cc: Jun Piao <piaojun@huawei.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/ocfs2
+hunk_count: 2
+covered_count: 2

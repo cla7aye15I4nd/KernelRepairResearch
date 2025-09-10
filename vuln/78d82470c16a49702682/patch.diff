@@ -1,0 +1,25 @@
+diff --git a/fs/bcachefs/alloc_background.c b/fs/bcachefs/alloc_background.c
+index 8846daaa1162..79af226ca609 100644
+--- a/fs/bcachefs/alloc_background.c
++++ b/fs/bcachefs/alloc_background.c
+@@ -1384,7 +1384,7 @@ int bch2_check_discard_freespace_key(struct btree_trans *trans, struct btree_ite
+ 	ret =   bch2_btree_bit_mod_iter(trans, iter, false) ?:
+ 		bch2_trans_commit(trans, NULL, NULL,
+ 			BCH_TRANS_COMMIT_no_enospc) ?:
+-		1;
++		-BCH_ERR_transaction_restart_commit;
+ 	goto out;
+ }
+ 
+diff --git a/fs/bcachefs/errcode.h b/fs/bcachefs/errcode.h
+index a12050e9c191..a0cfc0f286f4 100644
+--- a/fs/bcachefs/errcode.h
++++ b/fs/bcachefs/errcode.h
+@@ -148,6 +148,7 @@
+ 	x(BCH_ERR_transaction_restart,	transaction_restart_split_race)		\
+ 	x(BCH_ERR_transaction_restart,	transaction_restart_write_buffer_flush)	\
+ 	x(BCH_ERR_transaction_restart,	transaction_restart_nested)		\
++	x(BCH_ERR_transaction_restart,	transaction_restart_commit)		\
+ 	x(0,				no_btree_node)				\
+ 	x(BCH_ERR_no_btree_node,	no_btree_node_relock)			\
+ 	x(BCH_ERR_no_btree_node,	no_btree_node_upgrade)			\

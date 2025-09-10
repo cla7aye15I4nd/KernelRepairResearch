@@ -1,0 +1,59 @@
+id: 7bb7cd3595533513a9e7
+bug_link: https://syzkaller.appspot.com/bug?extid=7bb7cd3595533513a9e7
+title: WARNING in hfs_write_inode
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a689b938df39ab513026c53fb7011fd7cd594943
+fix_commit: cb7a95af78d29442b8294683eca4897544b8ef46
+datetime: '2023-01-06T14:09:13-08:00'
+fix_commit_message: 'hfs/hfsplus: avoid WARN_ON() for sanity check, use proper error
+  handling
+
+
+  Commit 55d1cbbbb29e ("hfs/hfsplus: use WARN_ON for sanity check") fixed
+
+  a build warning by turning a comment into a WARN_ON(), but it turns out
+
+  that syzbot then complains because it can trigger said warning with a
+
+  corrupted hfs image.
+
+
+  The warning actually does warn about a bad situation, but we are much
+
+  better off just handling it as the error it is.  So rather than warn
+
+  about us doing bad things, stop doing the bad things and return -EIO.
+
+
+  While at it, also fix a memory leak that was introduced by an earlier
+
+  fix for a similar syzbot warning situation, and add a check for one case
+
+  that historically wasn''t handled at all (ie neither comment nor
+
+  subsequent WARN_ON).
+
+
+  Reported-by: syzbot+7bb7cd3595533513a9e7@syzkaller.appspotmail.com
+
+  Fixes: 55d1cbbbb29e ("hfs/hfsplus: use WARN_ON for sanity check")
+
+  Fixes: 8d824e69d9f3 ("hfs: fix OOB Read in __hfs_brec_find")
+
+  Link: https://lore.kernel.org/lkml/000000000000dbce4e05f170f289@google.com/
+
+  Tested-by: Michael Schmitz <schmitzmic@gmail.com>
+
+  Cc: Arnd Bergmann <arnd@arndb.de>
+
+  Cc: Matthew Wilcox <willy@infradead.org>
+
+  Cc: Viacheslav Dubeyko <slava@dubeyko.com>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- fs/hfs
+hunk_count: 4
+covered_count: 4

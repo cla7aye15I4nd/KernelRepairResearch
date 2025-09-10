@@ -1,0 +1,37 @@
+id: f99ab3887ab65d70f816
+bug_link: https://syzkaller.appspot.com/bug?extid=f99ab3887ab65d70f816
+title: general protection fault in dccp_write_xmit
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 17cfe79a65f98abe535261856c5aef14f306dff7
+fix_commit: 67f93df79aeefc3add4e4b31a752600f834236e2
+datetime: '2018-03-07T13:38:56-05:00'
+fix_commit_message: 'dccp: check sk for closed state in dccp_sendmsg()
+
+
+  dccp_disconnect() sets ''dp->dccps_hc_tx_ccid'' tx handler to NULL,
+
+  therefore if DCCP socket is disconnected and dccp_sendmsg() is
+
+  called after it, it will cause a NULL pointer dereference in
+
+  dccp_write_xmit().
+
+
+  This crash and the reproducer was reported by syzbot. Looks like
+
+  it is reproduced if commit 69c64866ce07 ("dccp: CVE-2017-8824:
+
+  use-after-free in DCCP code") is applied.
+
+
+  Reported-by: syzbot+f99ab3887ab65d70f816@syzkaller.appspotmail.com
+
+  Signed-off-by: Alexey Kodanev <alexey.kodanev@oracle.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/dccp
+hunk_count: 1
+covered_count: 1

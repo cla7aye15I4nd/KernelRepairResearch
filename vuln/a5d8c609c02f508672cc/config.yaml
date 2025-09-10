@@ -1,0 +1,24 @@
+id: a5d8c609c02f508672cc
+bug_link: https://syzkaller.appspot.com/bug?extid=a5d8c609c02f508672cc
+title: possible deadlock in fat_count_free_clusters
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 46fd48ab3ea3eb3bb215684bd66ea3d260b091a9
+fix_commit: b49125574cae26458d4aa02ce8f4523ba9a2a328
+datetime: '2024-11-19T07:54:56-07:00'
+fix_commit_message: "loop: Fix ABBA locking race\n\nCurrent loop calls vfs_statfs()\
+  \ while holding the q->limits_lock. If\nFS takes some locking in vfs_statfs callback,\
+  \ this may lead to ABBA\nlocking bug (at least, FAT fs has this issue actually).\n\
+  \nSo this patch calls vfs_statfs() outside q->limits_locks instead,\nbecause looks\
+  \ like no reason to hold q->limits_locks while getting\ndiscord configs.\n\nChain\
+  \ exists of:\n  &sbi->fat_lock --> &q->q_usage_counter(io)#17 --> &q->limits_lock\n\
+  \n Possible unsafe locking scenario:\n\n       CPU0                    CPU1\n  \
+  \     ----                    ----\n  lock(&q->limits_lock);\n                 \
+  \              lock(&q->q_usage_counter(io)#17);\n                             \
+  \  lock(&q->limits_lock);\n  lock(&sbi->fat_lock);\n\n *** DEADLOCK ***\n\nReported-by:\
+  \ syzbot+a5d8c609c02f508672cc@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=a5d8c609c02f508672cc\n\
+  Reviewed-by: Ming Lei <ming.lei@redhat.com>\nSigned-off-by: OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 5
+covered_count: 5

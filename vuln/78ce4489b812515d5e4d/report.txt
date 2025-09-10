@@ -1,0 +1,110 @@
+==================================================================
+BUG: KCSAN: data-race in can_send / can_send
+
+read-write to 0xffff8881049d57f0 of 8 bytes by interrupt on cpu 0:
+ can_send+0x5b6/0x6d0 net/can/af_can.c:291
+ bcm_can_tx+0x314/0x420 net/can/bcm.c:314
+ bcm_tx_timeout_handler+0xea/0x280
+ __run_hrtimer kernel/time/hrtimer.c:1801 [inline]
+ __hrtimer_run_queues+0x20d/0x5e0 kernel/time/hrtimer.c:1865
+ hrtimer_run_softirq+0xe4/0x2c0 kernel/time/hrtimer.c:1882
+ handle_softirqs+0xbf/0x280 kernel/softirq.c:561
+ __do_softirq kernel/softirq.c:595 [inline]
+ invoke_softirq kernel/softirq.c:435 [inline]
+ __irq_exit_rcu+0x3a/0xc0 kernel/softirq.c:662
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1049 [inline]
+ sysvec_apic_timer_interrupt+0x73/0x80 arch/x86/kernel/apic/apic.c:1049
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+ __raw_callee_save___pv_queued_spin_unlock+0x10/0x18
+ pv_queued_spin_unlock arch/x86/include/asm/paravirt.h:582 [inline]
+ queued_spin_unlock arch/x86/include/asm/qspinlock.h:57 [inline]
+ do_raw_spin_unlock include/linux/spinlock.h:204 [inline]
+ __raw_spin_unlock include/linux/spinlock_api_smp.h:142 [inline]
+ _raw_spin_unlock+0x26/0x50 kernel/locking/spinlock.c:186
+ spin_unlock include/linux/spinlock.h:391 [inline]
+ nsim_dev_trap_report drivers/net/netdevsim/dev.c:823 [inline]
+ nsim_dev_trap_report_work+0x582/0x620 drivers/net/netdevsim/dev.c:851
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0x4db/0xa20 kernel/workqueue.c:3319
+ worker_thread+0x51d/0x6f0 kernel/workqueue.c:3400
+ kthread+0x4ae/0x520 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+read-write to 0xffff8881049d57f0 of 8 bytes by interrupt on cpu 1:
+ can_send+0x5b6/0x6d0 net/can/af_can.c:291
+ bcm_can_tx+0x314/0x420 net/can/bcm.c:314
+ bcm_tx_timeout_handler+0xea/0x280
+ __run_hrtimer kernel/time/hrtimer.c:1801 [inline]
+ __hrtimer_run_queues+0x20d/0x5e0 kernel/time/hrtimer.c:1865
+ hrtimer_run_softirq+0xe4/0x2c0 kernel/time/hrtimer.c:1882
+ handle_softirqs+0xbf/0x280 kernel/softirq.c:561
+ do_softirq+0x5e/0x90 kernel/softirq.c:462
+ __local_bh_enable_ip+0x6e/0x70 kernel/softirq.c:389
+ __raw_spin_unlock_bh include/linux/spinlock_api_smp.h:167 [inline]
+ _raw_spin_unlock_bh+0x36/0x40 kernel/locking/spinlock.c:210
+ spin_unlock_bh include/linux/spinlock.h:396 [inline]
+ batadv_nc_purge_paths+0x220/0x270 net/batman-adv/network-coding.c:471
+ batadv_nc_worker+0x3db/0xad0 net/batman-adv/network-coding.c:720
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0x4db/0xa20 kernel/workqueue.c:3319
+ worker_thread+0x51d/0x6f0 kernel/workqueue.c:3400
+ kthread+0x4ae/0x520 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+value changed: 0x0000000000001865 -> 0x0000000000001866
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 UID: 0 PID: 51 Comm: kworker/u8:3 Not tainted 6.14.0-rc7-syzkaller-00069-g81e4f8d68c66 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Workqueue: bat_events batadv_nc_worker
+==================================================================
+==================================================================
+BUG: KCSAN: data-race in can_receive / can_receive
+
+read-write to 0xffff8881049d5788 of 8 bytes by interrupt on cpu 0:
+ can_receive+0x4e/0x1f0 net/can/af_can.c:650
+ canfd_rcv+0xe7/0x180 net/can/af_can.c:703
+ __netif_receive_skb_one_core net/core/dev.c:5896 [inline]
+ __netif_receive_skb+0x123/0x280 net/core/dev.c:6009
+ process_backlog+0x22e/0x440 net/core/dev.c:6357
+ __napi_poll+0x63/0x3c0 net/core/dev.c:7191
+ napi_poll net/core/dev.c:7260 [inline]
+ net_rx_action+0x3a1/0x7f0 net/core/dev.c:7382
+ handle_softirqs+0xbf/0x280 kernel/softirq.c:561
+ __do_softirq kernel/softirq.c:595 [inline]
+ invoke_softirq kernel/softirq.c:435 [inline]
+ __irq_exit_rcu+0x3a/0xc0 kernel/softirq.c:662
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1049 [inline]
+ sysvec_apic_timer_interrupt+0x73/0x80 arch/x86/kernel/apic/apic.c:1049
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+ process_one_work kernel/workqueue.c:3243 [inline]
+ process_scheduled_works+0x4e0/0xa20 kernel/workqueue.c:3319
+ worker_thread+0x51d/0x6f0 kernel/workqueue.c:3400
+ kthread+0x4ae/0x520 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+read-write to 0xffff8881049d5788 of 8 bytes by interrupt on cpu 1:
+ can_receive+0x4e/0x1f0 net/can/af_can.c:650
+ canfd_rcv+0xe7/0x180 net/can/af_can.c:703
+ __netif_receive_skb_one_core net/core/dev.c:5896 [inline]
+ __netif_receive_skb+0x123/0x280 net/core/dev.c:6009
+ process_backlog+0x22e/0x440 net/core/dev.c:6357
+ __napi_poll+0x63/0x3c0 net/core/dev.c:7191
+ napi_poll net/core/dev.c:7260 [inline]
+ net_rx_action+0x3a1/0x7f0 net/core/dev.c:7382
+ handle_softirqs+0xbf/0x280 kernel/softirq.c:561
+ run_ksoftirqd+0x1c/0x30 kernel/softirq.c:950
+ smpboot_thread_fn+0x31c/0x4c0 kernel/smpboot.c:164
+ kthread+0x4ae/0x520 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+value changed: 0x000000000000300a -> 0x000000000000300b
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 UID: 0 PID: 24 Comm: ksoftirqd/1 Not tainted 6.14.0-rc7-syzkaller-00069-g81e4f8d68c66 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+==================================================================

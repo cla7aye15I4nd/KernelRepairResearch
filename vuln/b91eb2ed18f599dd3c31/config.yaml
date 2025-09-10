@@ -1,0 +1,58 @@
+id: b91eb2ed18f599dd3c31
+bug_link: https://syzkaller.appspot.com/bug?extid=b91eb2ed18f599dd3c31
+title: 'KASAN: slab-use-after-free Read in sys_io_cancel'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 90d35da658da8cff0d4ecbb5113f5fac9d00eb72
+fix_commit: 28468cbed92ea5eed19e2cbd2d55758c3c7938ca
+datetime: '2024-03-05T10:00:57+01:00'
+fix_commit_message: 'Revert "fs/aio: Make io_cancel() generate completions again"
+
+
+  Patch "fs/aio: Make io_cancel() generate completions again" is based on the
+
+  assumption that calling kiocb->ki_cancel() does not complete R/W requests.
+
+  This is incorrect: the two drivers that call kiocb_set_cancel_fn() callers
+
+  set a cancellation function that calls usb_ep_dequeue(). According to its
+
+  documentation, usb_ep_dequeue() calls the completion routine with status
+
+  -ECONNRESET. Hence this revert.
+
+
+  Cc: Benjamin LaHaise <ben@communityfibre.ca>
+
+  Cc: Eric Biggers <ebiggers@google.com>
+
+  Cc: Christoph Hellwig <hch@lst.de>
+
+  Cc: Avi Kivity <avi@scylladb.com>
+
+  Cc: Sandeep Dhavale <dhavale@google.com>
+
+  Cc: Jens Axboe <axboe@kernel.dk>
+
+  Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  Cc: Kent Overstreet <kent.overstreet@linux.dev>
+
+  Cc: stable@vger.kernel.org
+
+  Reported-by: syzbot+b91eb2ed18f599dd3c31@syzkaller.appspotmail.com
+
+  Fixes: 54cbc058d86b ("fs/aio: Make io_cancel() generate completions again")
+
+  Signed-off-by: Bart Van Assche <bvanassche@acm.org>
+
+  Link: https://lore.kernel.org/r/20240304182945.3646109-1-bvanassche@acm.org
+
+  Acked-by: Eric Biggers <ebiggers@google.com>
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

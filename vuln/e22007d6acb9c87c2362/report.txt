@@ -1,0 +1,101 @@
+bcachefs (loop0): accounting_read... done
+bcachefs (loop0): alloc_read... done
+bcachefs (loop0): stripes_read... done
+bcachefs (loop0): snapshots_read... done
+bcachefs (loop0): check_allocations... done
+bcachefs (loop0): going read-write
+bcachefs (loop0): journal_replay...
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000013: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000098-0x000000000000009f]
+CPU: 0 UID: 0 PID: 5829 Comm: syz-executor206 Not tainted 6.12.0-rc6-syzkaller-00110-gff7afaeca1a1 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:btree_path_lock_root fs/bcachefs/btree_iter.c:732 [inline]
+RIP: 0010:bch2_btree_path_traverse_one+0x94a/0x2940 fs/bcachefs/btree_iter.c:1183
+Code: 89 44 24 60 42 80 3c 20 00 74 08 4c 89 ef e8 0d c1 e5 fd 49 8b 45 00 48 89 44 24 48 48 8d 90 98 00 00 00 48 89 d0 48 c1 e8 03 <42> 0f b6 04 20 84 c0 48 89 94 24 80 00 00 00 0f 85 ee 10 00 00 4c
+RSP: 0018:ffffc90003b6cf40 EFLAGS: 00010202
+RAX: 0000000000000013 RBX: 0000000000000000 RCX: ffff88805b1abc00
+RDX: 0000000000000098 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc90003b6d230 R08: ffffffff8415bb40 R09: ffffffff84159bb9
+R10: 0000000000000002 R11: ffff88805b1abc00 R12: dffffc0000000000
+R13: ffff888079f814d8 R14: ffff888028958408 R15: 000000000000110b
+FS:  000055558785b380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fff06f3fff8 CR3: 0000000079c52000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_btree_path_traverse fs/bcachefs/btree_iter.h:247 [inline]
+ __bch2_btree_iter_peek fs/bcachefs/btree_iter.c:2210 [inline]
+ bch2_btree_iter_peek_upto+0xb58/0x70e0 fs/bcachefs/btree_iter.c:2310
+ bch2_btree_iter_peek_upto_type fs/bcachefs/btree_iter.h:685 [inline]
+ bch2_bucket_alloc_freelist fs/bcachefs/alloc_foreground.c:495 [inline]
+ bch2_bucket_alloc_trans+0x1122/0x3a50 fs/bcachefs/alloc_foreground.c:648
+ bch2_bucket_alloc_set_trans+0x517/0xd30 fs/bcachefs/alloc_foreground.c:808
+ __open_bucket_add_buckets+0x13d0/0x1ec0 fs/bcachefs/alloc_foreground.c:1057
+ open_bucket_add_buckets+0x33a/0x410 fs/bcachefs/alloc_foreground.c:1101
+ bch2_alloc_sectors_start_trans+0xce9/0x2030
+ __bch2_btree_node_alloc fs/bcachefs/btree_update_interior.c:343 [inline]
+ bch2_btree_reserve_get+0x612/0x1890 fs/bcachefs/btree_update_interior.c:554
+ bch2_btree_update_start+0xe56/0x14e0 fs/bcachefs/btree_update_interior.c:1252
+ bch2_btree_split_leaf+0x123/0x840 fs/bcachefs/btree_update_interior.c:1850
+ bch2_trans_commit_error+0x212/0x1390 fs/bcachefs/btree_trans_commit.c:942
+ __bch2_trans_commit+0x7ead/0x93c0 fs/bcachefs/btree_trans_commit.c:1140
+ bch2_trans_commit fs/bcachefs/btree_update.h:184 [inline]
+ bch2_journal_replay+0x1a3a/0x2a40 fs/bcachefs/recovery.c:317
+ bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:185
+ bch2_run_recovery_passes+0x387/0x870 fs/bcachefs/recovery_passes.c:232
+ bch2_fs_recovery+0x25cc/0x39c0 fs/bcachefs/recovery.c:861
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1036
+ bch2_fs_get_tree+0xd68/0x1710 fs/bcachefs/fs.c:2170
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f75b6d7b06a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe0d9f9288 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffe0d9f92a0 RCX: 00007f75b6d7b06a
+RDX: 00000000200058c0 RSI: 0000000020005900 RDI: 00007ffe0d9f92a0
+RBP: 0000000000000004 R08: 00007ffe0d9f92e0 R09: 00000000000058dd
+R10: 0000000000010000 R11: 0000000000000282 R12: 0000000000010000
+R13: 00007ffe0d9f92e0 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:btree_path_lock_root fs/bcachefs/btree_iter.c:732 [inline]
+RIP: 0010:bch2_btree_path_traverse_one+0x94a/0x2940 fs/bcachefs/btree_iter.c:1183
+Code: 89 44 24 60 42 80 3c 20 00 74 08 4c 89 ef e8 0d c1 e5 fd 49 8b 45 00 48 89 44 24 48 48 8d 90 98 00 00 00 48 89 d0 48 c1 e8 03 <42> 0f b6 04 20 84 c0 48 89 94 24 80 00 00 00 0f 85 ee 10 00 00 4c
+RSP: 0018:ffffc90003b6cf40 EFLAGS: 00010202
+RAX: 0000000000000013 RBX: 0000000000000000 RCX: ffff88805b1abc00
+RDX: 0000000000000098 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc90003b6d230 R08: ffffffff8415bb40 R09: ffffffff84159bb9
+R10: 0000000000000002 R11: ffff88805b1abc00 R12: dffffc0000000000
+R13: ffff888079f814d8 R14: ffff888028958408 R15: 000000000000110b
+FS:  000055558785b380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000559c75b97108 CR3: 0000000079c52000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	89 44 24 60          	mov    %eax,0x60(%rsp)
+   4:	42 80 3c 20 00       	cmpb   $0x0,(%rax,%r12,1)
+   9:	74 08                	je     0x13
+   b:	4c 89 ef             	mov    %r13,%rdi
+   e:	e8 0d c1 e5 fd       	call   0xfde5c120
+  13:	49 8b 45 00          	mov    0x0(%r13),%rax
+  17:	48 89 44 24 48       	mov    %rax,0x48(%rsp)
+  1c:	48 8d 90 98 00 00 00 	lea    0x98(%rax),%rdx
+  23:	48 89 d0             	mov    %rdx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 0f b6 04 20       	movzbl (%rax,%r12,1),%eax <-- trapping instruction
+  2f:	84 c0                	test   %al,%al
+  31:	48 89 94 24 80 00 00 	mov    %rdx,0x80(%rsp)
+  38:	00
+  39:	0f 85 ee 10 00 00    	jne    0x112d
+  3f:	4c                   	rex.WR

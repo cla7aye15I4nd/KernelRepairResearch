@@ -1,0 +1,31 @@
+id: 5f9f31cb7d985f584d8e
+bug_link: https://syzkaller.appspot.com/bug?extid=5f9f31cb7d985f584d8e
+title: 'KASAN: slab-out-of-bounds Read in xfrm_state_find'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c05c5e5aa163f4682ca97a2f0536575fc7dbdecb
+fix_commit: e952837f3ddb0ff726d5b582aa1aad9aa38d024d
+datetime: '2024-12-05T09:43:02+01:00'
+fix_commit_message: "xfrm: state: fix out-of-bounds read during lookup\n\nlookup and\
+  \ resize can run in parallel.\n\nThe xfrm_state_hash_generation seqlock ensures\
+  \ a retry, but the hash\nfunctions can observe a hmask value that is too large for\
+  \ the new hlist\narray.\n\nrehash does:\n  rcu_assign_pointer(net->xfrm.state_bydst,\
+  \ ndst) [..]\n  net->xfrm.state_hmask = nhashmask;\n\nWhile state lookup does:\n\
+  \  h = xfrm_dst_hash(net, daddr, saddr, tmpl->reqid, encap_family);\n  hlist_for_each_entry_rcu(x,\
+  \ net->xfrm.state_bydst + h, bydst) {\n\nThis is only safe in case the update to\
+  \ state_bydst is larger than\nnet->xfrm.xfrm_state_hmask (or if the lookup function\
+  \ gets\nserialized via state spinlock again).\n\nFix this by prefetching state_hmask\
+  \ and the associated pointers.\nThe xfrm_state_hash_generation seqlock retry will\
+  \ ensure that the pointer\nand the hmask will be consistent.\n\nThe existing helpers,\
+  \ like xfrm_dst_hash(), are now unsafe for RCU side,\nadd lockdep assertions to\
+  \ document that they are only safe for insert\nside.\n\nxfrm_state_lookup_byaddr()\
+  \ uses the spinlock rather than RCU.\nAFAICS this is an oversight from back when\
+  \ state lookup was converted to\nRCU, this lock should be replaced with RCU in a\
+  \ future patch.\n\nReported-by: syzbot+5f9f31cb7d985f584d8e@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/netdev/CACT4Y+azwfrE3uz6A5ZErov5YN2LYBN5KrsymBerT36VU8qzBA@mail.gmail.com/\n\
+  Diagnosed-by: Dmitry Vyukov <dvyukov@google.com>\nFixes: c2f672fc9464 (\"xfrm: state\
+  \ lookup can be lockless\")\nSigned-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by:\
+  \ Steffen Klassert <steffen.klassert@secunet.com>\n"
+submodule:
+- net/xfrm
+hunk_count: 16
+covered_count: 8

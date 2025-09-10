@@ -1,0 +1,63 @@
+diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
+index 159d78fc3d14..001ccc55ef0f 100644
+--- a/net/unix/af_unix.c
++++ b/net/unix/af_unix.c
+@@ -2673,7 +2673,8 @@ static struct sk_buff *manage_oob(struct sk_buff *skb, struct sock *sk,
+ 			__skb_unlink(read_skb, &sk->sk_receive_queue);
+ 		}
+ 
+-		goto unlock;
++		if (!skb)
++			goto unlock;
+ 	}
+ 
+ 	if (skb != u->oob_skb)
+@@ -3175,9 +3176,13 @@ static int unix_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
+ 			skb = skb_peek(&sk->sk_receive_queue);
+ 			if (skb) {
+ 				struct sk_buff *oob_skb = READ_ONCE(u->oob_skb);
++				struct sk_buff *next_skb;
++
++				next_skb = skb_peek_next(skb, &sk->sk_receive_queue);
+ 
+ 				if (skb == oob_skb ||
+-				    (!oob_skb && !unix_skb_len(skb)))
++				    (!unix_skb_len(skb) &&
++				     (!oob_skb || next_skb == oob_skb)))
+ 					answ = 1;
+ 			}
+ 
+diff --git a/tools/testing/selftests/net/af_unix/msg_oob.c b/tools/testing/selftests/net/af_unix/msg_oob.c
+index 535eb2c3d7d1..3ed3882a93b8 100644
+--- a/tools/testing/selftests/net/af_unix/msg_oob.c
++++ b/tools/testing/selftests/net/af_unix/msg_oob.c
+@@ -525,6 +525,29 @@ TEST_F(msg_oob, ex_oob_drop_2)
+ 	}
+ }
+ 
++TEST_F(msg_oob, ex_oob_oob)
++{
++	sendpair("x", 1, MSG_OOB);
++	epollpair(true);
++	siocatmarkpair(true);
++
++	recvpair("x", 1, 1, MSG_OOB);
++	epollpair(false);
++	siocatmarkpair(true);
++
++	sendpair("y", 1, MSG_OOB);
++	epollpair(true);
++	siocatmarkpair(true);
++
++	recvpair("", -EAGAIN, 1, 0);
++	epollpair(false);
++	siocatmarkpair(false);
++
++	recvpair("", -EINVAL, 1, MSG_OOB);
++	epollpair(false);
++	siocatmarkpair(false);
++}
++
+ TEST_F(msg_oob, ex_oob_ahead_break)
+ {
+ 	sendpair("hello", 5, MSG_OOB);

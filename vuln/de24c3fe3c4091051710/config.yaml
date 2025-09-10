@@ -1,0 +1,32 @@
+id: de24c3fe3c4091051710
+bug_link: https://syzkaller.appspot.com/bug?extid=de24c3fe3c4091051710
+title: general protection fault in jbd2_journal_dirty_metadata
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e80325ef5cc2d9de13845ab32c50d5012357d42b
+fix_commit: af98b0157adf6504fade79b3e6cb260c4ff68e37
+datetime: '2025-05-20T10:30:37-04:00'
+fix_commit_message: "jbd2: fix data-race and null-ptr-deref in jbd2_journal_dirty_metadata()\n\
+  \nSince handle->h_transaction may be a NULL pointer, so we should change it\nto\
+  \ call is_handle_aborted(handle) first before dereferencing it.\n\nAnd the following\
+  \ data-race was reported in my fuzzer:\n\n==================================================================\n\
+  BUG: KCSAN: data-race in jbd2_journal_dirty_metadata / jbd2_journal_dirty_metadata\n\
+  \nwrite to 0xffff888011024104 of 4 bytes by task 10881 on cpu 1:\n jbd2_journal_dirty_metadata+0x2a5/0x770\
+  \ fs/jbd2/transaction.c:1556\n __ext4_handle_dirty_metadata+0xe7/0x4b0 fs/ext4/ext4_jbd2.c:358\n\
+  \ ext4_do_update_inode fs/ext4/inode.c:5220 [inline]\n ext4_mark_iloc_dirty+0x32c/0xd50\
+  \ fs/ext4/inode.c:5869\n __ext4_mark_inode_dirty+0xe1/0x450 fs/ext4/inode.c:6074\n\
+  \ ext4_dirty_inode+0x98/0xc0 fs/ext4/inode.c:6103\n....\n\nread to 0xffff888011024104\
+  \ of 4 bytes by task 10880 on cpu 0:\n jbd2_journal_dirty_metadata+0xf2/0x770 fs/jbd2/transaction.c:1512\n\
+  \ __ext4_handle_dirty_metadata+0xe7/0x4b0 fs/ext4/ext4_jbd2.c:358\n ext4_do_update_inode\
+  \ fs/ext4/inode.c:5220 [inline]\n ext4_mark_iloc_dirty+0x32c/0xd50 fs/ext4/inode.c:5869\n\
+  \ __ext4_mark_inode_dirty+0xe1/0x450 fs/ext4/inode.c:6074\n ext4_dirty_inode+0x98/0xc0\
+  \ fs/ext4/inode.c:6103\n....\n\nvalue changed: 0x00000000 -> 0x00000001\n==================================================================\n\
+  \nThis issue is caused by missing data-race annotation for jh->b_modified.\nTherefore,\
+  \ the missing annotation needs to be added.\n\nReported-by: syzbot+de24c3fe3c4091051710@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=de24c3fe3c4091051710\nFixes: 6e06ae88edae\
+  \ (\"jbd2: speedup jbd2_journal_dirty_metadata()\")\nSigned-off-by: Jeongjun Park\
+  \ <aha310510@gmail.com>\nReviewed-by: Jan Kara <jack@suse.cz>\nLink: https://patch.msgid.link/20250514130855.99010-1-aha310510@gmail.com\n\
+  Signed-off-by: Theodore Ts'o <tytso@mit.edu>\nCc: stable@kernel.org\n"
+submodule:
+- fs/jbd2
+hunk_count: 3
+covered_count: 3

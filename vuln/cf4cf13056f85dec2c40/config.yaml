@@ -1,0 +1,28 @@
+id: cf4cf13056f85dec2c40
+bug_link: https://syzkaller.appspot.com/bug?extid=cf4cf13056f85dec2c40
+title: kernel BUG in __filemap_get_folio
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b9663a6ff8289a095d56d9a3a3f9c185a7b7b0d7
+fix_commit: 63b1898fffcd8bd81905b95104ecc52b45a97e21
+datetime: '2022-04-22T15:35:40-04:00'
+fix_commit_message: "XArray: Disallow sibling entries of nodes\n\nThere is a race\
+  \ between xas_split() and xas_load() which can result in\nthe wrong page being returned,\
+  \ and thus data corruption.  Fortunately,\nit's hard to hit (syzbot took three months\
+  \ to find it) and often guarded\nwith VM_BUG_ON().\n\nThe anatomy of this race is:\n\
+  \nthread A\t\t\tthread B\norder-9 page is stored at index 0x200\n\t\t\t\tlookup\
+  \ of page at index 0x274\npage split starts\n\t\t\t\tload of sibling entry at offset\
+  \ 9\nstores nodes at offsets 8-15\n\t\t\t\tload of entry at offset 8\n\nThe entry\
+  \ at offset 8 turns out to be a node, and so we descend into it,\nand load the page\
+  \ at index 0x234 instead of 0x274.  This is hard to fix\non the split side; we could\
+  \ replace the entire node that contains the\norder-9 page instead of replacing the\
+  \ eight entries.  Fixing it on\nthe lookup side is easier; just disallow sibling\
+  \ entries that point\nto nodes.  This cannot ever be a useful thing as the descent\
+  \ would not\nknow the correct offset to use within the new node.\n\nThe test suite\
+  \ continues to pass, but I have not added a new test for\nthis bug.\n\nReported-by:\
+  \ syzbot+cf4cf13056f85dec2c40@syzkaller.appspotmail.com\nTested-by: syzbot+cf4cf13056f85dec2c40@syzkaller.appspotmail.com\n\
+  Fixes: 6b24ca4a1a8d (\"mm: Use multi-index entries in the page cache\")\nSigned-off-by:\
+  \ Matthew Wilcox (Oracle) <willy@infradead.org>\n"
+submodule:
+- lib
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,33 @@
+id: 9bdc1adc1c55e7fe765b
+bug_link: https://syzkaller.appspot.com/bug?extid=9bdc1adc1c55e7fe765b
+title: general protection fault in loop_validate_file (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 684b73245cd4d2608f4f2214f6bff02ba6ceca5f
+fix_commit: f7c8a4120eedf24c36090b7542b179ff7a649219
+datetime: '2019-03-18T08:20:53-06:00'
+fix_commit_message: "loop: access lo_backing_file only when the loop device is Lo_bound\n\
+  \nCommit 758a58d0bc67 (\"loop: set GENHD_FL_NO_PART_SCAN after\nblkdev_reread_part()\"\
+  ) separates \"lo->lo_backing_file = NULL\" and\n\"lo->lo_state = Lo_unbound\" into\
+  \ different critical regions protected by\nloop_ctl_mutex.\n\nHowever, there is\
+  \ below race that the NULL lo->lo_backing_file would be\naccessed when the backend\
+  \ of a loop is another loop device, e.g., loop0's\nbackend is a file, while loop1's\
+  \ backend is loop0.\n\nloop0's backend is file            loop1's backend is loop0\n\
+  \n__loop_clr_fd()\n  mutex_lock(&loop_ctl_mutex);\n  lo->lo_backing_file = NULL;\
+  \ --> set to NULL\n  mutex_unlock(&loop_ctl_mutex);\n                          \
+  \         loop_set_fd()\n                                     mutex_lock_killable(&loop_ctl_mutex);\n\
+  \                                     loop_validate_file()\n                   \
+  \                    f = l->lo_backing_file; --> NULL\n                        \
+  \                 access if loop0 is not Lo_unbound\n  mutex_lock(&loop_ctl_mutex);\n\
+  \  lo->lo_state = Lo_unbound;\n  mutex_unlock(&loop_ctl_mutex);\n\nlo->lo_backing_file\
+  \ should be accessed only when the loop device is\nLo_bound.\n\nIn fact, the problem\
+  \ has been introduced already in commit 7ccd0791d985\n(\"loop: Push loop_ctl_mutex\
+  \ down into loop_clr_fd()\") after which\nloop_validate_file() could see devices\
+  \ in Lo_rundown state with which it\ndid not count. It was harmless at that point\
+  \ but still.\n\nFixes: 7ccd0791d985 (\"loop: Push loop_ctl_mutex down into loop_clr_fd()\"\
+  )\nReported-by: syzbot+9bdc1adc1c55e7fe765b@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Dongli Zhang <dongli.zhang@oracle.com>\nReviewed-by: Jan Kara <jack@suse.cz>\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 1
+covered_count: 1

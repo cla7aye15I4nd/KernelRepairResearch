@@ -1,0 +1,34 @@
+id: 59997e8d5cbdc486e6f6
+bug_link: https://syzkaller.appspot.com/bug?extid=59997e8d5cbdc486e6f6
+title: 'KASAN: use-after-free Read in n_tty_receive_buf_common'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 687bff0cd08f790d540cfb7b2349f0d876cdddec
+fix_commit: 07e6124a1a46b4b5a9b3cacc0c306b50da87abf5
+datetime: '2020-02-13T12:10:07-08:00'
+fix_commit_message: "vt: selection, close sel_buffer race\n\nsyzkaller reported this\
+  \ UAF:\nBUG: KASAN: use-after-free in n_tty_receive_buf_common+0x2481/0x2940 drivers/tty/n_tty.c:1741\n\
+  Read of size 1 at addr ffff8880089e40e9 by task syz-executor.1/13184\n\nCPU: 0 PID:\
+  \ 13184 Comm: syz-executor.1 Not tainted 5.4.7 #1\nHardware name: QEMU Standard\
+  \ PC (i440FX + PIIX, 1996), BIOS 1.12.0-1 04/01/2014\nCall Trace:\n...\n kasan_report+0xe/0x20\
+  \ mm/kasan/common.c:634\n n_tty_receive_buf_common+0x2481/0x2940 drivers/tty/n_tty.c:1741\n\
+  \ tty_ldisc_receive_buf+0xac/0x190 drivers/tty/tty_buffer.c:461\n paste_selection+0x297/0x400\
+  \ drivers/tty/vt/selection.c:372\n tioclinux+0x20d/0x4e0 drivers/tty/vt/vt.c:3044\n\
+  \ vt_ioctl+0x1bcf/0x28d0 drivers/tty/vt/vt_ioctl.c:364\n tty_ioctl+0x525/0x15a0\
+  \ drivers/tty/tty_io.c:2657\n vfs_ioctl fs/ioctl.c:47 [inline]\n\nIt is due to a\
+  \ race between parallel paste_selection (TIOCL_PASTESEL)\nand set_selection_user\
+  \ (TIOCL_SETSEL) invocations. One uses sel_buffer,\nwhile the other frees it and\
+  \ reallocates a new one for another\nselection. Add a mutex to close this race.\n\
+  \nThe mutex takes care properly of sel_buffer and sel_buffer_lth only. The\nother\
+  \ selection global variables (like sel_start, sel_end, and sel_cons)\nare protected\
+  \ only in set_selection_user. The other functions need quite\nsome more work to\
+  \ close the races of the variables there. This is going\nto happen later.\n\nThis\
+  \ likely fixes (I am unsure as there is no reproducer provided) bug\n206361 too.\
+  \ It was marked as CVE-2020-8648.\n\nSigned-off-by: Jiri Slaby <jslaby@suse.cz>\n\
+  Reported-by: syzbot+59997e8d5cbdc486e6f6@syzkaller.appspotmail.com\nReferences:\
+  \ https://bugzilla.kernel.org/show_bug.cgi?id=206361\nCc: stable <stable@vger.kernel.org>\n\
+  Link: https://lore.kernel.org/r/20200210081131.23572-2-jslaby@suse.cz\nSigned-off-by:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty/vt
+hunk_count: 11
+covered_count: 11

@@ -1,0 +1,50 @@
+id: b2c08a2f5cfef635cc3a
+bug_link: https://syzkaller.appspot.com/bug?extid=b2c08a2f5cfef635cc3a
+title: general protection fault in nexthop_is_blackhole
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4af7b32f84aa4cd60e39b355bc8a1eab6cd8d8a4
+fix_commit: eeaac3634ee0e3f35548be35275efeca888e9b23
+datetime: '2020-08-22T12:39:55-07:00'
+fix_commit_message: "net: nexthop: don't allow empty NHA_GROUP\n\nCurrently the nexthop\
+  \ code will use an empty NHA_GROUP attribute, but it\nrequires at least 1 entry\
+  \ in order to function properly. Otherwise we\nend up derefencing null or random\
+  \ pointers all over the place due to not\nhaving any nh_grp_entry members allocated,\
+  \ nexthop code relies on having at\nleast the first member present. Empty NHA_GROUP\
+  \ doesn't make any sense so\njust disallow it.\nAlso add a WARN_ON for any future\
+  \ users of nexthop_create_group().\n\n BUG: kernel NULL pointer dereference, address:\
+  \ 0000000000000080\n #PF: supervisor read access in kernel mode\n #PF: error_code(0x0000)\
+  \ - not-present page\n PGD 0 P4D 0\n Oops: 0000 [#1] SMP\n CPU: 0 PID: 558 Comm:\
+  \ ip Not tainted 5.9.0-rc1+ #93\n Hardware name: QEMU Standard PC (i440FX + PIIX,\
+  \ 1996), BIOS 1.13.0-2.fc32 04/01/2014\n RIP: 0010:fib_check_nexthop+0x4a/0xaa\n\
+  \ Code: 0f 84 83 00 00 00 48 c7 02 80 03 f7 81 c3 40 80 fe fe 75 12 b8 ea ff ff\
+  \ ff 48 85 d2 74 6b 48 c7 02 40 03 f7 81 c3 48 8b 40 10 <48> 8b 80 80 00 00 00 eb\
+  \ 36 80 78 1a 00 74 12 b8 ea ff ff ff 48 85\n RSP: 0018:ffff88807983ba00 EFLAGS:\
+  \ 00010213\n RAX: 0000000000000000 RBX: ffff88807983bc00 RCX: 0000000000000000\n\
+  \ RDX: ffff88807983bc00 RSI: 0000000000000000 RDI: ffff88807bdd0a80\n RBP: ffff88807983baf8\
+  \ R08: 0000000000000dc0 R09: 000000000000040a\n R10: 0000000000000000 R11: ffff88807bdd0ae8\
+  \ R12: 0000000000000000\n R13: 0000000000000000 R14: ffff88807bea3100 R15: 0000000000000001\n\
+  \ FS:  00007f10db393700(0000) GS:ffff88807dc00000(0000) knlGS:0000000000000000\n\
+  \ CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n CR2: 0000000000000080 CR3:\
+  \ 000000007bd0f004 CR4: 00000000003706f0\n Call Trace:\n  fib_create_info+0x64d/0xaf7\n\
+  \  fib_table_insert+0xf6/0x581\n  ? __vma_adjust+0x3b6/0x4d4\n  inet_rtm_newroute+0x56/0x70\n\
+  \  rtnetlink_rcv_msg+0x1e3/0x20d\n  ? rtnl_calcit.isra.0+0xb8/0xb8\n  netlink_rcv_skb+0x5b/0xac\n\
+  \  netlink_unicast+0xfa/0x17b\n  netlink_sendmsg+0x334/0x353\n  sock_sendmsg_nosec+0xf/0x3f\n\
+  \  ____sys_sendmsg+0x1a0/0x1fc\n  ? copy_msghdr_from_user+0x4c/0x61\n  ___sys_sendmsg+0x63/0x84\n\
+  \  ? handle_mm_fault+0xa39/0x11b5\n  ? sockfd_lookup_light+0x72/0x9a\n  __sys_sendmsg+0x50/0x6e\n\
+  \  do_syscall_64+0x54/0xbe\n  entry_SYSCALL_64_after_hwframe+0x44/0xa9\n RIP: 0033:0x7f10dacc0bb7\n\
+  \ Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb cd 66 0f 1f 44 00 00 8b 05 9a 4b 2b\
+  \ 00 85 c0 75 2e 48 63 ff 48 63 d2 b8 2e 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01\
+  \ c3 48 8b 15 b1 f2 2a 00 f7 d8 64 89 02 48\n RSP: 002b:00007ffcbe628bf8 EFLAGS:\
+  \ 00000246 ORIG_RAX: 000000000000002e\n RAX: ffffffffffffffda RBX: 00007ffcbe628f80\
+  \ RCX: 00007f10dacc0bb7\n RDX: 0000000000000000 RSI: 00007ffcbe628c60 RDI: 0000000000000003\n\
+  \ RBP: 000000005f41099c R08: 0000000000000001 R09: 0000000000000008\n R10: 00000000000005e9\
+  \ R11: 0000000000000246 R12: 0000000000000000\n R13: 0000000000000000 R14: 00007ffcbe628d70\
+  \ R15: 0000563a86c6e440\n Modules linked in:\n CR2: 0000000000000080\n\nCC: David\
+  \ Ahern <dsahern@gmail.com>\nFixes: 430a049190de (\"nexthop: Add support for nexthop\
+  \ groups\")\nReported-by: syzbot+a61aa19b0c14c8770bd9@syzkaller.appspotmail.com\n\
+  Signed-off-by: Nikolay Aleksandrov <nikolay@cumulusnetworks.com>\nReviewed-by: David\
+  \ Ahern <dsahern@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv4
+hunk_count: 2
+covered_count: 0

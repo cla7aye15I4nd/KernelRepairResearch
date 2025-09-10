@@ -1,0 +1,45 @@
+INFO: task kworker/0:2:1369 blocked for more than 143 seconds.
+      Not tainted 6.7.0-rc3-syzkaller-g2cc14f52aeb7 #0
+"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+task:kworker/0:2     state:D stack:0     pid:1369  tgid:1369  ppid:2      flags:0x00000008
+Workqueue: events_long flush_mdb
+Call trace:
+ __switch_to+0x314/0x560 arch/arm64/kernel/process.c:556
+ context_switch kernel/sched/core.c:5376 [inline]
+ __schedule+0x1354/0x2360 kernel/sched/core.c:6688
+ __schedule_loop kernel/sched/core.c:6763 [inline]
+ schedule+0xb8/0x19c kernel/sched/core.c:6778
+ io_schedule+0x8c/0x12c kernel/sched/core.c:8998
+ bit_wait_io+0x1c/0xac kernel/sched/wait_bit.c:209
+ __wait_on_bit_lock+0xcc/0x1e8 kernel/sched/wait_bit.c:90
+ out_of_line_wait_on_bit_lock+0x194/0x21c kernel/sched/wait_bit.c:117
+ wait_on_bit_lock_io include/linux/wait_bit.h:208 [inline]
+ __lock_buffer+0x78/0xac fs/buffer.c:71
+ lock_buffer include/linux/buffer_head.h:404 [inline]
+ hfs_mdb_commit+0x9fc/0xf2c fs/hfs/mdb.c:325
+ flush_mdb+0x6c/0x9c fs/hfs/super.c:66
+ process_one_work+0x694/0x1204 kernel/workqueue.c:2630
+ process_scheduled_works kernel/workqueue.c:2703 [inline]
+ worker_thread+0x938/0xef4 kernel/workqueue.c:2784
+ kthread+0x288/0x310 kernel/kthread.c:388
+ ret_from_fork+0x10/0x20 arch/arm64/kernel/entry.S:857
+
+Showing all locks held in the system:
+1 lock held by khungtaskd/29:
+ #0: ffff80008e6b4740 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire+0xc/0x44 include/linux/rcupdate.h:300
+2 locks held by kworker/0:2/1369:
+ #0: ffff0000c0021538 ((wq_completion)events_long){+.+.}-{0:0}, at: process_one_work+0x560/0x1204 kernel/workqueue.c:2603
+ #1: ffff800099b77c20 ((work_completion)(&(&sbi->mdb_work)->work)){+.+.}-{0:0}, at: process_one_work+0x5a0/0x1204 kernel/workqueue.c:2605
+2 locks held by getty/5857:
+ #0: ffff0000d25960a0 (&tty->ldisc_sem){++++}-{0:0}, at: ldsem_down_read+0x3c/0x4c drivers/tty/tty_ldsem.c:340
+ #1: ffff800094e402f0 (&ldata->atomic_read_lock){+.+.}-{3:3}, at: n_tty_read+0x41c/0x1228 drivers/tty/n_tty.c:2201
+2 locks held by kworker/u4:2/8498:
+ #0: ffff0001b4168d98 (&rq->__lock){-.-.}-{2:2}, at: raw_spin_rq_lock_nested kernel/sched/core.c:558 [inline]
+ #0: ffff0001b4168d98 (&rq->__lock){-.-.}-{2:2}, at: raw_spin_rq_lock kernel/sched/sched.h:1349 [inline]
+ #0: ffff0001b4168d98 (&rq->__lock){-.-.}-{2:2}, at: rq_lock kernel/sched/sched.h:1663 [inline]
+ #0: ffff0001b4168d98 (&rq->__lock){-.-.}-{2:2}, at: __schedule+0x2dc/0x2360 kernel/sched/core.c:6604
+ #1: ffff0001b4154e48 (&per_cpu_ptr(group->pcpu, cpu)->seq){-.-.}-{0:0}, at: psi_task_switch+0x3c0/0x618 kernel/sched/psi.c:988
+5 locks held by syz-executor178/16598:
+
+=============================================
+

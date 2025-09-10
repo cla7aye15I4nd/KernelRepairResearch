@@ -1,0 +1,37 @@
+id: fc69d7cb21258ab4ae4d
+bug_link: https://syzkaller.appspot.com/bug?extid=fc69d7cb21258ab4ae4d
+title: 'WARNING: suspicious RCU usage in find_set_and_id'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 44efc78d0e464ce70b45b165c005f8bedc17952e
+fix_commit: 5038517119d50ed0240059b1d7fc2faa92371c08
+datetime: '2020-01-29T18:34:46+01:00'
+fix_commit_message: 'netfilter: ipset: fix suspicious RCU usage in find_set_and_id
+
+
+  find_set_and_id() is called when the NFNL_SUBSYS_IPSET mutex is held.
+
+  However, in the error path there can be a follow-up recvmsg() without
+
+  the mutex held. Use the start() function of struct netlink_dump_control
+
+  instead of dump() to verify and report if the specified set does not
+
+  exist.
+
+
+  Thanks to Pablo Neira Ayuso for helping me to understand the subleties
+
+  of the netlink protocol.
+
+
+  Reported-by: syzbot+fc69d7cb21258ab4ae4d@syzkaller.appspotmail.com
+
+  Signed-off-by: Jozsef Kadlecsik <kadlec@netfilter.org>
+
+  Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+
+  '
+submodule:
+- net/netfilter
+hunk_count: 4
+covered_count: 3

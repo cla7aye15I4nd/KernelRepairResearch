@@ -1,0 +1,36 @@
+id: 934037347002901b8d2a
+bug_link: https://syzkaller.appspot.com/bug?extid=934037347002901b8d2a
+title: memory leak in nbd_add_socket
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 05a4fed69ff00a8bd83538684cb602a4636b07a7
+fix_commit: 579dd91ab3a5446b148e7f179b6596b270dace46
+datetime: '2020-07-08T15:42:18-06:00'
+fix_commit_message: 'nbd: Fix memory leak in nbd_add_socket
+
+
+  When adding first socket to nbd, if nsock''s allocation failed, the data
+
+  structure member "config->socks" was reallocated, but the data structure
+
+  member "config->num_connections" was not updated. A memory leak will occur
+
+  then because the function "nbd_config_put" will free "config->socks" only
+
+  when "config->num_connections" is not zero.
+
+
+  Fixes: 03bf73c315ed ("nbd: prevent memory leak")
+
+  Reported-by: syzbot+934037347002901b8d2a@syzkaller.appspotmail.com
+
+  Signed-off-by: Zheng Bin <zhengbin13@huawei.com>
+
+  Reviewed-by: Eric Biggers <ebiggers@google.com>
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- drivers/block
+hunk_count: 2
+covered_count: 2

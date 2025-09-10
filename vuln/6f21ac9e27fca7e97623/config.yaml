@@ -1,0 +1,45 @@
+id: 6f21ac9e27fca7e97623
+bug_link: https://syzkaller.appspot.com/bug?extid=6f21ac9e27fca7e97623
+title: 'linux-next test error: WARNING in __napi_schedule'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ca4f3f187b0885906ebac1abbf26545b5c514fba
+fix_commit: 351bdbb6419ca988802882badadc321d384d0254
+datetime: '2022-03-21T12:07:05-07:00'
+fix_commit_message: 'net: Revert the softirq will run annotation in ____napi_schedule().
+
+
+  The lockdep annotation lockdep_assert_softirq_will_run() expects that
+
+  either hard or soft interrupts are disabled because both guaranty that
+
+  the "raised" soft-interrupts will be processed once the context is left.
+
+
+  This triggers in flush_smp_call_function_from_idle() but it this case it
+
+  explicitly calls do_softirq() in case of pending softirqs.
+
+
+  Revert the "softirq will run" annotation in ____napi_schedule() and move
+
+  the check back to __netif_rx() as it was. Keep the IRQ-off assert in
+
+  ____napi_schedule() because this is always required.
+
+
+  Fixes: fbd9a2ceba5c7 ("net: Add lockdep asserts to ____napi_schedule().")
+
+  Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+
+  Reviewed-by: Jason A. Donenfeld <Jason@zx2c4.com>
+
+  Link: https://lore.kernel.org/r/YjhD3ZKWysyw8rc6@linutronix.de
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- include/linux
+- net/core
+hunk_count: 4
+covered_count: 1

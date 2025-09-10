@@ -1,0 +1,20 @@
+diff --git a/net/tipc/socket.c b/net/tipc/socket.c
+index 9b0b311c7ec1..b0dd183a4dbc 100644
+--- a/net/tipc/socket.c
++++ b/net/tipc/socket.c
+@@ -1973,10 +1973,12 @@ static int tipc_recvmsg(struct socket *sock, struct msghdr *m,
+ 		tipc_node_distr_xmit(sock_net(sk), &xmitq);
+ 	}
+ 
+-	if (!skb_cb->bytes_read)
+-		tsk_advance_rx_queue(sk);
++	if (skb_cb->bytes_read)
++		goto exit;
++
++	tsk_advance_rx_queue(sk);
+ 
+-	if (likely(!connected) || skb_cb->bytes_read)
++	if (likely(!connected))
+ 		goto exit;
+ 
+ 	/* Send connection flow control advertisement when applicable */

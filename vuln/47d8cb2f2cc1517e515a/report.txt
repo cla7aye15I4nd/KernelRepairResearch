@@ -1,0 +1,83 @@
+ocfs2: Unmounting device (7,0) on (node local)
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000001: 0000 [#1] SMP KASAN NOPTI
+KASAN: null-ptr-deref in range [0x0000000000000008-0x000000000000000f]
+CPU: 0 UID: 0 PID: 5449 Comm: syz-executor Not tainted 6.17.0-rc1-syzkaller-00214-g99bade344cfa #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:ocfs2_clear_inode fs/ocfs2/inode.c:1284 [inline]
+RIP: 0010:ocfs2_evict_inode+0x2d05/0x40e0 fs/ocfs2/inode.c:1296
+Code: 02 00 00 48 89 d8 48 c1 e8 03 42 80 3c 30 00 74 08 48 89 df e8 dc db 83 fe 4d 01 f4 48 8b 1b 48 83 c3 08 48 89 d8 48 c1 e8 03 <42> 80 3c 30 00 74 08 48 89 df e8 bc db 83 fe 48 8b 3b 49 81 c7 88
+RSP: 0018:ffffc90002a6f340 EFLAGS: 00010202
+RAX: 0000000000000001 RBX: 0000000000000008 RCX: ffff8880006e2440
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc90002a6fa70 R08: ffff8880438230b7 R09: 1ffff11008704616
+R10: dffffc0000000000 R11: ffffed1008704617 R12: fffff5200054de78
+R13: ffff888043823360 R14: dffffc0000000000 R15: ffff888043823338
+FS:  000055556e79a500(0000) GS:ffff88808d210000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f7ac55909c0 CR3: 0000000042abb000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ evict+0x501/0x9c0 fs/inode.c:810
+ __ocfs2_free_slot_info fs/ocfs2/slot_map.c:307 [inline]
+ ocfs2_free_slot_info+0x79/0x260 fs/ocfs2/slot_map.c:443
+ ocfs2_delete_osb+0x58/0x170 fs/ocfs2/super.c:2450
+ ocfs2_dismount_volume+0x57a/0x8d0 fs/ocfs2/super.c:1884
+ generic_shutdown_super+0x132/0x2c0 fs/super.c:643
+ kill_block_super+0x44/0x90 fs/super.c:1766
+ deactivate_locked_super+0xbc/0x130 fs/super.c:474
+ cleanup_mnt+0x425/0x4c0 fs/namespace.c:1378
+ task_work_run+0x1d4/0x260 kernel/task_work.c:227
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop+0xec/0x110 kernel/entry/common.c:43
+ exit_to_user_mode_prepare include/linux/irq-entry-common.h:225 [inline]
+ syscall_exit_to_user_mode_work include/linux/entry-common.h:175 [inline]
+ syscall_exit_to_user_mode include/linux/entry-common.h:210 [inline]
+ do_syscall_64+0x2bd/0x3b0 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f4544b8ff17
+Code: a8 ff ff ff f7 d8 64 89 01 48 83 c8 ff c3 0f 1f 44 00 00 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 a8 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0cacaac8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 00007f4544c11c05 RCX: 00007f4544b8ff17
+RDX: 0000000000000000 RSI: 0000000000000009 RDI: 00007ffc0cacab80
+RBP: 00007ffc0cacab80 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000246 R12: 00007ffc0cacbc10
+R13: 00007f4544c11c05 R14: 0000000000013b93 R15: 00007ffc0cacbc50
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:ocfs2_clear_inode fs/ocfs2/inode.c:1284 [inline]
+RIP: 0010:ocfs2_evict_inode+0x2d05/0x40e0 fs/ocfs2/inode.c:1296
+Code: 02 00 00 48 89 d8 48 c1 e8 03 42 80 3c 30 00 74 08 48 89 df e8 dc db 83 fe 4d 01 f4 48 8b 1b 48 83 c3 08 48 89 d8 48 c1 e8 03 <42> 80 3c 30 00 74 08 48 89 df e8 bc db 83 fe 48 8b 3b 49 81 c7 88
+RSP: 0018:ffffc90002a6f340 EFLAGS: 00010202
+RAX: 0000000000000001 RBX: 0000000000000008 RCX: ffff8880006e2440
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc90002a6fa70 R08: ffff8880438230b7 R09: 1ffff11008704616
+R10: dffffc0000000000 R11: ffffed1008704617 R12: fffff5200054de78
+R13: ffff888043823360 R14: dffffc0000000000 R15: ffff888043823338
+FS:  000055556e79a500(0000) GS:ffff88808d210000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f7ac5c9f000 CR3: 0000000042abb000 CR4: 0000000000352ef0
+----------------
+Code disassembly (best guess):
+   0:	02 00                	add    (%rax),%al
+   2:	00 48 89             	add    %cl,-0x77(%rax)
+   5:	d8 48 c1             	fmuls  -0x3f(%rax)
+   8:	e8 03 42 80 3c       	call   0x3c804210
+   d:	30 00                	xor    %al,(%rax)
+   f:	74 08                	je     0x19
+  11:	48 89 df             	mov    %rbx,%rdi
+  14:	e8 dc db 83 fe       	call   0xfe83dbf5
+  19:	4d 01 f4             	add    %r14,%r12
+  1c:	48 8b 1b             	mov    (%rbx),%rbx
+  1f:	48 83 c3 08          	add    $0x8,%rbx
+  23:	48 89 d8             	mov    %rbx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 80 3c 30 00       	cmpb   $0x0,(%rax,%r14,1) <-- trapping instruction
+  2f:	74 08                	je     0x39
+  31:	48 89 df             	mov    %rbx,%rdi
+  34:	e8 bc db 83 fe       	call   0xfe83dbf5
+  39:	48 8b 3b             	mov    (%rbx),%rdi
+  3c:	49                   	rex.WB
+  3d:	81                   	.byte 0x81
+  3e:	c7                   	(bad)
+  3f:	88                   	.byte 0x88

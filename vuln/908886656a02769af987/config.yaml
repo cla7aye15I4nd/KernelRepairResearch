@@ -1,0 +1,31 @@
+id: 908886656a02769af987
+bug_link: https://syzkaller.appspot.com/bug?extid=908886656a02769af987
+title: 'upstream test error: KASAN: invalid-access Write in setup_arch'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f56d8d2389ba2a0cab0512637bd264611eab1b9a
+fix_commit: 7aed6a2c51ffc97a126e0ea0c270fab7af97ae18
+datetime: '2024-10-15T11:38:10+01:00'
+fix_commit_message: "kasan: Disable Software Tag-Based KASAN with GCC\n\nSyzbot reports\
+  \ a KASAN failure early during boot on arm64 when building\nwith GCC 12.2.0 and\
+  \ using the Software Tag-Based KASAN mode:\n\n  | BUG: KASAN: invalid-access in\
+  \ smp_build_mpidr_hash arch/arm64/kernel/setup.c:133 [inline]\n  | BUG: KASAN: invalid-access\
+  \ in setup_arch+0x984/0xd60 arch/arm64/kernel/setup.c:356\n  | Write of size 4 at\
+  \ addr 03ff800086867e00 by task swapper/0\n  | Pointer tag: [03], memory tag: [fe]\n\
+  \nInitial triage indicates that the report is a false positive and a\nthorough investigation\
+  \ of the crash by Mark Rutland revealed the root\ncause to be a bug in GCC:\n\n\
+  \  > When GCC is passed `-fsanitize=hwaddress` or\n  > `-fsanitize=kernel-hwaddress`\
+  \ it ignores\n  > `__attribute__((no_sanitize_address))`, and instruments functions\n\
+  \  > we require are not instrumented.\n  >\n  > [...]\n  >\n  > All versions [of\
+  \ GCC] I tried were broken, from 11.3.0 to 14.2.0\n  > inclusive.\n  >\n  > I think\
+  \ we have to disable KASAN_SW_TAGS with GCC until this is\n  > fixed\n\nDisable\
+  \ Software Tag-Based KASAN when building with GCC by making\nCC_HAS_KASAN_SW_TAGS\
+  \ depend on !CC_IS_GCC.\n\nCc: Andrey Konovalov <andreyknvl@gmail.com>\nSuggested-by:\
+  \ Mark Rutland <mark.rutland@arm.com>\nReported-by: syzbot+908886656a02769af987@syzkaller.appspotmail.com\n\
+  Link: https://lore.kernel.org/r/000000000000f362e80620e27859@google.com\nLink: https://lore.kernel.org/r/ZvFGwKfoC4yVjN_X@J2N7QTR9R3\n\
+  Link: https://bugzilla.kernel.org/show_bug.cgi?id=218854\nReviewed-by: Andrey Konovalov\
+  \ <andreyknvl@gmail.com>\nAcked-by: Mark Rutland <mark.rutland@arm.com>\nLink: https://lore.kernel.org/r/20241014161100.18034-1-will@kernel.org\n\
+  Signed-off-by: Will Deacon <will@kernel.org>\n"
+submodule:
+- lib
+hunk_count: 2
+covered_count: 0

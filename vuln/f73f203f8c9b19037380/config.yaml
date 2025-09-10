@@ -1,0 +1,44 @@
+id: f73f203f8c9b19037380
+bug_link: https://syzkaller.appspot.com/bug?extid=f73f203f8c9b19037380
+title: WARNING in ieee80211_tdls_oper
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 81284e86bf8849f8e98e8ead3ff5811926b2107f
+fix_commit: 16ecdab5446f15a61ec88eb0d23d25d009821db0
+datetime: '2025-07-18T14:11:27+02:00'
+fix_commit_message: 'wifi: mac80211: reject TDLS operations when station is not associated
+
+
+  syzbot triggered a WARN in ieee80211_tdls_oper() by sending
+
+  NL80211_TDLS_ENABLE_LINK immediately after NL80211_CMD_CONNECT,
+
+  before association completed and without prior TDLS setup.
+
+
+  This left internal state like sdata->u.mgd.tdls_peer uninitialized,
+
+  leading to a WARN_ON() in code paths that assumed it was valid.
+
+
+  Reject the operation early if not in station mode or not associated.
+
+
+  Reported-by: syzbot+f73f203f8c9b19037380@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=f73f203f8c9b19037380
+
+  Fixes: 81dd2b882241 ("mac80211: move TDLS data to mgd private part")
+
+  Tested-by: syzbot+f73f203f8c9b19037380@syzkaller.appspotmail.com
+
+  Signed-off-by: Moon Hee Lee <moonhee.lee.ca@gmail.com>
+
+  Link: https://patch.msgid.link/20250715230904.661092-2-moonhee.lee.ca@gmail.com
+
+  Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+  '
+submodule:
+- net/mac80211
+hunk_count: 1
+covered_count: 1

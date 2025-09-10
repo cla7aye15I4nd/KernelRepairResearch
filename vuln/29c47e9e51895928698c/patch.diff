@@ -1,0 +1,24 @@
+diff --git a/fs/gfs2/super.c b/fs/gfs2/super.c
+index 726f062bc490..84e88b50ed92 100644
+--- a/fs/gfs2/super.c
++++ b/fs/gfs2/super.c
+@@ -602,13 +602,15 @@ static void gfs2_put_super(struct super_block *sb)
+ 	}
+ 	spin_unlock(&sdp->sd_jindex_spin);
+ 
+-	if (!sb_rdonly(sb)) {
++	if (!sb_rdonly(sb))
+ 		gfs2_make_fs_ro(sdp);
+-	}
+-	if (gfs2_withdrawn(sdp)) {
+-		gfs2_destroy_threads(sdp);
++	else {
++		if (gfs2_withdrawn(sdp))
++			gfs2_destroy_threads(sdp);
++
+ 		gfs2_quota_cleanup(sdp);
+ 	}
++
+ 	WARN_ON(gfs2_withdrawing(sdp));
+ 
+ 	/*  At this point, we're through modifying the disk  */

@@ -1,0 +1,18 @@
+diff --git a/fs/verity/enable.c b/fs/verity/enable.c
+index bbec6f93172c..fc4c50e5219d 100644
+--- a/fs/verity/enable.c
++++ b/fs/verity/enable.c
+@@ -357,6 +357,13 @@ int fsverity_ioctl_enable(struct file *filp, const void __user *uarg)
+ 	err = file_permission(filp, MAY_WRITE);
+ 	if (err)
+ 		return err;
++	/*
++	 * __kernel_read() is used while building the Merkle tree.  So, we can't
++	 * allow file descriptors that were opened for ioctl access only, using
++	 * the special nonstandard access mode 3.  O_RDONLY only, please!
++	 */
++	if (!(filp->f_mode & FMODE_READ))
++		return -EBADF;
+ 
+ 	if (IS_APPEND(inode))
+ 		return -EPERM;

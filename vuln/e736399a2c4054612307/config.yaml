@@ -1,0 +1,40 @@
+id: e736399a2c4054612307
+bug_link: https://syzkaller.appspot.com/bug?extid=e736399a2c4054612307
+title: 'KASAN: use-after-free Read in crypto_gcm_init_common'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 45d5cb137c3638b3a310f41b31d8e79daf647f14
+fix_commit: 9354544cbccf68da1b047f8fb7b47630e3c8a59d
+datetime: '2019-06-24T07:20:45-07:00'
+fix_commit_message: "net/tls: fix page double free on TX cleanup\n\nWith commit 94850257cf0f\
+  \ (\"tls: Fix tls_device handling of partial records\")\na new path was introduced\
+  \ to cleanup partial records during sk_proto_close.\nThis path does not handle the\
+  \ SW KTLS tx_list cleanup.\n\nThis is unnecessary though since the free_resources\
+  \ calls for both\nSW and offload paths will cleanup a partial record.\n\nThe visible\
+  \ effect is the following warning, but this bug also causes\na page double free.\n\
+  \n    WARNING: CPU: 7 PID: 4000 at net/core/stream.c:206 sk_stream_kill_queues+0x103/0x110\n\
+  \    RIP: 0010:sk_stream_kill_queues+0x103/0x110\n    RSP: 0018:ffffb6df87e07bd0\
+  \ EFLAGS: 00010206\n    RAX: 0000000000000000 RBX: ffff8c21db4971c0 RCX: 0000000000000007\n\
+  \    RDX: ffffffffffffffa0 RSI: 000000000000001d RDI: ffff8c21db497270\n    RBP:\
+  \ ffff8c21db497270 R08: ffff8c29f4748600 R09: 000000010020001a\n    R10: ffffb6df87e07aa0\
+  \ R11: ffffffff9a445600 R12: 0000000000000007\n    R13: 0000000000000000 R14: ffff8c21f03f2900\
+  \ R15: ffff8c21f03b8df0\n    Call Trace:\n     inet_csk_destroy_sock+0x55/0x100\n\
+  \     tcp_close+0x25d/0x400\n     ? tcp_check_oom+0x120/0x120\n     tls_sk_proto_close+0x127/0x1c0\n\
+  \     inet_release+0x3c/0x60\n     __sock_release+0x3d/0xb0\n     sock_close+0x11/0x20\n\
+  \     __fput+0xd8/0x210\n     task_work_run+0x84/0xa0\n     do_exit+0x2dc/0xb90\n\
+  \     ? release_sock+0x43/0x90\n     do_group_exit+0x3a/0xa0\n     get_signal+0x295/0x720\n\
+  \     do_signal+0x36/0x610\n     ? SYSC_recvfrom+0x11d/0x130\n     exit_to_usermode_loop+0x69/0xb0\n\
+  \     do_syscall_64+0x173/0x180\n     entry_SYSCALL_64_after_hwframe+0x3d/0xa2\n\
+  \    RIP: 0033:0x7fe9b9abc10d\n    RSP: 002b:00007fe9b19a1d48 EFLAGS: 00000246 ORIG_RAX:\
+  \ 00000000000000ca\n    RAX: fffffffffffffe00 RBX: 0000000000000006 RCX: 00007fe9b9abc10d\n\
+  \    RDX: 0000000000000002 RSI: 0000000000000080 RDI: 00007fe948003430\n    RBP:\
+  \ 00007fe948003410 R08: 00007fe948003430 R09: 0000000000000000\n    R10: 0000000000000000\
+  \ R11: 0000000000000246 R12: 00005603739d9080\n    R13: 00007fe9b9ab9f90 R14: 00007fe948003430\
+  \ R15: 0000000000000000\n\nFixes: 94850257cf0f (\"tls: Fix tls_device handling of\
+  \ partial records\")\nSigned-off-by: Dirk van der Merwe <dirk.vandermerwe@netronome.com>\n\
+  Signed-off-by: Jakub Kicinski <jakub.kicinski@netronome.com>\nSigned-off-by: David\
+  \ S. Miller <davem@davemloft.net>\n"
+submodule:
+- include/net
+- net/tls
+hunk_count: 2
+covered_count: 1

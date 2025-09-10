@@ -1,0 +1,35 @@
+------------[ cut here ]------------
+gfs2_meta_aops does not implement migrate_folio
+WARNING: CPU: 0 PID: 30 at mm/migrate.c:944 fallback_migrate_folio mm/migrate.c:942 [inline]
+WARNING: CPU: 0 PID: 30 at mm/migrate.c:944 move_to_new_folio+0x696/0x7a0 mm/migrate.c:996
+Modules linked in:
+CPU: 0 UID: 0 PID: 30 Comm: kcompactd1 Not tainted 6.16.0-rc3-syzkaller-00057-g92ca6c498a5e #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:fallback_migrate_folio mm/migrate.c:942 [inline]
+RIP: 0010:move_to_new_folio+0x696/0x7a0 mm/migrate.c:996
+Code: 0d 01 90 42 80 7c 3d 00 00 74 0a 48 8b 7c 24 20 e8 3f 53 fe ff 48 8b 44 24 20 48 8b 30 48 c7 c7 00 b4 97 8b e8 3b 7a 5e ff 90 <0f> 0b 90 90 49 bf 00 00 00 00 00 fc ff df e9 7e fd ff ff e8 42 d0
+RSP: 0018:ffffc90000516fd0 EFLAGS: 00010246
+RAX: 124470d10cdda500 RBX: ffffea00010a6140 RCX: ffff888030fd0000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000002
+RBP: 1ffff1100ac3f712 R08: ffff88801fc24293 R09: 1ffff11003f84852
+R10: dffffc0000000000 R11: ffffed1003f84853 R12: ffffea0001242240
+R13: ffff8880561fb770 R14: ffffea00010a6148 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff88808d251000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fc24a0076a2 CR3: 0000000044463000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ migrate_folio_move mm/migrate.c:1301 [inline]
+ migrate_folios_move mm/migrate.c:1653 [inline]
+ migrate_pages_batch+0x1c34/0x2830 mm/migrate.c:1900
+ migrate_pages_sync mm/migrate.c:1930 [inline]
+ migrate_pages+0x1bcc/0x2930 mm/migrate.c:2039
+ compact_zone+0x23f4/0x4ad0 mm/compaction.c:2683
+ compact_node+0x1d2/0x280 mm/compaction.c:2952
+ kcompactd+0xbc8/0x1290 mm/compaction.c:3250
+ kthread+0x70e/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>

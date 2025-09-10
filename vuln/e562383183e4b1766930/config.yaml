@@ -1,0 +1,33 @@
+id: e562383183e4b1766930
+bug_link: https://syzkaller.appspot.com/bug?extid=e562383183e4b1766930
+title: memory leak in ip_vs_add_service
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 179d9ba5559a756f4322583388b3213fe4e391b0
+fix_commit: 56e4ee82e850026d71223262c07df7d6af3bd872
+datetime: '2021-05-27T13:06:48+02:00'
+fix_commit_message: "ipvs: ignore IP_VS_SVC_F_HASHED flag when adding service\n\n\
+  syzbot reported memory leak [1] when adding service with\nHASHED flag. We should\
+  \ ignore this flag both from sockopt\nand netlink provided data, otherwise the service\
+  \ is not\nhashed and not visible while releasing resources.\n\n[1]\nBUG: memory\
+  \ leak\nunreferenced object 0xffff888115227800 (size 512):\n  comm \"syz-executor263\"\
+  , pid 8658, jiffies 4294951882 (age 12.560s)\n  hex dump (first 32 bytes):\n   \
+  \ 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n    00 00 00\
+  \ 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n  backtrace:\n    [<ffffffff83977188>]\
+  \ kmalloc include/linux/slab.h:556 [inline]\n    [<ffffffff83977188>] kzalloc include/linux/slab.h:686\
+  \ [inline]\n    [<ffffffff83977188>] ip_vs_add_service+0x598/0x7c0 net/netfilter/ipvs/ip_vs_ctl.c:1343\n\
+  \    [<ffffffff8397d770>] do_ip_vs_set_ctl+0x810/0xa40 net/netfilter/ipvs/ip_vs_ctl.c:2570\n\
+  \    [<ffffffff838449a8>] nf_setsockopt+0x68/0xa0 net/netfilter/nf_sockopt.c:101\n\
+  \    [<ffffffff839ae4e9>] ip_setsockopt+0x259/0x1ff0 net/ipv4/ip_sockglue.c:1435\n\
+  \    [<ffffffff839fa03c>] raw_setsockopt+0x18c/0x1b0 net/ipv4/raw.c:857\n    [<ffffffff83691f20>]\
+  \ __sys_setsockopt+0x1b0/0x360 net/socket.c:2117\n    [<ffffffff836920f2>] __do_sys_setsockopt\
+  \ net/socket.c:2128 [inline]\n    [<ffffffff836920f2>] __se_sys_setsockopt net/socket.c:2125\
+  \ [inline]\n    [<ffffffff836920f2>] __x64_sys_setsockopt+0x22/0x30 net/socket.c:2125\n\
+  \    [<ffffffff84350efa>] do_syscall_64+0x3a/0xb0 arch/x86/entry/common.c:47\n \
+  \   [<ffffffff84400068>] entry_SYSCALL_64_after_hwframe+0x44/0xae\n\nReported-and-tested-by:\
+  \ syzbot+e562383183e4b1766930@syzkaller.appspotmail.com\nFixes: 1da177e4c3f4 (\"\
+  Linux-2.6.12-rc2\")\nSigned-off-by: Julian Anastasov <ja@ssi.bg>\nReviewed-by: Simon\
+  \ Horman <horms@verge.net.au>\nSigned-off-by: Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 1
+covered_count: 1

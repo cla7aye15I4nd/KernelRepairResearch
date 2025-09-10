@@ -1,0 +1,41 @@
+id: 619d9f40141d826b097e
+bug_link: https://syzkaller.appspot.com/bug?extid=619d9f40141d826b097e
+title: 'BUG: soft lockup in snd_virmidi_output_trigger'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 69756930f2de0457d51db7d505a1e4f40e9fd116
+fix_commit: 50e9ffb1996a5d11ff5040a266585bad4ceeca0a
+datetime: '2018-07-27T08:59:25+02:00'
+fix_commit_message: 'ALSA: virmidi: Fix too long output trigger loop
+
+
+  The virmidi output trigger tries to parse the all available bytes and
+
+  process sequencer events as much as possible.  In a normal situation,
+
+  this is supposed to be relatively short, but a program may give a huge
+
+  buffer and it''ll take a long time in a single spin lock, which may
+
+  eventually lead to a soft lockup.
+
+
+  This patch simply adds a workaround, a cond_resched() call in the loop
+
+  if applicable.  A better solution would be to move the event processor
+
+  into a work, but let''s put a duct-tape quickly at first.
+
+
+  Reported-and-tested-by: Dae R. Jeong <threeearcat@gmail.com>
+
+  Reported-by: syzbot+619d9f40141d826b097e@syzkaller.appspotmail.com
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/core/seq
+hunk_count: 2
+covered_count: 2

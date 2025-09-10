@@ -1,0 +1,31 @@
+id: ff11be94dfcd7a5af8da
+bug_link: https://syzkaller.appspot.com/bug?extid=ff11be94dfcd7a5af8da
+title: WARNING in rxrpc_send_data
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d920270a6dbf756384b125ce39c17666a7c0c9f4
+fix_commit: ae4f899894792c436d792c17d3f3e6a2affb787f
+datetime: '2024-12-16T18:06:59-08:00'
+fix_commit_message: "rxrpc: Fix ability to add more data to a call once MSG_MORE deasserted\n\
+  \nWhen userspace is adding data to an RPC call for transmission, it must pass\n\
+  MSG_MORE to sendmsg() if it intends to add more data in future calls to\nsendmsg().\
+  \  Calling sendmsg() without MSG_MORE being asserted closes the\ntransmission phase\
+  \ of the call (assuming sendmsg() adds all the data\npresented) and further attempts\
+  \ to add more data should be rejected.\n\nHowever, this is no longer the case. \
+  \ The change of call state that was\npreviously the guard got bumped over to the\
+  \ I/O thread, which leaves a\nwindow for a repeat sendmsg() to insert more data.\
+  \  This previously went\nunnoticed, but the more recent patch that changed the structures\
+  \ behind the\nTx queue added a warning:\n\n        WARNING: CPU: 3 PID: 6639 at\
+  \ net/rxrpc/sendmsg.c:296 rxrpc_send_data+0x3f2/0x860\n\nand rejected the additional\
+  \ data, returning error EPROTO.\n\nFix this by adding a guard flag to the call,\
+  \ setting the flag when we queue\nthe final packet and then rejecting further attempts\
+  \ to add data with\nEPROTO.\n\nFixes: 2d689424b618 (\"rxrpc: Move call state changes\
+  \ from sendmsg to I/O thread\")\nReported-by: syzbot+ff11be94dfcd7a5af8da@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/r/6757fb68.050a0220.2477f.005f.GAE@google.com/\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\nTested-by: syzbot+ff11be94dfcd7a5af8da@syzkaller.appspotmail.com\n\
+  cc: Marc Dionne <marc.dionne@auristor.com>\ncc: linux-afs@lists.infradead.org\n\
+  Link: https://patch.msgid.link/2870480.1734037462@warthog.procyon.org.uk\nSigned-off-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/rxrpc
+hunk_count: 3
+covered_count: 2

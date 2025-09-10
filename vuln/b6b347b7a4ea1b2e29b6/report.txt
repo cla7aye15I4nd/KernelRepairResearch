@@ -1,0 +1,86 @@
+F2FS-fs (loop3): Stopped filesystem due to reason: 7
+kworker/u8:7: attempt to access beyond end of device
+loop3: rw=1, sector=45096, nr_sectors = 8 limit=40427
+BUG: unable to handle page fault for address: ffffed1604ea3dfa
+#PF: supervisor read access in kernel mode
+#PF: error_code(0x0000) - not-present page
+PGD 23ffee067 P4D 23ffee067 PUD 0 
+Oops: Oops: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 UID: 0 PID: 2977 Comm: kworker/u8:7 Not tainted 6.13.0-syzkaller-04541-gdf60eac9efe8 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+Workqueue: writeback wb_workfn (flush-7:3)
+RIP: 0010:get_ckpt_valid_blocks fs/f2fs/segment.h:361 [inline]
+RIP: 0010:has_curseg_enough_space fs/f2fs/segment.h:570 [inline]
+RIP: 0010:__get_secs_required fs/f2fs/segment.h:620 [inline]
+RIP: 0010:has_not_enough_free_secs fs/f2fs/segment.h:633 [inline]
+RIP: 0010:has_enough_free_secs+0x575/0x1660 fs/f2fs/segment.h:649
+Code: 3c 08 00 74 12 48 89 ef e8 88 30 0d fe 48 b9 00 00 00 00 00 fc ff df 4b 8d 1c 7f 48 c1 e3 04 48 03 5d 00 48 89 d8 48 c1 e8 03 <0f> b6 04 08 84 c0 0f 85 bc 02 00 00 44 0f b7 63 02 41 81 e4 ff 03
+RSP: 0018:ffffc9000baa7268 EFLAGS: 00010a06
+RAX: 1ffff11604ea3dfa RBX: ffff88b02751efd0 RCX: dffffc0000000000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000001
+RBP: ffff888028c058e8 R08: ffffffff83f643f7 R09: 1ffff110037e6a00
+R10: dffffc0000000000 R11: ffffed10037e6a01 R12: 1ffff110037e682e
+R13: ffff88801bf34170 R14: 0000000000000001 R15: 00000000ffffffff
+FS:  0000000000000000(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffed1604ea3dfa CR3: 0000000033f0a000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ f2fs_is_checkpoint_ready fs/f2fs/segment.h:671 [inline]
+ f2fs_write_inode+0x425/0x540 fs/f2fs/inode.c:791
+ write_inode fs/fs-writeback.c:1525 [inline]
+ __writeback_single_inode+0x708/0x10d0 fs/fs-writeback.c:1745
+ writeback_sb_inodes+0x820/0x1360 fs/fs-writeback.c:1976
+ wb_writeback+0x413/0xb80 fs/fs-writeback.c:2156
+ wb_do_writeback fs/fs-writeback.c:2303 [inline]
+ wb_workfn+0x410/0x1080 fs/fs-writeback.c:2343
+ process_one_work kernel/workqueue.c:3236 [inline]
+ process_scheduled_works+0xa66/0x1840 kernel/workqueue.c:3317
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3398
+ kthread+0x7a9/0x920 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+CR2: ffffed1604ea3dfa
+---[ end trace 0000000000000000 ]---
+RIP: 0010:get_ckpt_valid_blocks fs/f2fs/segment.h:361 [inline]
+RIP: 0010:has_curseg_enough_space fs/f2fs/segment.h:570 [inline]
+RIP: 0010:__get_secs_required fs/f2fs/segment.h:620 [inline]
+RIP: 0010:has_not_enough_free_secs fs/f2fs/segment.h:633 [inline]
+RIP: 0010:has_enough_free_secs+0x575/0x1660 fs/f2fs/segment.h:649
+Code: 3c 08 00 74 12 48 89 ef e8 88 30 0d fe 48 b9 00 00 00 00 00 fc ff df 4b 8d 1c 7f 48 c1 e3 04 48 03 5d 00 48 89 d8 48 c1 e8 03 <0f> b6 04 08 84 c0 0f 85 bc 02 00 00 44 0f b7 63 02 41 81 e4 ff 03
+RSP: 0018:ffffc9000baa7268 EFLAGS: 00010a06
+RAX: 1ffff11604ea3dfa RBX: ffff88b02751efd0 RCX: dffffc0000000000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000001
+RBP: ffff888028c058e8 R08: ffffffff83f643f7 R09: 1ffff110037e6a00
+R10: dffffc0000000000 R11: ffffed10037e6a01 R12: 1ffff110037e682e
+R13: ffff88801bf34170 R14: 0000000000000001 R15: 00000000ffffffff
+FS:  0000000000000000(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffed1604ea3dfa CR3: 0000000033f0a000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	3c 08                	cmp    $0x8,%al
+   2:	00 74 12 48          	add    %dh,0x48(%rdx,%rdx,1)
+   6:	89 ef                	mov    %ebp,%edi
+   8:	e8 88 30 0d fe       	call   0xfe0d3095
+   d:	48 b9 00 00 00 00 00 	movabs $0xdffffc0000000000,%rcx
+  14:	fc ff df
+  17:	4b 8d 1c 7f          	lea    (%r15,%r15,2),%rbx
+  1b:	48 c1 e3 04          	shl    $0x4,%rbx
+  1f:	48 03 5d 00          	add    0x0(%rbp),%rbx
+  23:	48 89 d8             	mov    %rbx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	0f b6 04 08          	movzbl (%rax,%rcx,1),%eax <-- trapping instruction
+  2e:	84 c0                	test   %al,%al
+  30:	0f 85 bc 02 00 00    	jne    0x2f2
+  36:	44 0f b7 63 02       	movzwl 0x2(%rbx),%r12d
+  3b:	41                   	rex.B
+  3c:	81                   	.byte 0x81
+  3d:	e4 ff                	in     $0xff,%al
+  3f:	03                   	.byte 0x3

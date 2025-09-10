@@ -1,0 +1,92 @@
+id: df038d463cca332e8414
+bug_link: https://syzkaller.appspot.com/bug?extid=df038d463cca332e8414
+title: 'KASAN: slab-use-after-free Write in v9fs_free_request'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 29be9100aca2915fab54b5693309bc42956542e5
+fix_commit: f89ea63f1c65d3e93b255f14f9d9e05df87955fa
+datetime: '2024-05-27T13:12:13+02:00'
+fix_commit_message: 'netfs, 9p: Fix race between umount and async request completion
+
+
+  There''s a problem in 9p''s interaction with netfslib whereby a crash occurs
+
+  because the 9p_fid structs get forcibly destroyed during client teardown
+
+  (without paying attention to their refcounts) before netfslib has finished
+
+  with them.  However, it''s not a simple case of deferring the clunking that
+
+  p9_fid_put() does as that requires the p9_client record to still be
+
+  present.
+
+
+  The problem is that netfslib has to unlock pages and clear the IN_PROGRESS
+
+  flag before destroying the objects involved - including the fid - and, in
+
+  any case, nothing checks to see if writeback completed barring looking at
+
+  the page flags.
+
+
+  Fix this by keeping a count of outstanding I/O requests (of any type) and
+
+  waiting for it to quiesce during inode eviction.
+
+
+  Reported-by: syzbot+df038d463cca332e8414@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/all/0000000000005be0aa061846f8d6@google.com/
+
+  Reported-by: syzbot+d7c7a495a5e466c031b6@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/all/000000000000b86c5e06130da9c6@google.com/
+
+  Reported-by: syzbot+1527696d41a634cc1819@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/all/000000000000041f960618206d7e@google.com/
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  Link: https://lore.kernel.org/r/755891.1716560771@warthog.procyon.org.uk
+
+  Tested-by: syzbot+d7c7a495a5e466c031b6@syzkaller.appspotmail.com
+
+  Reviewed-by: Dominique Martinet <asmadeus@codewreck.org>
+
+  cc: Eric Van Hensbergen <ericvh@kernel.org>
+
+  cc: Latchesar Ionkov <lucho@ionkov.net>
+
+  cc: Christian Schoenebeck <linux_oss@crudebyte.com>
+
+  cc: Jeff Layton <jlayton@kernel.org>
+
+  cc: Steve French <sfrench@samba.org>
+
+  cc: Hillf Danton <hdanton@sina.com>
+
+  cc: v9fs@lists.linux.dev
+
+  cc: linux-afs@lists.infradead.org
+
+  cc: linux-cifs@vger.kernel.org
+
+  cc: netfs@lists.linux.dev
+
+  cc: linux-fsdevel@vger.kernel.org
+
+  Reported-and-tested-by: syzbot+d7c7a495a5e466c031b6@syzkaller.appspotmail.com
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs/9p
+- fs/afs
+- fs/netfs
+- fs/smb
+- include/linux
+hunk_count: 9
+covered_count: 2

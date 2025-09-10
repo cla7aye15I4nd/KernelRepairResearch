@@ -1,0 +1,163 @@
+syz-executor734[5027]: memfd_create() called without MFD_EXEC or MFD_NOEXEC_SEAL set
+loop0: detected capacity change from 0 to 2048
+EXT4-fs (loop0): mounted filesystem 00000000-0000-0000-0000-000000000000 r/w without journal. Quota mode: none.
+==================================================================
+BUG: KASAN: slab-use-after-free in ext4_read_inline_data fs/ext4/inline.c:209 [inline]
+BUG: KASAN: slab-use-after-free in ext4_convert_inline_data_nolock+0x31a/0xd80 fs/ext4/inline.c:1188
+Read of size 20 at addr ffff8880254ad1a3 by task syz-executor734/5027
+
+CPU: 1 PID: 5027 Comm: syz-executor734 Not tainted 6.5.0-syzkaller-11704-g3f86ed6ec0b3 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2d0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0x163/0x540 mm/kasan/report.c:475
+ kasan_report+0x175/0x1b0 mm/kasan/report.c:588
+ kasan_check_range+0x27e/0x290 mm/kasan/generic.c:187
+ __asan_memcpy+0x29/0x70 mm/kasan/shadow.c:105
+ ext4_read_inline_data fs/ext4/inline.c:209 [inline]
+ ext4_convert_inline_data_nolock+0x31a/0xd80 fs/ext4/inline.c:1188
+ ext4_convert_inline_data+0x4da/0x620 fs/ext4/inline.c:2041
+ ext4_fallocate+0x14f/0x1f50 fs/ext4/extents.c:4700
+ vfs_fallocate+0x551/0x6b0 fs/open.c:324
+ ksys_fallocate fs/open.c:347 [inline]
+ __do_sys_fallocate fs/open.c:355 [inline]
+ __se_sys_fallocate fs/open.c:353 [inline]
+ __x64_sys_fallocate+0xbd/0x100 fs/open.c:353
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7fd7f56f7ed9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc2daf53c8 EFLAGS: 00000246 ORIG_RAX: 000000000000011d
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fd7f56f7ed9
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000004
+RBP: 00007fd7f576c5f0 R08: 00005555565c34c0 R09: 00005555565c34c0
+R10: 0000000000008000 R11: 0000000000000246 R12: 00007ffc2daf53f0
+R13: 00007ffc2daf5618 R14: 431bde82d7b634db R15: 00007fd7f574103b
+ </TASK>
+
+Allocated by task 4921:
+ kasan_save_stack mm/kasan/common.c:45 [inline]
+ kasan_set_track+0x4f/0x70 mm/kasan/common.c:52
+ __kasan_slab_alloc+0x66/0x70 mm/kasan/common.c:328
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook+0x6c/0x3b0 mm/slab.h:762
+ slab_alloc_node mm/slub.c:3478 [inline]
+ slab_alloc mm/slub.c:3486 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3493 [inline]
+ kmem_cache_alloc+0x123/0x300 mm/slub.c:3502
+ vm_area_dup+0x27/0x280 kernel/fork.c:500
+ dup_mmap kernel/fork.c:710 [inline]
+ dup_mm kernel/fork.c:1686 [inline]
+ copy_mm+0xcea/0x1f10 kernel/fork.c:1735
+ copy_process+0x1a0f/0x4290 kernel/fork.c:2501
+ kernel_clone+0x22d/0x7b0 kernel/fork.c:2909
+ __do_sys_clone kernel/fork.c:3052 [inline]
+ __se_sys_clone kernel/fork.c:3036 [inline]
+ __x64_sys_clone+0x258/0x2a0 kernel/fork.c:3036
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 4922:
+ kasan_save_stack mm/kasan/common.c:45 [inline]
+ kasan_set_track+0x4f/0x70 mm/kasan/common.c:52
+ kasan_save_free_info+0x28/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free+0xd6/0x120 mm/kasan/common.c:236
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1800 [inline]
+ slab_free_freelist_hook mm/slub.c:1826 [inline]
+ slab_free mm/slub.c:3809 [inline]
+ kmem_cache_free+0x292/0x500 mm/slub.c:3831
+ remove_vma mm/mmap.c:146 [inline]
+ exit_mmap+0x6bf/0xc50 mm/mmap.c:3234
+ __mmput+0x115/0x3c0 kernel/fork.c:1349
+ exec_mmap+0x669/0x700 fs/exec.c:1037
+ begin_new_exec+0x66e/0xf20 fs/exec.c:1296
+ load_elf_binary+0x95d/0x2760 fs/binfmt_elf.c:1001
+ search_binary_handler fs/exec.c:1739 [inline]
+ exec_binprm fs/exec.c:1781 [inline]
+ bprm_execve+0x90e/0x1740 fs/exec.c:1856
+ do_execveat_common+0x580/0x720 fs/exec.c:1964
+ do_execve fs/exec.c:2038 [inline]
+ __do_sys_execve fs/exec.c:2114 [inline]
+ __se_sys_execve fs/exec.c:2109 [inline]
+ __x64_sys_execve+0x92/0xa0 fs/exec.c:2109
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+The buggy address belongs to the object at ffff8880254ad100
+ which belongs to the cache vm_area_struct of size 192
+The buggy address is located 163 bytes inside of
+ freed 192-byte region [ffff8880254ad100, ffff8880254ad1c0)
+
+The buggy address belongs to the physical page:
+page:ffffea0000952b40 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x254ad
+flags: 0xfff00000000800(slab|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000800 ffff888014a49b40 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000100010 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x12cc0(GFP_KERNEL|__GFP_NOWARN|__GFP_NORETRY), pid 4921, tgid 4921 (dhcpcd-run-hook), ts 40881524433, free_ts 40360263174
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x1e6/0x210 mm/page_alloc.c:1536
+ prep_new_page mm/page_alloc.c:1543 [inline]
+ get_page_from_freelist+0x31ec/0x3370 mm/page_alloc.c:3183
+ __alloc_pages+0x255/0x670 mm/page_alloc.c:4439
+ alloc_slab_page+0x6a/0x160 mm/slub.c:1870
+ allocate_slab mm/slub.c:2017 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2070
+ ___slab_alloc+0xade/0x1100 mm/slub.c:3223
+ __slab_alloc mm/slub.c:3322 [inline]
+ __slab_alloc_node mm/slub.c:3375 [inline]
+ slab_alloc_node mm/slub.c:3468 [inline]
+ slab_alloc mm/slub.c:3486 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3493 [inline]
+ kmem_cache_alloc+0x1bf/0x300 mm/slub.c:3502
+ vm_area_dup+0x27/0x280 kernel/fork.c:500
+ dup_mmap kernel/fork.c:710 [inline]
+ dup_mm kernel/fork.c:1686 [inline]
+ copy_mm+0xcea/0x1f10 kernel/fork.c:1735
+ copy_process+0x1a0f/0x4290 kernel/fork.c:2501
+ kernel_clone+0x22d/0x7b0 kernel/fork.c:2909
+ __do_sys_clone kernel/fork.c:3052 [inline]
+ __se_sys_clone kernel/fork.c:3036 [inline]
+ __x64_sys_clone+0x258/0x2a0 kernel/fork.c:3036
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1136 [inline]
+ free_unref_page_prepare+0x8c3/0x9f0 mm/page_alloc.c:2312
+ free_unref_page_list+0x596/0x830 mm/page_alloc.c:2451
+ release_pages+0x2113/0x23f0 mm/swap.c:1042
+ tlb_batch_pages_flush mm/mmu_gather.c:98 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:293 [inline]
+ tlb_flush_mmu+0x34c/0x4e0 mm/mmu_gather.c:300
+ tlb_finish_mmu+0xd4/0x1f0 mm/mmu_gather.c:392
+ exit_mmap+0x4d3/0xc50 mm/mmap.c:3223
+ __mmput+0x115/0x3c0 kernel/fork.c:1349
+ exit_mm+0x21f/0x300 kernel/exit.c:567
+ do_exit+0x612/0x2290 kernel/exit.c:861
+ do_group_exit+0x206/0x2c0 kernel/exit.c:1024
+ __do_sys_exit_group kernel/exit.c:1035 [inline]
+ __se_sys_exit_group kernel/exit.c:1033 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1033
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Memory state around the buggy address:
+ ffff8880254ad080: fb fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+ ffff8880254ad100: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff8880254ad180: fb fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+                               ^
+ ffff8880254ad200: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff8880254ad280: fb fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+==================================================================

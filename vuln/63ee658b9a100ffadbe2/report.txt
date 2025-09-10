@@ -1,0 +1,48 @@
+------------[ cut here ]------------
+usb 1-1: BOGUS urb xfer, pipe 3 != type 1
+WARNING: CPU: 0 PID: 754 at drivers/usb/core/urb.c:504 usb_submit_urb+0xed6/0x1880 drivers/usb/core/urb.c:504
+Modules linked in:
+CPU: 0 PID: 754 Comm: kworker/0:2 Not tainted 6.4.0-rc7-syzkaller-00014-g692b7dc87ca6 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/27/2023
+Workqueue: mld mld_ifc_work
+RIP: 0010:usb_submit_urb+0xed6/0x1880 drivers/usb/core/urb.c:504
+Code: 7c 24 18 e8 2c b4 5b fb 48 8b 7c 24 18 e8 42 07 f0 fe 41 89 d8 44 89 e1 4c 89 ea 48 89 c6 48 c7 c7 a0 c9 fc 8a e8 5a 6f 23 fb <0f> 0b e9 58 f8 ff ff e8 fe b3 5b fb 48 81 c5 c0 05 00 00 e9 84 f7
+RSP: 0018:ffffc9000463f568 EFLAGS: 00010086
+RAX: 0000000000000000 RBX: 0000000000000001 RCX: 0000000000000000
+RDX: ffff88801eb28000 RSI: ffffffff814c03b7 RDI: 0000000000000001
+RBP: ffff8881443b7190 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000001 R12: 0000000000000003
+R13: ffff88802a77cb18 R14: 0000000000000003 R15: ffff888018262500
+FS:  0000000000000000(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000556a99c15a18 CR3: 0000000028c71000 CR4: 0000000000350ef0
+Call Trace:
+ <TASK>
+ usbnet_start_xmit+0xfe5/0x2190 drivers/net/usb/usbnet.c:1453
+ __netdev_start_xmit include/linux/netdevice.h:4918 [inline]
+ netdev_start_xmit include/linux/netdevice.h:4932 [inline]
+ xmit_one net/core/dev.c:3578 [inline]
+ dev_hard_start_xmit+0x187/0x700 net/core/dev.c:3594
+ sch_direct_xmit+0x1a3/0xc30 net/sched/sch_generic.c:342
+ __dev_xmit_skb net/core/dev.c:3805 [inline]
+ __dev_queue_xmit+0x14d6/0x3b10 net/core/dev.c:4210
+ dev_queue_xmit include/linux/netdevice.h:3088 [inline]
+ neigh_resolve_output net/core/neighbour.c:1552 [inline]
+ neigh_resolve_output+0x51b/0x870 net/core/neighbour.c:1532
+ neigh_output include/net/neighbour.h:544 [inline]
+ ip6_finish_output2+0x55a/0x1560 net/ipv6/ip6_output.c:134
+ __ip6_finish_output net/ipv6/ip6_output.c:195 [inline]
+ ip6_finish_output+0x69a/0x1170 net/ipv6/ip6_output.c:206
+ NF_HOOK_COND include/linux/netfilter.h:292 [inline]
+ ip6_output+0x1f1/0x540 net/ipv6/ip6_output.c:227
+ dst_output include/net/dst.h:458 [inline]
+ NF_HOOK include/linux/netfilter.h:303 [inline]
+ NF_HOOK include/linux/netfilter.h:297 [inline]
+ mld_sendpack+0xa09/0xed0 net/ipv6/mcast.c:1820
+ mld_send_cr net/ipv6/mcast.c:2121 [inline]
+ mld_ifc_work+0x73c/0xe20 net/ipv6/mcast.c:2653
+ process_one_work+0x99a/0x15e0 kernel/workqueue.c:2405
+ worker_thread+0x67d/0x10c0 kernel/workqueue.c:2552
+ kthread+0x344/0x440 kernel/kthread.c:379
+ ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308
+ </TASK>

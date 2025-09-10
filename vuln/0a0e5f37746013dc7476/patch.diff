@@ -1,0 +1,21 @@
+diff --git a/fs/block_dev.c b/fs/block_dev.c
+index 22591bad9353..a6f7c892cb4a 100644
+--- a/fs/block_dev.c
++++ b/fs/block_dev.c
+@@ -439,6 +439,7 @@ __blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter, int nr_pages)
+ 					ret = -EAGAIN;
+ 				goto error;
+ 			}
++			ret = dio->size;
+ 
+ 			if (polled)
+ 				WRITE_ONCE(iocb->ki_cookie, qc);
+@@ -465,7 +466,7 @@ __blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter, int nr_pages)
+ 				ret = -EAGAIN;
+ 			goto error;
+ 		}
+-		ret += bio->bi_iter.bi_size;
++		ret = dio->size;
+ 
+ 		bio = bio_alloc(gfp, nr_pages);
+ 		if (!bio) {

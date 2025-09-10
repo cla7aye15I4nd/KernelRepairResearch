@@ -1,0 +1,24 @@
+id: 59aa77b92d06cd5a54f2
+bug_link: https://syzkaller.appspot.com/bug?extid=59aa77b92d06cd5a54f2
+title: WARNING in ethnl_default_doit
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 994c393bb6886d6d94d628475b274a8cb3fc67a4
+fix_commit: e175aef902697826d344ce3a12189329848fe898
+datetime: '2021-06-14T12:14:24-07:00'
+fix_commit_message: "ethtool: strset: fix message length calculation\n\nOuter nest\
+  \ for ETHTOOL_A_STRSET_STRINGSETS is not accounted for.\nThis may result in ETHTOOL_MSG_STRSET_GET\
+  \ producing a warning like:\n\n    calculated message payload length (684) not sufficient\n\
+  \    WARNING: CPU: 0 PID: 30967 at net/ethtool/netlink.c:369 ethnl_default_doit+0x87a/0xa20\n\
+  \nand a splat.\n\nAs usually with such warnings three conditions must be met for\
+  \ the warning\nto trigger:\n - there must be no skb size rounding up (e.g. reply_size\
+  \ of 684);\n - string set must be per-device (so that the header gets populated);\n\
+  \ - the device name must be at least 12 characters long.\n\nall in all with current\
+  \ user space it looks like reading priv flags\nis the only place this could potentially\
+  \ happen. Or with syzbot :)\n\nReported-by: syzbot+59aa77b92d06cd5a54f2@syzkaller.appspotmail.com\n\
+  Fixes: 71921690f974 (\"ethtool: provide string sets with STRSET_GET request\")\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/ethtool
+hunk_count: 1
+covered_count: 0

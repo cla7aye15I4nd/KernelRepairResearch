@@ -1,0 +1,39 @@
+id: 25f4f05818dda7aabaea
+bug_link: https://syzkaller.appspot.com/bug?extid=25f4f05818dda7aabaea
+title: 'KASAN: slab-use-after-free Read in ovs_ct_exit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5b5f724b05c550e10693a53a81cadca901aefd16
+fix_commit: 5ea7b72d4fac2fdbc0425cd8f2ea33abe95235b2
+datetime: '2024-04-24T17:14:24-07:00'
+fix_commit_message: 'net: openvswitch: Fix Use-After-Free in ovs_ct_exit
+
+
+  Since kfree_rcu, which is called in the hlist_for_each_entry_rcu traversal
+
+  of ovs_ct_limit_exit, is not part of the RCU read critical section, it
+
+  is possible that the RCU grace period will pass during the traversal and
+
+  the key will be free.
+
+
+  To prevent this, it should be changed to hlist_for_each_entry_safe.
+
+
+  Fixes: 11efd5cb04a1 ("openvswitch: Support conntrack zone limit")
+
+  Signed-off-by: Hyunwoo Kim <v4bel@theori.io>
+
+  Reviewed-by: Eric Dumazet <edumazet@google.com>
+
+  Reviewed-by: Aaron Conole <aconole@redhat.com>
+
+  Link: https://lore.kernel.org/r/ZiYvzQN/Ry5oeFQW@v4bel-B760M-AORUS-ELITE-AX
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/openvswitch
+hunk_count: 1
+covered_count: 1

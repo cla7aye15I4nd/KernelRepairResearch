@@ -1,0 +1,27 @@
+id: fbe0496f92a0ce7b786c
+bug_link: https://syzkaller.appspot.com/bug?extid=fbe0496f92a0ce7b786c
+title: 'INFO: rcu detected stall in snd_pcm_oss_read'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9e6966646b6bc5078d579151b90016522d4ff2cb
+fix_commit: e190161f96b88ffae870405fd6c3fdd1d2e7f98d
+datetime: '2019-01-25T19:45:46+01:00'
+fix_commit_message: "ALSA: pcm: Fix tight loop of OSS capture stream\n\nWhen the trigger=off\
+  \ is passed for a PCM OSS stream, it sets the\nstart_threshold of the given substream\
+  \ to the boundary size, so that\nit won't be automatically started.  This can be\
+  \ problematic for a\ncapture stream, unfortunately, as detected by syzkaller.  The\
+  \ scenario\nis like the following:\n\n- In __snd_pcm_lib_xfer() that is invoked\
+  \ from snd_pcm_oss_read()\n  loop, we have a check whether the stream was already\
+  \ started or the\n  stream can be auto-started.\n- The function at this check returns\
+  \ 0 with trigger=off since we\n  explicitly disable the auto-start.\n- The loop\
+  \ continues and repeats calling __snd_pcm_lib_xfer() tightly,\n  which may lead\
+  \ to an RCU stall.\n\nThis patch fixes the bug by simply allowing the wait for non-started\n\
+  stream in the case of OSS capture.  For native usages, it's supposed\nto be done\
+  \ by the caller side (which is user-space), hence it returns\nzero like before.\n\
+  \n(In theory, __snd_pcm_lib_xfer() could wait even for the native API\n usage cases,\
+  \ too; but I'd like to stay in a safer side for not\n breaking the existing stuff\
+  \ for now.)\n\nReported-by: syzbot+fbe0496f92a0ce7b786c@syzkaller.appspotmail.com\n\
+  Cc: <stable@vger.kernel.org>\nSigned-off-by: Takashi Iwai <tiwai@suse.de>\n"
+submodule:
+- sound/core
+hunk_count: 2
+covered_count: 0

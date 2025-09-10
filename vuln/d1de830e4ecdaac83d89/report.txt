@@ -1,0 +1,41 @@
+==================================================================
+BUG: KCSAN: data-race in wg_packet_decrypt_worker / wg_packet_rx_poll
+
+write to 0xffff888112fff088 of 8 bytes by interrupt on cpu 0:
+ counter_validate drivers/net/wireguard/receive.c:321 [inline]
+ wg_packet_rx_poll+0x3ad/0xfc0 drivers/net/wireguard/receive.c:461
+ __napi_poll+0x63/0x3c0 net/core/dev.c:6632
+ napi_poll net/core/dev.c:6701 [inline]
+ net_rx_action+0x324/0x720 net/core/dev.c:6813
+ __do_softirq+0xc8/0x285 kernel/softirq.c:554
+ do_softirq+0x5e/0x90 kernel/softirq.c:455
+ __local_bh_enable_ip+0x6e/0x70 kernel/softirq.c:382
+ __raw_spin_unlock_bh include/linux/spinlock_api_smp.h:167 [inline]
+ _raw_spin_unlock_bh+0x36/0x40 kernel/locking/spinlock.c:210
+ spin_unlock_bh include/linux/spinlock.h:396 [inline]
+ ptr_ring_consume_bh include/linux/ptr_ring.h:367 [inline]
+ wg_packet_decrypt_worker+0x173/0x6f0 drivers/net/wireguard/receive.c:499
+ process_one_work kernel/workqueue.c:3254 [inline]
+ process_scheduled_works+0x465/0x990 kernel/workqueue.c:3335
+ worker_thread+0x526/0x730 kernel/workqueue.c:3416
+ kthread+0x1d1/0x210 kernel/kthread.c:388
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+
+read to 0xffff888112fff088 of 8 bytes by task 3983 on cpu 1:
+ decrypt_packet drivers/net/wireguard/receive.c:252 [inline]
+ wg_packet_decrypt_worker+0x222/0x6f0 drivers/net/wireguard/receive.c:501
+ process_one_work kernel/workqueue.c:3254 [inline]
+ process_scheduled_works+0x465/0x990 kernel/workqueue.c:3335
+ worker_thread+0x526/0x730 kernel/workqueue.c:3416
+ kthread+0x1d1/0x210 kernel/kthread.c:388
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+
+value changed: 0x00000000000000d6 -> 0x00000000000000d8
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 PID: 3983 Comm: kworker/1:7 Tainted: G        W          6.8.0-syzkaller-11752-gdba89d1b81df #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+Workqueue: wg-crypt-wg2 wg_packet_decrypt_worker
+==================================================================

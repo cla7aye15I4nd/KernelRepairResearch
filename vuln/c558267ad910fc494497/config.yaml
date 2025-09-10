@@ -1,0 +1,98 @@
+id: c558267ad910fc494497
+bug_link: https://syzkaller.appspot.com/bug?extid=c558267ad910fc494497
+title: possible deadlock in display_open
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: af2aa3c4e52bc63b532b55b1ac66f262ecff2fb3
+fix_commit: db264d4c66c0fe007b5d19fd007707cd0697603d
+datetime: '2022-05-13T11:23:38+02:00'
+fix_commit_message: 'media: imon: reorganize serialization
+
+
+  Since usb_register_dev() from imon_init_display() from imon_probe() holds
+
+  minor_rwsem while display_open() which holds driver_lock and ictx->lock is
+
+  called with minor_rwsem held from usb_open(), holding driver_lock or
+
+  ictx->lock when calling usb_register_dev() causes circular locking
+
+  dependency problem.
+
+
+  Since usb_deregister_dev() from imon_disconnect() holds minor_rwsem while
+
+  display_open() which holds driver_lock is called with minor_rwsem held,
+
+  holding driver_lock when calling usb_deregister_dev() also causes circular
+
+  locking dependency problem.
+
+
+  Sean Young explained that the problem is there are imon devices which have
+
+  two usb interfaces, even though it is one device. The probe and disconnect
+
+  function of both usb interfaces can run concurrently.
+
+
+  Alan Stern responded that the driver and USB cores guarantee that when an
+
+  interface is probed, both the interface and its USB device are locked.
+
+  Ditto for when the disconnect callback gets run. So concurrent probing/
+
+  disconnection of multiple interfaces on the same device is not possible.
+
+
+  Therefore, we don''t need locks for handling race between imon_probe() and
+
+  imon_disconnect(). But we still need to handle race between display_open()
+
+  /vfd_write()/lcd_write()/display_close() and imon_disconnect(), for
+
+  disconnect event can happen while file descriptors are in use.
+
+
+  Since "struct file"->private_data is set by display_open(), vfd_write()/
+
+  lcd_write()/display_close() can assume that "struct file"->private_data
+
+  is not NULL even after usb_set_intfdata(interface, NULL) was called.
+
+
+  Replace insufficiently held driver_lock with refcount_t based management.
+
+  Add a boolean flag for recording whether imon_disconnect() was already
+
+  called. Use RCU for accessing this boolean flag and refcount_t.
+
+
+  Since the boolean flag for imon_disconnect() is shared, disconnect event
+
+  on either intf0 or intf1 affects both interfaces. But I assume that this
+
+  change does not matter, for usually disconnect event would not happen
+
+  while interfaces are in use.
+
+
+  Link: https://syzkaller.appspot.com/bug?extid=c558267ad910fc494497
+
+
+  Reported-by: syzbot <syzbot+c558267ad910fc494497@syzkaller.appspotmail.com>
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Tested-by: syzbot <syzbot+c558267ad910fc494497@syzkaller.appspotmail.com>
+
+  Cc: Alan Stern <stern@rowland.harvard.edu>
+
+  Signed-off-by: Sean Young <sean@mess.org>
+
+  Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>
+
+  '
+submodule:
+- drivers/media/rc
+hunk_count: 18
+covered_count: 12

@@ -1,0 +1,24 @@
+diff --git a/net/wireless/core.c b/net/wireless/core.c
+index 983c4d3c9552..9e6b31903121 100644
+--- a/net/wireless/core.c
++++ b/net/wireless/core.c
+@@ -546,6 +546,9 @@ struct wiphy *wiphy_new_nm(const struct cfg80211_ops *ops, int sizeof_priv,
+ 	INIT_WORK(&rdev->mgmt_registrations_update_wk,
+ 		  cfg80211_mgmt_registrations_update_wk);
+ 	spin_lock_init(&rdev->mgmt_registrations_lock);
++	INIT_WORK(&rdev->wiphy_work, cfg80211_wiphy_work);
++	INIT_LIST_HEAD(&rdev->wiphy_work_list);
++	spin_lock_init(&rdev->wiphy_work_lock);
+ 
+ #ifdef CONFIG_CFG80211_DEFAULT_PS
+ 	rdev->wiphy.flags |= WIPHY_FLAG_PS_ON_BY_DEFAULT;
+@@ -563,9 +566,6 @@ struct wiphy *wiphy_new_nm(const struct cfg80211_ops *ops, int sizeof_priv,
+ 		return NULL;
+ 	}
+ 
+-	INIT_WORK(&rdev->wiphy_work, cfg80211_wiphy_work);
+-	INIT_LIST_HEAD(&rdev->wiphy_work_list);
+-	spin_lock_init(&rdev->wiphy_work_lock);
+ 	INIT_WORK(&rdev->rfkill_block, cfg80211_rfkill_block_work);
+ 	INIT_WORK(&rdev->conn_work, cfg80211_conn_work);
+ 	INIT_WORK(&rdev->event_work, cfg80211_event_work);

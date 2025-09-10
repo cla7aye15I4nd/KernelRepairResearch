@@ -1,0 +1,64 @@
+diff --git a/fs/bcachefs/bcachefs_format.h b/fs/bcachefs/bcachefs_format.h
+index f7fbfccd2b1e..8345a2b2d05b 100644
+--- a/fs/bcachefs/bcachefs_format.h
++++ b/fs/bcachefs/bcachefs_format.h
+@@ -591,6 +591,12 @@ struct bch_member {
+ 	__le64			btree_allocated_bitmap;
+ };
+ 
++/*
++ * This limit comes from the bucket_gens array - it's a single allocation, and
++ * kernel allocation are limited to INT_MAX
++ */
++#define BCH_MEMBER_NBUCKETS_MAX	(INT_MAX - 64)
++
+ #define BCH_MEMBER_V1_BYTES	56
+ 
+ LE64_BITMASK(BCH_MEMBER_STATE,		struct bch_member, flags,  0,  4)
+diff --git a/fs/bcachefs/errcode.h b/fs/bcachefs/errcode.h
+index 01a79fa3eacb..dbe35b80bc0b 100644
+--- a/fs/bcachefs/errcode.h
++++ b/fs/bcachefs/errcode.h
+@@ -175,6 +175,7 @@
+ 	x(EINVAL,			block_size_too_small)			\
+ 	x(EINVAL,			bucket_size_too_small)			\
+ 	x(EINVAL,			device_size_too_small)			\
++	x(EINVAL,			device_size_too_big)			\
+ 	x(EINVAL,			device_not_a_member_of_filesystem)	\
+ 	x(EINVAL,			device_has_been_removed)		\
+ 	x(EINVAL,			device_splitbrain)			\
+diff --git a/fs/bcachefs/sb-members.c b/fs/bcachefs/sb-members.c
+index 5b8e621ac5eb..44b3f0cb7b49 100644
+--- a/fs/bcachefs/sb-members.c
++++ b/fs/bcachefs/sb-members.c
+@@ -124,9 +124,9 @@ static int validate_member(struct printbuf *err,
+ 			   struct bch_sb *sb,
+ 			   int i)
+ {
+-	if (le64_to_cpu(m.nbuckets) > LONG_MAX) {
+-		prt_printf(err, "device %u: too many buckets (got %llu, max %lu)",
+-			   i, le64_to_cpu(m.nbuckets), LONG_MAX);
++	if (le64_to_cpu(m.nbuckets) > BCH_MEMBER_NBUCKETS_MAX) {
++		prt_printf(err, "device %u: too many buckets (got %llu, max %u)",
++			   i, le64_to_cpu(m.nbuckets), BCH_MEMBER_NBUCKETS_MAX);
+ 		return -BCH_ERR_invalid_sb_members;
+ 	}
+ 
+diff --git a/fs/bcachefs/super.c b/fs/bcachefs/super.c
+index c2c80e6890ae..dddf57ec4511 100644
+--- a/fs/bcachefs/super.c
++++ b/fs/bcachefs/super.c
+@@ -1959,6 +1959,13 @@ int bch2_dev_resize(struct bch_fs *c, struct bch_dev *ca, u64 nbuckets)
+ 		goto err;
+ 	}
+ 
++	if (nbuckets > BCH_MEMBER_NBUCKETS_MAX) {
++		bch_err(ca, "New device size too big (%llu greater than max %u)",
++			nbuckets, BCH_MEMBER_NBUCKETS_MAX);
++		ret = -BCH_ERR_device_size_too_big;
++		goto err;
++	}
++
+ 	if (bch2_dev_is_online(ca) &&
+ 	    get_capacity(ca->disk_sb.bdev->bd_disk) <
+ 	    ca->mi.bucket_size * nbuckets) {

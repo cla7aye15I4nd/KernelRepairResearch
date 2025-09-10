@@ -1,0 +1,24 @@
+id: 6800425d54ed3ed8135d
+bug_link: https://syzkaller.appspot.com/bug?extid=6800425d54ed3ed8135d
+title: kernel BUG at lib/string.c:LINE! (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 38759d6175d338fbf9282c8ea2b51f3b7ab9bc98
+fix_commit: 84652aefb347297aa08e91e283adf7b18f77c2d5
+datetime: '2018-03-28T16:13:36-06:00'
+fix_commit_message: "RDMA/ucma: Introduce safer rdma_addr_size() variants\n\nThere\
+  \ are several places in the ucma ABI where userspace can pass in a\nsockaddr but\
+  \ set the address family to AF_IB.  When that happens,\nrdma_addr_size() will return\
+  \ a size bigger than sizeof struct sockaddr_in6,\nand the ucma kernel code might\
+  \ end up copying past the end of a buffer\nnot sized for a struct sockaddr_ib.\n\
+  \nFix this by introducing new variants\n\n    int rdma_addr_size_in6(struct sockaddr_in6\
+  \ *addr);\n    int rdma_addr_size_kss(struct __kernel_sockaddr_storage *addr);\n\
+  \nthat are type-safe for the types used in the ucma ABI and return 0 if the\nsize\
+  \ computed is bigger than the size of the type passed in.  We can use\nthese new\
+  \ variants to check what size userspace has passed in before\ncopying any addresses.\n\
+  \nReported-by: <syzbot+6800425d54ed3ed8135d@syzkaller.appspotmail.com>\nSigned-off-by:\
+  \ Roland Dreier <roland@purestorage.com>\nSigned-off-by: Jason Gunthorpe <jgg@mellanox.com>\n"
+submodule:
+- drivers/infiniband/core
+- include/rdma
+hunk_count: 8
+covered_count: 2

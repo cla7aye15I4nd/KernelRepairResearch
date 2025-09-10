@@ -1,0 +1,26 @@
+BUG: memory leak
+unreferenced object 0xffff888129851240 (size 64):
+  comm "syz-executor.0", pid 5069, jiffies 4294977377 (age 16.480s)
+  hex dump (first 32 bytes):
+    01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+  backtrace:
+    [<ffffffff815545e5>] kmalloc_trace+0x25/0x90 mm/slab_common.c:1076
+    [<ffffffff821731b1>] kmalloc include/linux/slab.h:582 [inline]
+    [<ffffffff821731b1>] btrfs_ref_tree_mod+0x211/0xb80 fs/btrfs/ref-verify.c:768
+    [<ffffffff820444f6>] btrfs_free_tree_block+0x116/0x450 fs/btrfs/extent-tree.c:3250
+    [<ffffffff8202d775>] __btrfs_cow_block+0x6a5/0xa30 fs/btrfs/ctree.c:601
+    [<ffffffff8202dc54>] btrfs_cow_block+0x154/0x2b0 fs/btrfs/ctree.c:712
+    [<ffffffff8206013c>] commit_cowonly_roots+0x8c/0x3f0 fs/btrfs/transaction.c:1276
+    [<ffffffff820647c9>] btrfs_commit_transaction+0x999/0x15c0 fs/btrfs/transaction.c:2410
+    [<ffffffff8205a516>] btrfs_commit_super+0x86/0xb0 fs/btrfs/disk-io.c:4195
+    [<ffffffff8205c743>] close_ctree+0x543/0x730 fs/btrfs/disk-io.c:4349
+    [<ffffffff8166b44e>] generic_shutdown_super+0x9e/0x1c0 fs/super.c:499
+    [<ffffffff8166b769>] kill_anon_super+0x19/0x30 fs/super.c:1110
+    [<ffffffff8202357d>] btrfs_kill_super+0x1d/0x30 fs/btrfs/super.c:2138
+    [<ffffffff8166ca46>] deactivate_locked_super+0x46/0xd0 fs/super.c:330
+    [<ffffffff8166cb6c>] deactivate_super fs/super.c:361 [inline]
+    [<ffffffff8166cb6c>] deactivate_super+0x9c/0xb0 fs/super.c:357
+    [<ffffffff816a8931>] cleanup_mnt+0x121/0x210 fs/namespace.c:1254
+    [<ffffffff812becaf>] task_work_run+0x8f/0xe0 kernel/task_work.c:179
+

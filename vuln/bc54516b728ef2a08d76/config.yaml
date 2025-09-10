@@ -1,0 +1,42 @@
+id: bc54516b728ef2a08d76
+bug_link: https://syzkaller.appspot.com/bug?extid=bc54516b728ef2a08d76
+title: WARNING in io_req_complete_failed
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2dac1a159216b39ced8d78dba590c5d2f4249586
+fix_commit: c06c6c5d276707e04cedbcc55625e984922118aa
+datetime: '2022-11-25T06:10:04-07:00'
+fix_commit_message: 'io_uring: always lock in io_apoll_task_func
+
+
+  This is required for the failure case (io_req_complete_failed) and is
+
+  missing.
+
+
+  The alternative would be to only lock in the failure path, however all of
+
+  the non-error paths in io_poll_check_events that do not do not return
+
+  IOU_POLL_NO_ACTION end up locking anyway. The only extraneous lock would
+
+  be for the multishot poll overflowing the CQE ring, however multishot poll
+
+  would probably benefit from being locked as it will allow completions to
+
+  be batched.
+
+
+  So it seems reasonable to lock always.
+
+
+  Signed-off-by: Dylan Yudaken <dylany@meta.com>
+
+  Link: https://lore.kernel.org/r/20221124093559.3780686-3-dylany@meta.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 1
+covered_count: 1

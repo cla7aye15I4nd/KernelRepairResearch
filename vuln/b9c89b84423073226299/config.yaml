@@ -1,0 +1,36 @@
+id: b9c89b84423073226299
+bug_link: https://syzkaller.appspot.com/bug?extid=b9c89b84423073226299
+title: WARNING in fuse_destroy_inode
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9ff01193a20d391e8dbce4403dd5ef87c7eaaca6
+fix_commit: 4fc4bb796b0c75067fd65292dfd874869ff7c9dc
+datetime: '2018-11-22T10:20:19+01:00'
+fix_commit_message: 'fuse: Add bad inode check in fuse_destroy_inode()
+
+
+  make_bad_inode() sets inode->i_mode to S_IFREG if I/O error is detected
+
+  in fuse_do_getattr()/fuse_do_setattr(). If the inode is not a regular
+
+  file, write_files and queued_writes in fuse_inode are not initialized
+
+  and have NULL or invalid pointers written by other members in a union.
+
+  So, list_empty() returns false in fuse_destroy_inode(). Add
+
+  is_bad_inode() to check if make_bad_inode() was called.
+
+
+  Reported-by: syzbot+b9c89b84423073226299@syzkaller.appspotmail.com
+
+  Fixes: ab2257e9941b ("fuse: reduce size of struct fuse_inode")
+
+  Signed-off-by: Myungho Jung <mhjungk@gmail.com>
+
+  Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
+
+  '
+submodule:
+- fs/fuse
+hunk_count: 1
+covered_count: 1

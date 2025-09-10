@@ -1,0 +1,50 @@
+id: 4bcdddd48bb6f0be0da1
+bug_link: https://syzkaller.appspot.com/bug?extid=4bcdddd48bb6f0be0da1
+title: 'UBSAN: array-index-out-of-bounds in ieee80211_request_ibss_scan'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2c89c1b655c0b06823f4ee8b055140d8628fc4da
+fix_commit: 82bbe02b2500ef0a62053fe2eb84773fe31c5a0a
+datetime: '2025-05-15T13:20:33+02:00'
+fix_commit_message: 'wifi: mac80211: Set n_channels after allocating struct cfg80211_scan_request
+
+
+  Make sure that n_channels is set after allocating the
+
+  struct cfg80211_registered_device::int_scan_req member. Seen with
+
+  syzkaller:
+
+
+  UBSAN: array-index-out-of-bounds in net/mac80211/scan.c:1208:5
+
+  index 0 is out of range for type ''struct ieee80211_channel *[] __counted_by(n_channels)''
+  (aka ''struct ieee80211_channel *[]'')
+
+
+  This was missed in the initial conversions because I failed to locate
+
+  the allocation likely due to the "sizeof(void *)" not matching the
+
+  "channels" array type.
+
+
+  Reported-by: syzbot+4bcdddd48bb6f0be0da1@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/lkml/680fd171.050a0220.2b69d1.045e.GAE@google.com/
+
+  Fixes: e3eac9f32ec0 ("wifi: cfg80211: Annotate struct cfg80211_scan_request with
+  __counted_by")
+
+  Signed-off-by: Kees Cook <kees@kernel.org>
+
+  Reviewed-by: Gustavo A. R. Silva <gustavoars@kernel.org>
+
+  Link: https://patch.msgid.link/20250509184641.work.542-kees@kernel.org
+
+  Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+  '
+submodule:
+- net/mac80211
+hunk_count: 1
+covered_count: 0

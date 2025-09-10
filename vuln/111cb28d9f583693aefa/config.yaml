@@ -1,0 +1,43 @@
+id: 111cb28d9f583693aefa
+bug_link: https://syzkaller.appspot.com/bug?extid=111cb28d9f583693aefa
+title: memory leak in new_inode_pseudo
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b9aef63aca772a25ffcfaedf4bd29fb36b919a93
+fix_commit: 355e8d26f719c207aa2e00e6f3cfab3acf21769b
+datetime: '2019-06-13T03:00:30-06:00'
+fix_commit_message: 'io_uring: fix memory leak of UNIX domain socket inode
+
+
+  Opening and closing an io_uring instance leaks a UNIX domain socket
+
+  inode.  This is because the ->file of the io_uring instance''s internal
+
+  UNIX domain socket is set to point to the io_uring file, but then
+
+  sock_release() sees the non-NULL ->file and assumes the inode reference
+
+  is held by the file so doesn''t call iput().  That''s not the case here,
+
+  since the reference is still meant to be held by the socket; the actual
+
+  inode of the io_uring file is different.
+
+
+  Fix this leak by NULL-ing out ->file before releasing the socket.
+
+
+  Reported-by: syzbot+111cb28d9f583693aefa@syzkaller.appspotmail.com
+
+  Fixes: 2b188cc1bb85 ("Add io_uring IO interface")
+
+  Cc: <stable@vger.kernel.org> # v5.1+
+
+  Signed-off-by: Eric Biggers <ebiggers@google.com>
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- fs
+hunk_count: 1
+covered_count: 0

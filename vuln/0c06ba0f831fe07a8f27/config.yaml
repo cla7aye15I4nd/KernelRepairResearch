@@ -1,0 +1,46 @@
+id: 0c06ba0f831fe07a8f27
+bug_link: https://syzkaller.appspot.com/bug?extid=0c06ba0f831fe07a8f27
+title: 'UBSAN: array-index-out-of-bounds in bpf_mprog_detach'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5964d1e4594eb1dbfc1e2a34ec89eb48f6b03e75
+fix_commit: d210f9735e13e9b1ef6ffbb636ee051f615bd109
+datetime: '2023-08-04T09:35:39-07:00'
+fix_commit_message: 'bpf: Fix mprog detachment for empty mprog entry
+
+
+  syzbot reported an UBSAN array-index-out-of-bounds access in bpf_mprog_read()
+
+  upon bpf_mprog_detach(). While it did not have a reproducer, I was able to
+
+  manually reproduce through an empty mprog entry which just has miniq present.
+
+
+  The latter is important given otherwise we get an ENOENT error as tcx detaches
+
+  the whole mprog entry. The index 4294967295 was triggered via NULL dtuple.prog
+
+  which then attempts to detach from the back. bpf_mprog_fetch() in this case
+
+  did hit the idx == total and therefore tried to grab the entry at idx -1.
+
+
+  Fix it by adding an explicit bpf_mprog_total() check in bpf_mprog_detach() and
+
+  bail out early with ENOENT.
+
+
+  Fixes: 053c8e1f235d ("bpf: Add generic attach/detach/query API for multi-progs")
+
+  Reported-by: syzbot+0c06ba0f831fe07a8f27@syzkaller.appspotmail.com
+
+  Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+
+  Link: https://lore.kernel.org/r/20230804131112.11012-1-daniel@iogearbox.net
+
+  Signed-off-by: Martin KaFai Lau <martin.lau@kernel.org>
+
+  '
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 1

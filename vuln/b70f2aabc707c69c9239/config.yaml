@@ -1,0 +1,39 @@
+id: b70f2aabc707c69c9239
+bug_link: https://syzkaller.appspot.com/bug?extid=b70f2aabc707c69c9239
+title: 'WARNING: syz-executor still has locks held!'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2595646791c319cadfdbf271563aac97d0843dc7
+fix_commit: a72173ecfc6774cf2d55de9fb29421ce69e3428c
+datetime: '2018-12-04T16:04:20+01:00'
+fix_commit_message: "Revert \"exec: make de_thread() freezable\"\n\nRevert commit\
+  \ c22397888f1e \"exec: make de_thread() freezable\" as\nrequested by Ingo Molnar:\n\
+  \n\"So there's a new regression in v4.20-rc4, my desktop produces this\nlockdep\
+  \ splat:\n\n[ 1772.588771] WARNING: pkexec/4633 still has locks held!\n[ 1772.588773]\
+  \ 4.20.0-rc4-custom-00213-g93a49841322b #1 Not tainted\n[ 1772.588775] ------------------------------------\n\
+  [ 1772.588776] 1 lock held by pkexec/4633:\n[ 1772.588778]  #0: 00000000ed85fbf8\
+  \ (&sig->cred_guard_mutex){+.+.}, at: prepare_bprm_creds+0x2a/0x70\n[ 1772.588786]\
+  \ stack backtrace:\n[ 1772.588789] CPU: 7 PID: 4633 Comm: pkexec Not tainted 4.20.0-rc4-custom-00213-g93a49841322b\
+  \ #1\n[ 1772.588792] Call Trace:\n[ 1772.588800]  dump_stack+0x85/0xcb\n[ 1772.588803]\
+  \  flush_old_exec+0x116/0x890\n[ 1772.588807]  ? load_elf_phdrs+0x72/0xb0\n[ 1772.588809]\
+  \  load_elf_binary+0x291/0x1620\n[ 1772.588815]  ? sched_clock+0x5/0x10\n[ 1772.588817]\
+  \  ? search_binary_handler+0x6d/0x240\n[ 1772.588820]  search_binary_handler+0x80/0x240\n\
+  [ 1772.588823]  load_script+0x201/0x220\n[ 1772.588825]  search_binary_handler+0x80/0x240\n\
+  [ 1772.588828]  __do_execve_file.isra.32+0x7d2/0xa60\n[ 1772.588832]  ? strncpy_from_user+0x40/0x180\n\
+  [ 1772.588835]  __x64_sys_execve+0x34/0x40\n[ 1772.588838]  do_syscall_64+0x60/0x1c0\n\
+  \nThe warning gets triggered by an ancient lockdep check in the freezer:\n\n(gdb)\
+  \ list *0xffffffff812ece06\n0xffffffff812ece06 is in flush_old_exec (./include/linux/freezer.h:57).\n\
+  52\t * DO NOT ADD ANY NEW CALLERS OF THIS FUNCTION\n53\t * If try_to_freeze causes\
+  \ a lockdep warning it means the caller may deadlock\n54\t */\n55\tstatic inline\
+  \ bool try_to_freeze_unsafe(void)\n56\t{\n57\t\tmight_sleep();\n58\t\tif (likely(!freezing(current)))\n\
+  59\t\t\treturn false;\n60\t\treturn __refrigerator(false);\n61\t}\n\nI reviewed\
+  \ the ->cred_guard_mutex code, and the mutex is held across all\nof exec() - and\
+  \ we always did this.\n\nBut there's this recent -rc4 commit:\n\n> Chanho Min (1):\n\
+  >       exec: make de_thread() freezable\n\n  c22397888f1e: exec: make de_thread()\
+  \ freezable\n\nI believe this commit is bogus, you cannot call try_to_freeze() from\n\
+  de_thread(), because it's holding the ->cred_guard_mutex.\"\n\nReported-by: Ingo\
+  \ Molnar <mingo@kernel.org>\nTested-by: Ingo Molnar <mingo@kernel.org>\nSigned-off-by:\
+  \ Rafael J. Wysocki <rafael.j.wysocki@intel.com>\n"
+submodule:
+- fs
+hunk_count: 3
+covered_count: 3

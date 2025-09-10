@@ -1,0 +1,34 @@
+id: e7d46eb426883fb97efd
+bug_link: https://syzkaller.appspot.com/bug?extid=e7d46eb426883fb97efd
+title: 'KMSAN: uninit-value in alauda_check_media'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8e21a620c7e6e00347ade1a6ed4967b359eada5a
+fix_commit: a6ff6e7a9dd69364547751db0f626a10a6d628d2
+datetime: '2023-08-04T14:57:16+02:00'
+fix_commit_message: "usb-storage: alauda: Fix uninit-value in alauda_check_media()\n\
+  \nSyzbot got KMSAN to complain about access to an uninitialized value in\nthe alauda\
+  \ subdriver of usb-storage:\n\nBUG: KMSAN: uninit-value in alauda_transport+0x462/0x57f0\n\
+  drivers/usb/storage/alauda.c:1137\nCPU: 0 PID: 12279 Comm: usb-storage Not tainted\
+  \ 5.3.0-rc7+ #0\nHardware name: Google Google Compute Engine/Google Compute Engine,\
+  \ BIOS\nGoogle 01/01/2011\nCall Trace:\n  __dump_stack lib/dump_stack.c:77 [inline]\n\
+  \  dump_stack+0x191/0x1f0 lib/dump_stack.c:113\n  kmsan_report+0x13a/0x2b0 mm/kmsan/kmsan_report.c:108\n\
+  \  __msan_warning+0x73/0xe0 mm/kmsan/kmsan_instr.c:250\n  alauda_check_media+0x344/0x3310\
+  \ drivers/usb/storage/alauda.c:460\n\nThe problem is that alauda_check_media() doesn't\
+  \ verify that its USB\ntransfer succeeded before trying to use the received data.\
+  \  What\nshould happen if the transfer fails isn't entirely clear, but a\nreasonably\
+  \ conservative approach is to pretend that no media is\npresent.\n\nA similar problem\
+  \ exists in a usb_stor_dbg() call in\nalauda_get_media_status().  In this case,\
+  \ when an error occurs the\ncall is redundant, because usb_stor_ctrl_transfer()\
+  \ already will print\na debugging message.\n\nFinally, unrelated to the uninitialized\
+  \ memory access, is the fact\nthat alauda_check_media() performs DMA to a buffer\
+  \ on the stack.\nFortunately usb-storage provides a general purpose DMA-able buffer\
+  \ for\nuses like this.  We'll use it instead.\n\nReported-and-tested-by: syzbot+e7d46eb426883fb97efd@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/all/0000000000007d25ff059457342d@google.com/T/\n\
+  Suggested-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>\nSigned-off-by:\
+  \ Alan Stern <stern@rowland.harvard.edu>\nFixes: e80b0fade09e (\"[PATCH] USB Storage:\
+  \ add alauda support\")\nCc: <stable@vger.kernel.org>\nLink: https://lore.kernel.org/r/693d5d5e-f09b-42d0-8ed9-1f96cd30bcce@rowland.harvard.edu\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/storage
+hunk_count: 2
+covered_count: 1

@@ -1,0 +1,36 @@
+id: 5b49c9695968d7250a26
+bug_link: https://syzkaller.appspot.com/bug?extid=5b49c9695968d7250a26
+title: memory leak in wacom_probe
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: de925e2fbb44eed8a2a7ce166b485fed5eae01aa
+fix_commit: 37309f47e2f5674f3e86cb765312ace42cfcedf5
+datetime: '2020-12-22T10:26:54+01:00'
+fix_commit_message: "HID: wacom: Fix memory leakage caused by kfifo_alloc\n\nAs reported\
+  \ by syzbot below, kfifo_alloc'd memory would not be freed\nif a non-zero return\
+  \ value is triggered in wacom_probe. This patch\ncreates and uses devm_kfifo_alloc\
+  \ to allocate and free itself.\n\nBUG: memory leak\nunreferenced object 0xffff88810dc44a00\
+  \ (size 512):\n  comm \"kworker/1:2\", pid 3674, jiffies 4294943617 (age 14.100s)\n\
+  \  hex dump (first 32 bytes):\n   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\
+  \  ................\n   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n\
+  \  backtrace:\n   [<0000000023e1afac>] kmalloc_array include/linux/slab.h:592 [inline]\n\
+  \   [<0000000023e1afac>] __kfifo_alloc+0xad/0x100 lib/kfifo.c:43\n   [<00000000c477f737>]\
+  \ wacom_probe+0x1a1/0x3b0 drivers/hid/wacom_sys.c:2727\n   [<00000000b3109aca>]\
+  \ hid_device_probe+0x16b/0x210 drivers/hid/hid-core.c:2281\n   [<00000000aff7c640>]\
+  \ really_probe+0x159/0x480 drivers/base/dd.c:554\n   [<00000000778d0bc3>] driver_probe_device+0x84/0x100\
+  \ drivers/base/dd.c:738\n   [<000000005108dbb5>] __device_attach_driver+0xee/0x110\
+  \ drivers/base/dd.c:844\n   [<00000000efb7c59e>] bus_for_each_drv+0xb7/0x100 drivers/base/bus.c:431\n\
+  \   [<0000000024ab1590>] __device_attach+0x122/0x250 drivers/base/dd.c:912\n   [<000000004c7ac048>]\
+  \ bus_probe_device+0xc6/0xe0 drivers/base/bus.c:491\n   [<00000000b93050a3>] device_add+0x5ac/0xc30\
+  \ drivers/base/core.c:2936\n   [<00000000e5b46ea5>] hid_add_device+0x151/0x390 drivers/hid/hid-core.c:2437\n\
+  \   [<00000000c6add147>] usbhid_probe+0x412/0x560 drivers/hid/usbhid/hid-core.c:1407\n\
+  \   [<00000000c33acdb4>] usb_probe_interface+0x177/0x370 drivers/usb/core/driver.c:396\n\
+  \   [<00000000aff7c640>] really_probe+0x159/0x480 drivers/base/dd.c:554\n   [<00000000778d0bc3>]\
+  \ driver_probe_device+0x84/0x100 drivers/base/dd.c:738\n   [<000000005108dbb5>]\
+  \ __device_attach_driver+0xee/0x110 drivers/base/dd.c:844\n\nhttps://syzkaller.appspot.com/bug?extid=5b49c9695968d7250a26\n\
+  \nReported-by: syzbot+5b49c9695968d7250a26@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Ping Cheng <ping.cheng@wacom.com>\nReviewed-by: Benjamin Tissoires <benjamin.tissoires@redhat.com>\n\
+  Signed-off-by: Jiri Kosina <jkosina@suse.cz>\n"
+submodule:
+- drivers/hid
+hunk_count: 3
+covered_count: 1

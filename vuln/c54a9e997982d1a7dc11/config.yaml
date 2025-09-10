@@ -1,0 +1,47 @@
+id: c54a9e997982d1a7dc11
+bug_link: https://syzkaller.appspot.com/bug?extid=c54a9e997982d1a7dc11
+title: 'BUG: sleeping function called from invalid context in __lock_sock_fast'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b7535cfed223a9f02f9530853616f197b386d775
+fix_commit: 57fc0f1ceaa4016354cf6f88533e20b56190e41a
+datetime: '2023-06-21T22:44:54-07:00'
+fix_commit_message: 'mptcp: ensure listener is unhashed before updating the sk status
+
+
+  The MPTCP protocol access the listener subflow in a lockless
+
+  manner in a couple of places (poll, diag). That works only if
+
+  the msk itself leaves the listener status only after that the
+
+  subflow itself has been closed/disconnected. Otherwise we risk
+
+  deadlock in diag, as reported by Christoph.
+
+
+  Address the issue ensuring that the first subflow (the listener
+
+  one) is always disconnected before updating the msk socket status.
+
+
+  Reported-by: Christoph Paasch <cpaasch@apple.com>
+
+  Closes: https://github.com/multipath-tcp/mptcp_net-next/issues/407
+
+  Fixes: b29fcfb54cd7 ("mptcp: full disconnect implementation")
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+
+  Reviewed-by: Matthieu Baerts <matthieu.baerts@tessares.net>
+
+  Signed-off-by: Matthieu Baerts <matthieu.baerts@tessares.net>
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/mptcp
+hunk_count: 5
+covered_count: 0

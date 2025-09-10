@@ -1,0 +1,86 @@
+BUG: unable to handle page fault for address: ffffc9000cd2e000
+#PF: supervisor write access in kernel mode
+#PF: error_code(0x0002) - not-present page
+PGD 1b400067 P4D 1b400067 PUD 1c2ff067 PMD 31ddb067 PTE 0
+Oops: Oops: 0002 [#1] SMP KASAN PTI
+CPU: 1 UID: 0 PID: 6904 Comm: syz-executor975 Not tainted 6.15.0-rc4-syzkaller-00021-gca91b9500108 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/19/2025
+RIP: 0010:memset_orig+0x33/0xb0 arch/x86/lib/memset_64.S:68
+Code: 01 01 01 01 01 01 01 01 48 0f af c1 41 89 f9 41 83 e1 07 75 74 48 89 d1 48 c1 e9 06 74 39 66 0f 1f 84 00 00 00 00 00 48 ff c9 <48> 89 07 48 89 47 08 48 89 47 10 48 89 47 18 48 89 47 20 48 89 47
+RSP: 0018:ffffc90003477b28 EFLAGS: 00010216
+RAX: 0000000000000000 RBX: 0000000000000001 RCX: 0000000000005b3f
+RDX: 0000000000200000 RSI: 0000000000000000 RDI: ffffc9000cd2e000
+RBP: 0000000000200000 R08: 0000000000000001 R09: 0000000000000000
+R10: ffffc9000cc9b000 R11: 0000000000000000 R12: 0000000000100000
+R13: ffffc9000cc9b000 R14: ffffffff8cb35e9c R15: 000000000000001c
+FS:  000055558204d380(0000) GS:ffff888124aef000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffc9000cd2e000 CR3: 00000000309d4000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ snd_pcm_format_set_silence+0x211/0x340 sound/core/pcm_misc.c:441
+ snd_pcm_oss_change_params_locked+0x1eb4/0x3b40 sound/core/oss/pcm_oss.c:1078
+ snd_pcm_oss_change_params sound/core/oss/pcm_oss.c:1105 [inline]
+ snd_pcm_oss_make_ready+0xe6/0x1b0 sound/core/oss/pcm_oss.c:1164
+ snd_pcm_oss_sync+0x1de/0x840 sound/core/oss/pcm_oss.c:1730
+ snd_pcm_oss_release+0x28b/0x310 sound/core/oss/pcm_oss.c:2575
+ __fput+0x3ff/0xb70 fs/file_table.c:465
+ task_work_run+0x14d/0x240 kernel/task_work.c:227
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:114 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x27b/0x2a0 kernel/entry/common.c:218
+ do_syscall_64+0xda/0x230 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa65d3ffbe9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 c1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffcae655848 EFLAGS: 00000246 ORIG_RAX: 00000000000001b4
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007fa65d3ffbe9
+RDX: 0000000000000000 RSI: 0000000000000008 RDI: 0000000000000002
+RBP: 00000000000f4240 R08: 0000000000008000 R09: 0000000000008000
+R10: 0000000000008000 R11: 0000000000000246 R12: 0000000000016f19
+R13: 00007ffcae65586c R14: 00007ffcae655880 R15: 00007ffcae655870
+ </TASK>
+Modules linked in:
+CR2: ffffc9000cd2e000
+---[ end trace 0000000000000000 ]---
+RIP: 0010:memset_orig+0x33/0xb0 arch/x86/lib/memset_64.S:68
+Code: 01 01 01 01 01 01 01 01 48 0f af c1 41 89 f9 41 83 e1 07 75 74 48 89 d1 48 c1 e9 06 74 39 66 0f 1f 84 00 00 00 00 00 48 ff c9 <48> 89 07 48 89 47 08 48 89 47 10 48 89 47 18 48 89 47 20 48 89 47
+RSP: 0018:ffffc90003477b28 EFLAGS: 00010216
+RAX: 0000000000000000 RBX: 0000000000000001 RCX: 0000000000005b3f
+RDX: 0000000000200000 RSI: 0000000000000000 RDI: ffffc9000cd2e000
+RBP: 0000000000200000 R08: 0000000000000001 R09: 0000000000000000
+R10: ffffc9000cc9b000 R11: 0000000000000000 R12: 0000000000100000
+R13: ffffc9000cc9b000 R14: ffffffff8cb35e9c R15: 000000000000001c
+FS:  000055558204d380(0000) GS:ffff888124aef000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffc9000cd2e000 CR3: 00000000309d4000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	01 01                	add    %eax,(%rcx)
+   2:	01 01                	add    %eax,(%rcx)
+   4:	01 01                	add    %eax,(%rcx)
+   6:	01 01                	add    %eax,(%rcx)
+   8:	48 0f af c1          	imul   %rcx,%rax
+   c:	41 89 f9             	mov    %edi,%r9d
+   f:	41 83 e1 07          	and    $0x7,%r9d
+  13:	75 74                	jne    0x89
+  15:	48 89 d1             	mov    %rdx,%rcx
+  18:	48 c1 e9 06          	shr    $0x6,%rcx
+  1c:	74 39                	je     0x57
+  1e:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+  25:	00 00
+  27:	48 ff c9             	dec    %rcx
+* 2a:	48 89 07             	mov    %rax,(%rdi) <-- trapping instruction
+  2d:	48 89 47 08          	mov    %rax,0x8(%rdi)
+  31:	48 89 47 10          	mov    %rax,0x10(%rdi)
+  35:	48 89 47 18          	mov    %rax,0x18(%rdi)
+  39:	48 89 47 20          	mov    %rax,0x20(%rdi)
+  3d:	48                   	rex.W
+  3e:	89                   	.byte 0x89
+  3f:	47                   	rex.RXB

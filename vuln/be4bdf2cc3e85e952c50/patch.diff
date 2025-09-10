@@ -1,0 +1,49 @@
+diff --git a/net/tipc/bcast.c b/net/tipc/bcast.c
+index 5264a8ff6e01..88edfb358ae7 100644
+--- a/net/tipc/bcast.c
++++ b/net/tipc/bcast.c
+@@ -760,7 +760,7 @@ u32 tipc_bcast_get_broadcast_ratio(struct net *net)
+ 	return bb->rc_ratio;
+ }
+ 
+-void tipc_mcast_filter_msg(struct sk_buff_head *defq,
++void tipc_mcast_filter_msg(struct net *net, struct sk_buff_head *defq,
+ 			   struct sk_buff_head *inputq)
+ {
+ 	struct sk_buff *skb, *_skb, *tmp;
+@@ -775,6 +775,9 @@ void tipc_mcast_filter_msg(struct sk_buff_head *defq,
+ 		return;
+ 
+ 	node = msg_orignode(hdr);
++	if (node == tipc_own_addr(net))
++		return;
++
+ 	port = msg_origport(hdr);
+ 
+ 	/* Has the twin SYN message already arrived ? */
+diff --git a/net/tipc/bcast.h b/net/tipc/bcast.h
+index 484bde289d3a..dadad953e2be 100644
+--- a/net/tipc/bcast.h
++++ b/net/tipc/bcast.h
+@@ -101,7 +101,7 @@ int tipc_bclink_reset_stats(struct net *net);
+ u32 tipc_bcast_get_broadcast_mode(struct net *net);
+ u32 tipc_bcast_get_broadcast_ratio(struct net *net);
+ 
+-void tipc_mcast_filter_msg(struct sk_buff_head *defq,
++void tipc_mcast_filter_msg(struct net *net, struct sk_buff_head *defq,
+ 			   struct sk_buff_head *inputq);
+ 
+ static inline void tipc_bcast_lock(struct net *net)
+diff --git a/net/tipc/socket.c b/net/tipc/socket.c
+index a7b3e1a070e4..8ac8ddf1e324 100644
+--- a/net/tipc/socket.c
++++ b/net/tipc/socket.c
+@@ -2166,7 +2166,7 @@ static void tipc_sk_filter_rcv(struct sock *sk, struct sk_buff *skb,
+ 		tipc_group_filter_msg(grp, &inputq, xmitq);
+ 
+ 	if (unlikely(!grp) && mtyp == TIPC_MCAST_MSG)
+-		tipc_mcast_filter_msg(&tsk->mc_method.deferredq, &inputq);
++		tipc_mcast_filter_msg(net, &tsk->mc_method.deferredq, &inputq);
+ 
+ 	/* Validate and add to receive buffer if there is space */
+ 	while ((skb = __skb_dequeue(&inputq))) {

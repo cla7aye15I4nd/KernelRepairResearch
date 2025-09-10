@@ -1,0 +1,46 @@
+id: 2d373c9936c00d7e120c
+bug_link: https://syzkaller.appspot.com/bug?extid=2d373c9936c00d7e120c
+title: 'KCSAN: data-race in snd_seq_poll / snd_seq_pool_init'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aa85822c611aef7cd4dc17d27121d43e21bb82f0
+fix_commit: e3cd33ab17c33bd8f1a9df66ec83a15dd8f7afbb
+datetime: '2025-03-07T09:44:35+01:00'
+fix_commit_message: 'ALSA: seq: Improve data consistency at polling
+
+
+  snd_seq_poll() calls snd_seq_write_pool_allocated() that reads out a
+
+  field in client->pool object, while it can be updated concurrently via
+
+  ioctls, as reported by syzbot.  The data race itself is harmless, as
+
+  it''s merely a poll() call, and the state is volatile.  OTOH, the read
+
+  out of poll object info from the caller side is fragile, and we can
+
+  leave it better in snd_seq_pool_poll_wait() alone.
+
+
+  A similar pattern is seen in snd_seq_kernel_client_write_poll(), too,
+
+  which is called from the OSS sequencer.
+
+
+  This patch drops the pool checks from the caller side and add the
+
+  pool->lock in snd_seq_pool_poll_wait() for better data consistency.
+
+
+  Reported-by: syzbot+2d373c9936c00d7e120c@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/67c88903.050a0220.15b4b9.0028.GAE@google.com
+
+  Link: https://patch.msgid.link/20250307084246.29271-1-tiwai@suse.de
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/core/seq
+hunk_count: 3
+covered_count: 2

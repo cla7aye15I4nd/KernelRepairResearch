@@ -1,0 +1,55 @@
+id: ededba317ddeca8b3f08
+bug_link: https://syzkaller.appspot.com/bug?extid=ededba317ddeca8b3f08
+title: WARNING in _ieee80211_sta_cur_vht_bw
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3b602ddc0df723992721b0d286c90c9bdd755b34
+fix_commit: 58fcb1b4287ce38850402bb2bb16d09bf77b91d9
+datetime: '2025-07-07T10:45:21+02:00'
+fix_commit_message: 'wifi: mac80211: reject VHT opmode for unsupported channel widths
+
+
+  VHT operating mode notifications are not defined for channel widths
+
+  below 20 MHz. In particular, 5 MHz and 10 MHz are not valid under the
+
+  VHT specification and must be rejected.
+
+
+  Without this check, malformed notifications using these widths may
+
+  reach ieee80211_chan_width_to_rx_bw(), leading to a WARN_ON due to
+
+  invalid input. This issue was reported by syzbot.
+
+
+  Reject these unsupported widths early in sta_link_apply_parameters()
+
+  when opmode_notif is used. The accepted set includes 20, 40, 80, 160,
+
+  and 80+80 MHz, which are valid for VHT. While 320 MHz is not defined
+
+  for VHT, it is allowed to avoid rejecting HE or EHT clients that may
+
+  still send a VHT opmode notification.
+
+
+  Reported-by: syzbot+ededba317ddeca8b3f08@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=ededba317ddeca8b3f08
+
+  Fixes: 751e7489c1d7 ("wifi: mac80211: expose ieee80211_chan_width_to_rx_bw() to
+  drivers")
+
+  Tested-by: syzbot+ededba317ddeca8b3f08@syzkaller.appspotmail.com
+
+  Signed-off-by: Moon Hee Lee <moonhee.lee.ca@gmail.com>
+
+  Link: https://patch.msgid.link/20250703193756.46622-2-moonhee.lee.ca@gmail.com
+
+  Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+  '
+submodule:
+- net/mac80211
+hunk_count: 1
+covered_count: 1

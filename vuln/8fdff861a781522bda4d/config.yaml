@@ -1,0 +1,76 @@
+id: 8fdff861a781522bda4d
+bug_link: https://syzkaller.appspot.com/bug?extid=8fdff861a781522bda4d
+title: possible deadlock in xfs_qm_dqget_cache_insert
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 215b2bf72a05d702287fc45d854b4f5019f9aad1
+fix_commit: 0c6ca06aad84bac097f5c005d911db92dba3ae94
+datetime: '2024-03-15T10:30:23+05:30'
+fix_commit_message: 'xfs: quota radix tree allocations need to be NOFS on insert
+
+
+  In converting the XFS code from GFP_NOFS to scoped contexts, we
+
+  converted the quota radix tree to GFP_KERNEL. Unfortunately, it was
+
+  not clearly documented that this set was because there is a
+
+  dependency on the quotainfo->qi_tree_lock being taken in memory
+
+  reclaim to remove dquots from the radix tree.
+
+
+  In hindsight this is obvious, but the radix tree allocations on
+
+  insert are not immediately obvious, and we avoid this for the inode
+
+  cache radix trees by using preloading and hence completely avoiding
+
+  the radix tree node allocation under tree lock constraints.
+
+
+  Hence there are a few solutions here. The first is to reinstate
+
+  GFP_NOFS for the radix tree and add a comment explaining why
+
+  GFP_NOFS is used. The second is to use memalloc_nofs_save() on the
+
+  radix tree insert context, which makes it obvious that the radix
+
+  tree insert runs under GFP_NOFS constraints. The third option is to
+
+  simply replace the radix tree and it''s lock with an xarray which can
+
+  do memory allocation safely in an insert context.
+
+
+  The first is OK, but not really the direction we want to head. The
+
+  second is my preferred short term solution. The third - converting
+
+  XFS radix trees to xarray - is the longer term solution.
+
+
+  Hence to fix the regression here, we take option 2 as it moves us in
+
+  the direction we want to head with memory allocation and GFP_NOFS
+
+  removal.
+
+
+  Reported-by: syzbot+8fdff861a781522bda4d@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+d247769793ec169e4bf9@syzkaller.appspotmail.com
+
+  Fixes: 94a69db2367e ("xfs: use __GFP_NOLOCKDEP instead of GFP_NOFS")
+
+  Signed-off-by: Dave Chinner <dchinner@redhat.com>
+
+  Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
+
+  Signed-off-by: Chandan Babu R <chandanbabu@kernel.org>
+
+  '
+submodule:
+- fs/xfs
+hunk_count: 2
+covered_count: 2

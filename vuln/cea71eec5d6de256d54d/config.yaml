@@ -1,0 +1,26 @@
+id: cea71eec5d6de256d54d
+bug_link: https://syzkaller.appspot.com/bug?extid=cea71eec5d6de256d54d
+title: 'WARNING: refcount bug in sctp_wfree'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fbe4e0c1b298b4665ee6915266c9d6c5b934ef4a
+fix_commit: 5c3e82fe159622e46e91458c1a6509c321a62820
+datetime: '2020-03-29T21:57:30-07:00'
+fix_commit_message: "sctp: fix refcount bug in sctp_wfree\n\nWe should iterate over\
+  \ the datamsgs to move\nall chunks(skbs) to newsk.\n\nThe following case cause the\
+  \ bug:\nfor the trouble SKB, it was in outq->transmitted list\n\nsctp_outq_sack\n\
+  \        sctp_check_transmitted\n                SKB was moved to outq->sacked list\n\
+  \        then throw away the sack queue\n                SKB was deleted from outq->sacked\n\
+  (but it was held by datamsg at sctp_datamsg_to_asoc\nSo, sctp_wfree was not called\
+  \ here)\n\nthen migrate happened\n\n        sctp_for_each_tx_datachunk(\n      \
+  \  sctp_clear_owner_w);\n        sctp_assoc_migrate();\n        sctp_for_each_tx_datachunk(\n\
+  \        sctp_set_owner_w);\nSKB was not in the outq, and was not changed to newsk\n\
+  \nfinally\n\n__sctp_outq_teardown\n        sctp_chunk_put (for another skb)\n  \
+  \              sctp_datamsg_put\n                        __kfree_skb(msg->frag_list)\n\
+  \                                sctp_wfree (for SKB)\n\tSKB->sk was still oldsk\
+  \ (skb->sk != asoc->base.sk).\n\nReported-and-tested-by: syzbot+cea71eec5d6de256d54d@syzkaller.appspotmail.com\n\
+  Signed-off-by: Qiujun Huang <hqjagain@gmail.com>\nAcked-by: Marcelo Ricardo Leitner\
+  \ <mleitner@redhat.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 2
+covered_count: 1

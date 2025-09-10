@@ -1,0 +1,253 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.8.0-syzkaller-05271-gf99c5f563c17 #0 Not tainted
+------------------------------------------------------
+sshd/5067 is trying to acquire lock:
+ffff8880b9429470 (krc.lock){..-.}-{2:2}, at: krc_this_cpu_lock kernel/rcu/tree.c:2960 [inline]
+ffff8880b9429470 (krc.lock){..-.}-{2:2}, at: add_ptr_to_bulk_krc_lock kernel/rcu/tree.c:3359 [inline]
+ffff8880b9429470 (krc.lock){..-.}-{2:2}, at: kvfree_call_rcu+0x18a/0x790 kernel/rcu/tree.c:3444
+
+but task is already holding lock:
+ffff88802cc491f8 (&trie->lock){..-.}-{2:2}, at: trie_delete_elem+0x96/0x6a0 kernel/bpf/lpm_trie.c:451
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (&trie->lock){..-.}-{2:2}:
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+       _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+       trie_delete_elem+0x96/0x6a0 kernel/bpf/lpm_trie.c:451
+       bpf_prog_2c29ac5cdc6b1842+0x42/0x46
+       bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+       __bpf_prog_run include/linux/filter.h:657 [inline]
+       bpf_prog_run include/linux/filter.h:664 [inline]
+       __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+       bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+       trace_timer_start include/trace/events/timer.h:52 [inline]
+       enqueue_timer+0x396/0x550 kernel/time/timer.c:663
+       __mod_timer+0x953/0xeb0 kernel/time/timer.c:1181
+       sk_reset_timer+0x23/0xc0 net/core/sock.c:3420
+       tcp_event_new_data_sent+0x203/0x360 net/ipv4/tcp_output.c:81
+       tcp_write_xmit+0x1468/0x6100 net/ipv4/tcp_output.c:2799
+       __tcp_push_pending_frames+0x9b/0x360 net/ipv4/tcp_output.c:2977
+       tcp_sendmsg_locked+0x42cc/0x4d00 net/ipv4/tcp.c:1310
+       tcp_sendmsg+0x30/0x50 net/ipv4/tcp.c:1342
+       sock_sendmsg_nosec net/socket.c:730 [inline]
+       __sock_sendmsg+0x1a6/0x270 net/socket.c:745
+       sock_write_iter+0x2dd/0x400 net/socket.c:1160
+       call_write_iter include/linux/fs.h:2108 [inline]
+       new_sync_write fs/read_write.c:497 [inline]
+       vfs_write+0xa84/0xcb0 fs/read_write.c:590
+       ksys_write+0x1a0/0x2c0 fs/read_write.c:643
+       do_syscall_64+0xfb/0x240
+       entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+-> #1 (&base->lock){-.-.}-{2:2}:
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+       _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+       lock_timer_base+0x112/0x240 kernel/time/timer.c:1051
+       __mod_timer+0x1ca/0xeb0 kernel/time/timer.c:1132
+       queue_delayed_work_on+0x15a/0x260 kernel/workqueue.c:2595
+       kvfree_call_rcu+0x47f/0x790 kernel/rcu/tree.c:3472
+       rtnl_register_internal+0x482/0x590 net/core/rtnetlink.c:265
+       rtnl_register+0x36/0x80 net/core/rtnetlink.c:315
+       ip_rt_init+0x2f5/0x3a0 net/ipv4/route.c:3719
+       ip_init+0xe/0x20 net/ipv4/ip_output.c:1663
+       inet_init+0x3d8/0x580 net/ipv4/af_inet.c:2022
+       do_one_initcall+0x238/0x830 init/main.c:1241
+       do_initcall_level+0x157/0x210 init/main.c:1303
+       do_initcalls+0x3f/0x80 init/main.c:1319
+       kernel_init_freeable+0x435/0x5d0 init/main.c:1557
+       kernel_init+0x1d/0x2a0 init/main.c:1446
+       ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+
+-> #0 (krc.lock){..-.}-{2:2}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+       __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]
+       _raw_spin_lock+0x2e/0x40 kernel/locking/spinlock.c:154
+       krc_this_cpu_lock kernel/rcu/tree.c:2960 [inline]
+       add_ptr_to_bulk_krc_lock kernel/rcu/tree.c:3359 [inline]
+       kvfree_call_rcu+0x18a/0x790 kernel/rcu/tree.c:3444
+       trie_delete_elem+0x52c/0x6a0
+       bpf_prog_2c29ac5cdc6b1842+0x42/0x46
+       bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+       __bpf_prog_run include/linux/filter.h:657 [inline]
+       bpf_prog_run include/linux/filter.h:664 [inline]
+       __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+       bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+       trace_timer_start include/trace/events/timer.h:52 [inline]
+       enqueue_timer+0x396/0x550 kernel/time/timer.c:663
+       internal_add_timer kernel/time/timer.c:688 [inline]
+       __mod_timer+0xa0e/0xeb0 kernel/time/timer.c:1183
+       dsp_cmx_send+0x21bf/0x2240 drivers/isdn/mISDN/dsp_cmx.c:1839
+       call_timer_fn+0x17e/0x600 kernel/time/timer.c:1792
+       expire_timers kernel/time/timer.c:1843 [inline]
+       __run_timers kernel/time/timer.c:2408 [inline]
+       __run_timer_base+0x66a/0x8e0 kernel/time/timer.c:2419
+       run_timer_base kernel/time/timer.c:2428 [inline]
+       run_timer_softirq+0xb7/0x170 kernel/time/timer.c:2438
+       __do_softirq+0x2bc/0x943 kernel/softirq.c:554
+       invoke_softirq kernel/softirq.c:428 [inline]
+       __irq_exit_rcu+0xf2/0x1c0 kernel/softirq.c:633
+       irq_exit_rcu+0x9/0x30 kernel/softirq.c:645
+       instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+       sysvec_apic_timer_interrupt+0xa6/0xc0 arch/x86/kernel/apic/apic.c:1043
+       asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+       __raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152 [inline]
+       _raw_spin_unlock_irqrestore+0xd8/0x140 kernel/locking/spinlock.c:194
+       __mod_timer+0xb89/0xeb0 kernel/time/timer.c:1186
+       sk_reset_timer+0x23/0xc0 net/core/sock.c:3420
+       tcp_event_new_data_sent+0x203/0x360 net/ipv4/tcp_output.c:81
+       tcp_write_xmit+0x1468/0x6100 net/ipv4/tcp_output.c:2799
+       __tcp_push_pending_frames+0x9b/0x360 net/ipv4/tcp_output.c:2977
+       tcp_sendmsg_locked+0x42cc/0x4d00 net/ipv4/tcp.c:1310
+       tcp_sendmsg+0x30/0x50 net/ipv4/tcp.c:1342
+       sock_sendmsg_nosec net/socket.c:730 [inline]
+       __sock_sendmsg+0x1a6/0x270 net/socket.c:745
+       sock_write_iter+0x2dd/0x400 net/socket.c:1160
+       call_write_iter include/linux/fs.h:2108 [inline]
+       new_sync_write fs/read_write.c:497 [inline]
+       vfs_write+0xa84/0xcb0 fs/read_write.c:590
+       ksys_write+0x1a0/0x2c0 fs/read_write.c:643
+       do_syscall_64+0xfb/0x240
+       entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+other info that might help us debug this:
+
+Chain exists of:
+  krc.lock --> &base->lock --> &trie->lock
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&trie->lock);
+                               lock(&base->lock);
+                               lock(&trie->lock);
+  lock(krc.lock);
+
+ *** DEADLOCK ***
+
+6 locks held by sshd/5067:
+ #0: ffff88807c64a718 (sk_lock-AF_INET){+.+.}-{0:0}, at: lock_sock include/net/sock.h:1671 [inline]
+ #0: ffff88807c64a718 (sk_lock-AF_INET){+.+.}-{0:0}, at: tcp_sendmsg+0x22/0x50 net/ipv4/tcp.c:1341
+ #1: ffffc90000007c00 ((&dsp_spl_tl)){+.-.}-{0:0}, at: call_timer_fn+0xc0/0x600 kernel/time/timer.c:1789
+ #2: ffffffff8f1045f8 (dsp_lock){..-.}-{2:2}, at: dsp_cmx_send+0x26/0x2240 drivers/isdn/mISDN/dsp_cmx.c:1632
+ #3: ffff8880b942a758 (&base->lock){-.-.}-{2:2}, at: lock_timer_base+0x112/0x240 kernel/time/timer.c:1051
+ #4: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #4: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #4: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: __bpf_trace_run kernel/trace/bpf_trace.c:2380 [inline]
+ #4: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: bpf_trace_run2+0x114/0x420 kernel/trace/bpf_trace.c:2420
+ #5: ffff88802cc491f8 (&trie->lock){..-.}-{2:2}, at: trie_delete_elem+0x96/0x6a0 kernel/bpf/lpm_trie.c:451
+
+stack backtrace:
+CPU: 0 PID: 5067 Comm: sshd Not tainted 6.8.0-syzkaller-05271-gf99c5f563c17 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2e0 lib/dump_stack.c:106
+ check_noncircular+0x36a/0x4a0 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+ __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+ lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+ __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]
+ _raw_spin_lock+0x2e/0x40 kernel/locking/spinlock.c:154
+ krc_this_cpu_lock kernel/rcu/tree.c:2960 [inline]
+ add_ptr_to_bulk_krc_lock kernel/rcu/tree.c:3359 [inline]
+ kvfree_call_rcu+0x18a/0x790 kernel/rcu/tree.c:3444
+ trie_delete_elem+0x52c/0x6a0
+ bpf_prog_2c29ac5cdc6b1842+0x42/0x46
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+ trace_timer_start include/trace/events/timer.h:52 [inline]
+ enqueue_timer+0x396/0x550 kernel/time/timer.c:663
+ internal_add_timer kernel/time/timer.c:688 [inline]
+ __mod_timer+0xa0e/0xeb0 kernel/time/timer.c:1183
+ dsp_cmx_send+0x21bf/0x2240 drivers/isdn/mISDN/dsp_cmx.c:1839
+ call_timer_fn+0x17e/0x600 kernel/time/timer.c:1792
+ expire_timers kernel/time/timer.c:1843 [inline]
+ __run_timers kernel/time/timer.c:2408 [inline]
+ __run_timer_base+0x66a/0x8e0 kernel/time/timer.c:2419
+ run_timer_base kernel/time/timer.c:2428 [inline]
+ run_timer_softirq+0xb7/0x170 kernel/time/timer.c:2438
+ __do_softirq+0x2bc/0x943 kernel/softirq.c:554
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu+0xf2/0x1c0 kernel/softirq.c:633
+ irq_exit_rcu+0x9/0x30 kernel/softirq.c:645
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0xa6/0xc0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:__raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152 [inline]
+RIP: 0010:_raw_spin_unlock_irqrestore+0xd8/0x140 kernel/locking/spinlock.c:194
+Code: 9c 8f 44 24 20 42 80 3c 23 00 74 08 4c 89 f7 e8 3e 8e 7d f6 f6 44 24 21 02 75 52 41 f7 c7 00 02 00 00 74 01 fb bf 01 00 00 00 <e8> e3 43 ea f5 65 8b 05 34 26 89 74 85 c0 74 43 48 c7 04 24 0e 36
+RSP: 0018:ffffc90003a2f360 EFLAGS: 00000206
+RAX: f836c11418d67e00 RBX: 1ffff92000745e70 RCX: ffffffff81720c2a
+RDX: dffffc0000000000 RSI: ffffffff8baac220 RDI: 0000000000000001
+RBP: ffffc90003a2f3f0 R08: ffffffff92cc75bf R09: 1ffffffff2598eb7
+R10: dffffc0000000000 R11: fffffbfff2598eb8 R12: dffffc0000000000
+R13: 1ffff92000745e6c R14: ffffc90003a2f380 R15: 0000000000000246
+ __mod_timer+0xb89/0xeb0 kernel/time/timer.c:1186
+ sk_reset_timer+0x23/0xc0 net/core/sock.c:3420
+ tcp_event_new_data_sent+0x203/0x360 net/ipv4/tcp_output.c:81
+ tcp_write_xmit+0x1468/0x6100 net/ipv4/tcp_output.c:2799
+ __tcp_push_pending_frames+0x9b/0x360 net/ipv4/tcp_output.c:2977
+ tcp_sendmsg_locked+0x42cc/0x4d00 net/ipv4/tcp.c:1310
+ tcp_sendmsg+0x30/0x50 net/ipv4/tcp.c:1342
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg+0x1a6/0x270 net/socket.c:745
+ sock_write_iter+0x2dd/0x400 net/socket.c:1160
+ call_write_iter include/linux/fs.h:2108 [inline]
+ new_sync_write fs/read_write.c:497 [inline]
+ vfs_write+0xa84/0xcb0 fs/read_write.c:590
+ ksys_write+0x1a0/0x2c0 fs/read_write.c:643
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f9226955bf2
+Code: 89 c7 48 89 44 24 08 e8 7b 34 fa ff 48 8b 44 24 08 48 83 c4 28 c3 c3 64 8b 04 25 18 00 00 00 85 c0 75 20 b8 01 00 00 00 0f 05 <48> 3d 00 f0 ff ff 76 6f 48 8b 15 07 a2 0d 00 f7 d8 64 89 02 48 83
+RSP: 002b:00007ffffc6a91a8 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 000000000000002c RCX: 00007f9226955bf2
+RDX: 000000000000002c RSI: 00005648f6772960 RDI: 0000000000000004
+RBP: 00005648f6780220 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00005648d7ed3aa4
+R13: 0000000000000049 R14: 00005648d7ed43e8 R15: 00007ffffc6a9218
+ </TASK>
+----------------
+Code disassembly (best guess):
+   0:	9c                   	pushf
+   1:	8f 44 24 20          	pop    0x20(%rsp)
+   5:	42 80 3c 23 00       	cmpb   $0x0,(%rbx,%r12,1)
+   a:	74 08                	je     0x14
+   c:	4c 89 f7             	mov    %r14,%rdi
+   f:	e8 3e 8e 7d f6       	call   0xf67d8e52
+  14:	f6 44 24 21 02       	testb  $0x2,0x21(%rsp)
+  19:	75 52                	jne    0x6d
+  1b:	41 f7 c7 00 02 00 00 	test   $0x200,%r15d
+  22:	74 01                	je     0x25
+  24:	fb                   	sti
+  25:	bf 01 00 00 00       	mov    $0x1,%edi
+* 2a:	e8 e3 43 ea f5       	call   0xf5ea4412 <-- trapping instruction
+  2f:	65 8b 05 34 26 89 74 	mov    %gs:0x74892634(%rip),%eax        # 0x7489266a
+  36:	85 c0                	test   %eax,%eax
+  38:	74 43                	je     0x7d
+  3a:	48                   	rex.W
+  3b:	c7                   	.byte 0xc7
+  3c:	04 24                	add    $0x24,%al
+  3e:	0e                   	(bad)
+  3f:	36                   	ss

@@ -1,0 +1,14 @@
+diff --git a/fs/bcachefs/recovery.c b/fs/bcachefs/recovery.c
+index be5b47619327..8091d0686029 100644
+--- a/fs/bcachefs/recovery.c
++++ b/fs/bcachefs/recovery.c
+@@ -902,7 +902,8 @@ int bch2_fs_recovery(struct bch_fs *c)
+ 		bch2_journal_keys_put_initial(c);
+ 		bch2_find_btree_nodes_exit(&c->found_btree_nodes);
+ 	}
+-	kfree(clean);
++	if (!IS_ERR(clean))
++		kfree(clean);
+ 
+ 	if (!ret &&
+ 	    test_bit(BCH_FS_need_delete_dead_snapshots, &c->flags) &&

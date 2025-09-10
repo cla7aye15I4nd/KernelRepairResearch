@@ -1,0 +1,46 @@
+id: 0341f6a4d729d4e0acf1
+bug_link: https://syzkaller.appspot.com/bug?extid=0341f6a4d729d4e0acf1
+title: 'KASAN: use-after-free Read in tomoyo_realpath_from_path'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6794862a16ef41f753abd75c03a152836e4c8028
+fix_commit: 6f7c41374b62fd80bbd8aae3536c43688c54d95e
+datetime: '2019-12-11T19:54:10+09:00'
+fix_commit_message: 'tomoyo: Don''t use nifty names on sockets.
+
+
+  syzbot is reporting that use of SOCKET_I()->sk from open() can result in
+
+  use after free problem [1], for socket''s inode is still reachable via
+
+  /proc/pid/fd/n despite destruction of SOCKET_I()->sk already completed.
+
+
+  At first I thought that this race condition applies to only open/getattr
+
+  permission checks. But James Morris has pointed out that there are more
+
+  permission checks where this race condition applies to. Thus, get rid of
+
+  tomoyo_get_socket_name() instead of conditionally bypassing permission
+
+  checks on sockets. As a side effect of this patch,
+
+  "socket:[family=\$:type=\$:protocol=\$]" in the policy files has to be
+
+  rewritten to "socket:[\$]".
+
+
+  [1] https://syzkaller.appspot.com/bug?id=73d590010454403d55164cca23bd0565b1eb3b74
+
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Reported-by: syzbot <syzbot+0341f6a4d729d4e0acf1@syzkaller.appspotmail.com>
+
+  Reported-by: James Morris <jmorris@namei.org>
+
+  '
+submodule:
+- security/tomoyo
+hunk_count: 2
+covered_count: 2

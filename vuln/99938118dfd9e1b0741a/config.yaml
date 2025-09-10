@@ -1,0 +1,63 @@
+id: 99938118dfd9e1b0741a
+bug_link: https://syzkaller.appspot.com/bug?extid=99938118dfd9e1b0741a
+title: 'KASAN: use-after-free Read in bio_poll'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e233fe1aa02815f38588a5a965a197bbcabfb125
+fix_commit: 9650b453a3d4b1b8ed4ea8bcb9b40109608d1faf
+datetime: '2022-05-02T10:07:42-06:00'
+fix_commit_message: 'block: ignore RWF_HIPRI hint for sync dio
+
+
+  So far bio is marked as REQ_POLLED if RWF_HIPRI/IOCB_HIPRI is passed
+
+  from userspace sync io interface, then block layer tries to poll until
+
+  the bio is completed. But the current implementation calls
+
+  blk_io_schedule() if bio_poll() returns 0, and this way causes io hang or
+
+  timeout easily.
+
+
+  But looks no one reports this kind of issue, which should have been
+
+  triggered in normal io poll sanity test or blktests block/007 as
+
+  observed by Changhui, that means it is very likely that no one uses it
+
+  or no one cares it.
+
+
+  Also after io_uring is invented, io poll for sync dio becomes legacy
+
+  interface.
+
+
+  So ignore RWF_HIPRI hint for sync dio.
+
+
+  CC: linux-mm@kvack.org
+
+  Cc: linux-xfs@vger.kernel.org
+
+  Reported-by: Changhui Zhong <czhong@redhat.com>
+
+  Suggested-by: Christoph Hellwig <hch@lst.de>
+
+  Signed-off-by: Ming Lei <ming.lei@redhat.com>
+
+  Tested-by: Changhui Zhong <czhong@redhat.com>
+
+  Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+  Link: https://lore.kernel.org/r/20220420143110.2679002-1-ming.lei@redhat.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- block
+- fs/iomap
+- mm
+hunk_count: 7
+covered_count: 2

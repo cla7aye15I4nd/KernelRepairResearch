@@ -1,0 +1,36 @@
+id: 15927486a4f1bfcbaf91
+bug_link: https://syzkaller.appspot.com/bug?extid=15927486a4f1bfcbaf91
+title: general protection fault in fanotify_handle_event
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ba25b50d582ff6c6021eee80824134aeb9ab8785
+fix_commit: b1da6a51871c6929dced1a7fad81990988b36ed6
+datetime: '2019-04-28T22:14:50+02:00'
+fix_commit_message: 'fsnotify: Fix NULL ptr deref in fanotify_get_fsid()
+
+
+  fanotify_get_fsid() is reading mark->connector->fsid under srcu. It can
+
+  happen that it sees mark not fully initialized or mark that is already
+
+  detached from the object list. In these cases mark->connector
+
+  can be NULL leading to NULL ptr dereference. Fix the problem by
+
+  being careful when reading mark->connector and check it for being NULL.
+
+  Also use WRITE_ONCE when writing the mark just to prevent compiler from
+
+  doing something stupid.
+
+
+  Reported-by: syzbot+15927486a4f1bfcbaf91@syzkaller.appspotmail.com
+
+  Fixes: 77115225acc6 ("fanotify: cache fsid in fsnotify_mark_connector")
+
+  Signed-off-by: Jan Kara <jack@suse.cz>
+
+  '
+submodule:
+- fs/notify
+hunk_count: 7
+covered_count: 2

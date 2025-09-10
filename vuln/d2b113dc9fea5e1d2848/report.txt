@@ -1,0 +1,43 @@
+=====================================================
+BUG: KMSAN: uninit-value in trie_lookup_elem+0x4b9/0x510 kernel/bpf/lpm_trie.c:234
+ trie_lookup_elem+0x4b9/0x510 kernel/bpf/lpm_trie.c:234
+ ____bpf_map_lookup_elem kernel/bpf/helpers.c:42 [inline]
+ bpf_map_lookup_elem+0x5c/0x80 kernel/bpf/helpers.c:38
+ ___bpf_prog_run+0x13fe/0xe0f0 kernel/bpf/core.c:1997
+ __bpf_prog_run32+0xb2/0xe0 kernel/bpf/core.c:2236
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run2+0x116/0x300 kernel/trace/bpf_trace.c:2420
+ __bpf_trace_skb_copy_datagram_iovec+0x2c/0x40 include/trace/events/skb.h:73
+ trace_skb_copy_datagram_iovec include/trace/events/skb.h:73 [inline]
+ skb_copy_datagram_iter+0x15e/0x200 net/core/datagram.c:545
+ skb_copy_datagram_msg include/linux/skbuff.h:4045 [inline]
+ tcp_recvmsg_locked+0xcf6/0x3680 net/ipv4/tcp.c:2500
+ tcp_recvmsg+0x279/0xad0 net/ipv4/tcp.c:2578
+ inet_recvmsg+0x167/0x6a0 net/ipv4/af_inet.c:883
+ sock_recvmsg_nosec net/socket.c:1046 [inline]
+ sock_recvmsg+0x235/0x340 net/socket.c:1068
+ sock_read_iter+0x333/0x3c0 net/socket.c:1138
+ call_read_iter include/linux/fs.h:2102 [inline]
+ new_sync_read fs/read_write.c:395 [inline]
+ vfs_read+0xda3/0xef0 fs/read_write.c:476
+ ksys_read+0x20f/0x4c0 fs/read_write.c:619
+ __do_sys_read fs/read_write.c:629 [inline]
+ __se_sys_read fs/read_write.c:627 [inline]
+ __x64_sys_read+0x93/0xe0 fs/read_write.c:627
+ do_syscall_64+0xd5/0x1f0
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+Local variable stack created at:
+ __bpf_prog_run32+0x43/0xe0 kernel/bpf/core.c:2236
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run2+0x116/0x300 kernel/trace/bpf_trace.c:2420
+
+CPU: 0 PID: 5010 Comm: sshd Not tainted 6.8.0-syzkaller-11339-g741e9d668aa5 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+=====================================================

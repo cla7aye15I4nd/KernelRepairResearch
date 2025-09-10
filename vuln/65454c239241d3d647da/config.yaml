@@ -1,0 +1,34 @@
+id: 65454c239241d3d647da
+bug_link: https://syzkaller.appspot.com/bug?extid=65454c239241d3d647da
+title: memory leak in create_io_worker
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3b33e3f4a6c0296812a7ee757bdae83290e64aed
+fix_commit: 66e70be722886e4f134350212baa13f217e39e42
+datetime: '2021-09-09T06:57:04-06:00'
+fix_commit_message: "io-wq: fix memory leak in create_io_worker()\n\nBUG: memory leak\n\
+  unreferenced object 0xffff888126fcd6c0 (size 192):\n  comm \"syz-executor.1\", pid\
+  \ 11934, jiffies 4294983026 (age 15.690s)\n  backtrace:\n    [<ffffffff81632c91>]\
+  \ kmalloc_node include/linux/slab.h:609 [inline]\n    [<ffffffff81632c91>] kzalloc_node\
+  \ include/linux/slab.h:732 [inline]\n    [<ffffffff81632c91>] create_io_worker+0x41/0x1e0\
+  \ fs/io-wq.c:739\n    [<ffffffff8163311e>] io_wqe_create_worker fs/io-wq.c:267 [inline]\n\
+  \    [<ffffffff8163311e>] io_wqe_enqueue+0x1fe/0x330 fs/io-wq.c:866\n    [<ffffffff81620b64>]\
+  \ io_queue_async_work+0xc4/0x200 fs/io_uring.c:1473\n    [<ffffffff8162c59c>] __io_queue_sqe+0x34c/0x510\
+  \ fs/io_uring.c:6933\n    [<ffffffff8162c7ab>] io_req_task_submit+0x4b/0xa0 fs/io_uring.c:2233\n\
+  \    [<ffffffff8162cb48>] io_async_task_func+0x108/0x1c0 fs/io_uring.c:5462\n  \
+  \  [<ffffffff816259e3>] tctx_task_work+0x1b3/0x3a0 fs/io_uring.c:2158\n    [<ffffffff81269b43>]\
+  \ task_work_run+0x73/0xb0 kernel/task_work.c:164\n    [<ffffffff812dcdd1>] tracehook_notify_signal\
+  \ include/linux/tracehook.h:212 [inline]\n    [<ffffffff812dcdd1>] handle_signal_work\
+  \ kernel/entry/common.c:146 [inline]\n    [<ffffffff812dcdd1>] exit_to_user_mode_loop\
+  \ kernel/entry/common.c:172 [inline]\n    [<ffffffff812dcdd1>] exit_to_user_mode_prepare+0x151/0x180\
+  \ kernel/entry/common.c:209\n    [<ffffffff843ff25d>] __syscall_exit_to_user_mode_work\
+  \ kernel/entry/common.c:291 [inline]\n    [<ffffffff843ff25d>] syscall_exit_to_user_mode+0x1d/0x40\
+  \ kernel/entry/common.c:302\n    [<ffffffff843fa4a2>] do_syscall_64+0x42/0xb0 arch/x86/entry/common.c:86\n\
+  \    [<ffffffff84600068>] entry_SYSCALL_64_after_hwframe+0x44/0xae\n\nwhen create_io_thread()\
+  \ return error, and not retry, the worker object\nneed to be freed.\n\nReported-by:\
+  \ syzbot+65454c239241d3d647da@syzkaller.appspotmail.com\nSigned-off-by: Qiang.zhang\
+  \ <qiang.zhang@windriver.com>\nLink: https://lore.kernel.org/r/20210909115822.181188-1-qiang.zhang@windriver.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 3
+covered_count: 3

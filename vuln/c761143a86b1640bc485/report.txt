@@ -1,0 +1,36 @@
+  fragmentation     0
+  bp_start          8
+  incorrectly set at freespace:0:31:0 (free 0, genbits 0 should be 0), fixing
+=====================================================
+BUG: KMSAN: uninit-value in try_alloc_bucket fs/bcachefs/alloc_foreground.c:297 [inline]
+BUG: KMSAN: uninit-value in bch2_bucket_alloc_freelist fs/bcachefs/alloc_foreground.c:442 [inline]
+BUG: KMSAN: uninit-value in bch2_bucket_alloc_trans+0x2191/0x3280 fs/bcachefs/alloc_foreground.c:574
+ try_alloc_bucket fs/bcachefs/alloc_foreground.c:297 [inline]
+ bch2_bucket_alloc_freelist fs/bcachefs/alloc_foreground.c:442 [inline]
+ bch2_bucket_alloc_trans+0x2191/0x3280 fs/bcachefs/alloc_foreground.c:574
+ bch2_bucket_alloc_set_trans+0x935/0x1620 fs/bcachefs/alloc_foreground.c:730
+ __open_bucket_add_buckets+0x1e98/0x3130 fs/bcachefs/alloc_foreground.c:973
+ open_bucket_add_buckets+0x32b/0x530 fs/bcachefs/alloc_foreground.c:1017
+ bch2_alloc_sectors_start_trans+0x1839/0x32d0
+ __bch2_btree_node_alloc fs/bcachefs/btree_update_interior.c:322 [inline]
+ bch2_btree_reserve_get+0x9eb/0x22b0 fs/bcachefs/btree_update_interior.c:532
+ bch2_btree_update_start+0x22b8/0x2ec0 fs/bcachefs/btree_update_interior.c:1232
+ bch2_btree_node_rewrite+0x1da/0x1af0 fs/bcachefs/btree_update_interior.c:2144
+ async_btree_node_rewrite_trans fs/bcachefs/btree_update_interior.c:2217 [inline]
+ async_btree_node_rewrite_work+0x74c/0x1aa0 fs/bcachefs/btree_update_interior.c:2253
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xc1d/0x1e80 kernel/workqueue.c:3319
+ worker_thread+0xea7/0x14f0 kernel/workqueue.c:3400
+ kthread+0x6b9/0xef0 kernel/kthread.c:464
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+Local variable gen.i.i created at:
+ bch2_bucket_alloc_freelist fs/bcachefs/alloc_foreground.c:442 [inline]
+ bch2_bucket_alloc_trans+0x1fb2/0x3280 fs/bcachefs/alloc_foreground.c:574
+ bch2_bucket_alloc_set_trans+0x935/0x1620 fs/bcachefs/alloc_foreground.c:730
+
+CPU: 1 UID: 0 PID: 4283 Comm: kworker/u8:21 Not tainted 6.14.0-syzkaller-01103-g2df0c02dab82 #0 PREEMPT(undef) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Workqueue: btree_node_rewrite async_btree_node_rewrite_work
+=====================================================

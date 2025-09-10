@@ -1,0 +1,165 @@
+RAX: ffffffffffffffda RBX: 00007fff388f87d0 RCX: 00007f14c7b0b6e9
+RDX: 0000200000000200 RSI: 0000000000003ba0 RDI: 0000000000000003
+RBP: 0000000000000002 R08: 00007fff388f8556 R09: 00000000000000a0
+R10: 0000000000000002 R11: 0000000000000246 R12: 00007fff388f87cc
+R13: 431bde82d7b634db R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+iommufd_mock iommufd_mock0: Adding to iommu group 0
+==================================================================
+BUG: KASAN: slab-use-after-free in software_node_notify_remove+0x1bc/0x1c0 drivers/base/swnode.c:1108
+Read of size 1 at addr ffff888033c08908 by task syz-executor105/5844
+
+CPU: 0 UID: 0 PID: 5844 Comm: syz-executor105 Not tainted 6.14.0-syzkaller-12456-gacc4d5ff0b61 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0x16e/0x5b0 mm/kasan/report.c:521
+ kasan_report+0x143/0x180 mm/kasan/report.c:634
+ software_node_notify_remove+0x1bc/0x1c0 drivers/base/swnode.c:1108
+ device_platform_notify_remove drivers/base/core.c:2387 [inline]
+ device_del+0x594/0x9b0 drivers/base/core.c:3858
+ device_unregister+0x20/0xc0 drivers/base/core.c:3896
+ mock_dev_destroy drivers/iommu/iommufd/selftest.c:960 [inline]
+ iommufd_test_mock_domain drivers/iommu/iommufd/selftest.c:1022 [inline]
+ iommufd_test+0x3715/0x56a0 drivers/iommu/iommufd/selftest.c:1866
+ iommufd_fops_ioctl+0x4fc/0x610 drivers/iommu/iommufd/main.c:419
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl+0xf1/0x160 fs/ioctl.c:892
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f14c7b0b6e9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 a1 1a 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff388f87b8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007fff388f87d0 RCX: 00007f14c7b0b6e9
+RDX: 0000200000000200 RSI: 0000000000003ba0 RDI: 0000000000000003
+RBP: 0000000000000002 R08: 00007fff388f8556 R09: 00000000000000a0
+R10: 0000000000000002 R11: 0000000000000246 R12: 00007fff388f87cc
+R13: 431bde82d7b634db R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+Allocated by task 5844:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0x9d/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __kmalloc_cache_noprof+0x236/0x370 mm/slub.c:4362
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ swnode_register+0x5a/0x540 drivers/base/swnode.c:790
+ fwnode_create_software_node+0x199/0x1f0 drivers/base/swnode.c:949
+ device_create_managed_software_node+0xd5/0x1f0 drivers/base/swnode.c:1060
+ mock_dev_create drivers/iommu/iommufd/selftest.c:942 [inline]
+ iommufd_test_mock_domain drivers/iommu/iommufd/selftest.c:989 [inline]
+ iommufd_test+0x3335/0x56a0 drivers/iommu/iommufd/selftest.c:1866
+ iommufd_fops_ioctl+0x4fc/0x610 drivers/iommu/iommufd/main.c:419
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl+0xf1/0x160 fs/ioctl.c:892
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 5844:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:576
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x59/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2389 [inline]
+ slab_free mm/slub.c:4646 [inline]
+ kfree+0x198/0x430 mm/slub.c:4845
+ kobject_cleanup lib/kobject.c:689 [inline]
+ kobject_release lib/kobject.c:720 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ kobject_put+0x22f/0x480 lib/kobject.c:737
+ software_node_notify_remove+0x159/0x1c0 drivers/base/swnode.c:1106
+ device_platform_notify_remove drivers/base/core.c:2387 [inline]
+ device_del+0x594/0x9b0 drivers/base/core.c:3858
+ device_unregister+0x20/0xc0 drivers/base/core.c:3896
+ mock_dev_destroy drivers/iommu/iommufd/selftest.c:960 [inline]
+ iommufd_test_mock_domain drivers/iommu/iommufd/selftest.c:1022 [inline]
+ iommufd_test+0x3715/0x56a0 drivers/iommu/iommufd/selftest.c:1866
+ iommufd_fops_ioctl+0x4fc/0x610 drivers/iommu/iommufd/main.c:419
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl+0xf1/0x160 fs/ioctl.c:892
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff888033c08800
+ which belongs to the cache kmalloc-512 of size 512
+The buggy address is located 264 bytes inside of
+ freed 512-byte region [ffff888033c08800, ffff888033c08a00)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x33c08
+head: order:2 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000000040(head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000040 ffff88801b041c80 dead000000000100 dead000000000122
+raw: 0000000000000000 0000000000100010 00000000f5000000 0000000000000000
+head: 00fff00000000040 ffff88801b041c80 dead000000000100 dead000000000122
+head: 0000000000000000 0000000000100010 00000000f5000000 0000000000000000
+head: 00fff00000000002 ffffea0000cf0201 00000000ffffffff 00000000ffffffff
+head: ffffffffffffffff 0000000000000000 00000000ffffffff 0000000000000004
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 2, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 5212, tgid 5212 (udevadm), ts 38306058830, free_ts 27744191802
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f4/0x240 mm/page_alloc.c:1717
+ prep_new_page mm/page_alloc.c:1725 [inline]
+ get_page_from_freelist+0x352b/0x36c0 mm/page_alloc.c:3652
+ __alloc_frozen_pages_noprof+0x211/0x5b0 mm/page_alloc.c:4934
+ alloc_pages_mpol+0x339/0x690 mm/mempolicy.c:2301
+ alloc_slab_page mm/slub.c:2459 [inline]
+ allocate_slab+0x8f/0x3a0 mm/slub.c:2623
+ new_slab mm/slub.c:2676 [inline]
+ ___slab_alloc+0xc3b/0x1500 mm/slub.c:3862
+ __slab_alloc+0x58/0xa0 mm/slub.c:3952
+ __slab_alloc_node mm/slub.c:4027 [inline]
+ slab_alloc_node mm/slub.c:4188 [inline]
+ __kmalloc_cache_noprof+0x26a/0x370 mm/slub.c:4357
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ kernfs_fop_open+0x3a3/0xdf0 fs/kernfs/file.c:623
+ do_dentry_open+0xdec/0x1960 fs/open.c:956
+ vfs_open+0x3b/0x370 fs/open.c:1086
+ do_open fs/namei.c:3845 [inline]
+ path_openat+0x2caf/0x35d0 fs/namei.c:4004
+ do_filp_open+0x284/0x4e0 fs/namei.c:4031
+ do_sys_openat2+0x12b/0x1d0 fs/open.c:1429
+ do_sys_open fs/open.c:1444 [inline]
+ __do_sys_openat fs/open.c:1460 [inline]
+ __se_sys_openat fs/open.c:1455 [inline]
+ __x64_sys_openat+0x249/0x2a0 fs/open.c:1455
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+page last free pid 10 tgid 10 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1262 [inline]
+ __free_frozen_pages+0xde8/0x10a0 mm/page_alloc.c:2680
+ vfree+0x1c3/0x360 mm/vmalloc.c:3383
+ delayed_vfree_work+0x56/0x80 mm/vmalloc.c:3303
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xac3/0x18e0 kernel/workqueue.c:3319
+ worker_thread+0x870/0xd50 kernel/workqueue.c:3400
+ kthread+0x7b7/0x940 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+Memory state around the buggy address:
+ ffff888033c08800: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888033c08880: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888033c08900: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                      ^
+ ffff888033c08980: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888033c08a00: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

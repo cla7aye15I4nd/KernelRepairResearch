@@ -1,0 +1,32 @@
+id: 8c4a14856e657b43487c
+bug_link: https://syzkaller.appspot.com/bug?extid=8c4a14856e657b43487c
+title: WARNING in percpu_ref_exit (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 80ad894382bf1d73eb688c29714fa10c0afcf2e7
+fix_commit: c1e2148f8ecb26863b899d402a823dab8e26efd1
+datetime: '2020-03-06T10:15:21-07:00'
+fix_commit_message: "io_uring: free fixed_file_data after RCU grace period\n\nThe\
+  \ percpu refcount protects this structure, and we can have an atomic\nswitch in\
+  \ progress when exiting. This makes it unsafe to just free the\nstruct normally,\
+  \ and can trigger the following KASAN warning:\n\nBUG: KASAN: use-after-free in\
+  \ percpu_ref_switch_to_atomic_rcu+0xfa/0x1b0\nRead of size 1 at addr ffff888181a19a30\
+  \ by task swapper/0/0\n\nCPU: 0 PID: 0 Comm: swapper/0 Not tainted 5.6.0-rc4+ #5747\n\
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1ubuntu1 04/01/2014\n\
+  Call Trace:\n <IRQ>\n dump_stack+0x76/0xa0\n print_address_description.constprop.0+0x3b/0x60\n\
+  \ ? percpu_ref_switch_to_atomic_rcu+0xfa/0x1b0\n ? percpu_ref_switch_to_atomic_rcu+0xfa/0x1b0\n\
+  \ __kasan_report.cold+0x1a/0x3d\n ? percpu_ref_switch_to_atomic_rcu+0xfa/0x1b0\n\
+  \ percpu_ref_switch_to_atomic_rcu+0xfa/0x1b0\n rcu_core+0x370/0x830\n ? percpu_ref_exit+0x50/0x50\n\
+  \ ? rcu_note_context_switch+0x7b0/0x7b0\n ? run_rebalance_domains+0x11d/0x140\n\
+  \ __do_softirq+0x10a/0x3e9\n irq_exit+0xd5/0xe0\n smp_apic_timer_interrupt+0x86/0x200\n\
+  \ apic_timer_interrupt+0xf/0x20\n </IRQ>\nRIP: 0010:default_idle+0x26/0x1f0\n\n\
+  Fix this by punting the final exit and free of the struct to RCU, then\nwe know\
+  \ that it's safe to do so. Jann suggested the approach of using a\ndouble rcu callback\
+  \ to achieve this. It's important that we do a nested\ncall_rcu() callback, as otherwise\
+  \ the free could be ordered before the\natomic switch, even if the latter was already\
+  \ queued.\n\nReported-by: syzbot+e017e49c39ab484ac87a@syzkaller.appspotmail.com\n\
+  Suggested-by: Jann Horn <jannh@google.com>\nReviewed-by: Paul E. McKenney <paulmck@kernel.org>\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 3
+covered_count: 2

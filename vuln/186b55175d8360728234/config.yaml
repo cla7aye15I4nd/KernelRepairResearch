@@ -1,0 +1,23 @@
+id: 186b55175d8360728234
+bug_link: https://syzkaller.appspot.com/bug?extid=186b55175d8360728234
+title: possible deadlock in stack_depot_put
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a914d8d6cf204287aa2dfb9235d29d7944ad72a1
+fix_commit: a414d4286f3400aa05631c4931eb3feba83e29e8
+datetime: '2023-12-29T11:58:41-08:00'
+fix_commit_message: "kasan: handle concurrent kasan_record_aux_stack calls\n\nkasan_record_aux_stack\
+  \ can be called concurrently on the same object. \nThis might lead to a race condition\
+  \ when rotating the saved aux stack\ntrace handles, which in turns leads to incorrect\
+  \ accounting of stack depot\nhandles and refcount underflows in the stack depot\
+  \ code.\n\nFix by introducing a raw spinlock to protect the aux stack trace handles\n\
+  in kasan_record_aux_stack.\n\nLink: https://lkml.kernel.org/r/1606b960e2f746862d1f459515972f9695bf448a.1703020707.git.andreyknvl@google.com\n\
+  Fixes: 773688a6cb24 (\"kasan: use stack_depot_put for Generic mode\")\nSigned-off-by:\
+  \ Andrey Konovalov <andreyknvl@google.com>\nReported-by: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>\n\
+  Reported-by: syzbot+186b55175d8360728234@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/all/000000000000784b1c060b0074a2@google.com/\n\
+  Reviewed-by: Marco Elver <elver@google.com>\nCc: Alexander Potapenko <glider@google.com>\n\
+  Cc: Dmitry Vyukov <dvyukov@google.com>\nCc: Evgenii Stepanov <eugenis@google.com>\n\
+  Cc: Vlastimil Babka <vbabka@suse.cz>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm/kasan
+hunk_count: 6
+covered_count: 4

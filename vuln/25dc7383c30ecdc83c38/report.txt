@@ -1,0 +1,75 @@
+divide error: 0000 [#1] PREEMPT SMP KASAN
+CPU: 1 PID: 5053 Comm: syz-executor178 Not tainted 6.6.0-rc6-next-20231023-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/06/2023
+RIP: 0010:iommufd_test_dirty drivers/iommu/iommufd/selftest.c:1098 [inline]
+RIP: 0010:iommufd_test+0x1fd/0x35c0 drivers/iommu/iommufd/selftest.c:1203
+Code: 04 02 48 89 4c 24 28 84 c0 74 09 3c 03 7f 05 e8 69 ac 2f fd 48 8b 04 24 31 d2 31 ff 48 8b 5c 24 20 44 8b 68 08 48 8b 44 24 28 <48> f7 f3 48 89 d5 48 89 d6 e8 85 cf d8 fc 48 85 ed 0f 85 ce 22 00
+RSP: 0018:ffffc90003937cb0 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: ffffffff84affaf2 RDI: 0000000000000000
+RBP: 000000000000000d R08: 0000000000000005 R09: 000000000000000d
+R10: 000000000000000d R11: 0000000000000000 R12: 0000000000000000
+R13: 0000000000000000 R14: ffffc90003937e40 R15: ffffc90003937e00
+FS:  00005555560d7380(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000020006000 CR3: 0000000075a85000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ iommufd_fops_ioctl+0x35a/0x4e0 drivers/iommu/iommufd/main.c:404
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:871 [inline]
+ __se_sys_ioctl fs/ioctl.c:857 [inline]
+ __x64_sys_ioctl+0x18f/0x210 fs/ioctl.c:857
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x3f/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x62/0x6a
+RIP: 0033:0x7f5fb02172e9
+Code: 48 83 c4 28 c3 e8 37 17 00 00 0f 1f 80 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd74d26068 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007ffd74d26238 RCX: 00007f5fb02172e9
+RDX: 0000000020000140 RSI: 0000000000003ba0 RDI: 0000000000000003
+RBP: 00007f5fb028a610 R08: 0000000000000000 R09: 00007ffd74d26238
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffd74d26228 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:iommufd_test_dirty drivers/iommu/iommufd/selftest.c:1098 [inline]
+RIP: 0010:iommufd_test+0x1fd/0x35c0 drivers/iommu/iommufd/selftest.c:1203
+Code: 04 02 48 89 4c 24 28 84 c0 74 09 3c 03 7f 05 e8 69 ac 2f fd 48 8b 04 24 31 d2 31 ff 48 8b 5c 24 20 44 8b 68 08 48 8b 44 24 28 <48> f7 f3 48 89 d5 48 89 d6 e8 85 cf d8 fc 48 85 ed 0f 85 ce 22 00
+RSP: 0018:ffffc90003937cb0 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: ffffffff84affaf2 RDI: 0000000000000000
+RBP: 000000000000000d R08: 0000000000000005 R09: 000000000000000d
+R10: 000000000000000d R11: 0000000000000000 R12: 0000000000000000
+R13: 0000000000000000 R14: ffffc90003937e40 R15: ffffc90003937e00
+FS:  00005555560d7380(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000020006000 CR3: 0000000075a85000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	04 02                	add    $0x2,%al
+   2:	48 89 4c 24 28       	mov    %rcx,0x28(%rsp)
+   7:	84 c0                	test   %al,%al
+   9:	74 09                	je     0x14
+   b:	3c 03                	cmp    $0x3,%al
+   d:	7f 05                	jg     0x14
+   f:	e8 69 ac 2f fd       	call   0xfd2fac7d
+  14:	48 8b 04 24          	mov    (%rsp),%rax
+  18:	31 d2                	xor    %edx,%edx
+  1a:	31 ff                	xor    %edi,%edi
+  1c:	48 8b 5c 24 20       	mov    0x20(%rsp),%rbx
+  21:	44 8b 68 08          	mov    0x8(%rax),%r13d
+  25:	48 8b 44 24 28       	mov    0x28(%rsp),%rax
+* 2a:	48 f7 f3             	div    %rbx <-- trapping instruction
+  2d:	48 89 d5             	mov    %rdx,%rbp
+  30:	48 89 d6             	mov    %rdx,%rsi
+  33:	e8 85 cf d8 fc       	call   0xfcd8cfbd
+  38:	48 85 ed             	test   %rbp,%rbp
+  3b:	0f                   	.byte 0xf
+  3c:	85 ce                	test   %ecx,%esi
+  3e:	22 00                	and    (%rax),%al

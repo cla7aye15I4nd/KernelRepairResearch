@@ -1,0 +1,50 @@
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/bkey.c:272!
+Oops: invalid opcode: 0000 [#1] SMP KASAN PTI
+CPU: 0 UID: 0 PID: 6422 Comm: read_btree_node Not tainted 6.16.0-rc1-syzkaller-00004-gaef17cb3d3c4 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:__bch2_bkey_unpack_key+0xdeb/0xe10 fs/bcachefs/bkey.c:272
+Code: 51 d7 00 e9 f3 f9 ff ff e8 72 07 a8 fd 48 c7 c7 f0 de 75 8e 48 89 ee 4c 89 f2 e8 a0 51 d7 00 e9 2e fb ff ff e8 56 07 a8 fd 90 <0f> 0b e8 4e 07 a8 fd 90 0f 0b e8 46 07 a8 fd 90 0f 0b e8 3e 07 a8
+RSP: 0018:ffffc9000e7169d8 EFLAGS: 00010293
+RAX: ffffffff8418469a RBX: 0000000000000003 RCX: ffff888025599e00
+RDX: 0000000000000000 RSI: 0000000000000046 RDI: 0000000000000006
+RBP: 0000000000000046 R08: ffffc9000e716c6f R09: 0000000000000000
+R10: ffffc9000e716c50 R11: fffff52001ce2d8e R12: ffffc9000e716c50
+R13: ffff888057681028 R14: ffff8880547d90c1 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff888125c86000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055555adf75c8 CR3: 000000007e3c2000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __bch2_bkey_compat+0x4db/0xbd0 fs/bcachefs/bkey_methods.c:480
+ bch2_bkey_compat fs/bcachefs/bkey_methods.h:134 [inline]
+ validate_bset_keys+0x5b7/0x1480 fs/bcachefs/btree_io.c:983
+ bch2_btree_node_read_done+0x1d3c/0x5150 fs/bcachefs/btree_io.c:1211
+ btree_node_read_work+0x426/0xe30 fs/bcachefs/btree_io.c:1399
+ bch2_btree_node_read+0x887/0x2a00 fs/bcachefs/btree_io.c:-1
+ bch2_btree_node_fill+0xd12/0x14f0 fs/bcachefs/btree_cache.c:994
+ bch2_btree_node_get_noiter+0xa2c/0x1000 fs/bcachefs/btree_cache.c:1261
+ found_btree_node_is_readable fs/bcachefs/btree_node_scan.c:85 [inline]
+ try_read_btree_node fs/bcachefs/btree_node_scan.c:220 [inline]
+ read_btree_nodes_worker+0x1319/0x1e20 fs/bcachefs/btree_node_scan.c:269
+ kthread+0x70e/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__bch2_bkey_unpack_key+0xdeb/0xe10 fs/bcachefs/bkey.c:272
+Code: 51 d7 00 e9 f3 f9 ff ff e8 72 07 a8 fd 48 c7 c7 f0 de 75 8e 48 89 ee 4c 89 f2 e8 a0 51 d7 00 e9 2e fb ff ff e8 56 07 a8 fd 90 <0f> 0b e8 4e 07 a8 fd 90 0f 0b e8 46 07 a8 fd 90 0f 0b e8 3e 07 a8
+RSP: 0018:ffffc9000e7169d8 EFLAGS: 00010293
+RAX: ffffffff8418469a RBX: 0000000000000003 RCX: ffff888025599e00
+RDX: 0000000000000000 RSI: 0000000000000046 RDI: 0000000000000006
+RBP: 0000000000000046 R08: ffffc9000e716c6f R09: 0000000000000000
+R10: ffffc9000e716c50 R11: fffff52001ce2d8e R12: ffffc9000e716c50
+R13: ffff888057681028 R14: ffff8880547d90c1 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff888125c86000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffe50246f98 CR3: 0000000077018000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

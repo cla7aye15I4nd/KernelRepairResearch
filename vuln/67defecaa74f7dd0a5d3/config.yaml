@@ -1,0 +1,54 @@
+id: 67defecaa74f7dd0a5d3
+bug_link: https://syzkaller.appspot.com/bug?extid=67defecaa74f7dd0a5d3
+title: 'INFO: rcu detected stall in security_file_ioctl (8)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 56a5cf538c3f2d935b0d81040a8303b6e7fc5fd8
+fix_commit: e634134180885574d1fe7aa162777ba41e7fcd5b
+datetime: '2024-05-28T19:46:41-07:00'
+fix_commit_message: 'net/sched: taprio: make q->picos_per_byte available to fill_sched_entry()
+
+
+  In commit b5b73b26b3ca ("taprio: Fix allowing too small intervals"), a
+
+  comparison of user input against length_to_duration(q, ETH_ZLEN) was
+
+  introduced, to avoid RCU stalls due to frequent hrtimers.
+
+
+  The implementation of length_to_duration() depends on q->picos_per_byte
+
+  being set for the link speed. The blamed commit in the Fixes: tag has
+
+  moved this too late, so the checks introduced above are ineffective.
+
+  The q->picos_per_byte is zero at parse_taprio_schedule() ->
+
+  parse_sched_list() -> parse_sched_entry() -> fill_sched_entry() time.
+
+
+  Move the taprio_set_picos_per_byte() call as one of the first things in
+
+  taprio_change(), before the bulk of the netlink attribute parsing is
+
+  done. That''s because it is needed there.
+
+
+  Add a selftest to make sure the issue doesn''t get reintroduced.
+
+
+  Fixes: 09dbdf28f9f9 ("net/sched: taprio: fix calculation of maximum gate durations")
+
+  Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+
+  Reviewed-by: Eric Dumazet <edumazet@google.com>
+
+  Link: https://lore.kernel.org/r/20240527153955.553333-1-vladimir.oltean@nxp.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/sched
+- tools/testing/selftests/tc-testing/tc-tests/qdiscs
+hunk_count: 3
+covered_count: 0

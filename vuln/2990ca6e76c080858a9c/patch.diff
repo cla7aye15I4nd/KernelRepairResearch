@@ -1,0 +1,115 @@
+diff --git a/include/trace/events/initcall.h b/include/trace/events/initcall.h
+new file mode 100644
+index 000000000000..8d6cf10d27c9
+--- /dev/null
++++ b/include/trace/events/initcall.h
+@@ -0,0 +1,66 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM initcall
++
++#if !defined(_TRACE_INITCALL_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _TRACE_INITCALL_H
++
++#include <linux/tracepoint.h>
++
++TRACE_EVENT(initcall_level,
++
++	TP_PROTO(const char *level),
++
++	TP_ARGS(level),
++
++	TP_STRUCT__entry(
++		__string(level, level)
++	),
++
++	TP_fast_assign(
++		__assign_str(level, level);
++	),
++
++	TP_printk("level=%s", __get_str(level))
++);
++
++TRACE_EVENT(initcall_start,
++
++	TP_PROTO(initcall_t func),
++
++	TP_ARGS(func),
++
++	TP_STRUCT__entry(
++		__field(initcall_t, func)
++	),
++
++	TP_fast_assign(
++		__entry->func = func;
++	),
++
++	TP_printk("func=%pS", __entry->func)
++);
++
++TRACE_EVENT(initcall_finish,
++
++	TP_PROTO(initcall_t func, int ret),
++
++	TP_ARGS(func, ret),
++
++	TP_STRUCT__entry(
++		__field(initcall_t,	func)
++		__field(int,		ret)
++	),
++
++	TP_fast_assign(
++		__entry->func = func;
++		__entry->ret = ret;
++	),
++
++	TP_printk("func=%pS ret=%d", __entry->func, __entry->ret)
++);
++
++#endif /* if !defined(_TRACE_GPIO_H) || defined(TRACE_HEADER_MULTI_READ) */
++
++/* This part must be outside protection */
++#include <trace/define_trace.h>
+diff --git a/init/main.c b/init/main.c
+index 0ebdd5f15be8..2af8f2bb5ca8 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -97,6 +97,9 @@
+ #include <asm/sections.h>
+ #include <asm/cacheflush.h>
+ 
++#define CREATE_TRACE_POINTS
++#include <trace/events/initcall.h>
++
+ static int kernel_init(void *);
+ 
+ extern void init_IRQ(void);
+@@ -827,10 +830,12 @@ int __init_or_module do_one_initcall(initcall_t fn)
+ 	if (initcall_blacklisted(fn))
+ 		return -EPERM;
+ 
++	trace_initcall_start(fn);
+ 	if (initcall_debug)
+ 		ret = do_one_initcall_debug(fn);
+ 	else
+ 		ret = fn();
++	trace_initcall_finish(fn, ret);
+ 
+ 	msgbuf[0] = 0;
+ 
+@@ -895,6 +900,7 @@ static void __init do_initcall_level(int level)
+ 		   level, level,
+ 		   NULL, &repair_env_string);
+ 
++	trace_initcall_level(initcall_level_names[level]);
+ 	for (fn = initcall_levels[level]; fn < initcall_levels[level+1]; fn++)
+ 		do_one_initcall(*fn);
+ }
+@@ -929,6 +935,7 @@ static void __init do_pre_smp_initcalls(void)
+ {
+ 	initcall_t *fn;
+ 
++	trace_initcall_level("early");
+ 	for (fn = __initcall_start; fn < __initcall0_start; fn++)
+ 		do_one_initcall(*fn);
+ }

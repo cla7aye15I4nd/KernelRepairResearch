@@ -1,0 +1,140 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.14.0-rc7-syzkaller-ga2392f333575 #0 Not tainted
+------------------------------------------------------
+syz-executor365/6438 is trying to acquire lock:
+ffff0000dc410aa8 (&smc->clcsock_release_lock){+.+.}-{4:4}, at: smc_switch_to_fallback+0x48/0xa7c net/smc/af_smc.c:903
+
+but task is already holding lock:
+ffff0000dc410258 (sk_lock-AF_INET){+.+.}-{0:0}, at: lock_sock include/net/sock.h:1624 [inline]
+ffff0000dc410258 (sk_lock-AF_INET){+.+.}-{0:0}, at: smc_sendmsg+0x60/0x9f8 net/smc/af_smc.c:2775
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (sk_lock-AF_INET){+.+.}-{0:0}:
+       lock_sock_nested net/core/sock.c:3662 [inline]
+       lock_sock include/net/sock.h:1624 [inline]
+       sockopt_lock_sock+0x88/0x148 net/core/sock.c:1133
+       do_ip_setsockopt+0x138c/0x32c0 net/ipv4/ip_sockglue.c:1078
+       ip_setsockopt+0x80/0x128 net/ipv4/ip_sockglue.c:1417
+       raw_setsockopt+0xfc/0x290 net/ipv4/raw.c:845
+       sock_common_setsockopt+0xb0/0xcc net/core/sock.c:3854
+       do_sock_setsockopt+0x2a0/0x4e0 net/socket.c:2303
+       __sys_setsockopt net/socket.c:2328 [inline]
+       __do_sys_setsockopt net/socket.c:2334 [inline]
+       __se_sys_setsockopt net/socket.c:2331 [inline]
+       __arm64_sys_setsockopt+0x170/0x1e0 net/socket.c:2331
+       __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+       invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+       el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+       do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+       el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+       el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+       el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+
+-> #1 (rtnl_mutex){+.+.}-{4:4}:
+       __mutex_lock_common+0x1f0/0x24b8 kernel/locking/mutex.c:585
+       __mutex_lock kernel/locking/mutex.c:730 [inline]
+       mutex_lock_nested+0x2c/0x38 kernel/locking/mutex.c:782
+       rtnl_lock+0x20/0x2c net/core/rtnetlink.c:79
+       start_sync_thread+0xe0/0x24bc net/netfilter/ipvs/ip_vs_sync.c:1761
+       do_ip_vs_set_ctl+0x550/0xd70 net/netfilter/ipvs/ip_vs_ctl.c:2732
+       nf_setsockopt+0x270/0x290 net/netfilter/nf_sockopt.c:101
+       ip_setsockopt+0x118/0x128 net/ipv4/ip_sockglue.c:1424
+       tcp_setsockopt+0xcc/0xe8 net/ipv4/tcp.c:4043
+       sock_common_setsockopt+0xb0/0xcc net/core/sock.c:3854
+       smc_setsockopt+0x1f8/0xd0c net/smc/af_smc.c:3081
+       do_sock_setsockopt+0x2a0/0x4e0 net/socket.c:2303
+       __sys_setsockopt net/socket.c:2328 [inline]
+       __do_sys_setsockopt net/socket.c:2334 [inline]
+       __se_sys_setsockopt net/socket.c:2331 [inline]
+       __arm64_sys_setsockopt+0x170/0x1e0 net/socket.c:2331
+       __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+       invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+       el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+       do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+       el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+       el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+       el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+
+-> #0 (&smc->clcsock_release_lock){+.+.}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3163 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3282 [inline]
+       validate_chain kernel/locking/lockdep.c:3906 [inline]
+       __lock_acquire+0x34f0/0x7904 kernel/locking/lockdep.c:5228
+       lock_acquire+0x23c/0x724 kernel/locking/lockdep.c:5851
+       __mutex_lock_common+0x1f0/0x24b8 kernel/locking/mutex.c:585
+       __mutex_lock kernel/locking/mutex.c:730 [inline]
+       mutex_lock_nested+0x2c/0x38 kernel/locking/mutex.c:782
+       smc_switch_to_fallback+0x48/0xa7c net/smc/af_smc.c:903
+       smc_sendmsg+0xfc/0x9f8 net/smc/af_smc.c:2781
+       sock_sendmsg_nosec net/socket.c:718 [inline]
+       __sock_sendmsg net/socket.c:733 [inline]
+       __sys_sendto+0x360/0x4d8 net/socket.c:2187
+       __do_sys_sendto net/socket.c:2194 [inline]
+       __se_sys_sendto net/socket.c:2190 [inline]
+       __arm64_sys_sendto+0xd8/0xf8 net/socket.c:2190
+       __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+       invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+       el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+       do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+       el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+       el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+       el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+
+other info that might help us debug this:
+
+Chain exists of:
+  &smc->clcsock_release_lock --> rtnl_mutex --> sk_lock-AF_INET
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(sk_lock-AF_INET);
+                               lock(rtnl_mutex);
+                               lock(sk_lock-AF_INET);
+  lock(&smc->clcsock_release_lock);
+
+ *** DEADLOCK ***
+
+1 lock held by syz-executor365/6438:
+ #0: ffff0000dc410258 (sk_lock-AF_INET){+.+.}-{0:0}, at: lock_sock include/net/sock.h:1624 [inline]
+ #0: ffff0000dc410258 (sk_lock-AF_INET){+.+.}-{0:0}, at: smc_sendmsg+0x60/0x9f8 net/smc/af_smc.c:2775
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 6438 Comm: syz-executor365 Not tainted 6.14.0-rc7-syzkaller-ga2392f333575 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call trace:
+ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:466 (C)
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0xe4/0x150 lib/dump_stack.c:120
+ dump_stack+0x1c/0x28 lib/dump_stack.c:129
+ print_circular_bug+0x154/0x1c0 kernel/locking/lockdep.c:2076
+ check_noncircular+0x310/0x404 kernel/locking/lockdep.c:2208
+ check_prev_add kernel/locking/lockdep.c:3163 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3282 [inline]
+ validate_chain kernel/locking/lockdep.c:3906 [inline]
+ __lock_acquire+0x34f0/0x7904 kernel/locking/lockdep.c:5228
+ lock_acquire+0x23c/0x724 kernel/locking/lockdep.c:5851
+ __mutex_lock_common+0x1f0/0x24b8 kernel/locking/mutex.c:585
+ __mutex_lock kernel/locking/mutex.c:730 [inline]
+ mutex_lock_nested+0x2c/0x38 kernel/locking/mutex.c:782
+ smc_switch_to_fallback+0x48/0xa7c net/smc/af_smc.c:903
+ smc_sendmsg+0xfc/0x9f8 net/smc/af_smc.c:2781
+ sock_sendmsg_nosec net/socket.c:718 [inline]
+ __sock_sendmsg net/socket.c:733 [inline]
+ __sys_sendto+0x360/0x4d8 net/socket.c:2187
+ __do_sys_sendto net/socket.c:2194 [inline]
+ __se_sys_sendto net/socket.c:2190 [inline]
+ __arm64_sys_sendto+0xd8/0xf8 net/socket.c:2190
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+ el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600

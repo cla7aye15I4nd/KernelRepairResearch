@@ -1,0 +1,35 @@
+id: 6d532fa8f9463da290bc
+bug_link: https://syzkaller.appspot.com/bug?extid=6d532fa8f9463da290bc
+title: 'KMSAN: kernel-infoleak in ucma_init_qp_attr'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7694a7de22c53a312ea98960fcafc6ec62046531
+fix_commit: b35a0f4dd544eaa6162b6d2f13a2557a121ae5fd
+datetime: '2022-01-05T16:30:19-04:00'
+fix_commit_message: "RDMA/core: Don't infoleak GRH fields\n\nIf dst->is_global field\
+  \ is not set, the GRH fields are not cleared\nand the following infoleak is reported.\n\
+  \n=====================================================\nBUG: KMSAN: kernel-infoleak\
+  \ in instrument_copy_to_user include/linux/instrumented.h:121 [inline]\nBUG: KMSAN:\
+  \ kernel-infoleak in _copy_to_user+0x1c9/0x270 lib/usercopy.c:33\n instrument_copy_to_user\
+  \ include/linux/instrumented.h:121 [inline]\n _copy_to_user+0x1c9/0x270 lib/usercopy.c:33\n\
+  \ copy_to_user include/linux/uaccess.h:209 [inline]\n ucma_init_qp_attr+0x8c7/0xb10\
+  \ drivers/infiniband/core/ucma.c:1242\n ucma_write+0x637/0x6c0 drivers/infiniband/core/ucma.c:1732\n\
+  \ vfs_write+0x8ce/0x2030 fs/read_write.c:588\n ksys_write+0x28b/0x510 fs/read_write.c:643\n\
+  \ __do_sys_write fs/read_write.c:655 [inline]\n __se_sys_write fs/read_write.c:652\
+  \ [inline]\n __ia32_sys_write+0xdb/0x120 fs/read_write.c:652\n do_syscall_32_irqs_on\
+  \ arch/x86/entry/common.c:114 [inline]\n __do_fast_syscall_32+0x96/0xf0 arch/x86/entry/common.c:180\n\
+  \ do_fast_syscall_32+0x34/0x70 arch/x86/entry/common.c:205\n do_SYSENTER_32+0x1b/0x20\
+  \ arch/x86/entry/common.c:248\n entry_SYSENTER_compat_after_hwframe+0x4d/0x5c\n\n\
+  Local variable resp created at:\n ucma_init_qp_attr+0xa4/0xb10 drivers/infiniband/core/ucma.c:1214\n\
+  \ ucma_write+0x637/0x6c0 drivers/infiniband/core/ucma.c:1732\n\nBytes 40-59 of 144\
+  \ are uninitialized\nMemory access of size 144 starts at ffff888167523b00\nData\
+  \ copied to user address 0000000020000100\n\nCPU: 1 PID: 25910 Comm: syz-executor.1\
+  \ Not tainted 5.16.0-rc5-syzkaller #0\nHardware name: Google Google Compute Engine/Google\
+  \ Compute Engine, BIOS Google 01/01/2011\n=====================================================\n\
+  \nFixes: 4ba66093bdc6 (\"IB/core: Check for global flag when using ah_attr\")\n\
+  Link: https://lore.kernel.org/r/0e9dd51f93410b7b2f4f5562f52befc878b71afa.1641298868.git.leonro@nvidia.com\n\
+  Reported-by: syzbot+6d532fa8f9463da290bc@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Leon Romanovsky <leonro@nvidia.com>\nSigned-off-by: Jason Gunthorpe <jgg@nvidia.com>\n"
+submodule:
+- drivers/infiniband/core
+hunk_count: 1
+covered_count: 0

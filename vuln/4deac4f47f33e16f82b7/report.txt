@@ -1,0 +1,66 @@
+bcachefs (loop0): flushing journal and stopping allocators complete, journal seq 15
+bcachefs (loop0): unshutdown complete, journal seq 16
+bcachefs (loop0): done going read-only, filesystem not clean
+bcachefs (loop0): shutdown complete
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/btree_cache.c:614!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 UID: 0 PID: 5829 Comm: syz-executor284 Not tainted 6.12.0-rc7-syzkaller-00042-gf1b785f4c787 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/30/2024
+RIP: 0010:bch2_fs_btree_cache_exit+0x1521/0x1530 fs/bcachefs/btree_cache.c:613
+Code: fd 90 0f 0b e8 60 09 84 fd 90 0f 0b e8 58 09 84 fd 90 0f 0b e8 50 09 84 fd 90 0f 0b e8 48 09 84 fd 90 0f 0b e8 40 09 84 fd 90 <0f> 0b 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 00 90 90 90 90 90 90 90
+RSP: 0018:ffffc90003687b18 EFLAGS: 00010293
+RAX: ffffffff8410e070 RBX: 0000000000000002 RCX: ffff888030610000
+RDX: 0000000000000000 RSI: 0000000000000002 RDI: 0000000000000000
+RBP: ffff888034296000 R08: ffffffff8410d71c R09: 1ffff1100e4003b6
+R10: dffffc0000000000 R11: ffffed100e4003b7 R12: ffff888034296228
+R13: dffffc0000000000 R14: ffff888072001c78 R15: ffff888072000000
+FS:  0000555570aa63c0(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000555570aaf738 CR3: 00000000761f8000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __bch2_fs_free fs/bcachefs/super.c:556 [inline]
+ bch2_fs_release+0x20e/0x7d0 fs/bcachefs/super.c:610
+ kobject_cleanup lib/kobject.c:689 [inline]
+ kobject_release lib/kobject.c:720 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ kobject_put+0x22f/0x480 lib/kobject.c:737
+ deactivate_locked_super+0xc4/0x130 fs/super.c:473
+ cleanup_mnt+0x41f/0x4b0 fs/namespace.c:1373
+ task_work_run+0x24f/0x310 kernel/task_work.c:239
+ ptrace_notify+0x2d2/0x380 kernel/signal.c:2404
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]
+ syscall_exit_work+0xc6/0x190 kernel/entry/common.c:173
+ syscall_exit_to_user_mode_prepare kernel/entry/common.c:200 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:205 [inline]
+ syscall_exit_to_user_mode+0x279/0x370 kernel/entry/common.c:218
+ do_syscall_64+0x100/0x230 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa1427f0d37
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffe330a6b78 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007fa1427f0d37
+RDX: 0000000000000000 RSI: 0000000000000009 RDI: 00007ffe330a6c30
+RBP: 00007ffe330a6c30 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffe330a7cf0
+R13: 0000555570aa7700 R14: 00007ffe330a7c94 R15: 00007ffe330a7d10
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_fs_btree_cache_exit+0x1521/0x1530 fs/bcachefs/btree_cache.c:613
+Code: fd 90 0f 0b e8 60 09 84 fd 90 0f 0b e8 58 09 84 fd 90 0f 0b e8 50 09 84 fd 90 0f 0b e8 48 09 84 fd 90 0f 0b e8 40 09 84 fd 90 <0f> 0b 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 00 90 90 90 90 90 90 90
+RSP: 0018:ffffc90003687b18 EFLAGS: 00010293
+RAX: ffffffff8410e070 RBX: 0000000000000002 RCX: ffff888030610000
+RDX: 0000000000000000 RSI: 0000000000000002 RDI: 0000000000000000
+RBP: ffff888034296000 R08: ffffffff8410d71c R09: 1ffff1100e4003b6
+R10: dffffc0000000000 R11: ffffed100e4003b7 R12: ffff888034296228
+R13: dffffc0000000000 R14: ffff888072001c78 R15: ffff888072000000
+FS:  0000555570aa63c0(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fa1428435d8 CR3: 00000000761f8000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

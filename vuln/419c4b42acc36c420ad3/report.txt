@@ -1,0 +1,49 @@
+==================================================================
+BUG: KCSAN: data-race in try_to_migrate_one / zap_page_range_single
+
+write to 0xffff88810005d8f8 of 8 bytes by task 8962 on cpu 1:
+ update_hiwater_rss include/linux/mm.h:2669 [inline]
+ zap_page_range_single+0x1a0/0x2f0 mm/memory.c:2012
+ unmap_mapping_range_vma mm/memory.c:3834 [inline]
+ unmap_mapping_range_tree mm/memory.c:3851 [inline]
+ unmap_mapping_pages mm/memory.c:3917 [inline]
+ unmap_mapping_range+0x15c/0x1a0 mm/memory.c:3954
+ shmem_fallocate+0x278/0x860 mm/shmem.c:3672
+ vfs_fallocate+0x368/0x3b0 fs/open.c:338
+ madvise_remove mm/madvise.c:1025 [inline]
+ madvise_vma_behavior mm/madvise.c:1260 [inline]
+ madvise_walk_vmas mm/madvise.c:1502 [inline]
+ do_madvise+0x14da/0x2ad0 mm/madvise.c:1689
+ __do_sys_madvise mm/madvise.c:1705 [inline]
+ __se_sys_madvise mm/madvise.c:1703 [inline]
+ __x64_sys_madvise+0x61/0x70 mm/madvise.c:1703
+ x64_sys_call+0x23ab/0x2dc0 arch/x86/include/generated/asm/syscalls_64.h:29
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff88810005d8f8 of 8 bytes by task 8928 on cpu 0:
+ update_hiwater_rss include/linux/mm.h:2668 [inline]
+ try_to_migrate_one+0x775/0x12e0 mm/rmap.c:2183
+ rmap_walk_file+0x272/0x3c0 mm/rmap.c:2708
+ try_to_migrate+0x108/0x150
+ migrate_folio_unmap mm/migrate.c:1320 [inline]
+ migrate_pages_batch+0x786/0x1930 mm/migrate.c:1866
+ migrate_pages_sync mm/migrate.c:1989 [inline]
+ migrate_pages+0xf02/0x1840 mm/migrate.c:2098
+ do_mbind mm/mempolicy.c:1394 [inline]
+ kernel_mbind mm/mempolicy.c:1537 [inline]
+ __do_sys_mbind mm/mempolicy.c:1611 [inline]
+ __se_sys_mbind+0xfd1/0x11c0 mm/mempolicy.c:1607
+ __x64_sys_mbind+0x78/0x90 mm/mempolicy.c:1607
+ x64_sys_call+0x2662/0x2dc0 arch/x86/include/generated/asm/syscalls_64.h:238
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x00000000000021af -> 0x00000000000021b9
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 8928 Comm: syz.4.2451 Not tainted 6.14.0-rc3-syzkaller-00012-g2408a807bfc3 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+==================================================================

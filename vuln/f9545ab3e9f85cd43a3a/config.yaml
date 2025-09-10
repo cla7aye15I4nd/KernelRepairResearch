@@ -1,0 +1,20 @@
+id: f9545ab3e9f85cd43a3a
+bug_link: https://syzkaller.appspot.com/bug?extid=f9545ab3e9f85cd43a3a
+title: 'WARNING: bad unlock balance in rcu_lock_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 25016bd7f4caf5fc983bbab7403d08e64cba3004
+fix_commit: 10476e6304222ced7df9b3d5fb0a043b3c2a1ad8
+datetime: '2020-03-20T13:06:25+01:00'
+fix_commit_message: "locking/lockdep: Fix bad recursion pattern\n\nThere were two\
+  \ patterns for lockdep_recursion:\n\nPattern-A:\n\tif (current->lockdep_recursion)\n\
+  \t\treturn\n\n\tcurrent->lockdep_recursion = 1;\n\t/* do stuff */\n\tcurrent->lockdep_recursion\
+  \ = 0;\n\nPattern-B:\n\tcurrent->lockdep_recursion++;\n\t/* do stuff */\n\tcurrent->lockdep_recursion--;\n\
+  \nBut a third pattern has emerged:\n\nPattern-C:\n\tcurrent->lockdep_recursion =\
+  \ 1;\n\t/* do stuff */\n\tcurrent->lockdep_recursion = 0;\n\nAnd while this isn't\
+  \ broken per-se, it is highly dangerous because it\ndoesn't nest properly.\n\nGet\
+  \ rid of all Pattern-C instances and shore up Pattern-A with a\nwarning.\n\nSigned-off-by:\
+  \ Peter Zijlstra (Intel) <peterz@infradead.org>\nLink: https://lkml.kernel.org/r/20200313093325.GW12561@hirez.programming.kicks-ass.net\n"
+submodule:
+- kernel/locking
+hunk_count: 20
+covered_count: 2

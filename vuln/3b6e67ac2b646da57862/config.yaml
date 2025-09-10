@@ -1,0 +1,47 @@
+id: 3b6e67ac2b646da57862
+bug_link: https://syzkaller.appspot.com/bug?extid=3b6e67ac2b646da57862
+title: kernel BUG in gfs2_quota_cleanup
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1181f2d9fef7307b46850bc11e043f2180d636c1
+fix_commit: 71733b4922007500ae259af9e96017080f5d36d9
+datetime: '2023-12-18T14:24:33+01:00'
+fix_commit_message: "gfs2: fix kernel BUG in gfs2_quota_cleanup\n\n[Syz report]\n\
+  kernel BUG at fs/gfs2/quota.c:1508!\ninvalid opcode: 0000 [#1] PREEMPT SMP KASAN\n\
+  CPU: 0 PID: 5060 Comm: syz-executor505 Not tainted 6.7.0-rc3-syzkaller-00134-g994d5c58e50e\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 11/10/2023\nRIP: 0010:gfs2_quota_cleanup+0x6b5/0x6c0 fs/gfs2/quota.c:1508\nCode:\
+  \ fe e9 cf fd ff ff 44 89 e9 80 e1 07 80 c1 03 38 c1 0f 8c 2d fe ff ff 4c 89 ef\
+  \ e8 b6 19 23 fe e9 20 fe ff ff e8 ec 11 c7 fd 90 <0f> 0b e8 84 9c 4f 07 0f 1f 40\
+  \ 00 66 0f 1f 00 55 41 57 41 56 41 54\nRSP: 0018:ffffc9000409f9e0 EFLAGS: 00010293\n\
+  RAX: ffffffff83c76854 RBX: 0000000000000002 RCX: ffff888026001dc0\nRDX: 0000000000000000\
+  \ RSI: 0000000000000002 RDI: 0000000000000000\nRBP: ffffc9000409fb00 R08: ffffffff83c762b0\
+  \ R09: 1ffff1100fd38015\nR10: dffffc0000000000 R11: ffffed100fd38016 R12: dffffc0000000000\n\
+  R13: ffff88807e9c0828 R14: ffff888014693580 R15: ffff88807e9c0000\nFS:  0000000000000000(0000)\
+  \ GS:ffff8880b9800000(0000) knlGS:0000000000000000\nCS:  0010 DS: 0000 ES: 0000\
+  \ CR0: 0000000080050033\nCR2: 00007f16d1bd70f8 CR3: 0000000027199000 CR4: 00000000003506f0\n\
+  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\nDR3: 0000000000000000\
+  \ DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n <TASK>\n gfs2_put_super+0x2e1/0x940\
+  \ fs/gfs2/super.c:611\n generic_shutdown_super+0x13a/0x2c0 fs/super.c:696\n kill_block_super+0x44/0x90\
+  \ fs/super.c:1667\n deactivate_locked_super+0xc1/0x130 fs/super.c:484\n cleanup_mnt+0x426/0x4c0\
+  \ fs/namespace.c:1256\n task_work_run+0x24a/0x300 kernel/task_work.c:180\n exit_task_work\
+  \ include/linux/task_work.h:38 [inline]\n do_exit+0xa34/0x2750 kernel/exit.c:871\n\
+  \ do_group_exit+0x206/0x2c0 kernel/exit.c:1021\n __do_sys_exit_group kernel/exit.c:1032\
+  \ [inline]\n __se_sys_exit_group kernel/exit.c:1030 [inline]\n __x64_sys_exit_group+0x3f/0x40\
+  \ kernel/exit.c:1030\n do_syscall_x64 arch/x86/entry/common.c:51 [inline]\n do_syscall_64+0x45/0x110\
+  \ arch/x86/entry/common.c:82\n entry_SYSCALL_64_after_hwframe+0x63/0x6b\n...\n\n\
+  [pid  5060] fsconfig(4, FSCONFIG_CMD_RECONFIGURE, NULL, NULL, 0) = 0\n[pid  5060]\
+  \ exit_group(1)               = ?\n...\n\n[Analysis]\nWhen the task exits, it will\
+  \ execute cleanup_mnt() to recycle the mounted gfs2\nfile system, but it performs\
+  \ a system call fsconfig(4, FSCONFIG_CMD_RECONFIGURE,\nNULL, NULL, 0) before executing\
+  \ the task exit operation.\n\nThis will execute the following kernel path to complete\
+  \ the setting of\nSDF_JOURNAL_LIVE for sd_flags:\n\nSYSCALL_DEFINE5(fsconfig, ..)->\n\
+  \tvfs_fsconfig_locked()->\n\t\tvfs_cmd_reconfigure()->\n\t\t\tgfs2_reconfigure()->\n\
+  \t\t\t\tgfs2_make_fs_rw()->\n\t\t\t\t\tset_bit(SDF_JOURNAL_LIVE, &sdp->sd_flags);\n\
+  \n[Fix]\nAdd SDF_NORECOVERY check in gfs2_quota_cleanup() to avoid checking\nSDF_JOURNAL_LIVE\
+  \ on the path where gfs2 is being unmounted.\n\nReported-and-tested-by: syzbot+3b6e67ac2b646da57862@syzkaller.appspotmail.com\n\
+  Fixes: f66af88e3321 (\"gfs2: Stop using gfs2_make_fs_ro for withdraw\")\nSigned-off-by:\
+  \ Edward Adam Davis <eadavis@qq.com>\nSigned-off-by: Andreas Gruenbacher <agruenba@redhat.com>\n"
+submodule:
+- fs/gfs2
+hunk_count: 1
+covered_count: 1

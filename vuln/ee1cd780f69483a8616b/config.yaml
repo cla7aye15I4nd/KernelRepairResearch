@@ -1,0 +1,30 @@
+id: ee1cd780f69483a8616b
+bug_link: https://syzkaller.appspot.com/bug?extid=ee1cd780f69483a8616b
+title: possible deadlock in j1939_sk_errqueue
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 45977e58ce65ed0459edc9a0466d9dfea09463f5
+fix_commit: d1366b283d94ac4537a4b3a1e8668da4df7ce7e9
+datetime: '2023-03-27T11:03:22+02:00'
+fix_commit_message: "can: j1939: prevent deadlock by moving j1939_sk_errqueue()\n\n\
+  This commit addresses a deadlock situation that can occur in certain\nscenarios,\
+  \ such as when running data TP/ETP transfer and subscribing to\nthe error queue\
+  \ while receiving a net down event. The deadlock involves\nlocks in the following\
+  \ order:\n\n3\n  j1939_session_list_lock ->  active_session_list_lock\n  j1939_session_activate\n\
+  \  ...\n  j1939_sk_queue_activate_next -> sk_session_queue_lock\n  ...\n  j1939_xtp_rx_eoma_one\n\
+  \n2\n  j1939_sk_queue_drop_all  ->  sk_session_queue_lock\n  ...\n  j1939_sk_netdev_event_netdown\
+  \ -> j1939_socks_lock\n  j1939_netdev_notify\n\n1\n  j1939_sk_errqueue -> j1939_socks_lock\n\
+  \  __j1939_session_cancel -> active_session_list_lock\n  j1939_tp_rxtimer\n\n  \
+  \     CPU0                    CPU1\n       ----                    ----\n  lock(&priv->active_session_list_lock);\n\
+  \                               lock(&jsk->sk_session_queue_lock);\n           \
+  \                    lock(&priv->active_session_list_lock);\n  lock(&priv->j1939_socks_lock);\n\
+  \nThe solution implemented in this commit is to move the\nj1939_sk_errqueue() call\
+  \ out of the active_session_list_lock context,\nthus preventing the deadlock situation.\n\
+  \nReported-by: syzbot+ee1cd780f69483a8616b@syzkaller.appspotmail.com\nFixes: 5b9272e93f2e\
+  \ (\"can: j1939: extend UAPI to notify about RX status\")\nCo-developed-by: Hillf\
+  \ Danton <hdanton@sina.com>\nSigned-off-by: Hillf Danton <hdanton@sina.com>\nSigned-off-by:\
+  \ Oleksij Rempel <o.rempel@pengutronix.de>\nLink: https://lore.kernel.org/all/20230324130141.2132787-1-o.rempel@pengutronix.de\n\
+  Cc: stable@vger.kernel.org\nSigned-off-by: Marc Kleine-Budde <mkl@pengutronix.de>\n"
+submodule:
+- net/can
+hunk_count: 3
+covered_count: 3

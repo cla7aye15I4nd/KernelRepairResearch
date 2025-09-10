@@ -1,0 +1,16 @@
+diff --git a/security/integrity/ima/ima_api.c b/security/integrity/ima/ima_api.c
+index 78e0b0a7723e..bf22de8b7ce0 100644
+--- a/security/integrity/ima/ima_api.c
++++ b/security/integrity/ima/ima_api.c
+@@ -55,8 +55,9 @@ int ima_alloc_init_template(struct ima_event_data *event_data,
+ 	digests = kcalloc(NR_BANKS(ima_tpm_chip) + ima_extra_slots,
+ 			  sizeof(*digests), GFP_NOFS);
+ 	if (!digests) {
+-		result = -ENOMEM;
+-		goto out;
++		kfree(*entry);
++		*entry = NULL;
++		return -ENOMEM;
+ 	}
+ 
+ 	(*entry)->digests = digests;

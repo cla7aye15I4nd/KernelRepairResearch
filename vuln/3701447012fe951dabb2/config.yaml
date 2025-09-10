@@ -1,0 +1,36 @@
+id: 3701447012fe951dabb2
+bug_link: https://syzkaller.appspot.com/bug?extid=3701447012fe951dabb2
+title: upstream boot error (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c57cdf7a9e51d97a43e29b8f4a04157875104000
+fix_commit: 153fcd5f6d93b8e1e4040b1337f564a10f8d93af
+datetime: '2018-11-01T19:59:51-06:00'
+fix_commit_message: "block: brd: associate with queue until adding disk\n\nbrd_free()\
+  \ may be called in failure path on one brd instance which\ndisk isn't added yet,\
+  \ so release handler of gendisk may free the\nassociated request_queue early and\
+  \ causes the following use-after-free[1].\n\nThis patch fixes this issue by associating\
+  \ gendisk with request_queue\njust before adding disk.\n\n[1] KASAN: use-after-free\
+  \ Read in del_timer_syncNon-volatile memory driver v1.3\nLinux agpgart interface\
+  \ v0.103\n[drm] Initialized vgem 1.0.0 20120112 for virtual device on minor 0\n\
+  usbcore: registered new interface driver udl\n==================================================================\n\
+  BUG: KASAN: use-after-free in __lock_acquire+0x36d9/0x4c20\nkernel/locking/lockdep.c:3218\n\
+  Read of size 8 at addr ffff8801d1b6b540 by task swapper/0/1\n\nCPU: 0 PID: 1 Comm:\
+  \ swapper/0 Not tainted 4.19.0+ #88\nHardware name: Google Google Compute Engine/Google\
+  \ Compute Engine, BIOS\nGoogle 01/01/2011\nCall Trace:\n  __dump_stack lib/dump_stack.c:77\
+  \ [inline]\n  dump_stack+0x244/0x39d lib/dump_stack.c:113\n  print_address_description.cold.7+0x9/0x1ff\
+  \ mm/kasan/report.c:256\n  kasan_report_error mm/kasan/report.c:354 [inline]\n \
+  \ kasan_report.cold.8+0x242/0x309 mm/kasan/report.c:412\n  __asan_report_load8_noabort+0x14/0x20\
+  \ mm/kasan/report.c:433\n  __lock_acquire+0x36d9/0x4c20 kernel/locking/lockdep.c:3218\n\
+  \  lock_acquire+0x1ed/0x520 kernel/locking/lockdep.c:3844\n  del_timer_sync+0xb7/0x270\
+  \ kernel/time/timer.c:1283\n  blk_cleanup_queue+0x413/0x710 block/blk-core.c:809\n\
+  \  brd_free+0x5d/0x71 drivers/block/brd.c:422\n  brd_init+0x2eb/0x393 drivers/block/brd.c:518\n\
+  \  do_one_initcall+0x145/0x957 init/main.c:890\n  do_initcall_level init/main.c:958\
+  \ [inline]\n  do_initcalls init/main.c:966 [inline]\n  do_basic_setup init/main.c:984\
+  \ [inline]\n  kernel_init_freeable+0x5c6/0x6b9 init/main.c:1148\n  kernel_init+0x11/0x1ae\
+  \ init/main.c:1068\n  ret_from_fork+0x3a/0x50 arch/x86/entry/entry_64.S:350\n\n\
+  Reported-by: syzbot+3701447012fe951dabb2@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Ming Lei <ming.lei@redhat.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 3
+covered_count: 3

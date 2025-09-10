@@ -1,0 +1,44 @@
+ext4 filesystem being mounted at /root/syzkaller.LiS7QJ/67/bus supports timestamps until 2038-01-19 (0x7fffffff)
+------------[ cut here ]------------
+Looking for class "&ei->i_data_sem" with key init_once.__key.800, but found a different class "&ei->i_data_sem" with the same key
+WARNING: CPU: 1 PID: 6043 at kernel/locking/lockdep.c:939 look_up_lock_class+0xdc/0x170 kernel/locking/lockdep.c:936
+Modules linked in:
+CPU: 1 UID: 0 PID: 6043 Comm: syz-executor134 Not tainted 6.12.0-syzkaller-00171-g23acd177540d #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/30/2024
+RIP: 0010:look_up_lock_class+0xdc/0x170 kernel/locking/lockdep.c:936
+Code: 01 0f 85 8a 00 00 00 c6 05 22 28 46 04 01 90 49 8b 16 49 8b 76 18 48 8b 8b b8 00 00 00 48 c7 c7 00 ed 0a 8c e8 25 12 96 f5 90 <0f> 0b 90 90 eb 61 90 e8 c8 58 f2 f8 e8 a3 51 b5 f5 48 c7 c7 40 ec
+RSP: 0018:ffffc9000419f390 EFLAGS: 00010046
+RAX: 2dd31a1967d3b700 RBX: ffffffff93c6a800 RCX: ffff88803060bc00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc9000419f4a0 R08: ffffffff8155e222 R09: 1ffff110170e519a
+R10: dffffc0000000000 R11: ffffed10170e519b R12: ffff888078233410
+R13: ffff888078233410 R14: ffff888078233410 R15: ffffffff9a4dd3c1
+FS:  00005555768d8380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f04f9605100 CR3: 000000002b20c000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ register_lock_class+0x102/0x980 kernel/locking/lockdep.c:1290
+ __lock_acquire+0xf0/0x2050 kernel/locking/lockdep.c:5077
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5825
+ down_write_nested+0xa2/0x220 kernel/locking/rwsem.c:1693
+ ext4_move_extents+0x34a/0xcb0 fs/ext4/move_extent.c:621
+ __ext4_ioctl fs/ext4/ioctl.c:1370 [inline]
+ ext4_ioctl+0x34b5/0x5590 fs/ext4/ioctl.c:1626
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl+0xf9/0x170 fs/ioctl.c:893
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f04f958d329
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 21 18 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe0b933cb8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007f04f958d329
+RDX: 0000000020000240 RSI: 00000000c028660f RDI: 0000000000000005
+RBP: 0000000000000000 R08: 00007ffe0b933cf0 R09: 00007ffe0b933cf0
+R10: 00007ffe0b933cf0 R11: 0000000000000246 R12: 00007ffe0b933cdc
+R13: 0000000000000043 R14: 431bde82d7b634db R15: 00007ffe0b933d10
+ </TASK>

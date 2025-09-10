@@ -1,0 +1,38 @@
+id: 22b5ef302c7c40d94ea8
+bug_link: https://syzkaller.appspot.com/bug?extid=22b5ef302c7c40d94ea8
+title: 'KASAN: use-after-free Read in rpc_net_ns'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2ef96a5bb12be62ef75b5828c0aab838ebb29cb8
+fix_commit: 31e9a7f353526bbe53165a292f8ea9695ead3168
+datetime: '2020-05-10T19:44:56-04:00'
+fix_commit_message: 'SUNRPC: fix use-after-free in rpc_free_client_work()
+
+
+  Parts of rpc_free_client() were recently moved to
+
+  a separate rpc_free_clent_work().  This introduced
+
+  a use-after-free as rpc_clnt_remove_pipedir() calls
+
+  rpc_net_ns(), and that uses clnt->cl_xprt which has already
+
+  been freed.
+
+  So move the call to xprt_put() after the call to
+
+  rpc_clnt_remove_pipedir().
+
+
+  Reported-by: syzbot+22b5ef302c7c40d94ea8@syzkaller.appspotmail.com
+
+  Fixes: 7c4310ff5642 ("SUNRPC: defer slow parts of rpc_free_client() to a workqueue.")
+
+  Signed-off-by: NeilBrown <neilb@suse.de>
+
+  Signed-off-by: Trond Myklebust <trond.myklebust@hammerspace.com>
+
+  '
+submodule:
+- net/sunrpc
+hunk_count: 2
+covered_count: 2

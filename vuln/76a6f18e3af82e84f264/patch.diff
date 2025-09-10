@@ -1,0 +1,24 @@
+diff --git a/fs/afs/dynroot.c b/fs/afs/dynroot.c
+index 008698d706ca..7d997f7a8028 100644
+--- a/fs/afs/dynroot.c
++++ b/fs/afs/dynroot.c
+@@ -314,6 +314,9 @@ static const char *afs_atcell_get_link(struct dentry *dentry, struct inode *inod
+ 	const char *name;
+ 	bool dotted = vnode->fid.vnode == 3;
+ 
++	if (!rcu_access_pointer(net->ws_cell))
++		return ERR_PTR(-ENOENT);
++
+ 	if (!dentry) {
+ 		/* We're in RCU-pathwalk. */
+ 		cell = rcu_dereference(net->ws_cell);
+@@ -325,9 +328,6 @@ static const char *afs_atcell_get_link(struct dentry *dentry, struct inode *inod
+ 		return name;
+ 	}
+ 
+-	if (!rcu_access_pointer(net->ws_cell))
+-		return ERR_PTR(-ENOENT);
+-
+ 	down_read(&net->cells_lock);
+ 
+ 	cell = rcu_dereference_protected(net->ws_cell, lockdep_is_held(&net->cells_lock));

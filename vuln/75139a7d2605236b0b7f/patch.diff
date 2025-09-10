@@ -1,0 +1,35 @@
+diff --git a/net/tipc/msg.c b/net/tipc/msg.c
+index 046e4cb3acea..01b64869a173 100644
+--- a/net/tipc/msg.c
++++ b/net/tipc/msg.c
+@@ -238,14 +238,14 @@ int tipc_msg_append(struct tipc_msg *_hdr, struct msghdr *m, int dlen,
+ 		hdr = buf_msg(skb);
+ 		curr = msg_blocks(hdr);
+ 		mlen = msg_size(hdr);
+-		cpy = min_t(int, rem, mss - mlen);
++		cpy = min_t(size_t, rem, mss - mlen);
+ 		if (cpy != copy_from_iter(skb->data + mlen, cpy, &m->msg_iter))
+ 			return -EFAULT;
+ 		msg_set_size(hdr, mlen + cpy);
+ 		skb_put(skb, cpy);
+ 		rem -= cpy;
+ 		total += msg_blocks(hdr) - curr;
+-	} while (rem);
++	} while (rem > 0);
+ 	return total - accounted;
+ }
+ 
+diff --git a/net/tipc/socket.c b/net/tipc/socket.c
+index 26123f4177fd..a94f38333698 100644
+--- a/net/tipc/socket.c
++++ b/net/tipc/socket.c
+@@ -1574,7 +1574,8 @@ static int __tipc_sendstream(struct socket *sock, struct msghdr *m, size_t dlen)
+ 			break;
+ 		send = min_t(size_t, dlen - sent, TIPC_MAX_USER_MSG_SIZE);
+ 		blocks = tsk->snd_backlog;
+-		if (tsk->oneway++ >= tsk->nagle_start && send <= maxnagle) {
++		if (tsk->oneway++ >= tsk->nagle_start && maxnagle &&
++		    send <= maxnagle) {
+ 			rc = tipc_msg_append(hdr, m, send, maxnagle, txq);
+ 			if (unlikely(rc < 0))
+ 				break;

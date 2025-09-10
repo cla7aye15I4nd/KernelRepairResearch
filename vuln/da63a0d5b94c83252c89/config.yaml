@@ -1,0 +1,28 @@
+id: da63a0d5b94c83252c89
+bug_link: https://syzkaller.appspot.com/bug?extid=da63a0d5b94c83252c89
+title: 'INFO: rcu detected stall in mulaw_transfer'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b088b53e20c7d09b5ab84c5688e609f478e5c417
+fix_commit: 898dfe4687f460ba337a01c11549f87269a13fa2
+datetime: '2018-01-05T16:44:16+01:00'
+fix_commit_message: "ALSA: aloop: Fix racy hw constraints adjustment\n\nThe aloop\
+  \ driver tries to update the hw constraints of the connected\ntarget on the cable\
+  \ of the opened PCM substream.  This is done by\nadding the extra hw constraints\
+  \ rules referring to the substream\nruntime->hw fields, while the other substream\
+  \ may update the runtime\nhw of another side on the fly.\n\nThis is, however, racy\
+  \ and may result in the inconsistent values when\nboth PCM streams perform the prepare\
+  \ concurrently.  One of the reason\nis that it overwrites the other's runtime->hw\
+  \ field; which is not only\nracy but also broken when it's called before the open\
+  \ of another side\nfinishes.  And, since the reference to runtime->hw isn't protected,\n\
+  the concurrent write may give the partial value update and become\ninconsistent.\n\
+  \nThis patch is an attempt to fix and clean up:\n- The prepare doesn't change the\
+  \ runtime->hw of other side any longer,\n  but only update the cable->hw that is\
+  \ referred commonly.\n- The extra rules refer to the loopback_pcm object instead\
+  \ of the\n  runtime->hw.  The actual hw is deduced from cable->hw.\n- The extra\
+  \ rules take the cable_lock to protect against the race.\n\nFixes: b1c73fc8e697\
+  \ (\"ALSA: snd-aloop: Fix hw_params restrictions and checking\")\nCc: <stable@vger.kernel.org>\n\
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>\n"
+submodule:
+- sound/drivers
+hunk_count: 5
+covered_count: 0

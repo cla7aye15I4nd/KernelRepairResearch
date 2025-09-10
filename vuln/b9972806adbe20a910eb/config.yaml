@@ -1,0 +1,38 @@
+id: b9972806adbe20a910eb
+bug_link: https://syzkaller.appspot.com/bug?extid=b9972806adbe20a910eb
+title: kernel BUG in f2fs_get_victim
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a68905d48a4efe5ca45bb4ceab5cd7d6ac47c300
+fix_commit: 207764e5d6f19de483d7f0e43243d1a1fce4fb32
+datetime: '2025-01-22T21:04:56+00:00'
+fix_commit_message: "f2fs: fix to avoid return invalid mtime from f2fs_get_section_mtime()\n\
+  \nsyzbot reported a f2fs bug as below:\n\n------------[ cut here ]------------\n\
+  kernel BUG at fs/f2fs/gc.c:373!\nCPU: 0 UID: 0 PID: 5316 Comm: syz.0.0 Not tainted\
+  \ 6.13.0-rc3-syzkaller-00044-gaef25be35d23 #0\nRIP: 0010:get_cb_cost fs/f2fs/gc.c:373\
+  \ [inline]\nRIP: 0010:get_gc_cost fs/f2fs/gc.c:406 [inline]\nRIP: 0010:f2fs_get_victim+0x68b1/0x6aa0\
+  \ fs/f2fs/gc.c:912\nCall Trace:\n <TASK>\n __get_victim fs/f2fs/gc.c:1707 [inline]\n\
+  \ f2fs_gc+0xc89/0x2f60 fs/f2fs/gc.c:1915\n f2fs_ioc_gc fs/f2fs/file.c:2624 [inline]\n\
+  \ __f2fs_ioctl+0x4cc9/0xb8b0 fs/f2fs/file.c:4482\n vfs_ioctl fs/ioctl.c:51 [inline]\n\
+  \ __do_sys_ioctl fs/ioctl.c:906 [inline]\n __se_sys_ioctl+0xf5/0x170 fs/ioctl.c:892\n\
+  \ do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n do_syscall_64+0xf3/0x230\
+  \ arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\nw/ below\
+  \ testcase, it can reproduce directly:\n- dd if=/dev/zero of=/tmp/file bs=1M count=64\n\
+  - mkfs.f2fs /tmp/file\n- mount -t f2fs -o loop,mode=fragment:block /tmp/file /mnt/f2fs\n\
+  - echo 0 >  /sys/fs/f2fs/loop0/min_ssr_sections\n- dd if=/dev/zero of=/mnt/f2fs/file\
+  \ bs=1M count=5\n- umount /mnt/f2fs\n- for((i=4096;i<16384;i+=512)) do inject.f2fs\
+  \ --sit 0 --blk $i --mb mtime --val -1 /tmp/file; done\n- mount -o loop /tmp/file\
+  \ /mnt/f2fs\n- f2fs_io gc 0 /mnt/f2fs/file\n\nstatic unsigned int get_cb_cost()\n\
+  {\n\t...\n\tmtime = f2fs_get_section_mtime(sbi, segno);\n\tf2fs_bug_on(sbi, mtime\
+  \ == INVALID_MTIME);\n\t...\n}\n\nThe root cause is: mtime in f2fs_sit_entry can\
+  \ be fuzzed to INVALID_MTIME,\nthen it will trigger BUG_ON in get_cb_cost() during\
+  \ GC.\n\nLet's change behavior of f2fs_get_section_mtime() as below for fix:\n-\
+  \ return INVALID_MTIME only if total valid blocks is zero.\n- return INVALID_MTIME\
+  \ - 1 if average mtime calculated is\nINVALID_MTIME.\n\nFixes: b19ee7272208 (\"\
+  f2fs: introduce f2fs_get_section_mtime\")\nReported-by: syzbot+b9972806adbe20a910eb@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/linux-f2fs-devel/6768c82e.050a0220.226966.0035.GAE@google.com\n\
+  Cc: liuderong <liuderong@oppo.com>\nSigned-off-by: Chao Yu <chao@kernel.org>\nSigned-off-by:\
+  \ Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 2
+covered_count: 0

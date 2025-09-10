@@ -1,0 +1,36 @@
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 9 at arch/x86/mm/tlb.c:919 switch_mm_irqs_off+0x640/0x7c0 arch/x86/mm/tlb.c:918
+Modules linked in:
+CPU: 0 UID: 0 PID: 9 Comm: kworker/0:0 Not tainted 6.15.0-rc5-next-20250506-syzkaller #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/29/2025
+Workqueue: events once_deferred
+RIP: 0010:switch_mm_irqs_off+0x640/0x7c0 arch/x86/mm/tlb.c:918
+Code: 84 f4 fa ff ff 90 0f 0b 90 e9 eb fa ff ff 90 0f 0b 90 e9 84 fe ff ff 90 0f 0b 90 e9 18 fc ff ff 90 0f 0b 90 e9 cb fb ff ff 90 <0f> 0b 90 e9 df fb ff ff 89 c8 90 0f 0b 90 e9 3f fd ff ff 90 0f 0b
+RSP: 0000:ffffc900000e7740 EFLAGS: 00010056
+RAX: 0000000000000001 RBX: ffff888018470940 RCX: ffffffff816876dd
+RDX: 0000000000000000 RSI: 0000000000000008 RDI: ffff888018470940
+RBP: ffffc900000e7810 R08: ffff888018470947 R09: 1ffff1100308e128
+R10: dffffc0000000000 R11: ffffed100308e129 R12: 1ffff110033510ab
+R13: ffffffff8ce27740 R14: ffff888019a88000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff8881281a9000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffff88823ffff000 CR3: 0000000018478000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ unuse_temporary_mm+0x9d/0x100 arch/x86/mm/tlb.c:1038
+ __text_poke+0x52d/0x7f0 arch/x86/kernel/alternative.c:2214
+ text_poke arch/x86/kernel/alternative.c:2257 [inline]
+ smp_text_poke_batch_finish+0x213/0xe10 arch/x86/kernel/alternative.c:2565
+ arch_jump_label_transform_apply+0x17/0x30 arch/x86/kernel/jump_label.c:146
+ static_key_disable_cpuslocked+0x9b/0x160 kernel/jump_label.c:240
+ static_key_disable+0x15/0x20 kernel/jump_label.c:248
+ once_deferred+0x56/0x90 lib/once.c:20
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0x9f5/0x13f0 kernel/workqueue.c:3321
+ worker_thread+0x772/0xba0 kernel/workqueue.c:3402
+ kthread+0x5fd/0x770 kernel/kthread.c:464
+ ret_from_fork+0x32/0x70 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>

@@ -1,0 +1,51 @@
+id: b9564ba6e8e00694511b
+bug_link: https://syzkaller.appspot.com/bug?extid=b9564ba6e8e00694511b
+title: 'INFO: rcu detected stall in ext4_file_write_iter (6)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ceaa837f96adb69c0df0397937cd74991d5d821a
+fix_commit: d125d1349abeb46945dc5e98f7824bf688266f13
+datetime: '2023-02-14T11:18:35+01:00'
+fix_commit_message: "alarmtimer: Prevent starvation by small intervals and SIG_IGN\n\
+  \nsyzbot reported a RCU stall which is caused by setting up an alarmtimer\nwith\
+  \ a very small interval and ignoring the signal. The reproducer arms the\nalarm\
+  \ timer with a relative expiry of 8ns and an interval of 9ns. Not a\nproblem per\
+  \ se, but that's an issue when the signal is ignored because then\nthe timer is\
+  \ immediately rearmed because there is no way to delay that\nrearming to the signal\
+  \ delivery path.  See posix_timer_fn() and commit\n58229a189942 (\"posix-timers:\
+  \ Prevent softirq starvation by small intervals\nand SIG_IGN\") for details.\n\n\
+  The reproducer does not set SIG_IGN explicitely, but it sets up the timers\nsignal\
+  \ with SIGCONT. That has the same effect as explicitely setting\nSIG_IGN for a signal\
+  \ as SIGCONT is ignored if there is no handler set and\nthe task is not ptraced.\n\
+  \nThe log clearly shows that:\n\n   [pid  5102] --- SIGCONT {si_signo=SIGCONT, si_code=SI_TIMER,\
+  \ si_timerid=0, si_overrun=316014, si_int=0, si_ptr=NULL} ---\n\nIt works because\
+  \ the tasks are traced and therefore the signal is queued so\nthe tracer can see\
+  \ it, which delays the restart of the timer to the signal\ndelivery path. But then\
+  \ the tracer is killed:\n\n   [pid  5087] kill(-5102, SIGKILL <unfinished ...>\n\
+  \   ...\n   ./strace-static-x86_64: Process 5107 detached\n\nand after it's gone\
+  \ the stall can be observed:\n\n   syzkaller login: [   79.439102][    C0] hrtimer:\
+  \ interrupt took 68471 ns\n   [  184.460538][    C1] rcu: INFO: rcu_preempt detected\
+  \ stalls on CPUs/tasks:\n   ...\n   [  184.658237][    C1] rcu: Stack dump where\
+  \ RCU GP kthread last ran:\n   [  184.664574][    C1] Sending NMI from CPU 1 to\
+  \ CPUs 0:\n   [  184.669821][    C0] NMI backtrace for cpu 0\n   [  184.669831][\
+  \    C0] CPU: 0 PID: 5108 Comm: syz-executor192 Not tainted 6.2.0-rc6-next-20230203-syzkaller\
+  \ #0\n   ...\n   [  184.670036][    C0] Call Trace:\n   [  184.670041][    C0] \
+  \ <IRQ>\n   [  184.670045][    C0]  alarmtimer_fired+0x327/0x670\n\nposix_timer_fn()\
+  \ prevents that by checking whether the interval for\ntimers which have the signal\
+  \ ignored is smaller than a jiffie and\nartifically delay it by shifting the next\
+  \ expiry out by a jiffie. That's\naccurate vs. the overrun accounting, but slightly\
+  \ inaccurate\nvs. timer_gettimer(2).\n\nThe comment in that function says what needs\
+  \ to be done and there was a fix\navailable for the regular userspace induced SIG_IGN\
+  \ mechanism, but that did\nnot work due to the implicit ignore for SIGCONT and similar\
+  \ signals. This\nneeds to be worked on, but for now the only available workaround\
+  \ is to do\nexactly what posix_timer_fn() does:\n\nIncrease the interval of self-rearming\
+  \ timers, which have their signal\nignored, to at least a jiffie.\n\nInterestingly\
+  \ this has been fixed before via commit ff86bf0c65f1\n(\"alarmtimer: Rate limit\
+  \ periodic intervals\") already, but that fix got\nlost in a later rework.\n\nReported-by:\
+  \ syzbot+b9564ba6e8e00694511b@syzkaller.appspotmail.com\nFixes: f2c45807d399 (\"\
+  alarmtimer: Switch over to generic set/get/rearm routine\")\nSigned-off-by: Thomas\
+  \ Gleixner <tglx@linutronix.de>\nAcked-by: John Stultz <jstultz@google.com>\nCc:\
+  \ stable@vger.kernel.org\nLink: https://lore.kernel.org/r/87k00q1no2.ffs@tglx\n"
+submodule:
+- kernel/time
+hunk_count: 2
+covered_count: 0

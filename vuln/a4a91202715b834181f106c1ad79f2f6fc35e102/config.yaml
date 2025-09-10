@@ -1,0 +1,38 @@
+id: a4a91202715b834181f106c1ad79f2f6fc35e102
+bug_link: https://syzkaller.appspot.com/bug?extid=a4a91202715b834181f106c1ad79f2f6fc35e102
+title: WARNING in binder_send_failed_reply
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f88982679f54f75daa5b8eff3da72508f1e7422f
+fix_commit: e46a3b3ba7509cb7fda0e07bc7c63a2cd90f579b
+datetime: '2018-02-16T11:15:45+01:00'
+fix_commit_message: "ANDROID: binder: remove WARN() for redundant txn error\n\nbinder_send_failed_reply()\
+  \ is called when a synchronous\ntransaction fails. It reports an error to the thread\
+  \ that\nis waiting for the completion. Given that the transaction\nis synchronous,\
+  \ there should never be more than 1 error\nresponse to that thread -- this was being\
+  \ asserted with\na WARN().\n\nHowever, when exercising the driver with syzbot tests,\
+  \ cases\nwere observed where multiple \"synchronous\" requests were\nsent without\
+  \ waiting for responses, so it is possible that\nmultiple errors would be reported\
+  \ to the thread. This testing\nwas conducted with panic_on_warn set which forced\
+  \ the crash.\n\nThis is easily reproduced by sending back-to-back\n\"synchronous\"\
+  \ transactions without checking for any\nresponse (eg, set read_size to 0):\n\n\
+  \    bwr.write_buffer = (uintptr_t)&bc1;\n    bwr.write_size = sizeof(bc1);\n  \
+  \  bwr.read_buffer = (uintptr_t)&br;\n    bwr.read_size = 0;\n    ioctl(fd, BINDER_WRITE_READ,\
+  \ &bwr);\n    sleep(1);\n    bwr2.write_buffer = (uintptr_t)&bc2;\n    bwr2.write_size\
+  \ = sizeof(bc2);\n    bwr2.read_buffer = (uintptr_t)&br;\n    bwr2.read_size = 0;\n\
+  \    ioctl(fd, BINDER_WRITE_READ, &bwr2);\n    sleep(1);\n\nThe first transaction\
+  \ is sent to the servicemanager and the reply\nfails because no VMA is set up by\
+  \ this client. After\nbinder_send_failed_reply() is called, the BINDER_WORK_RETURN_ERROR\n\
+  is sitting on the thread's todo list since the read_size was 0 and\nthe client is\
+  \ not waiting for a response.\n\nThe 2nd transaction is sent and the BINDER_WORK_RETURN_ERROR\
+  \ has not\nbeen consumed, so the thread's reply_error.cmd is still set (normally\n\
+  cleared when the BINDER_WORK_RETURN_ERROR is handled). Therefore\nwhen the servicemanager\
+  \ attempts to reply to the 2nd failed\ntransaction, the error is already set and\
+  \ it triggers this warning.\n\nThis is a user error since it is not waiting for\
+  \ the synchronous\ntransaction to complete. If it ever does check, it will see an\n\
+  error.\n\nChanged the WARN() to a pr_warn().\n\nSigned-off-by: Todd Kjos <tkjos@android.com>\n\
+  Reported-by: syzbot <syzkaller@googlegroups.com>\nCc: stable <stable@vger.kernel.org>\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/android
+hunk_count: 1
+covered_count: 1

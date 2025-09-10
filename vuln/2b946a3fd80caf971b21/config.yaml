@@ -1,0 +1,31 @@
+id: 2b946a3fd80caf971b21
+bug_link: https://syzkaller.appspot.com/bug?extid=2b946a3fd80caf971b21
+title: 'KCSAN: data-race in io_sq_thread / io_sq_thread_park (9)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 48cc7ecd3a68e0fbfa281ef1ed6f6b6cb7638390
+fix_commit: e4956dc7a84da074fd8dc10f7abd147f15b3ae58
+datetime: '2024-08-13T06:10:59-06:00'
+fix_commit_message: 'io_uring/sqpoll: annotate debug task == current with data_race()
+
+
+  There''s a debug check in io_sq_thread_park() checking if it''s the SQPOLL
+
+  thread itself calling park. KCSAN warns about this, as we should not be
+
+  reading sqd->thread outside of sqd->lock.
+
+
+  Just silence this with data_race(). The pointer isn''t used for anything
+
+  but this debug check.
+
+
+  Reported-by: syzbot+2b946a3fd80caf971b21@syzkaller.appspotmail.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,161 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.15.0-rc7-syzkaller-00144-gb1427432d3b6 #0 Not tainted
+------------------------------------------------------
+syz-executor132/5818 is trying to acquire lock:
+ffff88807c520e00 (team->team_lock_key){+.+.}-{4:4}, at: team_del_slave+0x31/0x1b0 drivers/net/team/team_core.c:2003
+
+but task is already holding lock:
+ffff88802b410768 (&rdev->wiphy.mtx){+.+.}-{4:4}, at: nl80211_del_interface+0xfb/0x190 net/wireless/nl80211.c:4574
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&rdev->wiphy.mtx){+.+.}-{4:4}:
+       __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+       __mutex_lock+0x199/0xb90 kernel/locking/mutex.c:746
+       class_wiphy_constructor include/net/cfg80211.h:6092 [inline]
+       ieee80211_open+0x132/0x210 net/mac80211/iface.c:445
+       __dev_open+0x2e7/0x7d0 net/core/dev.c:1629
+       netif_open+0xf2/0x160 net/core/dev.c:1652
+       dev_open+0xb2/0x260 net/core/dev_api.c:200
+       team_port_add drivers/net/team/team_core.c:1230 [inline]
+       team_add_slave+0xaf0/0x21a0 drivers/net/team/team_core.c:1989
+       do_set_master+0x40c/0x730 net/core/rtnetlink.c:2946
+       do_setlink.constprop.0+0xe66/0x44b0 net/core/rtnetlink.c:3159
+       rtnl_setlink+0x3cb/0x770 net/core/rtnetlink.c:3466
+       rtnetlink_rcv_msg+0x95b/0xe90 net/core/rtnetlink.c:6955
+       netlink_rcv_skb+0x16a/0x440 net/netlink/af_netlink.c:2534
+       netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+       netlink_unicast+0x53d/0x7f0 net/netlink/af_netlink.c:1339
+       netlink_sendmsg+0x8d1/0xdd0 net/netlink/af_netlink.c:1883
+       sock_sendmsg_nosec net/socket.c:712 [inline]
+       __sock_sendmsg net/socket.c:727 [inline]
+       ____sys_sendmsg+0xa95/0xc70 net/socket.c:2566
+       ___sys_sendmsg+0x134/0x1d0 net/socket.c:2620
+       __sys_sendmsg+0x16d/0x220 net/socket.c:2652
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (team->team_lock_key){+.+.}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3166 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+       validate_chain kernel/locking/lockdep.c:3909 [inline]
+       __lock_acquire+0x1173/0x1ba0 kernel/locking/lockdep.c:5235
+       lock_acquire kernel/locking/lockdep.c:5866 [inline]
+       lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5823
+       __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+       __mutex_lock+0x199/0xb90 kernel/locking/mutex.c:746
+       team_del_slave+0x31/0x1b0 drivers/net/team/team_core.c:2003
+       team_device_event+0xd0/0x770 drivers/net/team/team_core.c:3000
+       notifier_call_chain+0xbc/0x410 kernel/notifier.c:85
+       call_netdevice_notifiers_info+0xbe/0x140 net/core/dev.c:2176
+       call_netdevice_notifiers_extack net/core/dev.c:2214 [inline]
+       call_netdevice_notifiers net/core/dev.c:2228 [inline]
+       unregister_netdevice_many_notify+0xf9a/0x26f0 net/core/dev.c:11972
+       unregister_netdevice_many net/core/dev.c:12036 [inline]
+       unregister_netdevice_queue+0x305/0x3f0 net/core/dev.c:11879
+       unregister_netdevice include/linux/netdevice.h:3374 [inline]
+       _cfg80211_unregister_wdev+0x64b/0x830 net/wireless/core.c:1256
+       ieee80211_if_remove+0x250/0x400 net/mac80211/iface.c:2259
+       ieee80211_del_iface+0x16/0x20 net/mac80211/cfg.c:224
+       rdev_del_virtual_intf net/wireless/rdev-ops.h:62 [inline]
+       cfg80211_remove_virtual_intf+0xda/0x2a0 net/wireless/util.c:2871
+       nl80211_del_interface+0x106/0x190 net/wireless/nl80211.c:4576
+       genl_family_rcv_msg_doit+0x209/0x2f0 net/netlink/genetlink.c:1115
+       genl_family_rcv_msg net/netlink/genetlink.c:1195 [inline]
+       genl_rcv_msg+0x55c/0x800 net/netlink/genetlink.c:1210
+       netlink_rcv_skb+0x16a/0x440 net/netlink/af_netlink.c:2534
+       genl_rcv+0x28/0x40 net/netlink/genetlink.c:1219
+       netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+       netlink_unicast+0x53d/0x7f0 net/netlink/af_netlink.c:1339
+       netlink_sendmsg+0x8d1/0xdd0 net/netlink/af_netlink.c:1883
+       sock_sendmsg_nosec net/socket.c:712 [inline]
+       __sock_sendmsg net/socket.c:727 [inline]
+       ____sys_sendmsg+0xa95/0xc70 net/socket.c:2566
+       ___sys_sendmsg+0x134/0x1d0 net/socket.c:2620
+       __sys_sendmsg+0x16d/0x220 net/socket.c:2652
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&rdev->wiphy.mtx);
+                               lock(team->team_lock_key);
+                               lock(&rdev->wiphy.mtx);
+  lock(team->team_lock_key);
+
+ *** DEADLOCK ***
+
+3 locks held by syz-executor132/5818:
+ #0: ffffffff901cae10 (cb_lock){++++}-{4:4}, at: genl_rcv+0x19/0x40 net/netlink/genetlink.c:1218
+ #1: ffffffff90128ce8 (rtnl_mutex){+.+.}-{4:4}, at: nl80211_pre_doit+0xb4/0xb10 net/wireless/nl80211.c:16693
+ #2: ffff88802b410768 (&rdev->wiphy.mtx){+.+.}-{4:4}, at: nl80211_del_interface+0xfb/0x190 net/wireless/nl80211.c:4574
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 5818 Comm: syz-executor132 Not tainted 6.15.0-rc7-syzkaller-00144-gb1427432d3b6 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_circular_bug+0x275/0x350 kernel/locking/lockdep.c:2079
+ check_noncircular+0x14c/0x170 kernel/locking/lockdep.c:2211
+ check_prev_add kernel/locking/lockdep.c:3166 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+ validate_chain kernel/locking/lockdep.c:3909 [inline]
+ __lock_acquire+0x1173/0x1ba0 kernel/locking/lockdep.c:5235
+ lock_acquire kernel/locking/lockdep.c:5866 [inline]
+ lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5823
+ __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+ __mutex_lock+0x199/0xb90 kernel/locking/mutex.c:746
+ team_del_slave+0x31/0x1b0 drivers/net/team/team_core.c:2003
+ team_device_event+0xd0/0x770 drivers/net/team/team_core.c:3000
+ notifier_call_chain+0xbc/0x410 kernel/notifier.c:85
+ call_netdevice_notifiers_info+0xbe/0x140 net/core/dev.c:2176
+ call_netdevice_notifiers_extack net/core/dev.c:2214 [inline]
+ call_netdevice_notifiers net/core/dev.c:2228 [inline]
+ unregister_netdevice_many_notify+0xf9a/0x26f0 net/core/dev.c:11972
+ unregister_netdevice_many net/core/dev.c:12036 [inline]
+ unregister_netdevice_queue+0x305/0x3f0 net/core/dev.c:11879
+ unregister_netdevice include/linux/netdevice.h:3374 [inline]
+ _cfg80211_unregister_wdev+0x64b/0x830 net/wireless/core.c:1256
+ ieee80211_if_remove+0x250/0x400 net/mac80211/iface.c:2259
+ ieee80211_del_iface+0x16/0x20 net/mac80211/cfg.c:224
+ rdev_del_virtual_intf net/wireless/rdev-ops.h:62 [inline]
+ cfg80211_remove_virtual_intf+0xda/0x2a0 net/wireless/util.c:2871
+ nl80211_del_interface+0x106/0x190 net/wireless/nl80211.c:4576
+ genl_family_rcv_msg_doit+0x209/0x2f0 net/netlink/genetlink.c:1115
+ genl_family_rcv_msg net/netlink/genetlink.c:1195 [inline]
+ genl_rcv_msg+0x55c/0x800 net/netlink/genetlink.c:1210
+ netlink_rcv_skb+0x16a/0x440 net/netlink/af_netlink.c:2534
+ genl_rcv+0x28/0x40 net/netlink/genetlink.c:1219
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x53d/0x7f0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x8d1/0xdd0 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg net/socket.c:727 [inline]
+ ____sys_sendmsg+0xa95/0xc70 net/socket.c:2566
+ ___sys_sendmsg+0x134/0x1d0 net/socket.c:2620
+ __sys_sendmsg+0x16d/0x220 net/socket.c:2652
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fe93c990569
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 01 1a 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe731971a8 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 00007fe93c9dd513 RCX: 00007fe93c990569
+RDX: 0000000000000000 RSI: 0000200000000400 RDI: 0000000000000004
+RBP: 00007fe93c9dd4e3 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007fe93c9dd44b
+R13: 0000000000000048 R14: 0000000000050012 R15: 0000000000000003
+ </TASK>
+team0: Port device wlan0 removed

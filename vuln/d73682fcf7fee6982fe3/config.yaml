@@ -1,0 +1,26 @@
+id: d73682fcf7fee6982fe3
+bug_link: https://syzkaller.appspot.com/bug?extid=d73682fcf7fee6982fe3
+title: WARNING in sk_psock_drop
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d0f418516022c32ecceaf4275423e5bd3f8743a9
+fix_commit: 58c8db929db1c1d785a6f5d8f8692e5dbcc35e84
+datetime: '2020-01-22T20:30:20+01:00'
+fix_commit_message: "net, sk_msg: Don't check if sock is locked when tearing down\
+  \ psock\n\nAs John Fastabend reports [0], psock state tear-down can happen on receive\n\
+  path *after* unlocking the socket, if the only other psock user, that is\nsockmap\
+  \ or sockhash, releases its psock reference before tcp_bpf_recvmsg\ndoes so:\n\n\
+  \ tcp_bpf_recvmsg()\n  psock = sk_psock_get(sk)                         <- refcnt\
+  \ 2\n  lock_sock(sk);\n  ...\n                                  sock_map_free()\
+  \  <- refcnt 1\n  release_sock(sk)\n  sk_psock_put()                           \
+  \        <- refcnt 0\n\nRemove the lockdep check for socket lock in psock tear-down\
+  \ that got\nintroduced in 7e81a3530206 (\"bpf: Sockmap, ensure sock lock held during\n\
+  tear down\").\n\n[0] https://lore.kernel.org/netdev/5e25dc995d7d_74082aaee6e465b441@john-XPS-13-9370.notmuch/\n\
+  \nFixes: 7e81a3530206 (\"bpf: Sockmap, ensure sock lock held during tear down\"\
+  )\nReported-by: syzbot+d73682fcf7fee6982fe3@syzkaller.appspotmail.com\nSuggested-by:\
+  \ John Fastabend <john.fastabend@gmail.com>\nSigned-off-by: Jakub Sitnicki <jakub@cloudflare.com>\n\
+  Acked-by: John Fastabend <john.fastabend@gmail.com>\nAcked-by: Daniel Borkmann <daniel@iogearbox.net>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,39 @@
+diff --git a/sound/core/oss/linear.c b/sound/core/oss/linear.c
+index 2045697f449d..797d838a2f9e 100644
+--- a/sound/core/oss/linear.c
++++ b/sound/core/oss/linear.c
+@@ -107,6 +107,8 @@ static snd_pcm_sframes_t linear_transfer(struct snd_pcm_plugin *plugin,
+ 		}
+ 	}
+ #endif
++	if (frames > dst_channels[0].frames)
++		frames = dst_channels[0].frames;
+ 	convert(plugin, src_channels, dst_channels, frames);
+ 	return frames;
+ }
+diff --git a/sound/core/oss/mulaw.c b/sound/core/oss/mulaw.c
+index 7915564bd394..3788906421a7 100644
+--- a/sound/core/oss/mulaw.c
++++ b/sound/core/oss/mulaw.c
+@@ -269,6 +269,8 @@ static snd_pcm_sframes_t mulaw_transfer(struct snd_pcm_plugin *plugin,
+ 		}
+ 	}
+ #endif
++	if (frames > dst_channels[0].frames)
++		frames = dst_channels[0].frames;
+ 	data = (struct mulaw_priv *)plugin->extra_data;
+ 	data->func(plugin, src_channels, dst_channels, frames);
+ 	return frames;
+diff --git a/sound/core/oss/route.c b/sound/core/oss/route.c
+index c8171f5783c8..72dea04197ef 100644
+--- a/sound/core/oss/route.c
++++ b/sound/core/oss/route.c
+@@ -57,6 +57,8 @@ static snd_pcm_sframes_t route_transfer(struct snd_pcm_plugin *plugin,
+ 		return -ENXIO;
+ 	if (frames == 0)
+ 		return 0;
++	if (frames > dst_channels[0].frames)
++		frames = dst_channels[0].frames;
+ 
+ 	nsrcs = plugin->src_format.channels;
+ 	ndsts = plugin->dst_format.channels;

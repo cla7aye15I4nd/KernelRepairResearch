@@ -1,0 +1,57 @@
+id: 726dc8c62c3536431ceb
+bug_link: https://syzkaller.appspot.com/bug?extid=726dc8c62c3536431ceb
+title: 'KCSAN: data-race in random_recv_done / virtio_read (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a4855a8c9b0ee284a008770721ad4cf1d8d932eb
+fix_commit: ac52578d6e8d300dd50f790f29a24169b1edd26c
+datetime: '2023-05-12T18:48:01+08:00'
+fix_commit_message: 'hwrng: virtio - Fix race on data_avail and actual data
+
+
+  The virtio rng device kicks off a new entropy request whenever the
+
+  data available reaches zero.  When a new request occurs at the end
+
+  of a read operation, that is, when the result of that request is
+
+  only needed by the next reader, then there is a race between the
+
+  writing of the new data and the next reader.
+
+
+  This is because there is no synchronisation whatsoever between the
+
+  writer and the reader.
+
+
+  Fix this by writing data_avail with smp_store_release and reading
+
+  it with smp_load_acquire when we first enter read.  The subsequent
+
+  reads are safe because they''re either protected by the first load
+
+  acquire, or by the completion mechanism.
+
+
+  Also remove the redundant zeroing of data_idx in random_recv_done
+
+  (data_idx must already be zero at this point) and data_avail in
+
+  request_entropy (ditto).
+
+
+  Reported-by: syzbot+726dc8c62c3536431ceb@syzkaller.appspotmail.com
+
+  Fixes: f7f510ec1957 ("virtio: An entropy device, as suggested by hpa.")
+
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  '
+submodule:
+- drivers/char/hw_random
+hunk_count: 4
+covered_count: 4

@@ -1,0 +1,73 @@
+id: bed360704c521841c85d
+bug_link: https://syzkaller.appspot.com/bug?extid=bed360704c521841c85d
+title: 'UBSAN: shift-out-of-bounds in ___bpf_prog_run'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4a638d581a7a3f00f277349903ff419b6790e2ae
+fix_commit: 28131e9d933339a92f78e7ab6429f4aaaa07061c
+datetime: '2021-06-17T12:04:37+02:00'
+fix_commit_message: "bpf: Fix up register-based shifts in interpreter to silence KUBSAN\n\
+  \nsyzbot reported a shift-out-of-bounds that KUBSAN observed in the\ninterpreter:\n\
+  \n  [...]\n  UBSAN: shift-out-of-bounds in kernel/bpf/core.c:1420:2\n  shift exponent\
+  \ 255 is too large for 64-bit type 'long long unsigned int'\n  CPU: 1 PID: 11097\
+  \ Comm: syz-executor.4 Not tainted 5.12.0-rc2-syzkaller #0\n  Hardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n  Call Trace:\n\
+  \   __dump_stack lib/dump_stack.c:79 [inline]\n   dump_stack+0x141/0x1d7 lib/dump_stack.c:120\n\
+  \   ubsan_epilogue+0xb/0x5a lib/ubsan.c:148\n   __ubsan_handle_shift_out_of_bounds.cold+0xb1/0x181\
+  \ lib/ubsan.c:327\n   ___bpf_prog_run.cold+0x19/0x56c kernel/bpf/core.c:1420\n \
+  \  __bpf_prog_run32+0x8f/0xd0 kernel/bpf/core.c:1735\n   bpf_dispatcher_nop_func\
+  \ include/linux/bpf.h:644 [inline]\n   bpf_prog_run_pin_on_cpu include/linux/filter.h:624\
+  \ [inline]\n   bpf_prog_run_clear_cb include/linux/filter.h:755 [inline]\n   run_filter+0x1a1/0x470\
+  \ net/packet/af_packet.c:2031\n   packet_rcv+0x313/0x13e0 net/packet/af_packet.c:2104\n\
+  \   dev_queue_xmit_nit+0x7c2/0xa90 net/core/dev.c:2387\n   xmit_one net/core/dev.c:3588\
+  \ [inline]\n   dev_hard_start_xmit+0xad/0x920 net/core/dev.c:3609\n   __dev_queue_xmit+0x2121/0x2e00\
+  \ net/core/dev.c:4182\n   __bpf_tx_skb net/core/filter.c:2116 [inline]\n   __bpf_redirect_no_mac\
+  \ net/core/filter.c:2141 [inline]\n   __bpf_redirect+0x548/0xc80 net/core/filter.c:2164\n\
+  \   ____bpf_clone_redirect net/core/filter.c:2448 [inline]\n   bpf_clone_redirect+0x2ae/0x420\
+  \ net/core/filter.c:2420\n   ___bpf_prog_run+0x34e1/0x77d0 kernel/bpf/core.c:1523\n\
+  \   __bpf_prog_run512+0x99/0xe0 kernel/bpf/core.c:1737\n   bpf_dispatcher_nop_func\
+  \ include/linux/bpf.h:644 [inline]\n   bpf_test_run+0x3ed/0xc50 net/bpf/test_run.c:50\n\
+  \   bpf_prog_test_run_skb+0xabc/0x1c50 net/bpf/test_run.c:582\n   bpf_prog_test_run\
+  \ kernel/bpf/syscall.c:3127 [inline]\n   __do_sys_bpf+0x1ea9/0x4f00 kernel/bpf/syscall.c:4406\n\
+  \   do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n   entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \  [...]\n\nGenerally speaking, KUBSAN reports from the kernel should be fixed.\n\
+  However, in case of BPF, this particular report caused concerns since\nthe large\
+  \ shift is not wrong from BPF point of view, just undefined.\nIn the verifier, K-based\
+  \ shifts that are >= {64,32} (depending on the\nbitwidth of the instruction) are\
+  \ already rejected. The register-based\ncases were not given their content might\
+  \ not be known at verification\ntime. Ideas such as verifier instruction rewrite\
+  \ with an additional\nAND instruction for the source register were brought up, but\
+  \ regularly\nrejected due to the additional runtime overhead they incur.\n\nAs Edward\
+  \ Cree rightly put it:\n\n  Shifts by more than insn bitness are legal in the BPF\
+  \ ISA; they are\n  implementation-defined behaviour [of the underlying architecture],\n\
+  \  rather than UB, and have been made legal for performance reasons.\n  Each of\
+  \ the JIT backends compiles the BPF shift operations to machine\n  instructions\
+  \ which produce implementation-defined results in such a\n  case; the resulting\
+  \ contents of the register may be arbitrary but\n  program behaviour as a whole\
+  \ remains defined.\n\n  Guard checks in the fast path (i.e. affecting JITted code)\
+  \ will thus\n  not be accepted.\n\n  The case of division by zero is not truly analogous\
+  \ here, as division\n  instructions on many of the JIT-targeted architectures will\
+  \ raise a\n  machine exception / fault on division by zero, whereas (to the best\n\
+  \  of my knowledge) none will do so on an out-of-bounds shift.\n\nGiven the KUBSAN\
+  \ report only affects the BPF interpreter, but not JITs,\none solution is to add\
+  \ the ANDs with 63 or 31 into ___bpf_prog_run().\nThat would make the shifts defined,\
+  \ and thus shuts up KUBSAN, and the\ncompiler would optimize out the AND on any\
+  \ CPU that interprets the shift\namounts modulo the width anyway (e.g., confirmed\
+  \ from disassembly that\non x86-64 and arm64 the generated interpreter code is the\
+  \ same before\nand after this fix).\n\nThe BPF interpreter is slow path, and most\
+  \ likely compiled out anyway\nas distros select BPF_JIT_ALWAYS_ON to avoid speculative\
+  \ execution of\nBPF instructions by the interpreter. Given the main argument was\
+  \ to\navoid sacrificing performance, the fact that the AND is optimized away\nfrom\
+  \ compiler for mainstream archs helps as well as a solution moving\nforward. Also\
+  \ add a comment on LSH/RSH/ARSH translation for JIT authors\nto provide guidance\
+  \ when they see the ___bpf_prog_run() interpreter\ncode and use it as a model for\
+  \ a new JIT backend.\n\nReported-by: syzbot+bed360704c521841c85d@syzkaller.appspotmail.com\n\
+  Reported-by: Kurt Manucredo <fuzzybritches0@gmail.com>\nSigned-off-by: Eric Biggers\
+  \ <ebiggers@kernel.org>\nCo-developed-by: Eric Biggers <ebiggers@kernel.org>\nSigned-off-by:\
+  \ Daniel Borkmann <daniel@iogearbox.net>\nAcked-by: Alexei Starovoitov <ast@kernel.org>\n\
+  Acked-by: Andrii Nakryiko <andrii@kernel.org>\nTested-by: syzbot+bed360704c521841c85d@syzkaller.appspotmail.com\n\
+  Cc: Edward Cree <ecree.xilinx@gmail.com>\nLink: https://lore.kernel.org/bpf/0000000000008f912605bd30d5d7@google.com\n\
+  Link: https://lore.kernel.org/bpf/bac16d8d-c174-bdc4-91bd-bfa62b410190@gmail.com\n"
+submodule:
+- kernel/bpf
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,29 @@
+id: 7015dcf45953112c8b45
+bug_link: https://syzkaller.appspot.com/bug?extid=7015dcf45953112c8b45
+title: 'linux-next test error: KASAN: slab-use-after-free Write in binder_add_device'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: dcb0d43ba8eb9517e70b1a0e4b0ae0ab657a0e5a
+fix_commit: e77aff5528a183462714f750e45add6cc71e276a
+datetime: '2025-02-20T15:20:11+01:00'
+fix_commit_message: "binderfs: fix use-after-free in binder_devices\n\nDevices created\
+  \ through binderfs are added to the global binder_devices\nlist but are not removed\
+  \ before being destroyed. This leads to dangling\npointers in the list and subsequent\
+  \ use-after-free errors:\n\n  ==================================================================\n\
+  \  BUG: KASAN: slab-use-after-free in binder_add_device+0x5c/0x9c\n  Write of size\
+  \ 8 at addr ffff0000c258d708 by task mount/653\n\n  CPU: 7 UID: 0 PID: 653 Comm:\
+  \ mount Not tainted 6.13.0-09030-g6d61a53dd6f5 #1\n  Hardware name: linux,dummy-virt\
+  \ (DT)\n  Call trace:\n   binder_add_device+0x5c/0x9c\n   binderfs_binder_device_create+0x690/0x84c\n\
+  \   [...]\n   __arm64_sys_mount+0x324/0x3bc\n\n  Allocated by task 632:\n   binderfs_binder_device_create+0x168/0x84c\n\
+  \   binder_ctl_ioctl+0xfc/0x184\n   [...]\n   __arm64_sys_ioctl+0x110/0x150\n\n\
+  \  Freed by task 649:\n   kfree+0xe0/0x338\n   binderfs_evict_inode+0x138/0x1dc\n\
+  \   [...]\n  ==================================================================\n\
+  \nRemove devices from binder_devices before destroying them.\n\nCc: Li Li <dualli@google.com>\n\
+  Reported-by: syzbot+7015dcf45953112c8b45@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=7015dcf45953112c8b45\n\
+  Fixes: 12d909cac1e1 (\"binderfs: add new binder devices to binder_devices\")\nSigned-off-by:\
+  \ Carlos Llamas <cmllamas@google.com>\nTested-by: syzbot+7015dcf45953112c8b45@syzkaller.appspotmail.com\n\
+  Link: https://lore.kernel.org/r/20250130215823.1518990-1-cmllamas@google.com\nSigned-off-by:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/android
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,20 @@
+id: f303e045423e617d2cad
+bug_link: https://syzkaller.appspot.com/bug?extid=f303e045423e617d2cad
+title: memory leak in tty_init_dev
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 09427c1915f754ebe7d3d8e54e79bbee48afe916
+fix_commit: 58af3d3d54e87bfc1f936e16c04ade3369d34011
+datetime: '2021-06-14T12:28:16-07:00'
+fix_commit_message: "net: caif: fix memory leak in ldisc_open\n\nSyzbot reported memory\
+  \ leak in tty_init_dev().\nThe problem was in unputted tty in ldisc_open()\n\nstatic\
+  \ int ldisc_open(struct tty_struct *tty)\n{\n...\n\tser->tty = tty_kref_get(tty);\n\
+  ...\n\tresult = register_netdevice(dev);\n\tif (result) {\n\t\trtnl_unlock();\n\t\
+  \tfree_netdev(dev);\n\t\treturn -ENODEV;\n\t}\n...\n}\n\nSer pointer is netdev private_data,\
+  \ so after free_netdev()\nthis pointer goes away with unputted tty reference. So,\
+  \ fix\nit by adding tty_kref_put() before freeing netdev.\n\nReported-and-tested-by:\
+  \ syzbot+f303e045423e617d2cad@syzkaller.appspotmail.com\nSigned-off-by: Pavel Skripkin\
+  \ <paskripkin@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- drivers/net/caif
+hunk_count: 1
+covered_count: 0

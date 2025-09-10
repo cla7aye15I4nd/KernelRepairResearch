@@ -1,0 +1,21 @@
+id: ee4f315443a4ea97512e
+bug_link: https://syzkaller.appspot.com/bug?extid=ee4f315443a4ea97512e
+title: general protection fault in crypto_remove_spawns (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 06bbf753476dab23eb262cb5fbab6d6d277a0ba3
+fix_commit: 6db43410179bc40419a9859ebb333f178a49829d
+datetime: '2019-01-10T21:37:31+08:00'
+fix_commit_message: "crypto: adiantum - initialize crypto_spawn::inst\n\ncrypto_grab_*()\
+  \ doesn't set crypto_spawn::inst, so templates must set it\nbeforehand.  Otherwise\
+  \ it will be left NULL, which causes a crash in\ncertain cases where algorithms\
+  \ are dynamically loaded/unloaded.  E.g.\nwith CONFIG_CRYPTO_CHACHA20_X86_64=m,\
+  \ the following caused a crash:\n\n    insmod chacha-x86_64.ko\n    python -c 'import\
+  \ socket; socket.socket(socket.AF_ALG, 5, 0).bind((\"skcipher\", \"adiantum(xchacha12,aes)\"\
+  ))'\n    rmmod chacha-x86_64.ko\n    python -c 'import socket; socket.socket(socket.AF_ALG,\
+  \ 5, 0).bind((\"skcipher\", \"adiantum(xchacha12,aes)\"))'\n\nFixes: 059c2a4d8e16\
+  \ (\"crypto: adiantum - add Adiantum support\")\nSigned-off-by: Eric Biggers <ebiggers@google.com>\n\
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- crypto
+hunk_count: 2
+covered_count: 0

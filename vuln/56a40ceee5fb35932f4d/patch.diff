@@ -1,0 +1,35 @@
+diff --git a/net/sctp/associola.c b/net/sctp/associola.c
+index a827a1f562bf..6a28b96e779e 100644
+--- a/net/sctp/associola.c
++++ b/net/sctp/associola.c
+@@ -499,8 +499,9 @@ void sctp_assoc_set_primary(struct sctp_association *asoc,
+ void sctp_assoc_rm_peer(struct sctp_association *asoc,
+ 			struct sctp_transport *peer)
+ {
+-	struct list_head	*pos;
+-	struct sctp_transport	*transport;
++	struct sctp_transport *transport;
++	struct list_head *pos;
++	struct sctp_chunk *ch;
+ 
+ 	pr_debug("%s: association:%p addr:%pISpc\n",
+ 		 __func__, asoc, &peer->ipaddr.sa);
+@@ -564,7 +565,6 @@ void sctp_assoc_rm_peer(struct sctp_association *asoc,
+ 	 */
+ 	if (!list_empty(&peer->transmitted)) {
+ 		struct sctp_transport *active = asoc->peer.active_path;
+-		struct sctp_chunk *ch;
+ 
+ 		/* Reset the transport of each chunk on this list */
+ 		list_for_each_entry(ch, &peer->transmitted,
+@@ -586,6 +586,10 @@ void sctp_assoc_rm_peer(struct sctp_association *asoc,
+ 				sctp_transport_hold(active);
+ 	}
+ 
++	list_for_each_entry(ch, &asoc->outqueue.out_chunk_list, list)
++		if (ch->transport == peer)
++			ch->transport = NULL;
++
+ 	asoc->peer.transport_count--;
+ 
+ 	sctp_transport_free(peer);

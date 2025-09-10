@@ -1,0 +1,64 @@
+id: 7110e6a4069f19537d85
+bug_link: https://syzkaller.appspot.com/bug?extid=7110e6a4069f19537d85
+title: WARNING in kcov_remote_start (4)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e4228cfd092351c2d9b1a3048b2070287291ccbb
+fix_commit: f85d39dd7ed89ffdd622bc1de247ffba8d961504
+datetime: '2024-06-04T15:34:44+02:00'
+fix_commit_message: 'kcov, usb: disable interrupts in kcov_remote_start_usb_softirq
+
+
+  After commit 8fea0c8fda30 ("usb: core: hcd: Convert from tasklet to BH
+
+  workqueue"), usb_giveback_urb_bh() runs in the BH workqueue with
+
+  interrupts enabled.
+
+
+  Thus, the remote coverage collection section in usb_giveback_urb_bh()->
+
+  __usb_hcd_giveback_urb() might be interrupted, and the interrupt handler
+
+  might invoke __usb_hcd_giveback_urb() again.
+
+
+  This breaks KCOV, as it does not support nested remote coverage collection
+
+  sections within the same context (neither in task nor in softirq).
+
+
+  Update kcov_remote_start/stop_usb_softirq() to disable interrupts for the
+
+  duration of the coverage collection section to avoid nested sections in
+
+  the softirq context (in addition to such in the task context, which are
+
+  already handled).
+
+
+  Reported-by: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
+
+  Closes: https://lore.kernel.org/linux-usb/0f4d1964-7397-485b-bc48-11c01e2fcbca@I-love.SAKURA.ne.jp/
+
+  Closes: https://syzkaller.appspot.com/bug?extid=0438378d6f157baae1a2
+
+  Suggested-by: Alan Stern <stern@rowland.harvard.edu>
+
+  Fixes: 8fea0c8fda30 ("usb: core: hcd: Convert from tasklet to BH workqueue")
+
+  Cc: stable@vger.kernel.org
+
+  Acked-by: Dmitry Vyukov <dvyukov@google.com>
+
+  Signed-off-by: Andrey Konovalov <andreyknvl@gmail.com>
+
+  Link: https://lore.kernel.org/r/20240527173538.4989-1-andrey.konovalov@linux.dev
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/core
+- include/linux
+hunk_count: 4
+covered_count: 4

@@ -1,0 +1,29 @@
+id: afbe81311aa0da046f1e62a665eccddac254f803
+bug_link: https://syzkaller.appspot.com/bug?extid=afbe81311aa0da046f1e62a665eccddac254f803
+title: 'KASAN: wild-memory-access Write in scatterwalk_copychunks'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d042566d8c704e1ecec370300545d4a409222e39
+fix_commit: e57121d08c38dabec15cf3e1e2ad46721af30cae
+datetime: '2017-12-22T19:02:33+11:00'
+fix_commit_message: "crypto: chacha20poly1305 - validate the digest size\n\nIf the\
+  \ rfc7539 template was instantiated with a hash algorithm with\ndigest size larger\
+  \ than 16 bytes (POLY1305_DIGEST_SIZE), then the digest\noverran the 'tag' buffer\
+  \ in 'struct chachapoly_req_ctx', corrupting the\nsubsequent memory, including 'cryptlen'.\
+  \  This caused a crash during\ncrypto_skcipher_decrypt().\n\nFix it by, when instantiating\
+  \ the template, requiring that the\nunderlying hash algorithm has the digest size\
+  \ expected for Poly1305.\n\nReproducer:\n\n    #include <linux/if_alg.h>\n    #include\
+  \ <sys/socket.h>\n    #include <unistd.h>\n\n    int main()\n    {\n           \
+  \ int algfd, reqfd;\n            struct sockaddr_alg addr = {\n                \
+  \    .salg_type = \"aead\",\n                    .salg_name = \"rfc7539(chacha20,sha256)\"\
+  ,\n            };\n            unsigned char buf[32] = { 0 };\n\n            algfd\
+  \ = socket(AF_ALG, SOCK_SEQPACKET, 0);\n            bind(algfd, (void *)&addr, sizeof(addr));\n\
+  \            setsockopt(algfd, SOL_ALG, ALG_SET_KEY, buf, sizeof(buf));\n      \
+  \      reqfd = accept(algfd, 0, 0);\n            write(reqfd, buf, 16);\n      \
+  \      read(reqfd, buf, 16);\n    }\n\nReported-by: syzbot <syzkaller@googlegroups.com>\n\
+  Fixes: 71ebc4d1b27d (\"crypto: chacha20poly1305 - Add a ChaCha20-Poly1305 AEAD construction,\
+  \ RFC7539\")\nCc: <stable@vger.kernel.org> # v4.2+\nSigned-off-by: Eric Biggers\
+  \ <ebiggers@google.com>\nSigned-off-by: Herbert Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- crypto
+hunk_count: 2
+covered_count: 0

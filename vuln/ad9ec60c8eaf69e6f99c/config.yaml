@@ -1,0 +1,44 @@
+id: ad9ec60c8eaf69e6f99c
+bug_link: https://syzkaller.appspot.com/bug?extid=ad9ec60c8eaf69e6f99c
+title: 'BUG: unable to handle kernel paging request in bpf_prog_ADDR (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f86601c3661946721e8f260bdd812b759854ac22
+fix_commit: 92de36080c93296ef9005690705cba260b9bd68a
+datetime: '2024-07-29T15:05:05-07:00'
+fix_commit_message: "bpf: Fail verification for sign-extension of packet data/data_end/data_meta\n\
+  \nsyzbot reported a kernel crash due to\n  commit 1f1e864b6555 (\"bpf: Handle sign-extenstin\
+  \ ctx member accesses\").\nThe reason is due to sign-extension of 32-bit load for\n\
+  packet data/data_end/data_meta uapi field.\n\nThe original code looks like:\n  \
+  \      r2 = *(s32 *)(r1 + 76) /* load __sk_buff->data */\n        r3 = *(u32 *)(r1\
+  \ + 80) /* load __sk_buff->data_end */\n        r0 = r2\n        r0 += 8\n     \
+  \   if r3 > r0 goto +1\n        ...\nNote that __sk_buff->data load has 32-bit sign\
+  \ extension.\n\nAfter verification and convert_ctx_accesses(), the final asm code\
+  \ looks like:\n        r2 = *(u64 *)(r1 +208)\n        r2 = (s32)r2\n        r3\
+  \ = *(u64 *)(r1 +80)\n        r0 = r2\n        r0 += 8\n        if r3 > r0 goto\
+  \ pc+1\n        ...\nNote that 'r2 = (s32)r2' may make the kernel __sk_buff->data\
+  \ address invalid\nwhich may cause runtime failure.\n\nCurrently, in C code, typically\
+  \ we have\n        void *data = (void *)(long)skb->data;\n        void *data_end\
+  \ = (void *)(long)skb->data_end;\n        ...\nand it will generate\n        r2\
+  \ = *(u64 *)(r1 +208)\n        r3 = *(u64 *)(r1 +80)\n        r0 = r2\n        r0\
+  \ += 8\n        if r3 > r0 goto pc+1\n\nIf we allow sign-extension,\n        void\
+  \ *data = (void *)(long)(int)skb->data;\n        void *data_end = (void *)(long)skb->data_end;\n\
+  \        ...\nthe generated code looks like\n        r2 = *(u64 *)(r1 +208)\n  \
+  \      r2 <<= 32\n        r2 s>>= 32\n        r3 = *(u64 *)(r1 +80)\n        r0\
+  \ = r2\n        r0 += 8\n        if r3 > r0 goto pc+1\nand this will cause verification\
+  \ failure since \"r2 <<= 32\" is not allowed\nas \"r2\" is a packet pointer.\n\n\
+  To fix this issue for case\n  r2 = *(s32 *)(r1 + 76) /* load __sk_buff->data */\n\
+  this patch added additional checking in is_valid_access() callback\nfunction for\
+  \ packet data/data_end/data_meta access. If those accesses\nare with sign-extenstion,\
+  \ the verification will fail.\n\n  [1] https://lore.kernel.org/bpf/000000000000c90eee061d236d37@google.com/\n\
+  \nReported-by: syzbot+ad9ec60c8eaf69e6f99c@syzkaller.appspotmail.com\nFixes: 1f1e864b6555\
+  \ (\"bpf: Handle sign-extenstin ctx member accesses\")\nAcked-by: Eduard Zingerman\
+  \ <eddyz87@gmail.com>\nSigned-off-by: Yonghong Song <yonghong.song@linux.dev>\n\
+  Link: https://lore.kernel.org/r/20240723153439.2429035-1-yonghong.song@linux.dev\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\nSigned-off-by: Andrii Nakryiko\
+  \ <andrii@kernel.org>\n"
+submodule:
+- include/linux
+- kernel/bpf
+- net/core
+hunk_count: 6
+covered_count: 0

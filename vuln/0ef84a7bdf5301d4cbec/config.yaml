@@ -1,0 +1,35 @@
+id: 0ef84a7bdf5301d4cbec
+bug_link: https://syzkaller.appspot.com/bug?extid=0ef84a7bdf5301d4cbec
+title: WARNING in bpf_check (4)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 17ce3e5949bc37557305ad46316f41c7875d6366
+fix_commit: e09299225d5ba3916c91ef70565f7d2187e4cca0
+datetime: '2025-07-23T19:33:49-07:00'
+fix_commit_message: "bpf: Reject narrower access to pointer ctx fields\n\nThe following\
+  \ BPF program, simplified from a syzkaller repro, causes a\nkernel warning:\n\n\
+  \    r0 = *(u8 *)(r1 + 169);\n    exit;\n\nWith pointer field sk being at offset\
+  \ 168 in __sk_buff. This access is\ndetected as a narrower read in bpf_skb_is_valid_access\
+  \ because it\ndoesn't match offsetof(struct __sk_buff, sk). It is therefore allowed\n\
+  and later proceeds to bpf_convert_ctx_access. Note that for the\n\"is_narrower_load\"\
+  \ case in the convert_ctx_accesses(), the insn->off\nis aligned, so the cnt may\
+  \ not be 0 because it matches the\noffsetof(struct __sk_buff, sk) in the bpf_convert_ctx_access.\
+  \ However,\nthe target_size stays 0 and the verifier errors with a kernel warning:\n\
+  \n    verifier bug: error during ctx access conversion(1)\n\nThis patch fixes that\
+  \ to return a proper \"invalid bpf_context access\noff=X size=Y\" error on the load\
+  \ instruction.\n\nThe same issue affects multiple other fields in context structures\
+  \ that\nallow narrow access. Some other non-affected fields (for sk_msg,\nsk_lookup,\
+  \ and sockopt) were also changed to use bpf_ctx_range_ptr for\nconsistency.\n\n\
+  Note this syzkaller crash was reported in the \"Closes\" link below, which\nused\
+  \ to be about a different bug, fixed in\ncommit fce7bd8e385a (\"bpf/verifier: Handle\
+  \ BPF_LOAD_ACQ instructions\nin insn_def_regno()\"). Because syzbot somehow confused\
+  \ the two bugs,\nthe new crash and repro didn't get reported to the mailing list.\n\
+  \nFixes: f96da09473b52 (\"bpf: simplify narrower ctx access\")\nFixes: 0df1a55afa832\
+  \ (\"bpf: Warn on internal verifier errors\")\nReported-by: syzbot+0ef84a7bdf5301d4cbec@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=0ef84a7bdf5301d4cbec\nSigned-off-by:\
+  \ Paul Chaignon <paul.chaignon@gmail.com>\nSigned-off-by: Martin KaFai Lau <martin.lau@kernel.org>\n\
+  Acked-by: Eduard Zingerman <eddyz87@gmail.com>\nLink: https://patch.msgid.link/3b8dcee67ff4296903351a974ddd9c4dca768b64.1753194596.git.paul.chaignon@gmail.com\n"
+submodule:
+- kernel/bpf
+- net/core
+hunk_count: 7
+covered_count: 0

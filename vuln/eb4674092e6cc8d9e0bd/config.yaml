@@ -1,0 +1,33 @@
+id: eb4674092e6cc8d9e0bd
+bug_link: https://syzkaller.appspot.com/bug?extid=eb4674092e6cc8d9e0bd
+title: general protection fault in gadget_setup
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c560e76319a94a3b9285bc426c609903408e4826
+fix_commit: 4a5d797a9f9c4f18585544237216d7812686a71f
+datetime: '2021-04-22T10:48:09+02:00'
+fix_commit_message: "usb: gadget: dummy_hcd: fix gpf in gadget_setup\n\nFix a general\
+  \ protection fault reported by syzbot due to a race between\ngadget_setup() and\
+  \ gadget_unbind() in raw_gadget.\n\nThe gadget core is supposed to guarantee that\
+  \ there won't be any more\ncallbacks to the gadget driver once the driver's unbind\
+  \ routine is\ncalled. That guarantee is enforced in usb_gadget_remove_driver as\n\
+  follows:\n\n        usb_gadget_disconnect(udc->gadget);\n        if (udc->gadget->irq)\n\
+  \                synchronize_irq(udc->gadget->irq);\n        udc->driver->unbind(udc->gadget);\n\
+  \        usb_gadget_udc_stop(udc);\n\nusb_gadget_disconnect turns off the pullup\
+  \ resistor, telling the host\nthat the gadget is no longer connected and preventing\
+  \ the transmission\nof any more USB packets. Any packets that have already been\
+  \ received\nare sure to processed by the UDC driver's interrupt handler by the time\n\
+  synchronize_irq returns.\n\nBut this doesn't work with dummy_hcd, because dummy_hcd\
+  \ doesn't use\ninterrupts; it uses a timer instead. It does have code to emulate\
+  \ the\neffect of synchronize_irq, but that code doesn't get invoked at the\nright\
+  \ time -- it currently runs in usb_gadget_udc_stop, after the unbind\ncallback instead\
+  \ of before. Indeed, there's no way for\nusb_gadget_remove_driver to invoke this\
+  \ code before the unbind callback.\n\nTo fix this, move the synchronize_irq() emulation\
+  \ code to dummy_pullup\nso that it runs before unbind. Also, add a comment explaining\
+  \ why it is\nnecessary to have it there.\n\nReported-by: syzbot+eb4674092e6cc8d9e0bd@syzkaller.appspotmail.com\n\
+  Suggested-by: Alan Stern <stern@rowland.harvard.edu>\nAcked-by: Alan Stern <stern@rowland.harvard.edu>\n\
+  Signed-off-by: Anirudh Rayabharam <mail@anirudhrb.com>\nLink: https://lore.kernel.org/r/20210419033713.3021-1-mail@anirudhrb.com\n\
+  Cc: stable <stable@vger.kernel.org>\nSigned-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/gadget/udc
+hunk_count: 2
+covered_count: 0

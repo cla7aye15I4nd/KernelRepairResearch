@@ -1,0 +1,169 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.17.0-rc1-syzkaller-00029-g91325f31afc1 #0 Not tainted
+------------------------------------------------------
+dhcpcd/5522 is trying to acquire lock:
+ffffffff99fc2398 (&net->xdp.lock){+.+.}-{4:4}, at: xsk_notifier+0x89/0x230 net/xdp/xsk.c:1664
+
+but task is already holding lock:
+ffff888062718d28 (&dev_instance_lock_key#20){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2758 [inline]
+ffff888062718d28 (&dev_instance_lock_key#20){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ffff888062718d28 (&dev_instance_lock_key#20){+.+.}-{4:4}, at: dev_change_flags+0x113/0x260 net/core/dev_api.c:67
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (&dev_instance_lock_key#20){+.+.}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5868
+       __mutex_lock_common kernel/locking/mutex.c:598 [inline]
+       __mutex_lock+0x187/0x1360 kernel/locking/mutex.c:760
+       netdev_lock include/linux/netdevice.h:2758 [inline]
+       netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+       xsk_bind+0x2f7/0xf90 net/xdp/xsk.c:1193
+       __sys_bind_socket net/socket.c:1858 [inline]
+       __sys_bind+0x2c6/0x3e0 net/socket.c:1889
+       __do_sys_bind net/socket.c:1894 [inline]
+       __se_sys_bind net/socket.c:1892 [inline]
+       __x64_sys_bind+0x7a/0x90 net/socket.c:1892
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #1 (&xs->mutex){+.+.}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5868
+       __mutex_lock_common kernel/locking/mutex.c:598 [inline]
+       __mutex_lock+0x187/0x1360 kernel/locking/mutex.c:760
+       xsk_notifier+0xd5/0x230 net/xdp/xsk.c:1668
+       notifier_call_chain+0x1b6/0x3e0 kernel/notifier.c:85
+       call_netdevice_notifiers_extack net/core/dev.c:2267 [inline]
+       call_netdevice_notifiers net/core/dev.c:2281 [inline]
+       unregister_netdevice_many_notify+0x14d7/0x1ff0 net/core/dev.c:12148
+       rtnl_delete_link net/core/rtnetlink.c:3513 [inline]
+       rtnl_dellink+0x488/0x710 net/core/rtnetlink.c:3555
+       rtnetlink_rcv_msg+0x7cf/0xb70 net/core/rtnetlink.c:6946
+       netlink_rcv_skb+0x208/0x470 net/netlink/af_netlink.c:2552
+       netlink_unicast_kernel net/netlink/af_netlink.c:1320 [inline]
+       netlink_unicast+0x82f/0x9e0 net/netlink/af_netlink.c:1346
+       netlink_sendmsg+0x805/0xb30 net/netlink/af_netlink.c:1896
+       sock_sendmsg_nosec net/socket.c:714 [inline]
+       __sock_sendmsg+0x21c/0x270 net/socket.c:729
+       ____sys_sendmsg+0x505/0x830 net/socket.c:2614
+       ___sys_sendmsg+0x21f/0x2a0 net/socket.c:2668
+       __sys_sendmsg net/socket.c:2700 [inline]
+       __do_sys_sendmsg net/socket.c:2705 [inline]
+       __se_sys_sendmsg net/socket.c:2703 [inline]
+       __x64_sys_sendmsg+0x19b/0x260 net/socket.c:2703
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&net->xdp.lock){+.+.}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3165 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3284 [inline]
+       validate_chain+0xb9b/0x2140 kernel/locking/lockdep.c:3908
+       __lock_acquire+0xab9/0xd20 kernel/locking/lockdep.c:5237
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5868
+       __mutex_lock_common kernel/locking/mutex.c:598 [inline]
+       __mutex_lock+0x187/0x1360 kernel/locking/mutex.c:760
+       xsk_notifier+0x89/0x230 net/xdp/xsk.c:1664
+       notifier_call_chain+0x1b6/0x3e0 kernel/notifier.c:85
+       call_netdevice_notifiers_extack net/core/dev.c:2267 [inline]
+       call_netdevice_notifiers net/core/dev.c:2281 [inline]
+       unregister_netdevice_many_notify+0x14d7/0x1ff0 net/core/dev.c:12148
+       unregister_netdevice_many net/core/dev.c:12211 [inline]
+       unregister_netdevice_queue+0x33c/0x380 net/core/dev.c:12055
+       register_netdevice+0x1689/0x1ae0 net/core/dev.c:11233
+       bpq_new_device drivers/net/hamradio/bpqether.c:481 [inline]
+       bpq_device_event+0x491/0x600 drivers/net/hamradio/bpqether.c:523
+       notifier_call_chain+0x1b6/0x3e0 kernel/notifier.c:85
+       call_netdevice_notifiers_extack net/core/dev.c:2267 [inline]
+       call_netdevice_notifiers net/core/dev.c:2281 [inline]
+       __dev_notify_flags+0x18d/0x2e0 net/core/dev.c:-1
+       netif_change_flags+0xe8/0x1a0 net/core/dev.c:9600
+       dev_change_flags+0x130/0x260 net/core/dev_api.c:68
+       devinet_ioctl+0xbb4/0x1b50 net/ipv4/devinet.c:1200
+       inet_ioctl+0x3c0/0x4c0 net/ipv4/af_inet.c:1001
+       sock_do_ioctl+0xdc/0x300 net/socket.c:1238
+       sock_ioctl+0x576/0x790 net/socket.c:1359
+       vfs_ioctl fs/ioctl.c:51 [inline]
+       __do_sys_ioctl fs/ioctl.c:598 [inline]
+       __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:584
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+Chain exists of:
+  &net->xdp.lock --> &xs->mutex --> &dev_instance_lock_key#20
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&dev_instance_lock_key#20);
+                               lock(&xs->mutex);
+                               lock(&dev_instance_lock_key#20);
+  lock(&net->xdp.lock);
+
+ *** DEADLOCK ***
+
+2 locks held by dhcpcd/5522:
+ #0: ffffffff8f537c88 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_net_lock include/linux/rtnetlink.h:130 [inline]
+ #0: ffffffff8f537c88 (rtnl_mutex){+.+.}-{4:4}, at: devinet_ioctl+0x323/0x1b50 net/ipv4/devinet.c:1121
+ #1: ffff888062718d28 (&dev_instance_lock_key#20){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2758 [inline]
+ #1: ffff888062718d28 (&dev_instance_lock_key#20){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ #1: ffff888062718d28 (&dev_instance_lock_key#20){+.+.}-{4:4}, at: dev_change_flags+0x113/0x260 net/core/dev_api.c:67
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 5522 Comm: dhcpcd Not tainted 6.17.0-rc1-syzkaller-00029-g91325f31afc1 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_circular_bug+0x2ee/0x310 kernel/locking/lockdep.c:2043
+ check_noncircular+0x134/0x160 kernel/locking/lockdep.c:2175
+ check_prev_add kernel/locking/lockdep.c:3165 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3284 [inline]
+ validate_chain+0xb9b/0x2140 kernel/locking/lockdep.c:3908
+ __lock_acquire+0xab9/0xd20 kernel/locking/lockdep.c:5237
+ lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5868
+ __mutex_lock_common kernel/locking/mutex.c:598 [inline]
+ __mutex_lock+0x187/0x1360 kernel/locking/mutex.c:760
+ xsk_notifier+0x89/0x230 net/xdp/xsk.c:1664
+ notifier_call_chain+0x1b6/0x3e0 kernel/notifier.c:85
+ call_netdevice_notifiers_extack net/core/dev.c:2267 [inline]
+ call_netdevice_notifiers net/core/dev.c:2281 [inline]
+ unregister_netdevice_many_notify+0x14d7/0x1ff0 net/core/dev.c:12148
+ unregister_netdevice_many net/core/dev.c:12211 [inline]
+ unregister_netdevice_queue+0x33c/0x380 net/core/dev.c:12055
+ register_netdevice+0x1689/0x1ae0 net/core/dev.c:11233
+ bpq_new_device drivers/net/hamradio/bpqether.c:481 [inline]
+ bpq_device_event+0x491/0x600 drivers/net/hamradio/bpqether.c:523
+ notifier_call_chain+0x1b6/0x3e0 kernel/notifier.c:85
+ call_netdevice_notifiers_extack net/core/dev.c:2267 [inline]
+ call_netdevice_notifiers net/core/dev.c:2281 [inline]
+ __dev_notify_flags+0x18d/0x2e0 net/core/dev.c:-1
+ netif_change_flags+0xe8/0x1a0 net/core/dev.c:9600
+ dev_change_flags+0x130/0x260 net/core/dev_api.c:68
+ devinet_ioctl+0xbb4/0x1b50 net/ipv4/devinet.c:1200
+ inet_ioctl+0x3c0/0x4c0 net/ipv4/af_inet.c:1001
+ sock_do_ioctl+0xdc/0x300 net/socket.c:1238
+ sock_ioctl+0x576/0x790 net/socket.c:1359
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:598 [inline]
+ __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:584
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f9b85bc0378
+Code: 00 00 48 8d 44 24 08 48 89 54 24 e0 48 89 44 24 c0 48 8d 44 24 d0 48 89 44 24 c8 b8 10 00 00 00 c7 44 24 b8 10 00 00 00 0f 05 <89> c2 3d 00 f0 ff ff 77 07 89 d0 c3 0f 1f 40 00 48 8b 15 49 3a 0d
+RSP: 002b:00007ffdd9c500b8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 0000000000000019 RCX: 00007f9b85bc0378
+RDX: 00007ffdd9c602b0 RSI: 0000000000008914 RDI: 0000000000000019
+RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffdd9c70450
+R13: 00007f9b85ac06c8 R14: 0000000000000028 R15: 0000000000008914
+ </TASK>

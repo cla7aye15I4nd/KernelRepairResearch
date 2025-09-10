@@ -1,0 +1,26 @@
+id: 53ce4a4246d0fe0fee34
+bug_link: https://syzkaller.appspot.com/bug?extid=53ce4a4246d0fe0fee34
+title: WARNING in dlfb_submit_urb/usb_submit_urb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: af11f31715b50ce77e50fa393bc530df0f33960b
+fix_commit: aaf7dbe07385e0b8deb7237eca2a79926bbc7091
+datetime: '2022-04-04T08:55:23+02:00'
+fix_commit_message: "video: fbdev: udlfb: properly check endpoint type\n\nsyzbot reported\
+  \ warning in usb_submit_urb, which is caused by wrong\nendpoint type.\n\nThis driver\
+  \ uses out bulk endpoint for communication, so\nlet's check if this endpoint is\
+  \ present and bail out early if not.\n\nFail log:\n\nusb 1-1: BOGUS urb xfer, pipe\
+  \ 3 != type 1\nWARNING: CPU: 0 PID: 4822 at drivers/usb/core/urb.c:493 usb_submit_urb+0xd27/0x1540\
+  \ drivers/usb/core/urb.c:493\nModules linked in:\nCPU: 0 PID: 4822 Comm: kworker/0:3\
+  \ Tainted: G        W         5.13.0-syzkaller #0\n...\nWorkqueue: usb_hub_wq hub_event\n\
+  RIP: 0010:usb_submit_urb+0xd27/0x1540 drivers/usb/core/urb.c:493\n...\nCall Trace:\n\
+  \ dlfb_submit_urb+0x89/0x160 drivers/video/fbdev/udlfb.c:1969\n dlfb_set_video_mode+0x21f0/0x2950\
+  \ drivers/video/fbdev/udlfb.c:315\n dlfb_ops_set_par+0x2a3/0x840 drivers/video/fbdev/udlfb.c:1110\n\
+  \ dlfb_usb_probe.cold+0x113e/0x1f4a drivers/video/fbdev/udlfb.c:1732\n usb_probe_interface+0x315/0x7f0\
+  \ drivers/usb/core/driver.c:396\n\nFixes: 88e58b1a42f8 (\"Staging: add udlfb driver\"\
+  )\nReported-and-tested-by: syzbot+53ce4a4246d0fe0fee34@syzkaller.appspotmail.com\n\
+  Signed-off-by: Pavel Skripkin <paskripkin@gmail.com>\nSigned-off-by: Helge Deller\
+  \ <deller@gmx.de>\n"
+submodule:
+- drivers/video/fbdev
+hunk_count: 4
+covered_count: 1

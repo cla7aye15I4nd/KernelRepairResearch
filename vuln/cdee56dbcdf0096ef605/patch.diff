@@ -1,0 +1,95 @@
+diff --git a/fs/xfs/scrub/common.c b/fs/xfs/scrub/common.c
+index abff79a77c72..47a20cf5205f 100644
+--- a/fs/xfs/scrub/common.c
++++ b/fs/xfs/scrub/common.c
+@@ -1044,9 +1044,7 @@ xchk_irele(
+ 	struct xfs_scrub	*sc,
+ 	struct xfs_inode	*ip)
+ {
+-	if (current->journal_info != NULL) {
+-		ASSERT(current->journal_info == sc->tp);
+-
++	if (sc->tp) {
+ 		/*
+ 		 * If we are in a transaction, we /cannot/ drop the inode
+ 		 * ourselves, because the VFS will trigger writeback, which
+diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
+index 1698507d1ac7..3f428620ebf2 100644
+--- a/fs/xfs/xfs_aops.c
++++ b/fs/xfs/xfs_aops.c
+@@ -503,13 +503,6 @@ xfs_vm_writepages(
+ {
+ 	struct xfs_writepage_ctx wpc = { };
+ 
+-	/*
+-	 * Writing back data in a transaction context can result in recursive
+-	 * transactions. This is bad, so issue a warning and get out of here.
+-	 */
+-	if (WARN_ON_ONCE(current->journal_info))
+-		return 0;
+-
+ 	xfs_iflags_clear(XFS_I(mapping->host), XFS_ITRUNCATED);
+ 	return iomap_writepages(mapping, wbc, &wpc.ctx, &xfs_writeback_ops);
+ }
+diff --git a/fs/xfs/xfs_icache.c b/fs/xfs/xfs_icache.c
+index e64265bc0b33..74f1812b03cb 100644
+--- a/fs/xfs/xfs_icache.c
++++ b/fs/xfs/xfs_icache.c
+@@ -2039,8 +2039,10 @@ xfs_inodegc_want_queue_work(
+  *  - Memory shrinkers queued the inactivation worker and it hasn't finished.
+  *  - The queue depth exceeds the maximum allowable percpu backlog.
+  *
+- * Note: If the current thread is running a transaction, we don't ever want to
+- * wait for other transactions because that could introduce a deadlock.
++ * Note: If we are in a NOFS context here (e.g. current thread is running a
++ * transaction) the we don't want to block here as inodegc progress may require
++ * filesystem resources we hold to make progress and that could result in a
++ * deadlock. Hence we skip out of here if we are in a scoped NOFS context.
+  */
+ static inline bool
+ xfs_inodegc_want_flush_work(
+@@ -2048,7 +2050,7 @@ xfs_inodegc_want_flush_work(
+ 	unsigned int		items,
+ 	unsigned int		shrinker_hits)
+ {
+-	if (current->journal_info)
++	if (current->flags & PF_MEMALLOC_NOFS)
+ 		return false;
+ 
+ 	if (shrinker_hits > 0)
+diff --git a/fs/xfs/xfs_trans.h b/fs/xfs/xfs_trans.h
+index 3f7e3a09a49f..1636663707dc 100644
+--- a/fs/xfs/xfs_trans.h
++++ b/fs/xfs/xfs_trans.h
+@@ -268,19 +268,14 @@ static inline void
+ xfs_trans_set_context(
+ 	struct xfs_trans	*tp)
+ {
+-	ASSERT(current->journal_info == NULL);
+ 	tp->t_pflags = memalloc_nofs_save();
+-	current->journal_info = tp;
+ }
+ 
+ static inline void
+ xfs_trans_clear_context(
+ 	struct xfs_trans	*tp)
+ {
+-	if (current->journal_info == tp) {
+-		memalloc_nofs_restore(tp->t_pflags);
+-		current->journal_info = NULL;
+-	}
++	memalloc_nofs_restore(tp->t_pflags);
+ }
+ 
+ static inline void
+@@ -288,10 +283,8 @@ xfs_trans_switch_context(
+ 	struct xfs_trans	*old_tp,
+ 	struct xfs_trans	*new_tp)
+ {
+-	ASSERT(current->journal_info == old_tp);
+ 	new_tp->t_pflags = old_tp->t_pflags;
+ 	old_tp->t_pflags = 0;
+-	current->journal_info = new_tp;
+ }
+ 
+ #endif	/* __XFS_TRANS_H__ */

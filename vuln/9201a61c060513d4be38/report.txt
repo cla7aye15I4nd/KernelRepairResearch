@@ -1,0 +1,66 @@
+F2FS-fs (loop0): inject invalid blkaddr in f2fs_is_valid_blkaddr of do_write_page+0x277/0xb10 fs/f2fs/segment.c:3956
+------------[ cut here ]------------
+kernel BUG at fs/f2fs/segment.c:3957!
+Oops: invalid opcode: 0000 [#1] SMP KASAN PTI
+CPU: 0 UID: 0 PID: 5852 Comm: syz-executor Not tainted 6.16.0-rc4-next-20250704-syzkaller #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:do_write_page+0xa44/0xb10 fs/f2fs/segment.c:3956
+Code: 42 34 ad fd 49 89 ed 48 89 e8 48 25 ff 0f 00 00 74 1a e8 4f 2f ad fd e9 9f 00 00 00 e8 45 2f ad fd 90 0f 0b e8 3d 2f ad fd 90 <0f> 0b 4d 89 ee 4c 89 ef be 08 00 00 00 e8 8a ce 11 fe 49 c1 ee 03
+RSP: 0018:ffffc9000404ec58 EFLAGS: 00010293
+RAX: ffffffff84128143 RBX: ffffc9000404ef40 RCX: ffff88802a593c00
+RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
+RBP: ffffc9000404ef5c R08: 0000000000000003 R09: 0000000000000004
+R10: dffffc0000000000 R11: fffffbfff1bfa430 R12: ffff88807b764000
+R13: 1ffff92000809deb R14: dffffc0000000000 R15: ffffc9000404ef5c
+FS:  000055555fd80500(0000) GS:ffff888125be7000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f1432f6f000 CR3: 000000002bdb4000 CR4: 00000000003526f0
+Call Trace:
+ <TASK>
+ f2fs_outplace_write_data+0x11a/0x220 fs/f2fs/segment.c:4017
+ f2fs_do_write_data_page+0x12ea/0x1a40 fs/f2fs/data.c:2752
+ f2fs_write_single_data_page+0xa68/0x1680 fs/f2fs/data.c:2851
+ f2fs_write_cache_pages fs/f2fs/data.c:3133 [inline]
+ __f2fs_write_data_pages fs/f2fs/data.c:3282 [inline]
+ f2fs_write_data_pages+0x195b/0x3000 fs/f2fs/data.c:3309
+ do_writepages+0x32e/0x550 mm/page-writeback.c:2636
+ filemap_fdatawrite_wbc mm/filemap.c:386 [inline]
+ __filemap_fdatawrite_range mm/filemap.c:419 [inline]
+ __filemap_fdatawrite mm/filemap.c:425 [inline]
+ filemap_fdatawrite+0x199/0x240 mm/filemap.c:430
+ f2fs_sync_dirty_inodes+0x31f/0x830 fs/f2fs/checkpoint.c:1108
+ block_operations fs/f2fs/checkpoint.c:1247 [inline]
+ f2fs_write_checkpoint+0x95a/0x1df0 fs/f2fs/checkpoint.c:1638
+ kill_f2fs_super+0x2c3/0x6c0 fs/f2fs/super.c:5081
+ deactivate_locked_super+0xb9/0x130 fs/super.c:474
+ cleanup_mnt+0x425/0x4c0 fs/namespace.c:1378
+ task_work_run+0x1d1/0x260 kernel/task_work.c:227
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop+0xec/0x110 kernel/entry/common.c:43
+ exit_to_user_mode_prepare include/linux/irq-entry-common.h:208 [inline]
+ syscall_exit_to_user_mode_work include/linux/entry-common.h:175 [inline]
+ syscall_exit_to_user_mode include/linux/entry-common.h:210 [inline]
+ do_syscall_64+0x2bd/0x3b0 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fecc358fc57
+Code: a8 ff ff ff f7 d8 64 89 01 48 83 c8 ff c3 0f 1f 44 00 00 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 a8 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffda78ab318 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 00007fecc3610925 RCX: 00007fecc358fc57
+RDX: 0000000000000000 RSI: 0000000000000009 RDI: 00007ffda78ab3d0
+RBP: 00007ffda78ab3d0 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000246 R12: 00007ffda78ac460
+R13: 00007fecc3610925 R14: 0000000000049ffc R15: 00007ffda78ac4a0
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:do_write_page+0xa44/0xb10 fs/f2fs/segment.c:3956
+Code: 42 34 ad fd 49 89 ed 48 89 e8 48 25 ff 0f 00 00 74 1a e8 4f 2f ad fd e9 9f 00 00 00 e8 45 2f ad fd 90 0f 0b e8 3d 2f ad fd 90 <0f> 0b 4d 89 ee 4c 89 ef be 08 00 00 00 e8 8a ce 11 fe 49 c1 ee 03
+RSP: 0018:ffffc9000404ec58 EFLAGS: 00010293
+RAX: ffffffff84128143 RBX: ffffc9000404ef40 RCX: ffff88802a593c00
+RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
+RBP: ffffc9000404ef5c R08: 0000000000000003 R09: 0000000000000004
+R10: dffffc0000000000 R11: fffffbfff1bfa430 R12: ffff88807b764000
+R13: 1ffff92000809deb R14: dffffc0000000000 R15: ffffc9000404ef5c
+FS:  000055555fd80500(0000) GS:ffff888125ce7000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ff8e7b81ab8 CR3: 000000002bdb4000 CR4: 00000000003526f0

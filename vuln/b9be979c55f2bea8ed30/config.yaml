@@ -1,0 +1,24 @@
+id: b9be979c55f2bea8ed30
+bug_link: https://syzkaller.appspot.com/bug?extid=b9be979c55f2bea8ed30
+title: 'KASAN: use-after-free Read in rxrpc_put_peer'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c48fc11b69e95007109206311b0187a3090591f3
+fix_commit: 55f6c98e3674ce16038a1949c3f9ca5a9a99f289
+datetime: '2019-10-07T11:05:05+01:00'
+fix_commit_message: "rxrpc: Fix trace-after-put looking at the put peer record\n\n\
+  rxrpc_put_peer() calls trace_rxrpc_peer() after it has done the decrement\nof the\
+  \ refcount - which looks at the debug_id in the peer record.  But\nunless the refcount\
+  \ was reduced to zero, we no longer have the right to\nlook in the record and, indeed,\
+  \ it may be deleted by some other thread.\n\nFix this by getting the debug_id out\
+  \ before decrementing the refcount and\nthen passing that into the tracepoint.\n\
+  \nThis can cause the following symptoms:\n\n    BUG: KASAN: use-after-free in __rxrpc_put_peer\
+  \ net/rxrpc/peer_object.c:411\n    [inline]\n    BUG: KASAN: use-after-free in rxrpc_put_peer+0x685/0x6a0\n\
+  \    net/rxrpc/peer_object.c:435\n    Read of size 8 at addr ffff888097ec0058 by\
+  \ task syz-executor823/24216\n\nFixes: 1159d4b496f5 (\"rxrpc: Add a tracepoint to\
+  \ track rxrpc_peer refcounting\")\nReported-by: syzbot+b9be979c55f2bea8ed30@syzkaller.appspotmail.com\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\n"
+submodule:
+- include/trace/events
+- net/rxrpc
+hunk_count: 6
+covered_count: 4

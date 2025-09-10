@@ -1,0 +1,82 @@
+------------[ cut here ]------------
+NETDEV WATCHDOG: sl0 (): transmit queue 0 timed out 25610 ms
+WARNING: CPU: 0 PID: 0 at net/sched/sch_generic.c:525 dev_watchdog+0x8cd/0x8f0 net/sched/sch_generic.c:525
+Modules linked in:
+CPU: 0 PID: 0 Comm: swapper/0 Not tainted 6.7.0-rc7-syzkaller-00003-gfbafc3e621c3 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+RIP: 0010:dev_watchdog+0x8cd/0x8f0 net/sched/sch_generic.c:525
+Code: 1e 77 06 01 90 48 8b 5c 24 10 48 89 df e8 0b 32 e6 ff 45 89 e8 89 e9 48 89 de 48 89 c2 48 c7 c7 20 51 ec 8b e8 94 30 c1 f8 90 <0f> 0b 90 90 e9 23 fd ff ff e8 65 ef fa f8 90 0f 0b 90 e9 bc fc ff
+RSP: 0018:ffffc90000007be0 EFLAGS: 00010282
+RAX: 0000000000000000 RBX: ffff88801f818000 RCX: ffffffff814ca739
+RDX: ffffffff8cc95900 RSI: ffffffff814ca746 RDI: 0000000000000001
+RBP: 0000000000000000 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000001 R12: ffff888018354000
+R13: 000000000000640a R14: ffff88801f818548 R15: 00000000ffffbe00
+FS:  0000000000000000(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f0efd6bf0d0 CR3: 000000000cd77000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ call_timer_fn+0x193/0x590 kernel/time/timer.c:1700
+ expire_timers kernel/time/timer.c:1751 [inline]
+ __run_timers+0x764/0xb20 kernel/time/timer.c:2022
+ run_timer_softirq+0x58/0xd0 kernel/time/timer.c:2035
+ __do_softirq+0x21a/0x8de kernel/softirq.c:553
+ invoke_softirq kernel/softirq.c:427 [inline]
+ __irq_exit_rcu kernel/softirq.c:632 [inline]
+ irq_exit_rcu+0xb7/0x120 kernel/softirq.c:644
+ sysvec_apic_timer_interrupt+0x95/0xb0 arch/x86/kernel/apic/apic.c:1076
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:649
+RIP: 0010:native_irq_disable arch/x86/include/asm/irqflags.h:37 [inline]
+RIP: 0010:arch_local_irq_disable arch/x86/include/asm/irqflags.h:72 [inline]
+RIP: 0010:acpi_safe_halt+0x1b/0x20 drivers/acpi/processor_idle.c:113
+Code: ed c3 66 66 2e 0f 1f 84 00 00 00 00 00 66 90 65 48 8b 04 25 00 bd 03 00 48 8b 00 a8 08 75 0c 66 90 0f 00 2d 37 b9 ba 00 fb f4 <fa> c3 0f 1f 00 0f b6 47 08 3c 01 74 0b 3c 02 74 05 8b 7f 04 eb 9f
+RSP: 0018:ffffffff8cc07d68 EFLAGS: 00000246
+RAX: 0000000000004000 RBX: 0000000000000001 RCX: ffffffff8a7f2a77
+RDX: 0000000000000001 RSI: ffff888146644000 RDI: ffff888146644064
+RBP: ffff888146644064 R08: 0000000000000001 R09: ffffed1017306dbd
+R10: ffff8880b9836deb R11: 0000000000000000 R12: ffff888014371000
+R13: ffffffff8db11aa0 R14: 0000000000000000 R15: 0000000000000000
+ acpi_idle_enter+0xc5/0x160 drivers/acpi/processor_idle.c:707
+ cpuidle_enter_state+0x83/0x500 drivers/cpuidle/cpuidle.c:267
+ cpuidle_enter+0x4e/0xa0 drivers/cpuidle/cpuidle.c:388
+ cpuidle_idle_call kernel/sched/idle.c:215 [inline]
+ do_idle+0x319/0x400 kernel/sched/idle.c:282
+ cpu_startup_entry+0x50/0x60 kernel/sched/idle.c:380
+ rest_init+0x16f/0x2b0 init/main.c:730
+ arch_call_rest_init+0x13/0x30 init/main.c:827
+ start_kernel+0x39f/0x480 init/main.c:1072
+ x86_64_start_reservations+0x18/0x30 arch/x86/kernel/head64.c:555
+ x86_64_start_kernel+0xb2/0xc0 arch/x86/kernel/head64.c:536
+ secondary_startup_64_no_verify+0x178/0x17b
+ </TASK>
+----------------
+Code disassembly (best guess):
+   0:	ed                   	in     (%dx),%eax
+   1:	c3                   	ret
+   2:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+   9:	00 00 00 00
+   d:	66 90                	xchg   %ax,%ax
+   f:	65 48 8b 04 25 00 bd 	mov    %gs:0x3bd00,%rax
+  16:	03 00
+  18:	48 8b 00             	mov    (%rax),%rax
+  1b:	a8 08                	test   $0x8,%al
+  1d:	75 0c                	jne    0x2b
+  1f:	66 90                	xchg   %ax,%ax
+  21:	0f 00 2d 37 b9 ba 00 	verw   0xbab937(%rip)        # 0xbab95f
+  28:	fb                   	sti
+  29:	f4                   	hlt
+* 2a:	fa                   	cli <-- trapping instruction
+  2b:	c3                   	ret
+  2c:	0f 1f 00             	nopl   (%rax)
+  2f:	0f b6 47 08          	movzbl 0x8(%rdi),%eax
+  33:	3c 01                	cmp    $0x1,%al
+  35:	74 0b                	je     0x42
+  37:	3c 02                	cmp    $0x2,%al
+  39:	74 05                	je     0x40
+  3b:	8b 7f 04             	mov    0x4(%rdi),%edi
+  3e:	eb 9f                	jmp    0xffffffdf

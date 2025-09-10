@@ -1,0 +1,93 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000001: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000008-0x000000000000000f]
+CPU: 0 UID: 0 PID: 5849 Comm: syz-executor148 Not tainted 6.12.0-rc5-next-20241101-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:_compound_head include/linux/page-flags.h:242 [inline]
+RIP: 0010:put_page+0x23/0x260 include/linux/mm.h:1552
+Code: 90 90 90 90 90 90 90 55 41 57 41 56 53 49 89 fe 48 bd 00 00 00 00 00 fc ff df e8 28 78 0d f8 49 8d 5e 08 48 89 d8 48 c1 e8 03 <80> 3c 28 00 74 08 48 89 df e8 4f bc 77 f8 48 8b 1b 48 89 de 48 83
+RSP: 0018:ffffc90003caf0a8 EFLAGS: 00010202
+RAX: 0000000000000001 RBX: 0000000000000008 RCX: ffff888024cdda00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: dffffc0000000000 R08: ffffffff8987d8fd R09: 1ffffffff203a1f6
+R10: dffffc0000000000 R11: fffffbfff203a1f7 R12: 0000000000000000
+R13: ffff888058bf2e42 R14: 0000000000000000 R15: 0000000000000000
+FS:  0000555576932380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000000045ad50 CR3: 0000000057c86000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ skb_page_unref include/linux/skbuff_ref.h:43 [inline]
+ __skb_frag_unref include/linux/skbuff_ref.h:56 [inline]
+ skb_release_data+0x483/0x8a0 net/core/skbuff.c:1119
+ skb_release_all net/core/skbuff.c:1190 [inline]
+ __kfree_skb net/core/skbuff.c:1204 [inline]
+ sk_skb_reason_drop+0x1c9/0x380 net/core/skbuff.c:1242
+ kfree_skb_reason include/linux/skbuff.h:1262 [inline]
+ kfree_skb include/linux/skbuff.h:1271 [inline]
+ __ip_flush_pending_frames net/ipv4/ip_output.c:1538 [inline]
+ ip_flush_pending_frames+0x12d/0x260 net/ipv4/ip_output.c:1545
+ udp_flush_pending_frames net/ipv4/udp.c:829 [inline]
+ udp_sendmsg+0x5d2/0x2a50 net/ipv4/udp.c:1302
+ sock_sendmsg_nosec net/socket.c:729 [inline]
+ __sock_sendmsg+0x1a6/0x270 net/socket.c:744
+ sock_sendmsg+0x134/0x200 net/socket.c:767
+ splice_to_socket+0xa10/0x10b0 fs/splice.c:889
+ do_splice_from fs/splice.c:941 [inline]
+ direct_splice_actor+0x11b/0x220 fs/splice.c:1164
+ splice_direct_to_actor+0x586/0xc80 fs/splice.c:1108
+ do_splice_direct_actor fs/splice.c:1207 [inline]
+ do_splice_direct+0x289/0x3e0 fs/splice.c:1233
+ do_sendfile+0x561/0xe10 fs/read_write.c:1388
+ __do_sys_sendfile64 fs/read_write.c:1455 [inline]
+ __se_sys_sendfile64+0x17c/0x1e0 fs/read_write.c:1441
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f0247802ba9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 c1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffebf9e9dd8 EFLAGS: 00000246 ORIG_RAX: 0000000000000028
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f0247802ba9
+RDX: 0000000000000000 RSI: 0000000000000003 RDI: 0000000000000004
+RBP: 00000000000f4240 R08: 00000000000000a0 R09: 00000000000000a0
+R10: 0000020000023893 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffebf9e9ff8 R14: 00007ffebf9e9e00 R15: 00007ffebf9e9df0
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:_compound_head include/linux/page-flags.h:242 [inline]
+RIP: 0010:put_page+0x23/0x260 include/linux/mm.h:1552
+Code: 90 90 90 90 90 90 90 55 41 57 41 56 53 49 89 fe 48 bd 00 00 00 00 00 fc ff df e8 28 78 0d f8 49 8d 5e 08 48 89 d8 48 c1 e8 03 <80> 3c 28 00 74 08 48 89 df e8 4f bc 77 f8 48 8b 1b 48 89 de 48 83
+RSP: 0018:ffffc90003caf0a8 EFLAGS: 00010202
+RAX: 0000000000000001 RBX: 0000000000000008 RCX: ffff888024cdda00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: dffffc0000000000 R08: ffffffff8987d8fd R09: 1ffffffff203a1f6
+----------------
+Code disassembly (best guess):
+   0:	90                   	nop
+   1:	90                   	nop
+   2:	90                   	nop
+   3:	90                   	nop
+   4:	90                   	nop
+   5:	90                   	nop
+   6:	90                   	nop
+   7:	55                   	push   %rbp
+   8:	41 57                	push   %r15
+   a:	41 56                	push   %r14
+   c:	53                   	push   %rbx
+   d:	49 89 fe             	mov    %rdi,%r14
+  10:	48 bd 00 00 00 00 00 	movabs $0xdffffc0000000000,%rbp
+  17:	fc ff df
+  1a:	e8 28 78 0d f8       	call   0xf80d7847
+  1f:	49 8d 5e 08          	lea    0x8(%r14),%rbx
+  23:	48 89 d8             	mov    %rbx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	80 3c 28 00          	cmpb   $0x0,(%rax,%rbp,1) <-- trapping instruction
+  2e:	74 08                	je     0x38
+  30:	48 89 df             	mov    %rbx,%rdi
+  33:	e8 4f bc 77 f8       	call   0xf877bc87
+  38:	48 8b 1b             	mov    (%rbx),%rbx
+  3b:	48 89 de             	mov    %rbx,%rsi
+  3e:	48                   	rex.W
+  3f:	83                   	.byte 0x83

@@ -1,0 +1,18 @@
+diff --git a/io_uring/sqpoll.c b/io_uring/sqpoll.c
+index 9e5bd79fd2b5..8961a3c1e73c 100644
+--- a/io_uring/sqpoll.c
++++ b/io_uring/sqpoll.c
+@@ -268,8 +268,12 @@ static int io_sq_thread(void *data)
+ 	DEFINE_WAIT(wait);
+ 
+ 	/* offload context creation failed, just exit */
+-	if (!current->io_uring)
++	if (!current->io_uring) {
++		mutex_lock(&sqd->lock);
++		sqd->thread = NULL;
++		mutex_unlock(&sqd->lock);
+ 		goto err_out;
++	}
+ 
+ 	snprintf(buf, sizeof(buf), "iou-sqp-%d", sqd->task_pid);
+ 	set_task_comm(current, buf);

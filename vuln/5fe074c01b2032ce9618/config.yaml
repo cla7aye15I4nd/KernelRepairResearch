@@ -1,0 +1,130 @@
+id: 5fe074c01b2032ce9618
+bug_link: https://syzkaller.appspot.com/bug?extid=5fe074c01b2032ce9618
+title: 'INFO: task hung in stop_sync_thread (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 876c27314ce51fe7e7e2aeb24a6448da1a26c78f
+fix_commit: 5c64576a77894a50be80be0024bed27171b55989
+datetime: '2018-04-09T17:05:27+02:00'
+fix_commit_message: "ipvs: fix rtnl_lock lockups caused by start_sync_thread\n\nsyzkaller\
+  \ reports for wrong rtnl_lock usage in sync code [1] and [2]\n\nWe have 2 problems\
+  \ in start_sync_thread if error path is\ntaken, eg. on memory allocation error or\
+  \ failure to configure\nsockets for mcast group or addr/port binding:\n\n1. recursive\
+  \ locking: holding rtnl_lock while calling sock_release\nwhich in turn calls again\
+  \ rtnl_lock in ip_mc_drop_socket to leave\nthe mcast group, as noticed by Florian\
+  \ Westphal. Additionally,\nsock_release can not be called while holding sync_mutex\
+  \ (ABBA\ndeadlock).\n\n2. task hung: holding rtnl_lock while calling kthread_stop\
+  \ to\nstop the running kthreads. As the kthreads do the same to leave\nthe mcast\
+  \ group (sock_release -> ip_mc_drop_socket -> rtnl_lock)\nthey hang.\n\nFix the\
+  \ problems by calling rtnl_unlock early in the error path,\nnow sock_release is\
+  \ called after unlocking both mutexes.\n\nProblem 3 (task hung reported by syzkaller\
+  \ [2]) is variant of\nproblem 2: use _trylock to prevent one user to call rtnl_lock\
+  \ and\nthen while waiting for sync_mutex to block kthreads that execute\nsock_release\
+  \ when they are stopped by stop_sync_thread.\n\n[1]\nIPVS: stopping backup sync\
+  \ thread 4500 ...\nWARNING: possible recursive locking detected\n4.16.0-rc7+ #3\
+  \ Not tainted\n--------------------------------------------\nsyzkaller688027/4497\
+  \ is trying to acquire lock:\n  (rtnl_mutex){+.+.}, at: [<00000000bb14d7fb>] rtnl_lock+0x17/0x20\n\
+  net/core/rtnetlink.c:74\n\nbut task is already holding lock:\nIPVS: stopping backup\
+  \ sync thread 4495 ...\n  (rtnl_mutex){+.+.}, at: [<00000000bb14d7fb>] rtnl_lock+0x17/0x20\n\
+  net/core/rtnetlink.c:74\n\nother info that might help us debug this:\n  Possible\
+  \ unsafe locking scenario:\n\n        CPU0\n        ----\n   lock(rtnl_mutex);\n\
+  \   lock(rtnl_mutex);\n\n  *** DEADLOCK ***\n\n  May be due to missing lock nesting\
+  \ notation\n\n2 locks held by syzkaller688027/4497:\n  #0:  (rtnl_mutex){+.+.},\
+  \ at: [<00000000bb14d7fb>] rtnl_lock+0x17/0x20\nnet/core/rtnetlink.c:74\n  #1: \
+  \ (ipvs->sync_mutex){+.+.}, at: [<00000000703f78e3>]\ndo_ip_vs_set_ctl+0x10f8/0x1cc0\
+  \ net/netfilter/ipvs/ip_vs_ctl.c:2388\n\nstack backtrace:\nCPU: 1 PID: 4497 Comm:\
+  \ syzkaller688027 Not tainted 4.16.0-rc7+ #3\nHardware name: Google Google Compute\
+  \ Engine/Google Compute Engine, BIOS\nGoogle 01/01/2011\nCall Trace:\n  __dump_stack\
+  \ lib/dump_stack.c:17 [inline]\n  dump_stack+0x194/0x24d lib/dump_stack.c:53\n \
+  \ print_deadlock_bug kernel/locking/lockdep.c:1761 [inline]\n  check_deadlock kernel/locking/lockdep.c:1805\
+  \ [inline]\n  validate_chain kernel/locking/lockdep.c:2401 [inline]\n  __lock_acquire+0xe8f/0x3e00\
+  \ kernel/locking/lockdep.c:3431\n  lock_acquire+0x1d5/0x580 kernel/locking/lockdep.c:3920\n\
+  \  __mutex_lock_common kernel/locking/mutex.c:756 [inline]\n  __mutex_lock+0x16f/0x1a80\
+  \ kernel/locking/mutex.c:893\n  mutex_lock_nested+0x16/0x20 kernel/locking/mutex.c:908\n\
+  \  rtnl_lock+0x17/0x20 net/core/rtnetlink.c:74\n  ip_mc_drop_socket+0x88/0x230 net/ipv4/igmp.c:2643\n\
+  \  inet_release+0x4e/0x1c0 net/ipv4/af_inet.c:413\n  sock_release+0x8d/0x1e0 net/socket.c:595\n\
+  \  start_sync_thread+0x2213/0x2b70 net/netfilter/ipvs/ip_vs_sync.c:1924\n  do_ip_vs_set_ctl+0x1139/0x1cc0\
+  \ net/netfilter/ipvs/ip_vs_ctl.c:2389\n  nf_sockopt net/netfilter/nf_sockopt.c:106\
+  \ [inline]\n  nf_setsockopt+0x67/0xc0 net/netfilter/nf_sockopt.c:115\n  ip_setsockopt+0x97/0xa0\
+  \ net/ipv4/ip_sockglue.c:1261\n  udp_setsockopt+0x45/0x80 net/ipv4/udp.c:2406\n\
+  \  sock_common_setsockopt+0x95/0xd0 net/core/sock.c:2975\n  SYSC_setsockopt net/socket.c:1849\
+  \ [inline]\n  SyS_setsockopt+0x189/0x360 net/socket.c:1828\n  do_syscall_64+0x281/0x940\
+  \ arch/x86/entry/common.c:287\n  entry_SYSCALL_64_after_hwframe+0x42/0xb7\nRIP:\
+  \ 0033:0x446a69\nRSP: 002b:00007fa1c3a64da8 EFLAGS: 00000246 ORIG_RAX: 0000000000000036\n\
+  RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 0000000000446a69\nRDX: 000000000000048b\
+  \ RSI: 0000000000000000 RDI: 0000000000000003\nRBP: 00000000006e29fc R08: 0000000000000018\
+  \ R09: 0000000000000000\nR10: 00000000200000c0 R11: 0000000000000246 R12: 00000000006e29f8\n\
+  R13: 00676e697279656b R14: 00007fa1c3a659c0 R15: 00000000006e2b60\n\n[2]\nIPVS:\
+  \ sync thread started: state = BACKUP, mcast_ifn = syz_tun, syncid = 4,\nid = 0\n\
+  IPVS: stopping backup sync thread 25415 ...\nINFO: task syz-executor7:25421 blocked\
+  \ for more than 120 seconds.\n       Not tainted 4.16.0-rc6+ #284\n\"echo 0 > /proc/sys/kernel/hung_task_timeout_secs\"\
+  \ disables this message.\nsyz-executor7   D23688 25421   4408 0x00000004\nCall Trace:\n\
+  \  context_switch kernel/sched/core.c:2862 [inline]\n  __schedule+0x8fb/0x1ec0 kernel/sched/core.c:3440\n\
+  \  schedule+0xf5/0x430 kernel/sched/core.c:3499\n  schedule_timeout+0x1a3/0x230\
+  \ kernel/time/timer.c:1777\n  do_wait_for_common kernel/sched/completion.c:86 [inline]\n\
+  \  __wait_for_common kernel/sched/completion.c:107 [inline]\n  wait_for_common kernel/sched/completion.c:118\
+  \ [inline]\n  wait_for_completion+0x415/0x770 kernel/sched/completion.c:139\n  kthread_stop+0x14a/0x7a0\
+  \ kernel/kthread.c:530\n  stop_sync_thread+0x3d9/0x740 net/netfilter/ipvs/ip_vs_sync.c:1996\n\
+  \  do_ip_vs_set_ctl+0x2b1/0x1cc0 net/netfilter/ipvs/ip_vs_ctl.c:2394\n  nf_sockopt\
+  \ net/netfilter/nf_sockopt.c:106 [inline]\n  nf_setsockopt+0x67/0xc0 net/netfilter/nf_sockopt.c:115\n\
+  \  ip_setsockopt+0x97/0xa0 net/ipv4/ip_sockglue.c:1253\n  sctp_setsockopt+0x2ca/0x63e0\
+  \ net/sctp/socket.c:4154\n  sock_common_setsockopt+0x95/0xd0 net/core/sock.c:3039\n\
+  \  SYSC_setsockopt net/socket.c:1850 [inline]\n  SyS_setsockopt+0x189/0x360 net/socket.c:1829\n\
+  \  do_syscall_64+0x281/0x940 arch/x86/entry/common.c:287\n  entry_SYSCALL_64_after_hwframe+0x42/0xb7\n\
+  RIP: 0033:0x454889\nRSP: 002b:00007fc927626c68 EFLAGS: 00000246 ORIG_RAX: 0000000000000036\n\
+  RAX: ffffffffffffffda RBX: 00007fc9276276d4 RCX: 0000000000454889\nRDX: 000000000000048c\
+  \ RSI: 0000000000000000 RDI: 0000000000000017\nRBP: 000000000072bf58 R08: 0000000000000018\
+  \ R09: 0000000000000000\nR10: 0000000020000000 R11: 0000000000000246 R12: 00000000ffffffff\n\
+  R13: 000000000000051c R14: 00000000006f9b40 R15: 0000000000000001\n\nShowing all\
+  \ locks held in the system:\n2 locks held by khungtaskd/868:\n  #0:  (rcu_read_lock){....},\
+  \ at: [<00000000a1a8f002>]\ncheck_hung_uninterruptible_tasks kernel/hung_task.c:175\
+  \ [inline]\n  #0:  (rcu_read_lock){....}, at: [<00000000a1a8f002>] watchdog+0x1c5/0xd60\n\
+  kernel/hung_task.c:249\n  #1:  (tasklist_lock){.+.+}, at: [<0000000037c2f8f9>]\n\
+  debug_show_all_locks+0xd3/0x3d0 kernel/locking/lockdep.c:4470\n1 lock held by rsyslogd/4247:\n\
+  \  #0:  (&f->f_pos_lock){+.+.}, at: [<000000000d8d6983>]\n__fdget_pos+0x12b/0x190\
+  \ fs/file.c:765\n2 locks held by getty/4338:\n  #0:  (&tty->ldisc_sem){++++}, at:\
+  \ [<00000000bee98654>]\nldsem_down_read+0x37/0x40 drivers/tty/tty_ldsem.c:365\n\
+  \  #1:  (&ldata->atomic_read_lock){+.+.}, at: [<00000000c1d180aa>]\nn_tty_read+0x2ef/0x1a40\
+  \ drivers/tty/n_tty.c:2131\n2 locks held by getty/4339:\n  #0:  (&tty->ldisc_sem){++++},\
+  \ at: [<00000000bee98654>]\nldsem_down_read+0x37/0x40 drivers/tty/tty_ldsem.c:365\n\
+  \  #1:  (&ldata->atomic_read_lock){+.+.}, at: [<00000000c1d180aa>]\nn_tty_read+0x2ef/0x1a40\
+  \ drivers/tty/n_tty.c:2131\n2 locks held by getty/4340:\n  #0:  (&tty->ldisc_sem){++++},\
+  \ at: [<00000000bee98654>]\nldsem_down_read+0x37/0x40 drivers/tty/tty_ldsem.c:365\n\
+  \  #1:  (&ldata->atomic_read_lock){+.+.}, at: [<00000000c1d180aa>]\nn_tty_read+0x2ef/0x1a40\
+  \ drivers/tty/n_tty.c:2131\n2 locks held by getty/4341:\n  #0:  (&tty->ldisc_sem){++++},\
+  \ at: [<00000000bee98654>]\nldsem_down_read+0x37/0x40 drivers/tty/tty_ldsem.c:365\n\
+  \  #1:  (&ldata->atomic_read_lock){+.+.}, at: [<00000000c1d180aa>]\nn_tty_read+0x2ef/0x1a40\
+  \ drivers/tty/n_tty.c:2131\n2 locks held by getty/4342:\n  #0:  (&tty->ldisc_sem){++++},\
+  \ at: [<00000000bee98654>]\nldsem_down_read+0x37/0x40 drivers/tty/tty_ldsem.c:365\n\
+  \  #1:  (&ldata->atomic_read_lock){+.+.}, at: [<00000000c1d180aa>]\nn_tty_read+0x2ef/0x1a40\
+  \ drivers/tty/n_tty.c:2131\n2 locks held by getty/4343:\n  #0:  (&tty->ldisc_sem){++++},\
+  \ at: [<00000000bee98654>]\nldsem_down_read+0x37/0x40 drivers/tty/tty_ldsem.c:365\n\
+  \  #1:  (&ldata->atomic_read_lock){+.+.}, at: [<00000000c1d180aa>]\nn_tty_read+0x2ef/0x1a40\
+  \ drivers/tty/n_tty.c:2131\n2 locks held by getty/4344:\n  #0:  (&tty->ldisc_sem){++++},\
+  \ at: [<00000000bee98654>]\nldsem_down_read+0x37/0x40 drivers/tty/tty_ldsem.c:365\n\
+  \  #1:  (&ldata->atomic_read_lock){+.+.}, at: [<00000000c1d180aa>]\nn_tty_read+0x2ef/0x1a40\
+  \ drivers/tty/n_tty.c:2131\n3 locks held by kworker/0:5/6494:\n  #0:  ((wq_completion)\"\
+  %s\"(\"ipv6_addrconf\")){+.+.}, at:\n[<00000000a062b18e>] work_static include/linux/workqueue.h:198\
+  \ [inline]\n  #0:  ((wq_completion)\"%s\"(\"ipv6_addrconf\")){+.+.}, at:\n[<00000000a062b18e>]\
+  \ set_work_data kernel/workqueue.c:619 [inline]\n  #0:  ((wq_completion)\"%s\"(\"\
+  ipv6_addrconf\")){+.+.}, at:\n[<00000000a062b18e>] set_work_pool_and_clear_pending\
+  \ kernel/workqueue.c:646\n[inline]\n  #0:  ((wq_completion)\"%s\"(\"ipv6_addrconf\"\
+  )){+.+.}, at:\n[<00000000a062b18e>] process_one_work+0xb12/0x1bb0 kernel/workqueue.c:2084\n\
+  \  #1:  ((addr_chk_work).work){+.+.}, at: [<00000000278427d5>]\nprocess_one_work+0xb89/0x1bb0\
+  \ kernel/workqueue.c:2088\n  #2:  (rtnl_mutex){+.+.}, at: [<00000000066e35ac>] rtnl_lock+0x17/0x20\n\
+  net/core/rtnetlink.c:74\n1 lock held by syz-executor7/25421:\n  #0:  (ipvs->sync_mutex){+.+.},\
+  \ at: [<00000000d414a689>]\ndo_ip_vs_set_ctl+0x277/0x1cc0 net/netfilter/ipvs/ip_vs_ctl.c:2393\n\
+  2 locks held by syz-executor7/25427:\n  #0:  (rtnl_mutex){+.+.}, at: [<00000000066e35ac>]\
+  \ rtnl_lock+0x17/0x20\nnet/core/rtnetlink.c:74\n  #1:  (ipvs->sync_mutex){+.+.},\
+  \ at: [<00000000e6d48489>]\ndo_ip_vs_set_ctl+0x10f8/0x1cc0 net/netfilter/ipvs/ip_vs_ctl.c:2388\n\
+  1 lock held by syz-executor7/25435:\n  #0:  (rtnl_mutex){+.+.}, at: [<00000000066e35ac>]\
+  \ rtnl_lock+0x17/0x20\nnet/core/rtnetlink.c:74\n1 lock held by ipvs-b:2:0/25415:\n\
+  \  #0:  (rtnl_mutex){+.+.}, at: [<00000000066e35ac>] rtnl_lock+0x17/0x20\nnet/core/rtnetlink.c:74\n\
+  \nReported-and-tested-by: syzbot+a46d6abf9d56b1365a72@syzkaller.appspotmail.com\n\
+  Reported-and-tested-by: syzbot+5fe074c01b2032ce9618@syzkaller.appspotmail.com\n\
+  Fixes: e0b26cc997d5 (\"ipvs: call rtnl_lock early\")\nSigned-off-by: Julian Anastasov\
+  \ <ja@ssi.bg>\nSigned-off-by: Simon Horman <horms@verge.net.au>\nSigned-off-by:\
+  \ Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 21
+covered_count: 2

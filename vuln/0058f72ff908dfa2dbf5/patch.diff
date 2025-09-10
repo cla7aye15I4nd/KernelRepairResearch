@@ -1,0 +1,83 @@
+diff --git a/drivers/pci/bus.c b/drivers/pci/bus.c
+index 9d278d3a19ff..93bc42170122 100644
+--- a/drivers/pci/bus.c
++++ b/drivers/pci/bus.c
+@@ -354,6 +354,17 @@ void pci_bus_add_device(struct pci_dev *dev)
+ 
+ 	if (dev_of_node(&dev->dev) && pci_is_bridge(dev)) {
+ 		for_each_available_child_of_node_scoped(dn, child) {
++			/*
++			 * First check whether the pwrctl device needs to be
++			 * created or not. This is decided based on at least
++			 * one of the power supplies being defined in the
++			 * devicetree node of the device.
++			 */
++			if (!of_pci_supply_present(child)) {
++				pci_dbg(dev, "skipping OF node: %s\n", child->name);
++				continue;
++			}
++
+ 			pdev = of_platform_device_create(child, NULL, &dev->dev);
+ 			if (!pdev)
+ 				pci_err(dev, "failed to create OF node: %s\n", child->name);
+diff --git a/drivers/pci/of.c b/drivers/pci/of.c
+index dacea3fc5128..52f770bcc481 100644
+--- a/drivers/pci/of.c
++++ b/drivers/pci/of.c
+@@ -728,6 +728,33 @@ void of_pci_make_dev_node(struct pci_dev *pdev)
+ }
+ #endif
+ 
++/**
++ * of_pci_supply_present() - Check if the power supply is present for the PCI
++ *				device
++ * @np: Device tree node
++ *
++ * Check if the power supply for the PCI device is present in the device tree
++ * node or not.
++ *
++ * Return: true if at least one power supply exists; false otherwise.
++ */
++bool of_pci_supply_present(struct device_node *np)
++{
++	struct property *prop;
++	char *supply;
++
++	if (!np)
++		return false;
++
++	for_each_property_of_node(np, prop) {
++		supply = strrchr(prop->name, '-');
++		if (supply && !strcmp(supply, "-supply"))
++			return true;
++	}
++
++	return false;
++}
++
+ #endif /* CONFIG_PCI */
+ 
+ /**
+diff --git a/drivers/pci/pci.h b/drivers/pci/pci.h
+index 14d00ce45bfa..64c6ca6de802 100644
+--- a/drivers/pci/pci.h
++++ b/drivers/pci/pci.h
+@@ -746,6 +746,7 @@ void pci_set_bus_of_node(struct pci_bus *bus);
+ void pci_release_bus_of_node(struct pci_bus *bus);
+ 
+ int devm_of_pci_bridge_init(struct device *dev, struct pci_host_bridge *bridge);
++bool of_pci_supply_present(struct device_node *np);
+ 
+ #else
+ static inline int
+@@ -793,6 +794,10 @@ static inline int devm_of_pci_bridge_init(struct device *dev, struct pci_host_br
+ 	return 0;
+ }
+ 
++static inline bool of_pci_supply_present(struct device_node *np)
++{
++	return false;
++}
+ #endif /* CONFIG_OF */
+ 
+ struct of_changeset;

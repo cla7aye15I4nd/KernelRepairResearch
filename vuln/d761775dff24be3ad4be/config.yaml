@@ -1,0 +1,24 @@
+id: d761775dff24be3ad4be
+bug_link: https://syzkaller.appspot.com/bug?extid=d761775dff24be3ad4be
+title: 'INFO: task hung in rfcomm_process_sessions (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 506d9b4099a0ce8249bba16b4d0b828fdcf69d9a
+fix_commit: 1d80d57ffcb55488f0ec0b77928d4f82d16b6a90
+datetime: '2023-01-17T15:59:02-08:00'
+fix_commit_message: "Bluetooth: Fix possible deadlock in rfcomm_sk_state_change\n\n\
+  syzbot reports a possible deadlock in rfcomm_sk_state_change [1].\nWhile rfcomm_sock_connect\
+  \ acquires the sk lock and waits for\nthe rfcomm lock, rfcomm_sock_release could\
+  \ have the rfcomm\nlock and hit a deadlock for acquiring the sk lock.\nHere's a\
+  \ simplified flow:\n\nrfcomm_sock_connect:\n  lock_sock(sk)\n  rfcomm_dlc_open:\n\
+  \    rfcomm_lock()\n\nrfcomm_sock_release:\n  rfcomm_sock_shutdown:\n    rfcomm_lock()\n\
+  \    __rfcomm_dlc_close:\n        rfcomm_k_state_change:\n\t  lock_sock(sk)\n\n\
+  This patch drops the sk lock before calling rfcomm_dlc_open to\navoid the possible\
+  \ deadlock and holds sk's reference count to\nprevent use-after-free after rfcomm_dlc_open\
+  \ completes.\n\nReported-by: syzbot+d7ce59...@syzkaller.appspotmail.com\nFixes:\
+  \ 1804fdf6e494 (\"Bluetooth: btintel: Combine setting up MSFT extension\")\nLink:\
+  \ https://syzkaller.appspot.com/bug?extid=d7ce59b06b3eb14fd218 [1]\n\nSigned-off-by:\
+  \ Ying Hsu <yinghsu@chromium.org>\nSigned-off-by: Luiz Augusto von Dentz <luiz.von.dentz@intel.com>\n"
+submodule:
+- net/bluetooth
+hunk_count: 2
+covered_count: 0

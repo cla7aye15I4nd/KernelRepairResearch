@@ -1,0 +1,51 @@
+(syz-executor417,5218,0):ocfs2_local_read_info:763 ERROR: status = -5
+------------[ cut here ]------------
+ODEBUG: free active (active state 0) object: ffff88807eaea2c8 object type: timer_list hint: qsync_work_fn+0x0/0x150
+WARNING: CPU: 0 PID: 5218 at lib/debugobjects.c:518 debug_print_object+0x17a/0x1f0 lib/debugobjects.c:515
+Modules linked in:
+CPU: 0 UID: 0 PID: 5218 Comm: syz-executor417 Not tainted 6.11.0-rc6-syzkaller-00019-g67784a74e258 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+RIP: 0010:debug_print_object+0x17a/0x1f0 lib/debugobjects.c:515
+Code: e8 bb 0a 46 fd 4c 8b 0b 48 c7 c7 00 c3 3f 8c 48 8b 74 24 08 48 89 ea 44 89 e1 4d 89 f8 ff 34 24 e8 fb 0b a4 fc 48 83 c4 08 90 <0f> 0b 90 90 ff 05 3c d1 45 0b 48 83 c4 10 5b 41 5c 41 5d 41 5e 41
+RSP: 0018:ffffc900035c6db8 EFLAGS: 00010286
+RAX: dd0cacaa42ed0e00 RBX: ffffffff8becc1a0 RCX: ffff88802f3ada00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffffff8c3fc480 R08: ffffffff8155b292 R09: fffffbfff1cba0e0
+R10: dffffc0000000000 R11: fffffbfff1cba0e0 R12: 0000000000000000
+R13: ffffffff8c3fc398 R14: dffffc0000000000 R15: ffff88807eaea2c8
+FS:  0000555556052380(0000) GS:ffff8880b8800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055c243ba0f90 CR3: 0000000072a60000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __debug_check_no_obj_freed lib/debugobjects.c:990 [inline]
+ debug_check_no_obj_freed+0x45b/0x580 lib/debugobjects.c:1020
+ slab_free_hook mm/slub.c:2219 [inline]
+ slab_free mm/slub.c:4473 [inline]
+ kfree+0x10f/0x360 mm/slub.c:4594
+ ocfs2_local_read_info+0x9dc/0x1940 fs/ocfs2/quota_local.c:785
+ dquot_load_quota_sb+0x766/0xbc0 fs/quota/dquot.c:2460
+ dquot_load_quota_inode+0x320/0x600 fs/quota/dquot.c:2497
+ ocfs2_enable_quotas+0x225/0x450 fs/ocfs2/super.c:926
+ ocfs2_fill_super+0x4da5/0x5880 fs/ocfs2/super.c:1141
+ mount_bdev+0x20a/0x2d0 fs/super.c:1679
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1800
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3472
+ do_mount fs/namespace.c:3812 [inline]
+ __do_sys_mount fs/namespace.c:4020 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:3997
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fe7139f7bfa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fffed6df9b8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007fffed6df9d0 RCX: 00007fe7139f7bfa
+RDX: 0000000020004740 RSI: 0000000020004780 RDI: 00007fffed6df9d0
+RBP: 0000000000000004 R08: 00007fffed6dfa10 R09: 0000000000004704
+R10: 0000000000000400 R11: 0000000000000282 R12: 0000000000000400
+R13: 00007fffed6dfa10 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>

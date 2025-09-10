@@ -1,0 +1,33 @@
+id: 256c348558aa5cf611a9
+bug_link: https://syzkaller.appspot.com/bug?extid=256c348558aa5cf611a9
+title: WARNING in xt_cluster_mt (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 983e35ce2e1ee4037f6f5d5398dfc107b22ad569
+fix_commit: 0bfcb7b71e735560077a42847f69597ec7dcc326
+datetime: '2024-10-09T23:20:46+02:00'
+fix_commit_message: "netfilter: xtables: avoid NFPROTO_UNSPEC where needed\n\nsyzbot\
+  \ managed to call xt_cluster match via ebtables:\n\n WARNING: CPU: 0 PID: 11 at\
+  \ net/netfilter/xt_cluster.c:72 xt_cluster_mt+0x196/0x780\n [..]\n ebt_do_table+0x174b/0x2a40\n\
+  \nModule registers to NFPROTO_UNSPEC, but it assumes ipv4/ipv6 packet\nprocessing.\
+  \  As this is only useful to restrict locally terminating\nTCP/UDP traffic, register\
+  \ this for ipv4 and ipv6 family only.\n\nPablo points out that this is a general\
+  \ issue, direct users of the\nset/getsockopt interface can call into targets/matches\
+  \ that were only\nintended for use with ip(6)tables.\n\nCheck all UNSPEC matches\
+  \ and targets for similar issues:\n\n- matches and targets are fine except if they\
+  \ assume skb_network_header()\n  is valid -- this is only true when called from\
+  \ inet layer: ip(6) stack\n  pulls the ip/ipv6 header into linear data area.\n-\
+  \ targets that return XT_CONTINUE or other xtables verdicts must be\n  restricted\
+  \ too, they are incompatbile with the ebtables traverser, e.g.\n  EBT_CONTINUE is\
+  \ a completely different value than XT_CONTINUE.\n\nMost matches/targets are changed\
+  \ to register for NFPROTO_IPV4/IPV6, as\nthey are provided for use by ip(6)tables.\n\
+  \nThe MARK target is also used by arptables, so register for NFPROTO_ARP too.\n\n\
+  While at it, bail out if connbytes fails to enable the corresponding\nconntrack\
+  \ family.\n\nThis change passes the selftests in iptables.git.\n\nReported-by: syzbot+256c348558aa5cf611a9@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/netfilter-devel/66fec2e2.050a0220.9ec68.0047.GAE@google.com/\n\
+  Fixes: 0269ea493734 (\"netfilter: xtables: add cluster match\")\nSigned-off-by:\
+  \ Florian Westphal <fw@strlen.de>\nCo-developed-by: Pablo Neira Ayuso <pablo@netfilter.org>\n\
+  Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 26
+covered_count: 1

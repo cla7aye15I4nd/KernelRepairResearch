@@ -1,0 +1,41 @@
+id: a9e23ea2aa21044c2798
+bug_link: https://syzkaller.appspot.com/bug?extid=a9e23ea2aa21044c2798
+title: 'KASAN: slab-out-of-bounds Read in rt_cache_valid'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6f6a8622057c92408930c31698394fae1557b188
+fix_commit: c3bcde026684c62d7a2b6f626dc7cf763833875c
+datetime: '2019-06-18T20:48:45-04:00'
+fix_commit_message: "tipc: pass tunnel dev as NULL to udp_tunnel(6)_xmit_skb\n\nudp_tunnel(6)_xmit_skb()\
+  \ called by tipc_udp_xmit() expects a tunnel device\nto count packets on dev->tstats,\
+  \ a perpcu variable. However, TIPC is using\nudp tunnel with no tunnel device, and\
+  \ pass the lower dev, like veth device\nthat only initializes dev->lstats(a perpcu\
+  \ variable) when creating it.\n\nLater iptunnel_xmit_stats() called by ip(6)tunnel_xmit()\
+  \ thinks the dev as\na tunnel device, and uses dev->tstats instead of dev->lstats.\
+  \ tstats' each\npointer points to a bigger struct than lstats, so when tstats->tx_bytes\
+  \ is\nincreased, other percpu variable's members could be overwritten.\n\nsyzbot\
+  \ has reported quite a few crashes due to fib_nh_common percpu member\n'nhc_pcpu_rth_output'\
+  \ overwritten, call traces are like:\n\n  BUG: KASAN: slab-out-of-bounds in rt_cache_valid+0x158/0x190\n\
+  \  net/ipv4/route.c:1556\n    rt_cache_valid+0x158/0x190 net/ipv4/route.c:1556\n\
+  \    __mkroute_output net/ipv4/route.c:2332 [inline]\n    ip_route_output_key_hash_rcu+0x819/0x2d50\
+  \ net/ipv4/route.c:2564\n    ip_route_output_key_hash+0x1ef/0x360 net/ipv4/route.c:2393\n\
+  \    __ip_route_output_key include/net/route.h:125 [inline]\n    ip_route_output_flow+0x28/0xc0\
+  \ net/ipv4/route.c:2651\n    ip_route_output_key include/net/route.h:135 [inline]\n\
+  \  ...\n\nor:\n\n  kasan: GPF could be caused by NULL-ptr deref or user memory access\n\
+  \  RIP: 0010:dst_dev_put+0x24/0x290 net/core/dst.c:168\n    <IRQ>\n    rt_fibinfo_free_cpus\
+  \ net/ipv4/fib_semantics.c:200 [inline]\n    free_fib_info_rcu+0x2e1/0x490 net/ipv4/fib_semantics.c:217\n\
+  \    __rcu_reclaim kernel/rcu/rcu.h:240 [inline]\n    rcu_do_batch kernel/rcu/tree.c:2437\
+  \ [inline]\n    invoke_rcu_callbacks kernel/rcu/tree.c:2716 [inline]\n    rcu_process_callbacks+0x100a/0x1ac0\
+  \ kernel/rcu/tree.c:2697\n  ...\n\nThe issue exists since tunnel stats update is\
+  \ moved to iptunnel_xmit by\nCommit 039f50629b7f (\"ip_tunnel: Move stats update\
+  \ to iptunnel_xmit()\"),\nand here to fix it by passing a NULL tunnel dev to udp_tunnel(6)_xmit_skb\n\
+  so that the packets counting won't happen on dev->tstats.\n\nReported-by: syzbot+9d4c12bfd45a58738d0a@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+a9e23ea2aa21044c2798@syzkaller.appspotmail.com\nReported-by:\
+  \ syzbot+c4c4b2bb358bb936ad7e@syzkaller.appspotmail.com\nReported-by: syzbot+0290d2290a607e035ba1@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+a43d8d4e7e8a7a9e149e@syzkaller.appspotmail.com\nReported-by:\
+  \ syzbot+a47c5f4c6c00fc1ed16e@syzkaller.appspotmail.com\nFixes: 039f50629b7f (\"\
+  ip_tunnel: Move stats update to iptunnel_xmit()\")\nSigned-off-by: Xin Long <lucien.xin@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 2
+covered_count: 0

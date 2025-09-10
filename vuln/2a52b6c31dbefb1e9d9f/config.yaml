@@ -1,0 +1,24 @@
+id: 2a52b6c31dbefb1e9d9f
+bug_link: https://syzkaller.appspot.com/bug?extid=2a52b6c31dbefb1e9d9f
+title: 'KASAN: invalid-access Read in kmem_cache_destroy'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 76c057c84d286140c6c416c3b4ba832cd1d8984e
+fix_commit: 757fed1d0898b893d7daa84183947c70f27632f3
+datetime: '2021-01-28T09:05:44-08:00'
+fix_commit_message: "Revert \"mm/slub: fix a memory leak in sysfs_slab_add()\"\n\n\
+  This reverts commit dde3c6b72a16c2db826f54b2d49bdea26c3534a2.\n\nsyzbot report a\
+  \ double-free bug. The following case can cause this bug.\n\n - mm/slab_common.c:\
+  \ create_cache(): if the __kmem_cache_create() fails,\n   it does:\n\n\tout_free_cache:\n\
+  \t\tkmem_cache_free(kmem_cache, s);\n\n - but __kmem_cache_create() - at least for\
+  \ slub() - will have done\n\n\tsysfs_slab_add(s)\n\t\t-> sysfs_create_group() ..\
+  \ fails ..\n\t\t-> kobject_del(&s->kobj); .. which frees s ...\n\nWe can't remove\
+  \ the kmem_cache_free() in create_cache(), because other\nerror cases of __kmem_cache_create()\
+  \ do not free this.\n\nSo, revert the commit dde3c6b72a16 (\"mm/slub: fix a memory\
+  \ leak in\nsysfs_slab_add()\") to fix this.\n\nReported-by: syzbot+d0bd96b4696c1ef67991@syzkaller.appspotmail.com\n\
+  Fixes: dde3c6b72a16 (\"mm/slub: fix a memory leak in sysfs_slab_add()\")\nAcked-by:\
+  \ Vlastimil Babka <vbabka@suse.cz>\nSigned-off-by: Wang Hai <wanghai38@huawei.com>\n\
+  Cc: <stable@vger.kernel.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

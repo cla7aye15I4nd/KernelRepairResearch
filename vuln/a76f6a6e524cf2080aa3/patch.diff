@@ -1,0 +1,38 @@
+diff --git a/fs/fscache/volume.c b/fs/fscache/volume.c
+index a058e0136bfe..ab8ceddf9efa 100644
+--- a/fs/fscache/volume.c
++++ b/fs/fscache/volume.c
+@@ -203,7 +203,11 @@ static struct fscache_volume *fscache_alloc_volume(const char *volume_key,
+ 	struct fscache_volume *volume;
+ 	struct fscache_cache *cache;
+ 	size_t klen, hlen;
+-	char *key;
++	u8 *key;
++
++	klen = strlen(volume_key);
++	if (klen > NAME_MAX)
++		return NULL;
+ 
+ 	if (!coherency_data)
+ 		coherency_len = 0;
+@@ -229,7 +233,6 @@ static struct fscache_volume *fscache_alloc_volume(const char *volume_key,
+ 	/* Stick the length on the front of the key and pad it out to make
+ 	 * hashing easier.
+ 	 */
+-	klen = strlen(volume_key);
+ 	hlen = round_up(1 + klen + 1, sizeof(__le32));
+ 	key = kzalloc(hlen, GFP_KERNEL);
+ 	if (!key)
+diff --git a/include/linux/fscache.h b/include/linux/fscache.h
+index 36e5dd84cf59..8e312c8323a8 100644
+--- a/include/linux/fscache.h
++++ b/include/linux/fscache.h
+@@ -75,7 +75,7 @@ struct fscache_volume {
+ 	atomic_t			n_accesses;	/* Number of cache accesses in progress */
+ 	unsigned int			debug_id;
+ 	unsigned int			key_hash;	/* Hash of key string */
+-	char				*key;		/* Volume ID, eg. "afs@example.com@1234" */
++	u8				*key;		/* Volume ID, eg. "afs@example.com@1234" */
+ 	struct list_head		proc_link;	/* Link in /proc/fs/fscache/volumes */
+ 	struct hlist_bl_node		hash_link;	/* Link in hash table */
+ 	struct work_struct		work;

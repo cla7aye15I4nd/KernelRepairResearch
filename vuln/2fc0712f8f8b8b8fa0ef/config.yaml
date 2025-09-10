@@ -1,0 +1,52 @@
+id: 2fc0712f8f8b8b8fa0ef
+bug_link: https://syzkaller.appspot.com/bug?extid=2fc0712f8f8b8b8fa0ef
+title: kernel BUG at mm/page-writeback.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 36bbbd0e234d817938bdc52121a0f5473b3e58f5
+fix_commit: c2407cf7d22d0c0d94cf20342b3b8f06f1d904e7
+datetime: '2021-01-05T11:33:00-08:00'
+fix_commit_message: "mm: make wait_on_page_writeback() wait for multiple pending writebacks\n\
+  \nEver since commit 2a9127fcf229 (\"mm: rewrite wait_on_page_bit_common()\nlogic\"\
+  ) we've had some very occasional reports of BUG_ON(PageWriteback)\nin write_cache_pages(),\
+  \ which we thought we already fixed in commit\n073861ed77b6 (\"mm: fix VM_BUG_ON(PageTail)\
+  \ and BUG_ON(PageWriteback)\").\n\nBut syzbot just reported another one, even with\
+  \ that commit in place.\n\nAnd it turns out that there's a simpler way to trigger\
+  \ the BUG_ON() than\nthe one Hugh found with page re-use.  It all boils down to\
+  \ the fact that\nthe page writeback is ostensibly serialized by the page lock, but\
+  \ that\nisn't actually really true.\n\nYes, the people _setting_ writeback all do\
+  \ so under the page lock, but\nthe actual clearing of the bit - and waking up any\
+  \ waiters - happens\nwithout any page lock.\n\nThis gives us this fairly simple\
+  \ race condition:\n\n  CPU1 = end previous writeback\n  CPU2 = start new writeback\
+  \ under page lock\n  CPU3 = write_cache_pages()\n\n  CPU1          CPU2        \
+  \    CPU3\n  ----          ----            ----\n\n  end_page_writeback()\n    test_clear_page_writeback(page)\n\
+  \    ... delayed...\n\n                lock_page();\n                set_page_writeback()\n\
+  \                unlock_page()\n\n                                lock_page()\n\
+  \                                wait_on_page_writeback();\n\n    wake_up_page(page,\
+  \ PG_writeback);\n    .. wakes up CPU3 ..\n\n                                BUG_ON(PageWriteback(page));\n\
+  \nwhere the BUG_ON() happens because we woke up the PG_writeback bit\nbecasue of\
+  \ the _previous_ writeback, but a new one had already been\nstarted because the\
+  \ clearing of the bit wasn't actually atomic wrt the\nactual wakeup or serialized\
+  \ by the page lock.\n\nThe reason this didn't use to happen was that the old logic\
+  \ in waiting\non a page bit would just loop if it ever saw the bit set again.\n\n\
+  The nice proper fix would probably be to get rid of the whole \"wait for\nwriteback\
+  \ to clear, and then set it\" logic in the writeback path, and\nreplace it with\
+  \ an atomic \"wait-to-set\" (ie the same as we have for page\nlocking: we set the\
+  \ page lock bit with a single \"lock_page()\", not with\n\"wait for lock bit to\
+  \ clear and then set it\").\n\nHowever, out current model for writeback is that\
+  \ the waiting for the\nwriteback bit is done by the generic VFS code (ie write_cache_pages()),\n\
+  but the actual setting of the writeback bit is done much later by the\nfilesystem\
+  \ \".writepages()\" function.\n\nIOW, to make the writeback bit have that same kind\
+  \ of \"wait-to-set\"\nbehavior as we have for page locking, we'd have to change\
+  \ our roughly\n~50 different writeback functions.  Painful.\n\nInstead, just make\
+  \ \"wait_on_page_writeback()\" loop on the very unlikely\nsituation that the PG_writeback\
+  \ bit is still set, basically re-instating\nthe old behavior.  This is very non-optimal\
+  \ in case of contention, but\nsince we only ever set the bit under the page lock,\
+  \ that situation is\ncontrolled.\n\nReported-by: syzbot+2fc0712f8f8b8b8fa0ef@syzkaller.appspotmail.com\n\
+  Fixes: 2a9127fcf229 (\"mm: rewrite wait_on_page_bit_common() logic\")\nAcked-by:\
+  \ Hugh Dickins <hughd@google.com>\nCc: Andrew Morton <akpm@linux-foundation.org>\n\
+  Cc: Matthew Wilcox <willy@infradead.org>\nCc: stable@kernel.org\nSigned-off-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 0

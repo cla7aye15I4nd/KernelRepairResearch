@@ -1,0 +1,49 @@
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in net/sched/cls_flow.c:329:23
+shift exponent 9445 is too large for 32-bit type 'u32' (aka 'unsigned int')
+CPU: 0 UID: 0 PID: 11 Comm: kworker/u8:0 Not tainted 6.13.0-rc3-syzkaller-00180-g4f619d518db9 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Workqueue: ipv6_addrconf addrconf_dad_work
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x3c8/0x420 lib/ubsan.c:468
+ flow_classify+0x24d5/0x25b0 net/sched/cls_flow.c:329
+ tc_classify include/net/tc_wrapper.h:197 [inline]
+ __tcf_classify net/sched/cls_api.c:1771 [inline]
+ tcf_classify+0x420/0x1160 net/sched/cls_api.c:1867
+ sfb_classify net/sched/sch_sfb.c:260 [inline]
+ sfb_enqueue+0x3ad/0x18b0 net/sched/sch_sfb.c:318
+ dev_qdisc_enqueue+0x4b/0x290 net/core/dev.c:3793
+ __dev_xmit_skb net/core/dev.c:3889 [inline]
+ __dev_queue_xmit+0xf0e/0x3f50 net/core/dev.c:4400
+ dev_queue_xmit include/linux/netdevice.h:3168 [inline]
+ neigh_hh_output include/net/neighbour.h:523 [inline]
+ neigh_output include/net/neighbour.h:537 [inline]
+ ip_finish_output2+0xd41/0x1390 net/ipv4/ip_output.c:236
+ iptunnel_xmit+0x55d/0x9b0 net/ipv4/ip_tunnel_core.c:82
+ udp_tunnel_xmit_skb+0x262/0x3b0 net/ipv4/udp_tunnel_core.c:173
+ geneve_xmit_skb drivers/net/geneve.c:916 [inline]
+ geneve_xmit+0x21dc/0x2d00 drivers/net/geneve.c:1039
+ __netdev_start_xmit include/linux/netdevice.h:5002 [inline]
+ netdev_start_xmit include/linux/netdevice.h:5011 [inline]
+ xmit_one net/core/dev.c:3590 [inline]
+ dev_hard_start_xmit+0x27a/0x7d0 net/core/dev.c:3606
+ __dev_queue_xmit+0x1b73/0x3f50 net/core/dev.c:4434
+ neigh_output include/net/neighbour.h:539 [inline]
+ ip6_finish_output2+0x12c7/0x17b0 net/ipv6/ip6_output.c:141
+ ip6_finish_output+0x41e/0x840 net/ipv6/ip6_output.c:226
+ NF_HOOK include/linux/netfilter.h:314 [inline]
+ ndisc_send_skb+0xb30/0x1450 net/ipv6/ndisc.c:511
+ ndisc_send_ns+0xcc/0x160 net/ipv6/ndisc.c:669
+ addrconf_dad_work+0xb45/0x16f0 net/ipv6/addrconf.c:4303
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa66/0x1840 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+---[ end trace ]---

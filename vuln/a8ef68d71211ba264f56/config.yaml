@@ -1,0 +1,44 @@
+id: a8ef68d71211ba264f56
+bug_link: https://syzkaller.appspot.com/bug?extid=a8ef68d71211ba264f56
+title: 'KMSAN: kernel-infoleak in kvm_write_guest_page'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7f9ad1dfa3c768d1116c2dbacd7a09f9a871534e
+fix_commit: bcbfbd8ec21096027f1ee13ce6c185e8175166f6
+datetime: '2018-11-27T12:49:57+01:00'
+fix_commit_message: 'KVM: x86: Fix kernel info-leak in KVM_HC_CLOCK_PAIRING hypercall
+
+
+  kvm_pv_clock_pairing() allocates local var
+
+  "struct kvm_clock_pairing clock_pairing" on stack and initializes
+
+  all it''s fields besides padding (clock_pairing.pad[]).
+
+
+  Because clock_pairing var is written completely (including padding)
+
+  to guest memory, failure to init struct padding results in kernel
+
+  info-leak.
+
+
+  Fix the issue by making sure to also init the padding with zeroes.
+
+
+  Fixes: 55dd00a73a51 ("KVM: x86: add KVM_HC_CLOCK_PAIRING hypercall")
+
+  Reported-by: syzbot+a8ef68d71211ba264f56@syzkaller.appspotmail.com
+
+  Reviewed-by: Mark Kanda <mark.kanda@oracle.com>
+
+  Signed-off-by: Liran Alon <liran.alon@oracle.com>
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  '
+submodule:
+- arch/x86/kvm
+hunk_count: 1
+covered_count: 0

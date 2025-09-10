@@ -1,0 +1,112 @@
+diff --git a/fs/bcachefs/bcachefs.h b/fs/bcachefs/bcachefs.h
+index 3651a296d506..5a1cede2febf 100644
+--- a/fs/bcachefs/bcachefs.h
++++ b/fs/bcachefs/bcachefs.h
+@@ -296,7 +296,6 @@ do {									\
+ #define bch2_fmt(_c, fmt)		bch2_log_msg(_c, fmt "\n")
+ 
+ void bch2_print_str(struct bch_fs *, const char *, const char *);
+-void bch2_print_str_nonblocking(struct bch_fs *, const char *, const char *);
+ 
+ __printf(2, 3)
+ void bch2_print_opts(struct bch_opts *, const char *, ...);
+diff --git a/fs/bcachefs/btree_locking.c b/fs/bcachefs/btree_locking.c
+index 47035aae232e..91a51aef82f1 100644
+--- a/fs/bcachefs/btree_locking.c
++++ b/fs/bcachefs/btree_locking.c
+@@ -213,7 +213,7 @@ static noinline __noreturn void break_cycle_fail(struct lock_graph *g)
+ 		prt_newline(&buf);
+ 	}
+ 
+-	bch2_print_str_nonblocking(g->g->trans->c, KERN_ERR, buf.buf);
++	bch2_print_str(g->g->trans->c, KERN_ERR, buf.buf);
+ 	printbuf_exit(&buf);
+ 	BUG();
+ }
+diff --git a/fs/bcachefs/error.c b/fs/bcachefs/error.c
+index ff49cebfd0e8..a8ec6aae5738 100644
+--- a/fs/bcachefs/error.c
++++ b/fs/bcachefs/error.c
+@@ -69,7 +69,7 @@ static bool bch2_fs_trans_inconsistent(struct bch_fs *c, struct btree_trans *tra
+ 	if (trans)
+ 		bch2_trans_updates_to_text(&buf, trans);
+ 	bool ret = __bch2_inconsistent_error(c, &buf);
+-	bch2_print_str_nonblocking(c, KERN_ERR, buf.buf);
++	bch2_print_str(c, KERN_ERR, buf.buf);
+ 
+ 	printbuf_exit(&buf);
+ 	return ret;
+diff --git a/fs/bcachefs/super.c b/fs/bcachefs/super.c
+index 8648f22411be..ae8fa58a208d 100644
+--- a/fs/bcachefs/super.c
++++ b/fs/bcachefs/super.c
+@@ -104,7 +104,7 @@ const char * const bch2_dev_write_refs[] = {
+ #undef x
+ 
+ static void __bch2_print_str(struct bch_fs *c, const char *prefix,
+-			     const char *str, bool nonblocking)
++			     const char *str)
+ {
+ #ifdef __KERNEL__
+ 	struct stdio_redirect *stdio = bch2_fs_stdio_redirect(c);
+@@ -114,17 +114,12 @@ static void __bch2_print_str(struct bch_fs *c, const char *prefix,
+ 		return;
+ 	}
+ #endif
+-	bch2_print_string_as_lines(KERN_ERR, str, nonblocking);
++	bch2_print_string_as_lines(KERN_ERR, str);
+ }
+ 
+ void bch2_print_str(struct bch_fs *c, const char *prefix, const char *str)
+ {
+-	__bch2_print_str(c, prefix, str, false);
+-}
+-
+-void bch2_print_str_nonblocking(struct bch_fs *c, const char *prefix, const char *str)
+-{
+-	__bch2_print_str(c, prefix, str, true);
++	__bch2_print_str(c, prefix, str);
+ }
+ 
+ __printf(2, 0)
+diff --git a/fs/bcachefs/util.c b/fs/bcachefs/util.c
+index dc3817f545fa..df9a6071fe18 100644
+--- a/fs/bcachefs/util.c
++++ b/fs/bcachefs/util.c
+@@ -262,8 +262,7 @@ static bool string_is_spaces(const char *str)
+ 	return true;
+ }
+ 
+-void bch2_print_string_as_lines(const char *prefix, const char *lines,
+-				bool nonblocking)
++void bch2_print_string_as_lines(const char *prefix, const char *lines)
+ {
+ 	bool locked = false;
+ 	const char *p;
+@@ -273,12 +272,7 @@ void bch2_print_string_as_lines(const char *prefix, const char *lines,
+ 		return;
+ 	}
+ 
+-	if (!nonblocking) {
+-		console_lock();
+-		locked = true;
+-	} else {
+-		locked = console_trylock();
+-	}
++	locked = console_trylock();
+ 
+ 	while (*lines) {
+ 		p = strchrnul(lines, '\n');
+diff --git a/fs/bcachefs/util.h b/fs/bcachefs/util.h
+index 0a4b1d433621..6488f098d140 100644
+--- a/fs/bcachefs/util.h
++++ b/fs/bcachefs/util.h
+@@ -214,7 +214,7 @@ u64 bch2_read_flag_list(const char *, const char * const[]);
+ void bch2_prt_u64_base2_nbits(struct printbuf *, u64, unsigned);
+ void bch2_prt_u64_base2(struct printbuf *, u64);
+ 
+-void bch2_print_string_as_lines(const char *, const char *, bool);
++void bch2_print_string_as_lines(const char *, const char *);
+ 
+ typedef DARRAY(unsigned long) bch_stacktrace;
+ int bch2_save_backtrace(bch_stacktrace *stack, struct task_struct *, unsigned, gfp_t);

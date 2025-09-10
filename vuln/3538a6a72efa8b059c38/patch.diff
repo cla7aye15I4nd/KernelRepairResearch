@@ -1,0 +1,45 @@
+diff --git a/net/rxrpc/ar-internal.h b/net/rxrpc/ar-internal.h
+index e7dccab7b741..37f3aec784cc 100644
+--- a/net/rxrpc/ar-internal.h
++++ b/net/rxrpc/ar-internal.h
+@@ -287,6 +287,7 @@ struct rxrpc_local {
+ 	struct hlist_node	link;
+ 	struct socket		*socket;	/* my UDP socket */
+ 	struct task_struct	*io_thread;
++	struct completion	io_thread_ready; /* Indication that the I/O thread started */
+ 	struct rxrpc_sock __rcu	*service;	/* Service(s) listening on this endpoint */
+ 	struct rw_semaphore	defrag_sem;	/* control re-enablement of IP DF bit */
+ 	struct sk_buff_head	rx_queue;	/* Received packets */
+diff --git a/net/rxrpc/io_thread.c b/net/rxrpc/io_thread.c
+index d83ae3193032..e460e4151c16 100644
+--- a/net/rxrpc/io_thread.c
++++ b/net/rxrpc/io_thread.c
+@@ -426,6 +426,8 @@ int rxrpc_io_thread(void *data)
+ 	struct rxrpc_call *call;
+ 	struct sk_buff *skb;
+ 
++	complete(&local->io_thread_ready);
++
+ 	skb_queue_head_init(&rx_queue);
+ 
+ 	set_user_nice(current, MIN_NICE);
+diff --git a/net/rxrpc/local_object.c b/net/rxrpc/local_object.c
+index 24ee585d9aaf..270b63d8f37a 100644
+--- a/net/rxrpc/local_object.c
++++ b/net/rxrpc/local_object.c
+@@ -97,6 +97,7 @@ static struct rxrpc_local *rxrpc_alloc_local(struct rxrpc_net *rxnet,
+ 		local->rxnet = rxnet;
+ 		INIT_HLIST_NODE(&local->link);
+ 		init_rwsem(&local->defrag_sem);
++		init_completion(&local->io_thread_ready);
+ 		skb_queue_head_init(&local->rx_queue);
+ 		INIT_LIST_HEAD(&local->call_attend_q);
+ 		local->client_bundles = RB_ROOT;
+@@ -189,6 +190,7 @@ static int rxrpc_open_socket(struct rxrpc_local *local, struct net *net)
+ 		goto error_sock;
+ 	}
+ 
++	wait_for_completion(&local->io_thread_ready);
+ 	local->io_thread = io_thread;
+ 	_leave(" = 0");
+ 	return 0;

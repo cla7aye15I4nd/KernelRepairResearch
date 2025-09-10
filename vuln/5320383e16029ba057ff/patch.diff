@@ -1,0 +1,48 @@
+diff --git a/fs/io-wq.c b/fs/io-wq.c
+index 91b85df0861e..74b40506c5d9 100644
+--- a/fs/io-wq.c
++++ b/fs/io-wq.c
+@@ -111,7 +111,7 @@ struct io_wq {
+ 
+ 	struct task_struct *manager;
+ 	struct user_struct *user;
+-	struct cred *creds;
++	const struct cred *creds;
+ 	struct mm_struct *mm;
+ 	refcount_t refs;
+ 	struct completion done;
+diff --git a/fs/io-wq.h b/fs/io-wq.h
+index 600e0158cba7..dd0af0d7376c 100644
+--- a/fs/io-wq.h
++++ b/fs/io-wq.h
+@@ -87,7 +87,7 @@ typedef void (put_work_fn)(struct io_wq_work *);
+ struct io_wq_data {
+ 	struct mm_struct *mm;
+ 	struct user_struct *user;
+-	struct cred *creds;
++	const struct cred *creds;
+ 
+ 	get_work_fn *get_work;
+ 	put_work_fn *put_work;
+diff --git a/fs/io_uring.c b/fs/io_uring.c
+index ec53aa7cdc94..5cab7a047317 100644
+--- a/fs/io_uring.c
++++ b/fs/io_uring.c
+@@ -238,7 +238,7 @@ struct io_ring_ctx {
+ 
+ 	struct user_struct	*user;
+ 
+-	struct cred		*creds;
++	const struct cred	*creds;
+ 
+ 	/* 0 is for ctx quiesce/reinit/free, 1 is for sqo_thread started */
+ 	struct completion	*completions;
+@@ -4759,7 +4759,7 @@ static int io_uring_create(unsigned entries, struct io_uring_params *p)
+ 	ctx->compat = in_compat_syscall();
+ 	ctx->account_mem = account_mem;
+ 	ctx->user = user;
+-	ctx->creds = prepare_creds();
++	ctx->creds = get_current_cred();
+ 
+ 	ret = io_allocate_scq_urings(ctx, p);
+ 	if (ret)

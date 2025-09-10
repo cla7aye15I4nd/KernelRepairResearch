@@ -1,0 +1,22 @@
+id: 031687116258450f9853
+bug_link: https://syzkaller.appspot.com/bug?extid=031687116258450f9853
+title: kernel BUG in dev_args_match_device
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: eb81b682b131642405a05c627ab08cf0967b3dd8
+fix_commit: 0fca385d6ebc3cabb20f67bcf8a71f1448bdc001
+datetime: '2022-11-07T14:30:45+01:00'
+fix_commit_message: "btrfs: fix match incorrectly in dev_args_match_device\n\nsyzkaller\
+  \ found a failed assertion:\n\n  assertion failed: (args->devid != (u64)-1) || args->missing,\
+  \ in fs/btrfs/volumes.c:6921\n\nThis can be triggered when we set devid to (u64)-1\
+  \ by ioctl. In this\ncase, the match of devid will be skipped and the match of device\
+  \ may\nsucceed incorrectly.\n\nPatch 562d7b1512f7 introduced this function which\
+  \ is used to match device.\nThis function contains two matching scenarios, we can\
+  \ distinguish them by\nchecking the value of args->missing rather than check whether\
+  \ args->devid\nand args->uuid is default value.\n\nReported-by: syzbot+031687116258450f9853@syzkaller.appspotmail.com\n\
+  Fixes: 562d7b1512f7 (\"btrfs: handle device lookup with btrfs_dev_lookup_args\"\
+  )\nCC: stable@vger.kernel.org # 5.16+\nReviewed-by: Nikolay Borisov <nborisov@suse.com>\n\
+  Signed-off-by: Liu Shixin <liushixin2@huawei.com>\nSigned-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 1

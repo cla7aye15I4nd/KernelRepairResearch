@@ -1,0 +1,24 @@
+diff --git a/drivers/staging/rtl8712/os_intfs.c b/drivers/staging/rtl8712/os_intfs.c
+index a2f3645be0cc..b18e6d9c832b 100644
+--- a/drivers/staging/rtl8712/os_intfs.c
++++ b/drivers/staging/rtl8712/os_intfs.c
+@@ -327,6 +327,7 @@ int r8712_init_drv_sw(struct _adapter *padapter)
+ 	mp871xinit(padapter);
+ 	init_default_value(padapter);
+ 	r8712_InitSwLeds(padapter);
++	mutex_init(&padapter->mutex_start);
+ 
+ 	return 0;
+ 
+diff --git a/drivers/staging/rtl8712/usb_intf.c b/drivers/staging/rtl8712/usb_intf.c
+index 37364d3101e2..df05213f922f 100644
+--- a/drivers/staging/rtl8712/usb_intf.c
++++ b/drivers/staging/rtl8712/usb_intf.c
+@@ -567,7 +567,6 @@ static int r871xu_drv_init(struct usb_interface *pusb_intf,
+ 	if (rtl871x_load_fw(padapter))
+ 		goto deinit_drv_sw;
+ 	init_completion(&padapter->rx_filter_ready);
+-	mutex_init(&padapter->mutex_start);
+ 	return 0;
+ 
+ deinit_drv_sw:

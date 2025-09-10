@@ -1,0 +1,55 @@
+id: bfb2bee01b9c01fff864
+bug_link: https://syzkaller.appspot.com/bug?extid=bfb2bee01b9c01fff864
+title: 'linux-next test error: general protection fault in xfrm_policy_lookup_bytype'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7f57f8165cb6d2c206e2b9ada53b9e2d6d8af42f
+fix_commit: b97df039a68b2f3e848e238df5d5d06343ea497b
+datetime: '2022-11-22T07:14:55+01:00'
+fix_commit_message: "xfrm: Fix oops in __xfrm_state_delete()\n\nKernel 5.14 added\
+  \ a new \"byseq\" index to speed\nup xfrm_state lookups by sequence number in commit\n\
+  fe9f1d8779cb (\"xfrm: add state hashtable keyed by seq\")\n\nWhile the patch was\
+  \ thorough, the function pfkey_send_new_mapping()\nin net/af_key.c also modifies\
+  \ x->km.seq and never added\nthe current xfrm_state to the \"byseq\" index.\n\n\
+  This leads to the following kernel Ooops:\n    BUG: kernel NULL pointer dereference,\
+  \ address: 0000000000000000\n    ..\n    RIP: 0010:__xfrm_state_delete+0xc9/0x1c0\n\
+  \    ..\n    Call Trace:\n    <TASK>\n    xfrm_state_delete+0x1e/0x40\n    xfrm_del_sa+0xb0/0x110\
+  \ [xfrm_user]\n    xfrm_user_rcv_msg+0x12d/0x270 [xfrm_user]\n    ? remove_entity_load_avg+0x8a/0xa0\n\
+  \    ? copy_to_user_state_extra+0x580/0x580 [xfrm_user]\n    netlink_rcv_skb+0x51/0x100\n\
+  \    xfrm_netlink_rcv+0x30/0x50 [xfrm_user]\n    netlink_unicast+0x1a6/0x270\n \
+  \   netlink_sendmsg+0x22a/0x480\n    __sys_sendto+0x1a6/0x1c0\n    ? __audit_syscall_entry+0xd8/0x130\n\
+  \    ? __audit_syscall_exit+0x249/0x2b0\n    __x64_sys_sendto+0x23/0x30\n    do_syscall_64+0x3a/0x90\n\
+  \    entry_SYSCALL_64_after_hwframe+0x61/0xcb\n\nExact location of the crash in\
+  \ __xfrm_state_delete():\n    if (x->km.seq)\n        hlist_del_rcu(&x->byseq);\n\
+  \nThe hlist_node \"byseq\" was never populated.\n\nThe bug only triggers if a new\
+  \ NAT traversal mapping (changed IP or port)\nis detected in esp_input_done2() /\
+  \ esp6_input_done2(), which in turn\nindirectly calls pfkey_send_new_mapping() *if*\
+  \ the kernel is compiled\nwith CONFIG_NET_KEY and \"af_key\" is active.\n\nThe PF_KEYv2\
+  \ message SADB_X_NAT_T_NEW_MAPPING is not part of RFC 2367.\nVarious implementations\
+  \ have been examined how they handle\nthe \"sadb_msg_seq\" header field:\n\n- racoon\
+  \ (Android): does not process SADB_X_NAT_T_NEW_MAPPING\n- strongswan: does not care\
+  \ about sadb_msg_seq\n- openswan: does not care about sadb_msg_seq\n\nThere is no\
+  \ standard how PF_KEYv2 sadb_msg_seq should be populated\nfor SADB_X_NAT_T_NEW_MAPPING\
+  \ and it's not used in popular\nimplementations either. Herbert Xu suggested we\
+  \ should just\nuse the current km.seq value as is. This fixes the root cause\nof\
+  \ the oops since we no longer modify km.seq itself.\n\nThe update of \"km.seq\"\
+  \ looks like a copy'n'paste error\nfrom pfkey_send_acquire(). SADB_ACQUIRE must\
+  \ indeed assign a unique km.seq\nnumber according to RFC 2367. It has been verified\
+  \ that code paths\ninvolving pfkey_send_acquire() don't cause the same Oops.\n\n\
+  PF_KEYv2 SADB_X_NAT_T_NEW_MAPPING support was originally added here:\n    https://git.kernel.org/pub/scm/linux/kernel/git/tglx/history.git\n\
+  \n    commit cbc3488685b20e7b2a98ad387a1a816aada569d8\n    Author:     Derek Atkins\
+  \ <derek@ihtfp.com>\n    AuthorDate: Wed Apr 2 13:21:02 2003 -0800\n\n        [IPSEC]:\
+  \ Implement UDP Encapsulation framework.\n\n        In particular, implement ESPinUDP\
+  \ encapsulation for IPsec\n        Nat Traversal.\n\nA note on triggering the bug:\
+  \ I was not able to trigger it using VMs.\nThere is one VPN using a high latency\
+  \ link on our production VPN server\nthat triggered it like once a day though.\n\
+  \nLink: https://github.com/strongswan/strongswan/issues/992\nLink: https://lore.kernel.org/netdev/00959f33ee52c4b3b0084d42c430418e502db554.1652340703.git.antony.antony@secunet.com/T/\n\
+  Link: https://lore.kernel.org/netdev/20221027142455.3975224-1-chenzhihao@meizu.com/T/\n\
+  \nFixes: fe9f1d8779cb (\"xfrm: add state hashtable keyed by seq\")\nReported-by:\
+  \ Roth Mark <rothm@mail.com>\nReported-by: Zhihao Chen <chenzhihao@meizu.com>\n\
+  Tested-by: Roth Mark <rothm@mail.com>\nSigned-off-by: Thomas Jarosch <thomas.jarosch@intra2net.com>\n\
+  Acked-by: Antony Antony <antony.antony@secunet.com>\nAcked-by: Herbert Xu <herbert@gondor.apana.org.au>\n\
+  Signed-off-by: Steffen Klassert <steffen.klassert@secunet.com>\n"
+submodule:
+- net/key
+hunk_count: 1
+covered_count: 0

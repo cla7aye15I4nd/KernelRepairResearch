@@ -1,0 +1,84 @@
+diff --git a/fs/debugfs/file.c b/fs/debugfs/file.c
+index a5ade8c16375..5063434be0fc 100644
+--- a/fs/debugfs/file.c
++++ b/fs/debugfs/file.c
+@@ -108,12 +108,6 @@ int debugfs_file_get(struct dentry *dentry)
+ 			kfree(fsd);
+ 			fsd = READ_ONCE(dentry->d_fsdata);
+ 		}
+-#ifdef CONFIG_LOCKDEP
+-		fsd->lock_name = kasprintf(GFP_KERNEL, "debugfs:%pd", dentry);
+-		lockdep_register_key(&fsd->key);
+-		lockdep_init_map(&fsd->lockdep_map, fsd->lock_name ?: "debugfs",
+-				 &fsd->key, 0);
+-#endif
+ 		INIT_LIST_HEAD(&fsd->cancellations);
+ 		mutex_init(&fsd->cancellations_mtx);
+ 	}
+@@ -132,8 +126,6 @@ int debugfs_file_get(struct dentry *dentry)
+ 	if (!refcount_inc_not_zero(&fsd->active_users))
+ 		return -EIO;
+ 
+-	lock_map_acquire_read(&fsd->lockdep_map);
+-
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(debugfs_file_get);
+@@ -151,8 +143,6 @@ void debugfs_file_put(struct dentry *dentry)
+ {
+ 	struct debugfs_fsdata *fsd = READ_ONCE(dentry->d_fsdata);
+ 
+-	lock_map_release(&fsd->lockdep_map);
+-
+ 	if (refcount_dec_and_test(&fsd->active_users))
+ 		complete(&fsd->active_users_drained);
+ }
+diff --git a/fs/debugfs/inode.c b/fs/debugfs/inode.c
+index e4e7fe1bd9fb..034a617cb1a5 100644
+--- a/fs/debugfs/inode.c
++++ b/fs/debugfs/inode.c
+@@ -243,10 +243,6 @@ static void debugfs_release_dentry(struct dentry *dentry)
+ 
+ 	/* check it wasn't a dir (no fsdata) or automount (no real_fops) */
+ 	if (fsd && fsd->real_fops) {
+-#ifdef CONFIG_LOCKDEP
+-		lockdep_unregister_key(&fsd->key);
+-		kfree(fsd->lock_name);
+-#endif
+ 		WARN_ON(!list_empty(&fsd->cancellations));
+ 		mutex_destroy(&fsd->cancellations_mtx);
+ 	}
+@@ -755,9 +751,6 @@ static void __debugfs_file_removed(struct dentry *dentry)
+ 	if ((unsigned long)fsd & DEBUGFS_FSDATA_IS_REAL_FOPS_BIT)
+ 		return;
+ 
+-	lock_map_acquire(&fsd->lockdep_map);
+-	lock_map_release(&fsd->lockdep_map);
+-
+ 	/* if we hit zero, just wait for all to finish */
+ 	if (!refcount_dec_and_test(&fsd->active_users)) {
+ 		wait_for_completion(&fsd->active_users_drained);
+diff --git a/fs/debugfs/internal.h b/fs/debugfs/internal.h
+index 0c4c68cf161f..dae80c2a469e 100644
+--- a/fs/debugfs/internal.h
++++ b/fs/debugfs/internal.h
+@@ -7,7 +7,6 @@
+ 
+ #ifndef _DEBUGFS_INTERNAL_H_
+ #define _DEBUGFS_INTERNAL_H_
+-#include <linux/lockdep.h>
+ #include <linux/list.h>
+ 
+ struct file_operations;
+@@ -25,11 +24,6 @@ struct debugfs_fsdata {
+ 		struct {
+ 			refcount_t active_users;
+ 			struct completion active_users_drained;
+-#ifdef CONFIG_LOCKDEP
+-			struct lockdep_map lockdep_map;
+-			struct lock_class_key key;
+-			char *lock_name;
+-#endif
+ 
+ 			/* protect cancellations */
+ 			struct mutex cancellations_mtx;

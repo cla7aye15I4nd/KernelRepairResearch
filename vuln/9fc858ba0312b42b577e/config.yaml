@@ -1,0 +1,29 @@
+id: 9fc858ba0312b42b577e
+bug_link: https://syzkaller.appspot.com/bug?extid=9fc858ba0312b42b577e
+title: general protection fault in dev_set_group
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 535caaca921c653b1f9838fbd5c4e9494cafc3d9
+fix_commit: feafc73f3e6ae73371777a037d41d2e31c929636
+datetime: '2025-06-05T08:03:00-07:00'
+fix_commit_message: "net: prevent a NULL deref in rtnl_create_link()\n\nAt the time\
+  \ rtnl_create_link() is running, dev->netdev_ops is NULL,\nwe must not use netdev_lock_ops()\
+  \ or risk a NULL deref if\nCONFIG_NET_SHAPER is defined.\n\nUse netif_set_group()\
+  \ instead of dev_set_group().\n\n RIP: 0010:netdev_need_ops_lock include/net/netdev_lock.h:33\
+  \ [inline]\n RIP: 0010:netdev_lock_ops include/net/netdev_lock.h:41 [inline]\n RIP:\
+  \ 0010:dev_set_group+0xc0/0x230 net/core/dev_api.c:82\nCall Trace:\n <TASK>\n  rtnl_create_link+0x748/0xd10\
+  \ net/core/rtnetlink.c:3674\n  rtnl_newlink_create+0x25c/0xb00 net/core/rtnetlink.c:3813\n\
+  \  __rtnl_newlink net/core/rtnetlink.c:3940 [inline]\n  rtnl_newlink+0x16d6/0x1c70\
+  \ net/core/rtnetlink.c:4055\n  rtnetlink_rcv_msg+0x7cf/0xb70 net/core/rtnetlink.c:6944\n\
+  \  netlink_rcv_skb+0x208/0x470 net/netlink/af_netlink.c:2534\n  netlink_unicast_kernel\
+  \ net/netlink/af_netlink.c:1313 [inline]\n  netlink_unicast+0x75b/0x8d0 net/netlink/af_netlink.c:1339\n\
+  \  netlink_sendmsg+0x805/0xb30 net/netlink/af_netlink.c:1883\n  sock_sendmsg_nosec\
+  \ net/socket.c:712 [inline]\n\nReported-by: syzbot+9fc858ba0312b42b577e@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/netdev/6840265f.a00a0220.d4325.0009.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nFixes: 7e4d784f5810 (\"net: hold\
+  \ netdev instance lock during rtnetlink operations\")\nAcked-by: Stanislav Fomichev\
+  \ <sdf@fomichev.me>\nLink: https://patch.msgid.link/20250604105815.1516973-1-edumazet@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,39 @@
+id: be93025dd45dccd8923c
+bug_link: https://syzkaller.appspot.com/bug?extid=be93025dd45dccd8923c
+title: 'KASAN: use-after-free Read in vb2_mmap'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2e84eb9affac43eeaf834992888b72426a8cd442
+fix_commit: cd26d1c4d1bc947b56ae404998ae2276df7b39b7
+datetime: '2018-11-23T05:54:22-05:00'
+fix_commit_message: 'media: vb2: vb2_mmap: move lock up
+
+
+  If a filehandle is dup()ped, then it is possible to close it from one fd
+
+  and call mmap from the other. This creates a race condition in vb2_mmap
+
+  where it is using queue data that __vb2_queue_free (called from close())
+
+  is in the process of releasing.
+
+
+  By moving up the mutex_lock(mmap_lock) in vb2_mmap this race is avoided
+
+  since __vb2_queue_free is called with the same mutex locked. So vb2_mmap
+
+  now reads consistent buffer data.
+
+
+  Signed-off-by: Hans Verkuil <hverkuil@xs4all.nl>
+
+  Reported-by: syzbot+be93025dd45dccd8923c@syzkaller.appspotmail.com
+
+  Signed-off-by: Hans Verkuil <hansverk@cisco.com>
+
+  Signed-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+
+  '
+submodule:
+- drivers/media/common/videobuf2
+hunk_count: 3
+covered_count: 3

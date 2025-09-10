@@ -1,0 +1,60 @@
+diff --git a/net/tipc/name_table.c b/net/tipc/name_table.c
+index b1fe20972aa9..4068eaad61a6 100644
+--- a/net/tipc/name_table.c
++++ b/net/tipc/name_table.c
+@@ -665,13 +665,14 @@ int tipc_nametbl_withdraw(struct net *net, u32 type, u32 lower,
+ /**
+  * tipc_nametbl_subscribe - add a subscription object to the name table
+  */
+-void tipc_nametbl_subscribe(struct tipc_subscription *sub)
++bool tipc_nametbl_subscribe(struct tipc_subscription *sub)
+ {
+ 	struct name_table *nt = tipc_name_table(sub->net);
+ 	struct tipc_net *tn = tipc_net(sub->net);
+ 	struct tipc_subscr *s = &sub->evt.s;
+ 	u32 type = tipc_sub_read(s, seq.type);
+ 	struct tipc_service *sc;
++	bool res = true;
+ 
+ 	spin_lock_bh(&tn->nametbl_lock);
+ 	sc = tipc_service_find(sub->net, type);
+@@ -685,8 +686,10 @@ void tipc_nametbl_subscribe(struct tipc_subscription *sub)
+ 		pr_warn("Failed to subscribe for {%u,%u,%u}\n", type,
+ 			tipc_sub_read(s, seq.lower),
+ 			tipc_sub_read(s, seq.upper));
++		res = false;
+ 	}
+ 	spin_unlock_bh(&tn->nametbl_lock);
++	return res;
+ }
+ 
+ /**
+diff --git a/net/tipc/name_table.h b/net/tipc/name_table.h
+index 4b14fc28d9e2..0febba41da86 100644
+--- a/net/tipc/name_table.h
++++ b/net/tipc/name_table.h
+@@ -126,7 +126,7 @@ struct publication *tipc_nametbl_insert_publ(struct net *net, u32 type,
+ struct publication *tipc_nametbl_remove_publ(struct net *net, u32 type,
+ 					     u32 lower, u32 upper,
+ 					     u32 node, u32 key);
+-void tipc_nametbl_subscribe(struct tipc_subscription *s);
++bool tipc_nametbl_subscribe(struct tipc_subscription *s);
+ void tipc_nametbl_unsubscribe(struct tipc_subscription *s);
+ int tipc_nametbl_init(struct net *net);
+ void tipc_nametbl_stop(struct net *net);
+diff --git a/net/tipc/subscr.c b/net/tipc/subscr.c
+index b7d80bc5f4ab..f340e53da625 100644
+--- a/net/tipc/subscr.c
++++ b/net/tipc/subscr.c
+@@ -153,7 +153,10 @@ struct tipc_subscription *tipc_sub_subscribe(struct net *net,
+ 	memcpy(&sub->evt.s, s, sizeof(*s));
+ 	spin_lock_init(&sub->lock);
+ 	kref_init(&sub->kref);
+-	tipc_nametbl_subscribe(sub);
++	if (!tipc_nametbl_subscribe(sub)) {
++		kfree(sub);
++		return NULL;
++	}
+ 	timer_setup(&sub->timer, tipc_sub_timeout, 0);
+ 	timeout = tipc_sub_read(&sub->evt.s, timeout);
+ 	if (timeout != TIPC_WAIT_FOREVER)

@@ -1,0 +1,164 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in radix_tree_next_slot include/linux/radix-tree.h:424 [inline]
+BUG: KASAN: slab-use-after-free in idr_for_each+0x252/0x270 lib/idr.c:202
+Read of size 8 at addr ffff8880263642f0 by task syz.4.16977/13935
+
+CPU: 0 UID: 0 PID: 13935 Comm: syz.4.16977 Tainted: G     U             6.14.0-rc3-syzkaller-00012-g2408a807bfc3 #0
+Tainted: [U]=USER
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0xc3/0x620 mm/kasan/report.c:489
+ kasan_report+0xd9/0x110 mm/kasan/report.c:602
+ radix_tree_next_slot include/linux/radix-tree.h:424 [inline]
+ idr_for_each+0x252/0x270 lib/idr.c:202
+ shm_destroy_orphaned+0x85/0x90 ipc/shm.c:435
+ proc_ipc_dointvec_minmax_orphans+0xca/0xe0 ipc/ipc_sysctl.c:32
+ proc_sys_call_handler+0x3c6/0x5a0 fs/proc/proc_sysctl.c:601
+ new_sync_write fs/read_write.c:586 [inline]
+ vfs_write+0x5ae/0x1150 fs/read_write.c:679
+ ksys_write+0x12b/0x250 fs/read_write.c:731
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f36e8f8cde9
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f36e9da5038 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 00007f36e91a5fa0 RCX: 00007f36e8f8cde9
+RDX: 000000000000fdef RSI: 0000000000000000 RDI: 0000000000000003
+RBP: 00007f36e900e2a0 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007f36e91a5fa0 R15: 00007ffd1d940748
+ </TASK>
+
+Allocated by task 9783:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ unpoison_slab_object mm/kasan/common.c:319 [inline]
+ __kasan_slab_alloc+0x89/0x90 mm/kasan/common.c:345
+ kasan_slab_alloc include/linux/kasan.h:250 [inline]
+ slab_post_alloc_hook mm/slub.c:4115 [inline]
+ slab_alloc_node mm/slub.c:4164 [inline]
+ kmem_cache_alloc_noprof+0x226/0x3d0 mm/slub.c:4171
+ radix_tree_node_alloc.constprop.0+0x1e8/0x350 lib/radix-tree.c:253
+ idr_get_free+0x528/0xa40 lib/radix-tree.c:1506
+ idr_alloc_u32+0x191/0x2f0 lib/idr.c:46
+ idr_alloc_cyclic+0x10c/0x230 lib/idr.c:125
+ ipc_idr_alloc ipc/util.c:230 [inline]
+ ipc_addid+0x697/0x1f50 ipc/util.c:305
+ newseg+0x674/0xe60 ipc/shm.c:775
+ ipcget_public ipc/util.c:415 [inline]
+ ipcget+0x88f/0xdc0 ipc/util.c:676
+ ksys_shmget ipc/shm.c:839 [inline]
+ __do_sys_shmget ipc/shm.c:844 [inline]
+ __se_sys_shmget ipc/shm.c:842 [inline]
+ __x64_sys_shmget+0x13f/0x1b0 ipc/shm.c:842
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 8962:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ kasan_save_free_info+0x3b/0x60 mm/kasan/generic.c:576
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x51/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2353 [inline]
+ slab_free mm/slub.c:4609 [inline]
+ kmem_cache_free+0x2e2/0x4d0 mm/slub.c:4711
+ rcu_do_batch kernel/rcu/tree.c:2546 [inline]
+ rcu_core+0x79d/0x14d0 kernel/rcu/tree.c:2802
+ handle_softirqs+0x213/0x8f0 kernel/softirq.c:561
+ do_softirq kernel/softirq.c:462 [inline]
+ do_softirq+0xb2/0xf0 kernel/softirq.c:449
+ __local_bh_enable_ip+0x100/0x120 kernel/softirq.c:389
+ spin_unlock_bh include/linux/spinlock.h:396 [inline]
+ batadv_nc_purge_paths+0x1c6/0x390 net/batman-adv/network-coding.c:471
+ batadv_nc_worker+0x913/0x1060 net/batman-adv/network-coding.c:720
+ process_one_work+0x9c5/0x1ba0 kernel/workqueue.c:3236
+ process_scheduled_works kernel/workqueue.c:3317 [inline]
+ worker_thread+0x6c8/0xf00 kernel/workqueue.c:3398
+ kthread+0x3af/0x750 kernel/kthread.c:464
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Last potentially related work creation:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_record_aux_stack+0xb8/0xd0 mm/kasan/generic.c:548
+ __call_rcu_common.constprop.0+0x9a/0x870 kernel/rcu/tree.c:3065
+ radix_tree_node_free lib/radix-tree.c:310 [inline]
+ delete_node+0x1fc/0x8e0 lib/radix-tree.c:573
+ __radix_tree_delete+0x193/0x3d0 lib/radix-tree.c:1379
+ radix_tree_delete_item+0xeb/0x230 lib/radix-tree.c:1430
+ ipc_rmid+0x10b/0x3e0 ipc/util.c:501
+ shm_rmid ipc/shm.c:275 [inline]
+ shm_destroy+0x2d7/0x6d0 ipc/shm.c:336
+ shm_try_destroy_orphaned ipc/shm.c:426 [inline]
+ shm_try_destroy_orphaned+0x1a8/0x270 ipc/shm.c:409
+ idr_for_each+0x141/0x270 lib/idr.c:208
+ shm_destroy_orphaned+0x85/0x90 ipc/shm.c:435
+ proc_ipc_dointvec_minmax_orphans+0xca/0xe0 ipc/ipc_sysctl.c:32
+ proc_sys_call_handler+0x3c6/0x5a0 fs/proc/proc_sysctl.c:601
+ new_sync_write fs/read_write.c:586 [inline]
+ vfs_write+0x5ae/0x1150 fs/read_write.c:679
+ ksys_write+0x12b/0x250 fs/read_write.c:731
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff8880263642c0
+ which belongs to the cache radix_tree_node of size 576
+The buggy address is located 48 bytes inside of
+ freed 576-byte region [ffff8880263642c0, ffff888026364500)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0xffff8880263679c0 pfn:0x26364
+head: order:2 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+memcg:ffff8880325a7001
+flags: 0xfff00000000240(workingset|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000240 ffff88801b04fdc0 ffffea00012a1710 ffffea0001e0db10
+raw: ffff8880263679c0 0000000000170013 00000000f5000000 ffff8880325a7001
+head: 00fff00000000240 ffff88801b04fdc0 ffffea00012a1710 ffffea0001e0db10
+head: ffff8880263679c0 0000000000170013 00000000f5000000 ffff8880325a7001
+head: 00fff00000000002 ffffea000098d901 ffffffffffffffff 0000000000000000
+head: 0000000000000004 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 2, migratetype Reclaimable, gfp_mask 0x52830(GFP_ATOMIC|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_RECLAIMABLE), pid 1, tgid 1 (swapper/0), ts 20165354961, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x181/0x1b0 mm/page_alloc.c:1551
+ prep_new_page mm/page_alloc.c:1559 [inline]
+ get_page_from_freelist+0xfce/0x2f80 mm/page_alloc.c:3477
+ __alloc_frozen_pages_noprof+0x221/0x2470 mm/page_alloc.c:4739
+ alloc_pages_mpol+0x1fc/0x540 mm/mempolicy.c:2270
+ alloc_slab_page mm/slub.c:2423 [inline]
+ allocate_slab mm/slub.c:2587 [inline]
+ new_slab+0x23d/0x330 mm/slub.c:2640
+ ___slab_alloc+0xc5d/0x1720 mm/slub.c:3826
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3916
+ __slab_alloc_node mm/slub.c:3991 [inline]
+ slab_alloc_node mm/slub.c:4152 [inline]
+ kmem_cache_alloc_noprof+0xfa/0x3d0 mm/slub.c:4171
+ radix_tree_node_alloc.constprop.0+0x1e8/0x350 lib/radix-tree.c:253
+ idr_get_free+0x528/0xa40 lib/radix-tree.c:1506
+ idr_alloc_u32+0x191/0x2f0 lib/idr.c:46
+ idr_alloc_cyclic+0x10c/0x230 lib/idr.c:125
+ __kernfs_new_node+0x11b/0x890 fs/kernfs/dir.c:630
+ kernfs_new_node+0x186/0x240 fs/kernfs/dir.c:700
+ kernfs_create_dir_ns+0x4c/0x150 fs/kernfs/dir.c:1061
+ internal_create_group+0x34e/0xf10 fs/sysfs/group.c:170
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff888026364180: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888026364200: fb fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+>ffff888026364280: fc fc fc fc fc fc fc fc fa fb fb fb fb fb fb fb
+                                                             ^
+ ffff888026364300: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888026364380: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

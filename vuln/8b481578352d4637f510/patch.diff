@@ -1,0 +1,48 @@
+diff --git a/mm/shrinker_debug.c b/mm/shrinker_debug.c
+index e5b40c43221d..b05295bab322 100644
+--- a/mm/shrinker_debug.c
++++ b/mm/shrinker_debug.c
+@@ -251,6 +251,7 @@ void shrinker_debugfs_remove(struct shrinker *shrinker)
+ 	lockdep_assert_held(&shrinker_rwsem);
+ 
+ 	kfree_const(shrinker->name);
++	shrinker->name = NULL;
+ 
+ 	if (!shrinker->debugfs_entry)
+ 		return;
+diff --git a/mm/vmscan.c b/mm/vmscan.c
+index f58761cea0a0..fbb4108250ee 100644
+--- a/mm/vmscan.c
++++ b/mm/vmscan.c
+@@ -644,8 +644,10 @@ int prealloc_shrinker(struct shrinker *shrinker, const char *fmt, ...)
+ 		return -ENOMEM;
+ 
+ 	err = __prealloc_shrinker(shrinker);
+-	if (err)
++	if (err) {
+ 		kfree_const(shrinker->name);
++		shrinker->name = NULL;
++	}
+ 
+ 	return err;
+ }
+@@ -660,6 +662,7 @@ void free_prealloced_shrinker(struct shrinker *shrinker)
+ {
+ #ifdef CONFIG_SHRINKER_DEBUG
+ 	kfree_const(shrinker->name);
++	shrinker->name = NULL;
+ #endif
+ 	if (shrinker->flags & SHRINKER_MEMCG_AWARE) {
+ 		down_write(&shrinker_rwsem);
+@@ -704,8 +707,10 @@ int register_shrinker(struct shrinker *shrinker, const char *fmt, ...)
+ 		return -ENOMEM;
+ 
+ 	err = __register_shrinker(shrinker);
+-	if (err)
++	if (err) {
+ 		kfree_const(shrinker->name);
++		shrinker->name = NULL;
++	}
+ 	return err;
+ }
+ #else

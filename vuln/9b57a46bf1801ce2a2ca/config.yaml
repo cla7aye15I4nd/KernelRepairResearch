@@ -1,0 +1,26 @@
+id: 9b57a46bf1801ce2a2ca
+bug_link: https://syzkaller.appspot.com/bug?extid=9b57a46bf1801ce2a2ca
+title: WARNING in hid_submit_ctrl/usb_submit_urb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5049307d37a760e304ad191c5dc7c6851266d2f8
+fix_commit: 0a824efdb724e07574bafcd2c2486b2a3de35ff6
+datetime: '2021-09-01T20:52:31+02:00'
+fix_commit_message: "HID: usbhid: Fix warning caused by 0-length input reports\n\n\
+  Syzbot found a warning caused by hid_submit_ctrl() submitting a\ncontrol request\
+  \ to transfer a 0-length input report:\n\n\tusb 1-1: BOGUS control dir, pipe 80000280\
+  \ doesn't match bRequestType a1\n\n(The warning message is a little difficult to\
+  \ understand.  It means\nthat the control request claims to be for an IN transfer\
+  \ but this\ncontradicts the USB spec, which requires 0-length control transfers\n\
+  always to be in the OUT direction.)\n\nNow, a zero-length report isn't good for\
+  \ anything and there's no\nreason for a device to have one, but the fuzzer likes\
+  \ to pick out\nthese weird edge cases.  In the future, perhaps we will decide to\n\
+  reject 0-length reports at probe time.  For now, the simplest approach\nfor avoiding\
+  \ these warnings is to pretend that the report actually has\nlength 1.\n\nSigned-off-by:\
+  \ Alan Stern <stern@rowland.harvard.edu>\nReported-and-tested-by: syzbot+9b57a46bf1801ce2a2ca@syzkaller.appspotmail.com\n\
+  Tested-by: Oleksandr Natalenko <oleksandr@natalenko.name>\nTested-by: Benjamin Tissoires\
+  \ <benjamin.tissoires@redhat.com>\nAcked-by: Benjamin Tissoires <benjamin.tissoires@redhat.com>\n\
+  Cc: stable@vger.kernel.org\nSigned-off-by: Jiri Kosina <jkosina@suse.cz>\n"
+submodule:
+- drivers/hid/usbhid
+hunk_count: 1
+covered_count: 1

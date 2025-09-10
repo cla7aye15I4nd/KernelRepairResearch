@@ -1,0 +1,52 @@
+id: f84aa7209ccec829536f
+bug_link: https://syzkaller.appspot.com/bug?extid=f84aa7209ccec829536f
+title: 'KASAN: use-after-free Read in destroy_async_on_interface'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c183813fcee44a249339b7c46e1ad271ca1870aa
+fix_commit: bd729f9d67aa9a303d8925bb8c4f06af25f407d1
+datetime: '2018-09-20T12:49:12+02:00'
+fix_commit_message: 'USB: fix error handling in usb_driver_claim_interface()
+
+
+  The syzbot fuzzing project found a use-after-free bug in the USB
+
+  core.  The bug was caused by usbfs not unbinding from an interface
+
+  when the USB device file was closed, which led another process to
+
+  attempt the unbind later on, after the private data structure had been
+
+  deallocated.
+
+
+  The reason usbfs did not unbind the interface at the appropriate time
+
+  was because it thought the interface had never been claimed in the
+
+  first place.  This was caused by the fact that
+
+  usb_driver_claim_interface() does not clean up properly when
+
+  device_bind_driver() returns an error.  Although the error code gets
+
+  passed back to the caller, the iface->dev.driver pointer remains set
+
+  and iface->condition remains equal to USB_INTERFACE_BOUND.
+
+
+  This patch adds proper error handling to usb_driver_claim_interface().
+
+
+  Signed-off-by: Alan Stern <stern@rowland.harvard.edu>
+
+  Reported-by: syzbot+f84aa7209ccec829536f@syzkaller.appspotmail.com
+
+  CC: <stable@vger.kernel.org>
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/core
+hunk_count: 1
+covered_count: 1

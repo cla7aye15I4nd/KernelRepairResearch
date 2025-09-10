@@ -1,0 +1,59 @@
+id: 7d9959e6503e8ffc8558
+bug_link: https://syzkaller.appspot.com/bug?extid=7d9959e6503e8ffc8558
+title: 'KASAN: vmalloc-out-of-bounds Write in vrealloc_noprof'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a220d6b95b1ae12c7626283d7609f0a1438e6437
+fix_commit: d699440f58ce9bd71103cc7b692e3ab76a20bfcd
+datetime: '2024-12-05T19:54:44-08:00'
+fix_commit_message: 'mm: fix vrealloc()''s KASAN poisoning logic
+
+
+  When vrealloc() reuses already allocated vmap_area, we need to re-annotate
+
+  poisoned and unpoisoned portions of underlying memory according to the new
+
+  size.
+
+
+  This results in a KASAN splat recorded at [1].  A KASAN mis-reporting
+
+  issue where there is none.
+
+
+  Note, hard-coding KASAN_VMALLOC_PROT_NORMAL might not be exactly correct,
+
+  but KASAN flag logic is pretty involved and spread out throughout
+
+  __vmalloc_node_range_noprof(), so I''m using the bare minimum flag here and
+
+  leaving the rest to mm people to refactor this logic and reuse it here.
+
+
+  Link: https://lkml.kernel.org/r/20241126005206.3457974-1-andrii@kernel.org
+
+  Link: https://lore.kernel.org/bpf/67450f9b.050a0220.21d33d.0004.GAE@google.com/
+  [1]
+
+  Fixes: 3ddc2fefe6f3 ("mm: vmalloc: implement vrealloc()")
+
+  Signed-off-by: Andrii Nakryiko <andrii@kernel.org>
+
+  Cc: Alexei Starovoitov <ast@kernel.org>
+
+  Cc: Christoph Hellwig <hch@infradead.org>
+
+  Cc: Michal Hocko <mhocko@suse.com>
+
+  Cc: Uladzislau Rezki (Sony) <urezki@gmail.com>
+
+  Cc: Vlastimil Babka <vbabka@suse.cz>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

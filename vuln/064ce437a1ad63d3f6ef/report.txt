@@ -1,0 +1,37 @@
+loop0: detected capacity change from 0 to 32768
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in fs/bcachefs/sb-members.c:249:2
+shift exponent 69 is too large for 64-bit type 'unsigned long long'
+CPU: 0 UID: 0 PID: 5099 Comm: syz-executor454 Not tainted 6.11.0-rc6-syzkaller #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:93 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:119
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x3c8/0x420 lib/ubsan.c:468
+ member_to_text+0x9a2/0x9b0 fs/bcachefs/sb-members.c:249
+ bch2_sb_members_v2_to_text+0x267/0x3b0 fs/bcachefs/sb-members.c:310
+ bch2_sb_field_validate+0x201/0x2e0 fs/bcachefs/super-io.c:1233
+ bch2_sb_validate+0xb4b/0xef0 fs/bcachefs/super-io.c:472
+ __bch2_read_super+0xc1b/0x1370 fs/bcachefs/super-io.c:827
+ bch2_fs_open+0x246/0xdf0 fs/bcachefs/super.c:2083
+ bch2_fs_get_tree+0x731/0x1700 fs/bcachefs/fs.c:1933
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1800
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3472
+ do_mount fs/namespace.c:3812 [inline]
+ __do_sys_mount fs/namespace.c:4020 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:3997
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fe3ee4d7faa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe262fa7b8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffe262fa7d0 RCX: 00007fe3ee4d7faa
+RDX: 00000000200058c0 RSI: 0000000020000100 RDI: 00007ffe262fa7d0
+RBP: 0000000000000004 R08: 00007ffe262fa810 R09: 0000000000005903
+R10: 0000000000000000 R11: 0000000000000282 R12: 0000000000000000
+R13: 00007ffe262fa810 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+---[ end trace ]---

@@ -1,0 +1,41 @@
+id: d4eb75e353a836d57809
+bug_link: https://syzkaller.appspot.com/bug?extid=d4eb75e353a836d57809
+title: general protection fault in cgroup_reconfigure
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cca8f32714d3a8bb4d109c9d7d790fd705b734e5
+fix_commit: 23bf1b6be9c291a7130118dcc7384f72ac04d813
+datetime: '2019-02-28T03:29:34-05:00'
+fix_commit_message: "kernfs, sysfs, cgroup, intel_rdt: Support fs_context\n\nMake\
+  \ kernfs support superblock creation/mount/remount with fs_context.\n\nThis requires\
+  \ that sysfs, cgroup and intel_rdt, which are built on kernfs,\nbe made to support\
+  \ fs_context also.\n\nNotes:\n\n (1) A kernfs_fs_context struct is created to wrap\
+  \ fs_context and the\n     kernfs mount parameters are moved in here (or are in\
+  \ fs_context).\n\n (2) kernfs_mount{,_ns}() are made into kernfs_get_tree().  The\
+  \ extra\n     namespace tag parameter is passed in the context if desired\n\n (3)\
+  \ kernfs_free_fs_context() is provided as a destructor for the\n     kernfs_fs_context\
+  \ struct, but for the moment it does nothing except\n     get called in the right\
+  \ places.\n\n (4) sysfs doesn't wrap kernfs_fs_context since it has no parameters\
+  \ to\n     pass, but possibly this should be done anyway in case someone wants to\n\
+  \     add a parameter in future.\n\n (5) A cgroup_fs_context struct is created to\
+  \ wrap kernfs_fs_context and\n     the cgroup v1 and v2 mount parameters are all\
+  \ moved there.\n\n (6) cgroup1 parameter parsing error messages are now handled\
+  \ by invalf(),\n     which allows userspace to collect them directly.\n\n (7) cgroup1\
+  \ parameter cleanup is now done in the context destructor rather\n     than in the\
+  \ mount/get_tree and remount functions.\n\nWeirdies:\n\n (*) cgroup_do_get_tree()\
+  \ calls cset_cgroup_from_root() with locks held,\n     but then uses the resulting\
+  \ pointer after dropping the locks.  I'm\n     told this is okay and needs commenting.\n\
+  \n (*) The cgroup refcount web.  This really needs documenting.\n\n (*) cgroup2\
+  \ only has one root?\n\nAdd a suggestion from Thomas Gleixner in which the RDT enablement\
+  \ code is\nplaced into its own function.\n\n[folded a leak fix from Andrey Vagin]\n\
+  \nSigned-off-by: David Howells <dhowells@redhat.com>\ncc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n\
+  cc: Tejun Heo <tj@kernel.org>\ncc: Li Zefan <lizefan@huawei.com>\ncc: Johannes Weiner\
+  \ <hannes@cmpxchg.org>\ncc: cgroups@vger.kernel.org\ncc: fenghua.yu@intel.com\n\
+  Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>\n"
+submodule:
+- arch/x86/kernel/cpu/resctrl
+- fs/kernfs
+- fs/sysfs
+- include/linux
+- kernel/cgroup
+hunk_count: 31
+covered_count: 2

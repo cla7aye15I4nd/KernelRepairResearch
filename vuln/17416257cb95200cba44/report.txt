@@ -1,0 +1,47 @@
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in mm/vmscan.c:4715:21
+shift exponent -1 is negative
+CPU: 1 PID: 5098 Comm: syz-executor405 Not tainted 6.10.0-rc1-next-20240528-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x3c8/0x420 lib/ubsan.c:468
+ get_nr_to_scan mm/vmscan.c:4715 [inline]
+ try_to_shrink_lruvec+0xa99/0xbb0 mm/vmscan.c:4761
+ lru_gen_shrink_lruvec mm/vmscan.c:4908 [inline]
+ shrink_lruvec+0x554/0x3070 mm/vmscan.c:5685
+ shrink_node_memcgs mm/vmscan.c:5921 [inline]
+ shrink_node+0xb17/0x4150 mm/vmscan.c:5961
+ shrink_zones mm/vmscan.c:6205 [inline]
+ do_try_to_free_pages+0x789/0x1cb0 mm/vmscan.c:6267
+ try_to_free_mem_cgroup_pages+0x48f/0xb10 mm/vmscan.c:6598
+ try_charge_memcg+0x704/0x1850 mm/memcontrol.c:2946
+ obj_cgroup_charge_pages mm/memcontrol.c:3420 [inline]
+ __memcg_kmem_charge_page+0xe2/0x250 mm/memcontrol.c:3446
+ __alloc_pages_noprof+0x28c/0x6c0 mm/page_alloc.c:4712
+ __alloc_pages_node_noprof include/linux/gfp.h:269 [inline]
+ alloc_pages_node_noprof include/linux/gfp.h:296 [inline]
+ bpf_ringbuf_area_alloc kernel/bpf/ringbuf.c:122 [inline]
+ bpf_ringbuf_alloc+0xcb/0x420 kernel/bpf/ringbuf.c:170
+ ringbuf_map_alloc+0x1d7/0x2f0 kernel/bpf/ringbuf.c:204
+ map_create+0x90c/0x1200 kernel/bpf/syscall.c:1333
+ __sys_bpf+0x6d1/0x810 kernel/bpf/syscall.c:5669
+ __do_sys_bpf kernel/bpf/syscall.c:5794 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5792 [inline]
+ __x64_sys_bpf+0x7c/0x90 kernel/bpf/syscall.c:5792
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fb37e1a9a19
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 18 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe988e0e78 EFLAGS: 00000246 ORIG_RAX: 0000000000000141
+RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007fb37e1a9a19
+RDX: 0000000000000048 RSI: 00000000200002c0 RDI: 0000000000000000
+RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007fb37e1f3036
+R13: 00007ffe988e0eb0 R14: 00007ffe988e0ef0 R15: 0000000000000000
+ </TASK>
+---[ end trace ]---

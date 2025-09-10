@@ -1,0 +1,65 @@
+diff --git a/include/linux/spinlock.h b/include/linux/spinlock.h
+index 3190997df9ca..e089157dcf97 100644
+--- a/include/linux/spinlock.h
++++ b/include/linux/spinlock.h
+@@ -451,9 +451,20 @@ extern int _atomic_dec_and_lock_irqsave(atomic_t *atomic, spinlock_t *lock,
+ #define atomic_dec_and_lock_irqsave(atomic, lock, flags) \
+ 		__cond_lock(lock, _atomic_dec_and_lock_irqsave(atomic, lock, &(flags)))
+ 
+-int alloc_bucket_spinlocks(spinlock_t **locks, unsigned int *lock_mask,
+-			   size_t max_size, unsigned int cpu_mult,
+-			   gfp_t gfp);
++int __alloc_bucket_spinlocks(spinlock_t **locks, unsigned int *lock_mask,
++			     size_t max_size, unsigned int cpu_mult,
++			     gfp_t gfp, const char *name,
++			     struct lock_class_key *key);
++
++#define alloc_bucket_spinlocks(locks, lock_mask, max_size, cpu_mult, gfp)    \
++	({								     \
++		static struct lock_class_key key;			     \
++		int ret;						     \
++									     \
++		ret = __alloc_bucket_spinlocks(locks, lock_mask, max_size,   \
++					       cpu_mult, gfp, #locks, &key); \
++		ret;							     \
++	})
+ 
+ void free_bucket_spinlocks(spinlock_t *locks);
+ 
+diff --git a/lib/bucket_locks.c b/lib/bucket_locks.c
+index ade3ce6c4af6..64b92e1dbace 100644
+--- a/lib/bucket_locks.c
++++ b/lib/bucket_locks.c
+@@ -11,8 +11,9 @@
+  * to a power of 2 to be suitable as a hash table.
+  */
+ 
+-int alloc_bucket_spinlocks(spinlock_t **locks, unsigned int *locks_mask,
+-			   size_t max_size, unsigned int cpu_mult, gfp_t gfp)
++int __alloc_bucket_spinlocks(spinlock_t **locks, unsigned int *locks_mask,
++			     size_t max_size, unsigned int cpu_mult, gfp_t gfp,
++			     const char *name, struct lock_class_key *key)
+ {
+ 	spinlock_t *tlocks = NULL;
+ 	unsigned int i, size;
+@@ -33,8 +34,10 @@ int alloc_bucket_spinlocks(spinlock_t **locks, unsigned int *locks_mask,
+ 		tlocks = kvmalloc_array(size, sizeof(spinlock_t), gfp);
+ 		if (!tlocks)
+ 			return -ENOMEM;
+-		for (i = 0; i < size; i++)
++		for (i = 0; i < size; i++) {
+ 			spin_lock_init(&tlocks[i]);
++			lockdep_init_map(&tlocks[i].dep_map, name, key, 0);
++		}
+ 	}
+ 
+ 	*locks = tlocks;
+@@ -42,7 +45,7 @@ int alloc_bucket_spinlocks(spinlock_t **locks, unsigned int *locks_mask,
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL(alloc_bucket_spinlocks);
++EXPORT_SYMBOL(__alloc_bucket_spinlocks);
+ 
+ void free_bucket_spinlocks(spinlock_t *locks)
+ {

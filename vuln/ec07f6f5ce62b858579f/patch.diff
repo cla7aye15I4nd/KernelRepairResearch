@@ -1,0 +1,32 @@
+diff --git a/fs/notify/fdinfo.c b/fs/notify/fdinfo.c
+index dec553034027..e933f9c65d90 100644
+--- a/fs/notify/fdinfo.c
++++ b/fs/notify/fdinfo.c
+@@ -47,10 +47,8 @@ static void show_mark_fhandle(struct seq_file *m, struct inode *inode)
+ 	size = f->handle_bytes >> 2;
+ 
+ 	ret = exportfs_encode_fid(inode, (struct fid *)f->f_handle, &size);
+-	if ((ret == FILEID_INVALID) || (ret < 0)) {
+-		WARN_ONCE(1, "Can't encode file handler for inotify: %d\n", ret);
++	if ((ret == FILEID_INVALID) || (ret < 0))
+ 		return;
+-	}
+ 
+ 	f->handle_type = ret;
+ 	f->handle_bytes = size * sizeof(u32);
+diff --git a/fs/overlayfs/copy_up.c b/fs/overlayfs/copy_up.c
+index 3601ddfeddc2..56eee9f23ea9 100644
+--- a/fs/overlayfs/copy_up.c
++++ b/fs/overlayfs/copy_up.c
+@@ -442,9 +442,8 @@ struct ovl_fh *ovl_encode_real_fh(struct ovl_fs *ofs, struct dentry *real,
+ 	buflen = (dwords << 2);
+ 
+ 	err = -EIO;
+-	if (WARN_ON(fh_type < 0) ||
+-	    WARN_ON(buflen > MAX_HANDLE_SZ) ||
+-	    WARN_ON(fh_type == FILEID_INVALID))
++	if (fh_type < 0 || fh_type == FILEID_INVALID ||
++	    WARN_ON(buflen > MAX_HANDLE_SZ))
+ 		goto out_err;
+ 
+ 	fh->fb.version = OVL_FH_VERSION;

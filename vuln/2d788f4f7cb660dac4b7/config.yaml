@@ -1,0 +1,124 @@
+id: 2d788f4f7cb660dac4b7
+bug_link: https://syzkaller.appspot.com/bug?extid=2d788f4f7cb660dac4b7
+title: general protection fault in find_mergeable_anon_vma
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 901ce9705fbb9f330ff1f19600e5daf9770b0175
+fix_commit: 8ac662f5da19f5873fdd94c48a5cdb45b2e1b58f
+datetime: '2024-12-18T19:04:44-08:00'
+fix_commit_message: 'fork: avoid inappropriate uprobe access to invalid mm
+
+
+  If dup_mmap() encounters an issue, currently uprobe is able to access the
+
+  relevant mm via the reverse mapping (in build_map_info()), and if we are
+
+  very unlucky with a race window, observe invalid XA_ZERO_ENTRY state which
+
+  we establish as part of the fork error path.
+
+
+  This occurs because uprobe_write_opcode() invokes anon_vma_prepare() which
+
+  in turn invokes find_mergeable_anon_vma() that uses a VMA iterator,
+
+  invoking vma_iter_load() which uses the advanced maple tree API and thus
+
+  is able to observe XA_ZERO_ENTRY entries added to dup_mmap() in commit
+
+  d24062914837 ("fork: use __mt_dup() to duplicate maple tree in
+
+  dup_mmap()").
+
+
+  This change was made on the assumption that only process tear-down code
+
+  would actually observe (and make use of) these values.  However this very
+
+  unlikely but still possible edge case with uprobes exists and
+
+  unfortunately does make these observable.
+
+
+  The uprobe operation prevents races against the dup_mmap() operation via
+
+  the dup_mmap_sem semaphore, which is acquired via uprobe_start_dup_mmap()
+
+  and dropped via uprobe_end_dup_mmap(), and held across
+
+  register_for_each_vma() prior to invoking build_map_info() which does the
+
+  reverse mapping lookup.
+
+
+  Currently these are acquired and dropped within dup_mmap(), which exposes
+
+  the race window prior to error handling in the invoking dup_mm() which
+
+  tears down the mm.
+
+
+  We can avoid all this by just moving the invocation of
+
+  uprobe_start_dup_mmap() and uprobe_end_dup_mmap() up a level to dup_mm()
+
+  and only release this lock once the dup_mmap() operation succeeds or clean
+
+  up is done.
+
+
+  This means that the uprobe code can never observe an incompletely
+
+  constructed mm and resolves the issue in this case.
+
+
+  Link: https://lkml.kernel.org/r/20241210172412.52995-1-lorenzo.stoakes@oracle.com
+
+  Fixes: d24062914837 ("fork: use __mt_dup() to duplicate maple tree in dup_mmap()")
+
+  Signed-off-by: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
+
+  Reported-by: syzbot+2d788f4f7cb660dac4b7@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/all/6756d273.050a0220.2477f.003d.GAE@google.com/
+
+  Cc: Adrian Hunter <adrian.hunter@intel.com>
+
+  Cc: Alexander Shishkin <alexander.shishkin@linux.intel.com>
+
+  Cc: Arnaldo Carvalho de Melo <acme@kernel.org>
+
+  Cc: Ian Rogers <irogers@google.com>
+
+  Cc: Ingo Molnar <mingo@redhat.com>
+
+  Cc: Jann Horn <jannh@google.com>
+
+  Cc: Jiri Olsa <jolsa@kernel.org>
+
+  Cc: Kan Liang <kan.liang@linux.intel.com>
+
+  Cc: Liam R. Howlett <Liam.Howlett@Oracle.com>
+
+  Cc: Mark Rutland <mark.rutland@arm.com>
+
+  Cc: Masami Hiramatsu <mhiramat@kernel.org>
+
+  Cc: Namhyung Kim <namhyung@kernel.org>
+
+  Cc: Oleg Nesterov <oleg@redhat.com>
+
+  Cc: Peng Zhang <zhangpeng.00@bytedance.com>
+
+  Cc: Peter Zijlstra <peterz@infradead.org>
+
+  Cc: Vlastimil Babka <vbabka@suse.cz>
+
+  Cc: David Hildenbrand <david@redhat.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- kernel
+hunk_count: 4
+covered_count: 0

@@ -1,0 +1,55 @@
+id: 3967212746d25888b189
+bug_link: https://syzkaller.appspot.com/bug?extid=3967212746d25888b189
+title: general protection fault in __loop_clr_fd
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b51478a0b3c7040bfcadf6e2e04df5ddde59fd98
+fix_commit: 87579e9b7d8dc36e7cfc40c03f1ae5634e16e2c5
+datetime: '2021-06-29T10:53:50-07:00'
+fix_commit_message: "loop: use worker per cgroup instead of kworker\n\nPatch series\
+  \ \"Charge loop device i/o to issuing cgroup\", v14.\n\nThe loop device runs all\
+  \ i/o to the backing file on a separate kworker\nthread which results in all i/o\
+  \ being charged to the root cgroup.  This\nallows a loop device to be used to trivially\
+  \ bypass resource limits and\nother policy.  This patch series fixes this gap in\
+  \ accounting.\n\nA simple script to demonstrate this behavior on cgroupv2 machine:\n\
+  \n'''\n#!/bin/bash\nset -e\n\nCGROUP=/sys/fs/cgroup/test.slice\nLOOP_DEV=/dev/loop0\n\
+  \nif [[ ! -d $CGROUP ]]\nthen\n    sudo mkdir $CGROUP\nfi\n\ngrep oom_kill $CGROUP/memory.events\n\
+  \n# Set a memory limit, write more than that limit to tmpfs -> OOM kill\nsudo unshare\
+  \ -m bash -c \"\necho \\$\\$ > $CGROUP/cgroup.procs;\necho 0 > $CGROUP/memory.swap.max;\n\
+  echo 64M > $CGROUP/memory.max;\nmount -t tmpfs -o size=512m tmpfs /tmp;\ndd if=/dev/zero\
+  \ of=/tmp/file bs=1M count=256\" || true\n\ngrep oom_kill $CGROUP/memory.events\n\
+  \n# Set a memory limit, write more than that limit through loopback\n# device ->\
+  \ no OOM kill\nsudo unshare -m bash -c \"\necho \\$\\$ > $CGROUP/cgroup.procs;\n\
+  echo 0 > $CGROUP/memory.swap.max;\necho 64M > $CGROUP/memory.max;\nmount -t tmpfs\
+  \ -o size=512m tmpfs /tmp;\ntruncate -s 512m /tmp/backing_file\nlosetup $LOOP_DEV\
+  \ /tmp/backing_file\ndd if=/dev/zero of=$LOOP_DEV bs=1M count=256;\nlosetup -D $LOOP_DEV\"\
+  \ || true\n\ngrep oom_kill $CGROUP/memory.events\n'''\n\nNaively charging cgroups\
+  \ could result in priority inversions through the\nsingle kworker thread in the\
+  \ case where multiple cgroups are\nreading/writing to the same loop device.  This\
+  \ patch series does some\nminor modification to the loop driver so that each cgroup\
+  \ can make forward\nprogress independently to avoid this inversion.\n\nWith this\
+  \ patch series applied, the above script triggers OOM kills when\nwriting through\
+  \ the loop device as expected.\n\nThis patch (of 3):\n\nExisting uses of loop device\
+  \ may have multiple cgroups reading/writing to\nthe same device.  Simply charging\
+  \ resources for I/O to the backing file\ncould result in priority inversion where\
+  \ one cgroup gets synchronously\nblocked, holding up all other I/O to the loop device.\n\
+  \nIn order to avoid this priority inversion, we use a single workqueue where\neach\
+  \ work item is a \"struct loop_worker\" which contains a queue of struct\nloop_cmds\
+  \ to issue.  The loop device maintains a tree mapping blk css_id\n-> loop_worker.\
+  \  This allows each cgroup to independently make forward\nprogress issuing I/O to\
+  \ the backing file.\n\nThere is also a single queue for I/O associated with the\
+  \ rootcg which can\nbe used in cases of extreme memory shortage where we cannot\
+  \ allocate a\nloop_worker.\n\nThe locking for the tree and queues is fairly heavy\
+  \ handed - we acquire a\nper-loop-device spinlock any time either is accessed. \
+  \ The existing\nimplementation serializes all I/O through a single thread anyways,\
+  \ so I\ndon't believe this is any worse.\n\n[colin.king@canonical.com: fixes]\n\n\
+  Link: https://lkml.kernel.org/r/20210610173944.1203706-1-schatzberg.dan@gmail.com\n\
+  Link: https://lkml.kernel.org/r/20210610173944.1203706-2-schatzberg.dan@gmail.com\n\
+  Signed-off-by: Dan Schatzberg <schatzberg.dan@gmail.com>\nReviewed-by: Ming Lei\
+  \ <ming.lei@redhat.com>\nAcked-by: Jens Axboe <axboe@kernel.dk>\nCc: Johannes Weiner\
+  \ <hannes@cmpxchg.org>\nCc: Michal Hocko <mhocko@suse.com>\nCc: Chris Down <chris@chrisdown.name>\n\
+  Cc: Shakeel Butt <shakeelb@google.com>\nCc: Tejun Heo <tj@kernel.org>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- drivers/block
+hunk_count: 13
+covered_count: 6

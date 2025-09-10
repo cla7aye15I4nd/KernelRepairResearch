@@ -1,0 +1,51 @@
+id: 705f4401d5a93a59b87d
+bug_link: https://syzkaller.appspot.com/bug?extid=705f4401d5a93a59b87d
+title: general protection fault in start_creating
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6929f71e46bdddbf1c4d67c2728648176c67c555
+fix_commit: d56f5136b01020155b6b0a29f69d924687529bee
+datetime: '2020-06-04T11:00:54-04:00'
+fix_commit_message: 'KVM: let kvm_destroy_vm_debugfs clean up vCPU debugfs directories
+
+
+  After commit 63d0434 ("KVM: x86: move kvm_create_vcpu_debugfs after
+
+  last failure point") we are creating the pre-vCPU debugfs files
+
+  after the creation of the vCPU file descriptor.  This makes it
+
+  possible for userspace to reach kvm_vcpu_release before
+
+  kvm_create_vcpu_debugfs has finished.  The vcpu->debugfs_dentry
+
+  then does not have any associated inode anymore, and this causes
+
+  a NULL-pointer dereference in debugfs_create_file.
+
+
+  The solution is simply to avoid removing the files; they are
+
+  cleaned up when the VM file descriptor is closed (and that must be
+
+  after KVM_CREATE_VCPU returns).  We can stop storing the dentry
+
+  in struct kvm_vcpu too, because it is not needed anywhere after
+
+  kvm_create_vcpu_debugfs returns.
+
+
+  Reported-by: syzbot+705f4401d5a93a59b87d@syzkaller.appspotmail.com
+
+  Fixes: 63d04348371b ("KVM: x86: move kvm_create_vcpu_debugfs after last failure
+  point")
+
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  '
+submodule:
+- arch/arm64/kvm
+- arch/x86/kvm
+- include/linux
+- virt/kvm
+hunk_count: 6
+covered_count: 3

@@ -1,0 +1,14 @@
+diff --git a/drivers/infiniband/core/ucma.c b/drivers/infiniband/core/ucma.c
+index 3f3f7bbc4528..14c260ed63cb 100644
+--- a/drivers/infiniband/core/ucma.c
++++ b/drivers/infiniband/core/ucma.c
+@@ -497,6 +497,9 @@ static ssize_t ucma_create_id(struct ucma_file *file, const char __user *inbuf,
+ 	mutex_lock(&mut);
+ 	idr_remove(&ctx_idr, ctx->id);
+ 	mutex_unlock(&mut);
++	mutex_lock(&file->mut);
++	list_del(&ctx->list);
++	mutex_unlock(&file->mut);
+ 	kfree(ctx);
+ 	return ret;
+ }

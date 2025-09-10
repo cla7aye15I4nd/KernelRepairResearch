@@ -1,0 +1,136 @@
+ffff88802ff24020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+ffff88802ff24030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+==================================================================
+BUG: KASAN: slab-out-of-bounds in hex_dump_to_buffer+0xdee/0xe30 lib/hexdump.c:193
+Read of size 1 at addr ffff88802ff24040 by task syz-executor415/5186
+
+CPU: 0 PID: 5186 Comm: syz-executor415 Not tainted 6.9.0-rc7-syzkaller-00012-gdccb07f2914c #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0xc3/0x620 mm/kasan/report.c:488
+ kasan_report+0xd9/0x110 mm/kasan/report.c:601
+ hex_dump_to_buffer+0xdee/0xe30 lib/hexdump.c:193
+ print_hex_dump+0x18c/0x260 lib/hexdump.c:276
+ ea_get+0x864/0x12c0 fs/jfs/xattr.c:561
+ __jfs_getxattr+0xfd/0x3f0 fs/jfs/xattr.c:807
+ jfs_xattr_get+0x3c/0x50 fs/jfs/xattr.c:931
+ __vfs_getxattr+0x13b/0x1a0 fs/xattr.c:423
+ inode_doinit_use_xattr+0xb5/0x410 security/selinux/hooks.c:1361
+ inode_doinit_with_dentry+0x51f/0x12c0 security/selinux/hooks.c:1486
+ selinux_d_instantiate+0x26/0x30 security/selinux/hooks.c:6345
+ security_d_instantiate+0x57/0xf0 security/security.c:3915
+ d_splice_alias+0x94/0xdf0 fs/dcache.c:2973
+ jfs_lookup+0x237/0x370 fs/jfs/namei.c:1474
+ __lookup_slow+0x24f/0x460 fs/namei.c:1692
+ lookup_slow fs/namei.c:1709 [inline]
+ walk_component+0x350/0x5b0 fs/namei.c:2004
+ lookup_last fs/namei.c:2461 [inline]
+ path_lookupat+0x17f/0x770 fs/namei.c:2485
+ filename_lookup+0x1e5/0x5b0 fs/namei.c:2514
+ user_path_at_empty+0x42/0x60 fs/namei.c:2921
+ user_path_at include/linux/namei.h:57 [inline]
+ path_listxattr+0x9c/0x160 fs/xattr.c:861
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x260 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fee15c3e879
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffdce0a03d8 EFLAGS: 00000246 ORIG_RAX: 00000000000000c2
+RAX: ffffffffffffffda RBX: 00007ffdce0a05b8 RCX: 00007fee15c3e879
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000020000000
+RBP: 00007fee15cb7610 R08: 0000000000005ed8 R09: 0000000000000000
+R10: 00007ffdce0a02a0 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffdce0a05a8 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+Allocated by task 5186:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ unpoison_slab_object mm/kasan/common.c:312 [inline]
+ __kasan_slab_alloc+0x89/0x90 mm/kasan/common.c:338
+ kasan_slab_alloc include/linux/kasan.h:201 [inline]
+ slab_post_alloc_hook mm/slub.c:3804 [inline]
+ slab_alloc_node mm/slub.c:3851 [inline]
+ kmem_cache_alloc_lru+0x142/0x700 mm/slub.c:3870
+ alloc_inode_sb include/linux/fs.h:3091 [inline]
+ jfs_alloc_inode+0x25/0x60 fs/jfs/super.c:105
+ alloc_inode+0x5d/0x230 fs/inode.c:261
+ iget_locked+0x1a1/0x6d0 fs/inode.c:1280
+ jfs_iget+0x1e/0x4d0 fs/jfs/inode.c:29
+ jfs_lookup+0x2a8/0x370 fs/jfs/namei.c:1469
+ __lookup_slow+0x24f/0x460 fs/namei.c:1692
+ lookup_slow fs/namei.c:1709 [inline]
+ walk_component+0x350/0x5b0 fs/namei.c:2004
+ lookup_last fs/namei.c:2461 [inline]
+ path_lookupat+0x17f/0x770 fs/namei.c:2485
+ filename_lookup+0x1e5/0x5b0 fs/namei.c:2514
+ user_path_at_empty+0x42/0x60 fs/namei.c:2921
+ user_path_at include/linux/namei.h:57 [inline]
+ path_listxattr+0x9c/0x160 fs/xattr.c:861
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x260 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88802ff23780
+ which belongs to the cache jfs_ip of size 2240
+The buggy address is located 0 bytes to the right of
+ allocated 2240-byte region [ffff88802ff23780, ffff88802ff24040)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x2ff20
+head: order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000000840(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000840 ffff88801668dcc0 dead000000000122 0000000000000000
+raw: 0000000000000000 00000000800d000d 00000001ffffffff 0000000000000000
+head: 00fff00000000840 ffff88801668dcc0 dead000000000122 0000000000000000
+head: 0000000000000000 00000000800d000d 00000001ffffffff 0000000000000000
+head: 00fff00000000003 ffffea0000bfc801 dead000000000122 00000000ffffffff
+head: 0000000800000000 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Reclaimable, gfp_mask 0xd2050(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC|__GFP_RECLAIMABLE), pid 5186, tgid 195832007 (syz-executor415), ts 5186, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x2d4/0x350 mm/page_alloc.c:1534
+ prep_new_page mm/page_alloc.c:1541 [inline]
+ get_page_from_freelist+0xa28/0x3780 mm/page_alloc.c:3317
+ __alloc_pages+0x22b/0x2460 mm/page_alloc.c:4575
+ __alloc_pages_node include/linux/gfp.h:238 [inline]
+ alloc_pages_node include/linux/gfp.h:261 [inline]
+ alloc_slab_page mm/slub.c:2180 [inline]
+ allocate_slab mm/slub.c:2343 [inline]
+ new_slab+0xcc/0x3a0 mm/slub.c:2396
+ ___slab_alloc+0x66d/0x1790 mm/slub.c:3530
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3615
+ __slab_alloc_node mm/slub.c:3668 [inline]
+ slab_alloc_node mm/slub.c:3841 [inline]
+ kmem_cache_alloc_lru+0x383/0x700 mm/slub.c:3870
+ alloc_inode_sb include/linux/fs.h:3091 [inline]
+ jfs_alloc_inode+0x25/0x60 fs/jfs/super.c:105
+ alloc_inode+0x5d/0x230 fs/inode.c:261
+ new_inode_pseudo fs/inode.c:1007 [inline]
+ new_inode+0x22/0x270 fs/inode.c:1033
+ jfs_fill_super+0x433/0xd20 fs/jfs/super.c:544
+ mount_bdev+0x1e3/0x2d0 fs/super.c:1658
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:662
+ vfs_get_tree+0x8f/0x380 fs/super.c:1779
+ do_new_mount fs/namespace.c:3352 [inline]
+ path_mount+0x14e6/0x1f20 fs/namespace.c:3679
+ do_mount fs/namespace.c:3692 [inline]
+ __do_sys_mount fs/namespace.c:3898 [inline]
+ __se_sys_mount fs/namespace.c:3875 [inline]
+ __x64_sys_mount+0x297/0x320 fs/namespace.c:3875
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff88802ff23f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff88802ff23f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff88802ff24000: 00 00 00 00 00 00 00 00 fc fc fc fc fc fc fc fc
+                                           ^
+ ffff88802ff24080: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88802ff24100: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

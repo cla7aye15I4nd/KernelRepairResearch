@@ -1,0 +1,122 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in gsm_cleanup_mux+0x210/0x2b8 drivers/tty/n_gsm.c:3084
+Read at addr f6ff0000057f780c by task syz-executor254/3077
+Pointer tag: [f6], memory tag: [fe]
+
+CPU: 0 PID: 3077 Comm: syz-executor254 Not tainted 6.4.0-rc7-syzkaller-00041-ge660abd551f1 #0
+Hardware name: linux,dummy-virt (DT)
+Call trace:
+ dump_backtrace+0x94/0xec arch/arm64/kernel/stacktrace.c:233
+ show_stack+0x18/0x24 arch/arm64/kernel/stacktrace.c:240
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x48/0x60 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:351 [inline]
+ print_report+0xd8/0x5f4 mm/kasan/report.c:462
+ kasan_report+0x7c/0x9c mm/kasan/report.c:572
+ __do_kernel_fault+0x174/0x1c0 arch/arm64/mm/fault.c:320
+ do_bad_area arch/arm64/mm/fault.c:479 [inline]
+ do_tag_check_fault+0x78/0x8c arch/arm64/mm/fault.c:790
+ do_mem_abort+0x44/0x94 arch/arm64/mm/fault.c:866
+ el1_abort+0x40/0x60 arch/arm64/kernel/entry-common.c:367
+ el1h_64_sync_handler+0xd8/0xe4 arch/arm64/kernel/entry-common.c:427
+ el1h_64_sync+0x64/0x68 arch/arm64/kernel/entry.S:586
+ gsm_cleanup_mux+0x210/0x2b8 drivers/tty/n_gsm.c:3084
+ gsm_config drivers/tty/n_gsm.c:3327 [inline]
+ gsmld_ioctl+0x5b4/0x86c drivers/tty/n_gsm.c:3733
+ tty_ioctl+0x120/0xb50 drivers/tty/tty_io.c:2786
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:870 [inline]
+ __se_sys_ioctl fs/ioctl.c:856 [inline]
+ __arm64_sys_ioctl+0xa8/0xec fs/ioctl.c:856
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x48/0x114 arch/arm64/kernel/syscall.c:52
+ el0_svc_common.constprop.0+0x44/0xec arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x38/0xa4 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x2c/0xb0 arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0xb8/0xbc arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x19c/0x1a0 arch/arm64/kernel/entry.S:591
+
+Allocated by task 3071:
+ kasan_save_stack+0x2c/0x54 mm/kasan/common.c:45
+ save_stack_info+0x38/0x118 mm/kasan/tags.c:104
+ kasan_save_alloc_info+0x14/0x20 mm/kasan/tags.c:138
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ ____kasan_kmalloc mm/kasan/common.c:333 [inline]
+ __kasan_kmalloc+0x9c/0xa8 mm/kasan/common.c:383
+ kasan_kmalloc include/linux/kasan.h:196 [inline]
+ kmalloc_trace+0x4c/0x60 mm/slab_common.c:1062
+ kmalloc include/linux/slab.h:559 [inline]
+ kzalloc include/linux/slab.h:680 [inline]
+ gsm_dlci_alloc+0x30/0x17c drivers/tty/n_gsm.c:2618
+ gsm_activate_mux drivers/tty/n_gsm.c:3100 [inline]
+ gsm_config drivers/tty/n_gsm.c:3355 [inline]
+ gsmld_ioctl+0x62c/0x86c drivers/tty/n_gsm.c:3733
+ tty_ioctl+0x120/0xb50 drivers/tty/tty_io.c:2786
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:870 [inline]
+ __se_sys_ioctl fs/ioctl.c:856 [inline]
+ __arm64_sys_ioctl+0xa8/0xec fs/ioctl.c:856
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x48/0x114 arch/arm64/kernel/syscall.c:52
+ el0_svc_common.constprop.0+0x44/0xec arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x38/0xa4 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x2c/0xb0 arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0xb8/0xbc arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x19c/0x1a0 arch/arm64/kernel/entry.S:591
+
+Freed by task 3071:
+ kasan_save_stack+0x2c/0x54 mm/kasan/common.c:45
+ save_stack_info+0x38/0x118 mm/kasan/tags.c:104
+ kasan_save_free_info+0x18/0x24 mm/kasan/tags.c:143
+ ____kasan_slab_free.constprop.0+0x190/0x1f8 mm/kasan/common.c:236
+ __kasan_slab_free+0x10/0x1c mm/kasan/common.c:244
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1781 [inline]
+ slab_free_freelist_hook+0xb4/0x1e8 mm/slub.c:1807
+ slab_free mm/slub.c:3786 [inline]
+ __kmem_cache_free+0x16c/0x2c0 mm/slub.c:3799
+ kfree+0x5c/0x74 mm/slab_common.c:1015
+ gsm_dlci_free+0x64/0x78 drivers/tty/n_gsm.c:2671
+ tty_port_destructor drivers/tty/tty_port.c:296 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ tty_port_put+0xac/0xd4 drivers/tty/tty_port.c:311
+ dlci_put drivers/tty/n_gsm.c:2681 [inline]
+ gsm_dlci_release drivers/tty/n_gsm.c:2714 [inline]
+ gsm_cleanup_mux+0xd8/0x2b8 drivers/tty/n_gsm.c:3074
+ gsm_config drivers/tty/n_gsm.c:3327 [inline]
+ gsmld_ioctl+0x5b4/0x86c drivers/tty/n_gsm.c:3733
+ tty_ioctl+0x120/0xb50 drivers/tty/tty_io.c:2786
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:870 [inline]
+ __se_sys_ioctl fs/ioctl.c:856 [inline]
+ __arm64_sys_ioctl+0xa8/0xec fs/ioctl.c:856
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x48/0x114 arch/arm64/kernel/syscall.c:52
+ el0_svc_common.constprop.0+0x44/0xec arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x38/0xa4 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x2c/0xb0 arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0xb8/0xbc arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x19c/0x1a0 arch/arm64/kernel/entry.S:591
+
+The buggy address belongs to the object at ffff0000057f7800
+ which belongs to the cache kmalloc-1k of size 1024
+The buggy address is located 12 bytes inside of
+ 1024-byte region [ffff0000057f7800, ffff0000057f7c00)
+
+The buggy address belongs to the physical page:
+page:0000000079801325 refcount:1 mapcount:0 mapping:0000000000000000 index:0xf6ff0000057f7800 pfn:0x457f4
+head:0000000079801325 order:2 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0x1ffc00000010200(slab|head|node=0|zone=0|lastcpupid=0x7ff|kasantag=0x0)
+page_type: 0xffffffff()
+raw: 01ffc00000010200 f5ff000002c01500 fffffc00000b3510 f1ff000002c00290
+raw: f6ff0000057f7800 0000000000100006 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+
+Memory state around the buggy address:
+ ffff0000057f7600: f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8
+ ffff0000057f7700: f8 f8 f8 f8 f8 f8 f8 f8 fe fe fe fe fe fe fe fe
+>ffff0000057f7800: fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe
+                   ^
+ ffff0000057f7900: fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe
+ ffff0000057f7a00: fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe
+==================================================================

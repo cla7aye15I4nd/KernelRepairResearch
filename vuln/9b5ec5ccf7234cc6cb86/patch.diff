@@ -1,0 +1,398 @@
+diff --git a/fs/Kconfig b/fs/Kconfig
+index 4bc7dd420874..ea2f77446080 100644
+--- a/fs/Kconfig
++++ b/fs/Kconfig
+@@ -173,13 +173,6 @@ source "fs/proc/Kconfig"
+ source "fs/kernfs/Kconfig"
+ source "fs/sysfs/Kconfig"
+ 
+-config FS_PID
+-	bool "Pseudo filesystem for process file descriptors"
+-	depends on 64BIT
+-	default y
+-	help
+-	  Pidfs implements advanced features for process file descriptors.
+-
+ config TMPFS
+ 	bool "Tmpfs virtual memory file system support (former shm fs)"
+ 	depends on SHMEM
+diff --git a/fs/internal.h b/fs/internal.h
+index 49c1fcfee4b3..7ca738904e34 100644
+--- a/fs/internal.h
++++ b/fs/internal.h
+@@ -313,8 +313,8 @@ struct mnt_idmap *mnt_idmap_get(struct mnt_idmap *idmap);
+ void mnt_idmap_put(struct mnt_idmap *idmap);
+ struct stashed_operations {
+ 	void (*put_data)(void *data);
+-	void (*init_inode)(struct inode *inode, void *data);
++	int (*init_inode)(struct inode *inode, void *data);
+ };
+-int path_from_stashed(struct dentry **stashed, unsigned long ino,
+-		      struct vfsmount *mnt, void *data, struct path *path);
++int path_from_stashed(struct dentry **stashed, struct vfsmount *mnt, void *data,
++		      struct path *path);
+ void stashed_dentry_prune(struct dentry *dentry);
+diff --git a/fs/libfs.c b/fs/libfs.c
+index 0d14ae808fcf..3a6f2cb364f8 100644
+--- a/fs/libfs.c
++++ b/fs/libfs.c
+@@ -2001,34 +2001,40 @@ static inline struct dentry *get_stashed_dentry(struct dentry *stashed)
+ }
+ 
+ static struct dentry *prepare_anon_dentry(struct dentry **stashed,
+-					  unsigned long ino,
+ 					  struct super_block *sb,
+ 					  void *data)
+ {
+ 	struct dentry *dentry;
+ 	struct inode *inode;
+ 	const struct stashed_operations *sops = sb->s_fs_info;
+-
+-	dentry = d_alloc_anon(sb);
+-	if (!dentry)
+-		return ERR_PTR(-ENOMEM);
++	int ret;
+ 
+ 	inode = new_inode_pseudo(sb);
+ 	if (!inode) {
+-		dput(dentry);
++		sops->put_data(data);
+ 		return ERR_PTR(-ENOMEM);
+ 	}
+ 
+-	inode->i_ino = ino;
+ 	inode->i_flags |= S_IMMUTABLE;
+ 	inode->i_mode = S_IFREG;
+ 	simple_inode_init_ts(inode);
+-	sops->init_inode(inode, data);
++
++	ret = sops->init_inode(inode, data);
++	if (ret < 0) {
++		iput(inode);
++		return ERR_PTR(ret);
++	}
+ 
+ 	/* Notice when this is changed. */
+ 	WARN_ON_ONCE(!S_ISREG(inode->i_mode));
+ 	WARN_ON_ONCE(!IS_IMMUTABLE(inode));
+ 
++	dentry = d_alloc_anon(sb);
++	if (!dentry) {
++		iput(inode);
++		return ERR_PTR(-ENOMEM);
++	}
++
+ 	/* Store address of location where dentry's supposed to be stashed. */
+ 	dentry->d_fsdata = stashed;
+ 
+@@ -2062,7 +2068,6 @@ static struct dentry *stash_dentry(struct dentry **stashed,
+ /**
+  * path_from_stashed - create path from stashed or new dentry
+  * @stashed:    where to retrieve or stash dentry
+- * @ino:        inode number to use
+  * @mnt:        mnt of the filesystems to use
+  * @data:       data to store in inode->i_private
+  * @path:       path to create
+@@ -2077,8 +2082,8 @@ static struct dentry *stash_dentry(struct dentry **stashed,
+  *
+  * Return: On success zero and on failure a negative error is returned.
+  */
+-int path_from_stashed(struct dentry **stashed, unsigned long ino,
+-		      struct vfsmount *mnt, void *data, struct path *path)
++int path_from_stashed(struct dentry **stashed, struct vfsmount *mnt, void *data,
++		      struct path *path)
+ {
+ 	struct dentry *dentry;
+ 	const struct stashed_operations *sops = mnt->mnt_sb->s_fs_info;
+@@ -2091,11 +2096,9 @@ int path_from_stashed(struct dentry **stashed, unsigned long ino,
+ 	}
+ 
+ 	/* Allocate a new dentry. */
+-	dentry = prepare_anon_dentry(stashed, ino, mnt->mnt_sb, data);
+-	if (IS_ERR(dentry)) {
+-		sops->put_data(data);
++	dentry = prepare_anon_dentry(stashed, mnt->mnt_sb, data);
++	if (IS_ERR(dentry))
+ 		return PTR_ERR(dentry);
+-	}
+ 
+ 	/* Added a new dentry. @data is now owned by the filesystem. */
+ 	path->dentry = stash_dentry(stashed, dentry);
+diff --git a/fs/nsfs.c b/fs/nsfs.c
+index 7aaafb5cb9fc..07e22a15ef02 100644
+--- a/fs/nsfs.c
++++ b/fs/nsfs.c
+@@ -56,7 +56,7 @@ int ns_get_path_cb(struct path *path, ns_get_path_helper_t *ns_get_cb,
+ 	if (!ns)
+ 		return -ENOENT;
+ 
+-	return path_from_stashed(&ns->stashed, ns->inum, nsfs_mnt, ns, path);
++	return path_from_stashed(&ns->stashed, nsfs_mnt, ns, path);
+ }
+ 
+ struct ns_get_path_task_args {
+@@ -101,8 +101,7 @@ int open_related_ns(struct ns_common *ns,
+ 		return PTR_ERR(relative);
+ 	}
+ 
+-	err = path_from_stashed(&relative->stashed, relative->inum, nsfs_mnt,
+-				relative, &path);
++	err = path_from_stashed(&relative->stashed, nsfs_mnt, relative, &path);
+ 	if (err < 0) {
+ 		put_unused_fd(fd);
+ 		return err;
+@@ -199,11 +198,15 @@ static const struct super_operations nsfs_ops = {
+ 	.show_path = nsfs_show_path,
+ };
+ 
+-static void nsfs_init_inode(struct inode *inode, void *data)
++static int nsfs_init_inode(struct inode *inode, void *data)
+ {
++	struct ns_common *ns = data;
++
+ 	inode->i_private = data;
+ 	inode->i_mode |= S_IRUGO;
+ 	inode->i_fop = &ns_file_operations;
++	inode->i_ino = ns->inum;
++	return 0;
+ }
+ 
+ static void nsfs_put_data(void *data)
+diff --git a/fs/pidfs.c b/fs/pidfs.c
+index 8fd71a00be9c..a63d5d24aa02 100644
+--- a/fs/pidfs.c
++++ b/fs/pidfs.c
+@@ -16,17 +16,6 @@
+ 
+ #include "internal.h"
+ 
+-static int pidfd_release(struct inode *inode, struct file *file)
+-{
+-#ifndef CONFIG_FS_PID
+-	struct pid *pid = file->private_data;
+-
+-	file->private_data = NULL;
+-	put_pid(pid);
+-#endif
+-	return 0;
+-}
+-
+ #ifdef CONFIG_PROC_FS
+ /**
+  * pidfd_show_fdinfo - print information about a pidfd
+@@ -120,7 +109,6 @@ static __poll_t pidfd_poll(struct file *file, struct poll_table_struct *pts)
+ }
+ 
+ static const struct file_operations pidfs_file_operations = {
+-	.release	= pidfd_release,
+ 	.poll		= pidfd_poll,
+ #ifdef CONFIG_PROC_FS
+ 	.show_fdinfo	= pidfd_show_fdinfo,
+@@ -131,16 +119,45 @@ struct pid *pidfd_pid(const struct file *file)
+ {
+ 	if (file->f_op != &pidfs_file_operations)
+ 		return ERR_PTR(-EBADF);
+-#ifdef CONFIG_FS_PID
+ 	return file_inode(file)->i_private;
+-#else
+-	return file->private_data;
+-#endif
+ }
+ 
+-#ifdef CONFIG_FS_PID
+ static struct vfsmount *pidfs_mnt __ro_after_init;
+ 
++#if BITS_PER_LONG == 32
++/*
++ * Provide a fallback mechanism for 32-bit systems so processes remain
++ * reliably comparable by inode number even on those systems.
++ */
++static DEFINE_IDA(pidfd_inum_ida);
++
++static int pidfs_inum(struct pid *pid, unsigned long *ino)
++{
++	int ret;
++
++	ret = ida_alloc_range(&pidfd_inum_ida, RESERVED_PIDS + 1,
++			      UINT_MAX, GFP_ATOMIC);
++	if (ret < 0)
++		return -ENOSPC;
++
++	*ino = ret;
++	return 0;
++}
++
++static inline void pidfs_free_inum(unsigned long ino)
++{
++	if (ino > 0)
++		ida_free(&pidfd_inum_ida, ino);
++}
++#else
++static inline int pidfs_inum(struct pid *pid, unsigned long *ino)
++{
++	*ino = pid->ino;
++	return 0;
++}
++#define pidfs_free_inum(ino) ((void)(ino))
++#endif
++
+ /*
+  * The vfs falls back to simple_setattr() if i_op->setattr() isn't
+  * implemented. Let's reject it completely until we have a clean
+@@ -173,6 +190,7 @@ static void pidfs_evict_inode(struct inode *inode)
+ 
+ 	clear_inode(inode);
+ 	put_pid(pid);
++	pidfs_free_inum(inode->i_ino);
+ }
+ 
+ static const struct super_operations pidfs_sops = {
+@@ -183,8 +201,10 @@ static const struct super_operations pidfs_sops = {
+ 
+ static char *pidfs_dname(struct dentry *dentry, char *buffer, int buflen)
+ {
+-	return dynamic_dname(buffer, buflen, "pidfd:[%lu]",
+-			     d_inode(dentry)->i_ino);
++	struct inode *inode = d_inode(dentry);
++	struct pid *pid = inode->i_private;
++
++	return dynamic_dname(buffer, buflen, "pidfd:[%llu]", pid->ino);
+ }
+ 
+ static const struct dentry_operations pidfs_dentry_operations = {
+@@ -193,13 +213,19 @@ static const struct dentry_operations pidfs_dentry_operations = {
+ 	.d_prune	= stashed_dentry_prune,
+ };
+ 
+-static void pidfs_init_inode(struct inode *inode, void *data)
++static int pidfs_init_inode(struct inode *inode, void *data)
+ {
+ 	inode->i_private = data;
+ 	inode->i_flags |= S_PRIVATE;
+ 	inode->i_mode |= S_IRWXU;
+ 	inode->i_op = &pidfs_inode_operations;
+ 	inode->i_fop = &pidfs_file_operations;
++	/*
++	 * Inode numbering for pidfs start at RESERVED_PIDS + 1. This
++	 * avoids collisions with the root inode which is 1 for pseudo
++	 * filesystems.
++	 */
++	return pidfs_inum(data, &inode->i_ino);
+ }
+ 
+ static void pidfs_put_data(void *data)
+@@ -240,13 +266,7 @@ struct file *pidfs_alloc_file(struct pid *pid, unsigned int flags)
+ 	struct path path;
+ 	int ret;
+ 
+-	/*
+-	* Inode numbering for pidfs start at RESERVED_PIDS + 1.
+-	* This avoids collisions with the root inode which is 1
+-	* for pseudo filesystems.
+-	 */
+-	ret = path_from_stashed(&pid->stashed, pid->ino, pidfs_mnt,
+-				get_pid(pid), &path);
++	ret = path_from_stashed(&pid->stashed, pidfs_mnt, get_pid(pid), &path);
+ 	if (ret < 0)
+ 		return ERR_PTR(ret);
+ 
+@@ -261,30 +281,3 @@ void __init pidfs_init(void)
+ 	if (IS_ERR(pidfs_mnt))
+ 		panic("Failed to mount pidfs pseudo filesystem");
+ }
+-
+-bool is_pidfs_sb(const struct super_block *sb)
+-{
+-	return sb == pidfs_mnt->mnt_sb;
+-}
+-
+-#else /* !CONFIG_FS_PID */
+-
+-struct file *pidfs_alloc_file(struct pid *pid, unsigned int flags)
+-{
+-	struct file *pidfd_file;
+-
+-	pidfd_file = anon_inode_getfile("[pidfd]", &pidfs_file_operations, pid,
+-					flags | O_RDWR);
+-	if (IS_ERR(pidfd_file))
+-		return pidfd_file;
+-
+-	get_pid(pid);
+-	return pidfd_file;
+-}
+-
+-void __init pidfs_init(void) { }
+-bool is_pidfs_sb(const struct super_block *sb)
+-{
+-	return false;
+-}
+-#endif
+diff --git a/include/linux/pid.h b/include/linux/pid.h
+index c79a0efd0258..a3aad9b4074c 100644
+--- a/include/linux/pid.h
++++ b/include/linux/pid.h
+@@ -45,6 +45,8 @@
+  * find_pid_ns() using the int nr and struct pid_namespace *ns.
+  */
+ 
++#define RESERVED_PIDS 300
++
+ struct upid {
+ 	int nr;
+ 	struct pid_namespace *ns;
+@@ -55,10 +57,8 @@ struct pid
+ 	refcount_t count;
+ 	unsigned int level;
+ 	spinlock_t lock;
+-#ifdef CONFIG_FS_PID
+ 	struct dentry *stashed;
+-	unsigned long ino;
+-#endif
++	u64 ino;
+ 	/* lists of tasks that use this pid */
+ 	struct hlist_head tasks[PIDTYPE_MAX];
+ 	struct hlist_head inodes;
+diff --git a/include/linux/pidfs.h b/include/linux/pidfs.h
+index 40dd325a32a6..75bdf9807802 100644
+--- a/include/linux/pidfs.h
++++ b/include/linux/pidfs.h
+@@ -4,6 +4,5 @@
+ 
+ struct file *pidfs_alloc_file(struct pid *pid, unsigned int flags);
+ void __init pidfs_init(void);
+-bool is_pidfs_sb(const struct super_block *sb);
+ 
+ #endif /* _LINUX_PID_FS_H */
+diff --git a/kernel/pid.c b/kernel/pid.c
+index 99a0c5eb24b8..da76ed1873f7 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -62,17 +62,13 @@ struct pid init_struct_pid = {
+ 
+ int pid_max = PID_MAX_DEFAULT;
+ 
+-#define RESERVED_PIDS		300
+-
+ int pid_max_min = RESERVED_PIDS + 1;
+ int pid_max_max = PID_MAX_LIMIT;
+-#ifdef CONFIG_FS_PID
+ /*
+  * Pseudo filesystems start inode numbering after one. We use Reserved
+  * PIDs as a natural offset.
+  */
+ static u64 pidfs_ino = RESERVED_PIDS;
+-#endif
+ 
+ /*
+  * PID-map pages start out as NULL, they get allocated upon
+@@ -280,10 +276,8 @@ struct pid *alloc_pid(struct pid_namespace *ns, pid_t *set_tid,
+ 	spin_lock_irq(&pidmap_lock);
+ 	if (!(ns->pid_allocated & PIDNS_ADDING))
+ 		goto out_unlock;
+-#ifdef CONFIG_FS_PID
+ 	pid->stashed = NULL;
+ 	pid->ino = ++pidfs_ino;
+-#endif
+ 	for ( ; upid >= pid->numbers; --upid) {
+ 		/* Make the PID visible to find_pid_ns. */
+ 		idr_replace(&upid->ns->idr, pid, upid->nr);

@@ -1,0 +1,95 @@
+kAFS: bad VL server IP address
+BUG: unable to handle page fault for address: fffffffffffffffa
+#PF: supervisor write access in kernel mode
+#PF: error_code(0x0002) - not-present page
+PGD e186067 P4D e186067 PUD e188067 PMD 0 
+Oops: Oops: 0002 [#1] SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5834 Comm: syz-executor362 Not tainted 6.15.0-rc1-syzkaller-00025-gbec7dcbc242c #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+RIP: 0010:arch_atomic_fetch_add arch/x86/include/asm/atomic.h:93 [inline]
+RIP: 0010:raw_atomic_fetch_sub_release include/linux/atomic/atomic-arch-fallback.h:949 [inline]
+RIP: 0010:atomic_fetch_sub_release include/linux/atomic/atomic-instrumented.h:401 [inline]
+RIP: 0010:__refcount_sub_and_test include/linux/refcount.h:389 [inline]
+RIP: 0010:__refcount_dec_and_test include/linux/refcount.h:432 [inline]
+RIP: 0010:refcount_dec_and_test include/linux/refcount.h:450 [inline]
+RIP: 0010:afs_put_vlserverlist+0x3a/0x220 fs/afs/vl_list.c:67
+Code: 53 48 83 ec 18 e8 e6 35 2f fe 48 85 ed 74 43 e8 dc 35 2f fe 4c 8d 65 10 be 04 00 00 00 bb ff ff ff ff 4c 89 e7 e8 76 ad 93 fe <f0> 0f c1 5d 10 31 ff 89 de e8 f8 30 2f fe 85 db 7e 29 e8 af 35 2f
+RSP: 0018:ffffc90003e5fae0 EFLAGS: 00010246
+RAX: 0000000000000001 RBX: 00000000ffffffff RCX: ffffffff838c071a
+RDX: fffffc0000000000 RSI: 0000000000000004 RDI: fffffffffffffffa
+RBP: ffffffffffffffea R08: 0000000000000001 R09: fffffbffffffffff
+R10: fffffffffffffffd R11: 0000000000000001 R12: fffffffffffffffa
+R13: ffffffffffffffea R14: ffff8880216ad700 R15: ffff888034ec2000
+FS:  0000555561d3e380(0000) GS:ffff888124ab9000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: fffffffffffffffa CR3: 000000007a922000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ afs_alloc_cell fs/afs/cell.c:218 [inline]
+ afs_lookup_cell+0x12a5/0x1680 fs/afs/cell.c:264
+ afs_cell_init+0x17a/0x380 fs/afs/cell.c:386
+ afs_proc_rootcell_write+0x21f/0x290 fs/afs/proc.c:247
+ proc_simple_write+0x114/0x1b0 fs/proc/generic.c:825
+ pde_write fs/proc/inode.c:330 [inline]
+ proc_reg_write+0x23d/0x330 fs/proc/inode.c:342
+ vfs_write+0x25c/0x1180 fs/read_write.c:682
+ ksys_write+0x12a/0x240 fs/read_write.c:736
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fab4ed8ba79
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 c1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff0c666448 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 0000200000000000 RCX: 00007fab4ed8ba79
+RDX: 000000000000009e RSI: 0000200000000200 RDI: 0000000000000003
+RBP: 00007fab4edfe5f0 R08: 0000000000000006 R09: 0000000000000006
+R10: 0000000000000006 R11: 0000000000000246 R12: 0000000000000001
+R13: 431bde82d7b634db R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+CR2: fffffffffffffffa
+---[ end trace 0000000000000000 ]---
+RIP: 0010:arch_atomic_fetch_add arch/x86/include/asm/atomic.h:93 [inline]
+RIP: 0010:raw_atomic_fetch_sub_release include/linux/atomic/atomic-arch-fallback.h:949 [inline]
+RIP: 0010:atomic_fetch_sub_release include/linux/atomic/atomic-instrumented.h:401 [inline]
+RIP: 0010:__refcount_sub_and_test include/linux/refcount.h:389 [inline]
+RIP: 0010:__refcount_dec_and_test include/linux/refcount.h:432 [inline]
+RIP: 0010:refcount_dec_and_test include/linux/refcount.h:450 [inline]
+RIP: 0010:afs_put_vlserverlist+0x3a/0x220 fs/afs/vl_list.c:67
+Code: 53 48 83 ec 18 e8 e6 35 2f fe 48 85 ed 74 43 e8 dc 35 2f fe 4c 8d 65 10 be 04 00 00 00 bb ff ff ff ff 4c 89 e7 e8 76 ad 93 fe <f0> 0f c1 5d 10 31 ff 89 de e8 f8 30 2f fe 85 db 7e 29 e8 af 35 2f
+RSP: 0018:ffffc90003e5fae0 EFLAGS: 00010246
+RAX: 0000000000000001 RBX: 00000000ffffffff RCX: ffffffff838c071a
+RDX: fffffc0000000000 RSI: 0000000000000004 RDI: fffffffffffffffa
+RBP: ffffffffffffffea R08: 0000000000000001 R09: fffffbffffffffff
+R10: fffffffffffffffd R11: 0000000000000001 R12: fffffffffffffffa
+R13: ffffffffffffffea R14: ffff8880216ad700 R15: ffff888034ec2000
+FS:  0000555561d3e380(0000) GS:ffff888124ab9000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: fffffffffffffffa CR3: 000000007a922000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	53                   	push   %rbx
+   1:	48 83 ec 18          	sub    $0x18,%rsp
+   5:	e8 e6 35 2f fe       	call   0xfe2f35f0
+   a:	48 85 ed             	test   %rbp,%rbp
+   d:	74 43                	je     0x52
+   f:	e8 dc 35 2f fe       	call   0xfe2f35f0
+  14:	4c 8d 65 10          	lea    0x10(%rbp),%r12
+  18:	be 04 00 00 00       	mov    $0x4,%esi
+  1d:	bb ff ff ff ff       	mov    $0xffffffff,%ebx
+  22:	4c 89 e7             	mov    %r12,%rdi
+  25:	e8 76 ad 93 fe       	call   0xfe93ada0
+* 2a:	f0 0f c1 5d 10       	lock xadd %ebx,0x10(%rbp) <-- trapping instruction
+  2f:	31 ff                	xor    %edi,%edi
+  31:	89 de                	mov    %ebx,%esi
+  33:	e8 f8 30 2f fe       	call   0xfe2f3130
+  38:	85 db                	test   %ebx,%ebx
+  3a:	7e 29                	jle    0x65
+  3c:	e8                   	.byte 0xe8
+  3d:	af                   	scas   %es:(%rdi),%eax
+  3e:	35                   	.byte 0x35
+  3f:	2f                   	(bad)

@@ -1,0 +1,57 @@
+diff --git a/drivers/android/binder.c b/drivers/android/binder.c
+index 27c9b004823a..73beea5dc18c 100644
+--- a/drivers/android/binder.c
++++ b/drivers/android/binder.c
+@@ -1857,6 +1857,8 @@ static void binder_deferred_fd_close(int fd)
+ 	init_task_work(&twcb->twork, binder_do_fd_close);
+ 	twcb->file = close_fd_get_file(fd);
+ 	if (twcb->file) {
++		// pin it until binder_do_fd_close(); see comments there
++		get_file(twcb->file);
+ 		filp_close(twcb->file, current->files);
+ 		task_work_add(current, &twcb->twork, TWA_RESUME);
+ 	} else {
+diff --git a/fs/file.c b/fs/file.c
+index dd6692048f4f..3bcc1ecc314a 100644
+--- a/fs/file.c
++++ b/fs/file.c
+@@ -800,8 +800,7 @@ struct file *__close_fd_get_file(unsigned int fd)
+ 
+ /*
+  * variant of close_fd that gets a ref on the file for later fput.
+- * The caller must ensure that filp_close() called on the file, and then
+- * an fput().
++ * The caller must ensure that filp_close() called on the file.
+  */
+ struct file *close_fd_get_file(unsigned int fd)
+ {
+diff --git a/fs/io_uring.c b/fs/io_uring.c
+index 7257b0870353..33da5116cc38 100644
+--- a/fs/io_uring.c
++++ b/fs/io_uring.c
+@@ -5110,7 +5110,7 @@ static int io_close(struct io_kiocb *req, unsigned int issue_flags)
+ 	struct files_struct *files = current->files;
+ 	struct io_close *close = &req->close;
+ 	struct fdtable *fdt;
+-	struct file *file = NULL;
++	struct file *file;
+ 	int ret = -EBADF;
+ 
+ 	if (req->close.file_slot) {
+@@ -5127,7 +5127,6 @@ static int io_close(struct io_kiocb *req, unsigned int issue_flags)
+ 	file = fdt->fd[close->fd];
+ 	if (!file || file->f_op == &io_uring_fops) {
+ 		spin_unlock(&files->file_lock);
+-		file = NULL;
+ 		goto err;
+ 	}
+ 
+@@ -5147,8 +5146,6 @@ static int io_close(struct io_kiocb *req, unsigned int issue_flags)
+ err:
+ 	if (ret < 0)
+ 		req_set_fail(req);
+-	if (file)
+-		fput(file);
+ 	__io_req_complete(req, issue_flags, ret, 0);
+ 	return 0;
+ }

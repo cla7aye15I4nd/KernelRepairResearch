@@ -1,0 +1,74 @@
+rcu: INFO: rcu_preempt detected stalls on CPUs/tasks:
+rcu: 	0-...0: (1 GPs behind) idle=38bc/1/0x4000000000000000 softirq=6131/6133 fqs=5249
+rcu: 	         hardirqs   softirqs   csw/system
+rcu: 	 number:        0          0            0
+rcu: 	cputime:        0          0            0   ==> 52510(ms)
+rcu: 	(detected by 1, t=10502 jiffies, g=7301, q=303 ncpus=2)
+Sending NMI from CPU 1 to CPUs 0:
+NMI backtrace for cpu 0
+CPU: 0 PID: 5101 Comm: syz-executor577 Not tainted 6.7.0-rc5-syzkaller-01533-g3ab5720881a9 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+RIP: 0010:arch_atomic64_read arch/x86/include/asm/atomic64_64.h:15 [inline]
+RIP: 0010:raw_atomic64_read include/linux/atomic/atomic-arch-fallback.h:2569 [inline]
+RIP: 0010:atomic64_read include/linux/atomic/atomic-instrumented.h:1597 [inline]
+RIP: 0010:taprio_set_budgets+0x144/0x310 net/sched/sch_taprio.c:681
+Code: e8 03 48 89 44 24 28 e9 c1 00 00 00 e8 25 f6 e4 f8 48 8b 7c 24 20 be 08 00 00 00 e8 06 f7 3b f9 48 8b 44 24 28 42 80 3c 38 00 <0f> 85 6a 01 00 00 4c 63 64 24 08 48 8b 44 24 18 49 83 fc 0f 4c 8b
+RSP: 0018:ffffc90000007d20 EFLAGS: 00000046
+RAX: 1ffff110035e3e5c RBX: ffff8880152ecc84 RCX: ffffffff88a2a78a
+RDX: ffffed10035e3e5d RSI: 0000000000000008 RDI: ffff88801af1f2e0
+RBP: 0000000000000001 R08: 0000000000000000 R09: ffffed10035e3e5c
+R10: ffff88801af1f2e7 R11: 0000000000000002 R12: 0000000004000000
+R13: ffff8880152ecc08 R14: 0000000000000008 R15: dffffc0000000000
+FS:  0000555556770380(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000020000600 CR3: 0000000072c1b000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <NMI>
+ </NMI>
+ <IRQ>
+ advance_sched+0x5e1/0xc60 net/sched/sch_taprio.c:988
+ __run_hrtimer kernel/time/hrtimer.c:1688 [inline]
+ __hrtimer_run_queues+0x203/0xc20 kernel/time/hrtimer.c:1752
+ hrtimer_interrupt+0x31b/0x800 kernel/time/hrtimer.c:1814
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1065 [inline]
+ __sysvec_apic_timer_interrupt+0x105/0x400 arch/x86/kernel/apic/apic.c:1082
+ sysvec_apic_timer_interrupt+0x90/0xb0 arch/x86/kernel/apic/apic.c:1076
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:649
+RIP: 0010:queue_work_on+0x92/0x110 kernel/workqueue.c:1836
+Code: ff 48 89 ee e8 9f c4 31 00 48 85 ed 75 3b e8 05 c9 31 00 9c 5b 81 e3 00 02 00 00 31 ff 48 89 de e8 83 c4 31 00 48 85 db 75 66 <e8> e9 c8 31 00 44 89 e8 5b 5d 41 5c 41 5d 41 5e 41 5f c3 e8 d6 c8
+RSP: 0018:ffffc9000430f9d8 EFLAGS: 00000293
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffffffff8155d4ed
+RDX: ffff888072d5d940 RSI: ffffffff8155d4f7 RDI: 0000000000000007
+RBP: 0000000000000200 R08: 0000000000000007 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000008
+R13: 0000000000000001 R14: ffff888013072800 R15: ffff888076207200
+ queue_work include/linux/workqueue.h:562 [inline]
+ synchronize_rcu_expedited_queue_work kernel/rcu/tree_exp.h:519 [inline]
+ synchronize_rcu_expedited+0x5a2/0x800 kernel/rcu/tree_exp.h:1006
+ synchronize_rcu+0x2f5/0x3b0 kernel/rcu/tree.c:3568
+ synchronize_net+0x4e/0x60 net/core/dev.c:10989
+ packet_release+0xb2c/0xdd0 net/packet/af_packet.c:3167
+ __sock_release+0xae/0x260 net/socket.c:659
+ sock_close+0x1c/0x20 net/socket.c:1419
+ __fput+0x270/0xbb0 fs/file_table.c:394
+ __fput_sync+0x47/0x50 fs/file_table.c:475
+ __do_sys_close fs/open.c:1590 [inline]
+ __se_sys_close fs/open.c:1575 [inline]
+ __x64_sys_close+0x87/0xf0 fs/open.c:1575
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x40/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7fd03423c0c0
+Code: ff f7 d8 64 89 02 48 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 80 3d e1 df 07 00 00 74 17 b8 03 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 48 c3 0f 1f 80 00 00 00 00 48 83 ec 18 89 7c
+RSP: 002b:00007ffc9b2872b8 EFLAGS: 00000202 ORIG_RAX: 0000000000000003
+RAX: ffffffffffffffda RBX: 0000000000000004 RCX: 00007fd03423c0c0
+RDX: 0000000000000000 RSI: 00000000200007c0 RDI: 0000000000000003
+RBP: 00000000000f4240 R08: 0000000000000000 R09: 0000000100000000
+R10: 0000000000000000 R11: 0000000000000202 R12: 00007ffc9b287310
+R13: 0000000000030165 R14: 00007ffc9b2872dc R15: 0000000000000003
+ </TASK>
+INFO: NMI handler (nmi_cpu_backtrace_handler) took too long to run: 2.242 msecs

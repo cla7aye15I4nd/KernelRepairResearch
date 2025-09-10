@@ -1,0 +1,30 @@
+id: 0141c834e47059395621
+bug_link: https://syzkaller.appspot.com/bug?extid=0141c834e47059395621
+title: WARNING in ip6_mr_output
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 647496422ba9d2784fb8e15b3fda7fe801b1f2ff
+fix_commit: af232e7615e45e88c790dbbf4401ff3ffd6b3ad8
+datetime: '2025-06-30T17:57:29-07:00'
+fix_commit_message: "ipv6: guard ip6_mr_output() with rcu\n\nsyzbot found at least\
+  \ one path leads to an ip_mr_output()\nwithout RCU being held.\n\nAdd guard(rcu)()\
+  \ to fix this in a concise way.\n\nWARNING: net/ipv6/ip6mr.c:2376 at ip6_mr_output+0xe0b/0x1040\
+  \ net/ipv6/ip6mr.c:2376, CPU#1: kworker/1:2/121\nCall Trace:\n <TASK>\n  ip6tunnel_xmit\
+  \ include/net/ip6_tunnel.h:162 [inline]\n  udp_tunnel6_xmit_skb+0x640/0xad0 net/ipv6/ip6_udp_tunnel.c:112\n\
+  \  send6+0x5ac/0x8d0 drivers/net/wireguard/socket.c:152\n  wg_socket_send_skb_to_peer+0x111/0x1d0\
+  \ drivers/net/wireguard/socket.c:178\n  wg_packet_create_data_done drivers/net/wireguard/send.c:251\
+  \ [inline]\n  wg_packet_tx_worker+0x1c8/0x7c0 drivers/net/wireguard/send.c:276\n\
+  \  process_one_work kernel/workqueue.c:3239 [inline]\n  process_scheduled_works+0xae1/0x17b0\
+  \ kernel/workqueue.c:3322\n  worker_thread+0x8a0/0xda0 kernel/workqueue.c:3403\n\
+  \  kthread+0x70e/0x8a0 kernel/kthread.c:464\n  ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148\n\
+  \  ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245\n </TASK>\n\nFixes:\
+  \ 96e8f5a9fe2d (\"net: ipv6: Add ip6_mr_output()\")\nReported-by: syzbot+0141c834e47059395621@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/netdev/685e86b3.a00a0220.129264.0003.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nCc: Roopa Prabhu <roopa@nvidia.com>\n\
+  Cc: Benjamin Poirier <bpoirier@nvidia.com>\nCc: Ido Schimmel <idosch@nvidia.com>\n\
+  Reviewed-by: Nikolay Aleksandrov <razor@blackwall.org>\nReviewed-by: Petr Machata\
+  \ <petrm@nvidia.com>\nLink: https://patch.msgid.link/20250627115822.3741390-1-edumazet@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/ipv6
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,146 @@
+diff --git a/fs/efivarfs/inode.c b/fs/efivarfs/inode.c
+index 91290fe4a70b..586446e02ef7 100644
+--- a/fs/efivarfs/inode.c
++++ b/fs/efivarfs/inode.c
+@@ -77,6 +77,7 @@ bool efivarfs_valid_name(const char *str, int len)
+ static int efivarfs_create(struct mnt_idmap *idmap, struct inode *dir,
+ 			   struct dentry *dentry, umode_t mode, bool excl)
+ {
++	struct efivarfs_fs_info *info = dir->i_sb->s_fs_info;
+ 	struct inode *inode = NULL;
+ 	struct efivar_entry *var;
+ 	int namelen, i = 0, err = 0;
+@@ -118,7 +119,7 @@ static int efivarfs_create(struct mnt_idmap *idmap, struct inode *dir,
+ 	inode->i_private = var;
+ 	kmemleak_ignore(var);
+ 
+-	err = efivar_entry_add(var, &efivarfs_list);
++	err = efivar_entry_add(var, &info->efivarfs_list);
+ 	if (err)
+ 		goto out;
+ 
+diff --git a/fs/efivarfs/internal.h b/fs/efivarfs/internal.h
+index c66647f5c0bd..1dc0ccce3cc3 100644
+--- a/fs/efivarfs/internal.h
++++ b/fs/efivarfs/internal.h
+@@ -16,6 +16,7 @@ struct efivarfs_mount_opts {
+ 
+ struct efivarfs_fs_info {
+ 	struct efivarfs_mount_opts mount_opts;
++	struct list_head efivarfs_list;
+ };
+ 
+ struct efi_variable {
+@@ -33,7 +34,8 @@ struct efivar_entry {
+ 	struct kobject kobj;
+ };
+ 
+-int efivar_init(int (*func)(efi_char16_t *, efi_guid_t, unsigned long, void *),
++int efivar_init(int (*func)(efi_char16_t *, efi_guid_t, unsigned long, void *,
++			    struct list_head *),
+ 		void *data, bool duplicates, struct list_head *head);
+ 
+ int efivar_entry_add(struct efivar_entry *entry, struct list_head *head);
+@@ -64,6 +66,4 @@ extern struct inode *efivarfs_get_inode(struct super_block *sb,
+ 			const struct inode *dir, int mode, dev_t dev,
+ 			bool is_removable);
+ 
+-extern struct list_head efivarfs_list;
+-
+ #endif /* EFIVAR_FS_INTERNAL_H */
+diff --git a/fs/efivarfs/super.c b/fs/efivarfs/super.c
+index f954b1fab915..cee325b5bbdd 100644
+--- a/fs/efivarfs/super.c
++++ b/fs/efivarfs/super.c
+@@ -19,8 +19,6 @@
+ 
+ #include "internal.h"
+ 
+-LIST_HEAD(efivarfs_list);
+-
+ static void efivarfs_evict_inode(struct inode *inode)
+ {
+ 	clear_inode(inode);
+@@ -167,7 +165,8 @@ static struct dentry *efivarfs_alloc_dentry(struct dentry *parent, char *name)
+ }
+ 
+ static int efivarfs_callback(efi_char16_t *name16, efi_guid_t vendor,
+-			     unsigned long name_size, void *data)
++			     unsigned long name_size, void *data,
++			     struct list_head *list)
+ {
+ 	struct super_block *sb = (struct super_block *)data;
+ 	struct efivar_entry *entry;
+@@ -222,7 +221,7 @@ static int efivarfs_callback(efi_char16_t *name16, efi_guid_t vendor,
+ 	}
+ 
+ 	__efivar_entry_get(entry, NULL, &size, NULL);
+-	__efivar_entry_add(entry, &efivarfs_list);
++	__efivar_entry_add(entry, list);
+ 
+ 	/* copied by the above to local storage in the dentry. */
+ 	kfree(name);
+@@ -292,6 +291,7 @@ static int efivarfs_parse_param(struct fs_context *fc, struct fs_parameter *para
+ 
+ static int efivarfs_fill_super(struct super_block *sb, struct fs_context *fc)
+ {
++	struct efivarfs_fs_info *sfi = sb->s_fs_info;
+ 	struct inode *inode = NULL;
+ 	struct dentry *root;
+ 	int err;
+@@ -317,11 +317,10 @@ static int efivarfs_fill_super(struct super_block *sb, struct fs_context *fc)
+ 	if (!root)
+ 		return -ENOMEM;
+ 
+-	INIT_LIST_HEAD(&efivarfs_list);
+-
+-	err = efivar_init(efivarfs_callback, (void *)sb, true, &efivarfs_list);
++	err = efivar_init(efivarfs_callback, (void *)sb, true,
++			  &sfi->efivarfs_list);
+ 	if (err)
+-		efivar_entry_iter(efivarfs_destroy, &efivarfs_list, NULL);
++		efivar_entry_iter(efivarfs_destroy, &sfi->efivarfs_list, NULL);
+ 
+ 	return err;
+ }
+@@ -358,6 +357,8 @@ static int efivarfs_init_fs_context(struct fs_context *fc)
+ 	if (!sfi)
+ 		return -ENOMEM;
+ 
++	INIT_LIST_HEAD(&sfi->efivarfs_list);
++
+ 	sfi->mount_opts.uid = GLOBAL_ROOT_UID;
+ 	sfi->mount_opts.gid = GLOBAL_ROOT_GID;
+ 
+@@ -373,7 +374,7 @@ static void efivarfs_kill_sb(struct super_block *sb)
+ 	kill_litter_super(sb);
+ 
+ 	/* Remove all entries and destroy */
+-	efivar_entry_iter(efivarfs_destroy, &efivarfs_list, NULL);
++	efivar_entry_iter(efivarfs_destroy, &sfi->efivarfs_list, NULL);
+ 	kfree(sfi);
+ }
+ 
+diff --git a/fs/efivarfs/vars.c b/fs/efivarfs/vars.c
+index 9e4f47808bd5..114ff0fd4e55 100644
+--- a/fs/efivarfs/vars.c
++++ b/fs/efivarfs/vars.c
+@@ -369,7 +369,8 @@ static void dup_variable_bug(efi_char16_t *str16, efi_guid_t *vendor_guid,
+  *
+  * Returns 0 on success, or a kernel error code on failure.
+  */
+-int efivar_init(int (*func)(efi_char16_t *, efi_guid_t, unsigned long, void *),
++int efivar_init(int (*func)(efi_char16_t *, efi_guid_t, unsigned long, void *,
++			    struct list_head *),
+ 		void *data, bool duplicates, struct list_head *head)
+ {
+ 	unsigned long variable_name_size = 1024;
+@@ -420,7 +421,7 @@ int efivar_init(int (*func)(efi_char16_t *, efi_guid_t, unsigned long, void *),
+ 				status = EFI_NOT_FOUND;
+ 			} else {
+ 				err = func(variable_name, vendor_guid,
+-					   variable_name_size, data);
++					   variable_name_size, data, head);
+ 				if (err)
+ 					status = EFI_NOT_FOUND;
+ 			}

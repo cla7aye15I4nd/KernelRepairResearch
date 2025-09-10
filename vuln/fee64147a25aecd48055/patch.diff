@@ -1,0 +1,98 @@
+diff --git a/net/ipv4/esp4_offload.c b/net/ipv4/esp4_offload.c
+index b1338e576d00..29b333a62ab0 100644
+--- a/net/ipv4/esp4_offload.c
++++ b/net/ipv4/esp4_offload.c
+@@ -122,6 +122,9 @@ static struct sk_buff *esp4_gso_segment(struct sk_buff *skb,
+ 	if (!xo)
+ 		goto out;
+ 
++	if (!(skb_shinfo(skb)->gso_type & SKB_GSO_ESP))
++		goto out;
++
+ 	seq = xo->seq.low;
+ 
+ 	x = skb->sp->xvec[skb->sp->len - 1];
+diff --git a/net/ipv4/tcp_offload.c b/net/ipv4/tcp_offload.c
+index b6a2aa1dcf56..4d58e2ce0b5b 100644
+--- a/net/ipv4/tcp_offload.c
++++ b/net/ipv4/tcp_offload.c
+@@ -32,6 +32,9 @@ static void tcp_gso_tstamp(struct sk_buff *skb, unsigned int ts_seq,
+ static struct sk_buff *tcp4_gso_segment(struct sk_buff *skb,
+ 					netdev_features_t features)
+ {
++	if (!(skb_shinfo(skb)->gso_type & SKB_GSO_TCPV4))
++		return ERR_PTR(-EINVAL);
++
+ 	if (!pskb_may_pull(skb, sizeof(struct tcphdr)))
+ 		return ERR_PTR(-EINVAL);
+ 
+diff --git a/net/ipv4/udp_offload.c b/net/ipv4/udp_offload.c
+index 01801b77bd0d..ea6e6e7df0ee 100644
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -203,6 +203,9 @@ static struct sk_buff *udp4_ufo_fragment(struct sk_buff *skb,
+ 		goto out;
+ 	}
+ 
++	if (!(skb_shinfo(skb)->gso_type & SKB_GSO_UDP))
++		goto out;
++
+ 	if (!pskb_may_pull(skb, sizeof(struct udphdr)))
+ 		goto out;
+ 
+diff --git a/net/ipv6/esp6_offload.c b/net/ipv6/esp6_offload.c
+index dd9627490c7c..f52c314d4c97 100644
+--- a/net/ipv6/esp6_offload.c
++++ b/net/ipv6/esp6_offload.c
+@@ -149,6 +149,9 @@ static struct sk_buff *esp6_gso_segment(struct sk_buff *skb,
+ 	if (!xo)
+ 		goto out;
+ 
++	if (!(skb_shinfo(skb)->gso_type & SKB_GSO_ESP))
++		goto out;
++
+ 	seq = xo->seq.low;
+ 
+ 	x = skb->sp->xvec[skb->sp->len - 1];
+diff --git a/net/ipv6/tcpv6_offload.c b/net/ipv6/tcpv6_offload.c
+index d883c9204c01..278e49cd67d4 100644
+--- a/net/ipv6/tcpv6_offload.c
++++ b/net/ipv6/tcpv6_offload.c
+@@ -46,6 +46,9 @@ static struct sk_buff *tcp6_gso_segment(struct sk_buff *skb,
+ {
+ 	struct tcphdr *th;
+ 
++	if (!(skb_shinfo(skb)->gso_type & SKB_GSO_TCPV6))
++		return ERR_PTR(-EINVAL);
++
+ 	if (!pskb_may_pull(skb, sizeof(*th)))
+ 		return ERR_PTR(-EINVAL);
+ 
+diff --git a/net/ipv6/udp_offload.c b/net/ipv6/udp_offload.c
+index a0f89ad76f9d..2a04dc9c781b 100644
+--- a/net/ipv6/udp_offload.c
++++ b/net/ipv6/udp_offload.c
+@@ -42,6 +42,9 @@ static struct sk_buff *udp6_ufo_fragment(struct sk_buff *skb,
+ 		const struct ipv6hdr *ipv6h;
+ 		struct udphdr *uh;
+ 
++		if (!(skb_shinfo(skb)->gso_type & SKB_GSO_UDP))
++			goto out;
++
+ 		if (!pskb_may_pull(skb, sizeof(struct udphdr)))
+ 			goto out;
+ 
+diff --git a/net/sctp/offload.c b/net/sctp/offload.c
+index 275925b93b29..35bc7106d182 100644
+--- a/net/sctp/offload.c
++++ b/net/sctp/offload.c
+@@ -45,6 +45,9 @@ static struct sk_buff *sctp_gso_segment(struct sk_buff *skb,
+ 	struct sk_buff *segs = ERR_PTR(-EINVAL);
+ 	struct sctphdr *sh;
+ 
++	if (!(skb_shinfo(skb)->gso_type & SKB_GSO_SCTP))
++		goto out;
++
+ 	sh = sctp_hdr(skb);
+ 	if (!pskb_may_pull(skb, sizeof(*sh)))
+ 		goto out;

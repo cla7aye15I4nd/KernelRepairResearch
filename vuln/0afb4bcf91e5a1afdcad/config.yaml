@@ -1,0 +1,40 @@
+id: 0afb4bcf91e5a1afdcad
+bug_link: https://syzkaller.appspot.com/bug?extid=0afb4bcf91e5a1afdcad
+title: WARNING in dev_setup_tc
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0ea09cbf8350b70ad44d67a1dcb379008a356034
+fix_commit: 0a13c1e0a449917b29c45d90701eededa69c99d3
+datetime: '2025-03-12T13:02:00-07:00'
+fix_commit_message: "net: revert to lockless TC_SETUP_BLOCK and TC_SETUP_FT\n\nThere\
+  \ is a couple of places from which we can arrive to ndo_setup_tc\nwith TC_SETUP_BLOCK/TC_SETUP_FT:\n\
+  - netlink\n- netlink notifier\n- netdev notifier\n\nLocking netdev too deep in this\
+  \ call chain seems to be problematic\n(especially assuming some/all of the call_netdevice_notifiers\n\
+  NETDEV_UNREGISTER) might soon be running with the instance lock).\nRevert to lockless\
+  \ ndo_setup_tc for TC_SETUP_BLOCK/TC_SETUP_FT. NFT\nframework already takes care\
+  \ of most of the locking. Document\nthe assumptions.\n\nndo_setup_tc TC_SETUP_BLOCK\n\
+  \  nft_block_offload_cmd\n    nft_chain_offload_cmd\n      nft_flow_block_chain\n\
+  \        nft_flow_offload_chain\n\t  nft_flow_rule_offload_abort\n\t    nft_flow_rule_offload_commit\n\
+  \t  nft_flow_rule_offload_commit\n\t    nf_tables_commit\n\t      nfnetlink_rcv_batch\n\
+  \t        nfnetlink_rcv_skb_batch\n\t\t  nfnetlink_rcv\n\tnft_offload_netdev_event\n\
+  \t  NETDEV_UNREGISTER notifier\n\nndo_setup_tc TC_SETUP_FT\n  nf_flow_table_offload_cmd\n\
+  \    nf_flow_table_offload_setup\n      nft_unregister_flowtable_hook\n        nft_register_flowtable_net_hooks\n\
+  \t  nft_flowtable_update\n\t  nf_tables_newflowtable\n\t    nfnetlink_rcv_batch\
+  \ (.call NFNL_CB_BATCH)\n\tnft_flowtable_update\n\t  nf_tables_newflowtable\n\t\
+  nft_flowtable_event\n\t  nf_tables_flowtable_event\n\t    NETDEV_UNREGISTER notifier\n\
+  \      __nft_unregister_flowtable_net_hooks\n        nft_unregister_flowtable_net_hooks\n\
+  \t  nf_tables_commit\n\t    nfnetlink_rcv_batch (.call NFNL_CB_BATCH)\n\t  __nf_tables_abort\n\
+  \t    nf_tables_abort\n\t      nfnetlink_rcv_batch\n\t__nft_release_hook\n\t  __nft_release_hooks\n\
+  \t    nf_tables_pre_exit_net -> module unload\n\t  nft_rcv_nl_event\n\t    netlink_register_notifier\
+  \ (oh boy)\n      nft_register_flowtable_net_hooks\n      \tnft_flowtable_update\n\
+  \t  nf_tables_newflowtable\n        nf_tables_newflowtable\n\nFixes: c4f0f30b424e\
+  \ (\"net: hold netdev instance lock during nft ndo_setup_tc\")\nSigned-off-by: Stanislav\
+  \ Fomichev <sdf@fomichev.me>\nReported-by: syzbot+0afb4bcf91e5a1afdcad@syzkaller.appspotmail.com\n\
+  Reviewed-by: Simon Horman <horms@kernel.org>\nLink: https://patch.msgid.link/20250308044726.1193222-1-sdf@fomichev.me\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- Documentation/networking
+- include/linux
+- net/core
+- net/netfilter
+hunk_count: 5
+covered_count: 2

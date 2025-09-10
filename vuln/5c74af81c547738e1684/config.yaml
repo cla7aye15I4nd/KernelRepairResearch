@@ -1,0 +1,47 @@
+id: 5c74af81c547738e1684
+bug_link: https://syzkaller.appspot.com/bug?extid=5c74af81c547738e1684
+title: 'KASAN: slab-out-of-bounds Write in tls_push_record'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 695ad876d091530e3eb5def7827f8d0106ca3e9f
+fix_commit: a447da7d00410278c90d3576782a43f8b675d7be
+datetime: '2018-06-15T09:14:30-07:00'
+fix_commit_message: "tls: fix use-after-free in tls_push_record\n\nsyzkaller managed\
+  \ to trigger a use-after-free in tls like the\nfollowing:\n\n  BUG: KASAN: use-after-free\
+  \ in tls_push_record.constprop.15+0x6a2/0x810 [tls]\n  Write of size 1 at addr ffff88037aa08000\
+  \ by task a.out/2317\n\n  CPU: 3 PID: 2317 Comm: a.out Not tainted 4.17.0+ #144\n\
+  \  Hardware name: LENOVO 20FBCTO1WW/20FBCTO1WW, BIOS N1FET47W (1.21 ) 11/28/2016\n\
+  \  Call Trace:\n   dump_stack+0x71/0xab\n   print_address_description+0x6a/0x280\n\
+  \   kasan_report+0x258/0x380\n   ? tls_push_record.constprop.15+0x6a2/0x810 [tls]\n\
+  \   tls_push_record.constprop.15+0x6a2/0x810 [tls]\n   tls_sw_push_pending_record+0x2e/0x40\
+  \ [tls]\n   tls_sk_proto_close+0x3fe/0x710 [tls]\n   ? tcp_check_oom+0x4c0/0x4c0\n\
+  \   ? tls_write_space+0x260/0x260 [tls]\n   ? kmem_cache_free+0x88/0x1f0\n   inet_release+0xd6/0x1b0\n\
+  \   __sock_release+0xc0/0x240\n   sock_close+0x11/0x20\n   __fput+0x22d/0x660\n\
+  \   task_work_run+0x114/0x1a0\n   do_exit+0x71a/0x2780\n   ? mm_update_next_owner+0x650/0x650\n\
+  \   ? handle_mm_fault+0x2f5/0x5f0\n   ? __do_page_fault+0x44f/0xa50\n   ? mm_fault_error+0x2d0/0x2d0\n\
+  \   do_group_exit+0xde/0x300\n   __x64_sys_exit_group+0x3a/0x50\n   do_syscall_64+0x9a/0x300\n\
+  \   ? page_fault+0x8/0x30\n   entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nThis happened\
+  \ through fault injection where aead_req allocation in\ntls_do_encryption() eventually\
+  \ failed and we returned -ENOMEM from\nthe function. Turns out that the use-after-free\
+  \ is triggered from\ntls_sw_sendmsg() in the second tls_push_record(). The error\
+  \ then\ntriggers a jump to waiting for memory in sk_stream_wait_memory()\nresp.\
+  \ returning immediately in case of MSG_DONTWAIT. What follows is\nthe trim_both_sgl(sk,\
+  \ orig_size), which drops elements from the sg\nlist added via tls_sw_sendmsg().\
+  \ Now the use-after-free gets triggered\nwhen the socket is being closed, where\
+  \ tls_sk_proto_close() callback\nis invoked. The tls_complete_pending_work() will\
+  \ figure that there's\na pending closed tls record to be flushed and thus calls\
+  \ into the\ntls_push_pending_closed_record() from there. ctx->push_pending_record()\n\
+  is called from the latter, which is the tls_sw_push_pending_record()\nfrom sw path.\
+  \ This again calls into tls_push_record(). And here the\ntls_fill_prepend() will\
+  \ panic since the buffer address has been freed\nearlier via trim_both_sgl(). One\
+  \ way to fix it is to move the aead\nrequest allocation out of tls_do_encryption()\
+  \ early into tls_push_record().\nThis means we don't prep the tls header and advance\
+  \ state to the\nTLS_PENDING_CLOSED_RECORD before allocation which could potentially\n\
+  fail happened. That fixes the issue on my side.\n\nFixes: 3c4d7559159b (\"tls: kernel\
+  \ TLS support\")\nReported-by: syzbot+5c74af81c547738e1684@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+709f2810a6a05f11d4d3@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Daniel Borkmann <daniel@iogearbox.net>\nAcked-by: Dave Watson <davejwatson@fb.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/tls
+hunk_count: 5
+covered_count: 5

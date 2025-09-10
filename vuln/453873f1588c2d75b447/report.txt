@@ -1,0 +1,56 @@
+JBD2: Ignoring recovery information on journal
+ocfs2: Mounting device (7,0) on (node local, slot 0) with ordered data mode.
+(syz-executor123,5828,1):ocfs2_verify_group_and_input:428 ERROR: add a group which is in the current volume.
+(syz-executor123,5828,1):ocfs2_group_add:511 ERROR: status = -22
+------------[ cut here ]------------
+kernel BUG at fs/ocfs2/uptodate.c:509!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5828 Comm: syz-executor123 Not tainted 6.12.0-rc5-syzkaller-00005-ge42b1a9a2557 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:ocfs2_set_new_buffer_uptodate+0x145/0x160 fs/ocfs2/uptodate.c:509
+Code: 03 42 80 3c 20 00 74 08 48 89 df e8 f5 96 61 fe 4c 8b 1b 4c 89 ff 5b 41 5c 41 5d 41 5e 41 5f 41 ff e3 cc 90 e8 cc fd fa fd 90 <0f> 0b e8 c4 fd fa fd 90 0f 0b e8 bc fd fa fd 90 0f 0b e8 b4 fd fa
+RSP: 0018:ffffc90003b9fa50 EFLAGS: 00010293
+RAX: ffffffff8399da64 RBX: 0000000000000001 RCX: ffff888023dabc00
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc90003b9fcf0 R08: ffffffff8399d94e R09: 1ffffffff2037ad5
+R10: dffffc0000000000 R11: fffffbfff2037ad6 R12: dffffc0000000000
+R13: 1ffff92000773f68 R14: ffff888066b510e8 R15: ffff888066bc8830
+FS:  0000555571e98380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00005654c69618d0 CR3: 000000007b2e4000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ ocfs2_group_add+0x39f/0x15a0 fs/ocfs2/resize.c:507
+ ocfs2_ioctl+0x65e/0x7d0 fs/ocfs2/ioctl.c:891
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl+0xf9/0x170 fs/ioctl.c:893
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f3204a587b9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff12acab78 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 3333222211110000 RCX: 00007f3204a587b9
+RDX: 0000000020000080 RSI: 0000000040186f02 RDI: 0000000000000004
+RBP: 00007f3204acf610 R08: 00007fff12acad48 R09: 00007fff12acad48
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007fff12acad38 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:ocfs2_set_new_buffer_uptodate+0x145/0x160 fs/ocfs2/uptodate.c:509
+Code: 03 42 80 3c 20 00 74 08 48 89 df e8 f5 96 61 fe 4c 8b 1b 4c 89 ff 5b 41 5c 41 5d 41 5e 41 5f 41 ff e3 cc 90 e8 cc fd fa fd 90 <0f> 0b e8 c4 fd fa fd 90 0f 0b e8 bc fd fa fd 90 0f 0b e8 b4 fd fa
+RSP: 0018:ffffc90003b9fa50 EFLAGS: 00010293
+RAX: ffffffff8399da64 RBX: 0000000000000001 RCX: ffff888023dabc00
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc90003b9fcf0 R08: ffffffff8399d94e R09: 1ffffffff2037ad5
+R10: dffffc0000000000 R11: fffffbfff2037ad6 R12: dffffc0000000000
+R13: 1ffff92000773f68 R14: ffff888066b510e8 R15: ffff888066bc8830
+FS:  0000555571e98380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000000045e620 CR3: 000000007b2e4000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

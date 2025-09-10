@@ -1,0 +1,25 @@
+id: 3ef5c0d1a5cb0b21e6be
+bug_link: https://syzkaller.appspot.com/bug?extid=3ef5c0d1a5cb0b21e6be
+title: possible deadlock in ovl_copy_up_start
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8f97d1e99149a7f1aa19e47a51b09764382a482e
+fix_commit: 6cd078702f2f33cb6b19a682de3e9184112f1a46
+datetime: '2018-10-26T23:34:39+02:00'
+fix_commit_message: "ovl: fix recursive oi->lock in ovl_link()\n\nlinking a non-copied-up\
+  \ file into a non-copied-up parent results in a\nnested call to mutex_lock_interruptible(&oi->lock).\
+  \ Fix this by copying up\ntarget parent before ovl_nlink_start(), same as done in\
+  \ ovl_rename().\n\n~/unionmount-testsuite$ ./run --ov -s\n~/unionmount-testsuite$\
+  \ ln /mnt/a/foo100 /mnt/a/dir100/\n\n WARNING: possible recursive locking detected\n\
+  \ --------------------------------------------\n ln/1545 is trying to acquire lock:\n\
+  \ 00000000bcce7c4c (&ovl_i_lock_key[depth]){+.+.}, at:\n     ovl_copy_up_start+0x28/0x7d\n\
+  \ but task is already holding lock:\n 0000000026d73d5b (&ovl_i_lock_key[depth]){+.+.},\
+  \ at:\n     ovl_nlink_start+0x3c/0xc1\n\n[SzM: this seems to be a false positive,\
+  \ but doing the copy-up first is\nharmless and removes the lockdep splat]\n\nReported-by:\
+  \ syzbot+3ef5c0d1a5cb0b21e6be@syzkaller.appspotmail.com\nFixes: 5f8415d6b87e (\"\
+  ovl: persistent overlay inode nlink for...\")\nCc: <stable@vger.kernel.org> # v4.13\n\
+  Signed-off-by: Amir Goldstein <amir73il@gmail.com>\nSigned-off-by: Miklos Szeredi\
+  \ <mszeredi@redhat.com>\n"
+submodule:
+- fs/overlayfs
+hunk_count: 1
+covered_count: 1

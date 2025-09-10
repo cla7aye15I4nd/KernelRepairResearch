@@ -1,0 +1,43 @@
+id: c56449ed3652e6720f30
+bug_link: https://syzkaller.appspot.com/bug?extid=c56449ed3652e6720f30
+title: 'KMSAN: uninit-value in __inet6_bind'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 84404d5fd5858588bbf694b0300dbc6310d02737
+fix_commit: fb24274546310872eeeaf3d1d53799d8414aa0f2
+datetime: '2018-12-19T12:09:00-08:00'
+fix_commit_message: 'ipv6: explicitly initialize udp6_addr in udp_sock_create6()
+
+
+  syzbot reported the use of uninitialized udp6_addr::sin6_scope_id.
+
+  We can just set ::sin6_scope_id to zero, as tunnels are unlikely
+
+  to use an IPv6 address that needs a scope id and there is no
+
+  interface to bind in this context.
+
+
+  For net-next, it looks different as we have cfg->bind_ifindex there
+
+  so we can probably call ipv6_iface_scope_id().
+
+
+  Same for ::sin6_flowinfo, tunnels don''t use it.
+
+
+  Fixes: 8024e02879dd ("udp: Add udp_sock_create for UDP tunnels to open listener
+  socket")
+
+  Reported-by: syzbot+c56449ed3652e6720f30@syzkaller.appspotmail.com
+
+  Cc: Jon Maloy <jon.maloy@ericsson.com>
+
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/ipv6
+hunk_count: 2
+covered_count: 2

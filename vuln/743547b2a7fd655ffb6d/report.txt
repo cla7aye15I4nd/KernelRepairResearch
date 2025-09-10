@@ -1,0 +1,154 @@
+INFO: trying to register non-static key.
+The code is fine but needs lockdep annotation, or maybe
+you didn't initialize this object before use?
+turning off the locking correctness validator.
+CPU: 1 PID: 0 Comm: swapper/1 Not tainted 6.4.0-rc4-syzkaller-00265-g4ecd704a4c51 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.14.0-2 04/01/2014
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x150 lib/dump_stack.c:106
+ assign_lock_key kernel/locking/lockdep.c:982 [inline]
+ register_lock_class+0xdb6/0x1120 kernel/locking/lockdep.c:1295
+ __lock_acquire+0x10d/0x5f30 kernel/locking/lockdep.c:4965
+ lock_acquire kernel/locking/lockdep.c:5705 [inline]
+ lock_acquire+0x1b1/0x520 kernel/locking/lockdep.c:5670
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+ _raw_spin_lock_irqsave+0x3d/0x60 kernel/locking/spinlock.c:162
+ skb_queue_tail+0x25/0x150 net/core/skbuff.c:3744
+ ath9k_htc_txep+0x28b/0x400 drivers/net/wireless/ath/ath9k/htc_drv_txrx.c:712
+ ath9k_htc_txcompletion_cb+0x1d1/0x2f0 drivers/net/wireless/ath/ath9k/htc_hst.c:353
+ hif_usb_regout_cb+0x119/0x1d0 drivers/net/wireless/ath/ath9k/hif_usb.c:88
+ __usb_hcd_giveback_urb+0x2b6/0x5c0 drivers/usb/core/hcd.c:1671
+ usb_hcd_giveback_urb+0x384/0x430 drivers/usb/core/hcd.c:1754
+ dummy_timer+0x13b6/0x3400 drivers/usb/gadget/udc/dummy_hcd.c:1988
+ call_timer_fn+0x1a0/0x580 kernel/time/timer.c:1700
+ expire_timers+0x29b/0x4b0 kernel/time/timer.c:1751
+ __run_timers kernel/time/timer.c:2022 [inline]
+ __run_timers kernel/time/timer.c:1995 [inline]
+ run_timer_softirq+0x326/0x910 kernel/time/timer.c:2035
+ __do_softirq+0x1d4/0x905 kernel/softirq.c:571
+ invoke_softirq kernel/softirq.c:445 [inline]
+ __irq_exit_rcu+0x114/0x190 kernel/softirq.c:650
+ irq_exit_rcu+0x9/0x20 kernel/softirq.c:662
+ sysvec_apic_timer_interrupt+0x97/0xc0 arch/x86/kernel/apic/apic.c:1106
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:645
+RIP: 0010:native_irq_disable arch/x86/include/asm/irqflags.h:37 [inline]
+RIP: 0010:arch_local_irq_disable arch/x86/include/asm/irqflags.h:72 [inline]
+RIP: 0010:default_idle+0xf/0x20 arch/x86/kernel/process.c:711
+Code: 89 07 49 c7 c0 08 00 00 00 4d 29 c8 4c 01 c7 4c 29 c2 e9 76 ff ff ff cc cc cc cc f3 0f 1e fa 66 90 0f 00 2d 03 d8 37 00 fb f4 <fa> c3 66 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 f3 0f 1e fa 65
+RSP: 0018:ffffc9000037fe08 EFLAGS: 00000242
+RAX: 000000000003b9f1 RBX: 0000000000000001 RCX: ffffffff8a0ea665
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: dffffc0000000000 R08: 0000000000000001 R09: ffff88806b736ceb
+R10: ffffed100d6e6d9d R11: 0000000000000000 R12: 0000000000000001
+R13: ffffffff8e79b910 R14: 0000000000000000 R15: 0000000000000000
+ default_idle_call+0x67/0xa0 kernel/sched/idle.c:97
+ cpuidle_idle_call kernel/sched/idle.c:170 [inline]
+ do_idle+0x317/0x3c0 kernel/sched/idle.c:282
+ cpu_startup_entry+0x18/0x20 kernel/sched/idle.c:379
+ start_secondary+0x221/0x2b0 arch/x86/kernel/smpboot.c:269
+ secondary_startup_64_no_verify+0xf4/0xfb
+ </TASK>
+general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] PREEMPT SMP KASAN
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 1 PID: 0 Comm: swapper/1 Not tainted 6.4.0-rc4-syzkaller-00265-g4ecd704a4c51 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.14.0-2 04/01/2014
+RIP: 0010:__skb_insert include/linux/skbuff.h:2205 [inline]
+RIP: 0010:__skb_queue_before include/linux/skbuff.h:2311 [inline]
+RIP: 0010:__skb_queue_tail include/linux/skbuff.h:2344 [inline]
+RIP: 0010:skb_queue_tail+0xa2/0x150 net/core/skbuff.c:3745
+Code: 48 89 fa 48 c1 ea 03 80 3c 02 00 0f 85 80 00 00 00 4c 89 e2 4c 89 65 08 48 b8 00 00 00 00 00 fc ff df 48 c1 ea 03 48 89 6b 08 <80> 3c 02 00 75 4f 48 8d 7b 10 49 89 2c 24 48 b8 00 00 00 00 00 fc
+RSP: 0018:ffffc900003f89f0 EFLAGS: 00010046
+RAX: dffffc0000000000 RBX: ffff888032263878 RCX: ffffffff81657374
+RDX: 0000000000000000 RSI: 0000000000000046 RDI: ffff88801de3ec88
+RBP: ffff88801de3ec80 R08: 0000000000000001 R09: 0000000000000003
+R10: fffff5200007f12c R11: 0000000000094001 R12: 0000000000000000
+R13: ffff888032263890 R14: 00000000ffff9f0e R15: ffffffff85d11470
+FS:  0000000000000000(0000) GS:ffff88806b700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fe02a183578 CR3: 000000002c471000 CR4: 0000000000350ee0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ ath9k_htc_txep+0x28b/0x400 drivers/net/wireless/ath/ath9k/htc_drv_txrx.c:712
+ ath9k_htc_txcompletion_cb+0x1d1/0x2f0 drivers/net/wireless/ath/ath9k/htc_hst.c:353
+ hif_usb_regout_cb+0x119/0x1d0 drivers/net/wireless/ath/ath9k/hif_usb.c:88
+ __usb_hcd_giveback_urb+0x2b6/0x5c0 drivers/usb/core/hcd.c:1671
+ usb_hcd_giveback_urb+0x384/0x430 drivers/usb/core/hcd.c:1754
+ dummy_timer+0x13b6/0x3400 drivers/usb/gadget/udc/dummy_hcd.c:1988
+ call_timer_fn+0x1a0/0x580 kernel/time/timer.c:1700
+ expire_timers+0x29b/0x4b0 kernel/time/timer.c:1751
+ __run_timers kernel/time/timer.c:2022 [inline]
+ __run_timers kernel/time/timer.c:1995 [inline]
+ run_timer_softirq+0x326/0x910 kernel/time/timer.c:2035
+ __do_softirq+0x1d4/0x905 kernel/softirq.c:571
+ invoke_softirq kernel/softirq.c:445 [inline]
+ __irq_exit_rcu+0x114/0x190 kernel/softirq.c:650
+ irq_exit_rcu+0x9/0x20 kernel/softirq.c:662
+ sysvec_apic_timer_interrupt+0x97/0xc0 arch/x86/kernel/apic/apic.c:1106
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:645
+RIP: 0010:native_irq_disable arch/x86/include/asm/irqflags.h:37 [inline]
+RIP: 0010:arch_local_irq_disable arch/x86/include/asm/irqflags.h:72 [inline]
+RIP: 0010:default_idle+0xf/0x20 arch/x86/kernel/process.c:711
+Code: 89 07 49 c7 c0 08 00 00 00 4d 29 c8 4c 01 c7 4c 29 c2 e9 76 ff ff ff cc cc cc cc f3 0f 1e fa 66 90 0f 00 2d 03 d8 37 00 fb f4 <fa> c3 66 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 f3 0f 1e fa 65
+RSP: 0018:ffffc9000037fe08 EFLAGS: 00000242
+RAX: 000000000003b9f1 RBX: 0000000000000001 RCX: ffffffff8a0ea665
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: dffffc0000000000 R08: 0000000000000001 R09: ffff88806b736ceb
+R10: ffffed100d6e6d9d R11: 0000000000000000 R12: 0000000000000001
+R13: ffffffff8e79b910 R14: 0000000000000000 R15: 0000000000000000
+ default_idle_call+0x67/0xa0 kernel/sched/idle.c:97
+ cpuidle_idle_call kernel/sched/idle.c:170 [inline]
+ do_idle+0x317/0x3c0 kernel/sched/idle.c:282
+ cpu_startup_entry+0x18/0x20 kernel/sched/idle.c:379
+ start_secondary+0x221/0x2b0 arch/x86/kernel/smpboot.c:269
+ secondary_startup_64_no_verify+0xf4/0xfb
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__skb_insert include/linux/skbuff.h:2205 [inline]
+RIP: 0010:__skb_queue_before include/linux/skbuff.h:2311 [inline]
+RIP: 0010:__skb_queue_tail include/linux/skbuff.h:2344 [inline]
+RIP: 0010:skb_queue_tail+0xa2/0x150 net/core/skbuff.c:3745
+Code: 48 89 fa 48 c1 ea 03 80 3c 02 00 0f 85 80 00 00 00 4c 89 e2 4c 89 65 08 48 b8 00 00 00 00 00 fc ff df 48 c1 ea 03 48 89 6b 08 <80> 3c 02 00 75 4f 48 8d 7b 10 49 89 2c 24 48 b8 00 00 00 00 00 fc
+RSP: 0018:ffffc900003f89f0 EFLAGS: 00010046
+RAX: dffffc0000000000 RBX: ffff888032263878 RCX: ffffffff81657374
+RDX: 0000000000000000 RSI: 0000000000000046 RDI: ffff88801de3ec88
+RBP: ffff88801de3ec80 R08: 0000000000000001 R09: 0000000000000003
+R10: fffff5200007f12c R11: 0000000000094001 R12: 0000000000000000
+R13: ffff888032263890 R14: 00000000ffff9f0e R15: ffffffff85d11470
+FS:  0000000000000000(0000) GS:ffff88806b700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fe02a183578 CR3: 000000002c471000 CR4: 0000000000350ee0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	89 07                	mov    %eax,(%rdi)
+   2:	49 c7 c0 08 00 00 00 	mov    $0x8,%r8
+   9:	4d 29 c8             	sub    %r9,%r8
+   c:	4c 01 c7             	add    %r8,%rdi
+   f:	4c 29 c2             	sub    %r8,%rdx
+  12:	e9 76 ff ff ff       	jmpq   0xffffff8d
+  17:	cc                   	int3
+  18:	cc                   	int3
+  19:	cc                   	int3
+  1a:	cc                   	int3
+  1b:	f3 0f 1e fa          	endbr64
+  1f:	66 90                	xchg   %ax,%ax
+  21:	0f 00 2d 03 d8 37 00 	verw   0x37d803(%rip)        # 0x37d82b
+  28:	fb                   	sti
+  29:	f4                   	hlt
+* 2a:	fa                   	cli <-- trapping instruction
+  2b:	c3                   	retq
+  2c:	66 66 2e 0f 1f 84 00 	data16 nopw %cs:0x0(%rax,%rax,1)
+  33:	00 00 00 00
+  37:	0f 1f 40 00          	nopl   0x0(%rax)
+  3b:	f3 0f 1e fa          	endbr64
+  3f:	65                   	gs

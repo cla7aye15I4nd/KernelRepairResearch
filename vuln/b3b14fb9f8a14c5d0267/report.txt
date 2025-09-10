@@ -1,0 +1,30 @@
+reiserfs: enabling write barrier flush mode
+REISERFS (device loop0): Created .reiserfs_priv - reserved for xattr storage.
+=====================================================
+BUG: KMSAN: uninit-value in comp_keys fs/reiserfs/stree.c:83 [inline]
+BUG: KMSAN: uninit-value in bin_search fs/reiserfs/stree.c:173 [inline]
+BUG: KMSAN: uninit-value in search_by_key+0x3293/0x6780 fs/reiserfs/stree.c:770
+ comp_keys fs/reiserfs/stree.c:83 [inline]
+ bin_search fs/reiserfs/stree.c:173 [inline]
+ search_by_key+0x3293/0x6780 fs/reiserfs/stree.c:770
+ reiserfs_delete_solid_item+0x4ec/0xe90 fs/reiserfs/stree.c:1419
+ remove_save_link+0x2ed/0x420 fs/reiserfs/super.c:540
+ reiserfs_truncate_file+0xd00/0x1b70 fs/reiserfs/inode.c:2314
+ reiserfs_setattr+0x1b79/0x1ee0 fs/reiserfs/inode.c:3388
+ notify_change+0x19fd/0x1af0 fs/attr.c:499
+ do_truncate+0x22a/0x2a0 fs/open.c:66
+ do_sys_ftruncate+0x81c/0xb30 fs/open.c:194
+ __do_sys_ftruncate fs/open.c:205 [inline]
+ __se_sys_ftruncate fs/open.c:203 [inline]
+ __x64_sys_ftruncate+0x71/0xa0 fs/open.c:203
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Local variable cpu_key created at:
+ reiserfs_delete_solid_item+0xbf/0xe90 fs/reiserfs/stree.c:1410
+ remove_save_link+0x2ed/0x420 fs/reiserfs/super.c:540
+
+CPU: 0 PID: 5009 Comm: syz-executor196 Not tainted 6.7.0-rc8-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+=====================================================

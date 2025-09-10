@@ -1,0 +1,47 @@
+BUG: sleeping function called from invalid context at ./include/linux/sched/mm.h:321
+in_atomic(): 0, irqs_disabled(): 0, non_block: 0, pid: 5821, name: syz-executor365
+preempt_count: 0, expected: 0
+RCU nest depth: 1, expected: 0
+4 locks held by syz-executor365/5821:
+ #0: ffff888032b155f8 (&f->f_pos_lock){+.+.}-{4:4}, at: fdget_pos+0x247/0x310 fs/file.c:1213
+ #1: ffff888077c90cf8 (&ovl_i_mutex_dir_key[depth]){++++}-{4:4}, at: wrap_directory_iterator+0x5a/0xd0 fs/readdir.c:54
+ #2: ffff88807d2c0148 (&type->i_mutex_dir_key#6){++++}-{4:4}, at: iterate_dir+0x4a6/0x760 fs/readdir.c:101
+ #3: ffffffff8eb3a760 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:331 [inline]
+ #3: ffffffff8eb3a760 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:841 [inline]
+ #3: ffffffff8eb3a760 (rcu_read_lock){....}-{1:3}, at: afs_dynroot_readdir+0x466/0xbe0 fs/afs/dynroot.c:351
+CPU: 0 UID: 0 PID: 5821 Comm: syz-executor365 Not tainted 6.14.0-syzkaller-01103-g2df0c02dab82 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ __might_resched+0x558/0x6c0 kernel/sched/core.c:8798
+ might_alloc include/linux/sched/mm.h:321 [inline]
+ slab_pre_alloc_hook mm/slub.c:4089 [inline]
+ slab_alloc_node mm/slub.c:4167 [inline]
+ __do_kmalloc_node mm/slub.c:4317 [inline]
+ __kmalloc_noprof+0xd0/0x4d0 mm/slub.c:4330
+ kmalloc_noprof include/linux/slab.h:906 [inline]
+ ovl_cache_entry_new+0x39/0x7b0 fs/overlayfs/readdir.c:152
+ ovl_cache_entry_add_rb fs/overlayfs/readdir.c:188 [inline]
+ ovl_fill_merge+0x416/0x830 fs/overlayfs/readdir.c:266
+ dir_emit include/linux/fs.h:3853 [inline]
+ afs_dynroot_readdir_cells fs/afs/dynroot.c:310 [inline]
+ afs_dynroot_readdir+0x814/0xbe0 fs/afs/dynroot.c:352
+ iterate_dir+0x5a9/0x760 fs/readdir.c:108
+ ovl_dir_read+0xfe/0x570 fs/overlayfs/readdir.c:313
+ ovl_dir_read_merged+0x315/0x5e0 fs/overlayfs/readdir.c:369
+ ovl_cache_get fs/overlayfs/readdir.c:422 [inline]
+ ovl_iterate+0x1196/0x21c0 fs/overlayfs/readdir.c:783
+ wrap_directory_iterator+0x91/0xd0 fs/readdir.c:65
+ iterate_dir+0x5a9/0x760 fs/readdir.c:108
+ __do_sys_getdents fs/readdir.c:322 [inline]
+ __se_sys_getdents+0x1ff/0x4e0 fs/readdir.c:308
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f7c82f020f9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff5a9e9b58 EFLAGS: 00000246 ORIG_RAX: 000000000000004e
+RAX: ffffffffffffffda RBX: 00007fff5a9e9c20 RCX: 00007f7c82f020f9
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 00000000000000

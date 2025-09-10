@@ -1,0 +1,49 @@
+id: 7d427828b2ea6e592804
+bug_link: https://syzkaller.appspot.com/bug?extid=7d427828b2ea6e592804
+title: WARNING in bpf_check
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6e6fddc78323533be570873abb728b7e0ba7e024
+fix_commit: c7a897843224a92209f306c984975b704969b89d
+datetime: '2018-07-12T14:00:54-07:00'
+fix_commit_message: "bpf: don't leave partial mangled prog in jit_subprogs error path\n\
+  \nsyzkaller managed to trigger the following bug through fault injection:\n\n  [...]\n\
+  \  [  141.043668] verifier bug. No program starts at insn 3\n  [  141.044648] WARNING:\
+  \ CPU: 3 PID: 4072 at kernel/bpf/verifier.c:1613\n                 get_callee_stack_depth\
+  \ kernel/bpf/verifier.c:1612 [inline]\n  [  141.044648] WARNING: CPU: 3 PID: 4072\
+  \ at kernel/bpf/verifier.c:1613\n                 fixup_call_args kernel/bpf/verifier.c:5587\
+  \ [inline]\n  [  141.044648] WARNING: CPU: 3 PID: 4072 at kernel/bpf/verifier.c:1613\n\
+  \                 bpf_check+0x525e/0x5e60 kernel/bpf/verifier.c:5952\n  [  141.047355]\
+  \ CPU: 3 PID: 4072 Comm: a.out Not tainted 4.18.0-rc4+ #51\n  [  141.048446] Hardware\
+  \ name: QEMU Standard PC (i440FX + PIIX, 1996),BIOS 1.10.2-1 04/01/2014\n  [  141.049877]\
+  \ Call Trace:\n  [  141.050324]  __dump_stack lib/dump_stack.c:77 [inline]\n  [\
+  \  141.050324]  dump_stack+0x1c9/0x2b4 lib/dump_stack.c:113\n  [  141.050950]  ?\
+  \ dump_stack_print_info.cold.2+0x52/0x52 lib/dump_stack.c:60\n  [  141.051837] \
+  \ panic+0x238/0x4e7 kernel/panic.c:184\n  [  141.052386]  ? add_taint.cold.5+0x16/0x16\
+  \ kernel/panic.c:385\n  [  141.053101]  ? __warn.cold.8+0x148/0x1ba kernel/panic.c:537\n\
+  \  [  141.053814]  ? __warn.cold.8+0x117/0x1ba kernel/panic.c:530\n  [  141.054506]\
+  \  ? get_callee_stack_depth kernel/bpf/verifier.c:1612 [inline]\n  [  141.054506]\
+  \  ? fixup_call_args kernel/bpf/verifier.c:5587 [inline]\n  [  141.054506]  ? bpf_check+0x525e/0x5e60\
+  \ kernel/bpf/verifier.c:5952\n  [  141.055163]  __warn.cold.8+0x163/0x1ba kernel/panic.c:538\n\
+  \  [  141.055820]  ? get_callee_stack_depth kernel/bpf/verifier.c:1612 [inline]\n\
+  \  [  141.055820]  ? fixup_call_args kernel/bpf/verifier.c:5587 [inline]\n  [  141.055820]\
+  \  ? bpf_check+0x525e/0x5e60 kernel/bpf/verifier.c:5952\n  [...]\n\nWhat happens\
+  \ in jit_subprogs() is that kcalloc() for the subprog func\nbuffer is failing with\
+  \ NULL where we then bail out. Latter is a plain\nreturn -ENOMEM, and this is definitely\
+  \ not okay since earlier in the\nloop we are walking all subprogs and temporarily\
+  \ rewrite insn->off to\nremember the subprog id as well as insn->imm to temporarily\
+  \ point the\ncall to __bpf_call_base + 1 for the initial JIT pass. Thus, bailing\n\
+  out in such state and handing this over to the interpreter is troublesome\nsince\
+  \ later/subsequent e.g. find_subprog() lookups are based on wrong\ninsn->imm.\n\n\
+  Therefore, once we hit this point, we need to jump to out_free path\nwhere we undo\
+  \ all changes from earlier loop, so that interpreter can\nwork on unmodified insn->{off,imm}.\n\
+  \nAnother point is that should find_subprog() fail in jit_subprogs() due\nto a verifier\
+  \ bug, then we also should not simply defer the program to\nthe interpreter since\
+  \ also here we did partial modifications. Instead\nwe should just bail out entirely\
+  \ and return an error to the user who is\ntrying to load the program.\n\nFixes:\
+  \ 1c2a088a6626 (\"bpf: x64: add JIT support for multi-function programs\")\nReported-by:\
+  \ syzbot+7d427828b2ea6e592804@syzkaller.appspotmail.com\nSigned-off-by: Daniel Borkmann\
+  \ <daniel@iogearbox.net>\nSigned-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 5
+covered_count: 2

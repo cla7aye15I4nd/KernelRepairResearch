@@ -1,0 +1,52 @@
+diff --git a/include/net/xsk_buff_pool.h b/include/net/xsk_buff_pool.h
+index 0140d086dc84..01755b838c74 100644
+--- a/include/net/xsk_buff_pool.h
++++ b/include/net/xsk_buff_pool.h
+@@ -86,7 +86,7 @@ int xp_assign_dev_shared(struct xsk_buff_pool *pool, struct xdp_umem *umem,
+ void xp_destroy(struct xsk_buff_pool *pool);
+ void xp_release(struct xdp_buff_xsk *xskb);
+ void xp_get_pool(struct xsk_buff_pool *pool);
+-void xp_put_pool(struct xsk_buff_pool *pool);
++bool xp_put_pool(struct xsk_buff_pool *pool);
+ void xp_clear_dev(struct xsk_buff_pool *pool);
+ void xp_add_xsk(struct xsk_buff_pool *pool, struct xdp_sock *xs);
+ void xp_del_xsk(struct xsk_buff_pool *pool, struct xdp_sock *xs);
+diff --git a/net/xdp/xsk.c b/net/xdp/xsk.c
+index b71a32eeae65..cfbec3989a76 100644
+--- a/net/xdp/xsk.c
++++ b/net/xdp/xsk.c
+@@ -1146,7 +1146,8 @@ static void xsk_destruct(struct sock *sk)
+ 	if (!sock_flag(sk, SOCK_DEAD))
+ 		return;
+ 
+-	xp_put_pool(xs->pool);
++	if (!xp_put_pool(xs->pool))
++		xdp_put_umem(xs->umem);
+ 
+ 	sk_refcnt_debug_dec(sk);
+ }
+diff --git a/net/xdp/xsk_buff_pool.c b/net/xdp/xsk_buff_pool.c
+index 64c9e55d4d4e..8a3bf4e1318e 100644
+--- a/net/xdp/xsk_buff_pool.c
++++ b/net/xdp/xsk_buff_pool.c
+@@ -251,15 +251,18 @@ void xp_get_pool(struct xsk_buff_pool *pool)
+ 	refcount_inc(&pool->users);
+ }
+ 
+-void xp_put_pool(struct xsk_buff_pool *pool)
++bool xp_put_pool(struct xsk_buff_pool *pool)
+ {
+ 	if (!pool)
+-		return;
++		return false;
+ 
+ 	if (refcount_dec_and_test(&pool->users)) {
+ 		INIT_WORK(&pool->work, xp_release_deferred);
+ 		schedule_work(&pool->work);
++		return true;
+ 	}
++
++	return false;
+ }
+ 
+ static struct xsk_dma_map *xp_find_dma_map(struct xsk_buff_pool *pool)

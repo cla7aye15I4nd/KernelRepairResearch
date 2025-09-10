@@ -1,0 +1,37 @@
+id: 219f00fb49874dcaea17
+bug_link: https://syzkaller.appspot.com/bug?extid=219f00fb49874dcaea17
+title: 'KASAN: null-ptr-deref Write in submit_audio_out_urb (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 98482377dc7295d0c70e251925b7cc14aff4c5ac
+fix_commit: 3450121997ce872eb7f1248417225827ea249710
+datetime: '2019-07-02T20:11:22+02:00'
+fix_commit_message: 'ALSA: line6: Fix write on zero-sized buffer
+
+
+  LINE6 drivers allocate the buffers based on the value returned from
+
+  usb_maxpacket() calls.  The manipulated device may return zero for
+
+  this, and this results in the kmalloc() with zero size (and it may
+
+  succeed) while the other part of the driver code writes the packet
+
+  data with the fixed size -- which eventually overwrites.
+
+
+  This patch adds a simple sanity check for the invalid buffer size for
+
+  avoiding that problem.
+
+
+  Reported-by: syzbot+219f00fb49874dcaea17@syzkaller.appspotmail.com
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/usb/line6
+hunk_count: 1
+covered_count: 0

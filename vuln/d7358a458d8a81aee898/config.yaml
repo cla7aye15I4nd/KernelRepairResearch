@@ -1,0 +1,30 @@
+id: d7358a458d8a81aee898
+bug_link: https://syzkaller.appspot.com/bug?extid=d7358a458d8a81aee898
+title: general protection fault in xt_rateest_tg_checkentry
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bd6f48546b9cb7a785344fc78058c420923d7ed8
+fix_commit: 1b789577f655060d98d20ed0c6f9fbd469d6ba63
+datetime: '2019-12-30T13:09:04+01:00'
+fix_commit_message: "netfilter: arp_tables: init netns pointer in xt_tgchk_param struct\n\
+  \nWe get crash when the targets checkentry function tries to make\nuse of the network\
+  \ namespace pointer for arptables.\n\nWhen the net pointer got added back in 2010,\
+  \ only ip/ip6/ebtables were\nchanged to initialize it, so arptables has this set\
+  \ to NULL.\n\nThis isn't a problem for normal arptables because no existing\narptables\
+  \ target has a checkentry function that makes use of par->net.\n\nHowever, direct\
+  \ users of the setsockopt interface can provide any\ntarget they want as long as\
+  \ its registered for ARP or UNPSEC protocols.\n\nsyzkaller managed to send a semi-valid\
+  \ arptables rule for RATEEST target\nwhich is enough to trigger NULL deref:\n\n\
+  kasan: GPF could be caused by NULL-ptr deref or user memory access\ngeneral protection\
+  \ fault: 0000 [#1] PREEMPT SMP KASAN\nRIP: xt_rateest_tg_checkentry+0x11d/0xb40\
+  \ net/netfilter/xt_RATEEST.c:109\n[..]\n xt_check_target+0x283/0x690 net/netfilter/x_tables.c:1019\n\
+  \ check_target net/ipv4/netfilter/arp_tables.c:399 [inline]\n find_check_entry net/ipv4/netfilter/arp_tables.c:422\
+  \ [inline]\n translate_table+0x1005/0x1d70 net/ipv4/netfilter/arp_tables.c:572\n\
+  \ do_replace net/ipv4/netfilter/arp_tables.c:977 [inline]\n do_arpt_set_ctl+0x310/0x640\
+  \ net/ipv4/netfilter/arp_tables.c:1456\n\nFixes: add67461240c1d (\"netfilter: add\
+  \ struct net * to target parameters\")\nReported-by: syzbot+d7358a458d8a81aee898@syzkaller.appspotmail.com\n\
+  Signed-off-by: Florian Westphal <fw@strlen.de>\nAcked-by: Cong Wang <xiyou.wangcong@gmail.com>\n\
+  Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/ipv4
+hunk_count: 10
+covered_count: 5

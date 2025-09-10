@@ -1,0 +1,76 @@
+=============================
+WARNING: suspicious RCU usage
+6.9.0-rc5-next-20240426-syzkaller #0 Not tainted
+-----------------------------
+kernel/rcu/tree.c:276 Illegal rcu_softirq_qs() in RCU read-side critical section!
+
+other info that might help us debug this:
+
+
+rcu_scheduler_active = 2, debug_locks = 1
+1 lock held by ksoftirqd/1/24:
+ #0: ffffffff8e333b20 (rcu_read_lock_sched){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #0: ffffffff8e333b20 (rcu_read_lock_sched){....}-{1:2}, at: rcu_read_lock_sched include/linux/rcupdate.h:933 [inline]
+ #0: ffffffff8e333b20 (rcu_read_lock_sched){....}-{1:2}, at: pfn_valid include/linux/mmzone.h:2022 [inline]
+ #0: ffffffff8e333b20 (rcu_read_lock_sched){....}-{1:2}, at: __virt_addr_valid+0x183/0x520 arch/x86/mm/physaddr.c:65
+
+stack backtrace:
+CPU: 1 PID: 24 Comm: ksoftirqd/1 Not tainted 6.9.0-rc5-next-20240426-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ lockdep_rcu_suspicious+0x221/0x340 kernel/locking/lockdep.c:6712
+ rcu_softirq_qs+0xd9/0x370 kernel/rcu/tree.c:273
+ __do_softirq+0x5fd/0x980 kernel/softirq.c:568
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu+0xf2/0x1c0 kernel/softirq.c:633
+ irq_exit_rcu+0x9/0x30 kernel/softirq.c:645
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0xa6/0xc0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:valid_section include/linux/mmzone.h:1925 [inline]
+RIP: 0010:pfn_valid include/linux/mmzone.h:2023 [inline]
+RIP: 0010:__virt_addr_valid+0x22e/0x520 arch/x86/mm/physaddr.c:65
+Code: 0e 01 48 c7 c7 e0 61 c8 8b be a7 03 00 00 48 c7 c2 20 62 c8 8b e8 02 c7 30 00 4d 85 ff 74 36 4c 89 f8 48 c1 e8 03 80 3c 28 00 <74> 08 4c 89 ff e8 78 c9 b9 00 49 8b 1f 48 89 de 48 83 e6 02 31 ff
+RSP: 0018:ffffc900001e7998 EFLAGS: 00000246
+RAX: 1ffff11027fff23c RBX: 0000000000000001 RCX: ffff8880176f0000
+RDX: 0000000000000000 RSI: ffffffff8c1fc4c0 RDI: ffffffff8c1fc480
+RBP: dffffc0000000000 R08: ffffffff81423fc4 R09: 1ffffffff25f2cb0
+R10: dffffc0000000000 R11: fffffbfff25f2cb1 R12: 000000007da17178
+R13: 1ffff9200003cf4c R14: ffffffff81423f93 R15: ffff88813fff91e0
+ kasan_addr_to_slab+0xd/0x80 mm/kasan/common.c:37
+ __kasan_record_aux_stack+0x11/0xc0 mm/kasan/generic.c:526
+ __call_rcu_common kernel/rcu/tree.c:3103 [inline]
+ call_rcu+0x167/0xa70 kernel/rcu/tree.c:3207
+ context_switch kernel/sched/core.c:5411 [inline]
+ __schedule+0x17f0/0x4a50 kernel/sched/core.c:6745
+ preempt_schedule_common+0x84/0xd0 kernel/sched/core.c:6924
+ preempt_schedule+0xe1/0xf0 kernel/sched/core.c:6948
+ preempt_schedule_thunk+0x1a/0x30 arch/x86/entry/thunk.S:12
+ smpboot_thread_fn+0x65b/0xa30 kernel/smpboot.c:163
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+----------------
+Code disassembly (best guess), 2 bytes skipped:
+   0:	48 c7 c7 e0 61 c8 8b 	mov    $0xffffffff8bc861e0,%rdi
+   7:	be a7 03 00 00       	mov    $0x3a7,%esi
+   c:	48 c7 c2 20 62 c8 8b 	mov    $0xffffffff8bc86220,%rdx
+  13:	e8 02 c7 30 00       	call   0x30c71a
+  18:	4d 85 ff             	test   %r15,%r15
+  1b:	74 36                	je     0x53
+  1d:	4c 89 f8             	mov    %r15,%rax
+  20:	48 c1 e8 03          	shr    $0x3,%rax
+  24:	80 3c 28 00          	cmpb   $0x0,(%rax,%rbp,1)
+* 28:	74 08                	je     0x32 <-- trapping instruction
+  2a:	4c 89 ff             	mov    %r15,%rdi
+  2d:	e8 78 c9 b9 00       	call   0xb9c9aa
+  32:	49 8b 1f             	mov    (%r15),%rbx
+  35:	48 89 de             	mov    %rbx,%rsi
+  38:	48 83 e6 02          	and    $0x2,%rsi
+  3c:	31 ff                	xor    %edi,%edi

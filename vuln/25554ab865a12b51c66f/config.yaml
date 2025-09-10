@@ -1,0 +1,52 @@
+id: 25554ab865a12b51c66f
+bug_link: https://syzkaller.appspot.com/bug?extid=25554ab865a12b51c66f
+title: 'KASAN: use-after-free Read in bpf_cgroup_storage_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fbeb1603bf4e9baa82da8f794de42949d0fe5e25
+fix_commit: 82c018d734a7aa24a9ac8f33f610c55923fb6911
+datetime: '2018-08-03T00:47:34+02:00'
+fix_commit_message: "Merge branch 'bpf-cgroup-local-storage'\n\nRoman Gushchin says:\n\
+  \n====================\nThis patchset implements cgroup local storage for bpf programs.\n\
+  The main idea is to provide a fast accessible memory for storing\nvarious per-cgroup\
+  \ data, e.g. number of transmitted packets.\n\nCgroup local storage looks as a special\
+  \ type of map for userspace,\nand is accessible using generic bpf maps API for reading\
+  \ and\nupdating of the data. The (cgroup inode id, attachment type) pair\nis used\
+  \ as a map key.\n\nA user can't create new entries or destroy existing entries;\n\
+  it happens automatically when a user attaches/detaches a bpf program\nto a cgroup.\n\
+  \nFrom a bpf program's point of view, cgroup storage is accessible\nwithout lookup\
+  \ using the special get_local_storage() helper function.\nIt takes a map fd as an\
+  \ argument. It always returns a valid pointer\nto the corresponding memory area.\n\
+  \nTo implement such a lookup-free access a pointer to the cgroup\nstorage is saved\
+  \ for an attachment of a bpf program to a cgroup,\nif required by the program. Before\
+  \ running the program, it's saved\nin a special global per-cpu variable, which is\
+  \ accessible from the\nget_local_storage() helper.\n\nThis patchset implement only\
+  \ cgroup local storage, however the API\nis intentionally made extensible to support\
+  \ other local storage types\nfurther: e.g. thread local storage, socket local storage,\
+  \ etc.\n\nv7->v6:\n  - fixed a use-after-free bug, caused by not clearing\n    prog->aux->cgroup_storage\
+  \ pointer after releasing the map\n\nv6->v5:\n  - fixed an error with returning\
+  \ -EINVAL instead of a pointer\n\nv5->v4:\n  - fixed an issue in verifier (test\
+  \ that flags == 0 properly)\n  - added a corresponding test\n  - added a note about\
+  \ synchronization, sync docs to tools/uapi/...\n  - switched the cgroup test to\
+  \ use XADD\n  - added a check for attr->max_entries to be 0, and atter->max_flags\n\
+  \    to be sane\n  - use bpf_uncharge_memlock() in bpf_uncharge_memlock()\n  - rebased\
+  \ to bpf-next\n\nv4->v3:\n  - fixed a leak in cgroup attachment code (discovered\
+  \ by Daniel)\n  - cgroup storage map will be released if the corresponding\n   \
+  \ bpf program failed to load by any reason\n  - introduced bpf_uncharge_memlock()\
+  \ helper\n\nv3->v2:\n  - fixed more build and sparse issues\n  - rebased to bpf-next\n\
+  \nv2->v1:\n  - fixed build issues\n  - removed explicit rlimit calls in patch 14\n\
+  \  - rebased to bpf-next\n====================\n\nSigned-off-by: Roman Gushchin\
+  \ <guro@fb.com>\nCc: Alexei Starovoitov <ast@kernel.org>\nCc: Martin KaFai Lau <kafai@fb.com>\n\
+  Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>\n"
+submodule:
+- drivers/media/rc
+- include/linux
+- include/uapi/linux
+- kernel/bpf
+- net/bpf
+- net/core
+- samples/bpf
+- tools/bpf/bpftool
+- tools/include/uapi/linux
+- tools/testing/selftests/bpf
+hunk_count: 80
+covered_count: 6

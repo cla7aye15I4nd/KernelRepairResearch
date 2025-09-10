@@ -1,0 +1,26 @@
+diff --git a/block/blk-mq-sched.c b/block/blk-mq-sched.c
+index c9d183d6c499..ca22afd47b3d 100644
+--- a/block/blk-mq-sched.c
++++ b/block/blk-mq-sched.c
+@@ -555,8 +555,6 @@ void blk_mq_sched_free_requests(struct request_queue *q)
+ 	struct blk_mq_hw_ctx *hctx;
+ 	int i;
+ 
+-	lockdep_assert_held(&q->sysfs_lock);
+-
+ 	queue_for_each_hw_ctx(q, hctx, i) {
+ 		if (hctx->sched_tags)
+ 			blk_mq_free_rqs(q->tag_set, hctx->sched_tags, i);
+diff --git a/block/blk.h b/block/blk.h
+index ed347f7a97b1..25773d668ec0 100644
+--- a/block/blk.h
++++ b/block/blk.h
+@@ -194,6 +194,8 @@ void elv_unregister_queue(struct request_queue *q);
+ static inline void elevator_exit(struct request_queue *q,
+ 		struct elevator_queue *e)
+ {
++	lockdep_assert_held(&q->sysfs_lock);
++
+ 	blk_mq_sched_free_requests(q);
+ 	__elevator_exit(q, e);
+ }

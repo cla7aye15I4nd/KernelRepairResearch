@@ -1,0 +1,70 @@
+id: 186522670e6722692d86
+bug_link: https://syzkaller.appspot.com/bug?extid=186522670e6722692d86
+title: 'BUG: unable to handle kernel paging request in copy_from_kernel_nofault (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 10541b374aa05c8118cc6a529a615882e53f261b
+fix_commit: c6f48506ba30c722dd9d89aa6a40eb1926277dff
+datetime: '2024-04-22T17:26:05+02:00'
+fix_commit_message: "arm32, bpf: Reimplement sign-extension mov instruction\n\nThe\
+  \ current implementation of the mov instruction with sign extension has the\nfollowing\
+  \ problems:\n\n  1. It clobbers the source register if it is not stacked because\
+  \ it\n     sign extends the source and then moves it to the destination.\n  2. If\
+  \ the dst_reg is stacked, the current code doesn't write the value\n     back in\
+  \ case of 64-bit mov.\n  3. There is room for improvement by emitting fewer instructions.\n\
+  \nThe steps for fixing this and the instructions emitted by the JIT are explained\n\
+  below with examples in all combinations:\n\nCase A: offset == 32:\n=====================\n\
+  \n  Case A.1: src and dst are stacked registers:\n  --------------------------------------------\n\
+  \    1. Load src_lo into tmp_lo\n    2. Store tmp_lo into dst_lo\n    3. Sign extend\
+  \ tmp_lo into tmp_hi\n    4. Store tmp_hi to dst_hi\n\n    Example: r3 = (s32)r3\n\
+  \tr3 is a stacked register\n\n\tldr     r6, [r11, #-16]\t// Load r3_lo into tmp_lo\n\
+  \t// str to dst_lo is not emitted because src_lo == dst_lo\n\tasr     r7, r6, #31\t\
+  // Sign extend tmp_lo into tmp_hi\n\tstr     r7, [r11, #-12] // Store tmp_hi into\
+  \ r3_hi\n\n  Case A.2: src is stacked but dst is not:\n  ----------------------------------------\n\
+  \    1. Load src_lo into dst_lo\n    2. Sign extend dst_lo into dst_hi\n\n    Example:\
+  \ r6 = (s32)r3\n\tr6 maps to {ARM_R5, ARM_R4} and r3 is stacked\n\n\tldr     r4,\
+  \ [r11, #-16] // Load r3_lo into r6_lo\n\tasr     r5, r4, #31\t// Sign extend r6_lo\
+  \ into r6_hi\n\n  Case A.3: src is not stacked but dst is stacked:\n  ------------------------------------------------\n\
+  \    1. Store src_lo into dst_lo\n    2. Sign extend src_lo into tmp_hi\n    3.\
+  \ Store tmp_hi to dst_hi\n\n    Example: r3 = (s32)r6\n\tr3 is stacked and r6 maps\
+  \ to {ARM_R5, ARM_R4}\n\n\tstr     r4, [r11, #-16] // Store r6_lo to r3_lo\n\tasr\
+  \     r7, r4, #31\t// Sign extend r6_lo into tmp_hi\n\tstr     r7, [r11, #-12]\t\
+  // Store tmp_hi to dest_hi\n\n  Case A.4: Both src and dst are not stacked:\n  -------------------------------------------\n\
+  \    1. Mov src_lo into dst_lo\n    2. Sign extend src_lo into dst_hi\n\n    Example:\
+  \ (bf) r6 = (s32)r6\n\tr6 maps to {ARM_R5, ARM_R4}\n\n\t// Mov not emitted because\
+  \ dst == src\n\tasr     r5, r4, #31 // Sign extend r6_lo into r6_hi\n\nCase B: offset\
+  \ != 32:\n=====================\n\n  Case B.1: src and dst are stacked registers:\n\
+  \  --------------------------------------------\n    1. Load src_lo into tmp_lo\n\
+  \    2. Sign extend tmp_lo according to offset.\n    3. Store tmp_lo into dst_lo\n\
+  \    4. Sign extend tmp_lo into tmp_hi\n    5. Store tmp_hi to dst_hi\n\n    Example:\
+  \ r9 = (s8)r3\n\tr9 and r3 are both stacked registers\n\n\tldr     r6, [r11, #-16]\
+  \ // Load r3_lo into tmp_lo\n\tlsl     r6, r6, #24\t// Sign extend tmp_lo\n\tasr\
+  \     r6, r6, #24\t// ..\n\tstr     r6, [r11, #-56] // Store tmp_lo to r9_lo\n\t\
+  asr     r7, r6, #31\t// Sign extend tmp_lo to tmp_hi\n\tstr     r7, [r11, #-52]\
+  \ // Store tmp_hi to r9_hi\n\n  Case B.2: src is stacked but dst is not:\n  ----------------------------------------\n\
+  \    1. Load src_lo into dst_lo\n    2. Sign extend dst_lo according to offset.\n\
+  \    3. Sign extend tmp_lo into dst_hi\n\n    Example: r6 = (s8)r3\n\tr6 maps to\
+  \ {ARM_R5, ARM_R4} and r3 is stacked\n\n\tldr     r4, [r11, #-16] // Load r3_lo\
+  \ to r6_lo\n\tlsl     r4, r4, #24\t// Sign extend r6_lo\n\tasr     r4, r4, #24\t\
+  // ..\n\tasr     r5, r4, #31\t// Sign extend r6_lo into r6_hi\n\n  Case B.3: src\
+  \ is not stacked but dst is stacked:\n  ------------------------------------------------\n\
+  \    1. Sign extend src_lo into tmp_lo according to offset.\n    2. Store tmp_lo\
+  \ into dst_lo.\n    3. Sign extend src_lo into tmp_hi.\n    4. Store tmp_hi to dst_hi.\n\
+  \n    Example: r3 = (s8)r1\n\tr3 is stacked and r1 maps to {ARM_R3, ARM_R2}\n\n\t\
+  lsl     r6, r2, #24 \t// Sign extend r1_lo to tmp_lo\n\tasr     r6, r6, #24\t//\
+  \ ..\n\tstr     r6, [r11, #-16] // Store tmp_lo to r3_lo\n\tasr     r7, r6, #31\t\
+  // Sign extend tmp_lo to tmp_hi\n\tstr     r7, [r11, #-12] // Store tmp_hi to r3_hi\n\
+  \n  Case B.4: Both src and dst are not stacked:\n  -------------------------------------------\n\
+  \    1. Sign extend src_lo into dst_lo according to offset.\n    2. Sign extend\
+  \ dst_lo into dst_hi.\n\n    Example: r6 = (s8)r1\n\tr6 maps to {ARM_R5, ARM_R4}\
+  \ and r1 maps to {ARM_R3, ARM_R2}\n\n\tlsl     r4, r2, #24\t// Sign extend r1_lo\
+  \ to r6_lo\n\tasr     r4, r4, #24\t// ..\n\tasr     r5, r4, #31\t// Sign extend\
+  \ r6_lo to r6_hi\n\nFixes: fc832653fa0d (\"arm32, bpf: add support for sign-extension\
+  \ mov instruction\")\nReported-by: syzbot+186522670e6722692d86@syzkaller.appspotmail.com\n\
+  Signed-off-by: Puranjay Mohan <puranjay@kernel.org>\nSigned-off-by: Daniel Borkmann\
+  \ <daniel@iogearbox.net>\nReviewed-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>\n\
+  Closes: https://lore.kernel.org/all/000000000000e9a8d80615163f2a@google.com\nLink:\
+  \ https://lore.kernel.org/bpf/20240419182832.27707-1-puranjay@kernel.org\n"
+submodule:
+- arch/arm/net
+hunk_count: 3
+covered_count: 0

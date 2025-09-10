@@ -1,0 +1,47 @@
+bcachefs (loop0): bch2_write_super(): fatal error : Unable to write superblock to sufficient devices (from bch2_fs_recovery)
+bcachefs (loop0): fatal error - emergency read only
+bcachefs (loop0): insufficient writeable journal devices available: have 0, need 1
+rw journal devs: loop0
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in fs/bcachefs/alloc_background.h:165:13
+shift exponent 129 is too large for 32-bit type 'unsigned int'
+CPU: 0 UID: 0 PID: 5825 Comm: syz-executor407 Not tainted 6.12.0-rc5-syzkaller-00063-g0fc810ae3ae1 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x3c8/0x420 lib/ubsan.c:468
+ data_type_movable fs/bcachefs/alloc_background.h:165 [inline]
+ alloc_lru_idx_fragmentation fs/bcachefs/alloc_background.h:171 [inline]
+ bch2_alloc_to_text+0xc79/0xce0 fs/bcachefs/alloc_background.c:369
+ __bch2_bkey_fsck_err+0x1c8/0x280 fs/bcachefs/error.c:457
+ bch2_alloc_v4_validate+0x931/0xef0 fs/bcachefs/alloc_background.c:259
+ bch2_btree_node_read_done+0x3e7e/0x5e90 fs/bcachefs/btree_io.c:1223
+ btree_node_read_work+0x68b/0x1260 fs/bcachefs/btree_io.c:1327
+ bch2_btree_node_read+0x2433/0x2a10
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1753 [inline]
+ bch2_btree_root_read+0x617/0x7a0 fs/bcachefs/btree_io.c:1775
+ read_btree_roots+0x296/0x840 fs/bcachefs/recovery.c:524
+ bch2_fs_recovery+0x2585/0x39c0 fs/bcachefs/recovery.c:854
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1036
+ bch2_fs_get_tree+0xd68/0x1710 fs/bcachefs/fs.c:2170
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1800
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f703e8bc8fa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc17ef5508 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffc17ef5520 RCX: 00007f703e8bc8fa
+RDX: 00000000200058c0 RSI: 0000000020000100 RDI: 00007ffc17ef5520
+RBP: 0000000000000004 R08: 00007ffc17ef5560 R09: 00000000000058c6
+R10: 0000000000000000 R11: 0000000000000282 R12: 0000000000000000
+R13: 00007ffc17ef5560 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+---[ end trace ]---

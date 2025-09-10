@@ -1,0 +1,59 @@
+diff --git a/include/linux/swap.h b/include/linux/swap.h
+index c2b8128799c1..0bd4c25016f9 100644
+--- a/include/linux/swap.h
++++ b/include/linux/swap.h
+@@ -332,7 +332,6 @@ extern void mark_page_accessed(struct page *);
+ extern void lru_add_drain(void);
+ extern void lru_add_drain_cpu(int cpu);
+ extern void lru_add_drain_all(void);
+-extern void lru_add_drain_all_cpuslocked(void);
+ extern void rotate_reclaimable_page(struct page *page);
+ extern void deactivate_file_page(struct page *page);
+ extern void mark_page_lazyfree(struct page *page);
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index c52aa05b106c..999ce3af809d 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1637,7 +1637,7 @@ static int __ref __offline_pages(unsigned long start_pfn,
+ 		goto failed_removal;
+ 
+ 	cond_resched();
+-	lru_add_drain_all_cpuslocked();
++	lru_add_drain_all();
+ 	drain_all_pages(zone);
+ 
+ 	pfn = scan_movable_pages(start_pfn, end_pfn);
+diff --git a/mm/swap.c b/mm/swap.c
+index 38e1b6374a97..e824c800adca 100644
+--- a/mm/swap.c
++++ b/mm/swap.c
+@@ -688,7 +688,14 @@ static void lru_add_drain_per_cpu(struct work_struct *dummy)
+ 
+ static DEFINE_PER_CPU(struct work_struct, lru_add_drain_work);
+ 
+-void lru_add_drain_all_cpuslocked(void)
++/*
++ * Doesn't need any cpu hotplug locking because we do rely on per-cpu
++ * kworkers being shut down before our page_alloc_cpu_dead callback is
++ * executed on the offlined cpu.
++ * Calling this function with cpu hotplug locks held can actually lead
++ * to obscure indirect dependencies via WQ context.
++ */
++void lru_add_drain_all(void)
+ {
+ 	static DEFINE_MUTEX(lock);
+ 	static struct cpumask has_work;
+@@ -724,13 +731,6 @@ void lru_add_drain_all_cpuslocked(void)
+ 	mutex_unlock(&lock);
+ }
+ 
+-void lru_add_drain_all(void)
+-{
+-	get_online_cpus();
+-	lru_add_drain_all_cpuslocked();
+-	put_online_cpus();
+-}
+-
+ /**
+  * release_pages - batched put_page()
+  * @pages: array of pages to release

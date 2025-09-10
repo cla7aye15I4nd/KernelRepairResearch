@@ -1,0 +1,24 @@
+id: 6c0b301317aa0156f9eb
+bug_link: https://syzkaller.appspot.com/bug?extid=6c0b301317aa0156f9eb
+title: WARNING in iomap_iter (4)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b49c0215b176e9c2e0998e7929eeb9261c9a7919
+fix_commit: 0bc8061ffc733a0a246b8689b2d32a3e9204f43c
+datetime: '2024-11-18T18:50:14+08:00'
+fix_commit_message: "erofs: handle NONHEAD !delta[1] lclusters gracefully\n\nsyzbot\
+  \ reported a WARNING in iomap_iter_done:\n iomap_fiemap+0x73b/0x9b0 fs/iomap/fiemap.c:80\n\
+  \ ioctl_fiemap fs/ioctl.c:220 [inline]\n\nGenerally, NONHEAD lclusters won't have\
+  \ delta[1]==0, except for crafted\nimages and filesystems created by pre-1.0 mkfs\
+  \ versions.\n\nPreviously, it would immediately bail out if delta[1]==0, which led\
+  \ to\ninadequate decompressed lengths (thus FIEMAP is impacted).  Treat it as\n\
+  delta[1]=1 to work around these legacy mkfs versions.\n\n`lclusterbits > 14` is\
+  \ illegal for compact indexes, error out too.\n\nReported-by: syzbot+6c0b301317aa0156f9eb@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/r/67373c0c.050a0220.2a2fcc.0079.GAE@google.com\n\
+  Tested-by: syzbot+6c0b301317aa0156f9eb@syzkaller.appspotmail.com\nFixes: d95ae5e25326\
+  \ (\"erofs: add support for the full decompressed length\")\nFixes: 001b8ccd0650\
+  \ (\"erofs: fix compact 4B support for 16k block size\")\nSigned-off-by: Gao Xiang\
+  \ <hsiangkao@linux.alibaba.com>\nLink: https://lore.kernel.org/r/20241115173651.3339514-1-hsiangkao@linux.alibaba.com\n"
+submodule:
+- fs/erofs
+hunk_count: 4
+covered_count: 0

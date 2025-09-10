@@ -1,0 +1,47 @@
+id: 2e782bf6a60d0fcb932d
+bug_link: https://syzkaller.appspot.com/bug?extid=2e782bf6a60d0fcb932d
+title: 'WARNING: proc registration bug in snd_info_card_register'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fa763f1b2858752e6150ffff46886a1b7faffc82
+fix_commit: 0b074ab7fc0d575247b9cc9f93bb7e007ca38840
+datetime: '2019-05-28T08:42:45+02:00'
+fix_commit_message: 'ALSA: line6: Assure canceling delayed work at disconnection
+
+
+  The current code performs the cancel of a delayed work at the late
+
+  stage of disconnection procedure, which may lead to the access to the
+
+  already cleared state.
+
+
+  This patch assures to call cancel_delayed_work_sync() at the beginning
+
+  of the disconnection procedure for avoiding that race.  The delayed
+
+  work object is now assigned in the common line6 object instead of its
+
+  derivative, so that we can call cancel_delayed_work_sync().
+
+
+  Along with the change, the startup function is called via the new
+
+  callback instead.  This will make it easier to port other LINE6
+
+  drivers to use the delayed work for startup in later patches.
+
+
+  Reported-by: syzbot+5255458d5e0a2b10bbb9@syzkaller.appspotmail.com
+
+  Fixes: 7f84ff68be05 ("ALSA: line6: toneport: Fix broken usage of timer for delayed
+  execution")
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/usb/line6
+hunk_count: 9
+covered_count: 6

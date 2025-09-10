@@ -1,0 +1,53 @@
+id: dd1339599f1840e4cc65
+bug_link: https://syzkaller.appspot.com/bug?extid=dd1339599f1840e4cc65
+title: WARNING in unreserve_psock
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5a6f6873606e03a0a95afe40ba5e84bb6e28a26f
+fix_commit: 9f8d0dc0ec4a4b5b78c0be83238c4511ff5f1ae0
+datetime: '2023-06-17T00:08:27-07:00'
+fix_commit_message: 'kcm: Fix unnecessary psock unreservation.
+
+
+  kcm_write_msgs() calls unreserve_psock() to release its hold on the
+
+  underlying TCP socket if it has run out of things to transmit, but if we
+
+  have nothing in the write queue on entry (e.g. because someone did a
+
+  zero-length sendmsg), we don''t actually go into the transmission loop and
+
+  as a consequence don''t call reserve_psock().
+
+
+  Fix this by skipping the call to unreserve_psock() if we didn''t reserve a
+
+  psock.
+
+
+  Fixes: c31a25e1db48 ("kcm: Send multiple frags in one sendmsg()")
+
+  Reported-by: syzbot+dd1339599f1840e4cc65@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/000000000000a61ffe05fe0c3d08@google.com/
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  Tested-by: syzbot+dd1339599f1840e4cc65@syzkaller.appspotmail.com
+
+  cc: Tom Herbert <tom@herbertland.com>
+
+  cc: Tom Herbert <tom@quantonium.net>
+
+  cc: Jens Axboe <axboe@kernel.dk>
+
+  cc: Matthew Wilcox <willy@infradead.org>
+
+  Link: https://lore.kernel.org/r/20787.1686828722@warthog.procyon.org.uk
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/kcm
+hunk_count: 2
+covered_count: 2

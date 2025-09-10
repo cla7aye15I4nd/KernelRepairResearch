@@ -1,0 +1,99 @@
+diff --git a/kernel/bpf/bpf_lru_list.c b/kernel/bpf/bpf_lru_list.c
+index d99e89f113c4..3dabdd137d10 100644
+--- a/kernel/bpf/bpf_lru_list.c
++++ b/kernel/bpf/bpf_lru_list.c
+@@ -41,7 +41,12 @@ static struct list_head *local_pending_list(struct bpf_lru_locallist *loc_l)
+ /* bpf_lru_node helpers */
+ static bool bpf_lru_node_is_ref(const struct bpf_lru_node *node)
+ {
+-	return node->ref;
++	return READ_ONCE(node->ref);
++}
++
++static void bpf_lru_node_clear_ref(struct bpf_lru_node *node)
++{
++	WRITE_ONCE(node->ref, 0);
+ }
+ 
+ static void bpf_lru_list_count_inc(struct bpf_lru_list *l,
+@@ -89,7 +94,7 @@ static void __bpf_lru_node_move_in(struct bpf_lru_list *l,
+ 
+ 	bpf_lru_list_count_inc(l, tgt_type);
+ 	node->type = tgt_type;
+-	node->ref = 0;
++	bpf_lru_node_clear_ref(node);
+ 	list_move(&node->list, &l->lists[tgt_type]);
+ }
+ 
+@@ -110,7 +115,7 @@ static void __bpf_lru_node_move(struct bpf_lru_list *l,
+ 		bpf_lru_list_count_inc(l, tgt_type);
+ 		node->type = tgt_type;
+ 	}
+-	node->ref = 0;
++	bpf_lru_node_clear_ref(node);
+ 
+ 	/* If the moving node is the next_inactive_rotation candidate,
+ 	 * move the next_inactive_rotation pointer also.
+@@ -353,7 +358,7 @@ static void __local_list_add_pending(struct bpf_lru *lru,
+ 	*(u32 *)((void *)node + lru->hash_offset) = hash;
+ 	node->cpu = cpu;
+ 	node->type = BPF_LRU_LOCAL_LIST_T_PENDING;
+-	node->ref = 0;
++	bpf_lru_node_clear_ref(node);
+ 	list_add(&node->list, local_pending_list(loc_l));
+ }
+ 
+@@ -419,7 +424,7 @@ static struct bpf_lru_node *bpf_percpu_lru_pop_free(struct bpf_lru *lru,
+ 	if (!list_empty(free_list)) {
+ 		node = list_first_entry(free_list, struct bpf_lru_node, list);
+ 		*(u32 *)((void *)node + lru->hash_offset) = hash;
+-		node->ref = 0;
++		bpf_lru_node_clear_ref(node);
+ 		__bpf_lru_node_move(l, node, BPF_LRU_LIST_T_INACTIVE);
+ 	}
+ 
+@@ -522,7 +527,7 @@ static void bpf_common_lru_push_free(struct bpf_lru *lru,
+ 		}
+ 
+ 		node->type = BPF_LRU_LOCAL_LIST_T_FREE;
+-		node->ref = 0;
++		bpf_lru_node_clear_ref(node);
+ 		list_move(&node->list, local_free_list(loc_l));
+ 
+ 		raw_spin_unlock_irqrestore(&loc_l->lock, flags);
+@@ -568,7 +573,7 @@ static void bpf_common_lru_populate(struct bpf_lru *lru, void *buf,
+ 
+ 		node = (struct bpf_lru_node *)(buf + node_offset);
+ 		node->type = BPF_LRU_LIST_T_FREE;
+-		node->ref = 0;
++		bpf_lru_node_clear_ref(node);
+ 		list_add(&node->list, &l->lists[BPF_LRU_LIST_T_FREE]);
+ 		buf += elem_size;
+ 	}
+@@ -594,7 +599,7 @@ static void bpf_percpu_lru_populate(struct bpf_lru *lru, void *buf,
+ 		node = (struct bpf_lru_node *)(buf + node_offset);
+ 		node->cpu = cpu;
+ 		node->type = BPF_LRU_LIST_T_FREE;
+-		node->ref = 0;
++		bpf_lru_node_clear_ref(node);
+ 		list_add(&node->list, &l->lists[BPF_LRU_LIST_T_FREE]);
+ 		i++;
+ 		buf += elem_size;
+diff --git a/kernel/bpf/bpf_lru_list.h b/kernel/bpf/bpf_lru_list.h
+index 4ea227c9c1ad..8f3c8b2b4490 100644
+--- a/kernel/bpf/bpf_lru_list.h
++++ b/kernel/bpf/bpf_lru_list.h
+@@ -64,11 +64,8 @@ struct bpf_lru {
+ 
+ static inline void bpf_lru_node_set_ref(struct bpf_lru_node *node)
+ {
+-	/* ref is an approximation on access frequency.  It does not
+-	 * have to be very accurate.  Hence, no protection is used.
+-	 */
+-	if (!node->ref)
+-		node->ref = 1;
++	if (!READ_ONCE(node->ref))
++		WRITE_ONCE(node->ref, 1);
+ }
+ 
+ int bpf_lru_init(struct bpf_lru *lru, bool percpu, u32 hash_offset,

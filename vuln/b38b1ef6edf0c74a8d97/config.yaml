@@ -1,0 +1,27 @@
+id: b38b1ef6edf0c74a8d97
+bug_link: https://syzkaller.appspot.com/bug?extid=b38b1ef6edf0c74a8d97
+title: 'KASAN: global-out-of-bounds Read in fbcon_resize'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3c5a87be170aba8ac40982182f812dcff6ed1ad1
+fix_commit: ec0972adecb391a8d8650832263a4790f3bfb4df
+datetime: '2020-09-16T14:35:51+02:00'
+fix_commit_message: "fbcon: Fix user font detection test at fbcon_resize().\n\nsyzbot\
+  \ is reporting OOB read at fbcon_resize() [1], for\ncommit 39b3cffb8cf31117 (\"\
+  fbcon: prevent user font height or width change\n from causing potential out-of-bounds\
+  \ access\") is by error using\nregistered_fb[con2fb_map[vc->vc_num]]->fbcon_par->p->userfont\
+  \ (which was\nset to non-zero) instead of fb_display[vc->vc_num].userfont (which\
+  \ remains\nzero for that display).\n\nWe could remove tricky userfont flag [2],\
+  \ for we can determine it by\ncomparing address of the font data and addresses of\
+  \ built-in font data.\nBut since that commit is failing to fix the original OOB\
+  \ read [3], this\npatch keeps the change minimal in case we decide to revert altogether.\n\
+  \n[1] https://syzkaller.appspot.com/bug?id=ebcbbb6576958a496500fee9cf7aa83ea00b5920\n\
+  [2] https://syzkaller.appspot.com/text?tag=Patch&x=14030853900000\n[3] https://syzkaller.appspot.com/bug?id=6fba8c186d97cf1011ab17660e633b1cc4e080c9\n\
+  \nReported-by: syzbot <syzbot+b38b1ef6edf0c74a8d97@syzkaller.appspotmail.com>\n\
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nFixes: 39b3cffb8cf31117\
+  \ (\"fbcon: prevent user font height or width change from causing potential out-of-bounds\
+  \ access\")\nCc: George Kennedy <george.kennedy@oracle.com>\nLink: https://lore.kernel.org/r/f6e3e611-8704-1263-d163-f52c906a4f06@I-love.SAKURA.ne.jp\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/video/fbdev/core
+hunk_count: 1
+covered_count: 1

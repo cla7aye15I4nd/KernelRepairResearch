@@ -1,0 +1,52 @@
+id: 1f6f096afda6f4f8f565
+bug_link: https://syzkaller.appspot.com/bug?extid=1f6f096afda6f4f8f565
+title: WARNING in pend_serror_exception
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f9e4e0a663d239f944649c5201879c7471615dd0
+fix_commit: efa1368ba9f4b6e081c0fdd73245b0ba6ef75bda
+datetime: '2025-07-15T20:12:03-07:00'
+fix_commit_message: 'KVM: arm64: Commit exceptions from KVM_SET_VCPU_EVENTS immediately
+
+
+  syzkaller has found that it can trip a warning in KVM''s exception
+
+  emulation infrastructure by repeatedly injecting exceptions into the
+
+  guest.
+
+
+  While it''s unlikely that a reasonable VMM will do this, further
+
+  investigation of the issue reveals that KVM can potentially discard the
+
+  "pending" SEA state. While the handling of KVM_GET_VCPU_EVENTS presumes
+
+  that userspace-injected SEAs are realized immediately, in reality the
+
+  emulated exception entry is deferred until the next call to KVM_RUN.
+
+
+  Hack-a-fix the immediate issues by committing the pending exceptions to
+
+  the vCPU''s architectural state immediately in KVM_SET_VCPU_EVENTS. This
+
+  is no different to the way KVM-injected exceptions are handled in
+
+  KVM_RUN where we potentially call __kvm_adjust_pc() before returning to
+
+  userspace.
+
+
+  Reported-by: syzbot+4e09b1432de3774b86ae@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+1f6f096afda6f4f8f565@syzkaller.appspotmail.com
+
+  Reviewed-by: Marc Zyngier <maz@kernel.org>
+
+  Signed-off-by: Oliver Upton <oliver.upton@linux.dev>
+
+  '
+submodule:
+- arch/arm64/kvm
+hunk_count: 3
+covered_count: 0

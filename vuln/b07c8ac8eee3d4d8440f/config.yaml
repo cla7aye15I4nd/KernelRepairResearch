@@ -1,0 +1,28 @@
+id: b07c8ac8eee3d4d8440f
+bug_link: https://syzkaller.appspot.com/bug?extid=b07c8ac8eee3d4d8440f
+title: WARNING in hugetlb_change_protection (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 74017458017127ca6bf14b1f9fda69e03f43389b
+fix_commit: c5977c95dff182d6ee06f4d6f60bcb0284912969
+datetime: '2024-04-16T15:39:50-07:00'
+fix_commit_message: "mm/userfaultfd: allow hugetlb change protection upon poison entry\n\
+  \nAfter UFFDIO_POISON, there can be two kinds of hugetlb pte markers, either\nthe\
+  \ POISON one or UFFD_WP one.\n\nAllow change protection to run on a poisoned marker\
+  \ just like !hugetlb\ncases, ignoring the marker irrelevant of the permission.\n\
+  \nHere the two bits are mutual exclusive.  For example, when install a\npoisoned\
+  \ entry it must not be UFFD_WP already (by checking pte_none()\nbefore such install).\
+  \  And it also means if UFFD_WP is set there must have\nno POISON bit set.  It makes\
+  \ sense because UFFD_WP is a bit to reflect\npermission, and permissions do not\
+  \ apply if the pte is poisoned and\ndestined to sigbus.\n\nSo here we simply check\
+  \ uffd_wp bit set first, do nothing otherwise.\n\nAttach the Fixes to UFFDIO_POISON\
+  \ work, as before that it should not be\npossible to have poison entry for hugetlb\
+  \ (e.g., hugetlb doesn't do swap,\nso no chance of swapin errors).\n\nLink: https://lkml.kernel.org/r/20240405231920.1772199-1-peterx@redhat.com\n\
+  Link: https://lore.kernel.org/r/000000000000920d5e0615602dd1@google.com\nFixes:\
+  \ fc71884a5f59 (\"mm: userfaultfd: add new UFFDIO_POISON ioctl\")\nSigned-off-by:\
+  \ Peter Xu <peterx@redhat.com>\nReported-by: syzbot+b07c8ac8eee3d4d8440f@syzkaller.appspotmail.com\n\
+  Reviewed-by: David Hildenbrand <david@redhat.com>\nReviewed-by: Axel Rasmussen <axelrasmussen@google.com>\n\
+  Cc: <stable@vger.kernel.org>\t[6.6+]\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,41 @@
+id: 1a748d0007eeac3ab079
+bug_link: https://syzkaller.appspot.com/bug?extid=1a748d0007eeac3ab079
+title: possible deadlock in fscrypt_initialize
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0fbcb5251fc81b58969b272c4fb7374a7b922e3e
+fix_commit: 4c0d5778385cb3618ff26a561ce41de2b7d9de70
+datetime: '2022-12-08T21:49:24-05:00'
+fix_commit_message: 'ext4: don''t set up encryption key during jbd2 transaction
+
+
+  Commit a80f7fcf1867 ("ext4: fixup ext4_fc_track_* functions'' signature")
+
+  extended the scope of the transaction in ext4_unlink() too far, making
+
+  it include the call to ext4_find_entry().  However, ext4_find_entry()
+
+  can deadlock when called from within a transaction because it may need
+
+  to set up the directory''s encryption key.
+
+
+  Fix this by restoring the transaction to its original scope.
+
+
+  Reported-by: syzbot+1a748d0007eeac3ab079@syzkaller.appspotmail.com
+
+  Fixes: a80f7fcf1867 ("ext4: fixup ext4_fc_track_* functions'' signature")
+
+  Cc: <stable@vger.kernel.org> # v5.10+
+
+  Signed-off-by: Eric Biggers <ebiggers@google.com>
+
+  Link: https://lore.kernel.org/r/20221106224841.279231-3-ebiggers@kernel.org
+
+  Signed-off-by: Theodore Ts''o <tytso@mit.edu>
+
+  '
+submodule:
+- fs/ext4
+hunk_count: 8
+covered_count: 6

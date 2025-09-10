@@ -1,0 +1,34 @@
+id: 17a611d10af7d18a7092
+bug_link: https://syzkaller.appspot.com/bug?extid=17a611d10af7d18a7092
+title: WARNING in zswap_folio_swapin
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7efa6f2c803366f84c3c362f01e822490669d72b
+fix_commit: 16e96ba5e92ce06b54f0862d44bb27bfa00d6c23
+datetime: '2024-02-20T14:20:48-08:00'
+fix_commit_message: "mm/swap_state: update zswap LRU's protection range with the folio\
+  \ locked\n\nWhen a folio is swapped in, the protection size of the corresponding\
+  \ zswap\nLRU is incremented, so that the zswap shrinker is more conservative with\n\
+  its reclaiming action.  This field is embedded within the struct lruvec,\nso updating\
+  \ it requires looking up the folio's memcg and lruvec.  However,\ncurrently this\
+  \ lookup can happen after the folio is unlocked, for instance\nif a new folio is\
+  \ allocated, and swap_read_folio() unlocks the folio\nbefore returning.  In this\
+  \ scenario, there is no stability guarantee for\nthe binding between a folio and\
+  \ its memcg and lruvec:\n\n* A folio's memcg and lruvec can be freed between the\
+  \ lookup and the\n  update, leading to a UAF.\n* Folio migration can clear the now-unlocked\
+  \ folio's memcg_data, which\n  directs the zswap LRU protection size update towards\
+  \ the root memcg\n  instead of the original memcg. This was recently picked up by\
+  \ the\n  syzbot thanks to a warning in the inlined folio_lruvec() call.\n\nMove\
+  \ the zswap LRU protection range update above the swap_read_folio()\ncall, and only\
+  \ when a new page is allocated, to prevent this.\n\n[nphamcs@gmail.com: add VM_WARN_ON_ONCE()\
+  \ to zswap_folio_swapin()]\n  Link: https://lkml.kernel.org/r/20240206180855.3987204-1-nphamcs@gmail.com\n\
+  [nphamcs@gmail.com: remove unneeded if (folio) checks]\n  Link: https://lkml.kernel.org/r/20240206191355.83755-1-nphamcs@gmail.com\n\
+  Link: https://lkml.kernel.org/r/20240205232442.3240571-1-nphamcs@gmail.com\nFixes:\
+  \ b5ba474f3f51 (\"zswap: shrink zswap pool based on memory pressure\")\nReported-by:\
+  \ syzbot+17a611d10af7d18a7092@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/all/000000000000ae47f90610803260@google.com/\n\
+  Signed-off-by: Nhat Pham <nphamcs@gmail.com>\nReviewed-by: Chengming Zhou <zhouchengming@bytedance.com>\n\
+  Acked-by: Johannes Weiner <hannes@cmpxchg.org>\nCc: Yosry Ahmed <yosryahmed@google.com>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 3
+covered_count: 3

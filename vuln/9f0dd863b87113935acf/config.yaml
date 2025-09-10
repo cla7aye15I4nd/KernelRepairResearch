@@ -1,0 +1,52 @@
+id: 9f0dd863b87113935acf
+bug_link: https://syzkaller.appspot.com/bug?extid=9f0dd863b87113935acf
+title: WARNING in devlink_free
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 80c0576ef179311f624bc450fede30a89afe9792
+fix_commit: 93e71edfd90ca7e07a3645167f1e8e4504d4e8ee
+datetime: '2023-01-11T20:49:32-08:00'
+fix_commit_message: 'devlink: keep the instance mutex alive until references are gone
+
+
+  The reference needs to keep the instance memory around, but also
+
+  the instance lock must remain valid. Users will take the lock,
+
+  check registration status and release the lock. mutex_destroy()
+
+  etc. belong in the same place as the freeing of the memory.
+
+
+  Unfortunately lockdep_unregister_key() sleeps so we need
+
+  to switch the an rcu_work.
+
+
+  Note that the problem is a bit hard to repro, because
+
+  devlink_pernet_pre_exit() iterates over registered instances.
+
+  AFAIU the instances must get devlink_free()d concurrently with
+
+  the namespace getting deleted for the problem to occur.
+
+
+  Reported-by: syzbot+d94d214ea473e218fc89@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+9f0dd863b87113935acf@syzkaller.appspotmail.com
+
+  Fixes: 9053637e0da7 ("devlink: remove the registration guarantee of references")
+
+  Reviewed-by: Jiri Pirko <jiri@nvidia.com>
+
+  Reviewed-by: Jacob Keller <jacob.e.keller@intel.com>
+
+  Link: https://lore.kernel.org/r/20230111042908.988199-1-kuba@kernel.org
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/devlink
+hunk_count: 5
+covered_count: 2

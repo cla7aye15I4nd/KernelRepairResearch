@@ -1,0 +1,25 @@
+id: 9873874c735f2892e7e9
+bug_link: https://syzkaller.appspot.com/bug?extid=9873874c735f2892e7e9
+title: general protection fault in wb_workfn
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8bfc3b4c6f9de815de4ab73784b9419348266a65
+fix_commit: b8b784958eccbf8f51ebeee65282ca3fd59ea391
+datetime: '2018-05-03T16:11:37-06:00'
+fix_commit_message: "bdi: Fix oops in wb_workfn()\n\nSyzbot has reported that it can\
+  \ hit a NULL pointer dereference in\nwb_workfn() due to wb->bdi->dev being NULL.\
+  \ This indicates that\nwb_workfn() was called for an already unregistered bdi which\
+  \ should not\nhappen as wb_shutdown() called from bdi_unregister() should make sure\n\
+  all pending writeback works are completed before bdi is unregistered.\nExcept that\
+  \ wb_workfn() itself can requeue the work with:\n\n\tmod_delayed_work(bdi_wq, &wb->dwork,\
+  \ 0);\n\nand if this happens while wb_shutdown() is waiting in:\n\n\tflush_delayed_work(&wb->dwork);\n\
+  \nthe dwork can get executed after wb_shutdown() has finished and\nbdi_unregister()\
+  \ has cleared wb->bdi->dev.\n\nMake wb_workfn() use wakeup_wb() for requeueing the\
+  \ work which takes all\nthe necessary precautions against racing with bdi unregistration.\n\
+  \nCC: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nCC: Tejun Heo <tj@kernel.org>\n\
+  Fixes: 839a8e8660b6777e7fe4e80af1a048aebe2b5977\nReported-by: syzbot <syzbot+9873874c735f2892e7e9@syzkaller.appspotmail.com>\n\
+  Reviewed-by: Dave Chinner <dchinner@redhat.com>\nSigned-off-by: Jan Kara <jack@suse.cz>\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

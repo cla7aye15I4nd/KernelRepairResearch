@@ -1,0 +1,36 @@
+id: 251ec6887ada6eac4921
+bug_link: https://syzkaller.appspot.com/bug?extid=251ec6887ada6eac4921
+title: inconsistent lock state in icmp_send
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3138a07ce219acde4c0d7ea0b6d54ba64153328b
+fix_commit: 1378817486d6860f6a927f573491afe65287abf1
+datetime: '2020-05-22T15:39:00-07:00'
+fix_commit_message: "tipc: block BH before using dst_cache\n\ndst_cache_get() documents\
+  \ it must be used with BH disabled.\n\nsysbot reported :\n\nBUG: using smp_processor_id()\
+  \ in preemptible [00000000] code: /21697\ncaller is dst_cache_get+0x3a/0xb0 net/core/dst_cache.c:68\n\
+  CPU: 0 PID: 21697 Comm:  Not tainted 5.7.0-rc6-syzkaller #0\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\nCall Trace:\n\
+  \ __dump_stack lib/dump_stack.c:77 [inline]\n dump_stack+0x188/0x20d lib/dump_stack.c:118\n\
+  \ check_preemption_disabled lib/smp_processor_id.c:47 [inline]\n debug_smp_processor_id.cold+0x88/0x9b\
+  \ lib/smp_processor_id.c:57\n dst_cache_get+0x3a/0xb0 net/core/dst_cache.c:68\n\
+  \ tipc_udp_xmit.isra.0+0xb9/0xad0 net/tipc/udp_media.c:164\n tipc_udp_send_msg+0x3e6/0x490\
+  \ net/tipc/udp_media.c:244\n tipc_bearer_xmit_skb+0x1de/0x3f0 net/tipc/bearer.c:526\n\
+  \ tipc_enable_bearer+0xb2f/0xd60 net/tipc/bearer.c:331\n __tipc_nl_bearer_enable+0x2bf/0x390\
+  \ net/tipc/bearer.c:995\n tipc_nl_bearer_enable+0x1e/0x30 net/tipc/bearer.c:1003\n\
+  \ genl_family_rcv_msg_doit net/netlink/genetlink.c:673 [inline]\n genl_family_rcv_msg\
+  \ net/netlink/genetlink.c:718 [inline]\n genl_rcv_msg+0x627/0xdf0 net/netlink/genetlink.c:735\n\
+  \ netlink_rcv_skb+0x15a/0x410 net/netlink/af_netlink.c:2469\n genl_rcv+0x24/0x40\
+  \ net/netlink/genetlink.c:746\n netlink_unicast_kernel net/netlink/af_netlink.c:1303\
+  \ [inline]\n netlink_unicast+0x537/0x740 net/netlink/af_netlink.c:1329\n netlink_sendmsg+0x882/0xe10\
+  \ net/netlink/af_netlink.c:1918\n sock_sendmsg_nosec net/socket.c:652 [inline]\n\
+  \ sock_sendmsg+0xcf/0x120 net/socket.c:672\n ____sys_sendmsg+0x6bf/0x7e0 net/socket.c:2362\n\
+  \ ___sys_sendmsg+0x100/0x170 net/socket.c:2416\n __sys_sendmsg+0xec/0x1b0 net/socket.c:2449\n\
+  \ do_syscall_64+0xf6/0x7d0 arch/x86/entry/common.c:295\n entry_SYSCALL_64_after_hwframe+0x49/0xb3\n\
+  RIP: 0033:0x45ca29\n\nFixes: e9c1a793210f (\"tipc: add dst_cache support for udp\
+  \ media\")\nCc: Xin Long <lucien.xin@gmail.com>\nCc: Jon Maloy <jon.maloy@ericsson.com>\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nReported-by: syzbot <syzkaller@googlegroups.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 2
+covered_count: 0

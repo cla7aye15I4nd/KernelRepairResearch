@@ -1,0 +1,45 @@
+id: 88533dc8b582309bf3ee
+bug_link: https://syzkaller.appspot.com/bug?extid=88533dc8b582309bf3ee
+title: memory leak in fdb_create
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 051c7b39be4a91f6b7d8c4548444e4b850f1f56c
+fix_commit: d7bae09fa008c6c9a489580db0a5a12063b97f97
+datetime: '2019-07-29T09:50:05-07:00'
+fix_commit_message: 'net: bridge: delete local fdb on device init failure
+
+
+  On initialization failure we have to delete the local fdb which was
+
+  inserted due to the default pvid creation. This problem has been present
+
+  since the inception of default_pvid. Note that currently there are 2 cases:
+
+  1) in br_dev_init() when br_multicast_init() fails
+
+  2) if register_netdevice() fails after calling ndo_init()
+
+
+  This patch takes care of both since br_vlan_flush() is called on both
+
+  occasions. Also the new fdb delete would be a no-op on normal bridge
+
+  device destruction since the local fdb would''ve been already flushed by
+
+  br_dev_delete(). This is not an issue for ports since nbp_vlan_init() is
+
+  called last when adding a port thus nothing can fail after it.
+
+
+  Reported-by: syzbot+88533dc8b582309bf3ee@syzkaller.appspotmail.com
+
+  Fixes: 5be5a2df40f0 ("bridge: Add filtering support for default_pvid")
+
+  Signed-off-by: Nikolay Aleksandrov <nikolay@cumulusnetworks.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/bridge
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,28 @@
+diff --git a/kernel/trace/bpf_trace.c b/kernel/trace/bpf_trace.c
+index 4e391daafa64..90cd30e9723e 100644
+--- a/kernel/trace/bpf_trace.c
++++ b/kernel/trace/bpf_trace.c
+@@ -3484,17 +3484,20 @@ int bpf_uprobe_multi_link_attach(const union bpf_attr *attr, struct bpf_prog *pr
+ 						    &uprobes[i].consumer);
+ 		if (IS_ERR(uprobes[i].uprobe)) {
+ 			err = PTR_ERR(uprobes[i].uprobe);
+-			bpf_uprobe_unregister(uprobes, i);
+-			goto error_free;
++			link->cnt = i;
++			goto error_unregister;
+ 		}
+ 	}
+ 
+ 	err = bpf_link_prime(&link->link, &link_primer);
+ 	if (err)
+-		goto error_free;
++		goto error_unregister;
+ 
+ 	return bpf_link_settle(&link_primer);
+ 
++error_unregister:
++	bpf_uprobe_unregister(uprobes, link->cnt);
++
+ error_free:
+ 	kvfree(uprobes);
+ 	kfree(link);

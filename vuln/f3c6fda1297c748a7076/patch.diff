@@ -1,0 +1,96 @@
+diff --git a/fs/buffer.c b/fs/buffer.c
+index f8c9e5eb4685..7be23ff20b27 100644
+--- a/fs/buffer.c
++++ b/fs/buffer.c
+@@ -207,6 +207,15 @@ __find_get_block_slow(struct block_device *bdev, sector_t block, bool atomic)
+ 	head = folio_buffers(folio);
+ 	if (!head)
+ 		goto out_unlock;
++	/*
++	 * Upon a noref migration, the folio lock serializes here;
++	 * otherwise bail.
++	 */
++	if (test_bit_acquire(BH_Migrate, &head->b_state)) {
++		WARN_ON(!atomic);
++		goto out_unlock;
++	}
++
+ 	bh = head;
+ 	do {
+ 		if (!buffer_mapped(bh))
+@@ -1390,7 +1399,8 @@ lookup_bh_lru(struct block_device *bdev, sector_t block, unsigned size)
+ /*
+  * Perform a pagecache lookup for the matching buffer.  If it's there, refresh
+  * it in the LRU and mark it as accessed.  If it is not present then return
+- * NULL
++ * NULL. Atomic context callers may also return NULL if the buffer is being
++ * migrated; similarly the page is not marked accessed either.
+  */
+ static struct buffer_head *
+ find_get_block_common(struct block_device *bdev, sector_t block,
+diff --git a/fs/ext4/ialloc.c b/fs/ext4/ialloc.c
+index 38bc8d74f4cc..e7ecc7c8a729 100644
+--- a/fs/ext4/ialloc.c
++++ b/fs/ext4/ialloc.c
+@@ -691,7 +691,8 @@ static int recently_deleted(struct super_block *sb, ext4_group_t group, int ino)
+ 	if (!bh || !buffer_uptodate(bh))
+ 		/*
+ 		 * If the block is not in the buffer cache, then it
+-		 * must have been written out.
++		 * must have been written out, or, most unlikely, is
++		 * being migrated - false failure should be OK here.
+ 		 */
+ 		goto out;
+ 
+diff --git a/include/linux/buffer_head.h b/include/linux/buffer_head.h
+index c791aa9a08da..0029ff880e27 100644
+--- a/include/linux/buffer_head.h
++++ b/include/linux/buffer_head.h
+@@ -34,6 +34,7 @@ enum bh_state_bits {
+ 	BH_Meta,	/* Buffer contains metadata */
+ 	BH_Prio,	/* Buffer should be submitted with REQ_PRIO */
+ 	BH_Defer_Completion, /* Defer AIO completion to workqueue */
++	BH_Migrate,     /* Buffer is being migrated (norefs) */
+ 
+ 	BH_PrivateStart,/* not a state bit, but the first bit available
+ 			 * for private allocation by other entities
+diff --git a/mm/migrate.c b/mm/migrate.c
+index f3ee6d8d5e2e..676d9cfc7059 100644
+--- a/mm/migrate.c
++++ b/mm/migrate.c
+@@ -845,9 +845,11 @@ static int __buffer_migrate_folio(struct address_space *mapping,
+ 		return -EAGAIN;
+ 
+ 	if (check_refs) {
+-		bool busy;
++		bool busy, migrating;
+ 		bool invalidated = false;
+ 
++		migrating = test_and_set_bit_lock(BH_Migrate, &head->b_state);
++		VM_WARN_ON_ONCE(migrating);
+ recheck_buffers:
+ 		busy = false;
+ 		spin_lock(&mapping->i_private_lock);
+@@ -859,12 +861,12 @@ static int __buffer_migrate_folio(struct address_space *mapping,
+ 			}
+ 			bh = bh->b_this_page;
+ 		} while (bh != head);
++		spin_unlock(&mapping->i_private_lock);
+ 		if (busy) {
+ 			if (invalidated) {
+ 				rc = -EAGAIN;
+ 				goto unlock_buffers;
+ 			}
+-			spin_unlock(&mapping->i_private_lock);
+ 			invalidate_bh_lrus();
+ 			invalidated = true;
+ 			goto recheck_buffers;
+@@ -883,7 +885,7 @@ static int __buffer_migrate_folio(struct address_space *mapping,
+ 
+ unlock_buffers:
+ 	if (check_refs)
+-		spin_unlock(&mapping->i_private_lock);
++		clear_bit_unlock(BH_Migrate, &head->b_state);
+ 	bh = head;
+ 	do {
+ 		unlock_buffer(bh);

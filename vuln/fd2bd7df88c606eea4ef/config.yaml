@@ -1,0 +1,26 @@
+id: fd2bd7df88c606eea4ef
+bug_link: https://syzkaller.appspot.com/bug?extid=fd2bd7df88c606eea4ef
+title: kernel BUG at drivers/usb/wusbcore/wusbhc.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 94b9a70d32db0d1e8eeaeb27d74a5ae712644da9
+fix_commit: f90bf1ece48a736097ea224430578fe586a9544c
+datetime: '2019-07-25T10:40:03+02:00'
+fix_commit_message: "usb: wusbcore: fix unbalanced get/put cluster_id\n\nsyzboot reported\
+  \ that\nhttps://syzkaller.appspot.com/bug?extid=fd2bd7df88c606eea4ef\n\nThere is\
+  \ not consitency parameter in cluste_id_get/put calling.\nIn case of getting the\
+  \ id with result is failure, the wusbhc->cluster_id\nwill not be updated and this\
+  \ can not be used for wusb_cluster_id_put().\n\nTested report\nhttps://groups.google.com/d/msg/syzkaller-bugs/0znZopp3-9k/oxOrhLkLEgAJ\n\
+  \nReproduce and gdb got the details:\n\n139\t\taddr = wusb_cluster_id_get();\n(gdb)\
+  \ n\n140\t\tif (addr == 0)\n(gdb) print addr\n$1 = 254 '\\376'\n(gdb) n\n142\t\t\
+  result = __hwahc_set_cluster_id(hwahc, addr);\n(gdb) print result\n$2 = -71\n(gdb)\
+  \ break wusb_cluster_id_put\nBreakpoint 3 at 0xffffffff836e3f20: file drivers/usb/wusbcore/wusbhc.c,\
+  \ line 384.\n(gdb) s\nThread 2 hit Breakpoint 3, wusb_cluster_id_put (id=0 '\\000')\
+  \ at drivers/usb/wusbcore/wusbhc.c:384\n384\t\tid = 0xff - id;\n(gdb) n\n385\t\t\
+  BUG_ON(id >= CLUSTER_IDS);\n(gdb) print id\n$3 = 255 '\\377'\n\nReported-by: syzbot+fd2bd7df88c606eea4ef@syzkaller.appspotmail.com\n\
+  Signed-off-by: Phong Tran <tranmanphong@gmail.com>\nCc: stable <stable@vger.kernel.org>\n\
+  Link: https://lore.kernel.org/r/20190724020601.15257-1-tranmanphong@gmail.com\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/host
+hunk_count: 1
+covered_count: 1

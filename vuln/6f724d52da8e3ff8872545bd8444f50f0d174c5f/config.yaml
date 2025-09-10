@@ -1,0 +1,55 @@
+id: 6f724d52da8e3ff8872545bd8444f50f0d174c5f
+bug_link: https://syzkaller.appspot.com/bug?extid=6f724d52da8e3ff8872545bd8444f50f0d174c5f
+title: 'KASAN: stack-out-of-bounds Write in sha3_update'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 887207ed9e5812ed9239b6d07185a2d35dda91db
+fix_commit: af3ff8045bbf3e32f1a448542e73abb4c8ceb6f1
+datetime: '2017-11-29T13:39:15+11:00'
+fix_commit_message: "crypto: hmac - require that the underlying hash algorithm is\
+  \ unkeyed\n\nBecause the HMAC template didn't check that its underlying hash\nalgorithm\
+  \ is unkeyed, trying to use \"hmac(hmac(sha3-512-generic))\"\nthrough AF_ALG or\
+  \ through KEYCTL_DH_COMPUTE resulted in the inner HMAC\nbeing used without having\
+  \ been keyed, resulting in sha3_update() being\ncalled without sha3_init(), causing\
+  \ a stack buffer overflow.\n\nThis is a very old bug, but it seems to have only\
+  \ started causing real\nproblems when SHA-3 support was added (requires CONFIG_CRYPTO_SHA3)\n\
+  because the innermost hash's state is ->import()ed from a zeroed buffer,\nand it\
+  \ just so happens that other hash algorithms are fine with that,\nbut SHA-3 is not.\
+  \  However, there could be arch or hardware-dependent\nhash algorithms also affected;\
+  \ I couldn't test everything.\n\nFix the bug by introducing a function crypto_shash_alg_has_setkey()\n\
+  which tests whether a shash algorithm is keyed.  Then update the HMAC\ntemplate\
+  \ to require that its underlying hash algorithm is unkeyed.\n\nHere is a reproducer:\n\
+  \n    #include <linux/if_alg.h>\n    #include <sys/socket.h>\n\n    int main()\n\
+  \    {\n        int algfd;\n        struct sockaddr_alg addr = {\n            .salg_type\
+  \ = \"hash\",\n            .salg_name = \"hmac(hmac(sha3-512-generic))\",\n    \
+  \    };\n        char key[4096] = { 0 };\n\n        algfd = socket(AF_ALG, SOCK_SEQPACKET,\
+  \ 0);\n        bind(algfd, (const struct sockaddr *)&addr, sizeof(addr));\n    \
+  \    setsockopt(algfd, SOL_ALG, ALG_SET_KEY, key, sizeof(key));\n    }\n\nHere was\
+  \ the KASAN report from syzbot:\n\n    BUG: KASAN: stack-out-of-bounds in memcpy\
+  \ include/linux/string.h:341  [inline]\n    BUG: KASAN: stack-out-of-bounds in sha3_update+0xdf/0x2e0\
+  \  crypto/sha3_generic.c:161\n    Write of size 4096 at addr ffff8801cca07c40 by\
+  \ task syzkaller076574/3044\n\n    CPU: 1 PID: 3044 Comm: syzkaller076574 Not tainted\
+  \ 4.14.0-mm1+ #25\n    Hardware name: Google Google Compute Engine/Google Compute\
+  \ Engine, BIOS  Google 01/01/2011\n    Call Trace:\n      __dump_stack lib/dump_stack.c:17\
+  \ [inline]\n      dump_stack+0x194/0x257 lib/dump_stack.c:53\n      print_address_description+0x73/0x250\
+  \ mm/kasan/report.c:252\n      kasan_report_error mm/kasan/report.c:351 [inline]\n\
+  \      kasan_report+0x25b/0x340 mm/kasan/report.c:409\n      check_memory_region_inline\
+  \ mm/kasan/kasan.c:260 [inline]\n      check_memory_region+0x137/0x190 mm/kasan/kasan.c:267\n\
+  \      memcpy+0x37/0x50 mm/kasan/kasan.c:303\n      memcpy include/linux/string.h:341\
+  \ [inline]\n      sha3_update+0xdf/0x2e0 crypto/sha3_generic.c:161\n      crypto_shash_update+0xcb/0x220\
+  \ crypto/shash.c:109\n      shash_finup_unaligned+0x2a/0x60 crypto/shash.c:151\n\
+  \      crypto_shash_finup+0xc4/0x120 crypto/shash.c:165\n      hmac_finup+0x182/0x330\
+  \ crypto/hmac.c:152\n      crypto_shash_finup+0xc4/0x120 crypto/shash.c:165\n  \
+  \    shash_digest_unaligned+0x9e/0xd0 crypto/shash.c:172\n      crypto_shash_digest+0xc4/0x120\
+  \ crypto/shash.c:186\n      hmac_setkey+0x36a/0x690 crypto/hmac.c:66\n      crypto_shash_setkey+0xad/0x190\
+  \ crypto/shash.c:64\n      shash_async_setkey+0x47/0x60 crypto/shash.c:207\n   \
+  \   crypto_ahash_setkey+0xaf/0x180 crypto/ahash.c:200\n      hash_setkey+0x40/0x90\
+  \ crypto/algif_hash.c:446\n      alg_setkey crypto/af_alg.c:221 [inline]\n     \
+  \ alg_setsockopt+0x2a1/0x350 crypto/af_alg.c:254\n      SYSC_setsockopt net/socket.c:1851\
+  \ [inline]\n      SyS_setsockopt+0x189/0x360 net/socket.c:1830\n      entry_SYSCALL_64_fastpath+0x1f/0x96\n\
+  \nReported-by: syzbot <syzkaller@googlegroups.com>\nCc: <stable@vger.kernel.org>\n\
+  Signed-off-by: Eric Biggers <ebiggers@google.com>\nSigned-off-by: Herbert Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- crypto
+- include/crypto/internal
+hunk_count: 3
+covered_count: 2

@@ -1,0 +1,61 @@
+id: e5600587fa9cbf8e3826
+bug_link: https://syzkaller.appspot.com/bug?extid=e5600587fa9cbf8e3826
+title: possible deadlock in f2fs_getxattr
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 005abf9e5e0d4dcfce318ae5dbcac32b7bf6b647
+fix_commit: 5c13e2388bf3426fd69a89eb46e50469e9624e56
+datetime: '2023-08-21T12:43:26-07:00'
+fix_commit_message: "f2fs: avoid false alarm of circular locking\n\n======================================================\n\
+  WARNING: possible circular locking dependency detected\n6.5.0-rc5-syzkaller-00353-gae545c3283dc\
+  \ #0 Not tainted\n------------------------------------------------------\nsyz-executor273/5027\
+  \ is trying to acquire lock:\nffff888077fe1fb0 (&fi->i_sem){+.+.}-{3:3}, at: f2fs_down_write\
+  \ fs/f2fs/f2fs.h:2133 [inline]\nffff888077fe1fb0 (&fi->i_sem){+.+.}-{3:3}, at: f2fs_add_inline_entry+0x300/0x6f0\
+  \ fs/f2fs/inline.c:644\n\nbut task is already holding lock:\nffff888077fe07c8 (&fi->i_xattr_sem){.+.+}-{3:3},\
+  \ at: f2fs_down_read fs/f2fs/f2fs.h:2108 [inline]\nffff888077fe07c8 (&fi->i_xattr_sem){.+.+}-{3:3},\
+  \ at: f2fs_add_dentry+0x92/0x230 fs/f2fs/dir.c:783\n\nwhich lock already depends\
+  \ on the new lock.\n\nthe existing dependency chain (in reverse order) is:\n\n->\
+  \ #1 (&fi->i_xattr_sem){.+.+}-{3:3}:\n       down_read+0x9c/0x470 kernel/locking/rwsem.c:1520\n\
+  \       f2fs_down_read fs/f2fs/f2fs.h:2108 [inline]\n       f2fs_getxattr+0xb1e/0x12c0\
+  \ fs/f2fs/xattr.c:532\n       __f2fs_get_acl+0x5a/0x900 fs/f2fs/acl.c:179\n    \
+  \   f2fs_acl_create fs/f2fs/acl.c:377 [inline]\n       f2fs_init_acl+0x15c/0xb30\
+  \ fs/f2fs/acl.c:420\n       f2fs_init_inode_metadata+0x159/0x1290 fs/f2fs/dir.c:558\n\
+  \       f2fs_add_regular_entry+0x79e/0xb90 fs/f2fs/dir.c:740\n       f2fs_add_dentry+0x1de/0x230\
+  \ fs/f2fs/dir.c:788\n       f2fs_do_add_link+0x190/0x280 fs/f2fs/dir.c:827\n   \
+  \    f2fs_add_link fs/f2fs/f2fs.h:3554 [inline]\n       f2fs_mkdir+0x377/0x620 fs/f2fs/namei.c:781\n\
+  \       vfs_mkdir+0x532/0x7e0 fs/namei.c:4117\n       do_mkdirat+0x2a9/0x330 fs/namei.c:4140\n\
+  \       __do_sys_mkdir fs/namei.c:4160 [inline]\n       __se_sys_mkdir fs/namei.c:4158\
+  \ [inline]\n       __x64_sys_mkdir+0xf2/0x140 fs/namei.c:4158\n       do_syscall_x64\
+  \ arch/x86/entry/common.c:50 [inline]\n       do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80\n\
+  \       entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\n-> #0 (&fi->i_sem){+.+.}-{3:3}:\n\
+  \       check_prev_add kernel/locking/lockdep.c:3142 [inline]\n       check_prevs_add\
+  \ kernel/locking/lockdep.c:3261 [inline]\n       validate_chain kernel/locking/lockdep.c:3876\
+  \ [inline]\n       __lock_acquire+0x2e3d/0x5de0 kernel/locking/lockdep.c:5144\n\
+  \       lock_acquire kernel/locking/lockdep.c:5761 [inline]\n       lock_acquire+0x1ae/0x510\
+  \ kernel/locking/lockdep.c:5726\n       down_write+0x93/0x200 kernel/locking/rwsem.c:1573\n\
+  \       f2fs_down_write fs/f2fs/f2fs.h:2133 [inline]\n       f2fs_add_inline_entry+0x300/0x6f0\
+  \ fs/f2fs/inline.c:644\n       f2fs_add_dentry+0xa6/0x230 fs/f2fs/dir.c:784\n  \
+  \     f2fs_do_add_link+0x190/0x280 fs/f2fs/dir.c:827\n       f2fs_add_link fs/f2fs/f2fs.h:3554\
+  \ [inline]\n       f2fs_mkdir+0x377/0x620 fs/f2fs/namei.c:781\n       vfs_mkdir+0x532/0x7e0\
+  \ fs/namei.c:4117\n       ovl_do_mkdir fs/overlayfs/overlayfs.h:196 [inline]\n \
+  \      ovl_mkdir_real+0xb5/0x370 fs/overlayfs/dir.c:146\n       ovl_workdir_create+0x3de/0x820\
+  \ fs/overlayfs/super.c:309\n       ovl_make_workdir fs/overlayfs/super.c:711 [inline]\n\
+  \       ovl_get_workdir fs/overlayfs/super.c:864 [inline]\n       ovl_fill_super+0xdab/0x6180\
+  \ fs/overlayfs/super.c:1400\n       vfs_get_super+0xf9/0x290 fs/super.c:1152\n \
+  \      vfs_get_tree+0x88/0x350 fs/super.c:1519\n       do_new_mount fs/namespace.c:3335\
+  \ [inline]\n       path_mount+0x1492/0x1ed0 fs/namespace.c:3662\n       do_mount\
+  \ fs/namespace.c:3675 [inline]\n       __do_sys_mount fs/namespace.c:3884 [inline]\n\
+  \       __se_sys_mount fs/namespace.c:3861 [inline]\n       __x64_sys_mount+0x293/0x310\
+  \ fs/namespace.c:3861\n       do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n\
+  \       do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80\n       entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\
+  \nother info that might help us debug this:\n\n Possible unsafe locking scenario:\n\
+  \n       CPU0                    CPU1\n       ----                    ----\n  rlock(&fi->i_xattr_sem);\n\
+  \                               lock(&fi->i_sem);\n                            \
+  \   lock(&fi->i_xattr_sem);\n  lock(&fi->i_sem);\n\nCc: <stable@vger.kernel.org>\n\
+  Reported-and-tested-by: syzbot+e5600587fa9cbf8e3826@syzkaller.appspotmail.com\n\
+  Fixes: 5eda1ad1aaff \"f2fs: fix deadlock in i_xattr_sem and inode page lock\"\n\
+  Tested-by: Guenter Roeck <linux@roeck-us.net>\nReviewed-by: Chao Yu <chao@kernel.org>\n\
+  Signed-off-by: Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 3
+covered_count: 3

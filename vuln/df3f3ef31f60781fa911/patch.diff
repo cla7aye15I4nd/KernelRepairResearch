@@ -1,0 +1,107 @@
+diff --git a/drivers/ptp/ptp_chardev.c b/drivers/ptp/ptp_chardev.c
+index 27c1ef493617..3f7a74788802 100644
+--- a/drivers/ptp/ptp_chardev.c
++++ b/drivers/ptp/ptp_chardev.c
+@@ -108,6 +108,7 @@ int ptp_open(struct posix_clock_context *pccontext, fmode_t fmode)
+ 		container_of(pccontext->clk, struct ptp_clock, clock);
+ 	struct timestamp_event_queue *queue;
+ 	char debugfsname[32];
++	unsigned long flags;
+ 
+ 	queue = kzalloc(sizeof(*queue), GFP_KERNEL);
+ 	if (!queue)
+@@ -119,7 +120,9 @@ int ptp_open(struct posix_clock_context *pccontext, fmode_t fmode)
+ 	}
+ 	bitmap_set(queue->mask, 0, PTP_MAX_CHANNELS);
+ 	spin_lock_init(&queue->lock);
++	spin_lock_irqsave(&ptp->tsevqs_lock, flags);
+ 	list_add_tail(&queue->qlist, &ptp->tsevqs);
++	spin_unlock_irqrestore(&ptp->tsevqs_lock, flags);
+ 	pccontext->private_clkdata = queue;
+ 
+ 	/* Debugfs contents */
+@@ -139,16 +142,16 @@ int ptp_release(struct posix_clock_context *pccontext)
+ {
+ 	struct timestamp_event_queue *queue = pccontext->private_clkdata;
+ 	unsigned long flags;
++	struct ptp_clock *ptp =
++		container_of(pccontext->clk, struct ptp_clock, clock);
+ 
+-	if (queue) {
+-		debugfs_remove(queue->debugfs_instance);
+-		pccontext->private_clkdata = NULL;
+-		spin_lock_irqsave(&queue->lock, flags);
+-		list_del(&queue->qlist);
+-		spin_unlock_irqrestore(&queue->lock, flags);
+-		bitmap_free(queue->mask);
+-		kfree(queue);
+-	}
++	debugfs_remove(queue->debugfs_instance);
++	pccontext->private_clkdata = NULL;
++	spin_lock_irqsave(&ptp->tsevqs_lock, flags);
++	list_del(&queue->qlist);
++	spin_unlock_irqrestore(&ptp->tsevqs_lock, flags);
++	bitmap_free(queue->mask);
++	kfree(queue);
+ 	return 0;
+ }
+ 
+diff --git a/drivers/ptp/ptp_clock.c b/drivers/ptp/ptp_clock.c
+index 3d1b0a97301c..3134568af622 100644
+--- a/drivers/ptp/ptp_clock.c
++++ b/drivers/ptp/ptp_clock.c
+@@ -179,11 +179,11 @@ static void ptp_clock_release(struct device *dev)
+ 	mutex_destroy(&ptp->pincfg_mux);
+ 	mutex_destroy(&ptp->n_vclocks_mux);
+ 	/* Delete first entry */
++	spin_lock_irqsave(&ptp->tsevqs_lock, flags);
+ 	tsevq = list_first_entry(&ptp->tsevqs, struct timestamp_event_queue,
+ 				 qlist);
+-	spin_lock_irqsave(&tsevq->lock, flags);
+ 	list_del(&tsevq->qlist);
+-	spin_unlock_irqrestore(&tsevq->lock, flags);
++	spin_unlock_irqrestore(&ptp->tsevqs_lock, flags);
+ 	bitmap_free(tsevq->mask);
+ 	kfree(tsevq);
+ 	debugfs_remove(ptp->debugfs_root);
+@@ -247,6 +247,7 @@ struct ptp_clock *ptp_clock_register(struct ptp_clock_info *info,
+ 	if (!queue)
+ 		goto no_memory_queue;
+ 	list_add_tail(&queue->qlist, &ptp->tsevqs);
++	spin_lock_init(&ptp->tsevqs_lock);
+ 	queue->mask = bitmap_alloc(PTP_MAX_CHANNELS, GFP_KERNEL);
+ 	if (!queue->mask)
+ 		goto no_memory_bitmap;
+@@ -407,6 +408,7 @@ void ptp_clock_event(struct ptp_clock *ptp, struct ptp_clock_event *event)
+ {
+ 	struct timestamp_event_queue *tsevq;
+ 	struct pps_event_time evt;
++	unsigned long flags;
+ 
+ 	switch (event->type) {
+ 
+@@ -415,10 +417,12 @@ void ptp_clock_event(struct ptp_clock *ptp, struct ptp_clock_event *event)
+ 
+ 	case PTP_CLOCK_EXTTS:
+ 		/* Enqueue timestamp on selected queues */
++		spin_lock_irqsave(&ptp->tsevqs_lock, flags);
+ 		list_for_each_entry(tsevq, &ptp->tsevqs, qlist) {
+ 			if (test_bit((unsigned int)event->index, tsevq->mask))
+ 				enqueue_external_timestamp(tsevq, event);
+ 		}
++		spin_unlock_irqrestore(&ptp->tsevqs_lock, flags);
+ 		wake_up_interruptible(&ptp->tsev_wq);
+ 		break;
+ 
+diff --git a/drivers/ptp/ptp_private.h b/drivers/ptp/ptp_private.h
+index 52f87e394aa6..35fde0a05746 100644
+--- a/drivers/ptp/ptp_private.h
++++ b/drivers/ptp/ptp_private.h
+@@ -44,6 +44,7 @@ struct ptp_clock {
+ 	struct pps_device *pps_source;
+ 	long dialed_frequency; /* remembers the frequency adjustment */
+ 	struct list_head tsevqs; /* timestamp fifo list */
++	spinlock_t tsevqs_lock; /* protects tsevqs from concurrent access */
+ 	struct mutex pincfg_mux; /* protect concurrent info->pin_config access */
+ 	wait_queue_head_t tsev_wq;
+ 	int defunct; /* tells readers to go away when clock is being removed */

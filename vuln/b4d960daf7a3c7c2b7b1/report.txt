@@ -1,0 +1,42 @@
+------------[ cut here ]------------
+'send_pkt()' returns 0, but 65536 expected
+WARNING: CPU: 0 PID: 5503 at net/vmw_vsock/virtio_transport_common.c:428 virtio_transport_send_pkt_info+0xd11/0xf00 net/vmw_vsock/virtio_transport_common.c:426
+Modules linked in:
+CPU: 0 UID: 0 PID: 5503 Comm: syz.0.17 Not tainted 6.16.0-syzkaller-12063-g37816488247d #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:virtio_transport_send_pkt_info+0xd11/0xf00 net/vmw_vsock/virtio_transport_common.c:426
+Code: 0f 0b 90 bd f2 ff ff ff eb bc e8 8a 20 65 f6 c6 05 94 cf 32 04 01 90 48 c7 c7 00 c3 b8 8c 44 89 f6 4c 89 ea e8 40 af 28 f6 90 <0f> 0b 90 90 e9 e1 fe ff ff e8 61 20 65 f6 90 0f 0b 90 e9 c5 f7 ff
+RSP: 0018:ffffc900027ff530 EFLAGS: 00010246
+RAX: d7fcdfc663889c00 RBX: 0000000000010000 RCX: ffff888000e1a440
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000002
+RBP: ffffffff8f8764d0 R08: ffff88801fc24253 R09: 1ffff11003f8484a
+R10: dffffc0000000000 R11: ffffed1003f8484b R12: dffffc0000000000
+R13: 0000000000010000 R14: 0000000000000000 R15: ffff888058b48024
+FS:  000055556bda1500(0000) GS:ffff88808d218000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000020000003f000 CR3: 000000003f6db000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ virtio_transport_stream_enqueue net/vmw_vsock/virtio_transport_common.c:1111 [inline]
+ virtio_transport_seqpacket_enqueue+0x143/0x1c0 net/vmw_vsock/virtio_transport_common.c:839
+ vsock_connectible_sendmsg+0xac7/0x1050 net/vmw_vsock/af_vsock.c:2140
+ sock_sendmsg_nosec net/socket.c:714 [inline]
+ __sock_sendmsg+0x21c/0x270 net/socket.c:729
+ ____sys_sendmsg+0x52d/0x830 net/socket.c:2614
+ ___sys_sendmsg+0x21f/0x2a0 net/socket.c:2668
+ __sys_sendmmsg+0x227/0x430 net/socket.c:2757
+ __do_sys_sendmmsg net/socket.c:2784 [inline]
+ __se_sys_sendmmsg net/socket.c:2781 [inline]
+ __x64_sys_sendmmsg+0xa0/0xc0 net/socket.c:2781
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fddc238ebe9
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd48081028 EFLAGS: 00000246 ORIG_RAX: 0000000000000133
+RAX: ffffffffffffffda RBX: 00007fddc25b5fa0 RCX: 00007fddc238ebe9
+RDX: 0000000000000001 RSI: 0000200000000100 RDI: 0000000000000004
+RBP: 00007fddc2411e19 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000024008094 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007fddc25b5fa0 R14: 00007fddc25b5fa0 R15: 0000000000000004
+ </TASK>

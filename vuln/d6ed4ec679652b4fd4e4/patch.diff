@@ -1,0 +1,17 @@
+diff --git a/mm/slab.c b/mm/slab.c
+index 73fe23e649c9..78eb8c5bf4e4 100644
+--- a/mm/slab.c
++++ b/mm/slab.c
+@@ -666,8 +666,10 @@ static struct alien_cache *__alloc_alien_cache(int node, int entries,
+ 	struct alien_cache *alc = NULL;
+ 
+ 	alc = kmalloc_node(memsize, gfp, node);
+-	init_arraycache(&alc->ac, entries, batch);
+-	spin_lock_init(&alc->lock);
++	if (alc) {
++		init_arraycache(&alc->ac, entries, batch);
++		spin_lock_init(&alc->lock);
++	}
+ 	return alc;
+ }
+ 

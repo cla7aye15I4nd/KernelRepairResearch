@@ -1,0 +1,73 @@
+id: efb9e48b9fbdc49bb34a
+bug_link: https://syzkaller.appspot.com/bug?extid=efb9e48b9fbdc49bb34a
+title: 'INFO: task hung in mpage_prepare_extent_to_map'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aea4df4c53f754cc229edde6c5465e481311cc49
+fix_commit: 4655e5e5f387264fd22a835bcfbe4af6691ff774
+datetime: '2019-11-15T18:34:00-08:00'
+fix_commit_message: 'mm,thp: recheck each page before collapsing file THP
+
+
+  In collapse_file(), for !is_shmem case, current check cannot guarantee
+
+  the locked page is up-to-date.  Specifically, xas_unlock_irq() should
+
+  not be called before lock_page() and get_page(); and it is necessary to
+
+  recheck PageUptodate() after locking the page.
+
+
+  With this bug and CONFIG_READ_ONLY_THP_FOR_FS=y, madvise(HUGE)''ed .text
+
+  may contain corrupted data.  This is because khugepaged mistakenly
+
+  collapses some not up-to-date sub pages into a huge page, and assumes
+
+  the huge page is up-to-date.  This will NOT corrupt data in the disk,
+
+  because the page is read-only and never written back.  Fix this by
+
+  properly checking PageUptodate() after locking the page.  This check
+
+  replaces "VM_BUG_ON_PAGE(!PageUptodate(page), page);".
+
+
+  Also, move PageDirty() check after locking the page.  Current khugepaged
+
+  should not try to collapse dirty file THP, because it is limited to
+
+  read-only .text.  The only case we hit a dirty page here is when the
+
+  page hasn''t been written since write.  Bail out and retry when this
+
+  happens.
+
+
+  syzbot reported bug on previous version of this patch.
+
+
+  Link: http://lkml.kernel.org/r/20191106060930.2571389-2-songliubraving@fb.com
+
+  Fixes: 99cb0dbd47a1 ("mm,thp: add read-only THP support for (non-shmem) FS")
+
+  Signed-off-by: Song Liu <songliubraving@fb.com>
+
+  Reported-by: syzbot+efb9e48b9fbdc49bb34a@syzkaller.appspotmail.com
+
+  Cc: Johannes Weiner <hannes@cmpxchg.org>
+
+  Cc: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
+
+  Cc: Hugh Dickins <hughd@google.com>
+
+  Cc: William Kucharski <william.kucharski@oracle.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 3
+covered_count: 3

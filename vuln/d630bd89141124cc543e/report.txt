@@ -1,0 +1,168 @@
+INFO: task kworker/1:0:24 blocked for more than 143 seconds.
+      Not tainted 6.16.0-rc4-next-20250630-syzkaller #0
+"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+task:kworker/1:0     state:D stack:20944 pid:24    tgid:24    ppid:2      task_flags:0x4208060 flags:0x00004000
+Workqueue: events_power_efficient hub_init_func2
+Call Trace:
+ <TASK>
+ context_switch kernel/sched/core.c:5313 [inline]
+ __schedule+0x16f5/0x4d00 kernel/sched/core.c:6696
+ __schedule_loop kernel/sched/core.c:6774 [inline]
+ schedule+0x165/0x360 kernel/sched/core.c:6789
+ schedule_preempt_disabled+0x13/0x30 kernel/sched/core.c:6846
+ __mutex_lock_common kernel/locking/mutex.c:679 [inline]
+ __mutex_lock+0x724/0xe80 kernel/locking/mutex.c:747
+ device_lock include/linux/device.h:884 [inline]
+ hub_activate+0xb7/0x1ea0 drivers/usb/core/hub.c:1096
+ process_one_work kernel/workqueue.c:3239 [inline]
+ process_scheduled_works+0xae1/0x17b0 kernel/workqueue.c:3322
+ worker_thread+0x8a0/0xda0 kernel/workqueue.c:3403
+ kthread+0x70e/0x8a0 kernel/kthread.c:463
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+INFO: task kworker/1:3:5844 blocked for more than 144 seconds.
+      Not tainted 6.16.0-rc4-next-20250630-syzkaller #0
+"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+task:kworker/1:3     state:D stack:21336 pid:5844  tgid:5844  ppid:2      task_flags:0x4288060 flags:0x00004000
+Workqueue: usb_hub_wq hub_event
+Call Trace:
+ <TASK>
+ context_switch kernel/sched/core.c:5313 [inline]
+ __schedule+0x16f5/0x4d00 kernel/sched/core.c:6696
+ __schedule_loop kernel/sched/core.c:6774 [inline]
+ schedule+0x165/0x360 kernel/sched/core.c:6789
+ schedule_timeout+0x9a/0x270 kernel/time/sleep_timeout.c:75
+ do_wait_for_common kernel/sched/completion.c:100 [inline]
+ __wait_for_common kernel/sched/completion.c:121 [inline]
+ wait_for_common kernel/sched/completion.c:132 [inline]
+ wait_for_completion+0x2bf/0x5d0 kernel/sched/completion.c:153
+ __flush_work+0x9b9/0xbc0 kernel/workqueue.c:4247
+ flush_work kernel/workqueue.c:4268 [inline]
+ flush_delayed_work+0x13e/0x190 kernel/workqueue.c:4290
+ hub_quiesce+0x1f0/0x330 drivers/usb/core/hub.c:1421
+ hub_disconnect+0xc8/0x470 drivers/usb/core/hub.c:1821
+ usb_unbind_interface+0x26b/0x910 drivers/usb/core/driver.c:458
+ device_remove drivers/base/dd.c:569 [inline]
+ __device_release_driver drivers/base/dd.c:1272 [inline]
+ device_release_driver_internal+0x4d6/0x7c0 drivers/base/dd.c:1295
+ bus_remove_device+0x34d/0x410 drivers/base/bus.c:579
+ device_del+0x511/0x8e0 drivers/base/core.c:3880
+ usb_disable_device+0x3e9/0x8a0 drivers/usb/core/message.c:1418
+ usb_disconnect+0x330/0x950 drivers/usb/core/hub.c:2349
+ hub_port_connect drivers/usb/core/hub.c:5411 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5711 [inline]
+ port_event drivers/usb/core/hub.c:5871 [inline]
+ hub_event+0x1cdb/0x4a00 drivers/usb/core/hub.c:5953
+ process_one_work kernel/workqueue.c:3239 [inline]
+ process_scheduled_works+0xae1/0x17b0 kernel/workqueue.c:3322
+ worker_thread+0x8a0/0xda0 kernel/workqueue.c:3403
+ kthread+0x70e/0x8a0 kernel/kthread.c:463
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+
+Showing all locks held in the system:
+2 locks held by ksoftirqd/1/23:
+3 locks held by kworker/1:0/24:
+ #0: ffff88801a482148 ((wq_completion)events_power_efficient){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3214 [inline]
+ #0: ffff88801a482148 ((wq_completion)events_power_efficient){+.+.}-{0:0}, at: process_scheduled_works+0x9b4/0x17b0 kernel/workqueue.c:3322
+ #1: ffffc900001e7bc0 ((work_completion)(&(&hub->init_work)->work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3215 [inline]
+ #1: ffffc900001e7bc0 ((work_completion)(&(&hub->init_work)->work)){+.+.}-{0:0}, at: process_scheduled_works+0x9ef/0x17b0 kernel/workqueue.c:3322
+ #2: ffff88807c3a1198 (&dev->mutex){....}-{4:4}, at: device_lock include/linux/device.h:884 [inline]
+ #2: ffff88807c3a1198 (&dev->mutex){....}-{4:4}, at: hub_activate+0xb7/0x1ea0 drivers/usb/core/hub.c:1096
+1 lock held by khungtaskd/31:
+ #0: ffffffff8e13bee0 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:331 [inline]
+ #0: ffffffff8e13bee0 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:841 [inline]
+ #0: ffffffff8e13bee0 (rcu_read_lock){....}-{1:3}, at: debug_show_all_locks+0x2e/0x180 kernel/locking/lockdep.c:6770
+3 locks held by kworker/u8:9/2985:
+ #0: ffff88814d863948 ((wq_completion)udp_tunnel_nic){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3214 [inline]
+ #0: ffff88814d863948 ((wq_completion)udp_tunnel_nic){+.+.}-{0:0}, at: process_scheduled_works+0x9b4/0x17b0 kernel/workqueue.c:3322
+ #1: ffffc9000bf37bc0 ((work_completion)(&utn->work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3215 [inline]
+ #1: ffffc9000bf37bc0 ((work_completion)(&utn->work)){+.+.}-{0:0}, at: process_scheduled_works+0x9ef/0x17b0 kernel/workqueue.c:3322
+ #2: ffffffff8f516c88 (rtnl_mutex){+.+.}-{4:4}, at: udp_tunnel_nic_device_sync_work+0x29/0xa50 net/ipv4/udp_tunnel_nic.c:736
+2 locks held by getty/5594:
+ #0: ffff88814da4d0a0 (&tty->ldisc_sem){++++}-{0:0}, at: tty_ldisc_ref_wait+0x25/0x70 drivers/tty/tty_ldisc.c:243
+ #1: ffffc9000331b2f0 (&ldata->atomic_read_lock){+.+.}-{4:4}, at: n_tty_read+0x43e/0x1400 drivers/tty/n_tty.c:2222
+5 locks held by kworker/1:3/5844:
+ #0: ffff8880212b7d48 ((wq_completion)usb_hub_wq){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3214 [inline]
+ #0: ffff8880212b7d48 ((wq_completion)usb_hub_wq){+.+.}-{0:0}, at: process_scheduled_works+0x9b4/0x17b0 kernel/workqueue.c:3322
+ #1: ffffc90003f5fbc0 ((work_completion)(&hub->events)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3215 [inline]
+ #1: ffffc90003f5fbc0 ((work_completion)(&hub->events)){+.+.}-{0:0}, at: process_scheduled_works+0x9ef/0x17b0 kernel/workqueue.c:3322
+ #2: ffff88802839e198 (&dev->mutex){....}-{4:4}, at: device_lock include/linux/device.h:884 [inline]
+ #2: ffff88802839e198 (&dev->mutex){....}-{4:4}, at: hub_event+0x184/0x4a00 drivers/usb/core/hub.c:5899
+ #3: ffff88807c3a1198 (&dev->mutex){....}-{4:4}, at: device_lock include/linux/device.h:884 [inline]
+ #3: ffff88807c3a1198 (&dev->mutex){....}-{4:4}, at: usb_disconnect+0xf8/0x950 drivers/usb/core/hub.c:2340
+ #4: ffff888069cf8160 (&dev->mutex){....}-{4:4}, at: device_lock include/linux/device.h:884 [inline]
+ #4: ffff888069cf8160 (&dev->mutex){....}-{4:4}, at: __device_driver_lock drivers/base/dd.c:1094 [inline]
+ #4: ffff888069cf8160 (&dev->mutex){....}-{4:4}, at: device_release_driver_internal+0xb6/0x7c0 drivers/base/dd.c:1292
+3 locks held by kworker/u8:14/6710:
+ #0: ffff88802fbea948 ((wq_completion)ipv6_addrconf){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3214 [inline]
+ #0: ffff88802fbea948 ((wq_completion)ipv6_addrconf){+.+.}-{0:0}, at: process_scheduled_works+0x9b4/0x17b0 kernel/workqueue.c:3322
+ #1: ffffc9000bf97bc0 ((work_completion)(&(&ifa->dad_work)->work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3215 [inline]
+ #1: ffffc9000bf97bc0 ((work_completion)(&(&ifa->dad_work)->work)){+.+.}-{0:0}, at: process_scheduled_works+0x9ef/0x17b0 kernel/workqueue.c:3322
+ #2: ffffffff8f516c88 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_net_lock include/linux/rtnetlink.h:130 [inline]
+ #2: ffffffff8f516c88 (rtnl_mutex){+.+.}-{4:4}, at: addrconf_dad_work+0x112/0x14b0 net/ipv6/addrconf.c:4198
+2 locks held by syz-executor/15173:
+ #0: ffffffff8e890228 (bio_slab_lock){+.+.}-{4:4}, at: bio_put_slab block/bio.c:140 [inline]
+ #0: ffffffff8e890228 (bio_slab_lock){+.+.}-{4:4}, at: bioset_exit+0x44a/0x690 block/bio.c:1764
+ #1: ffffffff8e1418c0 (rcu_state.barrier_mutex){+.+.}-{4:4}, at: rcu_barrier+0x4c/0x570 kernel/rcu/tree.c:3792
+1 lock held by syz.0.2670/17459:
+ #0: ffff88802839e198 (&dev->mutex){....}-{4:4}, at: device_lock include/linux/device.h:884 [inline]
+ #0: ffff88802839e198 (&dev->mutex){....}-{4:4}, at: usbdev_open+0x16e/0x760 drivers/usb/core/devio.c:1054
+1 lock held by syz.7.2682/17495:
+ #0: ffff88802839e198 (&dev->mutex){....}-{4:4}, at: device_lock include/linux/device.h:884 [inline]
+ #0: ffff88802839e198 (&dev->mutex){....}-{4:4}, at: usbdev_open+0x16e/0x760 drivers/usb/core/devio.c:1054
+3 locks held by syz-executor/17748:
+ #0: ffffffff8f516c88 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_lock net/core/rtnetlink.c:80 [inline]
+ #0: ffffffff8f516c88 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_nets_lock net/core/rtnetlink.c:341 [inline]
+ #0: ffffffff8f516c88 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_newlink+0x8db/0x1c70 net/core/rtnetlink.c:4054
+ #1: ffff888031b754e8 (&wg->device_update_lock){+.+.}-{4:4}, at: wg_open+0x227/0x420 drivers/net/wireguard/device.c:50
+ #2: ffffffff8e1419f8 (rcu_state.exp_mutex){+.+.}-{4:4}, at: exp_funnel_lock kernel/rcu/tree_exp.h:343 [inline]
+ #2: ffffffff8e1419f8 (rcu_state.exp_mutex){+.+.}-{4:4}, at: synchronize_rcu_expedited+0x3b9/0x730 kernel/rcu/tree_exp.h:967
+
+=============================================
+
+NMI backtrace for cpu 0
+CPU: 0 UID: 0 PID: 31 Comm: khungtaskd Not tainted 6.16.0-rc4-next-20250630-syzkaller #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ nmi_cpu_backtrace+0x39e/0x3d0 lib/nmi_backtrace.c:113
+ nmi_trigger_cpumask_backtrace+0x17a/0x300 lib/nmi_backtrace.c:62
+ trigger_all_cpu_backtrace include/linux/nmi.h:158 [inline]
+ check_hung_uninterruptible_tasks kernel/hung_task.c:307 [inline]
+ watchdog+0xfee/0x1030 kernel/hung_task.c:470
+ kthread+0x70e/0x8a0 kernel/kthread.c:463
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Sending NMI from CPU 0 to CPUs 1:
+NMI backtrace for cpu 1
+CPU: 1 UID: 0 PID: 0 Comm: swapper/1 Not tainted 6.16.0-rc4-next-20250630-syzkaller #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:pv_native_safe_halt+0x13/0x20 arch/x86/kernel/paravirt.c:82
+Code: 43 dd 02 00 cc cc cc 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 f3 0f 1e fa 66 90 0f 00 2d 43 82 18 00 f3 0f 1e fa fb f4 <e9> 18 dd 02 00 cc cc cc cc cc cc cc cc 90 90 90 90 90 90 90 90 90
+RSP: 0018:ffffc90000197de0 EFLAGS: 000002c6
+RAX: 83aea86729196e00 RBX: ffffffff8196c188 RCX: 83aea86729196e00
+RDX: 0000000000000001 RSI: ffffffff8d992cd0 RDI: ffffffff8be31d00
+RBP: ffffc90000197f20 R08: ffff8880b8732f1b R09: 1ffff110170e65e3
+R10: dffffc0000000000 R11: ffffed10170e65e4 R12: ffffffff8fa17430
+R13: 0000000000000001 R14: 0000000000000001 R15: 1ffff110039d5b40
+FS:  0000000000000000(0000) GS:ffff888125d1d000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f8f13780ab8 CR3: 000000007f9f8000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 00000000a0c2b1ef
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ arch_safe_halt arch/x86/include/asm/paravirt.h:107 [inline]
+ default_idle+0x13/0x20 arch/x86/kernel/process.c:757
+ default_idle_call+0x74/0xb0 kernel/sched/idle.c:122
+ cpuidle_idle_call kernel/sched/idle.c:190 [inline]
+ do_idle+0x1e8/0x510 kernel/sched/idle.c:330
+ cpu_startup_entry+0x44/0x60 kernel/sched/idle.c:428
+ start_secondary+0x101/0x110 arch/x86/kernel/smpboot.c:315
+ common_startup_64+0x13e/0x147
+ </TASK>

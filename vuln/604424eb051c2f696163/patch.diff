@@ -1,0 +1,32 @@
+diff --git a/fs/squashfs/file.c b/fs/squashfs/file.c
+index 8ba8c4c50770..e8df6430444b 100644
+--- a/fs/squashfs/file.c
++++ b/fs/squashfs/file.c
+@@ -544,7 +544,8 @@ static void squashfs_readahead(struct readahead_control *ractl)
+ 	struct squashfs_page_actor *actor;
+ 	unsigned int nr_pages = 0;
+ 	struct page **pages;
+-	int i, file_end = i_size_read(inode) >> msblk->block_log;
++	int i;
++	loff_t file_end = i_size_read(inode) >> msblk->block_log;
+ 	unsigned int max_pages = 1UL << shift;
+ 
+ 	readahead_expand(ractl, start, (len | mask) + 1);
+diff --git a/fs/squashfs/file_direct.c b/fs/squashfs/file_direct.c
+index f1ccad519e28..763a3f7a75f6 100644
+--- a/fs/squashfs/file_direct.c
++++ b/fs/squashfs/file_direct.c
+@@ -26,10 +26,10 @@ int squashfs_readpage_block(struct page *target_page, u64 block, int bsize,
+ 	struct inode *inode = target_page->mapping->host;
+ 	struct squashfs_sb_info *msblk = inode->i_sb->s_fs_info;
+ 
+-	int file_end = (i_size_read(inode) - 1) >> PAGE_SHIFT;
++	loff_t file_end = (i_size_read(inode) - 1) >> PAGE_SHIFT;
+ 	int mask = (1 << (msblk->block_log - PAGE_SHIFT)) - 1;
+-	int start_index = target_page->index & ~mask;
+-	int end_index = start_index | mask;
++	loff_t start_index = target_page->index & ~mask;
++	loff_t end_index = start_index | mask;
+ 	int i, n, pages, bytes, res = -ENOMEM;
+ 	struct page **page;
+ 	struct squashfs_page_actor *actor;

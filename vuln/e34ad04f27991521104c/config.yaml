@@ -1,0 +1,46 @@
+id: e34ad04f27991521104c
+bug_link: https://syzkaller.appspot.com/bug?extid=e34ad04f27991521104c
+title: WARNING in remove_proc_entry (7)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2ed4f6fe1555a8431c997a5446254ded963006ce
+fix_commit: 930b64ca0c511521f0abdd1d57ce52b2a6e3476b
+datetime: '2025-03-10T09:10:59-04:00'
+fix_commit_message: 'nfsd: don''t ignore the return code of svc_proc_register()
+
+
+  Currently, nfsd_proc_stat_init() ignores the return value of
+
+  svc_proc_register(). If the procfile creation fails, then the kernel
+
+  will WARN when it tries to remove the entry later.
+
+
+  Fix nfsd_proc_stat_init() to return the same type of pointer as
+
+  svc_proc_register(), and fix up nfsd_net_init() to check that and fail
+
+  the nfsd_net construction if it occurs.
+
+
+  svc_proc_register() can fail if the dentry can''t be allocated, or if an
+
+  identical dentry already exists. The second case is pretty unlikely in
+
+  the nfsd_net construction codepath, so if this happens, return -ENOMEM.
+
+
+  Reported-by: syzbot+e34ad04f27991521104c@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/linux-nfs/67a47501.050a0220.19061f.05f9.GAE@google.com/
+
+  Cc: stable@vger.kernel.org # v6.9
+
+  Signed-off-by: Jeff Layton <jlayton@kernel.org>
+
+  Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
+
+  '
+submodule:
+- fs/nfsd
+hunk_count: 4
+covered_count: 0

@@ -1,0 +1,64 @@
+id: f24dd060c1911fe54c85
+bug_link: https://syzkaller.appspot.com/bug?extid=f24dd060c1911fe54c85
+title: WARNING in thermal_thresholds_flush
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 41b89dba7c5dd0a071c52aa2f8c87c507e30dfbe
+fix_commit: 54219ee4eaeb356e0c8e0a6609dc6b5c21e2170a
+datetime: '2024-10-24T15:00:18+02:00'
+fix_commit_message: 'thermal: thresholds: Fix thermal lock annotation issue
+
+
+  When the thermal zone is unregistered (thermal sensor module being
+
+  unloaded), no lock is held when flushing the thresholds. That results
+
+  in a WARN when the lockdep validation is set in the kernel config.
+
+
+  This has been reported by syzbot.
+
+
+  As the thermal zone is in the process of being destroyed, there is no
+
+  need to send a notification about purging the thresholds to the
+
+  userspace as this one will receive a thermal zone deletion
+
+  notification which imply the deletion of all the associated resources
+
+  like the trip points or the user thresholds.
+
+
+  Split the function thermal_thresholds_flush() into a lockless one
+
+  without notification and its call with the lock annotation followed
+
+  with the thresholds flushing notification.
+
+
+  Please note this scenario is unlikely to happen, as the sensor drivers
+
+  are usually compiled-in in order to have the thermal framework to be
+
+  able to kick in at boot time if needed.
+
+
+  Fixes: 445936f9e258 ("thermal: core: Add user thresholds support")
+
+  Link: https://lore.kernel.org/all/67124175.050a0220.10f4f4.0012.GAE@google.com
+
+  Reported-by: syzbot+f24dd060c1911fe54c85@syzkaller.appspotmail.com
+
+  Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+
+  Link: https://patch.msgid.link/20241024102303.1086147-1-daniel.lezcano@linaro.org
+
+  [ rjw: Subject edit, added Fixes tag ]
+
+  Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+
+  '
+submodule:
+- drivers/thermal
+hunk_count: 2
+covered_count: 2

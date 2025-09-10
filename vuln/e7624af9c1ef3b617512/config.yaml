@@ -1,0 +1,38 @@
+id: e7624af9c1ef3b617512
+bug_link: https://syzkaller.appspot.com/bug?extid=e7624af9c1ef3b617512
+title: 'INFO: task hung in blkdev_issue_flush (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 090bb803708198e5ab6b0046398c7ed9f4d12d6b
+fix_commit: 2b5c8f0063e4b263cf2de82029798183cf85c320
+datetime: '2019-07-31T08:51:56-06:00'
+fix_commit_message: "nbd: replace kill_bdev() with __invalidate_device() again\n\n\
+  Commit abbbdf12497d (\"replace kill_bdev() with __invalidate_device()\")\nonce did\
+  \ this, but 29eaadc03649 (\"nbd: stop using the bdev everywhere\")\nresurrected\
+  \ kill_bdev() and it has been there since then. So buffer_head\nmappings still get\
+  \ killed on a server disconnection, and we can still\nhit the BUG_ON on a filesystem\
+  \ on the top of the nbd device.\n\n  EXT4-fs (nbd0): mounted filesystem with ordered\
+  \ data mode. Opts: (null)\n  block nbd0: Receive control failed (result -32)\n \
+  \ block nbd0: shutting down sockets\n  print_req_error: I/O error, dev nbd0, sector\
+  \ 66264 flags 3000\n  EXT4-fs warning (device nbd0): htree_dirblock_to_tree:979:\
+  \ inode #2: lblock 0: comm ls: error -5 reading directory block\n  print_req_error:\
+  \ I/O error, dev nbd0, sector 2264 flags 3000\n  EXT4-fs error (device nbd0): __ext4_get_inode_loc:4690:\
+  \ inode #2: block 283: comm ls: unable to read itable block\n  EXT4-fs error (device\
+  \ nbd0) in ext4_reserve_inode_write:5894: IO failure\n  ------------[ cut here ]------------\n\
+  \  kernel BUG at fs/buffer.c:3057!\n  invalid opcode: 0000 [#1] SMP PTI\n  CPU:\
+  \ 7 PID: 40045 Comm: jbd2/nbd0-8 Not tainted 5.1.0-rc3+ #4\n  Hardware name: Amazon\
+  \ EC2 m5.12xlarge/, BIOS 1.0 10/16/2017\n  RIP: 0010:submit_bh_wbc+0x18b/0x190\n\
+  \  ...\n  Call Trace:\n   jbd2_write_superblock+0xf1/0x230 [jbd2]\n   ? account_entity_enqueue+0xc5/0xf0\n\
+  \   jbd2_journal_update_sb_log_tail+0x94/0xe0 [jbd2]\n   jbd2_journal_commit_transaction+0x12f/0x1d20\
+  \ [jbd2]\n   ? __switch_to_asm+0x40/0x70\n   ...\n   ? lock_timer_base+0x67/0x80\n\
+  \   kjournald2+0x121/0x360 [jbd2]\n   ? remove_wait_queue+0x60/0x60\n   kthread+0xf8/0x130\n\
+  \   ? commit_timeout+0x10/0x10 [jbd2]\n   ? kthread_bind+0x10/0x10\n   ret_from_fork+0x35/0x40\n\
+  \nWith __invalidate_device(), I no longer hit the BUG_ON with sync or\nunmount on\
+  \ the disconnected device.\n\nFixes: 29eaadc03649 (\"nbd: stop using the bdev everywhere\"\
+  )\nCc: linux-block@vger.kernel.org\nCc: Ratna Manoj Bolla <manoj.br@gmail.com>\n\
+  Cc: nbd@other.debian.org\nCc: stable@vger.kernel.org\nCc: David Woodhouse <dwmw@amazon.com>\n\
+  Reviewed-by: Josef Bacik <josef@toxicpanda.com>\nSigned-off-by: Munehisa Kamata\
+  \ <kamatam@amazon.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 1
+covered_count: 0

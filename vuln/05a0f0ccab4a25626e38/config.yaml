@@ -1,0 +1,37 @@
+id: 05a0f0ccab4a25626e38
+bug_link: https://syzkaller.appspot.com/bug?extid=05a0f0ccab4a25626e38
+title: memory leak in __insert_pending
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e4db04f7d3dbbe16680e0ded27ea2a65b10f766a
+fix_commit: 1da18e38cb97e9521e93d63034521a9649524f64
+datetime: '2022-12-09T00:58:04-05:00'
+fix_commit_message: "ext4: fix reserved cluster accounting in __es_remove_extent()\n\
+  \nWhen bigalloc is enabled, reserved cluster accounting for delayed\nallocation\
+  \ is handled in extent_status.c.  With a corrupted file\nsystem, it's possible for\
+  \ this accounting to be incorrect,\ndsicovered by Syzbot:\n\nEXT4-fs error (device\
+  \ loop0): ext4_validate_block_bitmap:398: comm rep:\n\tbg 0: block 5: invalid block\
+  \ bitmap\nEXT4-fs (loop0): Delayed block allocation failed for inode 18 at logical\n\
+  \toffset 0 with max blocks 32 with error 28\nEXT4-fs (loop0): This should not happen!!\
+  \ Data will be lost\n\nEXT4-fs (loop0): Total free blocks count 0\nEXT4-fs (loop0):\
+  \ Free/Dirty block details\nEXT4-fs (loop0): free_blocks=0\nEXT4-fs (loop0): dirty_blocks=32\n\
+  EXT4-fs (loop0): Block reservation details\nEXT4-fs (loop0): i_reserved_data_blocks=2\n\
+  EXT4-fs (loop0): Inode 18 (00000000845cd634):\n\ti_reserved_data_blocks (1) not\
+  \ cleared!\n\nAbove issue happens as follows:\nAssume:\nsbi->s_cluster_ratio = 16\n\
+  Step1:\nInsert delay block [0, 31] -> ei->i_reserved_data_blocks=2\nStep2:\next4_writepages\n\
+  \  mpage_map_and_submit_extent -> return failed\n  mpage_release_unused_pages ->\
+  \ to release [0, 30]\n    ext4_es_remove_extent -> remove lblk=0 end=30\n      __es_remove_extent\
+  \ -> len1=0 len2=31-30=1\n __es_remove_extent:\n ...\n if (len2 > 0) {\n  ...\n\t\
+  \  if (len1 > 0) {\n\t\t  ...\n\t  } else {\n\t\tes->es_lblk = end + 1;\n\t\tes->es_len\
+  \ = len2;\n\t\t...\n\t  }\n  \tif (count_reserved)\n\t\tcount_rsvd(inode, lblk,\
+  \ ...);\n\tgoto out; -> will return but didn't calculate 'reserved'\n ...\nStep3:\n\
+  ext4_destroy_inode -> trigger \"i_reserved_data_blocks (1) not cleared!\"\n\nTo\
+  \ solve above issue if 'len2>0' call 'get_rsvd()' before goto out.\n\nReported-by:\
+  \ syzbot+05a0f0ccab4a25626e38@syzkaller.appspotmail.com\nFixes: 8fcc3a580651 (\"\
+  ext4: rework reserved cluster accounting when invalidating pages\")\nSigned-off-by:\
+  \ Ye Bin <yebin10@huawei.com>\nReviewed-by: Eric Whitney <enwlinux@gmail.com>\n\
+  Link: https://lore.kernel.org/r/20221208033426.1832460-2-yebin@huaweicloud.com\n\
+  Signed-off-by: Theodore Ts'o <tytso@mit.edu>\nCc: stable@kernel.org\n"
+submodule:
+- fs/ext4
+hunk_count: 2
+covered_count: 0

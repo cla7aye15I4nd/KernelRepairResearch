@@ -1,0 +1,62 @@
+Unable to handle kernel paging request at virtual address dfff80000000000d
+KASAN: null-ptr-deref in range [0x0000000000000068-0x000000000000006f]
+Mem abort info:
+  ESR = 0x0000000096000005
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x05: level 1 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000005, ISS2 = 0x00000000
+  CM = 0, WnR = 0, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+[dfff80000000000d] address between user and kernel address ranges
+Internal error: Oops: 0000000096000005 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 1 UID: 0 PID: 6459 Comm: syz-executor225 Not tainted 6.14.0-rc4-syzkaller-ge056da87c780 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : efivarfs_pm_notify+0xcc/0x350 fs/efivarfs/super.c:480
+lr : efivarfs_pm_notify+0x8c/0x350 fs/efivarfs/super.c:477
+sp : ffff80009ce07840
+x29: ffff80009ce078e0 x28: 0000000000000000 x27: 1fffe00018a18a41
+x26: dfff800000000000 x25: ffff7000139c0f08 x24: 0000000000000068
+x23: ffff80009ce07868 x22: 0000000000000002 x21: ffff80009ce07860
+x20: ffff80009ce07840 x19: ffff0000c50c5208 x18: ffff80009ce07280
+x17: 000000000000ddcd x16: ffff8000832b5180 x15: 0000000000000001
+x14: 0000000000000000 x13: 0000000000000002 x12: ffff0000c6908000
+x11: ffff800082da5b60 x10: 0000000000ff0100 x9 : 0000000000000000
+x8 : 000000000000000d x7 : 0000000000000000 x6 : 0000000000000000
+x5 : 0000000000000020 x4 : 0000000000000000 x3 : 0000000000000000
+x2 : 0000000000000000 x1 : 0000000000000002 x0 : ffff0000c50c5228
+Call trace:
+ efivarfs_pm_notify+0xcc/0x350 fs/efivarfs/super.c:480 (P)
+ notifier_call_chain+0x1c4/0x550 kernel/notifier.c:85
+ blocking_notifier_call_chain+0x70/0xa0 kernel/notifier.c:380
+ pm_notifier_call_chain+0x2c/0x3c kernel/power/main.c:109
+ snapshot_release+0x128/0x1b8 kernel/power/user.c:125
+ __fput+0x340/0x760 fs/file_table.c:464
+ ____fput+0x20/0x30 fs/file_table.c:492
+ task_work_run+0x230/0x2e0 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0x4e8/0x1acc kernel/exit.c:938
+ do_group_exit+0x194/0x22c kernel/exit.c:1087
+ __do_sys_exit_group kernel/exit.c:1098 [inline]
+ __se_sys_exit_group kernel/exit.c:1096 [inline]
+ pid_child_should_wake+0x0/0x1dc kernel/exit.c:1096
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+ el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+Code: f940027c 9100a297 9101a398 d343ff08 (387a6908) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	f940027c 	ldr	x28, [x19]
+   4:	9100a297 	add	x23, x20, #0x28
+   8:	9101a398 	add	x24, x28, #0x68
+   c:	d343ff08 	lsr	x8, x24, #3
+* 10:	387a6908 	ldrb	w8, [x8, x26] <-- trapping instruction

@@ -1,0 +1,35 @@
+id: 283ce5a46486d6acdbaf
+bug_link: https://syzkaller.appspot.com/bug?extid=283ce5a46486d6acdbaf
+title: 'KASAN: null-ptr-deref Read in filp_close (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 40226a3d96ef8ab8980f032681c8bfd46d63874e
+fix_commit: 3b0462726e7ef281c35a7a4ae33e93ee2bc9975b
+datetime: '2021-07-14T09:19:06-07:00'
+fix_commit_message: "cgroup: verify that source is a string\n\nThe following sequence\
+  \ can be used to trigger a UAF:\n\n    int fscontext_fd = fsopen(\"cgroup\");\n\
+  \    int fd_null = open(\"/dev/null, O_RDONLY);\n    int fsconfig(fscontext_fd,\
+  \ FSCONFIG_SET_FD, \"source\", fd_null);\n    close_range(3, ~0U, 0);\n\nThe cgroup\
+  \ v1 specific fs parser expects a string for the \"source\"\nparameter.  However,\
+  \ it is perfectly legitimate to e.g.  specify a file\ndescriptor for the \"source\"\
+  \ parameter.  The fs parser doesn't know what\na filesystem allows there.  So it's\
+  \ a bug to assume that \"source\" is\nalways of type fs_value_is_string when it\
+  \ can reasonably also be\nfs_value_is_file.\n\nThis assumption in the cgroup code\
+  \ causes a UAF because struct\nfs_parameter uses a union for the actual value. \
+  \ Access to that union is\nguarded by the param->type member.  Since the cgroup\
+  \ paramter parser\ndidn't check param->type but unconditionally moved param->string\
+  \ into\nfc->source a close on the fscontext_fd would trigger a UAF during\nput_fs_context()\
+  \ which frees fc->source thereby freeing the file stashed\nin param->file causing\
+  \ a UAF during a close of the fd_null.\n\nFix this by verifying that param->type\
+  \ is actually a string and report\nan error if not.\n\nIn follow up patches I'll\
+  \ add a new generic helper that can be used here\nand by other filesystems instead\
+  \ of this error-prone copy-pasta fix.\nBut fixing it in here first makes backporting\
+  \ a it to stable a lot\neasier.\n\nFixes: 8d2451f4994f (\"cgroup1: switch to option-by-option\
+  \ parsing\")\nReported-by: syzbot+283ce5a46486d6acdbaf@syzkaller.appspotmail.com\n\
+  Cc: Christoph Hellwig <hch@lst.de>\nCc: Alexander Viro <viro@zeniv.linux.org.uk>\n\
+  Cc: Dmitry Vyukov <dvyukov@google.com>\nCc: <stable@kernel.org>\nCc: syzkaller-bugs\
+  \ <syzkaller-bugs@googlegroups.com>\nSigned-off-by: Christian Brauner <christian.brauner@ubuntu.com>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- kernel/cgroup
+hunk_count: 1
+covered_count: 0

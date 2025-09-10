@@ -1,0 +1,54 @@
+id: 9b82859567f2e50c123e
+bug_link: https://syzkaller.appspot.com/bug?extid=9b82859567f2e50c123e
+title: WARNING in try_grab_page
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4b5d1e47b69426c0f7491d97d73ad0152d02d437
+fix_commit: f443fd5af5dbd531f880d3645d5dd36976cf087f
+datetime: '2023-08-04T13:03:40-07:00'
+fix_commit_message: "crypto, cifs: fix error handling in extract_iter_to_sg()\n\n\
+  Fix error handling in extract_iter_to_sg().  Pages need to be unpinned, not\nput\
+  \ in extract_user_to_sg() when handling IOVEC/UBUF sources.\n\nThe bug may result\
+  \ in a warning like the following:\n\n  WARNING: CPU: 1 PID: 20384 at mm/gup.c:229\
+  \ __lse_atomic_add arch/arm64/include/asm/atomic_lse.h:27 [inline]\n  WARNING: CPU:\
+  \ 1 PID: 20384 at mm/gup.c:229 arch_atomic_add arch/arm64/include/asm/atomic.h:28\
+  \ [inline]\n  WARNING: CPU: 1 PID: 20384 at mm/gup.c:229 raw_atomic_add include/linux/atomic/atomic-arch-fallback.h:537\
+  \ [inline]\n  WARNING: CPU: 1 PID: 20384 at mm/gup.c:229 atomic_add include/linux/atomic/atomic-instrumented.h:105\
+  \ [inline]\n  WARNING: CPU: 1 PID: 20384 at mm/gup.c:229 try_grab_page+0x108/0x160\
+  \ mm/gup.c:252\n  ...\n  pc : try_grab_page+0x108/0x160 mm/gup.c:229\n  lr : follow_page_pte+0x174/0x3e4\
+  \ mm/gup.c:651\n  ...\n  Call trace:\n   __lse_atomic_add arch/arm64/include/asm/atomic_lse.h:27\
+  \ [inline]\n   arch_atomic_add arch/arm64/include/asm/atomic.h:28 [inline]\n   raw_atomic_add\
+  \ include/linux/atomic/atomic-arch-fallback.h:537 [inline]\n   atomic_add include/linux/atomic/atomic-instrumented.h:105\
+  \ [inline]\n   try_grab_page+0x108/0x160 mm/gup.c:252\n   follow_pmd_mask mm/gup.c:734\
+  \ [inline]\n   follow_pud_mask mm/gup.c:765 [inline]\n   follow_p4d_mask mm/gup.c:782\
+  \ [inline]\n   follow_page_mask+0x12c/0x2e4 mm/gup.c:839\n   __get_user_pages+0x174/0x30c\
+  \ mm/gup.c:1217\n   __get_user_pages_locked mm/gup.c:1448 [inline]\n   __gup_longterm_locked+0x94/0x8f4\
+  \ mm/gup.c:2142\n   internal_get_user_pages_fast+0x970/0xb60 mm/gup.c:3140\n   pin_user_pages_fast+0x4c/0x60\
+  \ mm/gup.c:3246\n   iov_iter_extract_user_pages lib/iov_iter.c:1768 [inline]\n \
+  \  iov_iter_extract_pages+0xc8/0x54c lib/iov_iter.c:1831\n   extract_user_to_sg\
+  \ lib/scatterlist.c:1123 [inline]\n   extract_iter_to_sg lib/scatterlist.c:1349\
+  \ [inline]\n   extract_iter_to_sg+0x26c/0x6fc lib/scatterlist.c:1339\n   hash_sendmsg+0xc0/0x43c\
+  \ crypto/algif_hash.c:117\n   sock_sendmsg_nosec net/socket.c:725 [inline]\n   sock_sendmsg+0x54/0x60\
+  \ net/socket.c:748\n   ____sys_sendmsg+0x270/0x2ac net/socket.c:2494\n   ___sys_sendmsg+0x80/0xdc\
+  \ net/socket.c:2548\n   __sys_sendmsg+0x68/0xc4 net/socket.c:2577\n   __do_sys_sendmsg\
+  \ net/socket.c:2586 [inline]\n   __se_sys_sendmsg net/socket.c:2584 [inline]\n \
+  \  __arm64_sys_sendmsg+0x24/0x30 net/socket.c:2584\n   __invoke_syscall arch/arm64/kernel/syscall.c:38\
+  \ [inline]\n   invoke_syscall+0x48/0x114 arch/arm64/kernel/syscall.c:52\n   el0_svc_common.constprop.0+0x44/0xe4\
+  \ arch/arm64/kernel/syscall.c:142\n   do_el0_svc+0x38/0xa4 arch/arm64/kernel/syscall.c:191\n\
+  \   el0_svc+0x2c/0xb0 arch/arm64/kernel/entry-common.c:647\n   el0t_64_sync_handler+0xc0/0xc4\
+  \ arch/arm64/kernel/entry-common.c:665\n   el0t_64_sync+0x19c/0x1a0 arch/arm64/kernel/entry.S:591\n\
+  \nLink: https://lkml.kernel.org/r/20571.1690369076@warthog.procyon.org.uk\nFixes:\
+  \ 018584697533 (\"netfs: Add a function to extract an iterator into a scatterlist\"\
+  )\nReported-by: syzbot+9b82859567f2e50c123e@syzkaller.appspotmail.com\nLink: https://lore.kernel.org/linux-mm/000000000000273d0105ff97bf56@google.com/\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\nReviewed-by: David Hildenbrand\
+  \ <david@redhat.com>\nAcked-by: Steve French <stfrench@microsoft.com>\nCc: Sven\
+  \ Schnelle <svens@linux.ibm.com>\nCc: Herbert Xu <herbert@gondor.apana.org.au>\n\
+  Cc: Jeff Layton <jlayton@kernel.org>\nCc: Shyam Prasad N <nspmangalore@gmail.com>\n\
+  Cc: Rohith Surabattula <rohiths.msft@gmail.com>\nCc: Jens Axboe <axboe@kernel.dk>\n\
+  Cc: \"David S. Miller\" <davem@davemloft.net>\nCc: Eric Dumazet <edumazet@google.com>\n\
+  Cc: Jakub Kicinski <kuba@kernel.org>\nCc: Paolo Abeni <pabeni@redhat.com>\nCc: Matthew\
+  \ Wilcox <willy@infradead.org>\nCc: <stable@vger.kernel.org>\nSigned-off-by: Andrew\
+  \ Morton <akpm@linux-foundation.org>\n"
+submodule:
+- lib
+hunk_count: 1
+covered_count: 0

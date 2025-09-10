@@ -1,0 +1,61 @@
+id: 21ba4d5adff0b6a7cfc6
+bug_link: https://syzkaller.appspot.com/bug?extid=21ba4d5adff0b6a7cfc6
+title: general protection fault in dev_prep_valid_name
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7a0ea70da56ee8c2716d0b79e9959d3c47efab62
+fix_commit: 48327566769a6ff2e873b6bf075392bd756625ca
+datetime: '2024-12-03T11:29:29+01:00'
+fix_commit_message: 'rtnetlink: fix double call of rtnl_link_get_net_ifla()
+
+
+  Currently rtnl_link_get_net_ifla() gets called twice when we create
+
+  peer devices, once in rtnl_add_peer_net() and once in each ->newlink()
+
+  implementation.
+
+
+  This looks safer, however, it leads to a classic Time-of-Check to
+
+  Time-of-Use (TOCTOU) bug since IFLA_NET_NS_PID is very dynamic. And
+
+  because of the lack of checking error pointer of the second call, it
+
+  also leads to a kernel crash as reported by syzbot.
+
+
+  Fix this by getting rid of the second call, which already becomes
+
+  redudant after Kuniyuki''s work. We have to propagate the result of the
+
+  first rtnl_link_get_net_ifla() down to each ->newlink().
+
+
+  Reported-by: syzbot+21ba4d5adff0b6a7cfc6@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=21ba4d5adff0b6a7cfc6
+
+  Fixes: 0eb87b02a705 ("veth: Set VETH_INFO_PEER to veth_link_ops.peer_type.")
+
+  Fixes: 6b84e558e95d ("vxcan: Set VXCAN_INFO_PEER to vxcan_link_ops.peer_type.")
+
+  Fixes: fefd5d082172 ("netkit: Set IFLA_NETKIT_PEER_INFO to netkit_link_ops.peer_type.")
+
+  Cc: Kuniyuki Iwashima <kuniyu@amazon.com>
+
+  Signed-off-by: Cong Wang <cong.wang@bytedance.com>
+
+  Reviewed-by: Kuniyuki Iwashima <kuniyu@amazon.com>
+
+  Link: https://patch.msgid.link/20241129212519.825567-1-xiyou.wangcong@gmail.com
+
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+
+
+  '
+submodule:
+- drivers/net
+- drivers/net/can
+- net/core
+hunk_count: 16
+covered_count: 10

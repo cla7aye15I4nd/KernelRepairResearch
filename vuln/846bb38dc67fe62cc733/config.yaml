@@ -1,0 +1,24 @@
+id: 846bb38dc67fe62cc733
+bug_link: https://syzkaller.appspot.com/bug?extid=846bb38dc67fe62cc733
+title: possible deadlock in rtnl_newlink
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a5a441ae283d54ec329aadc7426991dc32786d52
+fix_commit: b4a8085ceefb7bbb12c2b71c55e71fc946c6929f
+datetime: '2025-06-10T09:10:47-07:00'
+fix_commit_message: "e1000: Move cancel_work_sync to avoid deadlock\n\nPreviously,\
+  \ e1000_down called cancel_work_sync for the e1000 reset task\n(via e1000_down_and_stop),\
+  \ which takes RTNL.\n\nAs reported by users and syzbot, a deadlock is possible in\
+  \ the following\nscenario:\n\nCPU 0:\n  - RTNL is held\n  - e1000_close\n  - e1000_down\n\
+  \  - cancel_work_sync (cancel / wait for e1000_reset_task())\n\nCPU 1:\n  - process_one_work\n\
+  \  - e1000_reset_task\n  - take RTNL\n\nTo remedy this, avoid calling cancel_work_sync\
+  \ from e1000_down\n(e1000_reset_task does nothing if the device is down anyway).\
+  \ Instead,\ncall cancel_work_sync for e1000_reset_task when the device is being\n\
+  removed.\n\nFixes: e400c7444d84 (\"e1000: Hold RTNL when e1000_down can be called\"\
+  )\nReported-by: syzbot+846bb38dc67fe62cc733@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/netdev/683837bf.a00a0220.52848.0003.GAE@google.com/\n\
+  Reported-by: John <john.cs.hey@gmail.com>\nCloses: https://lore.kernel.org/netdev/CAP=Rh=OEsn4y_2LvkO3UtDWurKcGPnZ_NPSXK=FbgygNXL37Sw@mail.gmail.com/\n\
+  Signed-off-by: Joe Damato <jdamato@fastly.com>\nAcked-by: Stanislav Fomichev <sdf@fomichev.me>\n\
+  Acked-by: Jacob Keller <jacob.e.keller@intel.com>\nSigned-off-by: Tony Nguyen <anthony.l.nguyen@intel.com>\n"
+submodule:
+- drivers/net/ethernet/intel/e1000
+hunk_count: 2
+covered_count: 1

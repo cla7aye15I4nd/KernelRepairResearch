@@ -1,0 +1,149 @@
+id: b6e65bd125a05f803d6b
+bug_link: https://syzkaller.appspot.com/bug?extid=b6e65bd125a05f803d6b
+title: 'KASAN: use-after-free Write in put_ucounts'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ff1176468d368232b684f75e82563369208bc371
+fix_commit: 345daff2e994ee844d6a609c37f085695fbb4c4d
+datetime: '2021-07-28T12:31:51-05:00'
+fix_commit_message: "ucounts: Fix race condition between alloc_ucounts and put_ucounts\n\
+  \nThe race happens because put_ucounts() doesn't use spinlock and\nget_ucounts is\
+  \ not under spinlock:\n\nCPU0                    CPU1\n----                    ----\n\
+  alloc_ucounts()         put_ucounts()\n\nspin_lock_irq(&ucounts_lock);\nucounts\
+  \ = find_ucounts(ns, uid, hashent);\n\n                        atomic_dec_and_test(&ucounts->count))\n\
+  \nspin_unlock_irq(&ucounts_lock);\n\n                        spin_lock_irqsave(&ucounts_lock,\
+  \ flags);\n                        hlist_del_init(&ucounts->node);\n           \
+  \             spin_unlock_irqrestore(&ucounts_lock, flags);\n                  \
+  \      kfree(ucounts);\n\nucounts = get_ucounts(ucounts);\n\n==================================================================\n\
+  BUG: KASAN: use-after-free in instrument_atomic_read_write include/linux/instrumented.h:101\
+  \ [inline]\nBUG: KASAN: use-after-free in atomic_add_negative include/asm-generic/atomic-instrumented.h:556\
+  \ [inline]\nBUG: KASAN: use-after-free in get_ucounts kernel/ucount.c:152 [inline]\n\
+  BUG: KASAN: use-after-free in get_ucounts kernel/ucount.c:150 [inline]\nBUG: KASAN:\
+  \ use-after-free in alloc_ucounts+0x19b/0x5b0 kernel/ucount.c:188\nWrite of size\
+  \ 4 at addr ffff88802821e41c by task syz-executor.4/16785\n\nCPU: 1 PID: 16785 Comm:\
+  \ syz-executor.4 Not tainted 5.14.0-rc1-next-20210712-syzkaller #0\nHardware name:\
+  \ Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\nCall\
+  \ Trace:\n __dump_stack lib/dump_stack.c:88 [inline]\n dump_stack_lvl+0xcd/0x134\
+  \ lib/dump_stack.c:105\n print_address_description.constprop.0.cold+0x6c/0x309 mm/kasan/report.c:233\n\
+  \ __kasan_report mm/kasan/report.c:419 [inline]\n kasan_report.cold+0x83/0xdf mm/kasan/report.c:436\n\
+  \ check_region_inline mm/kasan/generic.c:183 [inline]\n kasan_check_range+0x13d/0x180\
+  \ mm/kasan/generic.c:189\n instrument_atomic_read_write include/linux/instrumented.h:101\
+  \ [inline]\n atomic_add_negative include/asm-generic/atomic-instrumented.h:556 [inline]\n\
+  \ get_ucounts kernel/ucount.c:152 [inline]\n get_ucounts kernel/ucount.c:150 [inline]\n\
+  \ alloc_ucounts+0x19b/0x5b0 kernel/ucount.c:188\n set_cred_ucounts+0x171/0x3a0 kernel/cred.c:684\n\
+  \ __sys_setuid+0x285/0x400 kernel/sys.c:623\n do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  RIP: 0033:0x4665d9\nCode: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48\
+  \ 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d\
+  \ 01 f0 ff ff 73 01 c3 48 c7 c1 bc ff ff ff f7 d8 64 89 01 48\nRSP: 002b:00007fde54097188\
+  \ EFLAGS: 00000246 ORIG_RAX: 0000000000000069\nRAX: ffffffffffffffda RBX: 000000000056bf80\
+  \ RCX: 00000000004665d9\nRDX: 0000000000000000 RSI: 0000000000000000 RDI: 00000000000000ff\n\
+  RBP: 00000000004bfcb9 R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000\
+  \ R11: 0000000000000246 R12: 000000000056bf80\nR13: 00007ffc8655740f R14: 00007fde54097300\
+  \ R15: 0000000000022000\n\nAllocated by task 16784:\n kasan_save_stack+0x1b/0x40\
+  \ mm/kasan/common.c:38\n kasan_set_track mm/kasan/common.c:46 [inline]\n set_alloc_info\
+  \ mm/kasan/common.c:434 [inline]\n ____kasan_kmalloc mm/kasan/common.c:513 [inline]\n\
+  \ ____kasan_kmalloc mm/kasan/common.c:472 [inline]\n __kasan_kmalloc+0x9b/0xd0 mm/kasan/common.c:522\n\
+  \ kmalloc include/linux/slab.h:591 [inline]\n kzalloc include/linux/slab.h:721 [inline]\n\
+  \ alloc_ucounts+0x23d/0x5b0 kernel/ucount.c:169\n set_cred_ucounts+0x171/0x3a0 kernel/cred.c:684\n\
+  \ __sys_setuid+0x285/0x400 kernel/sys.c:623\n do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \nFreed by task 16785:\n kasan_save_stack+0x1b/0x40 mm/kasan/common.c:38\n kasan_set_track+0x1c/0x30\
+  \ mm/kasan/common.c:46\n kasan_set_free_info+0x20/0x30 mm/kasan/generic.c:360\n\
+  \ ____kasan_slab_free mm/kasan/common.c:366 [inline]\n ____kasan_slab_free mm/kasan/common.c:328\
+  \ [inline]\n __kasan_slab_free+0xfb/0x130 mm/kasan/common.c:374\n kasan_slab_free\
+  \ include/linux/kasan.h:229 [inline]\n slab_free_hook mm/slub.c:1650 [inline]\n\
+  \ slab_free_freelist_hook+0xdf/0x240 mm/slub.c:1675\n slab_free mm/slub.c:3235 [inline]\n\
+  \ kfree+0xeb/0x650 mm/slub.c:4295\n put_ucounts kernel/ucount.c:200 [inline]\n put_ucounts+0x117/0x150\
+  \ kernel/ucount.c:192\n put_cred_rcu+0x27a/0x520 kernel/cred.c:124\n rcu_do_batch\
+  \ kernel/rcu/tree.c:2550 [inline]\n rcu_core+0x7ab/0x1380 kernel/rcu/tree.c:2785\n\
+  \ __do_softirq+0x29b/0x9c2 kernel/softirq.c:558\n\nLast potentially related work\
+  \ creation:\n kasan_save_stack+0x1b/0x40 mm/kasan/common.c:38\n kasan_record_aux_stack+0xe5/0x110\
+  \ mm/kasan/generic.c:348\n insert_work+0x48/0x370 kernel/workqueue.c:1332\n __queue_work+0x5c1/0xed0\
+  \ kernel/workqueue.c:1498\n queue_work_on+0xee/0x110 kernel/workqueue.c:1525\n queue_work\
+  \ include/linux/workqueue.h:507 [inline]\n call_usermodehelper_exec+0x1f0/0x4c0\
+  \ kernel/umh.c:435\n kobject_uevent_env+0xf8f/0x1650 lib/kobject_uevent.c:618\n\
+  \ netdev_queue_add_kobject net/core/net-sysfs.c:1621 [inline]\n netdev_queue_update_kobjects+0x374/0x450\
+  \ net/core/net-sysfs.c:1655\n register_queue_kobjects net/core/net-sysfs.c:1716\
+  \ [inline]\n netdev_register_kobject+0x35a/0x430 net/core/net-sysfs.c:1959\n register_netdevice+0xd33/0x1500\
+  \ net/core/dev.c:10331\n nsim_init_netdevsim drivers/net/netdevsim/netdev.c:317\
+  \ [inline]\n nsim_create+0x381/0x4d0 drivers/net/netdevsim/netdev.c:364\n __nsim_dev_port_add+0x32e/0x830\
+  \ drivers/net/netdevsim/dev.c:1295\n nsim_dev_port_add_all+0x53/0x150 drivers/net/netdevsim/dev.c:1355\n\
+  \ nsim_dev_probe+0xcb5/0x1190 drivers/net/netdevsim/dev.c:1496\n call_driver_probe\
+  \ drivers/base/dd.c:517 [inline]\n really_probe+0x23c/0xcd0 drivers/base/dd.c:595\n\
+  \ __driver_probe_device+0x338/0x4d0 drivers/base/dd.c:747\n driver_probe_device+0x4c/0x1a0\
+  \ drivers/base/dd.c:777\n __device_attach_driver+0x20b/0x2f0 drivers/base/dd.c:894\n\
+  \ bus_for_each_drv+0x15f/0x1e0 drivers/base/bus.c:427\n __device_attach+0x228/0x4a0\
+  \ drivers/base/dd.c:965\n bus_probe_device+0x1e4/0x290 drivers/base/bus.c:487\n\
+  \ device_add+0xc2f/0x2180 drivers/base/core.c:3356\n nsim_bus_dev_new drivers/net/netdevsim/bus.c:431\
+  \ [inline]\n new_device_store+0x436/0x710 drivers/net/netdevsim/bus.c:298\n bus_attr_store+0x72/0xa0\
+  \ drivers/base/bus.c:122\n sysfs_kf_write+0x110/0x160 fs/sysfs/file.c:139\n kernfs_fop_write_iter+0x342/0x500\
+  \ fs/kernfs/file.c:296\n call_write_iter include/linux/fs.h:2152 [inline]\n new_sync_write+0x426/0x650\
+  \ fs/read_write.c:518\n vfs_write+0x75a/0xa40 fs/read_write.c:605\n ksys_write+0x12d/0x250\
+  \ fs/read_write.c:658\n do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x35/0xb0\
+  \ arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\nSecond\
+  \ to last potentially related work creation:\n kasan_save_stack+0x1b/0x40 mm/kasan/common.c:38\n\
+  \ kasan_record_aux_stack+0xe5/0x110 mm/kasan/generic.c:348\n insert_work+0x48/0x370\
+  \ kernel/workqueue.c:1332\n __queue_work+0x5c1/0xed0 kernel/workqueue.c:1498\n queue_work_on+0xee/0x110\
+  \ kernel/workqueue.c:1525\n queue_work include/linux/workqueue.h:507 [inline]\n\
+  \ call_usermodehelper_exec+0x1f0/0x4c0 kernel/umh.c:435\n kobject_uevent_env+0xf8f/0x1650\
+  \ lib/kobject_uevent.c:618\n kobject_synth_uevent+0x701/0x850 lib/kobject_uevent.c:208\n\
+  \ uevent_store+0x20/0x50 drivers/base/core.c:2371\n dev_attr_store+0x50/0x80 drivers/base/core.c:2072\n\
+  \ sysfs_kf_write+0x110/0x160 fs/sysfs/file.c:139\n kernfs_fop_write_iter+0x342/0x500\
+  \ fs/kernfs/file.c:296\n call_write_iter include/linux/fs.h:2152 [inline]\n new_sync_write+0x426/0x650\
+  \ fs/read_write.c:518\n vfs_write+0x75a/0xa40 fs/read_write.c:605\n ksys_write+0x12d/0x250\
+  \ fs/read_write.c:658\n do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x35/0xb0\
+  \ arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\nThe buggy\
+  \ address belongs to the object at ffff88802821e400\n which belongs to the cache\
+  \ kmalloc-192 of size 192\nThe buggy address is located 28 bytes inside of\n 192-byte\
+  \ region [ffff88802821e400, ffff88802821e4c0)\nThe buggy address belongs to the\
+  \ page:\npage:ffffea0000a08780 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0\
+  \ pfn:0x2821e\nflags: 0xfff00000000200(slab|node=0|zone=1|lastcpupid=0x7ff)\nraw:\
+  \ 00fff00000000200 dead000000000100 dead000000000122 ffff888010841a00\nraw: 0000000000000000\
+  \ 0000000080100010 00000001ffffffff 0000000000000000\npage dumped because: kasan:\
+  \ bad access detected\npage_owner tracks the page as allocated\npage last allocated\
+  \ via order 0, migratetype Unmovable, gfp_mask 0x12cc0(GFP_KERNEL|__GFP_NOWARN|__GFP_NORETRY),\
+  \ pid 1, ts 12874702440, free_ts 12637793385\n prep_new_page mm/page_alloc.c:2433\
+  \ [inline]\n get_page_from_freelist+0xa72/0x2f80 mm/page_alloc.c:4166\n __alloc_pages+0x1b2/0x500\
+  \ mm/page_alloc.c:5374\n alloc_page_interleave+0x1e/0x200 mm/mempolicy.c:2119\n\
+  \ alloc_pages+0x238/0x2a0 mm/mempolicy.c:2242\n alloc_slab_page mm/slub.c:1713 [inline]\n\
+  \ allocate_slab+0x32b/0x4c0 mm/slub.c:1853\n new_slab mm/slub.c:1916 [inline]\n\
+  \ new_slab_objects mm/slub.c:2662 [inline]\n ___slab_alloc+0x4ba/0x820 mm/slub.c:2825\n\
+  \ __slab_alloc.constprop.0+0xa7/0xf0 mm/slub.c:2865\n slab_alloc_node mm/slub.c:2947\
+  \ [inline]\n slab_alloc mm/slub.c:2989 [inline]\n __kmalloc+0x312/0x330 mm/slub.c:4133\n\
+  \ kmalloc include/linux/slab.h:596 [inline]\n kzalloc include/linux/slab.h:721 [inline]\n\
+  \ __register_sysctl_table+0x112/0x1090 fs/proc/proc_sysctl.c:1318\n rds_tcp_init_net+0x1db/0x4f0\
+  \ net/rds/tcp.c:551\n ops_init+0xaf/0x470 net/core/net_namespace.c:140\n __register_pernet_operations\
+  \ net/core/net_namespace.c:1137 [inline]\n register_pernet_operations+0x35a/0x850\
+  \ net/core/net_namespace.c:1214\n register_pernet_device+0x26/0x70 net/core/net_namespace.c:1301\n\
+  \ rds_tcp_init+0x77/0xe0 net/rds/tcp.c:717\n do_one_initcall+0x103/0x650 init/main.c:1285\n\
+  \ do_initcall_level init/main.c:1360 [inline]\n do_initcalls init/main.c:1376 [inline]\n\
+  \ do_basic_setup init/main.c:1396 [inline]\n kernel_init_freeable+0x6b8/0x741 init/main.c:1598\n\
+  page last free stack trace:\n reset_page_owner include/linux/page_owner.h:24 [inline]\n\
+  \ free_pages_prepare mm/page_alloc.c:1343 [inline]\n free_pcp_prepare+0x312/0x7d0\
+  \ mm/page_alloc.c:1394\n free_unref_page_prepare mm/page_alloc.c:3329 [inline]\n\
+  \ free_unref_page+0x19/0x690 mm/page_alloc.c:3408\n __vunmap+0x783/0xb70 mm/vmalloc.c:2587\n\
+  \ free_work+0x58/0x70 mm/vmalloc.c:82\n process_one_work+0x98d/0x1630 kernel/workqueue.c:2276\n\
+  \ worker_thread+0x658/0x11f0 kernel/workqueue.c:2422\n kthread+0x3e5/0x4d0 kernel/kthread.c:319\n\
+  \ ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:295\n\nMemory state around the\
+  \ buggy address:\n ffff88802821e300: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\
+  \ 00\n ffff88802821e380: 00 00 00 00 00 fc fc fc fc fc fc fc fc fc fc fc\n>ffff88802821e400:\
+  \ fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n                            ^\n\
+  \ ffff88802821e480: fb fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc\n ffff88802821e500:\
+  \ 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n==================================================================\n\
+  \n- The race fix has two parts.\n  * Changing the code to guarantee that ucounts->count\
+  \ is only decremented\n    when ucounts_lock is held.  This guarantees that find_ucounts\n\
+  \    will never find a structure with a zero reference count.\n  * Changing alloc_ucounts\
+  \ to increment ucounts->count while\n    ucounts_lock is held.  This guarantees\
+  \ the reference count on the\n    found data structure will not be decremented to\
+  \ zero (and the data\n    structure freed) before the reference count is incremented.\n\
+  \  -- Eric Biederman\n\nReported-by: syzbot+01985d7909f9468f013c@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+59dd63761094a80ad06d@syzkaller.appspotmail.com\nReported-by:\
+  \ syzbot+6cd79f45bb8fa1c9eeae@syzkaller.appspotmail.com\nReported-by: syzbot+b6e65bd125a05f803d6b@syzkaller.appspotmail.com\n\
+  Fixes: b6c336528926 (\"Use atomic_t for ucounts reference counting\")\nCc: Hillf\
+  \ Danton <hdanton@sina.com>\nSigned-off-by: Alexey Gladkov <legion@kernel.org>\n\
+  Link: https://lkml.kernel.org/r/7b2ace1759b281cdd2d66101d6b305deef722efb.1627397820.git.legion@kernel.org\n\
+  Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>\n"
+submodule:
+- kernel
+hunk_count: 3
+covered_count: 3

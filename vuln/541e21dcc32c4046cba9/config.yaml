@@ -1,0 +1,64 @@
+id: 541e21dcc32c4046cba9
+bug_link: https://syzkaller.appspot.com/bug?extid=541e21dcc32c4046cba9
+title: 'KMSAN: uninit-value in tomoyo_path_chown'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b90cb1053190353cc30f0fef0ef1f378ccc063c5
+fix_commit: f52d74b190f8d10ec01cd5774eca77c2186c8ab7
+datetime: '2022-09-20T11:57:57+02:00'
+fix_commit_message: 'open: always initialize ownership fields
+
+
+  Beginning of the merge window we introduced the vfs{g,u}id_t types in
+
+  b27c82e12965 ("attr: port attribute changes to new types") and changed
+
+  various codepaths over including chown_common().
+
+
+  During that change we forgot to account for the case were the passed
+
+  ownership value is -1. In this case the ownership fields in struct iattr
+
+  aren''t initialized but we rely on them being initialized by the time we
+
+  generate the ownership to pass down to the LSMs. All the major LSMs
+
+  don''t care about the ownership values at all. Only Tomoyo uses them and
+
+  so it took a while for syzbot to unearth this issue.
+
+
+  Fix this by initializing the ownership fields and do it within the
+
+  retry_deleg block. While notify_change() doesn''t alter the ownership
+
+  fields currently we shouldn''t rely on it.
+
+
+  Since no kernel has been released with these changes this does not
+
+  needed to be backported to any stable kernels.
+
+
+  [Christian Brauner (Microsoft) <brauner@kernel.org>]
+
+  * rewrote commit message
+
+  * use INVALID_VFS{G,U}ID macros
+
+
+  Fixes: b27c82e12965 ("attr: port attribute changes to new types") # mainline only
+
+  Reported-and-tested-by: syzbot+541e21dcc32c4046cba9@syzkaller.appspotmail.com
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Reviewed-by: Seth Forshee (DigitalOcean) <sforshee@kernel.org>
+
+  Signed-off-by: Christian Brauner (Microsoft) <brauner@kernel.org>
+
+  '
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

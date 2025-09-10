@@ -1,0 +1,16 @@
+diff --git a/fs/io_uring.c b/fs/io_uring.c
+index 8e25c25c7309..72d260520c8f 100644
+--- a/fs/io_uring.c
++++ b/fs/io_uring.c
+@@ -3489,8 +3489,9 @@ static int io_sq_offload_start(struct io_ring_ctx *ctx,
+ 	/* Do QD, or 4 * CPUS, whatever is smallest */
+ 	concurrency = min(ctx->sq_entries, 4 * num_online_cpus());
+ 	ctx->io_wq = io_wq_create(concurrency, ctx->sqo_mm);
+-	if (!ctx->io_wq) {
+-		ret = -ENOMEM;
++	if (IS_ERR(ctx->io_wq)) {
++		ret = PTR_ERR(ctx->io_wq);
++		ctx->io_wq = NULL;
+ 		goto err;
+ 	}
+ 

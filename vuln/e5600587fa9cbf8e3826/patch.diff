@@ -1,0 +1,56 @@
+diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
+index c602ff2403b6..c0b7417f1d87 100644
+--- a/fs/f2fs/f2fs.h
++++ b/fs/f2fs/f2fs.h
+@@ -2122,15 +2122,6 @@ static inline int f2fs_down_read_trylock(struct f2fs_rwsem *sem)
+ 	return down_read_trylock(&sem->internal_rwsem);
+ }
+ 
+-#ifdef CONFIG_DEBUG_LOCK_ALLOC
+-static inline void f2fs_down_read_nested(struct f2fs_rwsem *sem, int subclass)
+-{
+-	down_read_nested(&sem->internal_rwsem, subclass);
+-}
+-#else
+-#define f2fs_down_read_nested(sem, subclass) f2fs_down_read(sem)
+-#endif
+-
+ static inline void f2fs_up_read(struct f2fs_rwsem *sem)
+ {
+ 	up_read(&sem->internal_rwsem);
+@@ -2141,6 +2132,21 @@ static inline void f2fs_down_write(struct f2fs_rwsem *sem)
+ 	down_write(&sem->internal_rwsem);
+ }
+ 
++#ifdef CONFIG_DEBUG_LOCK_ALLOC
++static inline void f2fs_down_read_nested(struct f2fs_rwsem *sem, int subclass)
++{
++	down_read_nested(&sem->internal_rwsem, subclass);
++}
++
++static inline void f2fs_down_write_nested(struct f2fs_rwsem *sem, int subclass)
++{
++	down_write_nested(&sem->internal_rwsem, subclass);
++}
++#else
++#define f2fs_down_read_nested(sem, subclass) f2fs_down_read(sem)
++#define f2fs_down_write_nested(sem, subclass) f2fs_down_write(sem)
++#endif
++
+ static inline int f2fs_down_write_trylock(struct f2fs_rwsem *sem)
+ {
+ 	return down_write_trylock(&sem->internal_rwsem);
+diff --git a/fs/f2fs/inline.c b/fs/f2fs/inline.c
+index 4638fee16a91..0d185ad5e469 100644
+--- a/fs/f2fs/inline.c
++++ b/fs/f2fs/inline.c
+@@ -641,7 +641,8 @@ int f2fs_add_inline_entry(struct inode *dir, const struct f2fs_filename *fname,
+ 	}
+ 
+ 	if (inode) {
+-		f2fs_down_write(&F2FS_I(inode)->i_sem);
++		f2fs_down_write_nested(&F2FS_I(inode)->i_sem,
++						SINGLE_DEPTH_NESTING);
+ 		page = f2fs_init_inode_metadata(inode, dir, fname, ipage);
+ 		if (IS_ERR(page)) {
+ 			err = PTR_ERR(page);

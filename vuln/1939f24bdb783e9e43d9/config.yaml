@@ -1,0 +1,123 @@
+id: 1939f24bdb783e9e43d9
+bug_link: https://syzkaller.appspot.com/bug?extid=1939f24bdb783e9e43d9
+title: 'KASAN: slab-use-after-free Read in __dev_get_by_index'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7b998e073ff217f140acb59bc38e822e3cdf7612
+fix_commit: 750e51603395e755537da08f745864c93e3ce741
+datetime: '2024-12-05T11:57:26+01:00'
+fix_commit_message: "net: avoid potential UAF in default_operstate()\n\nsyzbot reported\
+  \ an UAF in default_operstate() [1]\n\nIssue is a race between device and netns\
+  \ dismantles.\n\nAfter calling __rtnl_unlock() from netdev_run_todo(),\nwe can not\
+  \ assume the netns of each device is still alive.\n\nMake sure the device is not\
+  \ in NETREG_UNREGISTERED state,\nand add an ASSERT_RTNL() before the call to\n__dev_get_by_index().\n\
+  \nWe might move this ASSERT_RTNL() in __dev_get_by_index()\nin the future.\n\n[1]\n\
+  \nBUG: KASAN: slab-use-after-free in __dev_get_by_index+0x5d/0x110 net/core/dev.c:852\n\
+  Read of size 8 at addr ffff888043eba1b0 by task syz.0.0/5339\n\nCPU: 0 UID: 0 PID:\
+  \ 5339 Comm: syz.0.0 Not tainted 6.12.0-syzkaller-10296-gaaf20f870da0 #0\nHardware\
+  \ name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1\
+  \ 04/01/2014\nCall Trace:\n <TASK>\n  __dump_stack lib/dump_stack.c:94 [inline]\n\
+  \  dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120\n  print_address_description\
+  \ mm/kasan/report.c:378 [inline]\n  print_report+0x169/0x550 mm/kasan/report.c:489\n\
+  \  kasan_report+0x143/0x180 mm/kasan/report.c:602\n  __dev_get_by_index+0x5d/0x110\
+  \ net/core/dev.c:852\n  default_operstate net/core/link_watch.c:51 [inline]\n  rfc2863_policy+0x224/0x300\
+  \ net/core/link_watch.c:67\n  linkwatch_do_dev+0x3e/0x170 net/core/link_watch.c:170\n\
+  \  netdev_run_todo+0x461/0x1000 net/core/dev.c:10894\n  rtnl_unlock net/core/rtnetlink.c:152\
+  \ [inline]\n  rtnl_net_unlock include/linux/rtnetlink.h:133 [inline]\n  rtnl_dellink+0x760/0x8d0\
+  \ net/core/rtnetlink.c:3520\n  rtnetlink_rcv_msg+0x791/0xcf0 net/core/rtnetlink.c:6911\n\
+  \  netlink_rcv_skb+0x1e3/0x430 net/netlink/af_netlink.c:2541\n  netlink_unicast_kernel\
+  \ net/netlink/af_netlink.c:1321 [inline]\n  netlink_unicast+0x7f6/0x990 net/netlink/af_netlink.c:1347\n\
+  \  netlink_sendmsg+0x8e4/0xcb0 net/netlink/af_netlink.c:1891\n  sock_sendmsg_nosec\
+  \ net/socket.c:711 [inline]\n  __sock_sendmsg+0x221/0x270 net/socket.c:726\n  ____sys_sendmsg+0x52a/0x7e0\
+  \ net/socket.c:2583\n  ___sys_sendmsg net/socket.c:2637 [inline]\n  __sys_sendmsg+0x269/0x350\
+  \ net/socket.c:2669\n  do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n  do_syscall_64+0xf3/0x230\
+  \ arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\nRIP: 0033:0x7f2a3cb80809\n\
+  Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89\
+  \ d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3\
+  \ 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48\nRSP: 002b:00007f2a3d9cd058 EFLAGS: 00000246\
+  \ ORIG_RAX: 000000000000002e\nRAX: ffffffffffffffda RBX: 00007f2a3cd45fa0 RCX: 00007f2a3cb80809\n\
+  RDX: 0000000000000000 RSI: 0000000020000000 RDI: 0000000000000008\nRBP: 00007f2a3cbf393e\
+  \ R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000 R11: 0000000000000246\
+  \ R12: 0000000000000000\nR13: 0000000000000000 R14: 00007f2a3cd45fa0 R15: 00007ffd03bc65c8\n\
+  \ </TASK>\n\nAllocated by task 5339:\n  kasan_save_stack mm/kasan/common.c:47 [inline]\n\
+  \  kasan_save_track+0x3f/0x80 mm/kasan/common.c:68\n  poison_kmalloc_redzone mm/kasan/common.c:377\
+  \ [inline]\n  __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:394\n  kasan_kmalloc include/linux/kasan.h:260\
+  \ [inline]\n  __kmalloc_cache_noprof+0x243/0x390 mm/slub.c:4314\n  kmalloc_noprof\
+  \ include/linux/slab.h:901 [inline]\n  kmalloc_array_noprof include/linux/slab.h:945\
+  \ [inline]\n  netdev_create_hash net/core/dev.c:11870 [inline]\n  netdev_init+0x10c/0x250\
+  \ net/core/dev.c:11890\n  ops_init+0x31e/0x590 net/core/net_namespace.c:138\n  setup_net+0x287/0x9e0\
+  \ net/core/net_namespace.c:362\n  copy_net_ns+0x33f/0x570 net/core/net_namespace.c:500\n\
+  \  create_new_namespaces+0x425/0x7b0 kernel/nsproxy.c:110\n  unshare_nsproxy_namespaces+0x124/0x180\
+  \ kernel/nsproxy.c:228\n  ksys_unshare+0x57d/0xa70 kernel/fork.c:3314\n  __do_sys_unshare\
+  \ kernel/fork.c:3385 [inline]\n  __se_sys_unshare kernel/fork.c:3383 [inline]\n\
+  \  __x64_sys_unshare+0x38/0x40 kernel/fork.c:3383\n  do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n  do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \nFreed by task 12:\n  kasan_save_stack mm/kasan/common.c:47 [inline]\n  kasan_save_track+0x3f/0x80\
+  \ mm/kasan/common.c:68\n  kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:582\n\
+  \  poison_slab_object mm/kasan/common.c:247 [inline]\n  __kasan_slab_free+0x59/0x70\
+  \ mm/kasan/common.c:264\n  kasan_slab_free include/linux/kasan.h:233 [inline]\n\
+  \  slab_free_hook mm/slub.c:2338 [inline]\n  slab_free mm/slub.c:4598 [inline]\n\
+  \  kfree+0x196/0x420 mm/slub.c:4746\n  netdev_exit+0x65/0xd0 net/core/dev.c:11992\n\
+  \  ops_exit_list net/core/net_namespace.c:172 [inline]\n  cleanup_net+0x802/0xcc0\
+  \ net/core/net_namespace.c:632\n  process_one_work kernel/workqueue.c:3229 [inline]\n\
+  \  process_scheduled_works+0xa63/0x1850 kernel/workqueue.c:3310\n  worker_thread+0x870/0xd30\
+  \ kernel/workqueue.c:3391\n  kthread+0x2f0/0x390 kernel/kthread.c:389\n  ret_from_fork+0x4b/0x80\
+  \ arch/x86/kernel/process.c:147\n  ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244\n\
+  \nThe buggy address belongs to the object at ffff888043eba000\n which belongs to\
+  \ the cache kmalloc-2k of size 2048\nThe buggy address is located 432 bytes inside\
+  \ of\n freed 2048-byte region [ffff888043eba000, ffff888043eba800)\n\nThe buggy\
+  \ address belongs to the physical page:\npage: refcount:1 mapcount:0 mapping:0000000000000000\
+  \ index:0x0 pfn:0x43eb8\nhead: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0\
+  \ pincount:0\nflags: 0x4fff00000000040(head|node=1|zone=1|lastcpupid=0x7ff)\npage_type:\
+  \ f5(slab)\nraw: 04fff00000000040 ffff88801ac42000 dead000000000122 0000000000000000\n\
+  raw: 0000000000000000 0000000000080008 00000001f5000000 0000000000000000\nhead:\
+  \ 04fff00000000040 ffff88801ac42000 dead000000000122 0000000000000000\nhead: 0000000000000000\
+  \ 0000000000080008 00000001f5000000 0000000000000000\nhead: 04fff00000000003 ffffea00010fae01\
+  \ ffffffffffffffff 0000000000000000\nhead: 0000000000000008 0000000000000000 00000000ffffffff\
+  \ 0000000000000000\npage dumped because: kasan: bad access detected\npage_owner\
+  \ tracks the page as allocated\npage last allocated via order 3, migratetype Unmovable,\
+  \ gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC),\
+  \ pid 5339, tgid 5338 (syz.0.0), ts 69674195892, free_ts 69663220888\n  set_page_owner\
+  \ include/linux/page_owner.h:32 [inline]\n  post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1556\n\
+  \  prep_new_page mm/page_alloc.c:1564 [inline]\n  get_page_from_freelist+0x3649/0x3790\
+  \ mm/page_alloc.c:3474\n  __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4751\n\
+  \  alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2265\n  alloc_slab_page+0x6a/0x140\
+  \ mm/slub.c:2408\n  allocate_slab+0x5a/0x2f0 mm/slub.c:2574\n  new_slab mm/slub.c:2627\
+  \ [inline]\n  ___slab_alloc+0xcd1/0x14b0 mm/slub.c:3815\n  __slab_alloc+0x58/0xa0\
+  \ mm/slub.c:3905\n  __slab_alloc_node mm/slub.c:3980 [inline]\n  slab_alloc_node\
+  \ mm/slub.c:4141 [inline]\n  __do_kmalloc_node mm/slub.c:4282 [inline]\n  __kmalloc_noprof+0x2e6/0x4c0\
+  \ mm/slub.c:4295\n  kmalloc_noprof include/linux/slab.h:905 [inline]\n  sk_prot_alloc+0xe0/0x210\
+  \ net/core/sock.c:2165\n  sk_alloc+0x38/0x370 net/core/sock.c:2218\n  __netlink_create+0x65/0x260\
+  \ net/netlink/af_netlink.c:629\n  __netlink_kernel_create+0x174/0x6f0 net/netlink/af_netlink.c:2015\n\
+  \  netlink_kernel_create include/linux/netlink.h:62 [inline]\n  uevent_net_init+0xed/0x2d0\
+  \ lib/kobject_uevent.c:783\n  ops_init+0x31e/0x590 net/core/net_namespace.c:138\n\
+  \  setup_net+0x287/0x9e0 net/core/net_namespace.c:362\npage last free pid 1032 tgid\
+  \ 1032 stack trace:\n  reset_page_owner include/linux/page_owner.h:25 [inline]\n\
+  \  free_pages_prepare mm/page_alloc.c:1127 [inline]\n  free_unref_page+0xdf9/0x1140\
+  \ mm/page_alloc.c:2657\n  __slab_free+0x31b/0x3d0 mm/slub.c:4509\n  qlink_free mm/kasan/quarantine.c:163\
+  \ [inline]\n  qlist_free_all+0x9a/0x140 mm/kasan/quarantine.c:179\n  kasan_quarantine_reduce+0x14f/0x170\
+  \ mm/kasan/quarantine.c:286\n  __kasan_slab_alloc+0x23/0x80 mm/kasan/common.c:329\n\
+  \  kasan_slab_alloc include/linux/kasan.h:250 [inline]\n  slab_post_alloc_hook mm/slub.c:4104\
+  \ [inline]\n  slab_alloc_node mm/slub.c:4153 [inline]\n  kmem_cache_alloc_node_noprof+0x1d9/0x380\
+  \ mm/slub.c:4205\n  __alloc_skb+0x1c3/0x440 net/core/skbuff.c:668\n  alloc_skb include/linux/skbuff.h:1323\
+  \ [inline]\n  alloc_skb_with_frags+0xc3/0x820 net/core/skbuff.c:6612\n  sock_alloc_send_pskb+0x91a/0xa60\
+  \ net/core/sock.c:2881\n  sock_alloc_send_skb include/net/sock.h:1797 [inline]\n\
+  \  mld_newpack+0x1c3/0xaf0 net/ipv6/mcast.c:1747\n  add_grhead net/ipv6/mcast.c:1850\
+  \ [inline]\n  add_grec+0x1492/0x19a0 net/ipv6/mcast.c:1988\n  mld_send_initial_cr+0x228/0x4b0\
+  \ net/ipv6/mcast.c:2234\n  ipv6_mc_dad_complete+0x88/0x490 net/ipv6/mcast.c:2245\n\
+  \  addrconf_dad_completed+0x712/0xcd0 net/ipv6/addrconf.c:4342\n addrconf_dad_work+0xdc2/0x16f0\n\
+  \  process_one_work kernel/workqueue.c:3229 [inline]\n  process_scheduled_works+0xa63/0x1850\
+  \ kernel/workqueue.c:3310\n\nMemory state around the buggy address:\n ffff888043eba080:\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n ffff888043eba100: fb fb fb fb\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb\n>ffff888043eba180: fb fb fb fb fb fb fb fb\
+  \ fb fb fb fb fb fb fb fb\n                                     ^\n ffff888043eba200:\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n ffff888043eba280: fb fb fb fb\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb\n\nFixes: 8c55facecd7a (\"net: linkwatch:\
+  \ only report IF_OPER_LOWERLAYERDOWN if iflink is actually down\")\nReported-by:\
+  \ syzbot+1939f24bdb783e9e43d9@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/netdev/674f3a18.050a0220.48a03.0041.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nReviewed-by: Vladimir Oltean\
+  \ <vladimir.oltean@nxp.com>\nLink: https://patch.msgid.link/20241203170933.2449307-1-edumazet@google.com\n\
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>\n\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 1

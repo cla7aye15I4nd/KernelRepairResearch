@@ -1,0 +1,27 @@
+id: fd2873203c2ed428828a
+bug_link: https://syzkaller.appspot.com/bug?extid=fd2873203c2ed428828a
+title: 'BUG: using smp_processor_id() in preemptible code in bpf_mem_alloc'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ab4dc30c5322fc46d0db938d1c0bdd56d7adcea1
+fix_commit: 4ff04abf9d5bc33d33c7a799887517619188b068
+datetime: '2024-11-15T08:11:53-08:00'
+fix_commit_message: "bpf: Add necessary migrate_disable to range_tree.\n\nWhen running\
+  \ bpf selftest (./test_progs -j), the following warnings\nshowed up:\n\n  $ ./test_progs\
+  \ -t arena_atomics\n  ...\n  BUG: using smp_processor_id() in preemptible [00000000]\
+  \ code: kworker/u19:0/12501\n  caller is bpf_mem_free+0x128/0x330\n  ...\n  Call\
+  \ Trace:\n   <TASK>\n   dump_stack_lvl\n   check_preemption_disabled\n   bpf_mem_free\n\
+  \   range_tree_destroy\n   arena_map_free\n   bpf_map_free_deferred\n   process_scheduled_works\n\
+  \   ...\n\nFor selftests arena_htab and arena_list, similar smp_process_id() BUGs\
+  \ are\ndumped, and the following are two stack trace:\n\n   <TASK>\n   dump_stack_lvl\n\
+  \   check_preemption_disabled\n   bpf_mem_alloc\n   range_tree_set\n   arena_map_alloc\n\
+  \   map_create\n   ...\n\n   <TASK>\n   dump_stack_lvl\n   check_preemption_disabled\n\
+  \   bpf_mem_alloc\n   range_tree_clear\n   arena_vm_fault\n   do_pte_missing\n \
+  \  handle_mm_fault\n   do_user_addr_fault\n   ...\n\nAdd migrate_{disable,enable}()\
+  \ around related bpf_mem_{alloc,free}()\ncalls to fix the issue.\n\nFixes: b795379757eb\
+  \ (\"bpf: Introduce range_tree data structure and use it in bpf arena\")\nSigned-off-by:\
+  \ Yonghong Song <yonghong.song@linux.dev>\nLink: https://lore.kernel.org/r/20241115060354.2832495-1-yonghong.song@linux.dev\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 5
+covered_count: 3

@@ -1,0 +1,32 @@
+id: 68ee510075cf64260cc4
+bug_link: https://syzkaller.appspot.com/bug?extid=68ee510075cf64260cc4
+title: general protection fault in team_nl_cmd_options_set
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a090d7948edab45688e78497ffc072c03db4086c
+fix_commit: 2fdeee2549231b1f989f011bb18191f5660d3745
+datetime: '2019-02-12T14:19:27-05:00'
+fix_commit_message: "team: avoid complex list operations in team_nl_cmd_options_set()\n\
+  \nThe current opt_inst_list operations inside team_nl_cmd_options_set()\nis too\
+  \ complex to track:\n\n    LIST_HEAD(opt_inst_list);\n    nla_for_each_nested(...)\
+  \ {\n        list_for_each_entry(opt_inst, &team->option_inst_list, list) {\n  \
+  \          if (__team_option_inst_tmp_find(&opt_inst_list, opt_inst))\n        \
+  \        continue;\n            list_add(&opt_inst->tmp_list, &opt_inst_list);\n\
+  \        }\n    }\n    team_nl_send_event_options_get(team, &opt_inst_list);\n\n\
+  as while we retrieve 'opt_inst' from team->option_inst_list, it could\nbe added\
+  \ to the local 'opt_inst_list' for multiple times. The\n__team_option_inst_tmp_find()\
+  \ doesn't work, as the setter\nteam_mode_option_set() still calls team->ops.exit()\
+  \ which uses\n->tmp_list too in __team_options_change_check().\n\nSimplify the list\
+  \ operations by moving the 'opt_inst_list' and\nteam_nl_send_event_options_get()\
+  \ into the nla_for_each_nested() loop so\nthat it can be guranteed that we won't\
+  \ insert a same list entry for\nmultiple times. Therefore, __team_option_inst_tmp_find()\
+  \ can be removed\ntoo.\n\nFixes: 4fb0534fb7bb (\"team: avoid adding twice the same\
+  \ option to the event list\")\nFixes: 2fcdb2c9e659 (\"team: allow to send multiple\
+  \ set events in one message\")\nReported-by: syzbot+4d4af685432dc0e56c91@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+68ee510075cf64260cc4@syzkaller.appspotmail.com\nCc: Jiri Pirko\
+  \ <jiri@resnulli.us>\nCc: Paolo Abeni <pabeni@redhat.com>\nSigned-off-by: Cong Wang\
+  \ <xiyou.wangcong@gmail.com>\nAcked-by: Jiri Pirko <jiri@mellanox.com>\nReviewed-by:\
+  \ Paolo Abeni <pabeni@redhat.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- drivers/net/team
+hunk_count: 4
+covered_count: 2

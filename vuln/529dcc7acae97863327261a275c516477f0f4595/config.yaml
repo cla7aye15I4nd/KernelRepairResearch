@@ -1,0 +1,22 @@
+id: 529dcc7acae97863327261a275c516477f0f4595
+bug_link: https://syzkaller.appspot.com/bug?extid=529dcc7acae97863327261a275c516477f0f4595
+title: 'BUG: unable to handle kernel paging request in devpts_mntget'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c0cef30e4ff0dc025f4a1660b8f0ba43ed58426e
+fix_commit: c9cc8d01fb04117928830449388512a5047569c9
+datetime: '2018-01-31T08:48:37-08:00'
+fix_commit_message: "devpts: fix error handling in devpts_mntget()\n\nIf devpts_ptmx_path()\
+  \ returns an error code, then devpts_mntget()\ndereferences an ERR_PTR():\n\n  \
+  \  BUG: unable to handle kernel paging request at fffffffffffffff5\n    IP: devpts_mntget+0x13f/0x280\
+  \ fs/devpts/inode.c:173\n\nFix it by returning early in the error paths.\n\nReproducer:\n\
+  \n    #define _GNU_SOURCE\n    #include <fcntl.h>\n    #include <sched.h>\n    #include\
+  \ <sys/ioctl.h>\n    #define TIOCGPTPEER _IO('T', 0x41)\n\n    int main()\n    {\n\
+  \        for (;;) {\n            int fd = open(\"/dev/ptmx\", 0);\n            unshare(CLONE_NEWNS);\n\
+  \            ioctl(fd, TIOCGPTPEER, 0);\n        }\n    }\n\nFixes: 311fc65c9fb9\
+  \ (\"pty: Repair TIOCGPTPEER\")\nReported-by: syzbot <syzkaller@googlegroups.com>\n\
+  Cc: <stable@vger.kernel.org> # v4.13+\nSigned-off-by: Eric Biggers <ebiggers@google.com>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs/devpts
+hunk_count: 1
+covered_count: 1

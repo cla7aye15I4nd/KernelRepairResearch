@@ -1,0 +1,52 @@
+id: 3c750be01dab672c513d
+bug_link: https://syzkaller.appspot.com/bug?extid=3c750be01dab672c513d
+title: 'KCSAN: data-race in io_sq_thread / io_uring_try_cancel_requests (12)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 94d57442e56d2ad2ca20d096040b8ae6f216a921
+fix_commit: a13030fd194c88961be4679f87a1380f1bda0ebe
+datetime: '2025-01-13T15:29:44-07:00'
+fix_commit_message: 'io_uring: simplify the SQPOLL thread check when cancelling requests
+
+
+  In io_uring_try_cancel_requests, we check whether sq_data->thread ==
+
+  current to determine if the function is called by the SQPOLL thread to do
+
+  iopoll when IORING_SETUP_SQPOLL is set. This check can race with the SQPOLL
+
+  thread termination.
+
+
+  io_uring_cancel_generic is used in 2 places: io_uring_cancel_generic and
+
+  io_ring_exit_work. In io_uring_cancel_generic, we have the information
+
+  whether the current is SQPOLL thread already. And the SQPOLL thread never
+
+  reaches io_ring_exit_work.
+
+
+  So to avoid the racy check, this commit adds a boolean flag to
+
+  io_uring_try_cancel_requests to determine if the caller is SQPOLL thread.
+
+
+  Reported-by: syzbot+3c750be01dab672c513d@syzkaller.appspotmail.com
+
+  Reported-by: Li Zetao <lizetao1@huawei.com>
+
+  Reviewed-by: Li Zetao <lizetao1@huawei.com>
+
+  Signed-off-by: Bui Quang Minh <minhquangbui99@gmail.com>
+
+  Reviewed-by: Pavel Begunkov <asml.silence@gmail.com>
+
+  Link: https://lore.kernel.org/r/20250113160331.44057-1-minhquangbui99@gmail.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 5
+covered_count: 3

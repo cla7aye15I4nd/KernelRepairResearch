@@ -1,0 +1,65 @@
+id: a70e2ad0879f160b9217
+bug_link: https://syzkaller.appspot.com/bug?extid=a70e2ad0879f160b9217
+title: WARNING in close_fs_devices (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ecc64fab7d49c678e70bd4c35fe64d2ab3e3d212
+fix_commit: b2a616676839e2a6b02c8e40be7f886f882ed194
+datetime: '2021-07-28T19:02:49+02:00'
+fix_commit_message: "btrfs: fix rw device counting in __btrfs_free_extra_devids\n\n\
+  When removing a writeable device in __btrfs_free_extra_devids, the rw\ndevice count\
+  \ should be decremented.\n\nThis error was caught by Syzbot which reported a warning\
+  \ in\nclose_fs_devices:\n\n  WARNING: CPU: 1 PID: 9355 at fs/btrfs/volumes.c:1168\
+  \ close_fs_devices+0x763/0x880 fs/btrfs/volumes.c:1168\n  Modules linked in:\n \
+  \ CPU: 0 PID: 9355 Comm: syz-executor552 Not tainted 5.13.0-rc1-syzkaller #0\n \
+  \ Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/01/2011\n  RIP: 0010:close_fs_devices+0x763/0x880 fs/btrfs/volumes.c:1168\n\
+  \  RSP: 0018:ffffc9000333f2f0 EFLAGS: 00010293\n  RAX: ffffffff8365f5c3 RBX: 0000000000000001\
+  \ RCX: ffff888029afd4c0\n  RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000\n\
+  \  RBP: ffff88802846f508 R08: ffffffff8365f525 R09: ffffed100337d128\n  R10: ffffed100337d128\
+  \ R11: 0000000000000000 R12: dffffc0000000000\n  R13: ffff888019be8868 R14: 1ffff1100337d10d\
+  \ R15: 1ffff1100337d10a\n  FS:  00007f6f53828700(0000) GS:ffff8880b9a00000(0000)\
+  \ knlGS:0000000000000000\n  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n\
+  \  CR2: 000000000047c410 CR3: 00000000302a6000 CR4: 00000000001506f0\n  DR0: 0000000000000000\
+  \ DR1: 0000000000000000 DR2: 0000000000000000\n  DR3: 0000000000000000 DR6: 00000000fffe0ff0\
+  \ DR7: 0000000000000400\n  Call Trace:\n   btrfs_close_devices+0xc9/0x450 fs/btrfs/volumes.c:1180\n\
+  \   open_ctree+0x8e1/0x3968 fs/btrfs/disk-io.c:3693\n   btrfs_fill_super fs/btrfs/super.c:1382\
+  \ [inline]\n   btrfs_mount_root+0xac5/0xc60 fs/btrfs/super.c:1749\n   legacy_get_tree+0xea/0x180\
+  \ fs/fs_context.c:592\n   vfs_get_tree+0x86/0x270 fs/super.c:1498\n   fc_mount fs/namespace.c:993\
+  \ [inline]\n   vfs_kern_mount+0xc9/0x160 fs/namespace.c:1023\n   btrfs_mount+0x3d3/0xb50\
+  \ fs/btrfs/super.c:1809\n   legacy_get_tree+0xea/0x180 fs/fs_context.c:592\n   vfs_get_tree+0x86/0x270\
+  \ fs/super.c:1498\n   do_new_mount fs/namespace.c:2905 [inline]\n   path_mount+0x196f/0x2be0\
+  \ fs/namespace.c:3235\n   do_mount fs/namespace.c:3248 [inline]\n   __do_sys_mount\
+  \ fs/namespace.c:3456 [inline]\n   __se_sys_mount+0x2f9/0x3b0 fs/namespace.c:3433\n\
+  \   do_syscall_64+0x3f/0xb0 arch/x86/entry/common.c:47\n   entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \nBecause fs_devices->rw_devices was not 0 after\nclosing all devices. Here is the\
+  \ call trace that was observed:\n\n  btrfs_mount_root():\n    btrfs_scan_one_device():\n\
+  \      device_list_add();   <---------------- device added\n    btrfs_open_devices():\n\
+  \      open_fs_devices():\n        btrfs_open_one_device();   <-------- writable\
+  \ device opened,\n\t                                     rw device count ++\n  \
+  \  btrfs_fill_super():\n      open_ctree():\n        btrfs_free_extra_devids():\n\
+  \t  __btrfs_free_extra_devids();  <--- writable device removed,\n\t            \
+  \                  rw device count not decremented\n\t  fail_tree_roots:\n\t   \
+  \ btrfs_close_devices():\n\t      close_fs_devices();   <------- rw device count\
+  \ off by 1\n\nAs a note, prior to commit cf89af146b7e (\"btrfs: dev-replace: fail\n\
+  mount if we don't have replace item with target device\"), rw_devices\nwas decremented\
+  \ on removing a writable device in\n__btrfs_free_extra_devids only if the BTRFS_DEV_STATE_REPLACE_TGT\
+  \ bit\nwas not set for the device. However, this check does not need to be\nreinstated\
+  \ as it is now redundant and incorrect.\n\nIn __btrfs_free_extra_devids, we skip\
+  \ removing the device if it is the\ntarget for replacement. This is done by checking\
+  \ whether device->devid\n== BTRFS_DEV_REPLACE_DEVID. Since BTRFS_DEV_STATE_REPLACE_TGT\
+  \ is set\nonly on the device with devid BTRFS_DEV_REPLACE_DEVID, no devices\nshould\
+  \ have the BTRFS_DEV_STATE_REPLACE_TGT bit set after the check,\nand so it's redundant\
+  \ to test for that bit.\n\nAdditionally, following commit 82372bc816d7 (\"Btrfs:\
+  \ make\nthe logic of source device removing more clear\"), rw_devices is\nincremented\
+  \ whenever a writeable device is added to the alloc\nlist (including the target\
+  \ device in btrfs_dev_replace_finishing), so\nall removals of writable devices from\
+  \ the alloc list should also be\naccompanied by a decrement to rw_devices.\n\nReported-by:\
+  \ syzbot+a70e2ad0879f160b9217@syzkaller.appspotmail.com\nFixes: cf89af146b7e (\"\
+  btrfs: dev-replace: fail mount if we don't have replace item with target device\"\
+  )\nCC: stable@vger.kernel.org # 5.10+\nTested-by: syzbot+a70e2ad0879f160b9217@syzkaller.appspotmail.com\n\
+  Reviewed-by: Anand Jain <anand.jain@oracle.com>\nSigned-off-by: Desmond Cheong Zhi\
+  \ Xi <desmondcheongzx@gmail.com>\nSigned-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,135 @@
+diff --git a/net/sched/cls_api.c b/net/sched/cls_api.c
+index adf5de1ff773..253b26f2eddd 100644
+--- a/net/sched/cls_api.c
++++ b/net/sched/cls_api.c
+@@ -1428,6 +1428,7 @@ int tcf_block_get_ext(struct tcf_block **p_block, struct Qdisc *q,
+ 		      struct tcf_block_ext_info *ei,
+ 		      struct netlink_ext_ack *extack)
+ {
++	struct net_device *dev = qdisc_dev(q);
+ 	struct net *net = qdisc_net(q);
+ 	struct tcf_block *block = NULL;
+ 	int err;
+@@ -1461,9 +1462,18 @@ int tcf_block_get_ext(struct tcf_block **p_block, struct Qdisc *q,
+ 	if (err)
+ 		goto err_block_offload_bind;
+ 
++	if (tcf_block_shared(block)) {
++		err = xa_insert(&block->ports, dev->ifindex, dev, GFP_KERNEL);
++		if (err) {
++			NL_SET_ERR_MSG(extack, "block dev insert failed");
++			goto err_dev_insert;
++		}
++	}
++
+ 	*p_block = block;
+ 	return 0;
+ 
++err_dev_insert:
+ err_block_offload_bind:
+ 	tcf_chain0_head_change_cb_del(block, ei);
+ err_chain0_head_change_cb_add:
+@@ -1502,8 +1512,12 @@ EXPORT_SYMBOL(tcf_block_get);
+ void tcf_block_put_ext(struct tcf_block *block, struct Qdisc *q,
+ 		       struct tcf_block_ext_info *ei)
+ {
++	struct net_device *dev = qdisc_dev(q);
++
+ 	if (!block)
+ 		return;
++	if (tcf_block_shared(block))
++		xa_erase(&block->ports, dev->ifindex);
+ 	tcf_chain0_head_change_cb_del(block, ei);
+ 	tcf_block_owner_del(block, q, ei->binder_type);
+ 
+diff --git a/net/sched/sch_api.c b/net/sched/sch_api.c
+index 2a2a48838eb9..36b025cc4fd2 100644
+--- a/net/sched/sch_api.c
++++ b/net/sched/sch_api.c
+@@ -1209,43 +1209,6 @@ static int qdisc_graft(struct net_device *dev, struct Qdisc *parent,
+ 	return 0;
+ }
+ 
+-static int qdisc_block_add_dev(struct Qdisc *sch, struct net_device *dev,
+-			       struct netlink_ext_ack *extack)
+-{
+-	const struct Qdisc_class_ops *cl_ops = sch->ops->cl_ops;
+-	struct tcf_block *block;
+-	int err;
+-
+-	block = cl_ops->tcf_block(sch, TC_H_MIN_INGRESS, NULL);
+-	if (block) {
+-		err = xa_insert(&block->ports, dev->ifindex, dev, GFP_KERNEL);
+-		if (err) {
+-			NL_SET_ERR_MSG(extack,
+-				       "ingress block dev insert failed");
+-			return err;
+-		}
+-	}
+-
+-	block = cl_ops->tcf_block(sch, TC_H_MIN_EGRESS, NULL);
+-	if (block) {
+-		err = xa_insert(&block->ports, dev->ifindex, dev, GFP_KERNEL);
+-		if (err) {
+-			NL_SET_ERR_MSG(extack,
+-				       "Egress block dev insert failed");
+-			goto err_out;
+-		}
+-	}
+-
+-	return 0;
+-
+-err_out:
+-	block = cl_ops->tcf_block(sch, TC_H_MIN_INGRESS, NULL);
+-	if (block)
+-		xa_erase(&block->ports, dev->ifindex);
+-
+-	return err;
+-}
+-
+ static int qdisc_block_indexes_set(struct Qdisc *sch, struct nlattr **tca,
+ 				   struct netlink_ext_ack *extack)
+ {
+@@ -1416,10 +1379,6 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
+ 	qdisc_hash_add(sch, false);
+ 	trace_qdisc_create(ops, dev, parent);
+ 
+-	err = qdisc_block_add_dev(sch, dev, extack);
+-	if (err)
+-		goto err_out4;
+-
+ 	return sch;
+ 
+ err_out4:
+diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
+index e33568df97a5..9b3e9262040b 100644
+--- a/net/sched/sch_generic.c
++++ b/net/sched/sch_generic.c
+@@ -1052,8 +1052,6 @@ static void __qdisc_destroy(struct Qdisc *qdisc)
+ {
+ 	const struct Qdisc_ops  *ops = qdisc->ops;
+ 	struct net_device *dev = qdisc_dev(qdisc);
+-	const struct Qdisc_class_ops *cops;
+-	struct tcf_block *block;
+ 
+ #ifdef CONFIG_NET_SCHED
+ 	qdisc_hash_del(qdisc);
+@@ -1064,18 +1062,6 @@ static void __qdisc_destroy(struct Qdisc *qdisc)
+ 
+ 	qdisc_reset(qdisc);
+ 
+-	cops = ops->cl_ops;
+-	if (ops->ingress_block_get) {
+-		block = cops->tcf_block(qdisc, TC_H_MIN_INGRESS, NULL);
+-		if (block)
+-			xa_erase(&block->ports, dev->ifindex);
+-	}
+-
+-	if (ops->egress_block_get) {
+-		block = cops->tcf_block(qdisc, TC_H_MIN_EGRESS, NULL);
+-		if (block)
+-			xa_erase(&block->ports, dev->ifindex);
+-	}
+ 
+ 	if (ops->destroy)
+ 		ops->destroy(qdisc);

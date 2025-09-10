@@ -1,0 +1,42 @@
+id: 223310b454ba6b75974e
+bug_link: https://syzkaller.appspot.com/bug?extid=223310b454ba6b75974e
+title: general protection fault in ima_free_template_entry
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6cc7c266e5b47d3cd2b5bb7fd3aac4e6bb2dd1d2
+fix_commit: 42413b49804b250ced70dac8815388af2d4ad872
+datetime: '2020-06-05T06:04:11-04:00'
+fix_commit_message: 'ima: Directly free *entry in ima_alloc_init_template() if digests
+  is NULL
+
+
+  To support multiple template digests, the static array entry->digest has
+
+  been replaced with a dynamically allocated array in commit aa724fe18a8a
+
+  ("ima: Switch to dynamically allocated buffer for template digests"). The
+
+  array is allocated in ima_alloc_init_template() and if the returned pointer
+
+  is NULL, ima_free_template_entry() is called.
+
+
+  However, (*entry)->template_desc is not yet initialized while it is used by
+
+  ima_free_template_entry(). This patch fixes the issue by directly freeing
+
+  *entry without calling ima_free_template_entry().
+
+
+  Fixes: aa724fe18a8a ("ima: Switch to dynamically allocated buffer for template digests")
+
+  Reported-by: syzbot+223310b454ba6b75974e@syzkaller.appspotmail.com
+
+  Signed-off-by: Roberto Sassu <roberto.sassu@huawei.com>
+
+  Signed-off-by: Mimi Zohar <zohar@linux.ibm.com>
+
+  '
+submodule:
+- security/integrity/ima
+hunk_count: 1
+covered_count: 1

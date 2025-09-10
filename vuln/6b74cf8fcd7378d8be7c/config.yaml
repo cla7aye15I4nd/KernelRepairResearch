@@ -1,0 +1,61 @@
+id: 6b74cf8fcd7378d8be7c
+bug_link: https://syzkaller.appspot.com/bug?extid=6b74cf8fcd7378d8be7c
+title: 'BUG: unable to handle kernel paging request in evict'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f6b1a1cf1c3ee430d3f5e47847047ce789a690aa
+fix_commit: 4e3c51f4e805291b057d12f5dda5aeb50a538dc4
+datetime: '2022-11-22T17:00:00-05:00'
+fix_commit_message: 'fs: do not update freeing inode i_io_list
+
+
+  After commit cbfecb927f42 ("fs: record I_DIRTY_TIME even if inode
+
+  already has I_DIRTY_INODE") writeback_single_inode can push inode with
+
+  I_DIRTY_TIME set to b_dirty_time list. In case of freeing inode with
+
+  I_DIRTY_TIME set this can happen after deletion of inode from i_io_list
+
+  at evict. Stack trace is following.
+
+
+  evict
+
+  fat_evict_inode
+
+  fat_truncate_blocks
+
+  fat_flush_inodes
+
+  writeback_inode
+
+  sync_inode_metadata(inode, sync=0)
+
+  writeback_single_inode(inode, wbc) <- wbc->sync_mode == WB_SYNC_NONE
+
+
+  This will lead to use after free in flusher thread.
+
+
+  Similar issue can be triggered if writeback_single_inode in the
+
+  stack trace update inode->i_io_list. Add explicit check to avoid it.
+
+
+  Fixes: cbfecb927f42 ("fs: record I_DIRTY_TIME even if inode already has I_DIRTY_INODE")
+
+  Reported-by: syzbot+6ba92bd00d5093f7e371@syzkaller.appspotmail.com
+
+  Reviewed-by: Jan Kara <jack@suse.cz>
+
+  Signed-off-by: Svyatoslav Feldsherov <feldsherov@google.com>
+
+  Link: https://lore.kernel.org/r/20221115202001.324188-1-feldsherov@google.com
+
+  Signed-off-by: Theodore Ts''o <tytso@mit.edu>
+
+  '
+submodule:
+- fs
+hunk_count: 1
+covered_count: 0

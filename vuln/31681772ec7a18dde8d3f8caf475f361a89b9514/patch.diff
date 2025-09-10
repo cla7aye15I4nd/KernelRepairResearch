@@ -1,0 +1,68 @@
+diff --git a/sound/core/seq/oss/seq_oss_midi.c b/sound/core/seq/oss/seq_oss_midi.c
+index aaff9ee32695..b30b2139e3f0 100644
+--- a/sound/core/seq/oss/seq_oss_midi.c
++++ b/sound/core/seq/oss/seq_oss_midi.c
+@@ -612,9 +612,7 @@ send_midi_event(struct seq_oss_devinfo *dp, struct snd_seq_event *ev, struct seq
+ 	if (!dp->timer->running)
+ 		len = snd_seq_oss_timer_start(dp->timer);
+ 	if (ev->type == SNDRV_SEQ_EVENT_SYSEX) {
+-		if ((ev->flags & SNDRV_SEQ_EVENT_LENGTH_MASK) == SNDRV_SEQ_EVENT_LENGTH_VARIABLE)
+-			snd_seq_oss_readq_puts(dp->readq, mdev->seq_device,
+-					       ev->data.ext.ptr, ev->data.ext.len);
++		snd_seq_oss_readq_sysex(dp->readq, mdev->seq_device, ev);
+ 	} else {
+ 		len = snd_midi_event_decode(mdev->coder, msg, sizeof(msg), ev);
+ 		if (len > 0)
+diff --git a/sound/core/seq/oss/seq_oss_readq.c b/sound/core/seq/oss/seq_oss_readq.c
+index 046cb586fb2f..06b21226b4e7 100644
+--- a/sound/core/seq/oss/seq_oss_readq.c
++++ b/sound/core/seq/oss/seq_oss_readq.c
+@@ -117,6 +117,35 @@ snd_seq_oss_readq_puts(struct seq_oss_readq *q, int dev, unsigned char *data, in
+ 	return 0;
+ }
+ 
++/*
++ * put MIDI sysex bytes; the event buffer may be chained, thus it has
++ * to be expanded via snd_seq_dump_var_event().
++ */
++struct readq_sysex_ctx {
++	struct seq_oss_readq *readq;
++	int dev;
++};
++
++static int readq_dump_sysex(void *ptr, void *buf, int count)
++{
++	struct readq_sysex_ctx *ctx = ptr;
++
++	return snd_seq_oss_readq_puts(ctx->readq, ctx->dev, buf, count);
++}
++
++int snd_seq_oss_readq_sysex(struct seq_oss_readq *q, int dev,
++			    struct snd_seq_event *ev)
++{
++	struct readq_sysex_ctx ctx = {
++		.readq = q,
++		.dev = dev
++	};
++
++	if ((ev->flags & SNDRV_SEQ_EVENT_LENGTH_MASK) != SNDRV_SEQ_EVENT_LENGTH_VARIABLE)
++		return 0;
++	return snd_seq_dump_var_event(ev, readq_dump_sysex, &ctx);
++}
++
+ /*
+  * copy an event to input queue:
+  * return zero if enqueued
+diff --git a/sound/core/seq/oss/seq_oss_readq.h b/sound/core/seq/oss/seq_oss_readq.h
+index f1463f1f449e..8d033ca2d23f 100644
+--- a/sound/core/seq/oss/seq_oss_readq.h
++++ b/sound/core/seq/oss/seq_oss_readq.h
+@@ -44,6 +44,8 @@ void snd_seq_oss_readq_delete(struct seq_oss_readq *q);
+ void snd_seq_oss_readq_clear(struct seq_oss_readq *readq);
+ unsigned int snd_seq_oss_readq_poll(struct seq_oss_readq *readq, struct file *file, poll_table *wait);
+ int snd_seq_oss_readq_puts(struct seq_oss_readq *readq, int dev, unsigned char *data, int len);
++int snd_seq_oss_readq_sysex(struct seq_oss_readq *q, int dev,
++			    struct snd_seq_event *ev);
+ int snd_seq_oss_readq_put_event(struct seq_oss_readq *readq, union evrec *ev);
+ int snd_seq_oss_readq_put_timestamp(struct seq_oss_readq *readq, unsigned long curt, int seq_mode);
+ int snd_seq_oss_readq_pick(struct seq_oss_readq *q, union evrec *rec);

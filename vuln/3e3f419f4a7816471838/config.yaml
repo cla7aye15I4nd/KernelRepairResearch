@@ -1,0 +1,45 @@
+id: 3e3f419f4a7816471838
+bug_link: https://syzkaller.appspot.com/bug?extid=3e3f419f4a7816471838
+title: 'KASAN: use-after-free Read in blk_mq_sched_free_rqs'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b96f3cab59654ee2c30e6adf0b1c13cf8c0850fa
+fix_commit: 50e34d78815e474d410f342fbe783b18192ca518
+datetime: '2022-06-17T07:31:05-06:00'
+fix_commit_message: 'block: disable the elevator int del_gendisk
+
+
+  The elevator is only used for file system requests, which are stopped in
+
+  del_gendisk.  Move disabling the elevator and freeing the scheduler tags
+
+  to the end of del_gendisk instead of doing that work in disk_release and
+
+  blk_cleanup_queue to avoid a use after free on q->tag_set from
+
+  disk_release as the tag_set might not be alive at that point.
+
+
+  Move the blk_qos_exit call as well, as it just depends on the elevator
+
+  exit and would be the only reason to keep the not exactly cheap queue
+
+  freeze in disk_release.
+
+
+  Fixes: e155b0c238b2 ("blk-mq: Use shared tags for shared sbitmap support")
+
+  Reported-by: syzbot+3e3f419f4a7816471838@syzkaller.appspotmail.com
+
+  Signed-off-by: Christoph Hellwig <hch@lst.de>
+
+  Tested-by: syzbot+3e3f419f4a7816471838@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/20220614074827.458955-2-hch@lst.de
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- block
+hunk_count: 4
+covered_count: 2

@@ -1,0 +1,42 @@
+id: 4125a3c514e3436a02e6
+bug_link: https://syzkaller.appspot.com/bug?extid=4125a3c514e3436a02e6
+title: 'KASAN: null-ptr-deref Write in xfs_filestream_select_ag (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3ef22684038aa577c10972ee9c6a2455f5fac941
+fix_commit: dc60992ce76fbc2f71c2674f435ff6bde2108028
+datetime: '2024-10-30T11:27:18+01:00'
+fix_commit_message: 'xfs: fix finding a last resort AG in xfs_filestream_pick_ag
+
+
+  When the main loop in xfs_filestream_pick_ag fails to find a suitable
+
+  AG it tries to just pick the online AG.  But the loop for that uses
+
+  args->pag as loop iterator while the later code expects pag to be
+
+  set.  Fix this by reusing the max_pag case for this last resort, and
+
+  also add a check for impossible case of no AG just to make sure that
+
+  the uninitialized pag doesn''t even escape in theory.
+
+
+  Reported-by: syzbot+4125a3c514e3436a02e6@syzkaller.appspotmail.com
+
+  Signed-off-by: Christoph Hellwig <hch@lst.de>
+
+  Tested-by: syzbot+4125a3c514e3436a02e6@syzkaller.appspotmail.com
+
+  Fixes: f8f1ed1ab3baba ("xfs: return a referenced perag from filestreams allocator")
+
+  Cc: <stable@vger.kernel.org> # v6.3
+
+  Reviewed-by: Darrick J. Wong <djwong@kernel.org>
+
+  Signed-off-by: Carlos Maiolino <cem@kernel.org>
+
+  '
+submodule:
+- fs/xfs
+hunk_count: 5
+covered_count: 1

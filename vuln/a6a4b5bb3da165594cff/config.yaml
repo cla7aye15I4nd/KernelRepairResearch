@@ -1,0 +1,38 @@
+id: a6a4b5bb3da165594cff
+bug_link: https://syzkaller.appspot.com/bug?extid=a6a4b5bb3da165594cff
+title: 'BUG: soft lockup in sys_sendmsg'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4cece764965020c22cff7665b18a012006359095
+fix_commit: b1f532a3b1e6d2e5559c7ace49322922637a28aa
+datetime: '2024-03-29T20:18:43+01:00'
+fix_commit_message: "batman-adv: Avoid infinite loop trying to resize local TT\n\n\
+  If the MTU of one of an attached interface becomes too small to transmit\nthe local\
+  \ translation table then it must be resized to fit inside all\nfragments (when enabled)\
+  \ or a single packet.\n\nBut if the MTU becomes too low to transmit even the header\
+  \ + the VLAN\nspecific part then the resizing of the local TT will never succeed.\
+  \ This\ncan for example happen when the usable space is 110 bytes and 11 VLANs are\n\
+  on top of batman-adv. In this case, at least 116 byte would be needed.\nThere will\
+  \ just be an endless spam of\n\n   batman_adv: batadv0: Forced to purge local tt\
+  \ entries to fit new maximum fragment MTU (110)\n\nin the log but the function will\
+  \ never finish. Problem here is that the\ntimeout will be halved all the time and\
+  \ will then stagnate at 0 and\ntherefore never be able to reduce the table even\
+  \ more.\n\nThere are other scenarios possible with a similar result. The number\
+  \ of\nBATADV_TT_CLIENT_NOPURGE entries in the local TT can for example be too\n\
+  high to fit inside a packet. Such a scenario can therefore happen also with\nonly\
+  \ a single VLAN + 7 non-purgable addresses - requiring at least 120\nbytes.\n\n\
+  While this should be handled proactively when:\n\n* interface with too low MTU is\
+  \ added\n* VLAN is added\n* non-purgeable local mac is added\n* MTU of an attached\
+  \ interface is reduced\n* fragmentation setting gets disabled (which most likely\
+  \ requires dropping\n  attached interfaces)\n\nnot all of these scenarios can be\
+  \ prevented because batman-adv is only\nconsuming events without the the possibility\
+  \ to prevent these actions\n(non-purgable MAC address added, MTU of an attached\
+  \ interface is reduced).\nIt is therefore necessary to also make sure that the code\
+  \ is able to handle\nalso the situations when there were already incompatible system\n\
+  configuration are present.\n\nCc: stable@vger.kernel.org\nFixes: a19d3d85e1b8 (\"\
+  batman-adv: limit local translation table max size\")\nReported-by: syzbot+a6a4b5bb3da165594cff@syzkaller.appspotmail.com\n\
+  Signed-off-by: Sven Eckelmann <sven@narfation.org>\nSigned-off-by: Simon Wunderlich\
+  \ <sw@simonwunderlich.de>\n"
+submodule:
+- net/batman-adv
+hunk_count: 1
+covered_count: 0

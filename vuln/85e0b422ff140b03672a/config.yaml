@@ -1,0 +1,25 @@
+id: 85e0b422ff140b03672a
+bug_link: https://syzkaller.appspot.com/bug?extid=85e0b422ff140b03672a
+title: general protection fault in sctp_assoc_rwnd_increase
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 273160ffc6b993c7c91627f5a84799c66dfe4dee
+fix_commit: 636d25d557d1073281013c43e4ff4737692da2d4
+datetime: '2019-03-18T18:23:11-07:00'
+fix_commit_message: "sctp: not copy sctp_sock pd_lobby in sctp_copy_descendant\n\n\
+  Now sctp_copy_descendant() copies pd_lobby from old sctp scok to new\nsctp sock.\
+  \ If sctp_sock_migrate() returns error, it will panic when\nreleasing new sock and\
+  \ trying to purge pd_lobby due to the incorrect\npointers in pd_lobby.\n\n  [  120.485116]\
+  \ kasan: CONFIG_KASAN_INLINE enabled\n  [  120.486270] kasan: GPF could be caused\
+  \ by NULL-ptr deref or user\n  [  120.509901] Call Trace:\n  [  120.510443]  sctp_ulpevent_free+0x1e8/0x490\
+  \ [sctp]\n  [  120.511438]  sctp_queue_purge_ulpevents+0x97/0xe0 [sctp]\n  [  120.512535]\
+  \  sctp_close+0x13a/0x700 [sctp]\n  [  120.517483]  inet_release+0xdc/0x1c0\n  [\
+  \  120.518215]  __sock_release+0x1d2/0x2a0\n  [  120.519025]  sctp_do_peeloff+0x30f/0x3c0\
+  \ [sctp]\n\nWe fix it by not copying sctp_sock pd_lobby in sctp_copy_descendan(),\n\
+  and skb_queue_head_init() can also be removed in sctp_sock_migrate().\n\nReported-by:\
+  \ syzbot+85e0b422ff140b03672a@syzkaller.appspotmail.com\nFixes: 89664c623617 (\"\
+  sctp: sctp_sock_migrate() returns error if sctp_bind_addr_dup() fails\")\nSigned-off-by:\
+  \ Xin Long <lucien.xin@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 2
+covered_count: 0

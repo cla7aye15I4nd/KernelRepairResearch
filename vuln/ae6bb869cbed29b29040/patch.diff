@@ -1,0 +1,49 @@
+diff --git a/net/ax25/af_ax25.c b/net/ax25/af_ax25.c
+index c603d33d5410..5d01edf8d819 100644
+--- a/net/ax25/af_ax25.c
++++ b/net/ax25/af_ax25.c
+@@ -653,15 +653,22 @@ static int ax25_setsockopt(struct socket *sock, int level, int optname,
+ 			break;
+ 		}
+ 
+-		dev = dev_get_by_name(&init_net, devname);
++		rtnl_lock();
++		dev = __dev_get_by_name(&init_net, devname);
+ 		if (!dev) {
++			rtnl_unlock();
+ 			res = -ENODEV;
+ 			break;
+ 		}
+ 
+ 		ax25->ax25_dev = ax25_dev_ax25dev(dev);
++		if (!ax25->ax25_dev) {
++			rtnl_unlock();
++			res = -ENODEV;
++			break;
++		}
+ 		ax25_fillin_cb(ax25, ax25->ax25_dev);
+-		dev_put(dev);
++		rtnl_unlock();
+ 		break;
+ 
+ 	default:
+diff --git a/net/ax25/ax25_dev.c b/net/ax25/ax25_dev.c
+index 9a3a301e1e2f..d92195cd7834 100644
+--- a/net/ax25/ax25_dev.c
++++ b/net/ax25/ax25_dev.c
+@@ -116,6 +116,7 @@ void ax25_dev_device_down(struct net_device *dev)
+ 	if ((s = ax25_dev_list) == ax25_dev) {
+ 		ax25_dev_list = s->next;
+ 		spin_unlock_bh(&ax25_dev_lock);
++		dev->ax25_ptr = NULL;
+ 		dev_put(dev);
+ 		kfree(ax25_dev);
+ 		return;
+@@ -125,6 +126,7 @@ void ax25_dev_device_down(struct net_device *dev)
+ 		if (s->next == ax25_dev) {
+ 			s->next = ax25_dev->next;
+ 			spin_unlock_bh(&ax25_dev_lock);
++			dev->ax25_ptr = NULL;
+ 			dev_put(dev);
+ 			kfree(ax25_dev);
+ 			return;

@@ -1,0 +1,34 @@
+=====================================================
+BUG: KMSAN: uninit-value in xfrm_state_find+0x2423/0xaae0 net/xfrm/xfrm_state.c:1438
+ xfrm_state_find+0x2423/0xaae0 net/xfrm/xfrm_state.c:1438
+ xfrm_tmpl_resolve_one net/xfrm/xfrm_policy.c:2519 [inline]
+ xfrm_tmpl_resolve net/xfrm/xfrm_policy.c:2570 [inline]
+ xfrm_resolve_and_create_bundle+0xabc/0x58b0 net/xfrm/xfrm_policy.c:2868
+ xfrm_lookup_with_ifid+0x48c/0x3ac0 net/xfrm/xfrm_policy.c:3202
+ xfrm_lookup net/xfrm/xfrm_policy.c:3333 [inline]
+ xfrm_lookup_route+0x63/0x2b0 net/xfrm/xfrm_policy.c:3344
+ ip_route_output_flow+0x20d/0x2b0 net/ipv4/route.c:2918
+ ip_route_connect include/net/route.h:352 [inline]
+ tcp_v4_connect+0xa43/0x1cd0 net/ipv4/tcp_ipv4.c:252
+ tcp_v6_connect+0x134a/0x1d40 net/ipv6/tcp_ipv6.c:240
+ __inet_stream_connect+0x2d3/0x1760 net/ipv4/af_inet.c:677
+ inet_stream_connect+0x69/0xd0 net/ipv4/af_inet.c:748
+ __sys_connect_file net/socket.c:2038 [inline]
+ __sys_connect+0x523/0x680 net/socket.c:2057
+ __do_sys_connect net/socket.c:2063 [inline]
+ __se_sys_connect net/socket.c:2060 [inline]
+ __x64_sys_connect+0x95/0x100 net/socket.c:2060
+ x64_sys_call+0x23bb/0x3db0 arch/x86/include/generated/asm/syscalls_64.h:43
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xd9/0x1b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Local variable tmp.i.i created at:
+ xfrm_tmpl_resolve_one net/xfrm/xfrm_policy.c:2491 [inline]
+ xfrm_tmpl_resolve net/xfrm/xfrm_policy.c:2570 [inline]
+ xfrm_resolve_and_create_bundle+0x3a7/0x58b0 net/xfrm/xfrm_policy.c:2868
+ xfrm_lookup_with_ifid+0x48c/0x3ac0 net/xfrm/xfrm_policy.c:3202
+
+CPU: 1 UID: 0 PID: 11691 Comm: syz.5.1451 Not tainted 6.15.0-rc6-syzkaller-00278-g172a9d94339c #0 PREEMPT(undef) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+=====================================================

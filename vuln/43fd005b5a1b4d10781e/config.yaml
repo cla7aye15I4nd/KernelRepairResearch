@@ -1,0 +1,76 @@
+id: 43fd005b5a1b4d10781e
+bug_link: https://syzkaller.appspot.com/bug?extid=43fd005b5a1b4d10781e
+title: possible deadlock in ktime_get_coarse_ts64
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ba05fd36b8512d6aeefe9c2c5b6a25b726c4bfff
+fix_commit: 5e0bc3082e2e403ac0753e099c2b01446bb35578
+datetime: '2021-11-15T20:35:58-08:00'
+fix_commit_message: "bpf: Forbid bpf_ktime_get_coarse_ns and bpf_timer_* in tracing\
+  \ progs\n\nUse of bpf_ktime_get_coarse_ns() and bpf_timer_* helpers in tracing\n\
+  progs may result in locking issues.\n\nbpf_ktime_get_coarse_ns() uses ktime_get_coarse_ns()\
+  \ time accessor that\nisn't safe for any context:\n======================================================\n\
+  WARNING: possible circular locking dependency detected\n5.15.0-syzkaller #0 Not\
+  \ tainted\n------------------------------------------------------\nsyz-executor.4/14877\
+  \ is trying to acquire lock:\nffffffff8cb30008 (tk_core.seq.seqcount){----}-{0:0},\
+  \ at: ktime_get_coarse_ts64+0x25/0x110 kernel/time/timekeeping.c:2255\n\nbut task\
+  \ is already holding lock:\nffffffff90dbf200 (&obj_hash[i].lock){-.-.}-{2:2}, at:\
+  \ debug_object_deactivate+0x61/0x400 lib/debugobjects.c:735\n\nwhich lock already\
+  \ depends on the new lock.\n\nthe existing dependency chain (in reverse order) is:\n\
+  \n-> #1 (&obj_hash[i].lock){-.-.}-{2:2}:\n       lock_acquire+0x19f/0x4d0 kernel/locking/lockdep.c:5625\n\
+  \       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]\n\
+  \       _raw_spin_lock_irqsave+0xd1/0x120 kernel/locking/spinlock.c:162\n      \
+  \ __debug_object_init+0xd9/0x1860 lib/debugobjects.c:569\n       debug_hrtimer_init\
+  \ kernel/time/hrtimer.c:414 [inline]\n       debug_init kernel/time/hrtimer.c:468\
+  \ [inline]\n       hrtimer_init+0x20/0x40 kernel/time/hrtimer.c:1592\n       ntp_init_cmos_sync\
+  \ kernel/time/ntp.c:676 [inline]\n       ntp_init+0xa1/0xad kernel/time/ntp.c:1095\n\
+  \       timekeeping_init+0x512/0x6bf kernel/time/timekeeping.c:1639\n       start_kernel+0x267/0x56e\
+  \ init/main.c:1030\n       secondary_startup_64_no_verify+0xb1/0xbb\n\n-> #0 (tk_core.seq.seqcount){----}-{0:0}:\n\
+  \       check_prev_add kernel/locking/lockdep.c:3051 [inline]\n       check_prevs_add\
+  \ kernel/locking/lockdep.c:3174 [inline]\n       validate_chain+0x1dfb/0x8240 kernel/locking/lockdep.c:3789\n\
+  \       __lock_acquire+0x1382/0x2b00 kernel/locking/lockdep.c:5015\n       lock_acquire+0x19f/0x4d0\
+  \ kernel/locking/lockdep.c:5625\n       seqcount_lockdep_reader_access+0xfe/0x230\
+  \ include/linux/seqlock.h:103\n       ktime_get_coarse_ts64+0x25/0x110 kernel/time/timekeeping.c:2255\n\
+  \       ktime_get_coarse include/linux/timekeeping.h:120 [inline]\n       ktime_get_coarse_ns\
+  \ include/linux/timekeeping.h:126 [inline]\n       ____bpf_ktime_get_coarse_ns kernel/bpf/helpers.c:173\
+  \ [inline]\n       bpf_ktime_get_coarse_ns+0x7e/0x130 kernel/bpf/helpers.c:171\n\
+  \       bpf_prog_a99735ebafdda2f1+0x10/0xb50\n       bpf_dispatcher_nop_func include/linux/bpf.h:721\
+  \ [inline]\n       __bpf_prog_run include/linux/filter.h:626 [inline]\n       bpf_prog_run\
+  \ include/linux/filter.h:633 [inline]\n       BPF_PROG_RUN_ARRAY include/linux/bpf.h:1294\
+  \ [inline]\n       trace_call_bpf+0x2cf/0x5d0 kernel/trace/bpf_trace.c:127\n   \
+  \    perf_trace_run_bpf_submit+0x7b/0x1d0 kernel/events/core.c:9708\n       perf_trace_lock+0x37c/0x440\
+  \ include/trace/events/lock.h:39\n       trace_lock_release+0x128/0x150 include/trace/events/lock.h:58\n\
+  \       lock_release+0x82/0x810 kernel/locking/lockdep.c:5636\n       __raw_spin_unlock_irqrestore\
+  \ include/linux/spinlock_api_smp.h:149 [inline]\n       _raw_spin_unlock_irqrestore+0x75/0x130\
+  \ kernel/locking/spinlock.c:194\n       debug_hrtimer_deactivate kernel/time/hrtimer.c:425\
+  \ [inline]\n       debug_deactivate kernel/time/hrtimer.c:481 [inline]\n       __run_hrtimer\
+  \ kernel/time/hrtimer.c:1653 [inline]\n       __hrtimer_run_queues+0x2f9/0xa60 kernel/time/hrtimer.c:1749\n\
+  \       hrtimer_interrupt+0x3b3/0x1040 kernel/time/hrtimer.c:1811\n       local_apic_timer_interrupt\
+  \ arch/x86/kernel/apic/apic.c:1086 [inline]\n       __sysvec_apic_timer_interrupt+0xf9/0x270\
+  \ arch/x86/kernel/apic/apic.c:1103\n       sysvec_apic_timer_interrupt+0x8c/0xb0\
+  \ arch/x86/kernel/apic/apic.c:1097\n       asm_sysvec_apic_timer_interrupt+0x12/0x20\n\
+  \       __raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152 [inline]\n\
+  \       _raw_spin_unlock_irqrestore+0xd4/0x130 kernel/locking/spinlock.c:194\n \
+  \      try_to_wake_up+0x702/0xd20 kernel/sched/core.c:4118\n       wake_up_process\
+  \ kernel/sched/core.c:4200 [inline]\n       wake_up_q+0x9a/0xf0 kernel/sched/core.c:953\n\
+  \       futex_wake+0x50f/0x5b0 kernel/futex/waitwake.c:184\n       do_futex+0x367/0x560\
+  \ kernel/futex/syscalls.c:127\n       __do_sys_futex kernel/futex/syscalls.c:199\
+  \ [inline]\n       __se_sys_futex+0x401/0x4b0 kernel/futex/syscalls.c:180\n    \
+  \   do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n       do_syscall_64+0x44/0xd0\
+  \ arch/x86/entry/common.c:80\n       entry_SYSCALL_64_after_hwframe+0x44/0xae\n\n\
+  There is a possible deadlock with bpf_timer_* set of helpers:\nhrtimer_start()\n\
+  \  lock_base();\n  trace_hrtimer...()\n    perf_event()\n      bpf_run()\n     \
+  \   bpf_timer_start()\n          hrtimer_start()\n            lock_base()      \
+  \   <- DEADLOCK\n\nForbid use of bpf_ktime_get_coarse_ns() and bpf_timer_* helpers\
+  \ in\nBPF_PROG_TYPE_KPROBE, BPF_PROG_TYPE_TRACEPOINT, BPF_PROG_TYPE_PERF_EVENT\n\
+  and BPF_PROG_TYPE_RAW_TRACEPOINT prog types.\n\nFixes: d05512618056 (\"bpf: Add\
+  \ bpf_ktime_get_coarse_ns helper\")\nFixes: b00628b1c7d5 (\"bpf: Introduce bpf timers.\"\
+  )\nReported-by: syzbot+43fd005b5a1b4d10781e@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Dmitrii Banshchikov <me@ubique.spb.ru>\nSigned-off-by: Alexei Starovoitov <ast@kernel.org>\n\
+  Link: https://lore.kernel.org/bpf/20211113142227.566439-2-me@ubique.spb.ru\n"
+submodule:
+- kernel/bpf
+- kernel/trace
+- net/core
+- net/ipv4
+hunk_count: 8
+covered_count: 0

@@ -1,0 +1,24 @@
+id: 4de3c0e8a263e1e499bc
+bug_link: https://syzkaller.appspot.com/bug?extid=4de3c0e8a263e1e499bc
+title: 'BUG: MAX_LOCK_DEPTH too low! (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f1baf68e1383f6ed93eb9cff2866d46562607a43
+fix_commit: 1de9770d121ee9294794cca0e0be8fbfa0134ee8
+datetime: '2022-02-11T11:10:29+00:00'
+fix_commit_message: "net/smc: Avoid overwriting the copies of clcsock callback functions\n\
+  \nThe callback functions of clcsock will be saved and replaced during\nthe fallback.\
+  \ But if the fallback happens more than once, then the\ncopies of these callback\
+  \ functions will be overwritten incorrectly,\nresulting in a loop call issue:\n\n\
+  clcsk->sk_error_report\n |- smc_fback_error_report() <------------------------------|\n\
+  \     |- smc_fback_forward_wakeup()                          | (loop)\n        \
+  \ |- clcsock_callback()  (incorrectly overwritten)   |\n             |- smc->clcsk_error_report()\
+  \ ------------------|\n\nSo this patch fixes the issue by saving these function\
+  \ pointers only\nonce in the fallback and avoiding overwriting.\n\nReported-by:\
+  \ syzbot+4de3c0e8a263e1e499bc@syzkaller.appspotmail.com\nFixes: 341adeec9ada (\"\
+  net/smc: Forward wakeup to smc socket waitqueue after fallback\")\nLink: https://lore.kernel.org/r/0000000000006d045e05d78776f6@google.com\n\
+  Signed-off-by: Wen Gu <guwen@linux.alibaba.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/smc
+hunk_count: 2
+covered_count: 2

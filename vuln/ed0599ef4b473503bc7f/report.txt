@@ -1,0 +1,59 @@
+------------[ cut here ]------------
+refcount_t: decrement hit 0; leaking memory.
+WARNING: CPU: 1 PID: 5193 at lib/refcount.c:31 refcount_warn_saturate+0x1ed/0x210 lib/refcount.c:31
+Modules linked in:
+CPU: 1 PID: 5193 Comm: syz-fuzzer Not tainted 6.9.0-rc3-syzkaller-00058-ga6189a740779 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+RIP: 0010:refcount_warn_saturate+0x1ed/0x210 lib/refcount.c:31
+Code: 8b e8 e7 e1 d3 fc 90 0f 0b 90 90 e9 c3 fe ff ff e8 88 0d 11 fd c6 05 94 b6 09 0b 01 90 48 c7 c7 40 b0 6e 8b e8 c4 e1 d3 fc 90 <0f> 0b 90 90 e9 a0 fe ff ff 48 89 ef e8 42 8a 6d fd e9 44 fe ff ff
+RSP: 0018:ffffc900069f7490 EFLAGS: 00010282
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffffffff81512be9
+RDX: ffff88801fb1c880 RSI: ffffffff81512bf6 RDI: 0000000000000001
+RBP: ffff888026c00d2c R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000001 R12: ffff888026c00d2c
+R13: 0000000000000000 R14: 0000000001a201e8 R15: ffff888040830ca8
+FS:  0000000000000000(0000) GS:ffff88802c300000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f3690e06440 CR3: 000000000d57a000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __refcount_dec include/linux/refcount.h:336 [inline]
+ refcount_dec include/linux/refcount.h:351 [inline]
+ dec_stack_record_count mm/page_owner.c:228 [inline]
+ __reset_page_owner+0x2ea/0x370 mm/page_owner.c:266
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1141 [inline]
+ free_unref_page_prepare+0x527/0xb10 mm/page_alloc.c:2347
+ free_unref_folios+0x256/0xad0 mm/page_alloc.c:2536
+ folios_put_refs+0x49c/0x750 mm/swap.c:1034
+ free_pages_and_swap_cache+0x262/0x4b0 mm/swap_state.c:329
+ __tlb_batch_free_encoded_pages+0xf9/0x290 mm/mmu_gather.c:136
+ tlb_batch_pages_flush mm/mmu_gather.c:149 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:366 [inline]
+ tlb_flush_mmu mm/mmu_gather.c:373 [inline]
+ tlb_finish_mmu+0x168/0x7b0 mm/mmu_gather.c:465
+ exit_mmap+0x3da/0xb90 mm/mmap.c:3280
+ __mmput+0x12a/0x4d0 kernel/fork.c:1345
+ mmput+0x62/0x70 kernel/fork.c:1367
+ exit_mm kernel/exit.c:569 [inline]
+ do_exit+0x999/0x2c10 kernel/exit.c:865
+ do_group_exit+0xd3/0x2a0 kernel/exit.c:1027
+ get_signal+0x25c3/0x2670 kernel/signal.c:2911
+ arch_do_signal_or_restart+0x90/0x7e0 arch/x86/kernel/signal.c:310
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x14a/0x2a0 kernel/entry/common.c:218
+ do_syscall_64+0xdc/0x260 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x472e43
+Code: Unable to access opcode bytes at 0x472e19.
+RSP: 002b:000000c00051fed0 EFLAGS: 00000286 ORIG_RAX: 00000000000000ca
+RAX: fffffffffffffe00 RBX: 0000000000000000 RCX: 0000000000472e43
+RDX: 0000000000000000 RSI: 0000000000000080 RDI: 000000000250f720
+RBP: 000000c00051ff18 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000286 R12: 000000000046f100
+R13: 000000c000486400 R14: 000000c0005109c0 R15: 0000000000000008
+ </TASK>

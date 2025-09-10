@@ -1,0 +1,59 @@
+id: 7078ae989d857fe17988
+bug_link: https://syzkaller.appspot.com/bug?extid=7078ae989d857fe17988
+title: general protection fault in rose_send_frame
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f46e79aa1a2bea7de2885fa8d79a68d11545a5fd
+fix_commit: 3b3fd068c56e3fbea30090859216a368398e39bf
+datetime: '2020-11-20T10:04:58-08:00'
+fix_commit_message: 'rose: Fix Null pointer dereference in rose_send_frame()
+
+
+  rose_send_frame() dereferences `neigh->dev` when called from
+
+  rose_transmit_clear_request(), and the first occurrence of the
+
+  `neigh` is in rose_loopback_timer() as `rose_loopback_neigh`,
+
+  and it is initialized in rose_add_loopback_neigh() as NULL.
+
+  i.e when `rose_loopback_neigh` used in rose_loopback_timer()
+
+  its `->dev` was still NULL and rose_loopback_timer() was calling
+
+  rose_rx_call_request() without checking for NULL.
+
+
+  - net/rose/rose_link.c
+
+  This bug seems to get triggered in this line:
+
+
+  rose_call = (ax25_address *)neigh->dev->dev_addr;
+
+
+  Fix it by adding NULL checking for `rose_loopback_neigh->dev`
+
+  in rose_loopback_timer().
+
+
+  Fixes: 1da177e4c3f4 ("Linux-2.6.12-rc2")
+
+  Suggested-by: Jakub Kicinski <kuba@kernel.org>
+
+  Reported-by: syzbot+a1c743815982d9496393@syzkaller.appspotmail.com
+
+  Tested-by: syzbot+a1c743815982d9496393@syzkaller.appspotmail.com
+
+  Link: https://syzkaller.appspot.com/bug?id=9d2a7ca8c7f2e4b682c97578dfa3f236258300b3
+
+  Signed-off-by: Anmol Karn <anmol.karan123@gmail.com>
+
+  Link: https://lore.kernel.org/r/20201119191043.28813-1-anmol.karan123@gmail.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/rose
+hunk_count: 1
+covered_count: 1

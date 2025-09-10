@@ -1,0 +1,384 @@
+diff --git a/include/linux/kasan.h b/include/linux/kasan.h
+index 1570c7191176..00a3bf7c0d8f 100644
+--- a/include/linux/kasan.h
++++ b/include/linux/kasan.h
+@@ -196,15 +196,18 @@ static __always_inline bool kasan_slab_pre_free(struct kmem_cache *s,
+ 	return false;
+ }
+ 
+-bool __kasan_slab_free(struct kmem_cache *s, void *object, bool init);
++bool __kasan_slab_free(struct kmem_cache *s, void *object, bool init,
++		       bool still_accessible);
+ /**
+  * kasan_slab_free - Poison, initialize, and quarantine a slab object.
+  * @object: Object to be freed.
+  * @init: Whether to initialize the object.
++ * @still_accessible: Whether the object contents are still accessible.
+  *
+  * This function informs that a slab object has been freed and is not
+- * supposed to be accessed anymore, except for objects in
+- * SLAB_TYPESAFE_BY_RCU caches.
++ * supposed to be accessed anymore, except when @still_accessible is set
++ * (indicating that the object is in a SLAB_TYPESAFE_BY_RCU cache and an RCU
++ * grace period might not have passed yet).
+  *
+  * For KASAN modes that have integrated memory initialization
+  * (kasan_has_integrated_init() == true), this function also initializes
+@@ -220,10 +223,11 @@ bool __kasan_slab_free(struct kmem_cache *s, void *object, bool init);
+  * @Return true if KASAN took ownership of the object; false otherwise.
+  */
+ static __always_inline bool kasan_slab_free(struct kmem_cache *s,
+-						void *object, bool init)
++						void *object, bool init,
++						bool still_accessible)
+ {
+ 	if (kasan_enabled())
+-		return __kasan_slab_free(s, object, init);
++		return __kasan_slab_free(s, object, init, still_accessible);
+ 	return false;
+ }
+ 
+@@ -419,7 +423,8 @@ static inline bool kasan_slab_pre_free(struct kmem_cache *s, void *object)
+ 	return false;
+ }
+ 
+-static inline bool kasan_slab_free(struct kmem_cache *s, void *object, bool init)
++static inline bool kasan_slab_free(struct kmem_cache *s, void *object,
++				   bool init, bool still_accessible)
+ {
+ 	return false;
+ }
+diff --git a/mm/Kconfig.debug b/mm/Kconfig.debug
+index afc72fde0f03..41a58536531d 100644
+--- a/mm/Kconfig.debug
++++ b/mm/Kconfig.debug
+@@ -70,6 +70,38 @@ config SLUB_DEBUG_ON
+ 	  off in a kernel built with CONFIG_SLUB_DEBUG_ON by specifying
+ 	  "slab_debug=-".
+ 
++config SLUB_RCU_DEBUG
++	bool "Enable UAF detection in TYPESAFE_BY_RCU caches (for KASAN)"
++	depends on SLUB_DEBUG
++	# SLUB_RCU_DEBUG should build fine without KASAN, but is currently useless
++	# without KASAN, so mark it as a dependency of KASAN for now.
++	depends on KASAN
++	default KASAN_GENERIC || KASAN_SW_TAGS
++	help
++	  Make SLAB_TYPESAFE_BY_RCU caches behave approximately as if the cache
++	  was not marked as SLAB_TYPESAFE_BY_RCU and every caller used
++	  kfree_rcu() instead.
++
++	  This is intended for use in combination with KASAN, to enable KASAN to
++	  detect use-after-free accesses in such caches.
++	  (KFENCE is able to do that independent of this flag.)
++
++	  This might degrade performance.
++	  Unfortunately this also prevents a very specific bug pattern from
++	  triggering (insufficient checks against an object being recycled
++	  within the RCU grace period); so this option can be turned off even on
++	  KASAN builds, in case you want to test for such a bug.
++
++	  If you're using this for testing bugs / fuzzing and care about
++	  catching all the bugs WAY more than performance, you might want to
++	  also turn on CONFIG_RCU_STRICT_GRACE_PERIOD.
++
++	  WARNING:
++	  This is designed as a debugging feature, not a security feature.
++	  Objects are sometimes recycled without RCU delay under memory pressure.
++
++	  If unsure, say N.
++
+ config PAGE_OWNER
+ 	bool "Track page owner"
+ 	depends on DEBUG_KERNEL && STACKTRACE_SUPPORT
+diff --git a/mm/kasan/common.c b/mm/kasan/common.c
+index f26bbc087b3b..ed4873e18c75 100644
+--- a/mm/kasan/common.c
++++ b/mm/kasan/common.c
+@@ -230,14 +230,14 @@ static bool check_slab_allocation(struct kmem_cache *cache, void *object,
+ }
+ 
+ static inline void poison_slab_object(struct kmem_cache *cache, void *object,
+-				      bool init)
++				      bool init, bool still_accessible)
+ {
+ 	void *tagged_object = object;
+ 
+ 	object = kasan_reset_tag(object);
+ 
+ 	/* RCU slabs could be legally used after free within the RCU period. */
+-	if (unlikely(cache->flags & SLAB_TYPESAFE_BY_RCU))
++	if (unlikely(still_accessible))
+ 		return;
+ 
+ 	kasan_poison(object, round_up(cache->object_size, KASAN_GRANULE_SIZE),
+@@ -255,12 +255,13 @@ bool __kasan_slab_pre_free(struct kmem_cache *cache, void *object,
+ 	return check_slab_allocation(cache, object, ip);
+ }
+ 
+-bool __kasan_slab_free(struct kmem_cache *cache, void *object, bool init)
++bool __kasan_slab_free(struct kmem_cache *cache, void *object, bool init,
++		       bool still_accessible)
+ {
+ 	if (!kasan_arch_is_ready() || is_kfence_address(object))
+ 		return false;
+ 
+-	poison_slab_object(cache, object, init);
++	poison_slab_object(cache, object, init, still_accessible);
+ 
+ 	/*
+ 	 * If the object is put into quarantine, do not let slab put the object
+@@ -518,7 +519,7 @@ bool __kasan_mempool_poison_object(void *ptr, unsigned long ip)
+ 	if (check_slab_allocation(slab->slab_cache, ptr, ip))
+ 		return false;
+ 
+-	poison_slab_object(slab->slab_cache, ptr, false);
++	poison_slab_object(slab->slab_cache, ptr, false, false);
+ 	return true;
+ }
+ 
+diff --git a/mm/kasan/kasan_test.c b/mm/kasan/kasan_test.c
+index 7b32be2a3cf0..567d33b493e2 100644
+--- a/mm/kasan/kasan_test.c
++++ b/mm/kasan/kasan_test.c
+@@ -996,6 +996,51 @@ static void kmem_cache_invalid_free(struct kunit *test)
+ 	kmem_cache_destroy(cache);
+ }
+ 
++static void kmem_cache_rcu_uaf(struct kunit *test)
++{
++	char *p;
++	size_t size = 200;
++	struct kmem_cache *cache;
++
++	KASAN_TEST_NEEDS_CONFIG_ON(test, CONFIG_SLUB_RCU_DEBUG);
++
++	cache = kmem_cache_create("test_cache", size, 0, SLAB_TYPESAFE_BY_RCU,
++				  NULL);
++	KUNIT_ASSERT_NOT_ERR_OR_NULL(test, cache);
++
++	p = kmem_cache_alloc(cache, GFP_KERNEL);
++	if (!p) {
++		kunit_err(test, "Allocation failed: %s\n", __func__);
++		kmem_cache_destroy(cache);
++		return;
++	}
++	*p = 1;
++
++	rcu_read_lock();
++
++	/* Free the object - this will internally schedule an RCU callback. */
++	kmem_cache_free(cache, p);
++
++	/*
++	 * We should still be allowed to access the object at this point because
++	 * the cache is SLAB_TYPESAFE_BY_RCU and we've been in an RCU read-side
++	 * critical section since before the kmem_cache_free().
++	 */
++	READ_ONCE(*p);
++
++	rcu_read_unlock();
++
++	/*
++	 * Wait for the RCU callback to execute; after this, the object should
++	 * have actually been freed from KASAN's perspective.
++	 */
++	rcu_barrier();
++
++	KUNIT_EXPECT_KASAN_FAIL(test, READ_ONCE(*p));
++
++	kmem_cache_destroy(cache);
++}
++
+ static void empty_cache_ctor(void *object) { }
+ 
+ static void kmem_cache_double_destroy(struct kunit *test)
+@@ -1937,6 +1982,7 @@ static struct kunit_case kasan_kunit_test_cases[] = {
+ 	KUNIT_CASE(kmem_cache_oob),
+ 	KUNIT_CASE(kmem_cache_double_free),
+ 	KUNIT_CASE(kmem_cache_invalid_free),
++	KUNIT_CASE(kmem_cache_rcu_uaf),
+ 	KUNIT_CASE(kmem_cache_double_destroy),
+ 	KUNIT_CASE(kmem_cache_accounted),
+ 	KUNIT_CASE(kmem_cache_bulk),
+diff --git a/mm/slab_common.c b/mm/slab_common.c
+index 1a2873293f5d..884e8e70a56d 100644
+--- a/mm/slab_common.c
++++ b/mm/slab_common.c
+@@ -511,6 +511,22 @@ void kmem_cache_destroy(struct kmem_cache *s)
+ 	/* in-flight kfree_rcu()'s may include objects from our cache */
+ 	kvfree_rcu_barrier();
+ 
++	if (IS_ENABLED(CONFIG_SLUB_RCU_DEBUG) &&
++	    (s->flags & SLAB_TYPESAFE_BY_RCU)) {
++		/*
++		 * Under CONFIG_SLUB_RCU_DEBUG, when objects in a
++		 * SLAB_TYPESAFE_BY_RCU slab are freed, SLUB will internally
++		 * defer their freeing with call_rcu().
++		 * Wait for such call_rcu() invocations here before actually
++		 * destroying the cache.
++		 *
++		 * It doesn't matter that we haven't looked at the slab refcount
++		 * yet - slabs with SLAB_TYPESAFE_BY_RCU can't be merged, so
++		 * the refcount should be 1 here.
++		 */
++		rcu_barrier();
++	}
++
+ 	cpus_read_lock();
+ 	mutex_lock(&slab_mutex);
+ 
+diff --git a/mm/slub.c b/mm/slub.c
+index 4946488cb5a7..95977f25a760 100644
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -2200,16 +2200,30 @@ static inline void memcg_slab_free_hook(struct kmem_cache *s, struct slab *slab,
+ }
+ #endif /* CONFIG_MEMCG */
+ 
++#ifdef CONFIG_SLUB_RCU_DEBUG
++static void slab_free_after_rcu_debug(struct rcu_head *rcu_head);
++
++struct rcu_delayed_free {
++	struct rcu_head head;
++	void *object;
++};
++#endif
++
+ /*
+  * Hooks for other subsystems that check memory allocations. In a typical
+  * production configuration these hooks all should produce no code at all.
+  *
+  * Returns true if freeing of the object can proceed, false if its reuse
+- * was delayed by KASAN quarantine, or it was returned to KFENCE.
++ * was delayed by CONFIG_SLUB_RCU_DEBUG or KASAN quarantine, or it was returned
++ * to KFENCE.
+  */
+ static __always_inline
+-bool slab_free_hook(struct kmem_cache *s, void *x, bool init)
++bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
++		    bool after_rcu_delay)
+ {
++	/* Are the object contents still accessible? */
++	bool still_accessible = (s->flags & SLAB_TYPESAFE_BY_RCU) && !after_rcu_delay;
++
+ 	kmemleak_free_recursive(x, s->flags);
+ 	kmsan_slab_free(s, x);
+ 
+@@ -2219,7 +2233,7 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init)
+ 		debug_check_no_obj_freed(x, s->object_size);
+ 
+ 	/* Use KCSAN to help debug racy use-after-free. */
+-	if (!(s->flags & SLAB_TYPESAFE_BY_RCU))
++	if (!still_accessible)
+ 		__kcsan_check_access(x, s->object_size,
+ 				     KCSAN_ACCESS_WRITE | KCSAN_ACCESS_ASSERT);
+ 
+@@ -2233,6 +2247,28 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init)
+ 	if (kasan_slab_pre_free(s, x))
+ 		return false;
+ 
++#ifdef CONFIG_SLUB_RCU_DEBUG
++	if (still_accessible) {
++		struct rcu_delayed_free *delayed_free;
++
++		delayed_free = kmalloc(sizeof(*delayed_free), GFP_NOWAIT);
++		if (delayed_free) {
++			/*
++			 * Let KASAN track our call stack as a "related work
++			 * creation", just like if the object had been freed
++			 * normally via kfree_rcu().
++			 * We have to do this manually because the rcu_head is
++			 * not located inside the object.
++			 */
++			kasan_record_aux_stack_noalloc(x);
++
++			delayed_free->object = x;
++			call_rcu(&delayed_free->head, slab_free_after_rcu_debug);
++			return false;
++		}
++	}
++#endif /* CONFIG_SLUB_RCU_DEBUG */
++
+ 	/*
+ 	 * As memory initialization might be integrated into KASAN,
+ 	 * kasan_slab_free and initialization memset's must be
+@@ -2256,7 +2292,7 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init)
+ 		       s->size - inuse - rsize);
+ 	}
+ 	/* KASAN might put x into memory quarantine, delaying its reuse. */
+-	return !kasan_slab_free(s, x, init);
++	return !kasan_slab_free(s, x, init, still_accessible);
+ }
+ 
+ static __fastpath_inline
+@@ -2270,7 +2306,7 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
+ 	bool init;
+ 
+ 	if (is_kfence_address(next)) {
+-		slab_free_hook(s, next, false);
++		slab_free_hook(s, next, false, false);
+ 		return false;
+ 	}
+ 
+@@ -2285,7 +2321,7 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
+ 		next = get_freepointer(s, object);
+ 
+ 		/* If object's reuse doesn't have to be delayed */
+-		if (likely(slab_free_hook(s, object, init))) {
++		if (likely(slab_free_hook(s, object, init, false))) {
+ 			/* Move object to the new freelist */
+ 			set_freepointer(s, object, *head);
+ 			*head = object;
+@@ -4477,7 +4513,7 @@ void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
+ 	memcg_slab_free_hook(s, slab, &object, 1);
+ 	alloc_tagging_slab_free_hook(s, slab, &object, 1);
+ 
+-	if (likely(slab_free_hook(s, object, slab_want_init_on_free(s))))
++	if (likely(slab_free_hook(s, object, slab_want_init_on_free(s), false)))
+ 		do_slab_free(s, slab, object, object, 1, addr);
+ }
+ 
+@@ -4486,7 +4522,7 @@ void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
+ static noinline
+ void memcg_alloc_abort_single(struct kmem_cache *s, void *object)
+ {
+-	if (likely(slab_free_hook(s, object, slab_want_init_on_free(s))))
++	if (likely(slab_free_hook(s, object, slab_want_init_on_free(s), false)))
+ 		do_slab_free(s, virt_to_slab(object), object, object, 1, _RET_IP_);
+ }
+ #endif
+@@ -4505,6 +4541,33 @@ void slab_free_bulk(struct kmem_cache *s, struct slab *slab, void *head,
+ 		do_slab_free(s, slab, head, tail, cnt, addr);
+ }
+ 
++#ifdef CONFIG_SLUB_RCU_DEBUG
++static void slab_free_after_rcu_debug(struct rcu_head *rcu_head)
++{
++	struct rcu_delayed_free *delayed_free =
++			container_of(rcu_head, struct rcu_delayed_free, head);
++	void *object = delayed_free->object;
++	struct slab *slab = virt_to_slab(object);
++	struct kmem_cache *s;
++
++	kfree(delayed_free);
++
++	if (WARN_ON(is_kfence_address(object)))
++		return;
++
++	/* find the object and the cache again */
++	if (WARN_ON(!slab))
++		return;
++	s = slab->slab_cache;
++	if (WARN_ON(!(s->flags & SLAB_TYPESAFE_BY_RCU)))
++		return;
++
++	/* resume freeing */
++	if (slab_free_hook(s, object, slab_want_init_on_free(s), true))
++		do_slab_free(s, slab, object, object, 1, _THIS_IP_);
++}
++#endif /* CONFIG_SLUB_RCU_DEBUG */
++
+ #ifdef CONFIG_KASAN_GENERIC
+ void ___cache_free(struct kmem_cache *cache, void *x, unsigned long addr)
+ {

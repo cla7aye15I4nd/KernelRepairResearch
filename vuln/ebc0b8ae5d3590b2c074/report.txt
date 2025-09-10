@@ -1,0 +1,68 @@
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 61 at net/mptcp/protocol.c:1024 __mptcp_clean_una+0xddb/0xff0 net/mptcp/protocol.c:1024
+Modules linked in:
+CPU: 1 UID: 0 PID: 61 Comm: kworker/u8:4 Not tainted 6.13.0-rc3-syzkaller-g23579010cf0a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/25/2024
+Workqueue: krdsd rds_tcp_accept_worker
+RIP: 0010:__mptcp_clean_una+0xddb/0xff0 net/mptcp/protocol.c:1024
+Code: fa ff ff 48 8b 4c 24 18 80 e1 07 fe c1 38 c1 0f 8c 8e fa ff ff 48 8b 7c 24 18 e8 f0 9a 54 f6 e9 7f fa ff ff e8 96 32 ee f5 90 <0f> 0b 90 4c 8b 6c 24 40 4d 89 f4 e9 04 f5 ff ff 44 89 f1 80 e1 07
+RSP: 0018:ffffc90000a17da0 EFLAGS: 00010246
+RAX: ffffffff8bb1415a RBX: ffff888079774630 RCX: ffff8880222fbc00
+RDX: 0000000000000100 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc90000a17eb0 R08: ffffffff8bb135dd R09: 1ffffd40003cd8c6
+R10: dffffc0000000000 R11: fffff940003cd8c7 R12: 0000000000000000
+R13: ffff888079774620 R14: dffffc0000000000 R15: ffff888029d98000
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f0fff0c6e48 CR3: 00000000328ae000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ mptcp_incoming_options+0xc49/0x2540 net/mptcp/options.c:1138
+ tcp_data_queue+0xf9/0x7310 net/ipv4/tcp_input.c:5233
+ tcp_rcv_established+0xed0/0x1f20 net/ipv4/tcp_input.c:6264
+ tcp_v4_do_rcv+0x96d/0xc70 net/ipv4/tcp_ipv4.c:1916
+ tcp_v4_rcv+0x2dc0/0x37f0 net/ipv4/tcp_ipv4.c:2351
+ ip_protocol_deliver_rcu+0x22e/0x440 net/ipv4/ip_input.c:205
+ ip_local_deliver_finish+0x341/0x5f0 net/ipv4/ip_input.c:233
+ NF_HOOK+0x3a4/0x450 include/linux/netfilter.h:314
+ NF_HOOK+0x3a4/0x450 include/linux/netfilter.h:314
+ __netif_receive_skb_one_core net/core/dev.c:5672 [inline]
+ __netif_receive_skb+0x2bf/0x650 net/core/dev.c:5785
+ process_backlog+0x662/0x15b0 net/core/dev.c:6117
+ __napi_poll+0xcb/0x490 net/core/dev.c:6883
+ napi_poll net/core/dev.c:6952 [inline]
+ net_rx_action+0x89b/0x1240 net/core/dev.c:7074
+ handle_softirqs+0x2d4/0x9b0 kernel/softirq.c:561
+ do_softirq+0x11b/0x1e0 kernel/softirq.c:462
+ </IRQ>
+ <TASK>
+ __local_bh_enable_ip+0x1bb/0x200 kernel/softirq.c:389
+ local_bh_enable include/linux/bottom_half.h:33 [inline]
+ rcu_read_unlock_bh include/linux/rcupdate.h:919 [inline]
+ __dev_queue_xmit+0x1775/0x3f50 net/core/dev.c:4461
+ dev_queue_xmit include/linux/netdevice.h:3168 [inline]
+ neigh_hh_output include/net/neighbour.h:523 [inline]
+ neigh_output include/net/neighbour.h:537 [inline]
+ ip_finish_output2+0xd41/0x1390 net/ipv4/ip_output.c:236
+ ip_local_out net/ipv4/ip_output.c:130 [inline]
+ __ip_queue_xmit+0x12ca/0x1ef0 net/ipv4/ip_output.c:536
+ __tcp_transmit_skb+0x2582/0x3ba0 net/ipv4/tcp_output.c:1468
+ tcp_transmit_skb net/ipv4/tcp_output.c:1486 [inline]
+ tcp_write_xmit+0x17b5/0x6bf0 net/ipv4/tcp_output.c:2829
+ __tcp_push_pending_frames+0x9b/0x360 net/ipv4/tcp_output.c:3012
+ __tcp_close+0xa7f/0xde0 net/ipv4/tcp.c:3130
+ tcp_close+0x28/0x110 net/ipv4/tcp.c:3221
+ inet_release+0x17d/0x200 net/ipv4/af_inet.c:435
+ __sock_release net/socket.c:640 [inline]
+ sock_release+0x82/0x150 net/socket.c:668
+ rds_tcp_accept_one+0x1b3/0xbe0 net/rds/tcp_listen.c:234
+ rds_tcp_accept_worker+0x3f/0xa0 net/rds/tcp.c:531
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa66/0x1840 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

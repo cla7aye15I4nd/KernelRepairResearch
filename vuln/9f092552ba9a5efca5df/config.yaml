@@ -1,0 +1,29 @@
+id: 9f092552ba9a5efca5df
+bug_link: https://syzkaller.appspot.com/bug?extid=9f092552ba9a5efca5df
+title: kernel BUG at net/l2tp/l2tp_core.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f3dda7a679df183e798b86e7b6ec05ab35476de3
+fix_commit: c9a368f1c0fbe2e3a21ebf231caeae58b18b2681
+datetime: '2020-07-09T22:03:31+02:00'
+fix_commit_message: "bpf: net: Avoid incorrect bpf_sk_reuseport_detach call\n\nbpf_sk_reuseport_detach\
+  \ is currently called when sk->sk_user_data\nis not NULL.  It is incorrect because\
+  \ sk->sk_user_data may not be\nmanaged by the bpf's reuseport_array.  It has been\
+  \ reported in [1] that,\nthe bpf_sk_reuseport_detach() which is called from udp_lib_unhash()\
+  \ has\ncorrupted the sk_user_data managed by l2tp.\n\nThis patch solves it by using\
+  \ another bit (defined as SK_USER_DATA_BPF)\nof the sk_user_data pointer value.\
+  \  It marks that a sk_user_data is\nmanaged/owned by BPF.\n\nThe patch depends on\
+  \ a PTRMASK introduced in\ncommit f1ff5ce2cd5e (\"net, sk_msg: Clear sk_user_data\
+  \ pointer on clone if tagged\").\n\n[ Note: sk->sk_user_data is used by bpf's reuseport_array\
+  \ only when a sk is\n  added to the bpf's reuseport_array.\n  i.e. doing setsockopt(SO_REUSEPORT)\
+  \ and having \"sk->sk_reuseport == 1\"\n  alone will not stop sk->sk_user_data being\
+  \ used by other means. ]\n\n[1]: https://lore.kernel.org/netdev/20200706121259.GA20199@katalix.com/\n\
+  \nFixes: 5dc4c4b7d4e8 (\"bpf: Introduce BPF_MAP_TYPE_REUSEPORT_SOCKARRAY\")\nReported-by:\
+  \ James Chapman <jchapman@katalix.com>\nReported-by: syzbot+9f092552ba9a5efca5df@syzkaller.appspotmail.com\n\
+  Signed-off-by: Martin KaFai Lau <kafai@fb.com>\nSigned-off-by: Daniel Borkmann <daniel@iogearbox.net>\n\
+  Tested-by: James Chapman <jchapman@katalix.com>\nAcked-by: James Chapman <jchapman@katalix.com>\n\
+  Link: https://lore.kernel.org/bpf/20200709061110.4019316-1-kafai@fb.com\n"
+submodule:
+- include/net
+- kernel/bpf
+hunk_count: 3
+covered_count: 0

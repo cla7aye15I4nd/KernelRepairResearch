@@ -1,0 +1,24 @@
+id: 47bbc6b678d317cccbe0
+bug_link: https://syzkaller.appspot.com/bug?extid=47bbc6b678d317cccbe0
+title: 'WARNING: suspicious RCU usage in tipc_l2_send_msg'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: eda814b97dfb8d9f4808eb2f65af9bd3705c4cae
+fix_commit: f6db9096416209474090d64d8284e7c16c3d8873
+datetime: '2020-08-20T16:42:08-07:00'
+fix_commit_message: "tipc: call rcu_read_lock() in tipc_aead_encrypt_done()\n\nb->media->send_msg()\
+  \ requires rcu_read_lock(), as we can see\nelsewhere in tipc,  tipc_bearer_xmit,\
+  \ tipc_bearer_xmit_skb\nand tipc_bearer_bc_xmit().\n\nSyzbot has reported this issue\
+  \ as:\n\n  net/tipc/bearer.c:466 suspicious rcu_dereference_check() usage!\n  Workqueue:\
+  \ cryptd cryptd_queue_worker\n  Call Trace:\n   tipc_l2_send_msg+0x354/0x420 net/tipc/bearer.c:466\n\
+  \   tipc_aead_encrypt_done+0x204/0x3a0 net/tipc/crypto.c:761\n   cryptd_aead_crypt+0xe8/0x1d0\
+  \ crypto/cryptd.c:739\n   cryptd_queue_worker+0x118/0x1b0 crypto/cryptd.c:181\n\
+  \   process_one_work+0x94c/0x1670 kernel/workqueue.c:2269\n   worker_thread+0x64c/0x1120\
+  \ kernel/workqueue.c:2415\n   kthread+0x3b5/0x4a0 kernel/kthread.c:291\n   ret_from_fork+0x1f/0x30\
+  \ arch/x86/entry/entry_64.S:293\n\nSo fix it by calling rcu_read_lock() in tipc_aead_encrypt_done()\n\
+  for b->media->send_msg().\n\nFixes: fc1b6d6de220 (\"tipc: introduce TIPC encryption\
+  \ & authentication\")\nReported-by: syzbot+47bbc6b678d317cccbe0@syzkaller.appspotmail.com\n\
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 1
+covered_count: 1

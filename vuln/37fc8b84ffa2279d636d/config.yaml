@@ -1,0 +1,35 @@
+id: 37fc8b84ffa2279d636d
+bug_link: https://syzkaller.appspot.com/bug?extid=37fc8b84ffa2279d636d
+title: 'WARNING: suspicious RCU usage in get_signal'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1feb2cc8db481b902272559ad7aae3c091762ad0
+fix_commit: 3066820034b5dd4e89bd74a7739c51c2d6f5e554
+datetime: '2021-05-10T16:22:54-07:00'
+fix_commit_message: "rcu: Reject RCU_LOCKDEP_WARN() false positives\n\nIf another\
+  \ lockdep report runs concurrently with an RCU lockdep report\nfrom RCU_LOCKDEP_WARN(),\
+  \ the following sequence of events can occur:\n\n1.\tdebug_lockdep_rcu_enabled()\
+  \ sees that lockdep is enabled\n\twhen called from (say) synchronize_rcu().\n\n\
+  2.\tLockdep is disabled by a concurrent lockdep report.\n\n3.\tdebug_lockdep_rcu_enabled()\
+  \ evaluates its lockdep-expression\n\targument, for example, lock_is_held(&rcu_bh_lock_map).\n\
+  \n4.\tBecause lockdep is now disabled, lock_is_held() plays it safe and\n\treturns\
+  \ the constant 1.\n\n5.\tBut in this case, the constant 1 is not safe, because invoking\n\
+  \tsynchronize_rcu() under rcu_read_lock_bh() is disallowed.\n\n6.\tdebug_lockdep_rcu_enabled()\
+  \ wrongly invokes lockdep_rcu_suspicious(),\n\tresulting in a false-positive splat.\n\
+  \nThis commit therefore changes RCU_LOCKDEP_WARN() to check\ndebug_lockdep_rcu_enabled()\
+  \ after checking the lockdep expression,\nso that any \"safe\" returns from lock_is_held()\
+  \ are rejected by\ndebug_lockdep_rcu_enabled().  This requires memory ordering,\
+  \ which is\nsupplied by READ_ONCE(debug_locks).  The resulting volatile accesses\n\
+  prevent the compiler from reordering and the fact that only one variable\nis being\
+  \ accessed prevents the underlying hardware from reordering.\nThe combination works\
+  \ for IA64, which can reorder reads to the same\nlocation, but this is defeated\
+  \ by the volatile accesses, which compile\nto load instructions that provide ordering.\n\
+  \nReported-by: syzbot+dde0cc33951735441301@syzkaller.appspotmail.com\nReported-by:\
+  \ Matthew Wilcox <willy@infradead.org>\nReported-by: syzbot+88e4f02896967fe1ab0d@syzkaller.appspotmail.com\n\
+  Reported-by: Thomas Gleixner <tglx@linutronix.de>\nSuggested-by: Boqun Feng <boqun.feng@gmail.com>\n\
+  Reviewed-by: Boqun Feng <boqun.feng@gmail.com>\nSigned-off-by: Paul E. McKenney\
+  \ <paulmck@kernel.org>\n"
+submodule:
+- include/linux
+- kernel/rcu
+hunk_count: 2
+covered_count: 0

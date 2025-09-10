@@ -1,0 +1,17 @@
+diff --git a/drivers/net/bonding/bond_main.c b/drivers/net/bonding/bond_main.c
+index b560644ee1b1..b1bffd8e9a95 100644
+--- a/drivers/net/bonding/bond_main.c
++++ b/drivers/net/bonding/bond_main.c
+@@ -5610,9 +5610,9 @@ bond_xdp_get_xmit_slave(struct net_device *bond_dev, struct xdp_buff *xdp)
+ 		break;
+ 
+ 	default:
+-		/* Should never happen. Mode guarded by bond_xdp_check() */
+-		netdev_err(bond_dev, "Unknown bonding mode %d for xdp xmit\n", BOND_MODE(bond));
+-		WARN_ON_ONCE(1);
++		if (net_ratelimit())
++			netdev_err(bond_dev, "Unknown bonding mode %d for xdp xmit\n",
++				   BOND_MODE(bond));
+ 		return NULL;
+ 	}
+ 

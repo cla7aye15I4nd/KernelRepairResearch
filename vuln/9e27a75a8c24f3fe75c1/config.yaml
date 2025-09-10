@@ -1,0 +1,38 @@
+id: 9e27a75a8c24f3fe75c1
+bug_link: https://syzkaller.appspot.com/bug?extid=9e27a75a8c24f3fe75c1
+title: memory leak in xas_nomem
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: dcfa24ba68991ab69a48254a18377b45180ae664
+fix_commit: 69a37a8ba1b408a1c7616494aa7018e4b3844cbe
+datetime: '2022-06-09T16:24:25-04:00'
+fix_commit_message: 'mm/huge_memory: Fix xarray node memory leak
+
+
+  If xas_split_alloc() fails to allocate the necessary nodes to complete the
+
+  xarray entry split, it sets the xa_state to -ENOMEM, which xas_nomem()
+
+  then interprets as "Please allocate more memory", not as "Please free
+
+  any unnecessary memory" (which was the intended outcome).  It''s confusing
+
+  to use xas_nomem() to free memory in this context, so call xas_destroy()
+
+  instead.
+
+
+  Reported-by: syzbot+9e27a75a8c24f3fe75c1@syzkaller.appspotmail.com
+
+  Fixes: 6b24ca4a1a8d ("mm: Use multi-index entries in the page cache")
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+
+  '
+submodule:
+- include/linux
+- lib
+- mm
+hunk_count: 3
+covered_count: 2

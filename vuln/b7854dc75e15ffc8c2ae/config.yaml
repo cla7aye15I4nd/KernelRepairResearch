@@ -1,0 +1,90 @@
+id: b7854dc75e15ffc8c2ae
+bug_link: https://syzkaller.appspot.com/bug?extid=b7854dc75e15ffc8c2ae
+title: 'KASAN: slab-out-of-bounds Read in xlog_pack_data'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8ebbf262d4684e035af5e7aa2a71cab636673a9b
+fix_commit: f1e1765aad7de7a8b8102044fc6a44684bc36180
+datetime: '2023-06-29T09:28:24-07:00'
+fix_commit_message: 'xfs: journal geometry is not properly bounds checked
+
+
+  If the journal geometry results in a sector or log stripe unit
+
+  validation problem, it indicates that we cannot set the log up to
+
+  safely write to the the journal. In these cases, we must abort the
+
+  mount because the corruption needs external intervention to resolve.
+
+  Similarly, a journal that is too large cannot be written to safely,
+
+  either, so we shouldn''t allow those geometries to mount, either.
+
+
+  If the log is too small, we risk having transaction reservations
+
+  overruning the available log space and the system hanging waiting
+
+  for space it can never provide. This is purely a runtime hang issue,
+
+  not a corruption issue as per the first cases listed above. We abort
+
+  mounts of the log is too small for V5 filesystems, but we must allow
+
+  v4 filesystems to mount because, historically, there was no log size
+
+  validity checking and so some systems may still be out there with
+
+  undersized logs.
+
+
+  The problem is that on V4 filesystems, when we discover a log
+
+  geometry problem, we skip all the remaining checks and then allow
+
+  the log to continue mounting. This mean that if one of the log size
+
+  checks fails, we skip the log stripe unit check. i.e. we allow the
+
+  mount because a "non-fatal" geometry is violated, and then fail to
+
+  check the hard fail geometries that should fail the mount.
+
+
+  Move all these fatal checks to the superblock verifier, and add a
+
+  new check for the two log sector size geometry variables having the
+
+  same values. This will prevent any attempt to mount a log that has
+
+  invalid or inconsistent geometries long before we attempt to mount
+
+  the log.
+
+
+  However, for the minimum log size checks, we can only do that once
+
+  we''ve setup up the log and calculated all the iclog sizes and
+
+  roundoffs. Hence this needs to remain in the log mount code after
+
+  the log has been initialised. It is also the only case where we
+
+  should allow a v4 filesystem to continue running, so leave that
+
+  handling in place, too.
+
+
+  Signed-off-by: Dave Chinner <dchinner@redhat.com>
+
+  Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+  Reviewed-by: Darrick J. Wong <djwong@kernel.org>
+
+  Signed-off-by: Darrick J. Wong <djwong@kernel.org>
+
+  '
+submodule:
+- fs/xfs
+hunk_count: 4
+covered_count: 2

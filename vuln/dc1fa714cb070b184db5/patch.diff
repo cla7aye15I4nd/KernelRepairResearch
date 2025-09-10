@@ -1,0 +1,50 @@
+diff --git a/include/linux/compiler-clang.h b/include/linux/compiler-clang.h
+index ee37256ec8bd..5e55302e3bf6 100644
+--- a/include/linux/compiler-clang.h
++++ b/include/linux/compiler-clang.h
+@@ -33,6 +33,14 @@
+ #define __no_sanitize_thread
+ #endif
+ 
++#if __has_feature(undefined_behavior_sanitizer)
++/* GCC does not have __SANITIZE_UNDEFINED__ */
++#define __no_sanitize_undefined \
++		__attribute__((no_sanitize("undefined")))
++#else
++#define __no_sanitize_undefined
++#endif
++
+ /*
+  * Not all versions of clang implement the the type-generic versions
+  * of the builtin overflow checkers. Fortunately, clang implements
+diff --git a/include/linux/compiler-gcc.h b/include/linux/compiler-gcc.h
+index 7dd4e0349ef3..1c74464c80c6 100644
+--- a/include/linux/compiler-gcc.h
++++ b/include/linux/compiler-gcc.h
+@@ -150,6 +150,12 @@
+ #define __no_sanitize_thread
+ #endif
+ 
++#if __has_attribute(__no_sanitize_undefined__)
++#define __no_sanitize_undefined __attribute__((no_sanitize_undefined))
++#else
++#define __no_sanitize_undefined
++#endif
++
+ #if GCC_VERSION >= 50100
+ #define COMPILER_HAS_GENERIC_BUILTIN_OVERFLOW 1
+ #endif
+diff --git a/include/linux/compiler_types.h b/include/linux/compiler_types.h
+index a8b4266084a1..85b8d2370c24 100644
+--- a/include/linux/compiler_types.h
++++ b/include/linux/compiler_types.h
+@@ -198,7 +198,8 @@ struct ftrace_likely_data {
+ 
+ /* Section for code which can't be instrumented at all */
+ #define noinstr								\
+-	noinline notrace __attribute((__section__(".noinstr.text"))) __no_kcsan
++	noinline notrace __attribute((__section__(".noinstr.text")))	\
++	__no_kcsan __no_sanitize_address __no_sanitize_undefined
+ 
+ #endif /* __KERNEL__ */
+ 

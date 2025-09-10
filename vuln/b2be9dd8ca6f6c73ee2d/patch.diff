@@ -1,0 +1,16 @@
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index 03b66d154b2b..4719a6d54aa6 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -2005,6 +2005,11 @@ static int xfrm_get_default(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		return -EMSGSIZE;
+ 	}
+ 
++	if (up->dirmask >= XFRM_USERPOLICY_DIRMASK_MAX) {
++		kfree_skb(r_skb);
++		return -EINVAL;
++	}
++
+ 	r_up = nlmsg_data(r_nlh);
+ 
+ 	r_up->action = ((net->xfrm.policy_default & (1 << up->dirmask)) >> up->dirmask);

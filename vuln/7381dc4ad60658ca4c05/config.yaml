@@ -1,0 +1,35 @@
+id: 7381dc4ad60658ca4c05
+bug_link: https://syzkaller.appspot.com/bug?extid=7381dc4ad60658ca4c05
+title: memory leak in kobject_set_name_vargs (5)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 21a87d88c2253350e115029f14fe2a10a7e6c856
+fix_commit: d0d51a97063db4704a5ef6bc978dddab1636a306
+datetime: '2022-10-11T19:05:45-07:00'
+fix_commit_message: "nilfs2: fix leak of nilfs_root in case of writer thread creation\
+  \ failure\n\nIf nilfs_attach_log_writer() failed to create a log writer thread,\
+  \ it\nfrees a data structure of the log writer without any cleanup.  After\ncommit\
+  \ e912a5b66837 (\"nilfs2: use root object to get ifile\"), this causes\na leak of\
+  \ struct nilfs_root, which started to leak an ifile metadata inode\nand a kobject\
+  \ on that struct.\n\nIn addition, if the kernel is booted with panic_on_warn, the\
+  \ above\nifile metadata inode leak will cause the following panic when the\nnilfs2\
+  \ kernel module is removed:\n\n  kmem_cache_destroy nilfs2_inode_cache: Slab cache\
+  \ still has objects when\n  called from nilfs_destroy_cachep+0x16/0x3a [nilfs2]\n\
+  \  WARNING: CPU: 8 PID: 1464 at mm/slab_common.c:494 kmem_cache_destroy+0x138/0x140\n\
+  \  ...\n  RIP: 0010:kmem_cache_destroy+0x138/0x140\n  Code: 00 20 00 00 e8 a9 55\
+  \ d8 ff e9 76 ff ff ff 48 8b 53 60 48 c7 c6 20 70 65 86 48 c7 c7 d8 69 9c 86 48\
+  \ 8b 4c 24 28 e8 ef 71 c7 00 <0f> 0b e9 53 ff ff ff c3 48 81 ff ff 0f 00 00 77 03\
+  \ 31 c0 c3 53 48\n  ...\n  Call Trace:\n   <TASK>\n   ? nilfs_palloc_freev.cold.24+0x58/0x58\
+  \ [nilfs2]\n   nilfs_destroy_cachep+0x16/0x3a [nilfs2]\n   exit_nilfs_fs+0xa/0x1b\
+  \ [nilfs2]\n    __x64_sys_delete_module+0x1d9/0x3a0\n   ? __sanitizer_cov_trace_pc+0x1a/0x50\n\
+  \   ? syscall_trace_enter.isra.19+0x119/0x190\n   do_syscall_64+0x34/0x80\n   entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\
+  \   ...\n   </TASK>\n  Kernel panic - not syncing: panic_on_warn set ...\n\nThis\
+  \ patch fixes these issues by calling nilfs_detach_log_writer() cleanup\nfunction\
+  \ if spawning the log writer thread fails.\n\nLink: https://lkml.kernel.org/r/20221007085226.57667-1-konishi.ryusuke@gmail.com\n\
+  Fixes: e912a5b66837 (\"nilfs2: use root object to get ifile\")\nSigned-off-by: Ryusuke\
+  \ Konishi <konishi.ryusuke@gmail.com>\nReported-by: syzbot+7381dc4ad60658ca4c05@syzkaller.appspotmail.com\n\
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>\nCc: <stable@vger.kernel.org>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- fs/nilfs2
+hunk_count: 1
+covered_count: 0

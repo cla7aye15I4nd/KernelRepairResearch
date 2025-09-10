@@ -1,0 +1,83 @@
+id: ec07f6f5ce62b858579f
+bug_link: https://syzkaller.appspot.com/bug?extid=ec07f6f5ce62b858579f
+title: WARNING in ovl_encode_real_fh
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2b2fc0be98a828cf33a88a28e9745e8599fb05cf
+fix_commit: 974e3fe0ac61de85015bbe5a4990cf4127b304b2
+datetime: '2024-12-19T15:18:27+01:00'
+fix_commit_message: 'fs: relax assertions on failure to encode file handles
+
+
+  Encoding file handles is usually performed by a filesystem >encode_fh()
+
+  method that may fail for various reasons.
+
+
+  The legacy users of exportfs_encode_fh(), namely, nfsd and
+
+  name_to_handle_at(2) syscall are ready to cope with the possibility
+
+  of failure to encode a file handle.
+
+
+  There are a few other users of exportfs_encode_{fh,fid}() that
+
+  currently have a WARN_ON() assertion when ->encode_fh() fails.
+
+  Relax those assertions because they are wrong.
+
+
+  The second linked bug report states commit 16aac5ad1fa9 ("ovl: support
+
+  encoding non-decodable file handles") in v6.6 as the regressing commit,
+
+  but this is not accurate.
+
+
+  The aforementioned commit only increases the chances of the assertion
+
+  and allows triggering the assertion with the reproducer using overlayfs,
+
+  inotify and drop_caches.
+
+
+  Triggering this assertion was always possible with other filesystems and
+
+  other reasons of ->encode_fh() failures and more particularly, it was
+
+  also possible with the exact same reproducer using overlayfs that is
+
+  mounted with options index=on,nfs_export=on also on kernels < v6.6.
+
+  Therefore, I am not listing the aforementioned commit as a Fixes commit.
+
+
+  Backport hint: this patch will have a trivial conflict applying to
+
+  v6.6.y, and other trivial conflicts applying to stable kernels < v6.6.
+
+
+  Reported-by: syzbot+ec07f6f5ce62b858579f@syzkaller.appspotmail.com
+
+  Tested-by: syzbot+ec07f6f5ce62b858579f@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/linux-unionfs/671fd40c.050a0220.4735a.024f.GAE@google.com/
+
+  Reported-by: Dmitry Safonov <dima@arista.com>
+
+  Closes: https://lore.kernel.org/linux-fsdevel/CAGrbwDTLt6drB9eaUagnQVgdPBmhLfqqxAf3F+Juqy_o6oP8uw@mail.gmail.com/
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Amir Goldstein <amir73il@gmail.com>
+
+  Link: https://lore.kernel.org/r/20241219115301.465396-1-amir73il@gmail.com
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs/notify
+- fs/overlayfs
+hunk_count: 2
+covered_count: 1

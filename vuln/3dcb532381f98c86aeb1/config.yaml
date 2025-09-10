@@ -1,0 +1,63 @@
+id: 3dcb532381f98c86aeb1
+bug_link: https://syzkaller.appspot.com/bug?extid=3dcb532381f98c86aeb1
+title: WARNING in kernfs_get
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 46c42d844211ef5902e32aa507beac0817c585e9
+fix_commit: ac43432cb1f5c2950408534987e57c2071e24d8f
+datetime: '2019-07-30T18:44:47+02:00'
+fix_commit_message: "driver core: Fix use-after-free and double free on glue directory\n\
+  \nThere is a race condition between removing glue directory and adding a new\ndevice\
+  \ under the glue dir. It can be reproduced in following test:\n\nCPU1:         \
+  \                                CPU2:\n\ndevice_add()\n  get_device_parent()\n\
+  \    class_dir_create_and_add()\n      kobject_add_internal()\n        create_dir()\
+  \    // create glue_dir\n\n                                              device_add()\n\
+  \                                                get_device_parent()\n         \
+  \                                         kobject_get() // get glue_dir\n\ndevice_del()\n\
+  \  cleanup_glue_dir()\n    kobject_del(glue_dir)\n\n                           \
+  \                     kobject_add()\n                                          \
+  \        kobject_add_internal()\n                                              \
+  \      create_dir() // in glue_dir\n                                           \
+  \           sysfs_create_dir_ns()\n                                            \
+  \            kernfs_create_dir_ns(sd)\n\n      sysfs_remove_dir() // glue_dir->sd=NULL\n\
+  \      sysfs_put()        // free glue_dir->sd\n\n                             \
+  \                             // sd is freed\n                                 \
+  \                         kernfs_new_node(sd)\n                                \
+  \                            kernfs_get(glue_dir)\n                            \
+  \                                kernfs_add_one()\n                            \
+  \                                kernfs_put()\n\nBefore CPU1 remove last child device\
+  \ under glue dir, if CPU2 add a new\ndevice under glue dir, the glue_dir kobject\
+  \ reference count will be\nincrease to 2 via kobject_get() in get_device_parent().\
+  \ And CPU2 has\nbeen called kernfs_create_dir_ns(), but not call kernfs_new_node().\n\
+  Meanwhile, CPU1 call sysfs_remove_dir() and sysfs_put(). This result in\nglue_dir->sd\
+  \ is freed and it's reference count will be 0. Then CPU2 call\nkernfs_get(glue_dir)\
+  \ will trigger a warning in kernfs_get() and increase\nit's reference count to 1.\
+  \ Because glue_dir->sd is freed by CPU1, the next\ncall kernfs_add_one() by CPU2\
+  \ will fail(This is also use-after-free)\nand call kernfs_put() to decrease reference\
+  \ count. Because the reference\ncount is decremented to 0, it will also call kmem_cache_free()\
+  \ to free\nthe glue_dir->sd again. This will result in double free.\n\nIn order\
+  \ to avoid this happening, we also should make sure that kernfs_node\nfor glue_dir\
+  \ is released in CPU1 only when refcount for glue_dir kobj is\n1 to fix this race.\n\
+  \nThe following calltrace is captured in kernel 4.14 with the following patch\n\
+  applied:\n\ncommit 726e41097920 (\"drivers: core: Remove glue dirs from sysfs earlier\"\
+  )\n\n--------------------------------------------------------------------------\n\
+  [    3.633703] WARNING: CPU: 4 PID: 513 at .../fs/kernfs/dir.c:494\n           \
+  \     Here is WARN_ON(!atomic_read(&kn->count) in kernfs_get().\n....\n[    3.633986]\
+  \ Call trace:\n[    3.633991]  kernfs_create_dir_ns+0xa8/0xb0\n[    3.633994]  sysfs_create_dir_ns+0x54/0xe8\n\
+  [    3.634001]  kobject_add_internal+0x22c/0x3f0\n[    3.634005]  kobject_add+0xe4/0x118\n\
+  [    3.634011]  device_add+0x200/0x870\n[    3.634017]  _request_firmware+0x958/0xc38\n\
+  [    3.634020]  request_firmware_into_buf+0x4c/0x70\n....\n[    3.634064] kernel\
+  \ BUG at .../mm/slub.c:294!\n                Here is BUG_ON(object == fp) in set_freepointer().\n\
+  ....\n[    3.634346] Call trace:\n[    3.634351]  kmem_cache_free+0x504/0x6b8\n\
+  [    3.634355]  kernfs_put+0x14c/0x1d8\n[    3.634359]  kernfs_create_dir_ns+0x88/0xb0\n\
+  [    3.634362]  sysfs_create_dir_ns+0x54/0xe8\n[    3.634366]  kobject_add_internal+0x22c/0x3f0\n\
+  [    3.634370]  kobject_add+0xe4/0x118\n[    3.634374]  device_add+0x200/0x870\n\
+  [    3.634378]  _request_firmware+0x958/0xc38\n[    3.634381]  request_firmware_into_buf+0x4c/0x70\n\
+  --------------------------------------------------------------------------\n\nFixes:\
+  \ 726e41097920 (\"drivers: core: Remove glue dirs from sysfs earlier\")\nSigned-off-by:\
+  \ Muchun Song <smuchun@gmail.com>\nReviewed-by: Mukesh Ojha <mojha@codeaurora.org>\n\
+  Signed-off-by: Prateek Sood <prsood@codeaurora.org>\nLink: https://lore.kernel.org/r/20190727032122.24639-1-smuchun@gmail.com\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/base
+hunk_count: 1
+covered_count: 0

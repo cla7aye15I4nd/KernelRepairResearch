@@ -1,0 +1,29 @@
+id: 5be8aebb1b7dfa90ef31
+bug_link: https://syzkaller.appspot.com/bug?extid=5be8aebb1b7dfa90ef31
+title: 'KASAN: use-after-free Read in decode_session6'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 67438feb2b85e9850f08e3d8c601692317341ca5
+fix_commit: 0356010d825eb18d9157408e8ca4ec4613d61398
+datetime: '2020-11-05T14:27:30-08:00'
+fix_commit_message: "sctp: bring inet(6)_skb_parm back to sctp_input_cb\n\ninet(6)_skb_parm\
+  \ was removed from sctp_input_cb by Commit a1dd2cf2f1ae\n(\"sctp: allow changing\
+  \ transport encap_port by peer packets\"), as it\nthought sctp_input_cb->header\
+  \ is not used any more in SCTP.\n\nsyzbot reported a crash:\n\n  [ ] BUG: KASAN:\
+  \ use-after-free in decode_session6+0xe7c/0x1580\n  [ ]\n  [ ] Call Trace:\n  [\
+  \ ]  <IRQ>\n  [ ]  dump_stack+0x107/0x163\n  [ ]  kasan_report.cold+0x1f/0x37\n\
+  \  [ ]  decode_session6+0xe7c/0x1580\n  [ ]  __xfrm_policy_check+0x2fa/0x2850\n\
+  \  [ ]  sctp_rcv+0x12b0/0x2e30\n  [ ]  sctp6_rcv+0x22/0x40\n  [ ]  ip6_protocol_deliver_rcu+0x2e8/0x1680\n\
+  \  [ ]  ip6_input_finish+0x7f/0x160\n  [ ]  ip6_input+0x9c/0xd0\n  [ ]  ipv6_rcv+0x28e/0x3c0\n\
+  \nIt was caused by sctp_input_cb->header/IP6CB(skb) still used in sctp rx\npath\
+  \ decode_session6() but some members overwritten by sctp6_rcv().\n\nThis patch is\
+  \ to fix it by bring inet(6)_skb_parm back to sctp_input_cb\nand not overwriting\
+  \ it in sctp4/6_rcv() and sctp_udp_rcv().\n\nReported-by: syzbot+5be8aebb1b7dfa90ef31@syzkaller.appspotmail.com\n\
+  Fixes: a1dd2cf2f1ae (\"sctp: allow changing transport encap_port by peer packets\"\
+  )\nSigned-off-by: Xin Long <lucien.xin@gmail.com>\nAcked-by: Marcelo Ricardo Leitner\
+  \ <marcelo.leitner@gmail.com>\nLink: https://lore.kernel.org/r/136c1a7a419341487c504be6d1996928d9d16e02.1604472932.git.lucien.xin@gmail.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- include/net/sctp
+- net/sctp
+hunk_count: 4
+covered_count: 1

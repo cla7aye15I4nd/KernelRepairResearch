@@ -1,0 +1,22 @@
+diff --git a/drivers/net/ieee802154/mac802154_hwsim.c b/drivers/net/ieee802154/mac802154_hwsim.c
+index 366eaae3550a..baa7e21b7f4f 100644
+--- a/drivers/net/ieee802154/mac802154_hwsim.c
++++ b/drivers/net/ieee802154/mac802154_hwsim.c
+@@ -824,12 +824,17 @@ static int hwsim_add_one(struct genl_info *info, struct device *dev,
+ static void hwsim_del(struct hwsim_phy *phy)
+ {
+ 	struct hwsim_pib *pib;
++	struct hwsim_edge *e;
+ 
+ 	hwsim_edge_unsubscribe_me(phy);
+ 
+ 	list_del(&phy->list);
+ 
+ 	rcu_read_lock();
++	list_for_each_entry_rcu(e, &phy->edges, list) {
++		list_del_rcu(&e->list);
++		hwsim_free_edge(e);
++	}
+ 	pib = rcu_dereference(phy->pib);
+ 	rcu_read_unlock();
+ 

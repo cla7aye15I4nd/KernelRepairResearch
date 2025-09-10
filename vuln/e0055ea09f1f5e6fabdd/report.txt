@@ -1,0 +1,137 @@
+JBD2: Ignoring recovery information on journal
+ocfs2: Mounting device (7,0) on (node local, slot 0) with ordered data mode.
+======================================================
+WARNING: possible circular locking dependency detected
+6.11.0-syzkaller-11653-g3630400697a3 #0 Not tainted
+------------------------------------------------------
+syz-executor199/5361 is trying to acquire lock:
+ffff8880289f15a8 (&osb->system_file_mutex){+.+.}-{3:3}, at: ocfs2_get_system_file_inode+0x18f/0x7b0 fs/ocfs2/sysfile.c:101
+
+but task is already holding lock:
+ffff88806fc4bf60 (&ocfs2_file_ip_alloc_sem_key){++++}-{3:3}, at: ocfs2_write_begin+0x1d1/0x3a0 fs/ocfs2/aops.c:1901
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&ocfs2_file_ip_alloc_sem_key){++++}-{3:3}:
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5822
+       down_read+0xb1/0xa40 kernel/locking/rwsem.c:1526
+       ocfs2_read_virt_blocks+0x2ca/0xa50 fs/ocfs2/extent_map.c:976
+       ocfs2_read_dir_block fs/ocfs2/dir.c:508 [inline]
+       ocfs2_find_entry_el fs/ocfs2/dir.c:715 [inline]
+       ocfs2_find_entry+0x43b/0x2780 fs/ocfs2/dir.c:1080
+       ocfs2_find_files_on_disk+0xff/0x360 fs/ocfs2/dir.c:1981
+       ocfs2_lookup_ino_from_name+0xb1/0x1e0 fs/ocfs2/dir.c:2003
+       _ocfs2_get_system_file_inode fs/ocfs2/sysfile.c:136 [inline]
+       ocfs2_get_system_file_inode+0x305/0x7b0 fs/ocfs2/sysfile.c:112
+       ocfs2_init_global_system_inodes+0x32c/0x730 fs/ocfs2/super.c:457
+       ocfs2_initialize_super fs/ocfs2/super.c:2248 [inline]
+       ocfs2_fill_super+0x2f47/0x5750 fs/ocfs2/super.c:994
+       mount_bdev+0x20a/0x2d0 fs/super.c:1679
+       legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+       vfs_get_tree+0x90/0x2b0 fs/super.c:1800
+       do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+       do_mount fs/namespace.c:3847 [inline]
+       __do_sys_mount fs/namespace.c:4055 [inline]
+       __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4032
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&osb->system_file_mutex){+.+.}-{3:3}:
+       check_prev_add kernel/locking/lockdep.c:3158 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3277 [inline]
+       validate_chain+0x18ef/0x5920 kernel/locking/lockdep.c:3901
+       __lock_acquire+0x1384/0x2050 kernel/locking/lockdep.c:5199
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5822
+       __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+       __mutex_lock+0x136/0xd70 kernel/locking/mutex.c:752
+       ocfs2_get_system_file_inode+0x18f/0x7b0 fs/ocfs2/sysfile.c:101
+       ocfs2_reserve_local_alloc_bits+0x107/0x2870 fs/ocfs2/localalloc.c:627
+       ocfs2_reserve_clusters_with_limit+0x1b8/0xb60 fs/ocfs2/suballoc.c:1166
+       ocfs2_reserve_clusters fs/ocfs2/suballoc.c:1227 [inline]
+       ocfs2_lock_allocators+0x30a/0x630 fs/ocfs2/suballoc.c:2746
+       ocfs2_write_begin_nolock+0x26f2/0x4ec0 fs/ocfs2/aops.c:1739
+       ocfs2_write_begin+0x205/0x3a0 fs/ocfs2/aops.c:1903
+       generic_perform_write+0x344/0x6d0 mm/filemap.c:4050
+       ocfs2_file_write_iter+0x17b1/0x1f50 fs/ocfs2/file.c:2456
+       iter_file_splice_write+0xbfa/0x1510 fs/splice.c:743
+       do_splice_from fs/splice.c:941 [inline]
+       direct_splice_actor+0x11b/0x220 fs/splice.c:1164
+       splice_direct_to_actor+0x586/0xc80 fs/splice.c:1108
+       do_splice_direct_actor fs/splice.c:1207 [inline]
+       do_splice_direct+0x289/0x3e0 fs/splice.c:1233
+       do_sendfile+0x561/0xe10 fs/read_write.c:1388
+       __do_sys_sendfile64 fs/read_write.c:1455 [inline]
+       __se_sys_sendfile64+0x17c/0x1e0 fs/read_write.c:1441
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&ocfs2_file_ip_alloc_sem_key);
+                               lock(&osb->system_file_mutex);
+                               lock(&ocfs2_file_ip_alloc_sem_key);
+  lock(&osb->system_file_mutex);
+
+ *** DEADLOCK ***
+
+3 locks held by syz-executor199/5361:
+ #0: ffff8880270e0420 (sb_writers#9){.+.+}-{0:0}, at: direct_splice_actor+0x49/0x220 fs/splice.c:1163
+ #1: ffff88806fc4c2c0 (&sb->s_type->i_mutex_key#14){+.+.}-{3:3}, at: inode_lock include/linux/fs.h:815 [inline]
+ #1: ffff88806fc4c2c0 (&sb->s_type->i_mutex_key#14){+.+.}-{3:3}, at: ocfs2_file_write_iter+0x467/0x1f50 fs/ocfs2/file.c:2388
+ #2: ffff88806fc4bf60 (&ocfs2_file_ip_alloc_sem_key){++++}-{3:3}, at: ocfs2_write_begin+0x1d1/0x3a0 fs/ocfs2/aops.c:1901
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 5361 Comm: syz-executor199 Not tainted 6.11.0-syzkaller-11653-g3630400697a3 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_circular_bug+0x13a/0x1b0 kernel/locking/lockdep.c:2074
+ check_noncircular+0x36a/0x4a0 kernel/locking/lockdep.c:2203
+ check_prev_add kernel/locking/lockdep.c:3158 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3277 [inline]
+ validate_chain+0x18ef/0x5920 kernel/locking/lockdep.c:3901
+ __lock_acquire+0x1384/0x2050 kernel/locking/lockdep.c:5199
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5822
+ __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+ __mutex_lock+0x136/0xd70 kernel/locking/mutex.c:752
+ ocfs2_get_system_file_inode+0x18f/0x7b0 fs/ocfs2/sysfile.c:101
+ ocfs2_reserve_local_alloc_bits+0x107/0x2870 fs/ocfs2/localalloc.c:627
+ ocfs2_reserve_clusters_with_limit+0x1b8/0xb60 fs/ocfs2/suballoc.c:1166
+ ocfs2_reserve_clusters fs/ocfs2/suballoc.c:1227 [inline]
+ ocfs2_lock_allocators+0x30a/0x630 fs/ocfs2/suballoc.c:2746
+ ocfs2_write_begin_nolock+0x26f2/0x4ec0 fs/ocfs2/aops.c:1739
+ ocfs2_write_begin+0x205/0x3a0 fs/ocfs2/aops.c:1903
+ generic_perform_write+0x344/0x6d0 mm/filemap.c:4050
+ ocfs2_file_write_iter+0x17b1/0x1f50 fs/ocfs2/file.c:2456
+ iter_file_splice_write+0xbfa/0x1510 fs/splice.c:743
+ do_splice_from fs/splice.c:941 [inline]
+ direct_splice_actor+0x11b/0x220 fs/splice.c:1164
+ splice_direct_to_actor+0x586/0xc80 fs/splice.c:1108
+ do_splice_direct_actor fs/splice.c:1207 [inline]
+ do_splice_direct+0x289/0x3e0 fs/splice.c:1233
+ do_sendfile+0x561/0xe10 fs/read_write.c:1388
+ __do_sys_sendfile64 fs/read_write.c:1455 [inline]
+ __se_sys_sendfile64+0x17c/0x1e0 fs/read_write.c:1441
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f67c2c6d1e9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 21 18 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffec755d2d8 EFLAGS: 00000246 ORIG_RAX: 0000000000000028
+RAX: ffffffffffffffda RBX: 00007ffec755d330 RCX: 00007f67c2c6d1e9
+RDX: 0000000000000000 RSI: 0000000000000004 RDI: 0000000000000005
+RBP: 0000000000000000 R08: 00007ffec755d310 R09: 00007ffec755d310
+R10: 0000000080000004 R11: 0000000000000246 R12: 00007ffec755d330
+R13: 000000000000002f R14: 431bde82d7b634db R15: 00007ffec755d2fc
+ </TASK>

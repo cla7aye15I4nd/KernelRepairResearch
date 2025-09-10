@@ -1,0 +1,89 @@
+diff --git a/drivers/atm/atmtcp.c b/drivers/atm/atmtcp.c
+index eeae160c898d..fa3c76a2b49d 100644
+--- a/drivers/atm/atmtcp.c
++++ b/drivers/atm/atmtcp.c
+@@ -279,6 +279,19 @@ static struct atm_vcc *find_vcc(struct atm_dev *dev, short vpi, int vci)
+         return NULL;
+ }
+ 
++static int atmtcp_c_pre_send(struct atm_vcc *vcc, struct sk_buff *skb)
++{
++	struct atmtcp_hdr *hdr;
++
++	if (skb->len < sizeof(struct atmtcp_hdr))
++		return -EINVAL;
++
++	hdr = (struct atmtcp_hdr *)skb->data;
++	if (hdr->length == ATMTCP_HDR_MAGIC)
++		return -EINVAL;
++
++	return 0;
++}
+ 
+ static int atmtcp_c_send(struct atm_vcc *vcc,struct sk_buff *skb)
+ {
+@@ -288,9 +301,6 @@ static int atmtcp_c_send(struct atm_vcc *vcc,struct sk_buff *skb)
+ 	struct sk_buff *new_skb;
+ 	int result = 0;
+ 
+-	if (skb->len < sizeof(struct atmtcp_hdr))
+-		goto done;
+-
+ 	dev = vcc->dev_data;
+ 	hdr = (struct atmtcp_hdr *) skb->data;
+ 	if (hdr->length == ATMTCP_HDR_MAGIC) {
+@@ -347,6 +357,7 @@ static const struct atmdev_ops atmtcp_v_dev_ops = {
+ 
+ static const struct atmdev_ops atmtcp_c_dev_ops = {
+ 	.close		= atmtcp_c_close,
++	.pre_send	= atmtcp_c_pre_send,
+ 	.send		= atmtcp_c_send
+ };
+ 
+diff --git a/include/linux/atmdev.h b/include/linux/atmdev.h
+index 45f2f278b50a..70807c679f1a 100644
+--- a/include/linux/atmdev.h
++++ b/include/linux/atmdev.h
+@@ -185,6 +185,7 @@ struct atmdev_ops { /* only send is required */
+ 	int (*compat_ioctl)(struct atm_dev *dev,unsigned int cmd,
+ 			    void __user *arg);
+ #endif
++	int (*pre_send)(struct atm_vcc *vcc, struct sk_buff *skb);
+ 	int (*send)(struct atm_vcc *vcc,struct sk_buff *skb);
+ 	int (*send_bh)(struct atm_vcc *vcc, struct sk_buff *skb);
+ 	int (*send_oam)(struct atm_vcc *vcc,void *cell,int flags);
+diff --git a/net/atm/common.c b/net/atm/common.c
+index d7f7976ea13a..881c7f259dbd 100644
+--- a/net/atm/common.c
++++ b/net/atm/common.c
+@@ -635,18 +635,27 @@ int vcc_sendmsg(struct socket *sock, struct msghdr *m, size_t size)
+ 
+ 	skb->dev = NULL; /* for paths shared with net_device interfaces */
+ 	if (!copy_from_iter_full(skb_put(skb, size), size, &m->msg_iter)) {
+-		atm_return_tx(vcc, skb);
+-		kfree_skb(skb);
+ 		error = -EFAULT;
+-		goto out;
++		goto free_skb;
+ 	}
+ 	if (eff != size)
+ 		memset(skb->data + size, 0, eff-size);
++
++	if (vcc->dev->ops->pre_send) {
++		error = vcc->dev->ops->pre_send(vcc, skb);
++		if (error)
++			goto free_skb;
++	}
++
+ 	error = vcc->dev->ops->send(vcc, skb);
+ 	error = error ? error : size;
+ out:
+ 	release_sock(sk);
+ 	return error;
++free_skb:
++	atm_return_tx(vcc, skb);
++	kfree_skb(skb);
++	goto out;
+ }
+ 
+ __poll_t vcc_poll(struct file *file, struct socket *sock, poll_table *wait)

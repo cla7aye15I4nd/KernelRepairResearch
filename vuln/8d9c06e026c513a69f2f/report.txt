@@ -1,0 +1,38 @@
+=====================================================
+BUG: KMSAN: uninit-value in io_fixup_rw_res io_uring/rw.c:273 [inline]
+BUG: KMSAN: uninit-value in io_rw_fail+0x1a7/0x1b0 io_uring/rw.c:996
+ io_fixup_rw_res io_uring/rw.c:273 [inline]
+ io_rw_fail+0x1a7/0x1b0 io_uring/rw.c:996
+ io_req_defer_failed+0x217/0x3e0 io_uring/io_uring.c:1030
+ io_queue_sqe_fallback+0x1f4/0x260 io_uring/io_uring.c:2063
+ io_submit_state_end io_uring/io_uring.c:2308 [inline]
+ io_submit_sqes+0x2b83/0x2ff0 io_uring/io_uring.c:2426
+ __do_sys_io_uring_enter io_uring/io_uring.c:3620 [inline]
+ __se_sys_io_uring_enter+0x491/0x43f0 io_uring/io_uring.c:3554
+ __x64_sys_io_uring_enter+0x11b/0x1a0 io_uring/io_uring.c:3554
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Uninit was created at:
+ slab_post_alloc_hook+0x12f/0xb70 mm/slab.h:767
+ slab_alloc_node mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_node+0x536/0x8d0 mm/slub.c:3517
+ __do_kmalloc_node mm/slab_common.c:1022 [inline]
+ __kmalloc+0x121/0x3c0 mm/slab_common.c:1036
+ kmalloc include/linux/slab.h:603 [inline]
+ io_alloc_async_data io_uring/io_uring.c:1745 [inline]
+ io_req_prep_async+0x384/0x5a0 io_uring/io_uring.c:1766
+ io_queue_sqe_fallback+0x95/0x260 io_uring/io_uring.c:2060
+ io_submit_state_end io_uring/io_uring.c:2308 [inline]
+ io_submit_sqes+0x2b83/0x2ff0 io_uring/io_uring.c:2426
+ __do_sys_io_uring_enter io_uring/io_uring.c:3620 [inline]
+ __se_sys_io_uring_enter+0x491/0x43f0 io_uring/io_uring.c:3554
+ __x64_sys_io_uring_enter+0x11b/0x1a0 io_uring/io_uring.c:3554
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+CPU: 0 PID: 4988 Comm: syz-executor352 Not tainted 6.5.0-syzkaller-09276-g99d99825fc07 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
+=====================================================

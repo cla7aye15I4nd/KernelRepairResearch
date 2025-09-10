@@ -1,0 +1,30 @@
+id: c6f45f6af72a45097be2
+bug_link: https://syzkaller.appspot.com/bug?extid=c6f45f6af72a45097be2
+title: 'KASAN: use-after-free Read in iput'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9a0fd675304d410f3a9586e1b333e16f4658d56c
+fix_commit: 0c92c7a3c5d416f47b32c5f20a611dfeca5d5f2e
+datetime: '2018-04-26T14:49:55-04:00'
+fix_commit_message: "tracing: Fix bad use of igrab in trace_uprobe.c\n\nAs Miklos\
+  \ reported and suggested:\n\n  This pattern repeats two times in trace_uprobe.c\
+  \ and in\n  kernel/events/core.c as well:\n\n      ret = kern_path(filename, LOOKUP_FOLLOW,\
+  \ &path);\n      if (ret)\n          goto fail_address_parse;\n\n      inode = igrab(d_inode(path.dentry));\n\
+  \      path_put(&path);\n\n  And it's wrong.  You can only hold a reference to the\
+  \ inode if you\n  have an active ref to the superblock as well (which is normally\n\
+  \  through path.mnt) or holding s_umount.\n\n  This way unmounting the containing\
+  \ filesystem while the tracepoint is\n  active will give you the \"VFS: Busy inodes\
+  \ after unmount...\" message\n  and a crash when the inode is finally put.\n\n \
+  \ Solution: store path instead of inode.\n\nThis patch fixes two instances in trace_uprobe.c.\
+  \ struct path is added to\nstruct trace_uprobe to keep the inode and containing\
+  \ mount point\nreferenced.\n\nLink: http://lkml.kernel.org/r/20180423172135.4050588-1-songliubraving@fb.com\n\
+  \nFixes: f3f096cfedf8 (\"tracing: Provide trace events interface for uprobes\")\n\
+  Fixes: 33ea4b24277b (\"perf/core: Implement the 'perf_uprobe' PMU\")\nCc: stable@vger.kernel.org\n\
+  Cc: Ingo Molnar <mingo@redhat.com>\nCc: Howard McLauchlan <hmclauchlan@fb.com>\n\
+  Cc: Josef Bacik <jbacik@fb.com>\nCc: Srikar Dronamraju <srikar@linux.vnet.ibm.com>\n\
+  Acked-by: Miklos Szeredi <mszeredi@redhat.com>\nReported-by: Miklos Szeredi <miklos@szeredi.hu>\n\
+  Signed-off-by: Song Liu <songliubraving@fb.com>\nSigned-off-by: Steven Rostedt (VMware)\
+  \ <rostedt@goodmis.org>\n"
+submodule:
+- kernel/trace
+hunk_count: 12
+covered_count: 4

@@ -1,0 +1,77 @@
+loop0: detected capacity change from 0 to 32768
+Unable to handle kernel paging request at virtual address ffff600118dc3959
+KASAN: probably wild-memory-access in range [0xffff0008c6e1cac8-0xffff0008c6e1cacf]
+Mem abort info:
+  ESR = 0x0000000096000005
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x05: level 1 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000005, ISS2 = 0x00000000
+  CM = 0, WnR = 0, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+swapper pgtable: 4k pages, 48-bit VAs, pgdp=00000001a50a7000
+[ffff600118dc3959] pgd=0000000000000000, p4d=0000000233926003, pud=0000000000000000
+Internal error: Oops: 0000000096000005 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 1 UID: 0 PID: 6442 Comm: syz-executor244 Not tainted 6.14.0-rc4-syzkaller-g017f704fbfb1 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : bch2_dirent_name_bytes fs/bcachefs/dirent.c:23 [inline]
+pc : bch2_dirent_get_name fs/bcachefs/dirent.c:37 [inline]
+pc : bch2_dirent_to_text+0xcc/0x2f4 fs/bcachefs/dirent.c:152
+lr : bch2_dirent_get_name fs/bcachefs/dirent.c:37 [inline]
+lr : bch2_dirent_to_text+0xbc/0x2f4 fs/bcachefs/dirent.c:152
+sp : ffff8000a4b06560
+x29: ffff8000a4b06570 x28: ffff0000c6e1ca74 x27: ffff0000c6e1cad0
+x26: ffff8000a4b06eac x25: ffff8000a4b06ea8 x24: dfff800000000000
+x23: dfff800000000000 x22: 0000000000000000 x21: ffff0008c6e1cac8
+x20: ffff0000c6e1caf8 x19: ffff8000a4b06ea0 x18: ffff0000cc7be858
+x17: 7972746e655f7465 x16: ffff80008b79c320 x15: 0000000000000001
+x14: 0000000000000001 x13: 0000000000000000 x12: 0000000000000007
+x11: 0000000000000020 x10: 0000000000ff0100 x9 : 0000000000000000
+x8 : 1fffe00118dc3959 x7 : ffff8000a4b06480 x6 : 000000000000003a
+x5 : ffff0000c69bc830 x4 : ffff80008bd08da2 x3 : ffff0000c6e1caf8
+x2 : ffff0000c6e1cad0 x1 : ffffffffffffffd8 x0 : 0000000000000009
+Call trace:
+ bch2_dirent_name_bytes fs/bcachefs/dirent.c:23 [inline] (P)
+ bch2_dirent_get_name fs/bcachefs/dirent.c:37 [inline] (P)
+ bch2_dirent_to_text+0xcc/0x2f4 fs/bcachefs/dirent.c:152 (P)
+ bch2_val_to_text fs/bcachefs/bkey_methods.c:305 [inline]
+ bch2_bkey_val_to_text+0xfc/0x140 fs/bcachefs/bkey_methods.c:315
+ journal_entry_btree_keys_to_text+0x460/0x9ac fs/bcachefs/journal_io.c:427
+ journal_entry_btree_root_to_text+0x34/0x48 fs/bcachefs/journal_io.c:471
+ bch2_journal_entry_to_text+0xe8/0x160 fs/bcachefs/journal_io.c:850
+ bch2_sb_clean_to_text+0x130/0x224 fs/bcachefs/sb-clean.c:256
+ __bch2_sb_field_to_text fs/bcachefs/super-io.c:1316 [inline]
+ bch2_sb_field_to_text+0x1a4/0x234 fs/bcachefs/super-io.c:1332
+ bch2_sb_field_validate+0x1d8/0x2a8 fs/bcachefs/super-io.c:1299
+ bch2_sb_validate+0xd54/0x1098 fs/bcachefs/super-io.c:517
+ __bch2_read_super+0x9a8/0x1074 fs/bcachefs/super-io.c:878
+ bch2_read_super+0x38/0x4c fs/bcachefs/super-io.c:898
+ bch2_fs_open+0x238/0x299c fs/bcachefs/super.c:2032
+ bch2_fs_get_tree+0x58c/0x11d4 fs/bcachefs/fs.c:2190
+ vfs_get_tree+0x90/0x28c fs/super.c:1814
+ do_new_mount+0x278/0x900 fs/namespace.c:3560
+ path_mount+0x590/0xe04 fs/namespace.c:3887
+ do_mount fs/namespace.c:3900 [inline]
+ __do_sys_mount fs/namespace.c:4111 [inline]
+ __se_sys_mount fs/namespace.c:4088 [inline]
+ __arm64_sys_mount+0x4f4/0x5d0 fs/namespace.c:4088
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+ el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+Code: 51001ac8 531d72d6 8b284e95 d343fea8 (38776908) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	51001ac8 	sub	w8, w22, #0x6
+   4:	531d72d6 	lsl	w22, w22, #3
+   8:	8b284e95 	add	x21, x20, w8, uxtw #3
+   c:	d343fea8 	lsr	x8, x21, #3
+* 10:	38776908 	ldrb	w8, [x8, x23] <-- trapping instruction

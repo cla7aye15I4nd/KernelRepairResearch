@@ -1,0 +1,37 @@
+INFO: trying to register non-static key.
+The code is fine but needs lockdep annotation, or maybe
+you didn't initialize this object before use?
+turning off the locking correctness validator.
+CPU: 0 PID: 5078 Comm: syz-executor.0 Not tainted 6.7.0-rc4-syzkaller-00384-gb10a3ccaf6e3 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/10/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2d0 lib/dump_stack.c:106
+ assign_lock_key+0x234/0x270 kernel/locking/lockdep.c:976
+ register_lock_class+0x1cf/0x970 kernel/locking/lockdep.c:1289
+ __lock_acquire+0xd9/0x1fd0 kernel/locking/lockdep.c:5014
+ lock_acquire+0x1e3/0x530 kernel/locking/lockdep.c:5754
+ debugfs_file_get+0x545/0x6d0 fs/debugfs/file.c:135
+ open_proxy_open+0x56/0x490 fs/debugfs/file.c:269
+ do_dentry_open+0x8ff/0x1590 fs/open.c:948
+ do_open fs/namei.c:3622 [inline]
+ path_openat+0x2849/0x3290 fs/namei.c:3779
+ do_filp_open+0x234/0x490 fs/namei.c:3809
+ do_sys_openat2+0x13e/0x1d0 fs/open.c:1440
+ do_sys_open fs/open.c:1455 [inline]
+ __do_sys_openat fs/open.c:1471 [inline]
+ __se_sys_openat fs/open.c:1466 [inline]
+ __x64_sys_openat+0x247/0x290 fs/open.c:1466
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x45/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7f8cf7a7b721
+Code: 75 57 89 f0 25 00 00 41 00 3d 00 00 41 00 74 49 80 3d ea 17 10 00 00 74 6d 89 da 48 89 ee bf 9c ff ff ff b8 01 01 00 00 0f 05 <48> 3d 00 f0 ff ff 0f 87 93 00 00 00 48 8b 54 24 28 64 48 2b 14 25
+RSP: 002b:00007ffe0eccf310 EFLAGS: 00000202 ORIG_RAX: 0000000000000101
+RAX: ffffffffffffffda RBX: 0000000000000002 RCX: 00007f8cf7a7b721
+RDX: 0000000000000002 RSI: 00007f8cf7ac7551 RDI: 00000000ffffff9c
+RBP: 00007f8cf7ac7551 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000202 R12: 00007ffe0eccfa68
+R13: 0000000000000003 R14: 00007f8cf7b9c018 R15: 0000000000000000
+ </TASK>

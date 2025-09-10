@@ -1,0 +1,34 @@
+id: dbb7c1161485e61b0241
+bug_link: https://syzkaller.appspot.com/bug?extid=dbb7c1161485e61b0241
+title: possible deadlock in vhost_chr_write_iter
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b7051cb8dadd69f85da5989017af2bb35b418950
+fix_commit: e9cb4239134c860e5f92c75bf5321bd377bb505b
+datetime: '2018-01-24T16:55:37-05:00'
+fix_commit_message: 'vhost: use mutex_lock_nested() in vhost_dev_lock_vqs()
+
+
+  We used to call mutex_lock() in vhost_dev_lock_vqs() which tries to
+
+  hold mutexes of all virtqueues. This may confuse lockdep to report a
+
+  possible deadlock because of trying to hold locks belong to same
+
+  class. Switch to use mutex_lock_nested() to avoid false positive.
+
+
+  Fixes: 6b1e6cc7855b0 ("vhost: new device IOTLB API")
+
+  Reported-by: syzbot+dbb7c1161485e61b0241@syzkaller.appspotmail.com
+
+  Signed-off-by: Jason Wang <jasowang@redhat.com>
+
+  Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- drivers/vhost
+hunk_count: 1
+covered_count: 1

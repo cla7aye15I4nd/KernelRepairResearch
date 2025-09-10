@@ -1,0 +1,37 @@
+=====================================================
+BUG: KMSAN: uninit-value in xas_start lib/xarray.c:193 [inline]
+BUG: KMSAN: uninit-value in xas_load+0xd20/0xd70 lib/xarray.c:239
+ xas_start lib/xarray.c:193 [inline]
+ xas_load+0xd20/0xd70 lib/xarray.c:239
+ xas_find+0x2c8/0xd40 lib/xarray.c:1406
+ xa_find+0x15a/0x2a0 lib/xarray.c:2197
+ io_unregister_zcrx_ifqs+0x75/0x1d0 io_uring/zcrx.c:640
+ io_ring_ctx_free+0x61/0x740 io_uring/io_uring.c:2723
+ io_ring_exit_work+0xdec/0xe20 io_uring/io_uring.c:2963
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xb8e/0x1d80 kernel/workqueue.c:3321
+ worker_thread+0xedf/0x1590 kernel/workqueue.c:3402
+ kthread+0xd5c/0xf00 kernel/kthread.c:464
+ ret_from_fork+0x1e3/0x310 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+Uninit was stored to memory at:
+ xa_find+0x26c/0x2a0 lib/xarray.c:2189
+ io_unregister_zcrx_ifqs+0x75/0x1d0 io_uring/zcrx.c:640
+ io_ring_ctx_free+0x61/0x740 io_uring/io_uring.c:2723
+ io_ring_exit_work+0xdec/0xe20 io_uring/io_uring.c:2963
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xb8e/0x1d80 kernel/workqueue.c:3321
+ worker_thread+0xedf/0x1590 kernel/workqueue.c:3402
+ kthread+0xd5c/0xf00 kernel/kthread.c:464
+ ret_from_fork+0x1e3/0x310 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+Local variable id created at:
+ io_unregister_zcrx_ifqs+0x3d/0x1d0 io_uring/zcrx.c:634
+ io_ring_ctx_free+0x61/0x740 io_uring/io_uring.c:2723
+
+CPU: 0 UID: 0 PID: 3524 Comm: kworker/u8:9 Not tainted 6.15.0-syzkaller-12426-ge271ed52b344 #0 PREEMPT(undef) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Workqueue: iou_exit io_ring_exit_work
+=====================================================

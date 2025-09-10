@@ -1,0 +1,90 @@
+------------[ cut here ]------------
+kernel BUG at arch/x86/mm/physaddr.c:28!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 2 UID: 0 PID: 6703 Comm: syz.3.325 Not tainted 6.11.0-syzkaller-02574-ga430d95c5efa #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:__phys_addr+0xd8/0x150 arch/x86/mm/physaddr.c:28
+Code: 48 d3 e8 48 89 c5 48 89 c6 e8 04 ee 4c 00 48 85 ed 75 11 e8 8a eb 4c 00 48 89 d8 5b 5d 41 5c c3 cc cc cc cc e8 79 eb 4c 00 90 <0f> 0b e8 71 eb 4c 00 48 c7 c0 10 60 ba 8d 48 ba 00 00 00 00 00 fc
+RSP: 0018:ffffc9000c01f550 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: 0000778000000000 RCX: ffffffff813e38c0
+RDX: ffff888024ecc880 RSI: ffffffff813e3947 RDI: 0000000000000006
+RBP: 0000000080000000 R08: 0000000000000006 R09: 0000000080000000
+R10: 0000778000000000 R11: 0000000000000000 R12: 0000000000000000
+R13: 0000000000000000 R14: ffff88801e93d000 R15: ffffc9000c01f680
+FS:  0000000000000000(0000) GS:ffff88802b800000(0063) knlGS:00000000f5716b40
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 0000000020bff000 CR3: 0000000025f2a000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ snd_pcm_mmap_data_fault+0x3f2/0x4c0 sound/core/pcm_native.c:3793
+ __do_fault+0x10a/0x490 mm/memory.c:4672
+ do_read_fault mm/memory.c:5078 [inline]
+ do_fault mm/memory.c:5208 [inline]
+ do_pte_missing mm/memory.c:3964 [inline]
+ handle_pte_fault mm/memory.c:5538 [inline]
+ __handle_mm_fault+0x3b47/0x5470 mm/memory.c:5681
+ handle_mm_fault+0x498/0xa60 mm/memory.c:5849
+ faultin_page mm/gup.c:1207 [inline]
+ __get_user_pages+0x475/0x15c0 mm/gup.c:1506
+ __get_user_pages_locked mm/gup.c:1773 [inline]
+ __gup_longterm_locked+0x22e/0x1b30 mm/gup.c:2502
+ pin_user_pages_remote+0xee/0x150 mm/gup.c:3541
+ process_vm_rw_single_vec mm/process_vm_access.c:106 [inline]
+ process_vm_rw_core.constprop.0+0x439/0x9f0 mm/process_vm_access.c:216
+ process_vm_rw+0x301/0x360 mm/process_vm_access.c:284
+ __do_sys_process_vm_readv mm/process_vm_access.c:296 [inline]
+ __se_sys_process_vm_readv mm/process_vm_access.c:292 [inline]
+ __ia32_sys_process_vm_readv+0xdf/0x1b0 mm/process_vm_access.c:292
+ do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]
+ __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386
+ do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+ entry_SYSENTER_compat_after_hwframe+0x84/0x8e
+RIP: 0023:0xf7f92579
+Code: b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
+RSP: 002b:00000000f571656c EFLAGS: 00000296 ORIG_RAX: 000000000000015b
+RAX: ffffffffffffffda RBX: 00000000000000e8 RCX: 0000000020008400
+RDX: 0000000000000002 RSI: 0000000020000400 RDI: 00000000000002db
+RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000296 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__phys_addr+0xd8/0x150 arch/x86/mm/physaddr.c:28
+Code: 48 d3 e8 48 89 c5 48 89 c6 e8 04 ee 4c 00 48 85 ed 75 11 e8 8a eb 4c 00 48 89 d8 5b 5d 41 5c c3 cc cc cc cc e8 79 eb 4c 00 90 <0f> 0b e8 71 eb 4c 00 48 c7 c0 10 60 ba 8d 48 ba 00 00 00 00 00 fc
+RSP: 0018:ffffc9000c01f550 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: 0000778000000000 RCX: ffffffff813e38c0
+RDX: ffff888024ecc880 RSI: ffffffff813e3947 RDI: 0000000000000006
+RBP: 0000000080000000 R08: 0000000000000006 R09: 0000000080000000
+R10: 0000778000000000 R11: 0000000000000000 R12: 0000000000000000
+R13: 0000000000000000 R14: ffff88801e93d000 R15: ffffc9000c01f680
+FS:  0000000000000000(0000) GS:ffff88802b800000(0063) knlGS:00000000f5716b40
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 00005583dfdec000 CR3: 0000000025f2a000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess), 2 bytes skipped:
+   0:	10 06                	adc    %al,(%rsi)
+   2:	03 74 b4 01          	add    0x1(%rsp,%rsi,4),%esi
+   6:	10 07                	adc    %al,(%rdi)
+   8:	03 74 b0 01          	add    0x1(%rax,%rsi,4),%esi
+   c:	10 08                	adc    %cl,(%rax)
+   e:	03 74 d8 01          	add    0x1(%rax,%rbx,8),%esi
+  1e:	00 51 52             	add    %dl,0x52(%rcx)
+  21:	55                   	push   %rbp
+  22:	89 e5                	mov    %esp,%ebp
+  24:	0f 34                	sysenter
+  26:	cd 80                	int    $0x80
+* 28:	5d                   	pop    %rbp <-- trapping instruction
+  29:	5a                   	pop    %rdx
+  2a:	59                   	pop    %rcx
+  2b:	c3                   	ret
+  2c:	90                   	nop
+  2d:	90                   	nop
+  2e:	90                   	nop
+  2f:	90                   	nop
+  30:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi
+  37:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi

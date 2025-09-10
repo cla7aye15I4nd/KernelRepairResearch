@@ -1,0 +1,29 @@
+id: b4169a1cfb945d2ed0ec
+bug_link: https://syzkaller.appspot.com/bug?extid=b4169a1cfb945d2ed0ec
+title: 'WARNING: suspicious RCU usage in task_cls_state'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f1c025773f257b534f6fa77dca29b0967dfed459
+fix_commit: 7f12c33850482521c961c5c15a50ebe9b9a88d1e
+datetime: '2025-06-11T21:30:29+02:00'
+fix_commit_message: "net, bpf: Fix RCU usage in task_cls_state() for BPF programs\n\
+  \nThe commit ee971630f20f (\"bpf: Allow some trace helpers for all prog\ntypes\"\
+  ) made bpf_get_cgroup_classid_curr helper available to all BPF\nprogram types, not\
+  \ just networking programs.\n\nThis helper calls __task_get_classid() which internally\
+  \ calls\ntask_cls_state() requiring rcu_read_lock_bh_held(). This works\nin networking/tc\
+  \ context where RCU BH is held, but triggers an RCU\nwarning when called from other\
+  \ contexts like BPF syscall programs\nthat run under rcu_read_lock_trace():\n\n\
+  \  WARNING: suspicious RCU usage\n  6.15.0-rc4-syzkaller-g079e5c56a5c4 #0 Not tainted\n\
+  \  -----------------------------\n  net/core/netclassid_cgroup.c:24 suspicious rcu_dereference_check()\
+  \ usage!\n\nFix this by also accepting rcu_read_lock_held() and\nrcu_read_lock_trace_held()\
+  \ as valid RCU contexts in the\ntask_cls_state() function. This ensures the helper\
+  \ works correctly\nin all needed RCU contexts where it might be called, regular\
+  \ RCU,\nRCU BH (for networking), and RCU trace (for BPF syscall programs).\n\nFixes:\
+  \ ee971630f20f (\"bpf: Allow some trace helpers for all prog types\")\nReported-by:\
+  \ syzbot+b4169a1cfb945d2ed0ec@syzkaller.appspotmail.com\nSigned-off-by: Charalampos\
+  \ Mitrodimas <charmitro@posteo.net>\nSigned-off-by: Daniel Borkmann <daniel@iogearbox.net>\n\
+  Acked-by: Daniel Borkmann <daniel@iogearbox.net>\nLink: https://lore.kernel.org/bpf/20250611-rcu-fix-task_cls_state-v3-1-3d30e1de753f@posteo.net\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=b4169a1cfb945d2ed0ec\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 1

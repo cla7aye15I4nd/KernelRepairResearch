@@ -1,0 +1,16 @@
+diff --git a/mm/userfaultfd.c b/mm/userfaultfd.c
+index 4f4892a5f767..07d3befc80e4 100644
+--- a/mm/userfaultfd.c
++++ b/mm/userfaultfd.c
+@@ -246,7 +246,10 @@ static int mcontinue_atomic_pte(struct mm_struct *dst_mm,
+ 	struct page *page;
+ 	int ret;
+ 
+-	ret = shmem_getpage(inode, pgoff, &page, SGP_READ);
++	ret = shmem_getpage(inode, pgoff, &page, SGP_NOALLOC);
++	/* Our caller expects us to return -EFAULT if we failed to find page. */
++	if (ret == -ENOENT)
++		ret = -EFAULT;
+ 	if (ret)
+ 		goto out;
+ 	if (!page) {

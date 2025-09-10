@@ -1,0 +1,38 @@
+id: d6caa905917d353f0d07
+bug_link: https://syzkaller.appspot.com/bug?extid=d6caa905917d353f0d07
+title: 'KMSAN: uninit-value in kvm_irq_delivery_to_apic_fast'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cca3f3381bef16ae04933cc3ff480952f7ae298f
+fix_commit: 8a414f943f8b5f94bbaafdec863d6f3dbef33f8a
+datetime: '2022-07-14T12:09:43-04:00'
+fix_commit_message: 'KVM: x86: Fully initialize ''struct kvm_lapic_irq'' in kvm_pv_kick_cpu_op()
+
+
+  ''vector'' and ''trig_mode'' fields of ''struct kvm_lapic_irq'' are left
+
+  uninitialized in kvm_pv_kick_cpu_op(). While these fields are normally
+
+  not needed for APIC_DM_REMRD, they''re still referenced by
+
+  __apic_accept_irq() for trace_kvm_apic_accept_irq(). Fully initialize
+
+  the structure to avoid consuming random stack memory.
+
+
+  Fixes: a183b638b61c ("KVM: x86: make apic_accept_irq tracepoint more generic")
+
+  Reported-by: syzbot+d6caa905917d353f0d07@syzkaller.appspotmail.com
+
+  Signed-off-by: Vitaly Kuznetsov <vkuznets@redhat.com>
+
+  Reviewed-by: Sean Christopherson <seanjc@google.com>
+
+  Message-Id: <20220708125147.593975-1-vkuznets@redhat.com>
+
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  '
+submodule:
+- arch/x86/kvm
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,74 @@
+id: 14e9f834f6ddecece094
+bug_link: https://syzkaller.appspot.com/bug?extid=14e9f834f6ddecece094
+title: WARNING in nilfs_sufile_set_segment_usage
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4a3ef6be03e6700037fc20e63aa5ffd972e435ca
+fix_commit: 675abf8df1353e0e3bde314993e0796c524cfbf0
+datetime: '2023-12-06T16:12:50-08:00'
+fix_commit_message: 'nilfs2: prevent WARNING in nilfs_sufile_set_segment_usage()
+
+
+  If nilfs2 reads a disk image with corrupted segment usage metadata, and
+
+  its segment usage information is marked as an error for the segment at the
+
+  write location, nilfs_sufile_set_segment_usage() can trigger WARN_ONs
+
+  during log writing.
+
+
+  Segments newly allocated for writing with nilfs_sufile_alloc() will not
+
+  have this error flag set, but this unexpected situation will occur if the
+
+  segment indexed by either nilfs->ns_segnum or nilfs->ns_nextnum (active
+
+  segment) was marked in error.
+
+
+  Fix this issue by inserting a sanity check to treat it as a file system
+
+  corruption.
+
+
+  Since error returns are not allowed during the execution phase where
+
+  nilfs_sufile_set_segment_usage() is used, this inserts the sanity check
+
+  into nilfs_sufile_mark_dirty() which pre-reads the buffer containing the
+
+  segment usage record to be updated and sets it up in a dirty state for
+
+  writing.
+
+
+  In addition, nilfs_sufile_set_segment_usage() is also called when
+
+  canceling log writing and undoing segment usage update, so in order to
+
+  avoid issuing the same kernel warning in that case, in case of
+
+  cancellation, avoid checking the error flag in
+
+  nilfs_sufile_set_segment_usage().
+
+
+  Link: https://lkml.kernel.org/r/20231205085947.4431-1-konishi.ryusuke@gmail.com
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+14e9f834f6ddecece094@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=14e9f834f6ddecece094
+
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 2
+covered_count: 2

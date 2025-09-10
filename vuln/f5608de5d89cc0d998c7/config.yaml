@@ -1,0 +1,96 @@
+id: f5608de5d89cc0d998c7
+bug_link: https://syzkaller.appspot.com/bug?extid=f5608de5d89cc0d998c7
+title: possible deadlock in bd_register_pending_holders
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1c500ad706383f1a6609e63d0b5d1723fd84dab9
+fix_commit: dfbb3409b27fa42b96f5727a80d3ceb6a8663991
+datetime: '2021-09-07T08:36:21-06:00'
+fix_commit_message: "block: genhd: don't call blkdev_show() with major_names_lock\
+  \ held\n\nIf CONFIG_BLK_DEV_LOOP && CONFIG_MTD (at least; there might be other\n\
+  combinations), lockdep complains circular locking dependency at\n__loop_clr_fd(),\
+  \ for major_names_lock serves as a locking dependency\naggregating hub across multiple\
+  \ block modules.\n\n ======================================================\n WARNING:\
+  \ possible circular locking dependency detected\n 5.14.0+ #757 Tainted: G      \
+  \      E\n ------------------------------------------------------\n systemd-udevd/7568\
+  \ is trying to acquire lock:\n ffff88800f334d48 ((wq_completion)loop0){+.+.}-{0:0},\
+  \ at: flush_workqueue+0x70/0x560\n\n but task is already holding lock:\n ffff888014a7d4a0\
+  \ (&lo->lo_mutex){+.+.}-{3:3}, at: __loop_clr_fd+0x4d/0x400 [loop]\n\n which lock\
+  \ already depends on the new lock.\n\n the existing dependency chain (in reverse\
+  \ order) is:\n\n -> #6 (&lo->lo_mutex){+.+.}-{3:3}:\n        lock_acquire+0xbe/0x1f0\n\
+  \        __mutex_lock_common+0xb6/0xe10\n        mutex_lock_killable_nested+0x17/0x20\n\
+  \        lo_open+0x23/0x50 [loop]\n        blkdev_get_by_dev+0x199/0x540\n     \
+  \   blkdev_open+0x58/0x90\n        do_dentry_open+0x144/0x3a0\n        path_openat+0xa57/0xda0\n\
+  \        do_filp_open+0x9f/0x140\n        do_sys_openat2+0x71/0x150\n        __x64_sys_openat+0x78/0xa0\n\
+  \        do_syscall_64+0x3d/0xb0\n        entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \n -> #5 (&disk->open_mutex){+.+.}-{3:3}:\n        lock_acquire+0xbe/0x1f0\n   \
+  \     __mutex_lock_common+0xb6/0xe10\n        mutex_lock_nested+0x17/0x20\n    \
+  \    bd_register_pending_holders+0x20/0x100\n        device_add_disk+0x1ae/0x390\n\
+  \        loop_add+0x29c/0x2d0 [loop]\n        blk_request_module+0x5a/0xb0\n   \
+  \     blkdev_get_no_open+0x27/0xa0\n        blkdev_get_by_dev+0x5f/0x540\n     \
+  \   blkdev_open+0x58/0x90\n        do_dentry_open+0x144/0x3a0\n        path_openat+0xa57/0xda0\n\
+  \        do_filp_open+0x9f/0x140\n        do_sys_openat2+0x71/0x150\n        __x64_sys_openat+0x78/0xa0\n\
+  \        do_syscall_64+0x3d/0xb0\n        entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \n -> #4 (major_names_lock){+.+.}-{3:3}:\n        lock_acquire+0xbe/0x1f0\n    \
+  \    __mutex_lock_common+0xb6/0xe10\n        mutex_lock_nested+0x17/0x20\n     \
+  \   blkdev_show+0x19/0x80\n        devinfo_show+0x52/0x60\n        seq_read_iter+0x2d5/0x3e0\n\
+  \        proc_reg_read_iter+0x41/0x80\n        vfs_read+0x2ac/0x330\n        ksys_read+0x6b/0xd0\n\
+  \        do_syscall_64+0x3d/0xb0\n        entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \n -> #3 (&p->lock){+.+.}-{3:3}:\n        lock_acquire+0xbe/0x1f0\n        __mutex_lock_common+0xb6/0xe10\n\
+  \        mutex_lock_nested+0x17/0x20\n        seq_read_iter+0x37/0x3e0\n       \
+  \ generic_file_splice_read+0xf3/0x170\n        splice_direct_to_actor+0x14e/0x350\n\
+  \        do_splice_direct+0x84/0xd0\n        do_sendfile+0x263/0x430\n        __se_sys_sendfile64+0x96/0xc0\n\
+  \        do_syscall_64+0x3d/0xb0\n        entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \n -> #2 (sb_writers#3){.+.+}-{0:0}:\n        lock_acquire+0xbe/0x1f0\n        lo_write_bvec+0x96/0x280\
+  \ [loop]\n        loop_process_work+0xa68/0xc10 [loop]\n        process_one_work+0x293/0x480\n\
+  \        worker_thread+0x23d/0x4b0\n        kthread+0x163/0x180\n        ret_from_fork+0x1f/0x30\n\
+  \n -> #1 ((work_completion)(&lo->rootcg_work)){+.+.}-{0:0}:\n        lock_acquire+0xbe/0x1f0\n\
+  \        process_one_work+0x280/0x480\n        worker_thread+0x23d/0x4b0\n     \
+  \   kthread+0x163/0x180\n        ret_from_fork+0x1f/0x30\n\n -> #0 ((wq_completion)loop0){+.+.}-{0:0}:\n\
+  \        validate_chain+0x1f0d/0x33e0\n        __lock_acquire+0x92d/0x1030\n   \
+  \     lock_acquire+0xbe/0x1f0\n        flush_workqueue+0x8c/0x560\n        drain_workqueue+0x80/0x140\n\
+  \        destroy_workqueue+0x47/0x4f0\n        __loop_clr_fd+0xb4/0x400 [loop]\n\
+  \        blkdev_put+0x14a/0x1d0\n        blkdev_close+0x1c/0x20\n        __fput+0xfd/0x220\n\
+  \        task_work_run+0x69/0xc0\n        exit_to_user_mode_prepare+0x1ce/0x1f0\n\
+  \        syscall_exit_to_user_mode+0x26/0x60\n        do_syscall_64+0x4c/0xb0\n\
+  \        entry_SYSCALL_64_after_hwframe+0x44/0xae\n\n other info that might help\
+  \ us debug this:\n\n Chain exists of:\n   (wq_completion)loop0 --> &disk->open_mutex\
+  \ --> &lo->lo_mutex\n\n  Possible unsafe locking scenario:\n\n        CPU0     \
+  \               CPU1\n        ----                    ----\n   lock(&lo->lo_mutex);\n\
+  \                                lock(&disk->open_mutex);\n                    \
+  \            lock(&lo->lo_mutex);\n   lock((wq_completion)loop0);\n\n  *** DEADLOCK\
+  \ ***\n\n 2 locks held by systemd-udevd/7568:\n  #0: ffff888012554128 (&disk->open_mutex){+.+.}-{3:3},\
+  \ at: blkdev_put+0x4c/0x1d0\n  #1: ffff888014a7d4a0 (&lo->lo_mutex){+.+.}-{3:3},\
+  \ at: __loop_clr_fd+0x4d/0x400 [loop]\n\n stack backtrace:\n CPU: 0 PID: 7568 Comm:\
+  \ systemd-udevd Tainted: G            E     5.14.0+ #757\n Hardware name: VMware,\
+  \ Inc. VMware Virtual Platform/440BX Desktop Reference Platform, BIOS 6.00 02/27/2020\n\
+  \ Call Trace:\n  dump_stack_lvl+0x79/0xbf\n  print_circular_bug+0x5d6/0x5e0\n  ?\
+  \ stack_trace_save+0x42/0x60\n  ? save_trace+0x3d/0x2d0\n  check_noncircular+0x10b/0x120\n\
+  \  validate_chain+0x1f0d/0x33e0\n  ? __lock_acquire+0x953/0x1030\n  ? __lock_acquire+0x953/0x1030\n\
+  \  __lock_acquire+0x92d/0x1030\n  ? flush_workqueue+0x70/0x560\n  lock_acquire+0xbe/0x1f0\n\
+  \  ? flush_workqueue+0x70/0x560\n  flush_workqueue+0x8c/0x560\n  ? flush_workqueue+0x70/0x560\n\
+  \  ? sched_clock_cpu+0xe/0x1a0\n  ? drain_workqueue+0x41/0x140\n  drain_workqueue+0x80/0x140\n\
+  \  destroy_workqueue+0x47/0x4f0\n  ? blk_mq_freeze_queue_wait+0xac/0xd0\n  __loop_clr_fd+0xb4/0x400\
+  \ [loop]\n  ? __mutex_unlock_slowpath+0x35/0x230\n  blkdev_put+0x14a/0x1d0\n  blkdev_close+0x1c/0x20\n\
+  \  __fput+0xfd/0x220\n  task_work_run+0x69/0xc0\n  exit_to_user_mode_prepare+0x1ce/0x1f0\n\
+  \  syscall_exit_to_user_mode+0x26/0x60\n  do_syscall_64+0x4c/0xb0\n  entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \ RIP: 0033:0x7f0fd4c661f7\n Code: 00 00 f7 d8 64 89 02 48 c7 c0 ff ff ff ff eb\
+  \ b7 0f 1f 00 f3 0f 1e fa 64 8b 04 25 18 00 00 00 85 c0 75 10 b8 03 00 00 00 0f\
+  \ 05 <48> 3d 00 f0 ff ff 77 41 c3 48 83 ec 18 89 7c 24 0c e8 13 fc ff ff\n RSP:\
+  \ 002b:00007ffd1c9e9fd8 EFLAGS: 00000246 ORIG_RAX: 0000000000000003\n RAX: 0000000000000000\
+  \ RBX: 00007f0fd46be6c8 RCX: 00007f0fd4c661f7\n RDX: 0000000000000000 RSI: 0000000000000000\
+  \ RDI: 0000000000000006\n RBP: 0000000000000006 R08: 000055fff1eaf400 R09: 0000000000000000\n\
+  \ R10: 00007f0fd46be6c8 R11: 0000000000000246 R12: 0000000000000000\n R13: 0000000000000000\
+  \ R14: 0000000000002f08 R15: 00007ffd1c9ea050\n\nCommit 1c500ad706383f1a (\"loop:\
+  \ reduce the loop_ctl_mutex scope\") is for\nbreaking \"loop_ctl_mutex => &lo->lo_mutex\"\
+  \ dependency chain. But enabling\na different block module results in forming circular\
+  \ locking dependency\ndue to shared major_names_lock mutex.\n\nThe simplest fix\
+  \ is to call probe function without holding\nmajor_names_lock [1], but Christoph\
+  \ Hellwig does not like such idea.\nTherefore, instead of holding major_names_lock\
+  \ in blkdev_show(),\nintroduce a different lock for blkdev_show() in order to break\n\
+  \"sb_writers#$N => &p->lock => major_names_lock\" dependency chain.\n\nLink: https://lkml.kernel.org/r/b2af8a5b-3c1b-204e-7f56-bea0b15848d6@i-love.sakura.ne.jp\
+  \ [1]\nSigned-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nLink: https://lore.kernel.org/r/18a02da2-0bf3-550e-b071-2b4ab13c49f0@i-love.sakura.ne.jp\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- block
+hunk_count: 6
+covered_count: 0

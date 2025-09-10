@@ -1,0 +1,45 @@
+wlan0: Created IBSS using preconfigured BSSID 50:50:50:50:50:50
+wlan0: Creating new IBSS network, BSSID 50:50:50:50:50:50
+=============================
+WARNING: suspicious RCU usage
+6.7.0-rc6-syzkaller-01863-g954fb2d2d49f #0 Not tainted
+-----------------------------
+net/wireless/scan.c:1867 suspicious rcu_dereference_check() usage!
+
+other info that might help us debug this:
+
+
+rcu_scheduler_active = 2, debug_locks = 1
+4 locks held by kworker/u4:2/35:
+ #0: ffff888013071938 ((wq_completion)events_unbound){+.+.}-{0:0}, at: process_one_work+0x789/0x15d0 kernel/workqueue.c:2602
+ #1: ffffc90000abfd80 ((work_completion)(&rdev->wiphy_work)){+.+.}-{0:0}, at: process_one_work+0x7eb/0x15d0 kernel/workqueue.c:2603
+ #2: ffff88807b0f8768 (&rdev->wiphy.mtx){+.+.}-{3:3}, at: wiphy_lock include/net/cfg80211.h:5928 [inline]
+ #2: ffff88807b0f8768 (&rdev->wiphy.mtx){+.+.}-{3:3}, at: cfg80211_wiphy_work+0x2b/0x330 net/wireless/core.c:424
+ #3: ffff88807b0f8168 (&rdev->bss_lock){+...}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ #3: ffff88807b0f8168 (&rdev->bss_lock){+...}-{2:2}, at: cfg80211_inform_single_bss_frame_data+0x8e4/0x12c0 net/wireless/scan.c:3014
+
+stack backtrace:
+CPU: 0 PID: 35 Comm: kworker/u4:2 Not tainted 6.7.0-rc6-syzkaller-01863-g954fb2d2d49f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+Workqueue: events_unbound cfg80211_wiphy_work
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x125/0x1b0 lib/dump_stack.c:106
+ lockdep_rcu_suspicious+0x20c/0x3b0 kernel/locking/lockdep.c:6712
+ __cfg80211_bss_update+0x17fb/0x25f0 net/wireless/scan.c:1867
+ cfg80211_inform_single_bss_frame_data+0x91e/0x12c0 net/wireless/scan.c:3015
+ cfg80211_inform_bss_frame_data+0x14c/0x340 net/wireless/scan.c:3050
+ __ieee80211_sta_join_ibss+0xcf3/0x1880 net/mac80211/ibss.c:376
+ ieee80211_sta_create_ibss+0x206/0x470 net/mac80211/ibss.c:1320
+ ieee80211_sta_find_ibss net/mac80211/ibss.c:1449 [inline]
+ ieee80211_ibss_work+0xbbb/0x14c0 net/mac80211/ibss.c:1666
+ ieee80211_iface_work+0xbeb/0xda0 net/mac80211/iface.c:1665
+ cfg80211_wiphy_work+0x24e/0x330 net/wireless/core.c:437
+ process_one_work+0x886/0x15d0 kernel/workqueue.c:2627
+ process_scheduled_works kernel/workqueue.c:2700 [inline]
+ worker_thread+0x8b9/0x1290 kernel/workqueue.c:2781
+ kthread+0x2c6/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+ </TASK>

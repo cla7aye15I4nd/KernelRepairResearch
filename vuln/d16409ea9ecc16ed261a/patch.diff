@@ -1,0 +1,42 @@
+diff --git a/mm/vma.c b/mm/vma.c
+index 726b2a31ce59..0fb9b2c7b734 100644
+--- a/mm/vma.c
++++ b/mm/vma.c
+@@ -967,26 +967,9 @@ static __must_check struct vm_area_struct *vma_merge_existing_range(
+ 		err = dup_anon_vma(next, middle, &anon_dup);
+ 	}
+ 
+-	if (err)
++	if (err || commit_merge(vmg))
+ 		goto abort;
+ 
+-	err = commit_merge(vmg);
+-	if (err) {
+-		VM_WARN_ON(err != -ENOMEM);
+-
+-		if (anon_dup)
+-			unlink_anon_vmas(anon_dup);
+-
+-		/*
+-		 * We've cleaned up any cloned anon_vma's, no VMAs have been
+-		 * modified, no harm no foul if the user requests that we not
+-		 * report this and just give up, leaving the VMAs unmerged.
+-		 */
+-		if (!vmg->give_up_on_oom)
+-			vmg->state = VMA_MERGE_ERROR_NOMEM;
+-		return NULL;
+-	}
+-
+ 	khugepaged_enter_vma(vmg->target, vmg->flags);
+ 	vmg->state = VMA_MERGE_SUCCESS;
+ 	return vmg->target;
+@@ -995,6 +978,9 @@ static __must_check struct vm_area_struct *vma_merge_existing_range(
+ 	vma_iter_set(vmg->vmi, start);
+ 	vma_iter_load(vmg->vmi);
+ 
++	if (anon_dup)
++		unlink_anon_vmas(anon_dup);
++
+ 	/*
+ 	 * This means we have failed to clone anon_vma's correctly, but no
+ 	 * actual changes to VMAs have occurred, so no harm no foul - if the

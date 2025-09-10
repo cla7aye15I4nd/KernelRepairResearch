@@ -1,0 +1,76 @@
+INFO: trying to register non-static key.
+The code is fine but needs lockdep annotation, or maybe
+you didn't initialize this object before use?
+turning off the locking correctness validator.
+CPU: 0 UID: 0 PID: 5991 Comm: syz.2.92 Not tainted 6.11.0-rc5-syzkaller-00176-g20371ba12063 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:93 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:119
+ assign_lock_key+0x238/0x270 kernel/locking/lockdep.c:975
+ register_lock_class+0x1cf/0x980 kernel/locking/lockdep.c:1288
+ __lock_acquire+0xf0/0x2040 kernel/locking/lockdep.c:5019
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5759
+ down_write+0x99/0x220 kernel/locking/rwsem.c:1579
+ ntfs_file_release+0x13d/0x210 fs/ntfs3/file.c:1252
+ __fput+0x24a/0x8a0 fs/file_table.c:422
+ task_work_run+0x24f/0x310 kernel/task_work.c:228
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:114 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x168/0x370 kernel/entry/common.c:218
+ do_syscall_64+0x100/0x230 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f240d179ef9
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffeea9a7848 EFLAGS: 00000246 ORIG_RAX: 00000000000001b4
+RAX: 0000000000000000 RBX: 000000000001fffc RCX: 00007f240d179ef9
+RDX: 0000000000000000 RSI: 000000000000001e RDI: 0000000000000003
+RBP: 00007f240d317a80 R08: 0000000000000001 R09: 00007ffeea9a7b3f
+R10: 00007f240d000000 R11: 0000000000000246 R12: 000000000002071e
+R13: 00007ffeea9a7950 R14: 0000000000000032 R15: ffffffffffffffff
+ </TASK>
+------------[ cut here ]------------
+DEBUG_RWSEMS_WARN_ON(sem->magic != sem): count = 0x1, magic = 0x0, owner = 0xffff88801d798000, curr 0xffff88801d798000, list not empty
+WARNING: CPU: 0 PID: 5991 at kernel/locking/rwsem.c:1364 __up_write kernel/locking/rwsem.c:1364 [inline]
+WARNING: CPU: 0 PID: 5991 at kernel/locking/rwsem.c:1364 up_write+0x412/0x590 kernel/locking/rwsem.c:1632
+Modules linked in:
+CPU: 0 UID: 0 PID: 5991 Comm: syz.2.92 Not tainted 6.11.0-rc5-syzkaller-00176-g20371ba12063 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+RIP: 0010:__up_write kernel/locking/rwsem.c:1364 [inline]
+RIP: 0010:up_write+0x412/0x590 kernel/locking/rwsem.c:1632
+Code: c7 c7 a0 c8 ea 8b 48 c7 c6 80 ca ea 8b 48 89 da 48 8b 4c 24 20 4c 8b 44 24 30 4c 8b 4c 24 28 50 e8 63 9c e6 ff 48 83 c4 08 90 <0f> 0b 90 90 e9 b6 fc ff ff 90 0f 0b 90 e9 2a fd ff ff 48 89 5c 24
+RSP: 0018:ffffc90009567c40 EFLAGS: 00010292
+RAX: 148f1a2880685e00 RBX: 0000000000000001 RCX: ffff88801d798000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc90009567d20 R08: ffffffff8155b212 R09: 1ffff920012acf28
+R10: dffffc0000000000 R11: fffff520012acf29 R12: ffff88805e500198
+R13: ffff88805e500140 R14: 1ffff920012acf90 R15: dffffc0000000000
+FS:  000055556ace1500(0000) GS:ffff8880b9200000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffd10841fac CR3: 0000000063b70000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ ntfs_file_release+0x18a/0x210 fs/ntfs3/file.c:1258
+ __fput+0x24a/0x8a0 fs/file_table.c:422
+ task_work_run+0x24f/0x310 kernel/task_work.c:228
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:114 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x168/0x370 kernel/entry/common.c:218
+ do_syscall_64+0x100/0x230 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f240d179ef9
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffeea9a7848 EFLAGS: 00000246 ORIG_RAX: 00000000000001b4
+RAX: 0000000000000000 RBX: 000000000001fffc RCX: 00007f240d179ef9
+RDX: 0000000000000000 RSI: 000000000000001e RDI: 0000000000000003
+RBP: 00007f240d317a80 R08: 0000000000000001 R09: 00007ffeea9a7b3f
+R10: 00007f240d000000 R11: 0000000000000246 R12: 000000000002071e
+R13: 00007ffeea9a7950 R14: 0000000000000032 R15: ffffffffffffffff
+ </TASK>

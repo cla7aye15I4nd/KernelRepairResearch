@@ -1,0 +1,26 @@
+id: 8ec30bb7bf1a981a2012
+bug_link: https://syzkaller.appspot.com/bug?extid=8ec30bb7bf1a981a2012
+title: possible deadlock in shmem_file_llseek
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4a3928c6f8a53fa1aed28ccba227742486e8ddcb
+fix_commit: cb57469c9573f6018cd1302953dd45d6e05aba7b
+datetime: '2018-03-01T17:37:07+01:00'
+fix_commit_message: "staging: android: ashmem: Fix lockdep issue during llseek\n\n\
+  ashmem_mutex create a chain of dependencies like so:\n\n(1)\nmmap syscall ->\n \
+  \ mmap_sem ->  (acquired)\n  ashmem_mmap\n  ashmem_mutex (try to acquire)\n  (block)\n\
+  \n(2)\nllseek syscall ->\n  ashmem_llseek ->\n  ashmem_mutex ->  (acquired)\n  inode_lock\
+  \ ->\n  inode->i_rwsem (try to acquire)\n  (block)\n\n(3)\ngetdents ->\n  iterate_dir\
+  \ ->\n  inode_lock ->\n  inode->i_rwsem   (acquired)\n  copy_to_user ->\n  mmap_sem\
+  \         (try to acquire)\n\nThere is a lock ordering created between mmap_sem\
+  \ and inode->i_rwsem\ncausing a lockdep splat [2] during a syzcaller test, this\
+  \ patch fixes\nthe issue by unlocking the mutex earlier. Functionally that's Ok\
+  \ since\nwe don't need to protect vfs_llseek.\n\n[1] https://patchwork.kernel.org/patch/10185031/\n\
+  [2] https://lkml.org/lkml/2018/1/10/48\n\nAcked-by: Todd Kjos <tkjos@google.com>\n\
+  Cc: Arve Hjonnevag <arve@android.com>\nCc: stable@vger.kernel.org\nReported-by:\
+  \ syzbot+8ec30bb7bf1a981a2012@syzkaller.appspotmail.com\nSigned-off-by: Joel Fernandes\
+  \ <joelaf@google.com>\nAcked-by: Greg Hackmann <ghackmann@google.com>\nSigned-off-by:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/staging/android
+hunk_count: 1
+covered_count: 1

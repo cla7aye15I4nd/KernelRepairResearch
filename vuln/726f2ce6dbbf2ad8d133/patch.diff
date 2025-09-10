@@ -1,0 +1,16 @@
+diff --git a/fs/io_uring.c b/fs/io_uring.c
+index 78f3d3ac2280..4a5eb9e856f0 100644
+--- a/fs/io_uring.c
++++ b/fs/io_uring.c
+@@ -6238,6 +6238,11 @@ static bool io_drain_req(struct io_kiocb *req)
+ 	int ret;
+ 	u32 seq;
+ 
++	if (req->flags & REQ_F_FAIL) {
++		io_req_complete_fail_submit(req);
++		return true;
++	}
++
+ 	/*
+ 	 * If we need to drain a request in the middle of a link, drain the
+ 	 * head request and the next request/link after the current link.

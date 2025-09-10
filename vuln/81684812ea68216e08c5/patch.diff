@@ -1,0 +1,23 @@
+diff --git a/mm/slub.c b/mm/slub.c
+index 862dbd9af4f5..e6f3727b9ad2 100644
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -5890,7 +5890,8 @@ static char *create_unique_id(struct kmem_cache *s)
+ 	char *name = kmalloc(ID_STR_LENGTH, GFP_KERNEL);
+ 	char *p = name;
+ 
+-	BUG_ON(!name);
++	if (!name)
++		return ERR_PTR(-ENOMEM);
+ 
+ 	*p++ = ':';
+ 	/*
+@@ -5948,6 +5949,8 @@ static int sysfs_slab_add(struct kmem_cache *s)
+ 		 * for the symlinks.
+ 		 */
+ 		name = create_unique_id(s);
++		if (IS_ERR(name))
++			return PTR_ERR(name);
+ 	}
+ 
+ 	s->kobj.kset = kset;

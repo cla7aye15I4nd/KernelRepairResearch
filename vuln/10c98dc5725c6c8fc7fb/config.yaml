@@ -1,0 +1,47 @@
+id: 10c98dc5725c6c8fc7fb
+bug_link: https://syzkaller.appspot.com/bug?extid=10c98dc5725c6c8fc7fb
+title: kernel BUG at kernel/time/timer.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d682026dd3c548a408415cd75882e5d081147f5b
+fix_commit: 10414014bc085aac9f787a5890b33b5605fbcfc4
+datetime: '2018-02-14T21:05:39+01:00'
+fix_commit_message: "netfilter: x_tables: fix missing timer initialization in xt_LED\n\
+  \nsyzbot reported that xt_LED may try to use the ledinternal->timer\nwithout previously\
+  \ initializing it:\n\n------------[ cut here ]------------\nkernel BUG at kernel/time/timer.c:958!\n\
+  invalid opcode: 0000 [#1] SMP KASAN\nDumping ftrace buffer:\n    (ftrace buffer\
+  \ empty)\nModules linked in:\nCPU: 1 PID: 1826 Comm: kworker/1:2 Not tainted 4.15.0+\
+  \ #306\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS\n\
+  Google 01/01/2011\nWorkqueue: ipv6_addrconf addrconf_dad_work\nRIP: 0010:__mod_timer\
+  \ kernel/time/timer.c:958 [inline]\nRIP: 0010:mod_timer+0x7d6/0x13c0 kernel/time/timer.c:1102\n\
+  RSP: 0018:ffff8801d24fe9f8 EFLAGS: 00010293\nRAX: ffff8801d25246c0 RBX: ffff8801aec6cb50\
+  \ RCX: ffffffff816052c6\nRDX: 0000000000000000 RSI: 00000000fffbd14b RDI: ffff8801aec6cb68\n\
+  RBP: ffff8801d24fec98 R08: 0000000000000000 R09: 1ffff1003a49fd6c\nR10: ffff8801d24feb28\
+  \ R11: 0000000000000005 R12: dffffc0000000000\nR13: ffff8801d24fec70 R14: 00000000fffbd14b\
+  \ R15: ffff8801af608f90\nFS:  0000000000000000(0000) GS:ffff8801db500000(0000) knlGS:0000000000000000\n\
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 00000000206d6fd0 CR3: 0000000006a22001\
+  \ CR4: 00000000001606e0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \  led_tg+0x1db/0x2e0 net/netfilter/xt_LED.c:75\n  ip6t_do_table+0xc2a/0x1a30 net/ipv6/netfilter/ip6_tables.c:365\n\
+  \  ip6table_raw_hook+0x65/0x80 net/ipv6/netfilter/ip6table_raw.c:42\n  nf_hook_entry_hookfn\
+  \ include/linux/netfilter.h:120 [inline]\n  nf_hook_slow+0xba/0x1a0 net/netfilter/core.c:483\n\
+  \  nf_hook.constprop.27+0x3f6/0x830 include/linux/netfilter.h:243\n  NF_HOOK include/linux/netfilter.h:286\
+  \ [inline]\n  ndisc_send_skb+0xa51/0x1370 net/ipv6/ndisc.c:491\n  ndisc_send_ns+0x38a/0x870\
+  \ net/ipv6/ndisc.c:633\n  addrconf_dad_work+0xb9e/0x1320 net/ipv6/addrconf.c:4008\n\
+  \  process_one_work+0xbbf/0x1af0 kernel/workqueue.c:2113\n  worker_thread+0x223/0x1990\
+  \ kernel/workqueue.c:2247\n  kthread+0x33c/0x400 kernel/kthread.c:238\n  ret_from_fork+0x3a/0x50\
+  \ arch/x86/entry/entry_64.S:429\nCode: 85 2a 0b 00 00 4d 8b 3c 24 4d 85 ff 75 9f\
+  \ 4c 8b bd 60 fd ff ff e8 bb\n57 10 00 65 ff 0d 94 9a a1 7e e9 d9 fc ff ff e8 aa\
+  \ 57 10 00 <0f> 0b e8 a3\n57 10 00 e9 14 fb ff ff e8 99 57 10 00 4c 89 bd 70\nRIP:\
+  \ __mod_timer kernel/time/timer.c:958 [inline] RSP: ffff8801d24fe9f8\nRIP: mod_timer+0x7d6/0x13c0\
+  \ kernel/time/timer.c:1102 RSP: ffff8801d24fe9f8\n---[ end trace f661ab06f5dd8b3d\
+  \ ]---\n\nThe ledinternal struct can be shared between several different\nxt_LED\
+  \ targets, but the related timer is currently initialized only\nif the first target\
+  \ requires it. Fix it by unconditionally\ninitializing the timer struct.\n\nv1 ->\
+  \ v2: call del_timer_sync() unconditionally, too.\n\nFixes: 268cb38e1802 (\"netfilter:\
+  \ x_tables: add LED trigger target\")\nReported-by: syzbot+10c98dc5725c6c8fc7fb@syzkaller.appspotmail.com\n\
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>\nSigned-off-by: Pablo Neira Ayuso\
+  \ <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 2
+covered_count: 0

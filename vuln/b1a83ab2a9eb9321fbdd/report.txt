@@ -1,0 +1,38 @@
+=====================================================
+BUG: KMSAN: uninit-value in profile_hit include/linux/profile.h:53 [inline]
+BUG: KMSAN: uninit-value in profile_tick+0x1ae/0x1b0 kernel/profile.c:339
+ profile_hit include/linux/profile.h:53 [inline]
+ profile_tick+0x1ae/0x1b0 kernel/profile.c:339
+ tick_sched_handle kernel/time/tick-sched.c:277 [inline]
+ tick_nohz_handler+0x588/0x690 kernel/time/tick-sched.c:297
+ __run_hrtimer kernel/time/hrtimer.c:1687 [inline]
+ __hrtimer_run_queues+0x56f/0xe40 kernel/time/hrtimer.c:1751
+ hrtimer_interrupt+0x3ab/0x1490 kernel/time/hrtimer.c:1813
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0xa6/0x3a0 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0x7e/0x90 arch/x86/kernel/apic/apic.c:1043
+ asm_sysvec_apic_timer_interrupt+0x1f/0x30 arch/x86/include/asm/idtentry.h:702
+ __preempt_count_dec_and_test arch/x86/include/asm/preempt.h:94 [inline]
+ __raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:152 [inline]
+ _raw_spin_unlock_irqrestore+0x33/0x60 kernel/locking/spinlock.c:194
+ spin_unlock_irqrestore include/linux/spinlock.h:406 [inline]
+ do_notify_parent_cldstop+0x790/0x810 kernel/signal.c:2218
+ ptrace_stop+0x672/0xd60 kernel/signal.c:2321
+ ptrace_do_notify kernel/signal.c:2395 [inline]
+ ptrace_notify+0x234/0x320 kernel/signal.c:2407
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_entry include/linux/ptrace.h:452 [inline]
+ syscall_trace_enter+0xe2/0x600 kernel/entry/common.c:45
+ syscall_enter_from_user_mode_work include/linux/entry-common.h:168 [inline]
+ syscall_enter_from_user_mode include/linux/entry-common.h:198 [inline]
+ do_syscall_64+0xa6/0x1e0 arch/x86/entry/common.c:79
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Local variable ewq created at:
+ userfaultfd_unmap_complete+0x41/0x540 fs/userfaultfd.c:850
+ vm_mmap_pgoff+0x2cf/0x4e0 mm/util.c:576
+
+CPU: 1 PID: 5045 Comm: syz-executor255 Not tainted 6.9.0-syzkaller-02707-g614da38e2f7a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+=====================================================

@@ -1,0 +1,46 @@
+     proc_sctp_do_udp_port+0x380/0x450 net/sctp/sysctl.c:555
+     proc_sys_call_handler+0x3c6/0x5a0 fs/proc/proc_sysctl.c:601
+     iter_file_splice_write+0x90f/0x10b0 fs/splice.c:743
+     do_splice_from fs/splice.c:941 [inline]
+     direct_splice_actor+0x18f/0x6c0 fs/splice.c:1164
+     splice_direct_to_actor+0x346/0xa40 fs/splice.c:1108
+     do_splice_direct_actor fs/splice.c:1207 [inline]
+     do_splice_direct+0x178/0x250 fs/splice.c:1233
+     do_sendfile+0xafb/0xe40 fs/read_write.c:1363
+     __do_sys_sendfile64 fs/read_write.c:1424 [inline]
+     __se_sys_sendfile64 fs/read_write.c:1410 [inline]
+     __x64_sys_sendfile64+0x1da/0x220 fs/read_write.c:1410
+     do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+     do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+     entry_SYSCALL_64_after_hwframe+0x77/0x7f
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 12 at lib/ref_tracker.c:179 ref_tracker_dir_exit+0x3e3/0x680 lib/ref_tracker.c:179
+Modules linked in:
+CPU: 0 UID: 0 PID: 12 Comm: kworker/u8:1 Not tainted 6.14.0-rc3-syzkaller-00060-g6537cfb395f3 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+Workqueue: netns cleanup_net
+RIP: 0010:ref_tracker_dir_exit+0x3e3/0x680 lib/ref_tracker.c:179
+Code: 11 02 00 00 4d 39 f5 49 8b 06 4d 89 f7 0f 85 0e ff ff ff 48 8b 2c 24 e8 5b 16 c8 fc 48 8b 74 24 18 48 89 ef e8 6e bd 65 06 90 <0f> 0b 90 e8 45 16 c8 fc 48 8d 5d 44 be 04 00 00 00 48 89 df e8 c4
+RSP: 0018:ffffc90000117ac8 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: dffffc0000000000 RCX: 0000000000000000
+RDX: 0000000000000001 RSI: ffffffff8b6ceca0 RDI: 0000000000000001
+RBP: ffff88802f7b01e0 R08: 0000000000000001 R09: fffffbfff2dd79b7
+R10: ffffffff96ebcdbf R11: 0000000000002ba2 R12: ffff88802f7b0230
+R13: ffff88802f7b0230 R14: ffff88802f7b0230 R15: ffff88802f7b0230
+FS:  0000000000000000(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000557010814f20 CR3: 000000000df80000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ net_free net/core/net_namespace.c:473 [inline]
+ net_free net/core/net_namespace.c:467 [inline]
+ cleanup_net+0x99f/0xbf0 net/core/net_namespace.c:675
+ process_one_work+0x9c5/0x1ba0 kernel/workqueue.c:3236
+ process_scheduled_works kernel/workqueue.c:3317 [inline]
+ worker_thread+0x6c8/0xf00 kernel/workqueue.c:3398
+ kthread+0x3af/0x750 kernel/kthread.c:464
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

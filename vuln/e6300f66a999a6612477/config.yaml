@@ -1,0 +1,32 @@
+id: e6300f66a999a6612477
+bug_link: https://syzkaller.appspot.com/bug?extid=e6300f66a999a6612477
+title: possible deadlock in xsk_diag_dump (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 53898ebabe843bfa7baea9dae152797d5d0563c9
+fix_commit: c64237960819aee1766d03f446ae6de94b1e3f73
+datetime: '2025-08-08T13:22:28-07:00'
+fix_commit_message: "hamradio: ignore ops-locked netdevs\n\nSyzkaller managed to trigger\
+  \ lock dependency in xsk_notify via\nregister_netdevice. As discussed in [0], using\
+  \ register_netdevice\nin the notifiers is problematic so skip adding hamradio for\
+  \ ops-locked\ndevices.\n\n       xsk_notifier+0x89/0x230 net/xdp/xsk.c:1664\n  \
+  \     notifier_call_chain+0x1b6/0x3e0 kernel/notifier.c:85\n       call_netdevice_notifiers_extack\
+  \ net/core/dev.c:2267 [inline]\n       call_netdevice_notifiers net/core/dev.c:2281\
+  \ [inline]\n       unregister_netdevice_many_notify+0x14d7/0x1ff0 net/core/dev.c:12156\n\
+  \       unregister_netdevice_many net/core/dev.c:12219 [inline]\n       unregister_netdevice_queue+0x33c/0x380\
+  \ net/core/dev.c:12063\n       register_netdevice+0x1689/0x1ae0 net/core/dev.c:11241\n\
+  \       bpq_new_device drivers/net/hamradio/bpqether.c:481 [inline]\n       bpq_device_event+0x491/0x600\
+  \ drivers/net/hamradio/bpqether.c:523\n       notifier_call_chain+0x1b6/0x3e0 kernel/notifier.c:85\n\
+  \       call_netdevice_notifiers_extack net/core/dev.c:2267 [inline]\n       call_netdevice_notifiers\
+  \ net/core/dev.c:2281 [inline]\n       __dev_notify_flags+0x18d/0x2e0 net/core/dev.c:-1\n\
+  \       netif_change_flags+0xe8/0x1a0 net/core/dev.c:9608\n       dev_change_flags+0x130/0x260\
+  \ net/core/dev_api.c:68\n       devinet_ioctl+0xbb4/0x1b50 net/ipv4/devinet.c:1200\n\
+  \       inet_ioctl+0x3c0/0x4c0 net/ipv4/af_inet.c:1001\n\n0: https://lore.kernel.org/netdev/20250625140357.6203d0af@kernel.org/\n\
+  Fixes: 4c975fd70002 (\"net: hold instance lock during NETDEV_REGISTER/UP\")\nSuggested-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\nReported-by: syzbot+e6300f66a999a6612477@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=e6300f66a999a6612477\nSigned-off-by:\
+  \ Stanislav Fomichev <sdf@fomichev.me>\nLink: https://patch.msgid.link/20250806213726.1383379-2-sdf@fomichev.me\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net/hamradio
+hunk_count: 1
+covered_count: 0

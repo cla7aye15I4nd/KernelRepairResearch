@@ -1,0 +1,41 @@
+id: cd714a07c6de2bc34293
+bug_link: https://syzkaller.appspot.com/bug?extid=cd714a07c6de2bc34293
+title: WARNING in io_uring_setup
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 06058632464845abb1af91521122fd04dd3daaec
+fix_commit: 917257daa0fea7a007102691c0e27d9216a96768
+datetime: '2019-04-13T19:08:22-06:00'
+fix_commit_message: 'io_uring: only test SQPOLL cpu after we''ve verified it
+
+
+  We currently call cpu_possible() even if we don''t use the CPU. Move the
+
+  test under the SQ_AFF branch, which is the only place where we''ll use
+
+  the value. Do the cpu_possible() test AFTER we''ve limited it to a max
+
+  of NR_CPUS. This avoids triggering the following warning:
+
+
+  WARNING: CPU: 1 PID: 7600 at include/linux/cpumask.h:121 cpu_max_bits_warn
+
+
+  if CONFIG_DEBUG_PER_CPU_MAPS is enabled.
+
+
+  While in there, also move the SQ thread idle period assignment inside
+
+  SETUP_SQPOLL, as we don''t use it otherwise either.
+
+
+  Reported-by: syzbot+cd714a07c6de2bc34293@syzkaller.appspotmail.com
+
+  Fixes: 6c271ce2f1d5 ("io_uring: add submission polling")
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,53 @@
+id: aa5bb5f6860e08a60450
+bug_link: https://syzkaller.appspot.com/bug?extid=aa5bb5f6860e08a60450
+title: 'INFO: task hung in freeze_super (6)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 68e7f31eecf1d622c59ef470da24762e6550cd06
+fix_commit: c836d3b8d94e3dd381e7d4bb918875084f85715e
+datetime: '2025-05-28T16:04:15+00:00'
+fix_commit_message: "f2fs: fix to skip f2fs_balance_fs() if checkpoint is disabled\n\
+  \nSyzbot reports a f2fs bug as below:\n\nINFO: task syz-executor328:5856 blocked\
+  \ for more than 144 seconds.\n      Not tainted 6.15.0-rc6-syzkaller-00208-g3c21441eeffc\
+  \ #0\n\"echo 0 > /proc/sys/kernel/hung_task_timeout_secs\" disables this message.\n\
+  task:syz-executor328 state:D stack:24392 pid:5856  tgid:5832  ppid:5826   task_flags:0x400040\
+  \ flags:0x00004006\nCall Trace:\n <TASK>\n context_switch kernel/sched/core.c:5382\
+  \ [inline]\n __schedule+0x168f/0x4c70 kernel/sched/core.c:6767\n __schedule_loop\
+  \ kernel/sched/core.c:6845 [inline]\n schedule+0x165/0x360 kernel/sched/core.c:6860\n\
+  \ io_schedule+0x81/0xe0 kernel/sched/core.c:7742\n f2fs_balance_fs+0x4b4/0x780 fs/f2fs/segment.c:444\n\
+  \ f2fs_map_blocks+0x3af1/0x43b0 fs/f2fs/data.c:1791\n f2fs_expand_inode_data+0x653/0xaf0\
+  \ fs/f2fs/file.c:1872\n f2fs_fallocate+0x4f5/0x990 fs/f2fs/file.c:1975\n vfs_fallocate+0x6a0/0x830\
+  \ fs/open.c:338\n ioctl_preallocate fs/ioctl.c:290 [inline]\n file_ioctl fs/ioctl.c:-1\
+  \ [inline]\n do_vfs_ioctl+0x1b8f/0x1eb0 fs/ioctl.c:885\n __do_sys_ioctl fs/ioctl.c:904\
+  \ [inline]\n __se_sys_ioctl+0x82/0x170 fs/ioctl.c:892\n do_syscall_x64 arch/x86/entry/syscall_64.c:63\
+  \ [inline]\n do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \nThe root cause is after commit 84b5bb8bf0f6 (\"f2fs: modify\nf2fs_is_checkpoint_ready\
+  \ logic to allow more data to be written with the\nCP disable\"), we will get chance\
+  \ to allow f2fs_is_checkpoint_ready() to\nreturn true once below conditions are\
+  \ all true:\n1. checkpoint is disabled\n2. there are not enough free segments\n\
+  3. there are enough free blocks\n\nThen it will cause f2fs_balance_fs() to trigger\
+  \ foreground GC.\n\nvoid f2fs_balance_fs(struct f2fs_sb_info *sbi, bool need)\n\
+  ...\n\tif (!f2fs_is_checkpoint_ready(sbi))\n\t\treturn;\n\nAnd the testcase mounts\
+  \ f2fs image w/ gc_merge,checkpoint=disable, so deadloop\nwill happen through below\
+  \ race condition:\n\n- f2fs_do_shutdown\t\t- vfs_fallocate\t\t\t\t- gc_thread_func\n\
+  \t\t\t\t - file_start_write\n\t\t\t\t  - __sb_start_write(SB_FREEZE_WRITE)\n\t\t\
+  \t\t - f2fs_fallocate\n\t\t\t\t  - f2fs_expand_inode_data\n\t\t\t\t   - f2fs_map_blocks\n\
+  \t\t\t\t    - f2fs_balance_fs\n\t\t\t\t     - prepare_to_wait\n\t\t\t\t     - wake_up(gc_wait_queue_head)\n\
+  \t\t\t\t     - io_schedule\n - bdev_freeze\n  - freeze_super\n   - sb->s_writers.frozen\
+  \ = SB_FREEZE_WRITE;\n   - sb_wait_write(sb, SB_FREEZE_WRITE);\n\t\t\t\t\t\t\t\t\
+  \t - if (sbi->sb->s_writers.frozen >= SB_FREEZE_WRITE) continue;\n\t\t\t\t\t\t\t\
+  \t\t : cause deadloop\n\nThis patch fix to add check condition in f2fs_balance_fs(),\
+  \ so that if\ncheckpoint is disabled, we will just skip trigger foreground GC to\n\
+  avoid such deadloop issue.\n\nMeanwhile let's remove f2fs_is_checkpoint_ready()\
+  \ check condition in\nf2fs_balance_fs(), since it's redundant, due to the main logic\
+  \ in the\nfunction is to check:\na) whether checkpoint is disabled\nb) there is\
+  \ enough free segments\n\nf2fs_balance_fs() still has all logics after f2fs_is_checkpoint_ready()'s\n\
+  removal.\n\nReported-by: syzbot+aa5bb5f6860e08a60450@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/linux-f2fs-devel/682d743a.a00a0220.29bc26.0289.GAE@google.com\n\
+  Fixes: 84b5bb8bf0f6 (\"f2fs: modify f2fs_is_checkpoint_ready logic to allow more\
+  \ data to be written with the CP disable\")\nCc: Qi Han <hanqi@vivo.com>\nSigned-off-by:\
+  \ Chao Yu <chao@kernel.org>\nReviewed-by: Zhiguo Niu <zhiguo.niu@unisoc.com>\nSigned-off-by:\
+  \ Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 1
+covered_count: 1

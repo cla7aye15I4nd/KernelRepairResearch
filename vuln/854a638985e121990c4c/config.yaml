@@ -1,0 +1,56 @@
+id: 854a638985e121990c4c
+bug_link: https://syzkaller.appspot.com/bug?extid=854a638985e121990c4c
+title: general protection fault in send_sigio_to_task
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c3ad2c3b02e953ead2b8d52a0c9e70312930c3d0
+fix_commit: 84fe4cc09abc1a5ef3a282db3ed10f4d3f1e6a0b
+datetime: '2018-08-15T23:03:20-05:00'
+fix_commit_message: 'signal: Don''t send signals to tasks that don''t exist
+
+
+  Recently syzbot reported crashes in send_sigio_to_task and
+
+  send_sigurg_to_task in linux-next.  Despite finding a reproducer
+
+  syzbot apparently did not bisected this or otherwise track down the
+
+  offending commit in linux-next.
+
+
+  I happened to see this report and examined the code because I had
+
+  recently changed these functions as part of making PIDTYPE_TGID a real
+
+  pid type so that fork would does not need to restart when receiving a
+
+  signal.  By examination I see that I spotted a bug in the code
+
+  that could explain the reported crashes.
+
+
+  When I took Oleg''s suggestion and optimized send_sigurg and send_sigio
+
+  to only send to a single task when type is PIDTYPE_PID or PIDTYPE_TGID
+
+  I failed to handle pids that no longer point to tasks.  The macro
+
+  do_each_pid_task simply iterates for zero iterations.  With pid_task
+
+  an explicit NULL test is needed.
+
+
+  Update the code to include the missing NULL test.
+
+
+  Fixes: 019191342fec ("signal: Use PIDTYPE_TGID to clearly store where file signals
+  will be sent")
+
+  Reported-by: syzkaller-bugs@googlegroups.com
+
+  Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+
+  '
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

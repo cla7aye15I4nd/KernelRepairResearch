@@ -1,0 +1,29 @@
+diff --git a/net/hsr/hsr_device.c b/net/hsr/hsr_device.c
+index 7444ec6e298e..bfcdc75fc01e 100644
+--- a/net/hsr/hsr_device.c
++++ b/net/hsr/hsr_device.c
+@@ -217,6 +217,7 @@ static netdev_tx_t hsr_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	master = hsr_port_get_hsr(hsr, HSR_PT_MASTER);
+ 	if (master) {
+ 		skb->dev = master->dev;
++		skb_reset_mac_header(skb);
+ 		hsr_forward_skb(skb, master);
+ 	} else {
+ 		atomic_long_inc(&dev->tx_dropped);
+diff --git a/net/hsr/hsr_forward.c b/net/hsr/hsr_forward.c
+index ed82a470b6e1..b218e4594009 100644
+--- a/net/hsr/hsr_forward.c
++++ b/net/hsr/hsr_forward.c
+@@ -555,12 +555,6 @@ void hsr_forward_skb(struct sk_buff *skb, struct hsr_port *port)
+ {
+ 	struct hsr_frame_info frame;
+ 
+-	if (skb_mac_header(skb) != skb->data) {
+-		WARN_ONCE(1, "%s:%d: Malformed frame (port_src %s)\n",
+-			  __FILE__, __LINE__, port->dev->name);
+-		goto out_drop;
+-	}
+-
+ 	if (fill_frame_info(&frame, skb, port) < 0)
+ 		goto out_drop;
+ 

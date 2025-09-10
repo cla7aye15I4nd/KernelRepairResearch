@@ -1,0 +1,50 @@
+diff --git a/include/net/sctp/structs.h b/include/net/sctp/structs.h
+index 16f949eef52f..6168e3449131 100644
+--- a/include/net/sctp/structs.h
++++ b/include/net/sctp/structs.h
+@@ -202,12 +202,17 @@ struct sctp_sock {
+ 	/* Flags controlling Heartbeat, SACK delay, and Path MTU Discovery. */
+ 	__u32 param_flags;
+ 
+-	struct sctp_initmsg initmsg;
+ 	struct sctp_rtoinfo rtoinfo;
+ 	struct sctp_paddrparams paddrparam;
+-	struct sctp_event_subscribe subscribe;
+ 	struct sctp_assocparams assocparams;
+ 
++	/*
++	 * These two structures must be grouped together for the usercopy
++	 * whitelist region.
++	 */
++	struct sctp_event_subscribe subscribe;
++	struct sctp_initmsg initmsg;
++
+ 	int user_frag;
+ 
+ 	__u32 autoclose;
+diff --git a/net/sctp/socket.c b/net/sctp/socket.c
+index 014847e25648..efbc8f52c531 100644
+--- a/net/sctp/socket.c
++++ b/net/sctp/socket.c
+@@ -8470,6 +8470,10 @@ struct proto sctp_prot = {
+ 	.unhash      =	sctp_unhash,
+ 	.get_port    =	sctp_get_port,
+ 	.obj_size    =  sizeof(struct sctp_sock),
++	.useroffset  =  offsetof(struct sctp_sock, subscribe),
++	.usersize    =  offsetof(struct sctp_sock, initmsg) -
++				offsetof(struct sctp_sock, subscribe) +
++				sizeof_field(struct sctp_sock, initmsg),
+ 	.sysctl_mem  =  sysctl_sctp_mem,
+ 	.sysctl_rmem =  sysctl_sctp_rmem,
+ 	.sysctl_wmem =  sysctl_sctp_wmem,
+@@ -8509,6 +8513,10 @@ struct proto sctpv6_prot = {
+ 	.unhash		= sctp_unhash,
+ 	.get_port	= sctp_get_port,
+ 	.obj_size	= sizeof(struct sctp6_sock),
++	.useroffset	= offsetof(struct sctp6_sock, sctp.subscribe),
++	.usersize	= offsetof(struct sctp6_sock, sctp.initmsg) -
++				offsetof(struct sctp6_sock, sctp.subscribe) +
++				sizeof_field(struct sctp6_sock, sctp.initmsg),
+ 	.sysctl_mem	= sysctl_sctp_mem,
+ 	.sysctl_rmem	= sysctl_sctp_rmem,
+ 	.sysctl_wmem	= sysctl_sctp_wmem,

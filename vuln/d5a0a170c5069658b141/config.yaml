@@ -1,0 +1,50 @@
+id: d5a0a170c5069658b141
+bug_link: https://syzkaller.appspot.com/bug?extid=d5a0a170c5069658b141
+title: 'KASAN: use-after-free Read in vhost_work_queue'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 78b1a52e05c9db11d293342e8d6d8a230a04b4e7
+fix_commit: 834e772c8db0c6a275d75315d90aba4ebbb1e249
+datetime: '2018-12-06T14:28:38-05:00'
+fix_commit_message: 'vhost/vsock: fix use-after-free in network stack callers
+
+
+  If the network stack calls .send_pkt()/.cancel_pkt() during .release(),
+
+  a struct vhost_vsock use-after-free is possible.  This occurs because
+
+  .release() does not wait for other CPUs to stop using struct
+
+  vhost_vsock.
+
+
+  Switch to an RCU-enabled hashtable (indexed by guest CID) so that
+
+  .release() can wait for other CPUs by calling synchronize_rcu().  This
+
+  also eliminates vhost_vsock_lock acquisition in the data path so it
+
+  could have a positive effect on performance.
+
+
+  This is CVE-2018-14625 "kernel: use-after-free Read in vhost_transport_send_pkt".
+
+
+  Cc: stable@vger.kernel.org
+
+  Reported-and-tested-by: syzbot+bd391451452fb0b93039@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+e3e074963495f92a89ed@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+d5a0a170c5069658b141@syzkaller.appspotmail.com
+
+  Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
+
+  Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+  Acked-by: Jason Wang <jasowang@redhat.com>
+
+  '
+submodule:
+- drivers/vhost
+hunk_count: 11
+covered_count: 11

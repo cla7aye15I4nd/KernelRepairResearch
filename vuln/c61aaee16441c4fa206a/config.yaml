@@ -1,0 +1,29 @@
+id: c61aaee16441c4fa206a
+bug_link: https://syzkaller.appspot.com/bug?extid=c61aaee16441c4fa206a
+title: net-next build error (4)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 07281a257a6868b900da5de1eda808c9e20253f1
+fix_commit: ea7b4244b3656ca33b19a950f092b5bbc718b40c
+datetime: '2021-09-01T10:17:05-07:00'
+fix_commit_message: "x86/setup: Explicitly include acpi.h\n\nAfter commit 342f43af70db\
+  \ (\"iscsi_ibft: fix crash due to KASLR physical\nmemory remapping\") x86_64_defconfig\
+  \ shows the following errors:\n\n  arch/x86/kernel/setup.c: In function ‘setup_arch’:\n\
+  \  arch/x86/kernel/setup.c:916:13: error: implicit declaration of function ‘acpi_mps_check’\
+  \ [-Werror=implicit-function-declaration]\n    916 |         if (acpi_mps_check())\
+  \ {\n        |             ^~~~~~~~~~~~~~\n  arch/x86/kernel/setup.c:1110:9: error:\
+  \ implicit declaration of function ‘acpi_table_upgrade’ [-Werror=implicit-function-declaration]\n\
+  \   1110 |         acpi_table_upgrade();\n        |         ^~~~~~~~~~~~~~~~~~\n\
+  \  [... more acpi noise ...]\n\nacpi.h was being implicitly included from iscsi_ibft.h\
+  \ in this\nconfiguration so the removal of that header means these functions have\n\
+  no definition or declaration.\n\nIn most other configurations, <linux/acpi.h> continued\
+  \ to be included\nthrough at least <linux/tboot.h> if CONFIG_INTEL_TXT was enabled,\
+  \ and\nthere were probably other implicit include paths too.\n\nAdd acpi.h explicitly\
+  \ so there is no more error, and so that we don't\ncontinue to depend on these unreliable\
+  \ implicit include paths.\n\nTested-by: Matthieu Baerts <matthieu.baerts@tessares.net>\n\
+  Signed-off-by: Nathan Chancellor <nathan@kernel.org>\nCc: Maurizio Lombardi <mlombard@redhat.com>\n\
+  Cc: Mike Rapoport <rppt@linux.ibm.com>\nCc: Konrad Rzeszutek Wilk <konrad@kernel.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- arch/x86/kernel
+hunk_count: 1
+covered_count: 1

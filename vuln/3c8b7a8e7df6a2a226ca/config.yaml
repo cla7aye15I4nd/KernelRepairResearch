@@ -1,0 +1,154 @@
+id: 3c8b7a8e7df6a2a226ca
+bug_link: https://syzkaller.appspot.com/bug?extid=3c8b7a8e7df6a2a226ca
+title: 'KASAN: slab-use-after-free Read in mptcp_pm_nl_rm_addr_or_subflow'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 88806efc034a9830f483963326b99930ad519af1
+fix_commit: 7decd1f5904a489d3ccdcf131972f94645681689
+datetime: '2024-10-17T12:06:55+02:00'
+fix_commit_message: "mptcp: pm: fix UaF read in mptcp_pm_nl_rm_addr_or_subflow\n\n\
+  Syzkaller reported this splat:\n\n  ==================================================================\n\
+  \  BUG: KASAN: slab-use-after-free in mptcp_pm_nl_rm_addr_or_subflow+0xb44/0xcc0\
+  \ net/mptcp/pm_netlink.c:881\n  Read of size 4 at addr ffff8880569ac858 by task\
+  \ syz.1.2799/14662\n\n  CPU: 0 UID: 0 PID: 14662 Comm: syz.1.2799 Not tainted 6.12.0-rc2-syzkaller-00307-g36c254515dc6\
+  \ #0\n  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1\
+  \ 04/01/2014\n  Call Trace:\n   <TASK>\n   __dump_stack lib/dump_stack.c:94 [inline]\n\
+  \   dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120\n   print_address_description\
+  \ mm/kasan/report.c:377 [inline]\n   print_report+0xc3/0x620 mm/kasan/report.c:488\n\
+  \   kasan_report+0xd9/0x110 mm/kasan/report.c:601\n   mptcp_pm_nl_rm_addr_or_subflow+0xb44/0xcc0\
+  \ net/mptcp/pm_netlink.c:881\n   mptcp_pm_nl_rm_subflow_received net/mptcp/pm_netlink.c:914\
+  \ [inline]\n   mptcp_nl_remove_id_zero_address+0x305/0x4a0 net/mptcp/pm_netlink.c:1572\n\
+  \   mptcp_pm_nl_del_addr_doit+0x5c9/0x770 net/mptcp/pm_netlink.c:1603\n   genl_family_rcv_msg_doit+0x202/0x2f0\
+  \ net/netlink/genetlink.c:1115\n   genl_family_rcv_msg net/netlink/genetlink.c:1195\
+  \ [inline]\n   genl_rcv_msg+0x565/0x800 net/netlink/genetlink.c:1210\n   netlink_rcv_skb+0x165/0x410\
+  \ net/netlink/af_netlink.c:2551\n   genl_rcv+0x28/0x40 net/netlink/genetlink.c:1219\n\
+  \   netlink_unicast_kernel net/netlink/af_netlink.c:1331 [inline]\n   netlink_unicast+0x53c/0x7f0\
+  \ net/netlink/af_netlink.c:1357\n   netlink_sendmsg+0x8b8/0xd70 net/netlink/af_netlink.c:1901\n\
+  \   sock_sendmsg_nosec net/socket.c:729 [inline]\n   __sock_sendmsg net/socket.c:744\
+  \ [inline]\n   ____sys_sendmsg+0x9ae/0xb40 net/socket.c:2607\n   ___sys_sendmsg+0x135/0x1e0\
+  \ net/socket.c:2661\n   __sys_sendmsg+0x117/0x1f0 net/socket.c:2690\n   do_syscall_32_irqs_on\
+  \ arch/x86/entry/common.c:165 [inline]\n   __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386\n\
+  \   do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411\n   entry_SYSENTER_compat_after_hwframe+0x84/0x8e\n\
+  \  RIP: 0023:0xf7fe4579\n  Code: b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08\
+  \ 03 74 d8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80\
+  \ <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00\n  RSP: 002b:00000000f574556c\
+  \ EFLAGS: 00000296 ORIG_RAX: 0000000000000172\n  RAX: ffffffffffffffda RBX: 000000000000000b\
+  \ RCX: 0000000020000140\n  RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000\n\
+  \  RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000\n  R10: 0000000000000000\
+  \ R11: 0000000000000296 R12: 0000000000000000\n  R13: 0000000000000000 R14: 0000000000000000\
+  \ R15: 0000000000000000\n   </TASK>\n\n  Allocated by task 5387:\n   kasan_save_stack+0x33/0x60\
+  \ mm/kasan/common.c:47\n   kasan_save_track+0x14/0x30 mm/kasan/common.c:68\n   poison_kmalloc_redzone\
+  \ mm/kasan/common.c:377 [inline]\n   __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:394\n\
+  \   kmalloc_noprof include/linux/slab.h:878 [inline]\n   kzalloc_noprof include/linux/slab.h:1014\
+  \ [inline]\n   subflow_create_ctx+0x87/0x2a0 net/mptcp/subflow.c:1803\n   subflow_ulp_init+0xc3/0x4d0\
+  \ net/mptcp/subflow.c:1956\n   __tcp_set_ulp net/ipv4/tcp_ulp.c:146 [inline]\n \
+  \  tcp_set_ulp+0x326/0x7f0 net/ipv4/tcp_ulp.c:167\n   mptcp_subflow_create_socket+0x4ae/0x10a0\
+  \ net/mptcp/subflow.c:1764\n   __mptcp_subflow_connect+0x3cc/0x1490 net/mptcp/subflow.c:1592\n\
+  \   mptcp_pm_create_subflow_or_signal_addr+0xbda/0x23a0 net/mptcp/pm_netlink.c:642\n\
+  \   mptcp_pm_nl_fully_established net/mptcp/pm_netlink.c:650 [inline]\n   mptcp_pm_nl_work+0x3a1/0x4f0\
+  \ net/mptcp/pm_netlink.c:943\n   mptcp_worker+0x15a/0x1240 net/mptcp/protocol.c:2777\n\
+  \   process_one_work+0x958/0x1b30 kernel/workqueue.c:3229\n   process_scheduled_works\
+  \ kernel/workqueue.c:3310 [inline]\n   worker_thread+0x6c8/0xf00 kernel/workqueue.c:3391\n\
+  \   kthread+0x2c1/0x3a0 kernel/kthread.c:389\n   ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147\n\
+  \   ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244\n\n  Freed by task\
+  \ 113:\n   kasan_save_stack+0x33/0x60 mm/kasan/common.c:47\n   kasan_save_track+0x14/0x30\
+  \ mm/kasan/common.c:68\n   kasan_save_free_info+0x3b/0x60 mm/kasan/generic.c:579\n\
+  \   poison_slab_object mm/kasan/common.c:247 [inline]\n   __kasan_slab_free+0x51/0x70\
+  \ mm/kasan/common.c:264\n   kasan_slab_free include/linux/kasan.h:230 [inline]\n\
+  \   slab_free_hook mm/slub.c:2342 [inline]\n   slab_free mm/slub.c:4579 [inline]\n\
+  \   kfree+0x14f/0x4b0 mm/slub.c:4727\n   kvfree+0x47/0x50 mm/util.c:701\n   kvfree_rcu_list+0xf5/0x2c0\
+  \ kernel/rcu/tree.c:3423\n   kvfree_rcu_drain_ready kernel/rcu/tree.c:3563 [inline]\n\
+  \   kfree_rcu_monitor+0x503/0x8b0 kernel/rcu/tree.c:3632\n   kfree_rcu_shrink_scan+0x245/0x3a0\
+  \ kernel/rcu/tree.c:3966\n   do_shrink_slab+0x44f/0x11c0 mm/shrinker.c:435\n   shrink_slab+0x32b/0x12a0\
+  \ mm/shrinker.c:662\n   shrink_one+0x47e/0x7b0 mm/vmscan.c:4818\n   shrink_many\
+  \ mm/vmscan.c:4879 [inline]\n   lru_gen_shrink_node mm/vmscan.c:4957 [inline]\n\
+  \   shrink_node+0x2452/0x39d0 mm/vmscan.c:5937\n   kswapd_shrink_node mm/vmscan.c:6765\
+  \ [inline]\n   balance_pgdat+0xc19/0x18f0 mm/vmscan.c:6957\n   kswapd+0x5ea/0xbf0\
+  \ mm/vmscan.c:7226\n   kthread+0x2c1/0x3a0 kernel/kthread.c:389\n   ret_from_fork+0x45/0x80\
+  \ arch/x86/kernel/process.c:147\n   ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244\n\
+  \n  Last potentially related work creation:\n   kasan_save_stack+0x33/0x60 mm/kasan/common.c:47\n\
+  \   __kasan_record_aux_stack+0xba/0xd0 mm/kasan/generic.c:541\n   kvfree_call_rcu+0x74/0xbe0\
+  \ kernel/rcu/tree.c:3810\n   subflow_ulp_release+0x2ae/0x350 net/mptcp/subflow.c:2009\n\
+  \   tcp_cleanup_ulp+0x7c/0x130 net/ipv4/tcp_ulp.c:124\n   tcp_v4_destroy_sock+0x1c5/0x6a0\
+  \ net/ipv4/tcp_ipv4.c:2541\n   inet_csk_destroy_sock+0x1a3/0x440 net/ipv4/inet_connection_sock.c:1293\n\
+  \   tcp_done+0x252/0x350 net/ipv4/tcp.c:4870\n   tcp_rcv_state_process+0x379b/0x4f30\
+  \ net/ipv4/tcp_input.c:6933\n   tcp_v4_do_rcv+0x1ad/0xa90 net/ipv4/tcp_ipv4.c:1938\n\
+  \   sk_backlog_rcv include/net/sock.h:1115 [inline]\n   __release_sock+0x31b/0x400\
+  \ net/core/sock.c:3072\n   __tcp_close+0x4f3/0xff0 net/ipv4/tcp.c:3142\n   __mptcp_close_ssk+0x331/0x14d0\
+  \ net/mptcp/protocol.c:2489\n   mptcp_close_ssk net/mptcp/protocol.c:2543 [inline]\n\
+  \   mptcp_close_ssk+0x150/0x220 net/mptcp/protocol.c:2526\n   mptcp_pm_nl_rm_addr_or_subflow+0x2be/0xcc0\
+  \ net/mptcp/pm_netlink.c:878\n   mptcp_pm_nl_rm_subflow_received net/mptcp/pm_netlink.c:914\
+  \ [inline]\n   mptcp_nl_remove_id_zero_address+0x305/0x4a0 net/mptcp/pm_netlink.c:1572\n\
+  \   mptcp_pm_nl_del_addr_doit+0x5c9/0x770 net/mptcp/pm_netlink.c:1603\n   genl_family_rcv_msg_doit+0x202/0x2f0\
+  \ net/netlink/genetlink.c:1115\n   genl_family_rcv_msg net/netlink/genetlink.c:1195\
+  \ [inline]\n   genl_rcv_msg+0x565/0x800 net/netlink/genetlink.c:1210\n   netlink_rcv_skb+0x165/0x410\
+  \ net/netlink/af_netlink.c:2551\n   genl_rcv+0x28/0x40 net/netlink/genetlink.c:1219\n\
+  \   netlink_unicast_kernel net/netlink/af_netlink.c:1331 [inline]\n   netlink_unicast+0x53c/0x7f0\
+  \ net/netlink/af_netlink.c:1357\n   netlink_sendmsg+0x8b8/0xd70 net/netlink/af_netlink.c:1901\n\
+  \   sock_sendmsg_nosec net/socket.c:729 [inline]\n   __sock_sendmsg net/socket.c:744\
+  \ [inline]\n   ____sys_sendmsg+0x9ae/0xb40 net/socket.c:2607\n   ___sys_sendmsg+0x135/0x1e0\
+  \ net/socket.c:2661\n   __sys_sendmsg+0x117/0x1f0 net/socket.c:2690\n   do_syscall_32_irqs_on\
+  \ arch/x86/entry/common.c:165 [inline]\n   __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386\n\
+  \   do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411\n   entry_SYSENTER_compat_after_hwframe+0x84/0x8e\n\
+  \n  The buggy address belongs to the object at ffff8880569ac800\n   which belongs\
+  \ to the cache kmalloc-512 of size 512\n  The buggy address is located 88 bytes\
+  \ inside of\n   freed 512-byte region [ffff8880569ac800, ffff8880569aca00)\n\n \
+  \ The buggy address belongs to the physical page:\n  page: refcount:1 mapcount:0\
+  \ mapping:0000000000000000 index:0x0 pfn:0x569ac\n  head: order:2 mapcount:0 entire_mapcount:0\
+  \ nr_pages_mapped:0 pincount:0\n  flags: 0x4fff00000000040(head|node=1|zone=1|lastcpupid=0x7ff)\n\
+  \  page_type: f5(slab)\n  raw: 04fff00000000040 ffff88801ac42c80 dead000000000100\
+  \ dead000000000122\n  raw: 0000000000000000 0000000080100010 00000001f5000000 0000000000000000\n\
+  \  head: 04fff00000000040 ffff88801ac42c80 dead000000000100 dead000000000122\n \
+  \ head: 0000000000000000 0000000080100010 00000001f5000000 0000000000000000\n  head:\
+  \ 04fff00000000002 ffffea00015a6b01 ffffffffffffffff 0000000000000000\n  head: 0000000000000004\
+  \ 0000000000000000 00000000ffffffff 0000000000000000\n  page dumped because: kasan:\
+  \ bad access detected\n  page_owner tracks the page as allocated\n  page last allocated\
+  \ via order 2, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC),\
+  \ pid 10238, tgid 10238 (kworker/u32:6), ts 597403252405, free_ts 597177952947\n\
+  \   set_page_owner include/linux/page_owner.h:32 [inline]\n   post_alloc_hook+0x2d1/0x350\
+  \ mm/page_alloc.c:1537\n   prep_new_page mm/page_alloc.c:1545 [inline]\n   get_page_from_freelist+0x101e/0x3070\
+  \ mm/page_alloc.c:3457\n   __alloc_pages_noprof+0x223/0x25a0 mm/page_alloc.c:4733\n\
+  \   alloc_pages_mpol_noprof+0x2c9/0x610 mm/mempolicy.c:2265\n   alloc_slab_page\
+  \ mm/slub.c:2412 [inline]\n   allocate_slab mm/slub.c:2578 [inline]\n   new_slab+0x2ba/0x3f0\
+  \ mm/slub.c:2631\n   ___slab_alloc+0xd1d/0x16f0 mm/slub.c:3818\n   __slab_alloc.constprop.0+0x56/0xb0\
+  \ mm/slub.c:3908\n   __slab_alloc_node mm/slub.c:3961 [inline]\n   slab_alloc_node\
+  \ mm/slub.c:4122 [inline]\n   __kmalloc_cache_noprof+0x2c5/0x310 mm/slub.c:4290\n\
+  \   kmalloc_noprof include/linux/slab.h:878 [inline]\n   kzalloc_noprof include/linux/slab.h:1014\
+  \ [inline]\n   mld_add_delrec net/ipv6/mcast.c:743 [inline]\n   igmp6_leave_group\
+  \ net/ipv6/mcast.c:2625 [inline]\n   igmp6_group_dropped+0x4ab/0xe40 net/ipv6/mcast.c:723\n\
+  \   __ipv6_dev_mc_dec+0x281/0x360 net/ipv6/mcast.c:979\n   addrconf_leave_solict\
+  \ net/ipv6/addrconf.c:2253 [inline]\n   __ipv6_ifa_notify+0x3f6/0xc30 net/ipv6/addrconf.c:6283\n\
+  \   addrconf_ifdown.isra.0+0xef9/0x1a20 net/ipv6/addrconf.c:3982\n   addrconf_notify+0x220/0x19c0\
+  \ net/ipv6/addrconf.c:3781\n   notifier_call_chain+0xb9/0x410 kernel/notifier.c:93\n\
+  \   call_netdevice_notifiers_info+0xbe/0x140 net/core/dev.c:1996\n   call_netdevice_notifiers_extack\
+  \ net/core/dev.c:2034 [inline]\n   call_netdevice_notifiers net/core/dev.c:2048\
+  \ [inline]\n   dev_close_many+0x333/0x6a0 net/core/dev.c:1589\n  page last free\
+  \ pid 13136 tgid 13136 stack trace:\n   reset_page_owner include/linux/page_owner.h:25\
+  \ [inline]\n   free_pages_prepare mm/page_alloc.c:1108 [inline]\n   free_unref_page+0x5f4/0xdc0\
+  \ mm/page_alloc.c:2638\n   stack_depot_save_flags+0x2da/0x900 lib/stackdepot.c:666\n\
+  \   kasan_save_stack+0x42/0x60 mm/kasan/common.c:48\n   kasan_save_track+0x14/0x30\
+  \ mm/kasan/common.c:68\n   unpoison_slab_object mm/kasan/common.c:319 [inline]\n\
+  \   __kasan_slab_alloc+0x89/0x90 mm/kasan/common.c:345\n   kasan_slab_alloc include/linux/kasan.h:247\
+  \ [inline]\n   slab_post_alloc_hook mm/slub.c:4085 [inline]\n   slab_alloc_node\
+  \ mm/slub.c:4134 [inline]\n   kmem_cache_alloc_noprof+0x121/0x2f0 mm/slub.c:4141\n\
+  \   skb_clone+0x190/0x3f0 net/core/skbuff.c:2084\n   do_one_broadcast net/netlink/af_netlink.c:1462\
+  \ [inline]\n   netlink_broadcast_filtered+0xb11/0xef0 net/netlink/af_netlink.c:1540\n\
+  \   netlink_broadcast+0x39/0x50 net/netlink/af_netlink.c:1564\n   uevent_net_broadcast_untagged\
+  \ lib/kobject_uevent.c:331 [inline]\n   kobject_uevent_net_broadcast lib/kobject_uevent.c:410\
+  \ [inline]\n   kobject_uevent_env+0xacd/0x1670 lib/kobject_uevent.c:608\n   device_del+0x623/0x9f0\
+  \ drivers/base/core.c:3882\n   snd_card_disconnect.part.0+0x58a/0x7c0 sound/core/init.c:546\n\
+  \   snd_card_disconnect+0x1f/0x30 sound/core/init.c:495\n   snd_usx2y_disconnect+0xe9/0x1f0\
+  \ sound/usb/usx2y/usbusx2y.c:417\n   usb_unbind_interface+0x1e8/0x970 drivers/usb/core/driver.c:461\n\
+  \   device_remove drivers/base/dd.c:569 [inline]\n   device_remove+0x122/0x170 drivers/base/dd.c:561\n\
+  \nThat's because 'subflow' is used just after 'mptcp_close_ssk(subflow)',\nwhich\
+  \ will initiate the release of its memory. Even if it is very likely\nthe release\
+  \ and the re-utilisation will be done later on, it is of\ncourse better to avoid\
+  \ any issues and read the content of 'subflow'\nbefore closing it.\n\nFixes: 1c1f72137598\
+  \ (\"mptcp: pm: only decrement add_addr_accepted for MPJ req\")\nCc: stable@vger.kernel.org\n\
+  Reported-by: syzbot+3c8b7a8e7df6a2a226ca@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/670d7337.050a0220.4cbc0.004f.GAE@google.com\n\
+  Signed-off-by: Matthieu Baerts (NGI0) <matttbe@kernel.org>\nAcked-by: Paolo Abeni\
+  \ <pabeni@redhat.com>\nLink: https://patch.msgid.link/20241015-net-mptcp-uaf-pm-rm-v1-1-c4ee5d987a64@kernel.org\n\
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>\n\n"
+submodule:
+- net/mptcp
+hunk_count: 1
+covered_count: 1

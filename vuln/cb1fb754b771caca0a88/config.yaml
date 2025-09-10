@@ -1,0 +1,25 @@
+id: cb1fb754b771caca0a88
+bug_link: https://syzkaller.appspot.com/bug?extid=cb1fb754b771caca0a88
+title: 'KASAN: use-after-free Read in delayed_uprobe_remove'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5cf99a0f3161bc3ae2391269d134d6bf7e26f00e
+fix_commit: 1aed58e67a6ec1e7a18bfabe8ba6ec2d27c15636
+datetime: '2018-12-05T23:05:13-05:00'
+fix_commit_message: "Uprobes: Fix kernel oops with delayed_uprobe_remove()\n\nThere\
+  \ could be a race between task exit and probe unregister:\n\n  exit_mm()\n  mmput()\n\
+  \  __mmput()                     uprobe_unregister()\n  uprobe_clear_state()   \
+  \       put_uprobe()\n  delayed_uprobe_remove()       delayed_uprobe_remove()\n\n\
+  put_uprobe() is calling delayed_uprobe_remove() without taking\ndelayed_uprobe_lock\
+  \ and thus the race sometimes results in a\nkernel crash. Fix this by taking delayed_uprobe_lock\
+  \ before\ncalling delayed_uprobe_remove() from put_uprobe().\n\nDetailed crash log\
+  \ can be found at:\n  Link: http://lkml.kernel.org/r/000000000000140c370577db5ece@google.com\n\
+  \nLink: http://lkml.kernel.org/r/20181205033423.26242-1-ravi.bangoria@linux.ibm.com\n\
+  \nAcked-by: Oleg Nesterov <oleg@redhat.com>\nReviewed-by: Srikar Dronamraju <srikar@linux.vnet.ibm.com>\n\
+  Reported-by: syzbot+cb1fb754b771caca0a88@syzkaller.appspotmail.com\nFixes: 1cc33161a83d\
+  \ (\"uprobes: Support SDT markers having reference count (semaphore)\")\nSigned-off-by:\
+  \ Ravi Bangoria <ravi.bangoria@linux.ibm.com>\nSigned-off-by: Steven Rostedt (VMware)\
+  \ <rostedt@goodmis.org>\n"
+submodule:
+- kernel/events
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,23 @@
+id: 2b149e3a2468e54d2178
+bug_link: https://syzkaller.appspot.com/bug?extid=2b149e3a2468e54d2178
+title: 'upstream boot error: KASAN: slab-out-of-bounds Write in hpet_alloc'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 15d6632496537fa66488221ee5dd2f9fb318ef2e
+fix_commit: 98c49f1746ac44ccc164e914b9a44183fad09f51
+datetime: '2020-01-30T06:58:33+01:00'
+fix_commit_message: "char: hpet: Fix out-of-bounds read bug\n\nCurrently, there is\
+  \ an out-of-bounds read on array hpetp->hp_dev\nin the following for loop:\n\n870\
+  \         for (i = 0; i < hdp->hd_nirqs; i++)\n871                 hpetp->hp_dev[i].hd_hdwirq\
+  \ = hdp->hd_irq[i];\n\nThis is due to the recent change from one-element array to\n\
+  flexible-array member in struct hpets:\n\n104 struct hpets {\n\t...\n113       \
+  \  struct hpet_dev hp_dev[];\n114 };\n\nThis change affected the total size of the\
+  \ dynamic memory\nallocation, decreasing it by one time the size of struct hpet_dev.\n\
+  \nFix this by adjusting the allocation size when calling\nstruct_size().\n\nFixes:\
+  \ 987f028b8637c (\"char: hpet: Use flexible-array member\")\nSigned-off-by: Gustavo\
+  \ A. R. Silva <gustavo@embeddedor.com>\nSigned-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\n\
+  Acked-by: Eric Biggers <ebiggers@kernel.org>\nLink: https://lore.kernel.org/r/20200129022613.GA24281@embeddedor.com\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/char
+hunk_count: 1
+covered_count: 1

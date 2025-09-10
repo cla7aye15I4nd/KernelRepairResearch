@@ -1,0 +1,58 @@
+id: ae97a827ae1c3336bbb4
+bug_link: https://syzkaller.appspot.com/bug?extid=ae97a827ae1c3336bbb4
+title: kernel BUG in prepare_to_merge
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 12b2d64e591652a2d97dd3afa2b062ca7a4ba352
+fix_commit: 773e722a98e25caf96f91aced7070c1858250ba2
+datetime: '2023-08-10T17:10:10+02:00'
+fix_commit_message: "btrfs: avoid race between qgroup tree creation and relocation\n\
+  \n[BUG]\nSyzbot reported a weird ASSERT() triggered inside prepare_to_merge().\n\
+  \n  assertion failed: root->reloc_root == reloc_root, in fs/btrfs/relocation.c:1919\n\
+  \  ------------[ cut here ]------------\n  kernel BUG at fs/btrfs/relocation.c:1919!\n\
+  \  invalid opcode: 0000 [#1] PREEMPT SMP KASAN\n  CPU: 0 PID: 9904 Comm: syz-executor.3\
+  \ Not tainted\n  6.4.0-syzkaller-08881-g533925cb7604 #0\n  Hardware name: Google\
+  \ Google Compute Engine/Google Compute Engine,\n  BIOS Google 05/27/2023\n  RIP:\
+  \ 0010:prepare_to_merge+0xbb2/0xc40 fs/btrfs/relocation.c:1919\n  Code: fe e9 f5\
+  \ (...)\n  RSP: 0018:ffffc9000325f760 EFLAGS: 00010246\n  RAX: 000000000000004f\
+  \ RBX: ffff888075644030 RCX: 1481ccc522da5800\n  RDX: ffffc90005c09000 RSI: 00000000000364ca\
+  \ RDI: 00000000000364cb\n  RBP: ffffc9000325f870 R08: ffffffff816f33ac R09: 1ffff9200064bea0\n\
+  \  R10: dffffc0000000000 R11: fffff5200064bea1 R12: ffff888075644000\n  R13: ffff88803b166000\
+  \ R14: ffff88803b166560 R15: ffff88803b166558\n  FS:  00007f4e305fd700(0000) GS:ffff8880b9800000(0000)\
+  \ knlGS:0000000000000000\n  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n\
+  \  CR2: 000056080679c000 CR3: 00000000193ad000 CR4: 00000000003506f0\n  DR0: 0000000000000000\
+  \ DR1: 0000000000000000 DR2: 0000000000000000\n  DR3: 0000000000000000 DR6: 00000000fffe0ff0\
+  \ DR7: 0000000000000400\n  Call Trace:\n   <TASK>\n   relocate_block_group+0xa5d/0xcd0\
+  \ fs/btrfs/relocation.c:3749\n   btrfs_relocate_block_group+0x7ab/0xd70 fs/btrfs/relocation.c:4087\n\
+  \   btrfs_relocate_chunk+0x12c/0x3b0 fs/btrfs/volumes.c:3283\n   __btrfs_balance+0x1b06/0x2690\
+  \ fs/btrfs/volumes.c:4018\n   btrfs_balance+0xbdb/0x1120 fs/btrfs/volumes.c:4402\n\
+  \   btrfs_ioctl_balance+0x496/0x7c0 fs/btrfs/ioctl.c:3604\n   vfs_ioctl fs/ioctl.c:51\
+  \ [inline]\n   __do_sys_ioctl fs/ioctl.c:870 [inline]\n   __se_sys_ioctl+0xf8/0x170\
+  \ fs/ioctl.c:856\n   do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n   do_syscall_64+0x41/0xc0\
+  \ arch/x86/entry/common.c:80\n   entry_SYSCALL_64_after_hwframe+0x63/0xcd\n  RIP:\
+  \ 0033:0x7f4e2f88c389\n\n[CAUSE]\nWith extra debugging, the offending reloc_root\
+  \ is for quota tree (rootid 8).\n\nNormally we should not use the reloc tree for\
+  \ quota root at all, as reloc\ntrees are only for subvolume trees.\n\nBut there\
+  \ is a race between quota enabling and relocation, this happens\nafter commit 85724171b302\
+  \ (\"btrfs: fix the btrfs_get_global_root return value\").\n\nBefore that commit,\
+  \ for quota and free space tree, we exit immediately\nif we cannot grab it from\
+  \ fs_info.\n\nBut now we would try to read it from disk, just as if they are fs\
+  \ trees,\nthis sets ROOT_SHAREABLE flags in such race:\n\n             Thread A\
+  \             |           Thread B\n ---------------------------------+------------------------------\n\
+  \ btrfs_quota_enable()             |\n |                                | btrfs_get_root_ref()\n\
+  \ |                                | |- btrfs_get_global_root()\n |            \
+  \                    | |  Returned NULL\n |                                | |-\
+  \ btrfs_lookup_fs_root()\n |                                | |  Returned NULL\n\
+  \ |- btrfs_create_tree()           | |\n |  Now quota root item is        | |\n\
+  \ |  inserted                      | |- btrfs_read_tree_root()\n |             \
+  \                   | |  Got the newly inserted quota root\n |                 \
+  \               | |- btrfs_init_fs_root()\n |                                | |\
+  \  Set ROOT_SHAREABLE flag\n\n[FIX]\nGet back to the old behavior by returning PTR_ERR(-ENOENT)\
+  \ if the target\nobjectid is not a subvolume tree or data reloc tree.\n\nReported-and-tested-by:\
+  \ syzbot+ae97a827ae1c3336bbb4@syzkaller.appspotmail.com\nFixes: 85724171b302 (\"\
+  btrfs: fix the btrfs_get_global_root return value\")\nReviewed-by: Filipe Manana\
+  \ <fdmanana@suse.com>\nSigned-off-by: Qu Wenruo <wqu@suse.com>\nSigned-off-by: David\
+  \ Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 0

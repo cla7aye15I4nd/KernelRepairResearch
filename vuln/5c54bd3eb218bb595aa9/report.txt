@@ -1,0 +1,26 @@
+==================================================================
+BUG: KCSAN: data-race in do_timer_create / do_timer_create
+
+write to 0xffff88810462d704 of 4 bytes by task 5587 on cpu 1:
+ do_timer_create+0x2fd/0xa30 kernel/time/posix-timers.c:516
+ __se_sys_timer_create kernel/time/posix-timers.c:577 [inline]
+ __x64_sys_timer_create+0xbb/0xe0 kernel/time/posix-timers.c:577
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+read to 0xffff88810462d704 of 4 bytes by task 5586 on cpu 0:
+ posix_timer_add kernel/time/posix-timers.c:143 [inline]
+ do_timer_create+0x19f/0xa30 kernel/time/posix-timers.c:516
+ __se_sys_timer_create kernel/time/posix-timers.c:577 [inline]
+ __x64_sys_timer_create+0xbb/0xe0 kernel/time/posix-timers.c:577
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+value changed: 0x00000012 -> 0x0000001d
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 PID: 5586 Comm: syz-executor.5 Not tainted 6.4.0-rc2-syzkaller-00338-ge2065b8c1b01 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/28/2023
+==================================================================

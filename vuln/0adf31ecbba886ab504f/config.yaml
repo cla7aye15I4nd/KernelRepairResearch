@@ -1,0 +1,80 @@
+id: 0adf31ecbba886ab504f
+bug_link: https://syzkaller.appspot.com/bug?extid=0adf31ecbba886ab504f
+title: 'INFO: task hung in write_cache_pages (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 89a004508081e1d1a498f10ea6d4f7f97a820438
+fix_commit: fb3592c41a4427601f9643b2a84e55bb99f5cd7c
+datetime: '2023-03-07T17:04:54-08:00'
+fix_commit_message: "migrate_pages: fix deadlock in batched migration\n\nPatch series\
+  \ \"migrate_pages: fix deadlock in batched synchronous\nmigration\", v2.\n\nTwo\
+  \ deadlock bugs were reported for the migrate_pages() batching series. \nThanks\
+  \ Hugh and Pengfei.  Analysis shows that if we have locked some other\nfolios except\
+  \ the one we are migrating, it's not safe in general to wait\nsynchronously, for\
+  \ example, to wait the writeback to complete or wait to\nlock the buffer head.\n\
+  \nSo 1/3 fixes the deadlock in a simple way, where the batching support for\nthe\
+  \ synchronous migration is disabled.  The change is straightforward and\neasy to\
+  \ be understood.  While 3/3 re-introduce the batching for\nsynchronous migration\
+  \ via trying to migrate asynchronously in batch\noptimistically, then fall back\
+  \ to migrate synchronously one by one for\nfail-to-migrate folios.  Test shows that\
+  \ this can restore the TLB flushing\nbatching performance for synchronous migration\
+  \ effectively.\n\n\nThis patch (of 3):\n\nTwo deadlock bugs were reported for the\
+  \ migrate_pages() batching series. \nThanks Hugh and Pengfei!  For example, in the\
+  \ following deadlock trace\nsnippet,\n\n INFO: task kworker/u4:0:9 blocked for more\
+  \ than 147 seconds.\n       Not tainted 6.2.0-rc4-kvm+ #1314\n \"echo 0 > /proc/sys/kernel/hung_task_timeout_secs\"\
+  \ disables this message.\n task:kworker/u4:0    state:D stack:0     pid:9     ppid:2\
+  \      flags:0x00004000\n Workqueue: loop4 loop_rootcg_workfn\n Call Trace:\n  <TASK>\n\
+  \  __schedule+0x43b/0xd00\n  schedule+0x6a/0xf0\n  io_schedule+0x4a/0x80\n  folio_wait_bit_common+0x1b5/0x4e0\n\
+  \  ? __pfx_wake_page_function+0x10/0x10\n  __filemap_get_folio+0x73d/0x770\n  shmem_get_folio_gfp+0x1fd/0xc80\n\
+  \  shmem_write_begin+0x91/0x220\n  generic_perform_write+0x10e/0x2e0\n  __generic_file_write_iter+0x17e/0x290\n\
+  \  ? generic_write_checks+0x12b/0x1a0\n  generic_file_write_iter+0x97/0x180\n  ?\
+  \ __sanitizer_cov_trace_const_cmp4+0x1a/0x20\n  do_iter_readv_writev+0x13c/0x210\n\
+  \  ? __sanitizer_cov_trace_const_cmp4+0x1a/0x20\n  do_iter_write+0xf6/0x330\n  vfs_iter_write+0x46/0x70\n\
+  \  loop_process_work+0x723/0xfe0\n  loop_rootcg_workfn+0x28/0x40\n  process_one_work+0x3cc/0x8d0\n\
+  \  worker_thread+0x66/0x630\n  ? __pfx_worker_thread+0x10/0x10\n  kthread+0x153/0x190\n\
+  \  ? __pfx_kthread+0x10/0x10\n  ret_from_fork+0x29/0x50\n  </TASK>\n\n INFO: task\
+  \ repro:1023 blocked for more than 147 seconds.\n       Not tainted 6.2.0-rc4-kvm+\
+  \ #1314\n \"echo 0 > /proc/sys/kernel/hung_task_timeout_secs\" disables this message.\n\
+  \ task:repro           state:D stack:0     pid:1023  ppid:360    flags:0x00004004\n\
+  \ Call Trace:\n  <TASK>\n  __schedule+0x43b/0xd00\n  schedule+0x6a/0xf0\n  io_schedule+0x4a/0x80\n\
+  \  folio_wait_bit_common+0x1b5/0x4e0\n  ? compaction_alloc+0x77/0x1150\n  ? __pfx_wake_page_function+0x10/0x10\n\
+  \  folio_wait_bit+0x30/0x40\n  folio_wait_writeback+0x2e/0x1e0\n  migrate_pages_batch+0x555/0x1ac0\n\
+  \  ? __pfx_compaction_alloc+0x10/0x10\n  ? __pfx_compaction_free+0x10/0x10\n  ?\
+  \ __this_cpu_preempt_check+0x17/0x20\n  ? lock_is_held_type+0xe6/0x140\n  migrate_pages+0x100e/0x1180\n\
+  \  ? __pfx_compaction_free+0x10/0x10\n  ? __pfx_compaction_alloc+0x10/0x10\n  compact_zone+0xe10/0x1b50\n\
+  \  ? lock_is_held_type+0xe6/0x140\n  ? check_preemption_disabled+0x80/0xf0\n  compact_node+0xa3/0x100\n\
+  \  ? __sanitizer_cov_trace_const_cmp8+0x1c/0x30\n  ? _find_first_bit+0x7b/0x90\n\
+  \  sysctl_compaction_handler+0x5d/0xb0\n  proc_sys_call_handler+0x29d/0x420\n  proc_sys_write+0x2b/0x40\n\
+  \  vfs_write+0x3a3/0x780\n  ksys_write+0xb7/0x180\n  __x64_sys_write+0x26/0x30\n\
+  \  do_syscall_64+0x3b/0x90\n  entry_SYSCALL_64_after_hwframe+0x72/0xdc\n RIP: 0033:0x7f3a2471f59d\n\
+  \ RSP: 002b:00007ffe567f7288 EFLAGS: 00000217 ORIG_RAX: 0000000000000001\n RAX:\
+  \ ffffffffffffffda RBX: 0000000000000000 RCX: 00007f3a2471f59d\n RDX: 0000000000000000\
+  \ RSI: 0000000000000000 RDI: 0000000000000005\n RBP: 00007ffe567f72a0 R08: 0000000000000010\
+  \ R09: 0000000000000010\n R10: 0000000000000010 R11: 0000000000000217 R12: 00000000004012e0\n\
+  \ R13: 00007ffe567f73e0 R14: 0000000000000000 R15: 0000000000000000\n  </TASK>\n\
+  \nThe page migration task has held the lock of the shmem folio A, and is\nwaiting\
+  \ the writeback of the folio B of the file system on the loop block\ndevice to complete.\
+  \  While the loop worker task which writes back the\nfolio B is waiting to lock\
+  \ the shmem folio A, because the folio A backs\nthe folio B in the loop device.\
+  \  Thus deadlock is triggered.\n\nIn general, if we have locked some other folios\
+  \ except the one we are\nmigrating, it's not safe to wait synchronously, for example,\
+  \ to wait the\nwriteback to complete or wait to lock the buffer head.\n\nTo fix\
+  \ the deadlock, in this patch, we avoid to batch the page migration\nexcept for\
+  \ MIGRATE_ASYNC mode.  In MIGRATE_ASYNC mode, synchronous waiting\nis avoided.\n\
+  \nThe fix can be improved further.  We will do that as soon as possible.\n\nLink:\
+  \ https://lkml.kernel.org/r/20230303030155.160983-1-ying.huang@intel.com\nLink:\
+  \ https://lore.kernel.org/linux-mm/87a6c8c-c5c1-67dc-1e32-eb30831d6e3d@google.com/\n\
+  Link: https://lore.kernel.org/linux-mm/874jrg7kke.fsf@yhuang6-desk2.ccr.corp.intel.com/\n\
+  Link: https://lore.kernel.org/linux-mm/20230227110614.dngdub2j3exr6dfp@quack3/\n\
+  Link: https://lkml.kernel.org/r/20230303030155.160983-2-ying.huang@intel.com\nFixes:\
+  \ 5dfab109d519 (\"migrate_pages: batch _unmap and _move\")\nSigned-off-by: \"Huang,\
+  \ Ying\" <ying.huang@intel.com>\nReported-by: Hugh Dickins <hughd@google.com>\n\
+  Reported-by: \"Xu, Pengfei\" <pengfei.xu@intel.com>\nCc: Jan Kara <jack@suse.cz>\n\
+  Cc: Baolin Wang <baolin.wang@linux.alibaba.com>\nCc: Christoph Hellwig <hch@lst.de>\n\
+  Cc: Stefan Roesch <shr@devkernel.io>\nCc: Tejun Heo <tj@kernel.org>\nCc: Xin Hao\
+  \ <xhao@linux.alibaba.com>\nCc: Zi Yan <ziy@nvidia.com>\nCc: Yang Shi <shy828301@gmail.com>\n\
+  Cc: Matthew Wilcox <willy@infradead.org>\nCc: Mike Kravetz <mike.kravetz@oracle.com>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 13
+covered_count: 6

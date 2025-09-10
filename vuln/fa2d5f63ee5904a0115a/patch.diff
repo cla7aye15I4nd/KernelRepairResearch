@@ -1,0 +1,16 @@
+diff --git a/drivers/staging/android/ion/ion-ioctl.c b/drivers/staging/android/ion/ion-ioctl.c
+index 6ed2cc15c8c0..a8d3cc412fb9 100644
+--- a/drivers/staging/android/ion/ion-ioctl.c
++++ b/drivers/staging/android/ion/ion-ioctl.c
+@@ -60,8 +60,10 @@ long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ 		return -EFAULT;
+ 
+ 	ret = validate_ioctl_arg(cmd, &data);
+-	if (WARN_ON_ONCE(ret))
++	if (ret) {
++		pr_warn_once("%s: ioctl validate failed\n", __func__);
+ 		return ret;
++	}
+ 
+ 	if (!(dir & _IOC_WRITE))
+ 		memset(&data, 0, sizeof(data));

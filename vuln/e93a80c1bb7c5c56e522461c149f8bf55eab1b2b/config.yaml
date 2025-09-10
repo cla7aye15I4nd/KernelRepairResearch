@@ -1,0 +1,31 @@
+id: e93a80c1bb7c5c56e522461c149f8bf55eab1b2b
+bug_link: https://syzkaller.appspot.com/bug?extid=e93a80c1bb7c5c56e522461c149f8bf55eab1b2b
+title: possible deadlock in seq_read
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c1e287c11b752b055257196c5e98e4e91f401b32
+fix_commit: 73601ea5b7b18eb234219ae2adf77530f389da79
+datetime: '2019-03-29T10:01:37-07:00'
+fix_commit_message: "fs/open.c: allow opening only regular files during execve()\n\
+  \nsyzbot is hitting lockdep warning [1] due to trying to open a fifo\nduring an\
+  \ execve() operation.  But we don't need to open non regular\nfiles during an execve()\
+  \ operation, for all files which we will need are\nthe executable file itself and\
+  \ the interpreter programs like /bin/sh and\nld-linux.so.2 .\n\nSince the manpage\
+  \ for execve(2) says that execve() returns EACCES when\nthe file or a script interpreter\
+  \ is not a regular file, and the manpage\nfor uselib(2) says that uselib() can return\
+  \ EACCES, and we use\nFMODE_EXEC when opening for execve()/uselib(), we can bail\
+  \ out if a non\nregular file is requested with FMODE_EXEC set.\n\nSince this deadlock\
+  \ followed by khungtaskd warnings is trivially\nreproducible by a local unprivileged\
+  \ user, and syzbot's frequent crash\ndue to this deadlock defers finding other bugs,\
+  \ let's workaround this\ndeadlock until we get a chance to find a better solution.\n\
+  \n[1] https://syzkaller.appspot.com/bug?id=b5095bfec44ec84213bac54742a82483aad578ce\n\
+  \nLink: http://lkml.kernel.org/r/1552044017-7890-1-git-send-email-penguin-kernel@I-love.SAKURA.ne.jp\n\
+  Reported-by: syzbot <syzbot+e93a80c1bb7c5c56e522461c149f8bf55eab1b2b@syzkaller.appspotmail.com>\n\
+  Fixes: 8924feff66f35fe2 (\"splice: lift pipe_lock out of splice_to_pipe()\")\nSigned-off-by:\
+  \ Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nAcked-by: Kees Cook <keescook@chromium.org>\n\
+  Cc: Al Viro <viro@zeniv.linux.org.uk>\nCc: Eric Biggers <ebiggers3@gmail.com>\n\
+  Cc: Dmitry Vyukov <dvyukov@google.com>\nCc: <stable@vger.kernel.org>\t[4.9+]\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,49 @@
+id: b19c2dc2c990ea657a71
+bug_link: https://syzkaller.appspot.com/bug?extid=b19c2dc2c990ea657a71
+title: 'KMSAN: uninit-value in mpol_rebind_mm'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7775face207922ea62a4e96b9cd45abfdc7b9840
+fix_commit: 2e25644e8da4ed3a27e7b8315aaae74660be72dc
+datetime: '2019-03-05T21:07:18-08:00'
+fix_commit_message: "mm, mempolicy: fix uninit memory access\n\nSyzbot with KMSAN\
+  \ reports (excerpt):\n\n==================================================================\n\
+  BUG: KMSAN: uninit-value in mpol_rebind_policy mm/mempolicy.c:353 [inline]\nBUG:\
+  \ KMSAN: uninit-value in mpol_rebind_mm+0x249/0x370 mm/mempolicy.c:384\nCPU: 1 PID:\
+  \ 17420 Comm: syz-executor4 Not tainted 4.20.0-rc7+ #15\nHardware name: Google Google\
+  \ Compute Engine/Google Compute Engine, BIOS\nGoogle 01/01/2011\nCall Trace:\n \
+  \ __dump_stack lib/dump_stack.c:77 [inline]\n  dump_stack+0x173/0x1d0 lib/dump_stack.c:113\n\
+  \  kmsan_report+0x12e/0x2a0 mm/kmsan/kmsan.c:613\n  __msan_warning+0x82/0xf0 mm/kmsan/kmsan_instr.c:295\n\
+  \  mpol_rebind_policy mm/mempolicy.c:353 [inline]\n  mpol_rebind_mm+0x249/0x370\
+  \ mm/mempolicy.c:384\n  update_tasks_nodemask+0x608/0xca0 kernel/cgroup/cpuset.c:1120\n\
+  \  update_nodemasks_hier kernel/cgroup/cpuset.c:1185 [inline]\n  update_nodemask\
+  \ kernel/cgroup/cpuset.c:1253 [inline]\n  cpuset_write_resmask+0x2a98/0x34b0 kernel/cgroup/cpuset.c:1728\n\
+  \n...\n\nUninit was created at:\n  kmsan_save_stack_with_flags mm/kmsan/kmsan.c:204\
+  \ [inline]\n  kmsan_internal_poison_shadow+0x92/0x150 mm/kmsan/kmsan.c:158\n  kmsan_kmalloc+0xa6/0x130\
+  \ mm/kmsan/kmsan_hooks.c:176\n  kmem_cache_alloc+0x572/0xb90 mm/slub.c:2777\n  mpol_new\
+  \ mm/mempolicy.c:276 [inline]\n  do_mbind mm/mempolicy.c:1180 [inline]\n  kernel_mbind+0x8a7/0x31a0\
+  \ mm/mempolicy.c:1347\n  __do_sys_mbind mm/mempolicy.c:1354 [inline]\n\nAs it's\
+  \ difficult to report where exactly the uninit value resides in\nthe mempolicy object,\
+  \ we have to guess a bit.  mm/mempolicy.c:353\ncontains this part of mpol_rebind_policy():\n\
+  \n        if (!mpol_store_user_nodemask(pol) &&\n            nodes_equal(pol->w.cpuset_mems_allowed,\
+  \ *newmask))\n\n\"mpol_store_user_nodemask(pol)\" is testing pol->flags, which I\
+  \ couldn't\never see being uninitialized after leaving mpol_new().  So I'll guess\n\
+  it's actually about accessing pol->w.cpuset_mems_allowed on line 354,\nbut still\
+  \ part of statement starting on line 353.\n\nFor w.cpuset_mems_allowed to be not\
+  \ initialized, and the nodes_equal()\nreachable for a mempolicy where mpol_set_nodemask()\
+  \ is called in\ndo_mbind(), it seems the only possibility is a MPOL_PREFERRED policy\n\
+  with empty set of nodes, i.e.  MPOL_LOCAL equivalent, with MPOL_F_LOCAL\nflag. \
+  \ Let's exclude such policies from the nodes_equal() check.  Note\nthe uninit access\
+  \ should be benign anyway, as rebinding this kind of\npolicy is always a no-op.\
+  \  Therefore no actual need for stable\ninclusion.\n\nLink: http://lkml.kernel.org/r/a71997c3-e8ae-a787-d5ce-3db05768b27c@suse.cz\n\
+  Link: http://lkml.kernel.org/r/73da3e9c-cc84-509e-17d9-0c434bb9967d@suse.cz\nSigned-off-by:\
+  \ Vlastimil Babka <vbabka@suse.cz>\nReported-by: syzbot+b19c2dc2c990ea657a71@syzkaller.appspotmail.com\n\
+  Cc: Alexander Potapenko <glider@google.com>\nCc: Dmitry Vyukov <dvyukov@google.com>\n\
+  Cc: Andrea Arcangeli <aarcange@redhat.com>\nCc: \"Kirill A. Shutemov\" <kirill.shutemov@linux.intel.com>\n\
+  Cc: Michal Hocko <mhocko@suse.com>\nCc: David Rientjes <rientjes@google.com>\nCc:\
+  \ Yisheng Xie <xieyisheng1@huawei.com>\nCc: zhong jiang <zhongjiang@huawei.com>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds\
+  \ <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

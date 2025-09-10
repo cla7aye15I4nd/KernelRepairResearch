@@ -1,0 +1,34 @@
+id: 0eefc1e06a77d327a056
+bug_link: https://syzkaller.appspot.com/bug?extid=0eefc1e06a77d327a056
+title: possible deadlock in ext4_evict_inode
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3f4287e7d98a2954f20bf96c567fdffcd2b63eb9
+fix_commit: e5bfad3d7acc5702f32aafeb388362994f4d7bd0
+datetime: '2019-09-04T09:37:07-07:00'
+fix_commit_message: 'smack: use GFP_NOFS while holding inode_smack::smk_lock
+
+
+  inode_smack::smk_lock is taken during smack_d_instantiate(), which is
+
+  called during a filesystem transaction when creating a file on ext4.
+
+  Therefore to avoid a deadlock, all code that takes this lock must use
+
+  GFP_NOFS, to prevent memory reclaim from waiting for the filesystem
+
+  transaction to complete.
+
+
+  Reported-by: syzbot+0eefc1e06a77d327a056@syzkaller.appspotmail.com
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Eric Biggers <ebiggers@google.com>
+
+  Signed-off-by: Casey Schaufler <casey@schaufler-ca.com>
+
+  '
+submodule:
+- security/smack
+hunk_count: 4
+covered_count: 1

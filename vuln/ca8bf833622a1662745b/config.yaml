@@ -1,0 +1,45 @@
+id: ca8bf833622a1662745b
+bug_link: https://syzkaller.appspot.com/bug?extid=ca8bf833622a1662745b
+title: 'KASAN: use-after-free Read in io_rsrc_node_ref_zero'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 228339662b398a59b3560cd571deb8b25b253c7e
+fix_commit: 80912cef18f16f8fe59d1fb9548d4364342be360
+datetime: '2022-02-22T09:57:32-07:00'
+fix_commit_message: 'io_uring: disallow modification of rsrc_data during quiesce
+
+
+  io_rsrc_ref_quiesce will unlock the uring while it waits for references to
+
+  the io_rsrc_data to be killed.
+
+  There are other places to the data that might add references to data via
+
+  calls to io_rsrc_node_switch.
+
+  There is a race condition where this reference can be added after the
+
+  completion has been signalled. At this point the io_rsrc_ref_quiesce call
+
+  will wake up and relock the uring, assuming the data is unused and can be
+
+  freed - although it is actually being used.
+
+
+  To fix this check in io_rsrc_ref_quiesce if a resource has been revived.
+
+
+  Reported-by: syzbot+ca8bf833622a1662745b@syzkaller.appspotmail.com
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Dylan Yudaken <dylany@fb.com>
+
+  Link: https://lore.kernel.org/r/20220222161751.995746-1-dylany@fb.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

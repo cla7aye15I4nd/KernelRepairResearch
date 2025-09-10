@@ -1,0 +1,66 @@
+id: d0d442c22fa8db45ff0e
+bug_link: https://syzkaller.appspot.com/bug?extid=d0d442c22fa8db45ff0e
+title: general protection fault in vhost_work_queue
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1f5d2e3bab16369d5d4b4020a25db4ab1f4f082c
+fix_commit: a284f09effea1908db7985dbfb5458c9100038d8
+datetime: '2023-06-08T15:43:09-04:00'
+fix_commit_message: 'vhost: Fix crash during early vhost_transport_send_pkt calls
+
+
+  If userspace does VHOST_VSOCK_SET_GUEST_CID before VHOST_SET_OWNER we
+
+  can race where:
+
+  1. thread0 calls vhost_transport_send_pkt -> vhost_work_queue
+
+  2. thread1 does VHOST_SET_OWNER which calls vhost_worker_create.
+
+  3. vhost_worker_create will set the dev->worker pointer before setting
+
+  the worker->vtsk pointer.
+
+  4. thread0''s vhost_work_queue will see the dev->worker pointer is
+
+  set and try to call vhost_task_wake using not yet set worker->vtsk
+
+  pointer.
+
+  5. We then crash since vtsk is NULL.
+
+
+  Before commit 6e890c5d5021 ("vhost: use vhost_tasks for worker
+
+  threads"), we only had the worker pointer so we could just check it to
+
+  see if VHOST_SET_OWNER has been done. After that commit we have the
+
+  vhost_worker and vhost_task pointer, so we can now hit the bug above.
+
+
+  This patch embeds the vhost_worker in the vhost_dev and moves the work
+
+  list initialization back to vhost_dev_init, so we can just check the
+
+  worker.vtsk pointer to check if VHOST_SET_OWNER has been done like
+
+  before.
+
+
+  Fixes: 6e890c5d5021 ("vhost: use vhost_tasks for worker threads")
+
+  Signed-off-by: Mike Christie <michael.christie@oracle.com>
+
+  Message-Id: <20230607192338.6041-2-michael.christie@oracle.com>
+
+  Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+  Reported-by: syzbot+d0d442c22fa8db45ff0e@syzkaller.appspotmail.com
+
+  Reviewed-by: Stefano Garzarella <sgarzare@redhat.com>
+
+  '
+submodule:
+- drivers/vhost
+hunk_count: 7
+covered_count: 4

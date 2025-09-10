@@ -1,0 +1,29 @@
+id: 8e8958586909d62b6840
+bug_link: https://syzkaller.appspot.com/bug?extid=8e8958586909d62b6840
+title: 'KASAN: use-after-free Read in setup_rw_floppy'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 46cf2c613f4b10eb12f749207b0fd2c1bfae3088
+fix_commit: 233087ca063686964a53c829d547c7571e3f67bf
+datetime: '2022-04-27T09:41:54-07:00'
+fix_commit_message: "floppy: disable FDRAWCMD by default\n\nMinh Yuan reported a concurrency\
+  \ use-after-free issue in the floppy code\nbetween raw_cmd_ioctl and seek_interrupt.\n\
+  \n[ It turns out this has been around, and that others have reported the\n  KASAN\
+  \ splats over the years, but Minh Yuan had a reproducer for it and\n  so gets primary\
+  \ credit for reporting it for this fix   - Linus ]\n\nThe problem is, this driver\
+  \ tends to break very easily and nowadays,\nnobody is expected to use FDRAWCMD anyway\
+  \ since it was used to\nmanipulate non-standard formats.  The risk of breaking the\
+  \ driver is\nhigher than the risk presented by this race, and accessing the device\n\
+  requires privileges anyway.\n\nLet's just add a config option to completely disable\
+  \ this ioctl and\nleave it disabled by default.  Distros shouldn't use it, and only\
+  \ those\nrunning on antique hardware might need to enable it.\n\nLink: https://lore.kernel.org/all/000000000000b71cdd05d703f6bf@google.com/\n\
+  Link: https://lore.kernel.org/lkml/CAKcFiNC=MfYVW-Jt9A3=FPJpTwCD2PL_ULNCpsCVE5s8ZeBQgQ@mail.gmail.com\n\
+  Link: https://lore.kernel.org/all/CAEAjamu1FRhz6StCe_55XY5s389ZP_xmCF69k987En+1z53=eg@mail.gmail.com\n\
+  Reported-by: Minh Yuan <yuanmingbuaa@gmail.com>\nReported-by: syzbot+8e8958586909d62b6840@syzkaller.appspotmail.com\n\
+  Reported-by: cruise k <cruise4k@gmail.com>\nReported-by: Kyungtae Kim <kt0755@gmail.com>\n\
+  Suggested-by: Linus Torvalds <torvalds@linuxfoundation.org>\nTested-by: Denis Efremov\
+  \ <efremov@linux.com>\nSigned-off-by: Willy Tarreau <w@1wt.eu>\nSigned-off-by: Linus\
+  \ Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- drivers/block
+hunk_count: 5
+covered_count: 2

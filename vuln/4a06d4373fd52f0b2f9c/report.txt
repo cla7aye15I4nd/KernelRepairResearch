@@ -1,0 +1,44 @@
+loop1: detected capacity change from 0 to 256
+==================================================================
+BUG: KCSAN: data-race in inotify_handle_inode_event / inotify_remove_from_idr
+
+write to 0xffff88810396ff48 of 4 bytes by task 8000 on cpu 1:
+ inotify_remove_from_idr+0x106/0x310 fs/notify/inotify/inotify_user.c:511
+ inotify_ignored_and_remove_idr+0x34/0x60 fs/notify/inotify/inotify_user.c:532
+ inotify_freeing_mark+0x1d/0x30 fs/notify/inotify/inotify_fsnotify.c:133
+ fsnotify_free_mark fs/notify/mark.c:490 [inline]
+ fsnotify_destroy_mark+0x17a/0x190 fs/notify/mark.c:499
+ __do_sys_inotify_rm_watch fs/notify/inotify/inotify_user.c:817 [inline]
+ __se_sys_inotify_rm_watch+0xf7/0x170 fs/notify/inotify/inotify_user.c:794
+ __x64_sys_inotify_rm_watch+0x31/0x40 fs/notify/inotify/inotify_user.c:794
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+read to 0xffff88810396ff48 of 4 bytes by task 9356 on cpu 0:
+ inotify_handle_inode_event+0x17e/0x2c0 fs/notify/inotify/inotify_fsnotify.c:113
+ fsnotify_handle_inode_event+0x19b/0x1f0 fs/notify/fsnotify.c:264
+ fsnotify_handle_event fs/notify/fsnotify.c:316 [inline]
+ send_to_group fs/notify/fsnotify.c:364 [inline]
+ fsnotify+0x101c/0x1150 fs/notify/fsnotify.c:570
+ __fsnotify_parent+0x307/0x480 fs/notify/fsnotify.c:230
+ fsnotify_parent include/linux/fsnotify.h:77 [inline]
+ fsnotify_file include/linux/fsnotify.h:99 [inline]
+ fsnotify_close include/linux/fsnotify.h:341 [inline]
+ __fput+0x4b0/0x570 fs/file_table.c:307
+ ____fput+0x15/0x20 fs/file_table.c:349
+ task_work_run+0x135/0x1a0 kernel/task_work.c:179
+ resume_user_mode_work include/linux/resume_user_mode.h:49 [inline]
+ exit_to_user_mode_loop+0xd1/0xe0 kernel/entry/common.c:171
+ exit_to_user_mode_prepare+0x6c/0xb0 kernel/entry/common.c:204
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:286 [inline]
+ syscall_exit_to_user_mode+0x26/0x140 kernel/entry/common.c:297
+ do_syscall_64+0x4d/0xc0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+value changed: 0x00000726 -> 0xffffffff
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 PID: 9356 Comm: syz-executor.1 Not tainted 6.3.0-syzkaller-13505-g17784de648be #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/14/2023
+==================================================================

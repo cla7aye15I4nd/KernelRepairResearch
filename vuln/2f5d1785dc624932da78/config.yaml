@@ -1,0 +1,23 @@
+id: 2f5d1785dc624932da78
+bug_link: https://syzkaller.appspot.com/bug?extid=2f5d1785dc624932da78
+title: WARNING in io_disable_sqo_submit
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c93cc9e16d88e0f5ea95d2d65d58a8a4dab258bc
+fix_commit: 6b393a1ff1746a1c91bd95cbb2d79b104d8f15ac
+datetime: '2021-01-16T12:14:02-07:00'
+fix_commit_message: "io_uring: fix false positive sqo warning on flush\n\nWARNING:\
+  \ CPU: 1 PID: 9094 at fs/io_uring.c:8884\n\tio_disable_sqo_submit+0x106/0x130 fs/io_uring.c:8884\n\
+  Call Trace:\n io_uring_flush+0x28b/0x3a0 fs/io_uring.c:9099\n filp_close+0xb4/0x170\
+  \ fs/open.c:1280\n close_fd+0x5c/0x80 fs/file.c:626\n __do_sys_close fs/open.c:1299\
+  \ [inline]\n __se_sys_close fs/open.c:1297 [inline]\n __x64_sys_close+0x2f/0xa0\
+  \ fs/open.c:1297\n do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \nio_uring's final close() may be triggered by any task not only the\ncreator. It's\
+  \ well handled by io_uring_flush() including SQPOLL case,\nthough a warning in io_disable_sqo_submit()\
+  \ will fallaciously fire by\nmoving this warning out to the only call site that\
+  \ matters.\n\nReported-by: syzbot+2f5d1785dc624932da78@syzkaller.appspotmail.com\n\
+  Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>\nSigned-off-by: Jens Axboe\
+  \ <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

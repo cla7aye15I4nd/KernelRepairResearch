@@ -1,0 +1,74 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 1 UID: 0 PID: 10078 Comm: syz.4.940 Not tainted 6.11.0-rc7-syzkaller-00097-g196145c606d0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+RIP: 0010:sctp_inet_listen+0x7f0/0xa20 net/sctp/socket.c:8617
+Code: 8d 98 00 06 00 00 48 89 d8 48 c1 e8 03 42 80 3c 28 00 74 08 48 89 df e8 6e 4e 05 f7 48 8b 1b 48 83 c3 02 48 89 d8 48 c1 e8 03 <42> 0f b6 04 28 84 c0 0f 85 8e 01 00 00 c6 03 01 31 db e9 d6 f9 ff
+RSP: 0018:ffffc90002eafd20 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000002 RCX: ffff88802e973c00
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc90002eafe78 R08: ffffffff8af5839c R09: 1ffffffff283c920
+R10: dffffc0000000000 R11: fffffbfff283c921 R12: 1ffff1100fc7e242
+R13: dffffc0000000000 R14: ffff88807e3f1212 R15: 1ffff1100fc7e2ff
+FS:  0000000000000000(0000) GS:ffff8880b8900000(0063) knlGS:00000000f5735b40
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 00007fadae30cff8 CR3: 0000000050d9a000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __sys_listen_socket net/socket.c:1883 [inline]
+ __sys_listen+0x1b7/0x230 net/socket.c:1894
+ __do_sys_listen net/socket.c:1902 [inline]
+ __se_sys_listen net/socket.c:1900 [inline]
+ __ia32_sys_listen+0x5a/0x70 net/socket.c:1900
+ do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]
+ __do_fast_syscall_32+0xb4/0x110 arch/x86/entry/common.c:386
+ do_fast_syscall_32+0x34/0x80 arch/x86/entry/common.c:411
+ entry_SYSENTER_compat_after_hwframe+0x84/0x8e
+RIP: 0023:0xf7fd6579
+Code: b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90
+RSP: 002b:00000000f573556c EFLAGS: 00000206 ORIG_RAX: 000000000000016b
+RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000206 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:sctp_inet_listen+0x7f0/0xa20 net/sctp/socket.c:8617
+Code: 8d 98 00 06 00 00 48 89 d8 48 c1 e8 03 42 80 3c 28 00 74 08 48 89 df e8 6e 4e 05 f7 48 8b 1b 48 83 c3 02 48 89 d8 48 c1 e8 03 <42> 0f b6 04 28 84 c0 0f 85 8e 01 00 00 c6 03 01 31 db e9 d6 f9 ff
+RSP: 0018:ffffc90002eafd20 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000002 RCX: ffff88802e973c00
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc90002eafe78 R08: ffffffff8af5839c R09: 1ffffffff283c920
+R10: dffffc0000000000 R11: fffffbfff283c921 R12: 1ffff1100fc7e242
+R13: dffffc0000000000 R14: ffff88807e3f1212 R15: 1ffff1100fc7e2ff
+FS:  0000000000000000(0000) GS:ffff8880b8900000(0063) knlGS:00000000f5735b40
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 000055f65cf85950 CR3: 0000000050d9a000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	8d 98 00 06 00 00    	lea    0x600(%rax),%ebx
+   6:	48 89 d8             	mov    %rbx,%rax
+   9:	48 c1 e8 03          	shr    $0x3,%rax
+   d:	42 80 3c 28 00       	cmpb   $0x0,(%rax,%r13,1)
+  12:	74 08                	je     0x1c
+  14:	48 89 df             	mov    %rbx,%rdi
+  17:	e8 6e 4e 05 f7       	call   0xf7054e8a
+  1c:	48 8b 1b             	mov    (%rbx),%rbx
+  1f:	48 83 c3 02          	add    $0x2,%rbx
+  23:	48 89 d8             	mov    %rbx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 0f b6 04 28       	movzbl (%rax,%r13,1),%eax <-- trapping instruction
+  2f:	84 c0                	test   %al,%al
+  31:	0f 85 8e 01 00 00    	jne    0x1c5
+  37:	c6 03 01             	movb   $0x1,(%rbx)
+  3a:	31 db                	xor    %ebx,%ebx
+  3c:	e9                   	.byte 0xe9
+  3d:	d6                   	(bad)
+  3e:	f9                   	stc
+  3f:	ff                   	.byte 0xff

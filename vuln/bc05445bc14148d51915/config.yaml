@@ -1,0 +1,23 @@
+id: bc05445bc14148d51915
+bug_link: https://syzkaller.appspot.com/bug?extid=bc05445bc14148d51915
+title: inconsistent lock state in padata_do_serial (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1aa33fc8d4032227253ceb736f47c52b859d9683
+fix_commit: 34c3a47d20ae55b3600fed733bf96eafe9c500d5
+datetime: '2022-11-25T17:39:18+08:00'
+fix_commit_message: "padata: Always leave BHs disabled when running ->parallel()\n\
+  \nA deadlock can happen when an overloaded system runs ->parallel() in the\ncontext\
+  \ of the current task:\n\n    padata_do_parallel\n      ->parallel()\n        pcrypt_aead_enc/dec\n\
+  \          padata_do_serial\n            spin_lock(&reorder->lock) // BHs still\
+  \ enabled\n              <interrupt>\n                ...\n                  __do_softirq\n\
+  \                    ...\n                      padata_do_serial\n             \
+  \           spin_lock(&reorder->lock)\n\nIt's a bug for BHs to be on in _do_serial\
+  \ as Steffen points out, so\nensure they're off in the \"current task\" case like\
+  \ they are in\npadata_parallel_worker to avoid this situation.\n\nReported-by: syzbot+bc05445bc14148d51915@syzkaller.appspotmail.com\n\
+  Fixes: 4611ce224688 (\"padata: allocate work structures for parallel jobs from a\
+  \ pool\")\nSigned-off-by: Daniel Jordan <daniel.m.jordan@oracle.com>\nAcked-by:\
+  \ Steffen Klassert <steffen.klassert@secunet.com>\nSigned-off-by: Herbert Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 1

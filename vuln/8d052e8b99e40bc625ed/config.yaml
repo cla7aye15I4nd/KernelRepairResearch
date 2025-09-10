@@ -1,0 +1,26 @@
+id: 8d052e8b99e40bc625ed
+bug_link: https://syzkaller.appspot.com/bug?extid=8d052e8b99e40bc625ed
+title: WARNING in css_rstat_exit
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 87eba5bc5ab1d99e31c9d3b2c386187da94a5ab1
+fix_commit: eea51c6e3f6675b795f6439eaa960eb2948d6905
+datetime: '2025-08-09T08:46:32-10:00'
+fix_commit_message: "cgroup: avoid null de-ref in css_rstat_exit()\n\ncss_rstat_exit()\
+  \ may be called asynchronously in scenarios where preceding\ncalls to css_rstat_init()\
+  \ have not completed. One such example is this\nsequence below:\n\ncss_create(...)\n\
+  {\n\t...\n\tinit_and_link_css(css, ...);\n\n\terr = percpu_ref_init(...);\n\tif\
+  \ (err)\n\t\tgoto err_free_css;\n\terr = cgroup_idr_alloc(...);\n\tif (err)\n\t\t\
+  goto err_free_css;\n\terr = css_rstat_init(css, ...);\n\tif (err)\n\t\tgoto err_free_css;\n\
+  \t...\nerr_free_css:\n\tINIT_RCU_WORK(&css->destroy_rwork, css_free_rwork_fn);\n\
+  \tqueue_rcu_work(cgroup_destroy_wq, &css->destroy_rwork);\n\treturn ERR_PTR(err);\n\
+  }\n\nIf any of the three goto jumps are taken, async cleanup will begin and\ncss_rstat_exit()\
+  \ will be invoked on an uninitialized css->rstat_cpu.\n\nAvoid accessing the unitialized\
+  \ field by returning early in\ncss_rstat_exit() if this is the case.\n\nSigned-off-by:\
+  \ JP Kobryn <inwardvessel@gmail.com>\nSuggested-by: Michal Koutný <mkoutny@suse.com>\n\
+  Fixes: 5da3bfa029d68 (\"cgroup: use separate rstat trees for each subsystem\")\n\
+  Cc: stable@vger.kernel.org # v6.16\nReported-by: syzbot+8d052e8b99e40bc625ed@syzkaller.appspotmail.com\n\
+  Acked-by: Shakeel Butt <shakeel.butt@linux.dev>\nSigned-off-by: Tejun Heo <tj@kernel.org>\n"
+submodule:
+- kernel/cgroup
+hunk_count: 1
+covered_count: 1

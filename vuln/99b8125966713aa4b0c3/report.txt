@@ -1,0 +1,220 @@
+INFO: task syz-executor:23898 blocked for more than 147 seconds.
+      Not tainted 6.10.0-rc6-syzkaller-00210-gd270dd21bee0 #0
+"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+task:syz-executor    state:D stack:26784 pid:23898 tgid:23898 ppid:1      flags:0x00004006
+Call Trace:
+ <TASK>
+ context_switch kernel/sched/core.c:5408 [inline]
+ __schedule+0x17e8/0x4a20 kernel/sched/core.c:6745
+ __schedule_loop kernel/sched/core.c:6822 [inline]
+ schedule+0x14b/0x320 kernel/sched/core.c:6837
+ schedule_preempt_disabled+0x13/0x30 kernel/sched/core.c:6894
+ __mutex_lock_common kernel/locking/mutex.c:684 [inline]
+ __mutex_lock+0x6a4/0xd70 kernel/locking/mutex.c:752
+ register_nexthop_notifier+0x84/0x290 net/ipv4/nexthop.c:3871
+ ops_init+0x359/0x610 net/core/net_namespace.c:139
+ setup_net+0x515/0xca0 net/core/net_namespace.c:343
+ copy_net_ns+0x4e2/0x7b0 net/core/net_namespace.c:508
+ create_new_namespaces+0x425/0x7b0 kernel/nsproxy.c:110
+ unshare_nsproxy_namespaces+0x124/0x180 kernel/nsproxy.c:228
+ ksys_unshare+0x619/0xc10 kernel/fork.c:3323
+ __do_sys_unshare kernel/fork.c:3394 [inline]
+ __se_sys_unshare kernel/fork.c:3392 [inline]
+ __x64_sys_unshare+0x38/0x40 kernel/fork.c:3392
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f188b777337
+RSP: 002b:00007f188ba2ffa8 EFLAGS: 00000206 ORIG_RAX: 0000000000000110
+RAX: ffffffffffffffda RBX: 00007f188b7e4be6 RCX: 00007f188b777337
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000040000000
+RBP: 0000000000000000 R08: 00007f188c437d60 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000206 R12: 000000000000000c
+R13: 0000000000000003 R14: 0000000000000009 R15: 0000000000000009
+ </TASK>
+
+Showing all locks held in the system:
+4 locks held by kworker/u8:1/12:
+ #0: ffff888015ed5948 ((wq_completion)netns){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3223 [inline]
+ #0: ffff888015ed5948 ((wq_completion)netns){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3329
+ #1: ffffc90000117d00 (net_cleanup_work){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3224 [inline]
+ #1: ffffc90000117d00 (net_cleanup_work){+.+.}-{0:0}, at: process_scheduled_works+0x945/0x1830 kernel/workqueue.c:3329
+ #2: ffffffff8f5da5d0 (pernet_ops_rwsem){++++}-{3:3}, at: cleanup_net+0x16a/0xcc0 net/core/net_namespace.c:594
+ #3: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: cleanup_net+0x6af/0xcc0 net/core/net_namespace.c:630
+1 lock held by khungtaskd/30:
+ #0: ffffffff8e333f20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #0: ffffffff8e333f20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #0: ffffffff8e333f20 (rcu_read_lock){....}-{1:2}, at: debug_show_all_locks+0x55/0x2a0 kernel/locking/lockdep.c:6614
+5 locks held by kworker/u8:8/2903:
+2 locks held by getty/4841:
+ #0: ffff88802f2f20a0 (&tty->ldisc_sem){++++}-{0:0}, at: tty_ldisc_ref_wait+0x25/0x70 drivers/tty/tty_ldisc.c:243
+ #1: ffffc90002f162f0 (&ldata->atomic_read_lock){+.+.}-{3:3}, at: n_tty_read+0x6b5/0x1e10 drivers/tty/n_tty.c:2211
+1 lock held by syz-executor/5082:
+3 locks held by kworker/0:4/5145:
+ #0: ffff888015081948 ((wq_completion)events_power_efficient){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3223 [inline]
+ #0: ffff888015081948 ((wq_completion)events_power_efficient){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3329
+ #1: ffffc90004307d00 ((reg_check_chans).work){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3224 [inline]
+ #1: ffffc90004307d00 ((reg_check_chans).work){+.+.}-{0:0}, at: process_scheduled_works+0x945/0x1830 kernel/workqueue.c:3329
+ #2: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: reg_check_chans_work+0x91/0xea0 net/wireless/reg.c:2478
+3 locks held by kworker/u9:0/13927:
+ #0: ffff88805c391148 ((wq_completion)hci9){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3223 [inline]
+ #0: ffff88805c391148 ((wq_completion)hci9){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3329
+ #1: ffffc9000508fd00 ((work_completion)(&hdev->power_on)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3224 [inline]
+ #1: ffffc9000508fd00 ((work_completion)(&hdev->power_on)){+.+.}-{0:0}, at: process_scheduled_works+0x945/0x1830 kernel/workqueue.c:3329
+ #2: ffff888078bd4d88 (&hdev->req_lock){+.+.}-{3:3}, at: hci_dev_do_open net/bluetooth/hci_core.c:439 [inline]
+ #2: ffff888078bd4d88 (&hdev->req_lock){+.+.}-{3:3}, at: hci_power_on+0x1bf/0x6b0 net/bluetooth/hci_core.c:976
+4 locks held by kworker/0:0/16848:
+3 locks held by kworker/1:3/16927:
+ #0: ffff888015080948 ((wq_completion)events){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3223 [inline]
+ #0: ffff888015080948 ((wq_completion)events){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3329
+ #1: ffffc900100f7d00 ((linkwatch_work).work){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3224 [inline]
+ #1: ffffc900100f7d00 ((linkwatch_work).work){+.+.}-{0:0}, at: process_scheduled_works+0x945/0x1830 kernel/workqueue.c:3329
+ #2: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: linkwatch_event+0xe/0x60 net/core/link_watch.c:276
+3 locks held by kworker/1:9/25602:
+3 locks held by kworker/u8:2/16200:
+ #0: ffff88802a351148 ((wq_completion)ipv6_addrconf){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3223 [inline]
+ #0: ffff88802a351148 ((wq_completion)ipv6_addrconf){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3329
+ #1: ffffc900032dfd00 ((work_completion)(&(&net->ipv6.addr_chk_work)->work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3224 [inline]
+ #1: ffffc900032dfd00 ((work_completion)(&(&net->ipv6.addr_chk_work)->work)){+.+.}-{0:0}, at: process_scheduled_works+0x945/0x1830 kernel/workqueue.c:3329
+ #2: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: addrconf_verify_work+0x19/0x30 net/ipv6/addrconf.c:4733
+1 lock held by syz-executor/20673:
+ #0: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: tun_detach drivers/net/tun.c:698 [inline]
+ #0: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: tun_chr_close+0x3e/0x1b0 drivers/net/tun.c:3500
+5 locks held by kworker/u9:2/21875:
+ #0: ffff88807c1ce948 ((wq_completion)hci0#3){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3223 [inline]
+ #0: ffff88807c1ce948 ((wq_completion)hci0#3){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3329
+ #1: ffffc9000d0d7d00 ((work_completion)(&hdev->cmd_sync_work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3224 [inline]
+ #1: ffffc9000d0d7d00 ((work_completion)(&hdev->cmd_sync_work)){+.+.}-{0:0}, at: process_scheduled_works+0x945/0x1830 kernel/workqueue.c:3329
+ #2: ffff88806bc14d88 (&hdev->req_lock){+.+.}-{3:3}, at: hci_cmd_sync_work+0x1ec/0x400 net/bluetooth/hci_sync.c:322
+ #3: ffff88806bc14078 (&hdev->lock){+.+.}-{3:3}, at: hci_abort_conn_sync+0x1ea/0xde0 net/bluetooth/hci_sync.c:5444
+ #4: ffffffff8f751508 (hci_cb_list_lock){+.+.}-{3:3}, at: hci_connect_cfm include/net/bluetooth/hci_core.h:1967 [inline]
+ #4: ffffffff8f751508 (hci_cb_list_lock){+.+.}-{3:3}, at: hci_conn_failed+0x185/0x340 net/bluetooth/hci_conn.c:1266
+1 lock held by syz-executor/22435:
+ #0: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: tun_detach drivers/net/tun.c:698 [inline]
+ #0: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: tun_chr_close+0x3e/0x1b0 drivers/net/tun.c:3500
+1 lock held by syz-executor/22862:
+1 lock held by syz-executor/23866:
+ #0: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: tun_detach drivers/net/tun.c:698 [inline]
+ #0: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: tun_chr_close+0x3e/0x1b0 drivers/net/tun.c:3500
+3 locks held by syz-executor/23889:
+ #0: ffff88802f308d88 (&hdev->req_lock){+.+.}-{3:3}, at: hci_dev_do_close net/bluetooth/hci_core.c:510 [inline]
+ #0: ffff88802f308d88 (&hdev->req_lock){+.+.}-{3:3}, at: hci_unregister_dev+0x203/0x510 net/bluetooth/hci_core.c:2728
+ #1: ffff88802f308078 (&hdev->lock){+.+.}-{3:3}, at: hci_dev_close_sync+0x494/0xf60 net/bluetooth/hci_sync.c:5063
+ #2: ffffffff8f751508 (hci_cb_list_lock){+.+.}-{3:3}, at: hci_disconn_cfm include/net/bluetooth/hci_core.h:1982 [inline]
+ #2: ffffffff8f751508 (hci_cb_list_lock){+.+.}-{3:3}, at: hci_conn_hash_flush+0xa6/0x240 net/bluetooth/hci_conn.c:2593
+2 locks held by syz-executor/23898:
+ #0: ffffffff8f5da5d0 (pernet_ops_rwsem){++++}-{3:3}, at: copy_net_ns+0x4c6/0x7b0 net/core/net_namespace.c:504
+ #1: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: register_nexthop_notifier+0x84/0x290 net/ipv4/nexthop.c:3871
+2 locks held by syz-executor/23908:
+ #0: ffffffff8f5da5d0 (pernet_ops_rwsem){++++}-{3:3}, at: copy_net_ns+0x4c6/0x7b0 net/core/net_namespace.c:504
+ #1: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: register_nexthop_notifier+0x84/0x290 net/ipv4/nexthop.c:3871
+2 locks held by syz-executor/23919:
+ #0: ffffffff8f5da5d0 (pernet_ops_rwsem){++++}-{3:3}, at: copy_net_ns+0x4c6/0x7b0 net/core/net_namespace.c:504
+ #1: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: register_nexthop_notifier+0x84/0x290 net/ipv4/nexthop.c:3871
+6 locks held by kworker/u9:4/23933:
+ #0: ffff88806ec60148 ((wq_completion)hci6){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3223 [inline]
+ #0: ffff88806ec60148 ((wq_completion)hci6){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3329
+ #1: ffffc90004357d00 ((work_completion)(&hdev->cmd_sync_work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3224 [inline]
+ #1: ffffc90004357d00 ((work_completion)(&hdev->cmd_sync_work)){+.+.}-{0:0}, at: process_scheduled_works+0x945/0x1830 kernel/workqueue.c:3329
+ #2: ffff88807a9f0d88 (&hdev->req_lock){+.+.}-{3:3}, at: hci_cmd_sync_work+0x1ec/0x400 net/bluetooth/hci_sync.c:322
+ #3: ffff88807a9f0078 (&hdev->lock){+.+.}-{3:3}, at: hci_abort_conn_sync+0x1ea/0xde0 net/bluetooth/hci_sync.c:5444
+ #4: ffffffff8f751508 (hci_cb_list_lock){+.+.}-{3:3}, at: hci_connect_cfm include/net/bluetooth/hci_core.h:1967 [inline]
+ #4: ffffffff8f751508 (hci_cb_list_lock){+.+.}-{3:3}, at: hci_conn_failed+0x185/0x340 net/bluetooth/hci_conn.c:1266
+ #5: ffffffff8e3392f8 (rcu_state.exp_mutex){+.+.}-{3:3}, at: exp_funnel_lock kernel/rcu/tree_exp.h:323 [inline]
+ #5: ffffffff8e3392f8 (rcu_state.exp_mutex){+.+.}-{3:3}, at: synchronize_rcu_expedited+0x451/0x830 kernel/rcu/tree_exp.h:939
+2 locks held by syz-executor/23934:
+ #0: ffffffff8f5da5d0 (pernet_ops_rwsem){++++}-{3:3}, at: copy_net_ns+0x4c6/0x7b0 net/core/net_namespace.c:504
+ #1: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: register_nexthop_notifier+0x84/0x290 net/ipv4/nexthop.c:3871
+2 locks held by syz-executor/23935:
+ #0: ffffffff8f5da5d0 (pernet_ops_rwsem){++++}-{3:3}, at: copy_net_ns+0x4c6/0x7b0 net/core/net_namespace.c:504
+ #1: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: register_nexthop_notifier+0x84/0x290 net/ipv4/nexthop.c:3871
+2 locks held by syz-executor/23936:
+ #0: ffffffff8f5da5d0 (pernet_ops_rwsem){++++}-{3:3}, at: copy_net_ns+0x4c6/0x7b0 net/core/net_namespace.c:504
+ #1: ffffffff8f5e6e08 (rtnl_mutex){+.+.}-{3:3}, at: register_nexthop_notifier+0x84/0x290 net/ipv4/nexthop.c:3871
+1 lock held by dhcpcd/23940:
+ #0: ffff88807ea75610 (&sb->s_type->i_mutex_key#10){+.+.}-{3:3}, at: inode_lock include/linux/fs.h:791 [inline]
+ #0: ffff88807ea75610 (&sb->s_type->i_mutex_key#10){+.+.}-{3:3}, at: __sock_release net/socket.c:658 [inline]
+ #0: ffff88807ea75610 (&sb->s_type->i_mutex_key#10){+.+.}-{3:3}, at: sock_close+0x90/0x240 net/socket.c:1421
+1 lock held by syz-executor/23950:
+3 locks held by kworker/u9:5/23949:
+ #0: ffff88807beb8148 ((wq_completion)hci11){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3223 [inline]
+ #0: ffff88807beb8148 ((wq_completion)hci11){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3329
+ #1: ffffc90009f87d00 ((work_completion)(&hdev->power_on)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3224 [inline]
+ #1: ffffc90009f87d00 ((work_completion)(&hdev->power_on)){+.+.}-{0:0}, at: process_scheduled_works+0x945/0x1830 kernel/workqueue.c:3329
+ #2: ffff88804d9e0d88 (&hdev->req_lock){+.+.}-{3:3}, at: hci_dev_do_open net/bluetooth/hci_core.c:439 [inline]
+ #2: ffff88804d9e0d88 (&hdev->req_lock){+.+.}-{3:3}, at: hci_power_on+0x1bf/0x6b0 net/bluetooth/hci_core.c:976
+
+=============================================
+
+NMI backtrace for cpu 1
+CPU: 1 PID: 30 Comm: khungtaskd Not tainted 6.10.0-rc6-syzkaller-00210-gd270dd21bee0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ nmi_cpu_backtrace+0x49c/0x4d0 lib/nmi_backtrace.c:113
+ nmi_trigger_cpumask_backtrace+0x198/0x320 lib/nmi_backtrace.c:62
+ trigger_all_cpu_backtrace include/linux/nmi.h:162 [inline]
+ check_hung_uninterruptible_tasks kernel/hung_task.c:223 [inline]
+ watchdog+0xfde/0x1020 kernel/hung_task.c:379
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Sending NMI from CPU 1 to CPUs 0:
+NMI backtrace for cpu 0
+CPU: 0 PID: 16848 Comm: kworker/0:0 Not tainted 6.10.0-rc6-syzkaller-00210-gd270dd21bee0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Workqueue: events_power_efficient gc_worker
+RIP: 0010:debug_smp_processor_id+0xb/0x20 lib/smp_processor_id.c:60
+Code: e9 66 ff ff ff 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 f3 0f 1e fa 48 c7 c7 60 e9 1f 8c <48> c7 c6 a0 e9 1f 8c eb 1c 66 2e 0f 1f 84 00 00 00 00 00 66 90 90
+RSP: 0018:ffffc900000078d8 EFLAGS: 00000083
+RAX: 0000000000000001 RBX: 0000000000000000 RCX: ffffffff81728ea0
+RDX: 0000000000000000 RSI: 0000000000000008 RDI: ffffffff8c1fe960
+RBP: ffffc90000007a30 R08: ffffffff8fad496f R09: 1ffffffff1f5a92d
+R10: dffffc0000000000 R11: fffffbfff1f5a92e R12: 1ffff92000000f2c
+R13: ffffffff84b685e0 R14: dffffc0000000000 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fd896fffd00 CR3: 000000000e132000 CR4: 00000000003506f0
+Call Trace:
+ <NMI>
+ </NMI>
+ <IRQ>
+ rcu_dynticks_curr_cpu_in_eqs include/linux/context_tracking.h:122 [inline]
+ rcu_is_watching+0x15/0xb0 kernel/rcu/tree.c:724
+ trace_lock_release include/trace/events/lock.h:69 [inline]
+ lock_release+0xbf/0x9f0 kernel/locking/lockdep.c:5765
+ debug_objects_fill_pool+0xc0/0x9b0 lib/debugobjects.c:616
+ debug_object_activate+0x135/0x510 lib/debugobjects.c:704
+ debug_hrtimer_activate kernel/time/hrtimer.c:423 [inline]
+ debug_activate kernel/time/hrtimer.c:478 [inline]
+ enqueue_hrtimer+0x30/0x3c0 kernel/time/hrtimer.c:1085
+ __run_hrtimer kernel/time/hrtimer.c:1706 [inline]
+ __hrtimer_run_queues+0x6cb/0xd50 kernel/time/hrtimer.c:1753
+ hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1815
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0x110/0x3f0 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:seqcount_lockdep_reader_access+0x1e0/0x220 include/linux/seqlock.h:75
+Code: f7 4d 85 ed 75 16 e8 ef 2a f6 f7 eb 15 e8 e8 2a f6 f7 e8 e3 e9 e5 01 4d 85 ed 74 ea e8 d9 2a f6 f7 fb 48 c7 04 24 0e 36 e0 45 <4b> c7 04 3c 00 00 00 00 66 43 c7 44 3c 09 00 00 43 c6 44 3c 0b 00
+RSP: 0018:ffffc900043779a0 EFLAGS: 00000293
+RAX: ffffffff899ffcd7 RBX: 0000000000000000 RCX: ffff88802ae13c00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc90004377a50 R08: ffffffff899ffcad R09: 1ffffffff25f4ec2
+R10: dffffc0000000000 R11: fffffbfff25f4ec3 R12: dffffc0000000000
+R13: 0000000000000200 R14: 0000000000000046 R15: 1ffff9200086ef34
+ nf_conntrack_get_ht include/net/netfilter/nf_conntrack.h:345 [inline]
+ gc_worker+0x316/0x1530 net/netfilter/nf_conntrack_core.c:1488
+ process_one_work kernel/workqueue.c:3248 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3329
+ worker_thread+0x86d/0xd50 kernel/workqueue.c:3409
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

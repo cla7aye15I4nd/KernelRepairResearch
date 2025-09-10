@@ -1,0 +1,41 @@
+id: 94bbb75204a05da3d89f
+bug_link: https://syzkaller.appspot.com/bug?extid=94bbb75204a05da3d89f
+title: 'KASAN: slab-out-of-bounds Read in dns_resolver_preparse'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fbafc3e621c3f4ded43720fdb1d6ce1728ec664e
+fix_commit: 1997b3cb4217b09e49659b634c94da47f0340409
+datetime: '2023-12-26T13:15:49-08:00'
+fix_commit_message: "keys, dns: Fix missing size check of V1 server-list header\n\n\
+  The dns_resolver_preparse() function has a check on the size of the\npayload for\
+  \ the basic header of the binary-style payload, but is missing\na check for the\
+  \ size of the V1 server-list payload header after\ndetermining that's what we've\
+  \ been given.\n\nFix this by getting rid of the the pointer to the basic header\
+  \ and just\nassuming that we have a V1 server-list payload and moving the V1 server\n\
+  list pointer inside the if-statement.  Dealing with other types and\nversions can\
+  \ be left for when such have been defined.\n\nThis can be tested by doing the following\
+  \ with KASAN enabled:\n\n    echo -n -e '\\x0\\x0\\x1\\x2' | keyctl padd dns_resolver\
+  \ foo @p\n\nand produces an oops like the following:\n\n    BUG: KASAN: slab-out-of-bounds\
+  \ in dns_resolver_preparse+0xc9f/0xd60 net/dns_resolver/dns_key.c:127\n    Read\
+  \ of size 1 at addr ffff888028894084 by task syz-executor265/5069\n    ...\n   \
+  \ Call Trace:\n      dns_resolver_preparse+0xc9f/0xd60 net/dns_resolver/dns_key.c:127\n\
+  \      __key_create_or_update+0x453/0xdf0 security/keys/key.c:842\n      key_create_or_update+0x42/0x50\
+  \ security/keys/key.c:1007\n      __do_sys_add_key+0x29c/0x450 security/keys/keyctl.c:134\n\
+  \      do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n      do_syscall_64+0x40/0x110\
+  \ arch/x86/entry/common.c:83\n      entry_SYSCALL_64_after_hwframe+0x62/0x6a\n\n\
+  This patch was originally by Edward Adam Davis, but was modified by\nLinus.\n\n\
+  Fixes: b946001d3bb1 (\"keys, dns: Allow key types (eg. DNS) to be reclaimed immediately\
+  \ on expiry\")\nReported-and-tested-by: syzbot+94bbb75204a05da3d89f@syzkaller.appspotmail.com\n\
+  Link: https://lore.kernel.org/r/0000000000009b39bc060c73e209@google.com/\nSuggested-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\nSigned-off-by: Edward Adam Davis\
+  \ <eadavis@qq.com>\nSigned-off-by: David Howells <dhowells@redhat.com>\nTested-by:\
+  \ David Howells <dhowells@redhat.com>\nCc: Edward Adam Davis <eadavis@qq.com>\n\
+  Cc: Jarkko Sakkinen <jarkko@kernel.org>\nCc: Jeffrey E Altman <jaltman@auristor.com>\n\
+  Cc: Wang Lei <wang840925@gmail.com>\nCc: Jeff Layton <jlayton@redhat.com>\nCc: Steve\
+  \ French <sfrench@us.ibm.com>\nCc: Marc Dionne <marc.dionne@auristor.com>\nCc: \"\
+  David S. Miller\" <davem@davemloft.net>\nCc: Eric Dumazet <edumazet@google.com>\n\
+  Cc: Jakub Kicinski <kuba@kernel.org>\nCc: Paolo Abeni <pabeni@redhat.com>\nReviewed-by:\
+  \ Simon Horman <horms@kernel.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- net/dns_resolver
+hunk_count: 2
+covered_count: 2

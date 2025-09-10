@@ -1,0 +1,49 @@
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in drivers/net/usb/asix_devices.c:679:27
+shift exponent 208 is too large for 64-bit type 'unsigned long'
+CPU: 0 UID: 0 PID: 10 Comm: kworker/0:1 Not tainted 6.17.0-rc1-syzkaller-00214-g99bade344cfa #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2025
+Workqueue: usb_hub_wq hub_event
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ ubsan_epilogue+0xa/0x40 lib/ubsan.c:233
+ __ubsan_handle_shift_out_of_bounds+0x386/0x410 lib/ubsan.c:494
+ ax88772_init_mdio drivers/net/usb/asix_devices.c:679 [inline]
+ ax88772_bind+0xdcf/0xfa0 drivers/net/usb/asix_devices.c:910
+ usbnet_probe+0xa96/0x2870 drivers/net/usb/usbnet.c:1781
+ usb_probe_interface+0x668/0xc30 drivers/usb/core/driver.c:396
+ call_driver_probe drivers/base/dd.c:-1 [inline]
+ really_probe+0x26a/0x9e0 drivers/base/dd.c:659
+ __driver_probe_device+0x18c/0x2f0 drivers/base/dd.c:801
+ driver_probe_device+0x4f/0x430 drivers/base/dd.c:831
+ __device_attach_driver+0x2ce/0x530 drivers/base/dd.c:959
+ bus_for_each_drv+0x251/0x2e0 drivers/base/bus.c:462
+ __device_attach+0x2b8/0x400 drivers/base/dd.c:1031
+ bus_probe_device+0x185/0x260 drivers/base/bus.c:537
+ device_add+0x7b6/0xb50 drivers/base/core.c:3689
+ usb_set_configuration+0x1a87/0x20e0 drivers/usb/core/message.c:2210
+ usb_generic_driver_probe+0x8d/0x150 drivers/usb/core/generic.c:250
+ usb_probe_device+0x1c1/0x390 drivers/usb/core/driver.c:291
+ call_driver_probe drivers/base/dd.c:-1 [inline]
+ really_probe+0x26a/0x9e0 drivers/base/dd.c:659
+ __driver_probe_device+0x18c/0x2f0 drivers/base/dd.c:801
+ driver_probe_device+0x4f/0x430 drivers/base/dd.c:831
+ __device_attach_driver+0x2ce/0x530 drivers/base/dd.c:959
+ bus_for_each_drv+0x251/0x2e0 drivers/base/bus.c:462
+ __device_attach+0x2b8/0x400 drivers/base/dd.c:1031
+ bus_probe_device+0x185/0x260 drivers/base/bus.c:537
+ device_add+0x7b6/0xb50 drivers/base/core.c:3689
+ usb_new_device+0xa39/0x16f0 drivers/usb/core/hub.c:2694
+ hub_port_connect drivers/usb/core/hub.c:5566 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5706 [inline]
+ port_event drivers/usb/core/hub.c:5870 [inline]
+ hub_event+0x2958/0x4a20 drivers/usb/core/hub.c:5952
+ process_one_work kernel/workqueue.c:3236 [inline]
+ process_scheduled_works+0xade/0x17b0 kernel/workqueue.c:3319
+ worker_thread+0x8a0/0xda0 kernel/workqueue.c:3400
+ kthread+0x70e/0x8a0 kernel/kthread.c:463
+ ret_from_fork+0x3f9/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+---[ end trace ]---

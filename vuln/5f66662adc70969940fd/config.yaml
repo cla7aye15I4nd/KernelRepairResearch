@@ -1,0 +1,21 @@
+id: 5f66662adc70969940fd
+bug_link: https://syzkaller.appspot.com/bug?extid=5f66662adc70969940fd
+title: 'BUG: unable to handle kernel paging request in tcf_action_dump_terse'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9a9e77495958c7382b2438bc19746dd3aaaabb8e
+fix_commit: 580e4273d7a883ececfefa692c1f96bdbacb99b5
+datetime: '2020-10-04T14:53:06-07:00'
+fix_commit_message: "net_sched: check error pointer in tcf_dump_walker()\n\nAlthough\
+  \ we take RTNL on dump path, it is possible to\nskip RTNL on insertion path. So\
+  \ the following race condition\nis possible:\n\nrtnl_lock()\t\t// no rtnl lock\n\
+  \t\t\tmutex_lock(&idrinfo->lock);\n\t\t\t// insert ERR_PTR(-EBUSY)\n\t\t\tmutex_unlock(&idrinfo->lock);\n\
+  tc_dump_action()\nrtnl_unlock()\n\nSo we have to skip those temporary -EBUSY entries\
+  \ on dump path\ntoo.\n\nReported-and-tested-by: syzbot+b47bc4f247856fb4d9e1@syzkaller.appspotmail.com\n\
+  Fixes: 0fedc63fadf0 (\"net_sched: commit action insertions together\")\nCc: Vlad\
+  \ Buslov <vladbu@mellanox.com>\nCc: Jamal Hadi Salim <jhs@mojatatu.com>\nCc: Jiri\
+  \ Pirko <jiri@resnulli.us>\nSigned-off-by: Cong Wang <xiyou.wangcong@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sched
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,43 @@
+id: c5e32344981ad9f33750
+bug_link: https://syzkaller.appspot.com/bug?extid=c5e32344981ad9f33750
+title: possible deadlock in send_sigurg (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 529adfe8f131c60938ece113379f1a07640aefb1
+fix_commit: 8d1ddb5e79374fb277985a6b3faa2ed8631c5b4c
+datetime: '2020-11-05T07:44:15-05:00'
+fix_commit_message: "fcntl: Fix potential deadlock in send_sig{io, urg}()\n\nSyzbot\
+  \ reports a potential deadlock found by the newly added recursive\nread deadlock\
+  \ detection in lockdep:\n\n[...] ========================================================\n\
+  [...] WARNING: possible irq lock inversion dependency detected\n[...] 5.9.0-rc2-syzkaller\
+  \ #0 Not tainted\n[...] --------------------------------------------------------\n\
+  [...] syz-executor.1/10214 just changed the state of lock:\n[...] ffff88811f506338\
+  \ (&f->f_owner.lock){.+..}-{2:2}, at: send_sigurg+0x1d/0x200\n[...] but this lock\
+  \ was taken by another, HARDIRQ-safe lock in the past:\n[...]  (&dev->event_lock){-...}-{2:2}\n\
+  [...]\n[...]\n[...] and interrupts could create inverse lock ordering between them.\n\
+  [...]\n[...]\n[...] other info that might help us debug this:\n[...] Chain exists\
+  \ of:\n[...]   &dev->event_lock --> &new->fa_lock --> &f->f_owner.lock\n[...]\n\
+  [...]  Possible interrupt unsafe locking scenario:\n[...]\n[...]        CPU0   \
+  \                 CPU1\n[...]        ----                    ----\n[...]   lock(&f->f_owner.lock);\n\
+  [...]                                local_irq_disable();\n[...]               \
+  \                 lock(&dev->event_lock);\n[...]                               \
+  \ lock(&new->fa_lock);\n[...]   <Interrupt>\n[...]     lock(&dev->event_lock);\n\
+  [...]\n[...]  *** DEADLOCK ***\n\nThe corresponding deadlock case is as followed:\n\
+  \n\tCPU 0\t\tCPU 1\t\tCPU 2\n\tread_lock(&fown->lock);\n\t\t\tspin_lock_irqsave(&dev->event_lock,\
+  \ ...)\n\t\t\t\t\twrite_lock_irq(&filp->f_owner.lock); // wait for the lock\n\t\t\
+  \tread_lock(&fown-lock); // have to wait until the writer release\n\t\t\t\t\t  \
+  \     // due to the fairness\n\t<interrupted>\n\tspin_lock_irqsave(&dev->event_lock);\
+  \ // wait for the lock\n\nThe lock dependency on CPU 1 happens if there exists a\
+  \ call sequence:\n\n\tinput_inject_event():\n\t  spin_lock_irqsave(&dev->event_lock,...);\n\
+  \t  input_handle_event():\n\t    input_pass_values():\n\t      input_to_handler():\n\
+  \t        handler->event(): // evdev_event()\n\t          evdev_pass_values():\n\
+  \t            spin_lock(&client->buffer_lock);\n\t            __pass_event():\n\t\
+  \              kill_fasync():\n\t                kill_fasync_rcu():\n\t        \
+  \          read_lock(&fa->fa_lock);\n\t                  send_sigio():\n\t     \
+  \               read_lock(&fown->lock);\n\nTo fix this, make the reader in send_sigurg()\
+  \ and send_sigio() use\nread_lock_irqsave() and read_lock_irqrestore().\n\nReported-by:\
+  \ syzbot+22e87cdf94021b984aa6@syzkaller.appspotmail.com\nReported-by: syzbot+c5e32344981ad9f33750@syzkaller.appspotmail.com\n\
+  Signed-off-by: Boqun Feng <boqun.feng@gmail.com>\nSigned-off-by: Jeff Layton <jlayton@kernel.org>\n"
+submodule:
+- fs
+hunk_count: 4
+covered_count: 4

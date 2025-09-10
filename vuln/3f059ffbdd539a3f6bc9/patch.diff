@@ -1,0 +1,42 @@
+diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+index 873c0f9fdac6..f943bd79ef03 100644
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -325,6 +325,11 @@ static inline int check_net(const struct net *net)
+ #define net_drop_ns NULL
+ #endif
+ 
++/* Returns true if the netns initialization is completed successfully */
++static inline bool net_initialized(const struct net *net)
++{
++	return READ_ONCE(net->list.next);
++}
+ 
+ static inline void __netns_tracker_alloc(struct net *net,
+ 					 netns_tracker *tracker,
+diff --git a/net/ipv4/ipmr.c b/net/ipv4/ipmr.c
+index c5b8ec5c0a8c..99d8faa508e5 100644
+--- a/net/ipv4/ipmr.c
++++ b/net/ipv4/ipmr.c
+@@ -122,7 +122,7 @@ static void ipmr_expire_process(struct timer_list *t);
+ 
+ static bool ipmr_can_free_table(struct net *net)
+ {
+-	return !check_net(net) || !net->ipv4.mr_rules_ops;
++	return !check_net(net) || !net_initialized(net);
+ }
+ 
+ static struct mr_table *ipmr_mr_table_iter(struct net *net,
+diff --git a/net/ipv6/ip6mr.c b/net/ipv6/ip6mr.c
+index 7f1902ac3586..578ff1336afe 100644
+--- a/net/ipv6/ip6mr.c
++++ b/net/ipv6/ip6mr.c
+@@ -110,7 +110,7 @@ static void ipmr_expire_process(struct timer_list *t);
+ 
+ static bool ip6mr_can_free_table(struct net *net)
+ {
+-	return !check_net(net) || !net->ipv6.mr6_rules_ops;
++	return !check_net(net) || !net_initialized(net);
+ }
+ 
+ static struct mr_table *ip6mr_mr_table_iter(struct net *net,

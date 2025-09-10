@@ -1,0 +1,41 @@
+id: c7aabc9fe93e7f3637ba
+bug_link: https://syzkaller.appspot.com/bug?extid=c7aabc9fe93e7f3637ba
+title: 'KASAN: use-after-free Read in nf_ct_deliver_cached_events'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d54725cd11a57c30f650260cfb0a92c268bdc3e0
+fix_commit: ad88b7a6aa3e6ac94589fc1aaf7c99fe9211cff2
+datetime: '2019-10-26T12:36:42+02:00'
+fix_commit_message: "netfilter: ecache: don't look for ecache extension on dying/unconfirmed\
+  \ conntracks\n\nsyzbot reported following splat:\nBUG: KASAN: use-after-free in\
+  \ __nf_ct_ext_exist\ninclude/net/netfilter/nf_conntrack_extend.h:53 [inline]\nBUG:\
+  \ KASAN: use-after-free in nf_ct_deliver_cached_events+0x5c3/0x6d0\nnet/netfilter/nf_conntrack_ecache.c:205\n\
+  nf_conntrack_confirm include/net/netfilter/nf_conntrack_core.h:65 [inline]\nnf_confirm+0x3d8/0x4d0\
+  \ net/netfilter/nf_conntrack_proto.c:154\n[..]\n\nWhile there is no reproducer yet,\
+  \ the syzbot report contains one\ninteresting bit of information:\n\nFreed by task\
+  \ 27585:\n[..]\n kfree+0x10a/0x2c0 mm/slab.c:3757\n nf_ct_ext_destroy+0x2ab/0x2e0\
+  \ net/netfilter/nf_conntrack_extend.c:38\n nf_conntrack_free+0x8f/0xe0 net/netfilter/nf_conntrack_core.c:1418\n\
+  \ destroy_conntrack+0x1a2/0x270 net/netfilter/nf_conntrack_core.c:626\n nf_conntrack_put\
+  \ include/linux/netfilter/nf_conntrack_common.h:31 [inline]\n nf_ct_resolve_clash\
+  \ net/netfilter/nf_conntrack_core.c:915 [inline]\n ^^^^^^^^^^^^^^^^^^^\n __nf_conntrack_confirm+0x21ca/0x2830\
+  \ net/netfilter/nf_conntrack_core.c:1038\n nf_conntrack_confirm include/net/netfilter/nf_conntrack_core.h:63\
+  \ [inline]\n nf_confirm+0x3e7/0x4d0 net/netfilter/nf_conntrack_proto.c:154\n\nThis\
+  \ is whats happening:\n\n1. a conntrack entry is about to be confirmed (added to\
+  \ hash table).\n2. a clash with existing entry is detected.\n3. nf_ct_resolve_clash()\
+  \ puts skb->nfct (the \"losing\" entry).\n4. this entry now has a refcount of 0\
+  \ and is freed to SLAB_TYPESAFE_BY_RCU\n   kmem cache.\n\nskb->nfct has been replaced\
+  \ by the one found in the hash.\nProblem is that nf_conntrack_confirm() uses the\
+  \ old ct:\n\nstatic inline int nf_conntrack_confirm(struct sk_buff *skb)\n{\n struct\
+  \ nf_conn *ct = (struct nf_conn *)skb_nfct(skb);\n int ret = NF_ACCEPT;\n\n  if\
+  \ (ct) {\n    if (!nf_ct_is_confirmed(ct))\n       ret = __nf_conntrack_confirm(skb);\n\
+  \    if (likely(ret == NF_ACCEPT))\n\tnf_ct_deliver_cached_events(ct); /* This ct\
+  \ has refcount 0! */\n  }\n  return ret;\n}\n\nAs of \"netfilter: conntrack: free\
+  \ extension area immediately\", we can't\naccess conntrack extensions in this case.\n\
+  \nTo fix this, make sure we check the dying bit presence before attempting\nto get\
+  \ the eache extension.\n\nReported-by: syzbot+c7aabc9fe93e7f3637ba@syzkaller.appspotmail.com\n\
+  Fixes: 2ad9d7747c10d1 (\"netfilter: conntrack: free extension area immediately\"\
+  )\nSigned-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Pablo Neira Ayuso\
+  \ <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 1
+covered_count: 1

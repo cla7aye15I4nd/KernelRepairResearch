@@ -1,0 +1,26 @@
+diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
+index 9455476c5ba2..1199ffd305d1 100644
+--- a/include/linux/rcupdate.h
++++ b/include/linux/rcupdate.h
+@@ -315,7 +315,7 @@ static inline int rcu_read_lock_any_held(void)
+ #define RCU_LOCKDEP_WARN(c, s)						\
+ 	do {								\
+ 		static bool __section(".data.unlikely") __warned;	\
+-		if (debug_lockdep_rcu_enabled() && !__warned && (c)) {	\
++		if ((c) && debug_lockdep_rcu_enabled() && !__warned) {	\
+ 			__warned = true;				\
+ 			lockdep_rcu_suspicious(__FILE__, __LINE__, s);	\
+ 		}							\
+diff --git a/kernel/rcu/update.c b/kernel/rcu/update.c
+index b95ae86c40a7..dd94a602a6d2 100644
+--- a/kernel/rcu/update.c
++++ b/kernel/rcu/update.c
+@@ -277,7 +277,7 @@ EXPORT_SYMBOL_GPL(rcu_callback_map);
+ 
+ noinstr int notrace debug_lockdep_rcu_enabled(void)
+ {
+-	return rcu_scheduler_active != RCU_SCHEDULER_INACTIVE && debug_locks &&
++	return rcu_scheduler_active != RCU_SCHEDULER_INACTIVE && READ_ONCE(debug_locks) &&
+ 	       current->lockdep_recursion == 0;
+ }
+ EXPORT_SYMBOL_GPL(debug_lockdep_rcu_enabled);

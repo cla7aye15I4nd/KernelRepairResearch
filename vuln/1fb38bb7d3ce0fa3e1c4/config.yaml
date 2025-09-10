@@ -1,0 +1,41 @@
+id: 1fb38bb7d3ce0fa3e1c4
+bug_link: https://syzkaller.appspot.com/bug?extid=1fb38bb7d3ce0fa3e1c4
+title: 'KASAN: use-after-free Read in bdev_evict_inode'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9451aa0aacaf7ea13d1acfd5de8b63a6e0b24fac
+fix_commit: 889c05cc5834a1eef2dbe1e639cfd7a81c4f4c6d
+datetime: '2021-08-16T10:49:11-06:00'
+fix_commit_message: 'block: ensure the bdi is freed after inode_detach_wb
+
+
+  inode_detach_wb references the "main" bdi of the inode.  With the
+
+  recent change to move the bdi from the request_queue to the gendisk
+
+  this causes a guaranteed use after free when using certain cgroup
+
+  configurations.  The big itself is older through as any non-default
+
+  inode reference (e.g. an open file descriptor) could have injected
+
+  this use after free even before that.
+
+
+  Fixes: 52ebea749aae ("writeback: make backing_dev_info host cgroup-specific bdi_writebacks")
+
+  Reported-by: Qian Cai <quic_qiancai@quicinc.com>
+
+  Reported-by: syzbot <syzbot+1fb38bb7d3ce0fa3e1c4@syzkaller.appspotmail.com>
+
+  Signed-off-by: Christoph Hellwig <hch@lst.de>
+
+  Link: https://lore.kernel.org/r/20210816122614.601358-3-hch@lst.de
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- block
+- fs
+hunk_count: 3
+covered_count: 3

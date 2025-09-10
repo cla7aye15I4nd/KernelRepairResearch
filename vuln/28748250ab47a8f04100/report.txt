@@ -1,0 +1,60 @@
+divide error: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 PID: 5070 Comm: usb-storage Not tainted 6.8.0-rc5-syzkaller-00297-gf2e367d6ad3b #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/25/2024
+RIP: 0010:isd200_scsi_to_ata drivers/usb/storage/isd200.c:1318 [inline]
+RIP: 0010:isd200_ata_command+0x776/0x2380 drivers/usb/storage/isd200.c:1529
+Code: 62 fa 49 8d 7c 24 0c 48 89 f8 48 c1 e8 03 42 0f b6 04 28 84 c0 0f 85 00 18 00 00 41 0f b7 5c 24 0c 48 8b 7c 24 18 89 f8 31 d2 <f7> f3 41 89 d0 49 83 c4 06 4c 89 e0 48 c1 e8 03 42 0f b6 04 28 84
+RSP: 0018:ffffc900043ffc00 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffff888023230000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc900043ffd50 R08: ffffffff873161fd R09: ffffffff87315c95
+R10: 0000000000000008 R11: ffff888023230000 R12: ffff88807f7a0000
+R13: dffffc0000000000 R14: ffff888021da1000 R15: ffff88807c10a110
+FS:  0000000000000000(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000563828985bd8 CR3: 000000002e0cc000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ usb_stor_control_thread+0x4b1/0xa50 drivers/usb/storage/usb.c:368
+ kthread+0x2ef/0x390 kernel/kthread.c:388
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1b/0x30 arch/x86/entry/entry_64.S:242
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:isd200_scsi_to_ata drivers/usb/storage/isd200.c:1318 [inline]
+RIP: 0010:isd200_ata_command+0x776/0x2380 drivers/usb/storage/isd200.c:1529
+Code: 62 fa 49 8d 7c 24 0c 48 89 f8 48 c1 e8 03 42 0f b6 04 28 84 c0 0f 85 00 18 00 00 41 0f b7 5c 24 0c 48 8b 7c 24 18 89 f8 31 d2 <f7> f3 41 89 d0 49 83 c4 06 4c 89 e0 48 c1 e8 03 42 0f b6 04 28 84
+RSP: 0018:ffffc900043ffc00 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffff888023230000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc900043ffd50 R08: ffffffff873161fd R09: ffffffff87315c95
+R10: 0000000000000008 R11: ffff888023230000 R12: ffff88807f7a0000
+R13: dffffc0000000000 R14: ffff888021da1000 R15: ffff88807c10a110
+FS:  0000000000000000(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000563828985bd8 CR3: 000000000df32000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess), 1 bytes skipped:
+   0:	fa                   	cli
+   1:	49 8d 7c 24 0c       	lea    0xc(%r12),%rdi
+   6:	48 89 f8             	mov    %rdi,%rax
+   9:	48 c1 e8 03          	shr    $0x3,%rax
+   d:	42 0f b6 04 28       	movzbl (%rax,%r13,1),%eax
+  12:	84 c0                	test   %al,%al
+  14:	0f 85 00 18 00 00    	jne    0x181a
+  1a:	41 0f b7 5c 24 0c    	movzwl 0xc(%r12),%ebx
+  20:	48 8b 7c 24 18       	mov    0x18(%rsp),%rdi
+  25:	89 f8                	mov    %edi,%eax
+  27:	31 d2                	xor    %edx,%edx
+* 29:	f7 f3                	div    %ebx <-- trapping instruction
+  2b:	41 89 d0             	mov    %edx,%r8d
+  2e:	49 83 c4 06          	add    $0x6,%r12
+  32:	4c 89 e0             	mov    %r12,%rax
+  35:	48 c1 e8 03          	shr    $0x3,%rax
+  39:	42 0f b6 04 28       	movzbl (%rax,%r13,1),%eax
+  3e:	84                   	.byte 0x84

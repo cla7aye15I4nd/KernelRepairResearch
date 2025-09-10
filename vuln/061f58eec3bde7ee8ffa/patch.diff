@@ -1,0 +1,24 @@
+diff --git a/net/sched/sch_api.c b/net/sched/sch_api.c
+index 60239378d43f..6292d6d73b72 100644
+--- a/net/sched/sch_api.c
++++ b/net/sched/sch_api.c
+@@ -1389,6 +1389,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
+ 		ops->destroy(sch);
+ 	qdisc_put_stab(rtnl_dereference(sch->stab));
+ err_out3:
++	lockdep_unregister_key(&sch->root_lock_key);
+ 	netdev_put(dev, &sch->dev_tracker);
+ 	qdisc_free(sch);
+ err_out2:
+diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
+index 31dfd6c7405b..d3f6006b563c 100644
+--- a/net/sched/sch_generic.c
++++ b/net/sched/sch_generic.c
+@@ -982,6 +982,7 @@ struct Qdisc *qdisc_alloc(struct netdev_queue *dev_queue,
+ 
+ 	return sch;
+ errout1:
++	lockdep_unregister_key(&sch->root_lock_key);
+ 	kfree(sch);
+ errout:
+ 	return ERR_PTR(err);

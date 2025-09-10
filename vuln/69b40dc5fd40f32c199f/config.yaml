@@ -1,0 +1,27 @@
+id: 69b40dc5fd40f32c199f
+bug_link: https://syzkaller.appspot.com/bug?extid=69b40dc5fd40f32c199f
+title: 'BUG: sleeping function called from invalid context in __getblk_gfp'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 85f273a6a1e492afa7309fd23fcd8cb870085f56
+fix_commit: f123dc86388cb669c3d6322702dc441abc35c31e
+datetime: '2024-02-02T13:11:49+01:00'
+fix_commit_message: "sysv: don't call sb_bread() with pointers_lock held\n\nsyzbot\
+  \ is reporting sleep in atomic context in SysV filesystem [1], for\nsb_bread() is\
+  \ called with rw_spinlock held.\n\nA \"write_lock(&pointers_lock) => read_lock(&pointers_lock)\
+  \ deadlock\" bug\nand a \"sb_bread() with write_lock(&pointers_lock)\" bug were\
+  \ introduced by\n\"Replace BKL for chain locking with sysvfs-private rwlock\" in\
+  \ Linux 2.5.12.\n\nThen, \"[PATCH] err1-40: sysvfs locking fix\" in Linux 2.6.8\
+  \ fixed the\nformer bug by moving pointers_lock lock to the callers, but instead\n\
+  introduced a \"sb_bread() with read_lock(&pointers_lock)\" bug (which made\nthis\
+  \ problem easier to hit).\n\nAl Viro suggested that why not to do like get_branch()/get_block()/\n\
+  find_shared() in Minix filesystem does. And doing like that is almost a\nrevert\
+  \ of \"[PATCH] err1-40: sysvfs locking fix\" except that get_branch()\n from with\
+  \ find_shared() is called without write_lock(&pointers_lock).\n\nReported-by: syzbot\
+  \ <syzbot+69b40dc5fd40f32c199f@syzkaller.appspotmail.com>\nLink: https://syzkaller.appspot.com/bug?extid=69b40dc5fd40f32c199f\n\
+  Suggested-by: Al Viro <viro@zeniv.linux.org.uk>\nSigned-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\n\
+  Link: https://lore.kernel.org/r/0d195f93-a22a-49a2-0020-103534d6f7f6@I-love.SAKURA.ne.jp\n\
+  Signed-off-by: Christian Brauner <brauner@kernel.org>\n"
+submodule:
+- fs/sysv
+hunk_count: 4
+covered_count: 3

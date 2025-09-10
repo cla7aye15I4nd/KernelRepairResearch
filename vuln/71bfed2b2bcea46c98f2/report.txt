@@ -1,0 +1,35 @@
+=====================================================
+BUG: KMSAN: uninit-value in nci_rf_intf_activated_ntf_packet net/nfc/nci/ntf.c:620 [inline]
+BUG: KMSAN: uninit-value in nci_ntf_packet+0x27f4/0x39c0 net/nfc/nci/ntf.c:802
+ nci_rf_intf_activated_ntf_packet net/nfc/nci/ntf.c:620 [inline]
+ nci_ntf_packet+0x27f4/0x39c0 net/nfc/nci/ntf.c:802
+ nci_rx_work+0x288/0x5d0 net/nfc/nci/core.c:1532
+ process_one_work kernel/workqueue.c:3267 [inline]
+ process_scheduled_works+0xa81/0x1bd0 kernel/workqueue.c:3348
+ worker_thread+0xea5/0x1560 kernel/workqueue.c:3429
+ kthread+0x3e2/0x540 kernel/kthread.c:389
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Uninit was created at:
+ slab_post_alloc_hook mm/slub.c:3877 [inline]
+ slab_alloc_node mm/slub.c:3918 [inline]
+ kmem_cache_alloc_node+0x622/0xc90 mm/slub.c:3961
+ kmalloc_reserve+0x13d/0x4a0 net/core/skbuff.c:577
+ __alloc_skb+0x35b/0x7a0 net/core/skbuff.c:668
+ alloc_skb include/linux/skbuff.h:1319 [inline]
+ virtual_ncidev_write+0x6d/0x290 drivers/nfc/virtual_ncidev.c:120
+ vfs_write+0x497/0x14d0 fs/read_write.c:588
+ ksys_write+0x20f/0x4c0 fs/read_write.c:643
+ __do_sys_write fs/read_write.c:655 [inline]
+ __se_sys_write fs/read_write.c:652 [inline]
+ __x64_sys_write+0x93/0xe0 fs/read_write.c:652
+ x64_sys_call+0x3062/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:2
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 1 PID: 3730 Comm: kworker/u8:19 Not tainted 6.9.0-syzkaller-02707-g614da38e2f7a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Workqueue: nfc2_nci_rx_wq nci_rx_work
+=====================================================

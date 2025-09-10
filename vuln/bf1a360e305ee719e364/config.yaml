@@ -1,0 +1,52 @@
+id: bf1a360e305ee719e364
+bug_link: https://syzkaller.appspot.com/bug?extid=bf1a360e305ee719e364
+title: 'KASAN: null-ptr-deref Write in event_handler'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6801854be94fe8819b3894979875ea31482f5658
+fix_commit: 9380afd6df70e24eacbdbde33afc6a3950965d22
+datetime: '2021-03-10T19:32:34+01:00'
+fix_commit_message: "usbip: fix stub_dev usbip_sockfd_store() races leading to gpf\n\
+  \nusbip_sockfd_store() is invoked when user requests attach (import)\ndetach (unimport)\
+  \ usb device from usbip host. vhci_hcd sends import\nrequest and usbip_sockfd_store()\
+  \ exports the device if it is free\nfor export.\n\nExport and unexport are governed\
+  \ by local state and shared state\n- Shared state (usbip device status, sockfd)\
+  \ - sockfd and Device\n  status are used to determine if stub should be brought\
+  \ up or shut\n  down.\n- Local state (tcp_socket, rx and tx thread task_struct ptrs)\n\
+  \  A valid tcp_socket controls rx and tx thread operations while the\n  device is\
+  \ in exported state.\n- While the device is exported, device status is marked used\
+  \ and socket,\n  sockfd, and thread pointers are valid.\n\nExport sequence (stub-up)\
+  \ includes validating the socket and creating\nreceive (rx) and transmit (tx) threads\
+  \ to talk to the client to provide\naccess to the exported device. rx and tx threads\
+  \ depends on local and\nshared state to be correct and in sync.\n\nUnexport (stub-down)\
+  \ sequence shuts the socket down and stops the rx and\ntx threads. Stub-down sequence\
+  \ relies on local and shared states to be\nin sync.\n\nThere are races in updating\
+  \ the local and shared status in the current\nstub-up sequence resulting in crashes.\
+  \ These stem from starting rx and\ntx threads before local and global state is updated\
+  \ correctly to be in\nsync.\n\n1. Doesn't handle kthread_create() error and saves\
+  \ invalid ptr in local\n   state that drives rx and tx threads.\n2. Updates tcp_socket\
+  \ and sockfd,  starts stub_rx and stub_tx threads\n   before updating usbip_device\
+  \ status to SDEV_ST_USED. This opens up a\n   race condition between the threads\
+  \ and usbip_sockfd_store() stub up\n   and down handling.\n\nFix the above problems:\n\
+  - Stop using kthread_get_run() macro to create/start threads.\n- Create threads\
+  \ and get task struct reference.\n- Add kthread_create() failure handling and bail\
+  \ out.\n- Hold usbip_device lock to update local and shared states after\n  creating\
+  \ rx and tx threads.\n- Update usbip_device status to SDEV_ST_USED.\n- Update usbip_device\
+  \ tcp_socket, sockfd, tcp_rx, and tcp_tx\n- Start threads after usbip_device (tcp_socket,\
+  \ sockfd, tcp_rx, tcp_tx,\n  and status) is complete.\n\nCredit goes to syzbot and\
+  \ Tetsuo Handa for finding and root-causing the\nkthread_get_run() improper error\
+  \ handling problem and others. This is a\nhard problem to find and debug since the\
+  \ races aren't seen in a normal\ncase. Fuzzing forces the race window to be small\
+  \ enough for the\nkthread_get_run() error path bug and starting threads before updating\
+  \ the\nlocal and shared state bug in the stub-up sequence.\n\nTested with syzbot\
+  \ reproducer:\n- https://syzkaller.appspot.com/text?tag=ReproC&x=14801034d00000\n\
+  \nFixes: 9720b4bc76a83807 (\"staging/usbip: convert to kthread\")\nCc: stable@vger.kernel.org\n\
+  Reported-by: syzbot <syzbot+a93fba6d384346a761e3@syzkaller.appspotmail.com>\nReported-by:\
+  \ syzbot <syzbot+bf1a360e305ee719e364@syzkaller.appspotmail.com>\nReported-by: syzbot\
+  \ <syzbot+95ce4b142579611ef0a9@syzkaller.appspotmail.com>\nReported-by: Tetsuo Handa\
+  \ <penguin-kernel@I-love.SAKURA.ne.jp>\nSigned-off-by: Shuah Khan <skhan@linuxfoundation.org>\n\
+  Link: https://lore.kernel.org/r/268a0668144d5ff36ec7d87fdfa90faf583b7ccc.1615171203.git.skhan@linuxfoundation.org\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/usbip
+hunk_count: 2
+covered_count: 0

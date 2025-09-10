@@ -1,0 +1,33 @@
+id: e2d6cfb305e9f3911dea
+bug_link: https://syzkaller.appspot.com/bug?extid=e2d6cfb305e9f3911dea
+title: WARNING in usercopy_warn
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e728789c52afccc1275cba1dd812f03abe16ea3c
+fix_commit: 79a8a642bf05cd0dced20621f6fef9d884124abd
+datetime: '2018-02-08T15:15:48-05:00'
+fix_commit_message: "net: Whitelist the skbuff_head_cache \"cb\" field\n\nMost callers\
+  \ of put_cmsg() use a \"sizeof(foo)\" for the length argument.\nWithin put_cmsg(),\
+  \ a copy_to_user() call is made with a dynamic size, as a\nresult of the cmsg header\
+  \ calculations. This means that hardened usercopy\nwill examine the copy, even though\
+  \ it was technically a fixed size and\nshould be implicitly whitelisted. All the\
+  \ put_cmsg() calls being built\nfrom values in skbuff_head_cache are coming out\
+  \ of the protocol-defined\n\"cb\" field, so whitelist this field entirely instead\
+  \ of creating per-use\nbounce buffers, for which there are concerns about performance.\n\
+  \nOriginal report was:\n\nBad or missing usercopy whitelist? Kernel memory exposure\
+  \ attempt detected from SLAB object 'skbuff_head_cache' (offset 64, size 16)!\n\
+  WARNING: CPU: 0 PID: 3663 at mm/usercopy.c:81 usercopy_warn+0xdb/0x100 mm/usercopy.c:76\n\
+  ...\n __check_heap_object+0x89/0xc0 mm/slab.c:4426\n check_heap_object mm/usercopy.c:236\
+  \ [inline]\n __check_object_size+0x272/0x530 mm/usercopy.c:259\n check_object_size\
+  \ include/linux/thread_info.h:112 [inline]\n check_copy_size include/linux/thread_info.h:143\
+  \ [inline]\n copy_to_user include/linux/uaccess.h:154 [inline]\n put_cmsg+0x233/0x3f0\
+  \ net/core/scm.c:242\n sock_recv_errqueue+0x200/0x3e0 net/core/sock.c:2913\n packet_recvmsg+0xb2e/0x17a0\
+  \ net/packet/af_packet.c:3296\n sock_recvmsg_nosec net/socket.c:803 [inline]\n sock_recvmsg+0xc9/0x110\
+  \ net/socket.c:810\n ___sys_recvmsg+0x2a4/0x640 net/socket.c:2179\n __sys_recvmmsg+0x2a9/0xaf0\
+  \ net/socket.c:2287\n SYSC_recvmmsg net/socket.c:2368 [inline]\n SyS_recvmmsg+0xc4/0x160\
+  \ net/socket.c:2352\n entry_SYSCALL_64_fastpath+0x29/0xa0\n\nReported-by: syzbot+e2d6cfb305e9f3911dea@syzkaller.appspotmail.com\n\
+  Fixes: 6d07d1cd300f (\"usercopy: Restrict non-usercopy caches to size 0\")\nSigned-off-by:\
+  \ Kees Cook <keescook@chromium.org>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,28 @@
+id: 148f2573ec86c854cdac7339c41b98e31a94150a
+bug_link: https://syzkaller.appspot.com/bug?extid=148f2573ec86c854cdac7339c41b98e31a94150a
+title: 'KASAN: use-after-free Read in disk_unblock_events'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9df6c29912315186fef1c79cc15b758ace84175b
+fix_commit: 897366537fb65e87755b822360c230354c3fc73b
+datetime: '2018-02-26T09:48:42-07:00'
+fix_commit_message: "genhd: Fix use after free in __blkdev_get()\n\nWhen two blkdev_open()\
+  \ calls race with device removal and recreation,\n__blkdev_get() can use looked\
+  \ up gendisk after it is freed:\n\nCPU0\t\t\t\tCPU1\t\t\tCPU2\n\t\t\t\t\t\t\tdel_gendisk(disk);\n\
+  \t\t\t\t\t\t\t  bdev_unhash_inode(inode);\nblkdev_open()\t\t\tblkdev_open()\n  bdev\
+  \ = bd_acquire(inode);\n    - creates and returns new inode\n\t\t\t\t  bdev = bd_acquire(inode);\n\
+  \t\t\t\t    - returns the same inode\n  __blkdev_get(devt)\t\t  __blkdev_get(devt)\n\
+  \    disk = get_gendisk(devt);\n      - got structure of device going away\n\t\t\
+  \t\t\t\t\t<finish device removal>\n\t\t\t\t\t\t\t<new device gets\n\t\t\t\t\t\t\t\
+  \ created under the same\n\t\t\t\t\t\t\t device number>\n\t\t\t\t  disk = get_gendisk(devt);\n\
+  \t\t\t\t    - got new device structure\n\t\t\t\t  if (!bdev->bd_openers) {\n\t\t\
+  \t\t    does the first open\n\t\t\t\t  }\n    if (!bdev->bd_openers)\n      - false\n\
+  \    } else {\n      put_disk_and_module(disk)\n        - remember this was old\
+  \ device - this was last ref and disk is\n          now freed\n    }\n    disk_unblock_events(disk);\
+  \ -> oops\n\nFix the problem by making sure we drop reference to disk in\n__blkdev_get()\
+  \ only after we are really done with it.\n\nReported-by: Hou Tao <houtao1@huawei.com>\n\
+  Tested-by: Hou Tao <houtao1@huawei.com>\nSigned-off-by: Jan Kara <jack@suse.cz>\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 3
+covered_count: 1

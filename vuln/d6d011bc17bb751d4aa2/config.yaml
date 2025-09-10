@@ -1,0 +1,47 @@
+id: d6d011bc17bb751d4aa2
+bug_link: https://syzkaller.appspot.com/bug?extid=d6d011bc17bb751d4aa2
+title: 'KMSAN: uninit-value in kvm_cpuid'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 773e89ab0056aaa2baa1ffd9f044551654410104
+fix_commit: e8a747d0884e554a8c1872da6c8f680a4f893c6d
+datetime: '2021-09-30T04:20:33-04:00'
+fix_commit_message: "KVM: x86: Swap order of CPUID entry \"index\" vs. \"significant\
+  \ flag\" checks\n\nCheck whether a CPUID entry's index is significant before checking\
+  \ for a\nmatching index to hack-a-fix an undefined behavior bug due to consuming\n\
+  uninitialized data.  RESET/INIT emulation uses kvm_cpuid() to retrieve\nCPUID.0x1,\
+  \ which does _not_ have a significant index, and fails to\ninitialize the dummy\
+  \ variable that doubles as EBX/ECX/EDX output _and_\nECX, a.k.a. index, input.\n\
+  \nPractically speaking, it's _extremely_  unlikely any compiler will yield\ncode\
+  \ that causes problems, as the compiler would need to inline the\nkvm_cpuid() call\
+  \ to detect the uninitialized data, and intentionally hose\nthe kernel, e.g. insert\
+  \ ud2, instead of simply ignoring the result of\nthe index comparison.\n\nAlthough\
+  \ the sketchy \"dummy\" pattern was introduced in SVM by commit\n66f7b72e1171 (\"\
+  KVM: x86: Make register state after reset conform to\nspecification\"), it wasn't\
+  \ actually broken until commit 7ff6c0350315\n(\"KVM: x86: Remove stateful CPUID\
+  \ handling\") arbitrarily swapped the\norder of operations such that \"index\" was\
+  \ checked before the significant\nflag.\n\nAvoid consuming uninitialized data by\
+  \ reverting to checking the flag\nbefore the index purely so that the fix can be\
+  \ easily backported; the\noffending RESET/INIT code has been refactored, moved,\
+  \ and consolidated\nfrom vendor code to common x86 since the bug was introduced.\
+  \  A future\npatch will directly address the bad RESET/INIT behavior.\n\nThe undefined\
+  \ behavior was detected by syzbot + KernelMemorySanitizer.\n\n  BUG: KMSAN: uninit-value\
+  \ in cpuid_entry2_find arch/x86/kvm/cpuid.c:68\n  BUG: KMSAN: uninit-value in kvm_find_cpuid_entry\
+  \ arch/x86/kvm/cpuid.c:1103\n  BUG: KMSAN: uninit-value in kvm_cpuid+0x456/0x28f0\
+  \ arch/x86/kvm/cpuid.c:1183\n   cpuid_entry2_find arch/x86/kvm/cpuid.c:68 [inline]\n\
+  \   kvm_find_cpuid_entry arch/x86/kvm/cpuid.c:1103 [inline]\n   kvm_cpuid+0x456/0x28f0\
+  \ arch/x86/kvm/cpuid.c:1183\n   kvm_vcpu_reset+0x13fb/0x1c20 arch/x86/kvm/x86.c:10885\n\
+  \   kvm_apic_accept_events+0x58f/0x8c0 arch/x86/kvm/lapic.c:2923\n   vcpu_enter_guest+0xfd2/0x6d80\
+  \ arch/x86/kvm/x86.c:9534\n   vcpu_run+0x7f5/0x18d0 arch/x86/kvm/x86.c:9788\n  \
+  \ kvm_arch_vcpu_ioctl_run+0x245b/0x2d10 arch/x86/kvm/x86.c:10020\n\n  Local variable\
+  \ ----dummy@kvm_vcpu_reset created at:\n   kvm_vcpu_reset+0x1fb/0x1c20 arch/x86/kvm/x86.c:10812\n\
+  \   kvm_apic_accept_events+0x58f/0x8c0 arch/x86/kvm/lapic.c:2923\n\nReported-by:\
+  \ syzbot+f3985126b746b3d59c9d@syzkaller.appspotmail.com\nReported-by: Alexander\
+  \ Potapenko <glider@google.com>\nFixes: 2a24be79b6b7 (\"KVM: VMX: Set EDX at INIT\
+  \ with CPUID.0x1, Family-Model-Stepping\")\nFixes: 7ff6c0350315 (\"KVM: x86: Remove\
+  \ stateful CPUID handling\")\nCc: stable@vger.kernel.org\nSigned-off-by: Sean Christopherson\
+  \ <seanjc@google.com>\nReviewed-by: Jim Mattson <jmattson@google.com>\nMessage-Id:\
+  \ <20210929222426.1855730-2-seanjc@google.com>\nSigned-off-by: Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 1
+covered_count: 1

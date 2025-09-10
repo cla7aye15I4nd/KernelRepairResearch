@@ -1,0 +1,67 @@
+============================================
+WARNING: possible recursive locking detected
+6.12.0-rc3-syzkaller-00007-g6485cf5ea253 #0 Not tainted
+--------------------------------------------
+kworker/u8:3/53 is trying to acquire lock:
+ffff888079668108 (&HFSPLUS_I(inode)->extents_lock){+.+.}-{3:3}, at: hfsplus_file_extend+0x21b/0x1b70 fs/hfsplus/extents.c:458
+
+but task is already holding lock:
+ffff8880796687c8 (&HFSPLUS_I(inode)->extents_lock){+.+.}-{3:3}, at: hfsplus_ext_write_extent+0x8e/0x1f0 fs/hfsplus/extents.c:149
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&HFSPLUS_I(inode)->extents_lock);
+  lock(&HFSPLUS_I(inode)->extents_lock);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+5 locks held by kworker/u8:3/53:
+ #0: ffff888020ac8948 ((wq_completion)writeback){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3204 [inline]
+ #0: ffff888020ac8948 ((wq_completion)writeback){+.+.}-{0:0}, at: process_scheduled_works+0x93b/0x1850 kernel/workqueue.c:3310
+ #1: ffffc90000be7d00 ((work_completion)(&(&wb->dwork)->work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3205 [inline]
+ #1: ffffc90000be7d00 ((work_completion)(&(&wb->dwork)->work)){+.+.}-{0:0}, at: process_scheduled_works+0x976/0x1850 kernel/workqueue.c:3310
+ #2: ffff88802e9fc0e0 (&type->s_umount_key#44){.+.+}-{3:3}, at: super_trylock_shared+0x22/0xf0 fs/super.c:562
+ #3: ffff8880796687c8 (&HFSPLUS_I(inode)->extents_lock){+.+.}-{3:3}, at: hfsplus_ext_write_extent+0x8e/0x1f0 fs/hfsplus/extents.c:149
+ #4: ffff888024d2c0b0 (&tree->tree_lock/1){+.+.}-{3:3}, at: hfsplus_find_init+0x14a/0x1c0 fs/hfsplus/bfind.c:28
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 53 Comm: kworker/u8:3 Not tainted 6.12.0-rc3-syzkaller-00007-g6485cf5ea253 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Workqueue: writeback wb_workfn (flush-7:0)
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_deadlock_bug+0x483/0x620 kernel/locking/lockdep.c:3037
+ check_deadlock kernel/locking/lockdep.c:3089 [inline]
+ validate_chain+0x15e2/0x5920 kernel/locking/lockdep.c:3891
+ __lock_acquire+0x1384/0x2050 kernel/locking/lockdep.c:5202
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5825
+ __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+ __mutex_lock+0x136/0xd70 kernel/locking/mutex.c:752
+ hfsplus_file_extend+0x21b/0x1b70 fs/hfsplus/extents.c:458
+ hfsplus_bmap_reserve+0x105/0x4e0 fs/hfsplus/btree.c:358
+ __hfsplus_ext_write_extent+0x2a4/0x5c0 fs/hfsplus/extents.c:104
+ hfsplus_ext_write_extent_locked fs/hfsplus/extents.c:139 [inline]
+ hfsplus_ext_write_extent+0x16a/0x1f0 fs/hfsplus/extents.c:150
+ hfsplus_write_inode+0x22/0x5e0 fs/hfsplus/super.c:154
+ write_inode fs/fs-writeback.c:1503 [inline]
+ __writeback_single_inode+0x711/0x10d0 fs/fs-writeback.c:1723
+ writeback_sb_inodes+0x80c/0x1370 fs/fs-writeback.c:1954
+ __writeback_inodes_wb+0x11b/0x260 fs/fs-writeback.c:2025
+ wb_writeback+0x42f/0xbd0 fs/fs-writeback.c:2136
+ wb_check_background_flush fs/fs-writeback.c:2206 [inline]
+ wb_do_writeback fs/fs-writeback.c:2294 [inline]
+ wb_workfn+0xc58/0x1090 fs/fs-writeback.c:2321
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa63/0x1850 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

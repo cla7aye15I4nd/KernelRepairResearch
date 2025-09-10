@@ -1,0 +1,21 @@
+id: 91ca3f25bd7f795f019c
+bug_link: https://syzkaller.appspot.com/bug?extid=91ca3f25bd7f795f019c
+title: possible deadlock in io_timeout_fn (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 80c18e4ac20c9cde420cb3ffab48c936147cf07d
+fix_commit: 4aa84f2ffa81f71e15e5cffc2cc6090dbee78f8e
+datetime: '2021-01-07T07:48:09-07:00'
+fix_commit_message: "io_uring: dont kill fasync under completion_lock\n\n      CPU0\
+  \                    CPU1\n       ----                    ----\n  lock(&new->fa_lock);\n\
+  \                               local_irq_disable();\n                         \
+  \      lock(&ctx->completion_lock);\n                               lock(&new->fa_lock);\n\
+  \  <Interrupt>\n    lock(&ctx->completion_lock);\n\n *** DEADLOCK ***\n\nMove kill_fasync()\
+  \ out of io_commit_cqring() to io_cqring_ev_posted(),\nso it doesn't hold completion_lock\
+  \ while doing it. That saves from the\nreported deadlock, and it's just nice to\
+  \ shorten the locking time and\nuntangle nested locks (compl_lock -> wq_head::lock).\n\
+  \nReported-by: syzbot+91ca3f25bd7f795f019c@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Pavel Begunkov <asml.silence@gmail.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 3
+covered_count: 1

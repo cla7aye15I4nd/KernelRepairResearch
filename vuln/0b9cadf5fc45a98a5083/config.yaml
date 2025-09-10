@@ -1,0 +1,26 @@
+id: 0b9cadf5fc45a98a5083
+bug_link: https://syzkaller.appspot.com/bug?extid=0b9cadf5fc45a98a5083
+title: possible deadlock in f2fs_write_checkpoint
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2fef99b8372c1ae3d8445ab570e888b5a358dbe9
+fix_commit: c7f91bd4102902384137dd5c50d04bfed27050dd
+datetime: '2022-02-25T11:11:31-08:00'
+fix_commit_message: "f2fs: Restore rwsem lockdep support\n\nLockdep uses lock class\
+  \ keys in its analysis. init_rwsem() instantiates\none lock class key with each\
+  \ init_rwsem() user as follows:\n\n #define init_rwsem(sem)                    \
+  \                    \\\n do {                                                 \
+  \          \\\n         static struct lock_class_key __key;                    \\\
+  \n                                                                \\\n         __init_rwsem((sem),\
+  \ #sem, &__key);                     \\\n } while (0)\n\nCommit e4544b63a7ee (\"\
+  f2fs: move f2fs to use reader-unfair rwsems\") reduced\nthe number of lock class\
+  \ keys from one per init_rwsem() user to one per\nfile in which init_f2fs_rwsem()\
+  \ is used. This causes the same lock class key\nto be associated with multiple f2fs\
+  \ rwsems and also triggers a number of\nfalse positive lockdep deadlock reports.\
+  \ Fix this by again instantiating one\nlock class key with each init_f2fs_rwsem()\
+  \ caller.\n\nCc: Tim Murray <timmurray@google.com>\nReported-by: syzbot+0b9cadf5fc45a98a5083@syzkaller.appspotmail.com\n\
+  Fixes: e4544b63a7ee (\"f2fs: move f2fs to use reader-unfair rwsems\")\nSigned-off-by:\
+  \ Bart Van Assche <bvanassche@acm.org>\nSigned-off-by: Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 1
+covered_count: 1

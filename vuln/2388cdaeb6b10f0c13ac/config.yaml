@@ -1,0 +1,84 @@
+id: 2388cdaeb6b10f0c13ac
+bug_link: https://syzkaller.appspot.com/bug?extid=2388cdaeb6b10f0c13ac
+title: WARNING in kcov_remote_start (5)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 37bf7fbe1db27792b27345871aa5f8ae52cd396c
+fix_commit: 7d4df2dad312f270d62fecb0e5c8b086c6d7dcfc
+datetime: '2024-08-07T18:33:56-07:00'
+fix_commit_message: 'kcov: properly check for softirq context
+
+
+  When collecting coverage from softirqs, KCOV uses in_serving_softirq() to
+
+  check whether the code is running in the softirq context.  Unfortunately,
+
+  in_serving_softirq() is > 0 even when the code is running in the hardirq
+
+  or NMI context for hardirqs and NMIs that happened during a softirq.
+
+
+  As a result, if a softirq handler contains a remote coverage collection
+
+  section and a hardirq with another remote coverage collection section
+
+  happens during handling the softirq, KCOV incorrectly detects a nested
+
+  softirq coverate collection section and prints a WARNING, as reported by
+
+  syzbot.
+
+
+  This issue was exposed by commit a7f3813e589f ("usb: gadget: dummy_hcd:
+
+  Switch to hrtimer transfer scheduler"), which switched dummy_hcd to using
+
+  hrtimer and made the timer''s callback be executed in the hardirq context.
+
+
+  Change the related checks in KCOV to account for this behavior of
+
+  in_serving_softirq() and make KCOV ignore remote coverage collection
+
+  sections in the hardirq and NMI contexts.
+
+
+  This prevents the WARNING printed by syzbot but does not fix the inability
+
+  of KCOV to collect coverage from the __usb_hcd_giveback_urb when dummy_hcd
+
+  is in use (caused by a7f3813e589f); a separate patch is required for that.
+
+
+  Link: https://lkml.kernel.org/r/20240729022158.92059-1-andrey.konovalov@linux.dev
+
+  Fixes: 5ff3b30ab57d ("kcov: collect coverage from interrupts")
+
+  Signed-off-by: Andrey Konovalov <andreyknvl@gmail.com>
+
+  Reported-by: syzbot+2388cdaeb6b10f0c13ac@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=2388cdaeb6b10f0c13ac
+
+  Acked-by: Marco Elver <elver@google.com>
+
+  Cc: Alan Stern <stern@rowland.harvard.edu>
+
+  Cc: Aleksandr Nogikh <nogikh@google.com>
+
+  Cc: Alexander Potapenko <glider@google.com>
+
+  Cc: Dmitry Vyukov <dvyukov@google.com>
+
+  Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  Cc: Marcello Sylvester Bauer <sylv@sylv.io>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- kernel
+hunk_count: 4
+covered_count: 1

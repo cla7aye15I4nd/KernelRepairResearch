@@ -1,0 +1,43 @@
+id: c382812c78d98ecd9fb8
+bug_link: https://syzkaller.appspot.com/bug?extid=c382812c78d98ecd9fb8
+title: WARNING in input_alloc_absinfo
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 17a4ed5545c5599852a5d75c5fb2c8e597943f99
+fix_commit: 100294cee9a98bfd4d6cb2d1c8a8aef0e959b0c4
+datetime: '2018-08-08T11:23:47-07:00'
+fix_commit_message: 'Input: do not use WARN() in input_alloc_absinfo()
+
+
+  Some of fuzzers set panic_on_warn=1 so that they can handle WARN()ings
+
+  the same way they handle full-blown kernel crashes. We used WARN() in
+
+  input_alloc_absinfo() to get a better idea where memory allocation
+
+  failed, but since then kmalloc() and friends started dumping call stack on
+
+  memory allocation failures anyway, so we are not getting anything extra
+
+  from WARN().
+
+
+  Because of the above, let''s replace WARN with dev_err(). We use dev_err()
+
+  instead of simply removing message and relying on kcalloc() to give us
+
+  stack dump so that we''d know the instance of hardware device to which we
+
+  were trying to attach input device.
+
+
+  Reported-by: Dmitry Vyukov <dvyukov@google.com>
+
+  Acked-by: Dmitry Vyukov <dvyukov@google.com>
+
+  Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+
+  '
+submodule:
+- drivers/input
+hunk_count: 1
+covered_count: 1

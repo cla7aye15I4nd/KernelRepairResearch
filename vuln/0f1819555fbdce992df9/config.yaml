@@ -1,0 +1,29 @@
+id: 0f1819555fbdce992df9
+bug_link: https://syzkaller.appspot.com/bug?extid=0f1819555fbdce992df9
+title: WARNING in handle_desc
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a1a640b8c0cd8a2a7f84ab694f04bc64dc6988af
+fix_commit: 3ca94192278ca8de169d78c085396c424be123b3
+datetime: '2019-09-26T12:31:31+02:00'
+fix_commit_message: "KVM: X86: Fix userspace set invalid CR4\n\nReported by syzkaller:\n\
+  \n\tWARNING: CPU: 0 PID: 6544 at /home/kernel/data/kvm/arch/x86/kvm//vmx/vmx.c:4689\
+  \ handle_desc+0x37/0x40 [kvm_intel]\n\tCPU: 0 PID: 6544 Comm: a.out Tainted: G \
+  \          OE     5.3.0-rc4+ #4\n\tRIP: 0010:handle_desc+0x37/0x40 [kvm_intel]\n\
+  \tCall Trace:\n\t vmx_handle_exit+0xbe/0x6b0 [kvm_intel]\n\t vcpu_enter_guest+0x4dc/0x18d0\
+  \ [kvm]\n\t kvm_arch_vcpu_ioctl_run+0x407/0x660 [kvm]\n\t kvm_vcpu_ioctl+0x3ad/0x690\
+  \ [kvm]\n\t do_vfs_ioctl+0xa2/0x690\n\t ksys_ioctl+0x6d/0x80\n\t __x64_sys_ioctl+0x1a/0x20\n\
+  \t do_syscall_64+0x74/0x720\n\t entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\nWhen\
+  \ CR4.UMIP is set, guest should have UMIP cpuid flag. Current\nkvm set_sregs function\
+  \ doesn't have such check when userspace inputs\nsregs values. SECONDARY_EXEC_DESC\
+  \ is enabled on writes to CR4.UMIP\nin vmx_set_cr4 though guest doesn't have UMIP\
+  \ cpuid flag. The testcast\ntriggers handle_desc warning when executing ltr instruction\
+  \ since\nguest architectural CR4 doesn't set UMIP. This patch fixes it by\nadding\
+  \ valid CR4 and CPUID combination checking in __set_sregs.\n\nsyzkaller source:\
+  \ https://syzkaller.appspot.com/x/repro.c?x=138efb99600000\n\nReported-by: syzbot+0f1819555fbdce992df9@syzkaller.appspotmail.com\n\
+  Cc: stable@vger.kernel.org\nSigned-off-by: Wanpeng Li <wanpengli@tencent.com>\n\
+  Reviewed-by: Sean Christopherson <sean.j.christopherson@intel.com>\nSigned-off-by:\
+  \ Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 3
+covered_count: 1

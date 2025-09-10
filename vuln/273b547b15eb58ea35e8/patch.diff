@@ -1,0 +1,25 @@
+diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+index 03fc7e5edf07..561a42567477 100644
+--- a/mm/huge_memory.c
++++ b/mm/huge_memory.c
+@@ -2462,7 +2462,7 @@ static void __split_huge_page_tail(struct page *head, int tail,
+ 	 * Fix up and warn once if private is unexpectedly set.
+ 	 */
+ 	if (!folio_test_swapcache(page_folio(head))) {
+-		VM_WARN_ON_ONCE_PAGE(page_tail->private != 0, head);
++		VM_WARN_ON_ONCE_PAGE(page_tail->private != 0, page_tail);
+ 		page_tail->private = 0;
+ 	}
+ 
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index b5a6c815ae28..218b28ee49ed 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -807,6 +807,7 @@ static void prep_compound_tail(struct page *head, int tail_idx)
+ 
+ 	p->mapping = TAIL_MAPPING;
+ 	set_compound_head(p, head);
++	set_page_private(p, 0);
+ }
+ 
+ void prep_compound_page(struct page *page, unsigned int order)

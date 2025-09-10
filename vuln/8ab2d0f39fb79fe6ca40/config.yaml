@@ -1,0 +1,28 @@
+id: 8ab2d0f39fb79fe6ca40
+bug_link: https://syzkaller.appspot.com/bug?extid=8ab2d0f39fb79fe6ca40
+title: 'INFO: task syz-executor can''t die for more than 143 seconds.'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4feb80faf428a02d407a9ea1952004af01308765
+fix_commit: 8619e5bdeee8b2c685d686281f2d2a6017c4bc15
+datetime: '2019-09-04T13:31:28+02:00'
+fix_commit_message: "/dev/mem: Bail out upon SIGKILL.\n\nsyzbot found that a thread\
+  \ can stall for minutes inside read_mem() or\nwrite_mem() after that thread was\
+  \ killed by SIGKILL [1]. Reading from\niomem areas of /dev/mem can be slow, depending\
+  \ on the hardware.\nWhile reading 2GB at one read() is legal, delaying termination\
+  \ of killed\nthread for minutes is bad. Thus, allow reading/writing /dev/mem and\n\
+  /dev/kmem to be preemptible and killable.\n\n  [ 1335.912419][T20577] read_mem:\
+  \ sz=4096 count=2134565632\n  [ 1335.943194][T20577] read_mem: sz=4096 count=2134561536\n\
+  \  [ 1335.978280][T20577] read_mem: sz=4096 count=2134557440\n  [ 1336.011147][T20577]\
+  \ read_mem: sz=4096 count=2134553344\n  [ 1336.041897][T20577] read_mem: sz=4096\
+  \ count=2134549248\n\nTheoretically, reading/writing /dev/mem and /dev/kmem can\
+  \ become\n\"interruptible\". But this patch chose \"killable\". Future patch will\
+  \ make\nthem \"interruptible\" so that we can revert to \"killable\" if some program\n\
+  regressed.\n\n[1] https://syzkaller.appspot.com/bug?id=a0e3436829698d5824231251fad9d8e998f94f5e\n\
+  \nSigned-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nCc: stable <stable@vger.kernel.org>\n\
+  Reported-by: syzbot <syzbot+8ab2d0f39fb79fe6ca40@syzkaller.appspotmail.com>\nLink:\
+  \ https://lore.kernel.org/r/1566825205-10703-1-git-send-email-penguin-kernel@I-love.SAKURA.ne.jp\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/char
+hunk_count: 7
+covered_count: 1

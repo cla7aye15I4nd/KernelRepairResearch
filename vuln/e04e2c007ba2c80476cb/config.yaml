@@ -1,0 +1,32 @@
+id: e04e2c007ba2c80476cb
+bug_link: https://syzkaller.appspot.com/bug?extid=e04e2c007ba2c80476cb
+title: 'KASAN: slab-use-after-free Read in rose_get_neigh'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aaf2b2480375099c022a82023e1cd772bf1c6a5d
+fix_commit: 34a500caf48c47d5171f4aa1f237da39b07c6157
+datetime: '2025-07-01T19:28:48-07:00'
+fix_commit_message: "rose: fix dangling neighbour pointers in rose_rt_device_down()\n\
+  \nThere are two bugs in rose_rt_device_down() that can cause\nuse-after-free:\n\n\
+  1. The loop bound `t->count` is modified within the loop, which can\n   cause the\
+  \ loop to terminate early and miss some entries.\n\n2. When removing an entry from\
+  \ the neighbour array, the subsequent entries\n   are moved up to fill the gap,\
+  \ but the loop index `i` is still\n   incremented, causing the next entry to be\
+  \ skipped.\n\nFor example, if a node has three neighbours (A, A, B) with count=3\
+  \ and A\nis being removed, the second A is not checked.\n\n    i=0: (A, A, B) ->\
+  \ (A, B) with count=2\n          ^ checked\n    i=1: (A, B)    -> (A, B) with count=2\n\
+  \             ^ checked (B, not A!)\n    i=2: (doesn't occur because i < count is\
+  \ false)\n\nThis leaves the second A in the array with count=2, but the rose_neigh\n\
+  structure has been freed. Code that accesses these entries assumes that\nthe first\
+  \ `count` entries are valid pointers, causing a use-after-free\nwhen it accesses\
+  \ the dangling pointer.\n\nFix both issues by iterating over the array in reverse\
+  \ order with a fixed\nloop bound. This ensures that all entries are examined and\
+  \ that the removal\nof an entry doesn't affect subsequent iterations.\n\nReported-by:\
+  \ syzbot+e04e2c007ba2c80476cb@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=e04e2c007ba2c80476cb\n\
+  Tested-by: syzbot+e04e2c007ba2c80476cb@syzkaller.appspotmail.com\nFixes: 1da177e4c3f4\
+  \ (\"Linux-2.6.12-rc2\")\nSigned-off-by: Kohei Enju <enjuk@amazon.com>\nReviewed-by:\
+  \ Simon Horman <horms@kernel.org>\nLink: https://patch.msgid.link/20250629030833.6680-1-enjuk@amazon.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/rose
+hunk_count: 1
+covered_count: 1

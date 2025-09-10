@@ -1,0 +1,20 @@
+diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
+index 1e80f68e2266..429957412633 100644
+--- a/net/xfrm/xfrm_state.c
++++ b/net/xfrm/xfrm_state.c
+@@ -313,13 +313,14 @@ xfrm_get_type_offload(u8 proto, unsigned short family, bool try_load)
+ 	if ((type && !try_module_get(type->owner)))
+ 		type = NULL;
+ 
++	rcu_read_unlock();
++
+ 	if (!type && try_load) {
+ 		request_module("xfrm-offload-%d-%d", family, proto);
+ 		try_load = 0;
+ 		goto retry;
+ 	}
+ 
+-	rcu_read_unlock();
+ 	return type;
+ }
+ 

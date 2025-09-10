@@ -1,0 +1,45 @@
+id: b1a83ab2a9eb9321fbdd
+bug_link: https://syzkaller.appspot.com/bug?extid=b1a83ab2a9eb9321fbdd
+title: 'KMSAN: uninit-value in profile_hits (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 99d3bf5f7377d42f8be60a6b9cb60fb0be34dceb
+fix_commit: 7c51f7bbf057f82aeba3390c39ef61b244181c09
+datetime: '2024-07-29T10:45:54-07:00'
+fix_commit_message: "profiling: remove prof_cpu_mask\n\nsyzbot is reporting uninit-value\
+  \ at profile_hits(), for there is a race\nwindow between\n\n  if (!alloc_cpumask_var(&prof_cpu_mask,\
+  \ GFP_KERNEL))\n    return -ENOMEM;\n  cpumask_copy(prof_cpu_mask, cpu_possible_mask);\n\
+  \nin profile_init() and\n\n  cpumask_available(prof_cpu_mask) &&\n  cpumask_test_cpu(smp_processor_id(),\
+  \ prof_cpu_mask))\n\nin profile_tick(); prof_cpu_mask remains uninitialzed until\
+  \ cpumask_copy()\ncompletes while cpumask_available(prof_cpu_mask) returns true\
+  \ as soon as\nalloc_cpumask_var(&prof_cpu_mask) completes.\n\nWe could replace alloc_cpumask_var()\
+  \ with zalloc_cpumask_var() and\ncall cpumask_copy() from create_proc_profile()\
+  \ on only UP kernels, for\nprofile_online_cpu() calls cpumask_set_cpu() as needed\
+  \ via\ncpuhp_setup_state(CPUHP_AP_ONLINE_DYN) on SMP kernels. But this patch\nremoves\
+  \ prof_cpu_mask because it seems unnecessary.\n\nThe cpumask_test_cpu(smp_processor_id(),\
+  \ prof_cpu_mask) test\nin profile_tick() is likely always true due to\n\n  a CPU\
+  \ cannot call profile_tick() if that CPU is offline\n\nand\n\n  cpumask_set_cpu(cpu,\
+  \ prof_cpu_mask) is called when that CPU becomes\n  online and cpumask_clear_cpu(cpu,\
+  \ prof_cpu_mask) is called when that\n  CPU becomes offline\n\n. This test could\
+  \ be false during transition between online and offline.\n\nBut according to include/linux/cpuhotplug.h\
+  \ , CPUHP_PROFILE_PREPARE\nbelongs to PREPARE section, which means that the CPU\
+  \ subjected to\nprofile_dead_cpu() cannot be inside profile_tick() (i.e. no risk\
+  \ of\nuse-after-free bug) because interrupt for that CPU is disabled during\nPREPARE\
+  \ section. Therefore, this test is guaranteed to be true, and\ncan be removed. (Since\
+  \ profile_hits() checks prof_buffer != NULL, we\ndon't need to check prof_buffer\
+  \ != NULL here unless get_irq_regs() or\nuser_mode() is such slow that we want to\
+  \ avoid when prof_buffer == NULL).\n\ndo_profile_hits() is called from profile_tick()\
+  \ from timer interrupt\nonly if cpumask_test_cpu(smp_processor_id(), prof_cpu_mask)\
+  \ is true and\nprof_buffer is not NULL. But syzbot is also reporting that sometimes\n\
+  do_profile_hits() is called while current thread is still doing vzalloc(),\nwhere\
+  \ prof_buffer must be NULL at this moment. This indicates that multiple\nthreads\
+  \ concurrently tried to write to /sys/kernel/profiling interface,\nwhich caused\
+  \ that somebody else try to re-allocate prof_buffer despite\nsomebody has already\
+  \ allocated prof_buffer. Fix this by using\nserialization.\n\nReported-by: syzbot\
+  \ <syzbot+b1a83ab2a9eb9321fbdd@syzkaller.appspotmail.com>\nCloses: https://syzkaller.appspot.com/bug?extid=b1a83ab2a9eb9321fbdd\n\
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nTested-by: syzbot\
+  \ <syzbot+b1a83ab2a9eb9321fbdd@syzkaller.appspotmail.com>\nSigned-off-by: Linus\
+  \ Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- kernel
+hunk_count: 9
+covered_count: 3

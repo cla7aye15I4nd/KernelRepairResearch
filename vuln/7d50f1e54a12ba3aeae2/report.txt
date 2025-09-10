@@ -1,0 +1,190 @@
+INFO: task syz-executor144:5058 blocked for more than 143 seconds.
+      Not tainted 6.4.0-rc7-syzkaller-00072-gdad9774deaf1 #0
+"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+task:syz-executor144 state:D stack:26952 pid:5058  ppid:5052   flags:0x00004000
+Call Trace:
+ <TASK>
+ context_switch kernel/sched/core.c:5343 [inline]
+ __schedule+0xc9a/0x5880 kernel/sched/core.c:6669
+ schedule+0xde/0x1a0 kernel/sched/core.c:6745
+ wb_wait_for_completion+0x182/0x240 fs/fs-writeback.c:192
+ sync_inodes_sb+0x1aa/0xa60 fs/fs-writeback.c:2730
+ sync_filesystem.part.0+0xe6/0x1d0 fs/sync.c:64
+ sync_filesystem+0x8f/0xc0 fs/sync.c:43
+ generic_shutdown_super+0x74/0x480 fs/super.c:473
+ kill_block_super+0xa1/0x100 fs/super.c:1407
+ deactivate_locked_super+0x98/0x160 fs/super.c:331
+ deactivate_super+0xb1/0xd0 fs/super.c:362
+ cleanup_mnt+0x2ae/0x3d0 fs/namespace.c:1177
+ task_work_run+0x16f/0x270 kernel/task_work.c:179
+ resume_user_mode_work include/linux/resume_user_mode.h:49 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:171 [inline]
+ exit_to_user_mode_prepare+0x210/0x240 kernel/entry/common.c:204
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:286 [inline]
+ syscall_exit_to_user_mode+0x1d/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x46/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f3f24b324a7
+RSP: 002b:00007ffd5bfa1db8 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 00000000001154d0 RCX: 00007f3f24b324a7
+RDX: 00007ffd5bfa1e79 RSI: 000000000000000a RDI: 00007ffd5bfa1e70
+RBP: 00007ffd5bfa1e70 R08: 00000000ffffffff R09: 00007ffd5bfa1c50
+R10: 0000555555a40733 R11: 0000000000000206 R12: 00007ffd5bfa2f30
+R13: 0000555555a406f0 R14: 00007ffd5bfa1de0 R15: 00007ffd5bfa2f50
+ </TASK>
+
+Showing all locks held in the system:
+2 locks held by kworker/u4:0/10:
+ #0: ffff8880b993c3d8 (&rq->__lock){-.-.}-{2:2}, at: raw_spin_rq_lock_nested+0x2f/0x120 kernel/sched/core.c:558
+ #1: ffff8880b9928848 (&per_cpu_ptr(group->pcpu, cpu)->seq){-.-.}-{0:0}, at: psi_task_switch+0x2de/0x950 kernel/sched/psi.c:996
+4 locks held by kworker/u4:1/12:
+ #0: ffff888146250938 ((wq_completion)writeback){+.+.}-{0:0}, at: arch_atomic64_set arch/x86/include/asm/atomic64_64.h:34 [inline]
+ #0: ffff888146250938 ((wq_completion)writeback){+.+.}-{0:0}, at: arch_atomic_long_set include/linux/atomic/atomic-long.h:41 [inline]
+ #0: ffff888146250938 ((wq_completion)writeback){+.+.}-{0:0}, at: atomic_long_set include/linux/atomic/atomic-instrumented.h:1324 [inline]
+ #0: ffff888146250938 ((wq_completion)writeback){+.+.}-{0:0}, at: set_work_data kernel/workqueue.c:643 [inline]
+ #0: ffff888146250938 ((wq_completion)writeback){+.+.}-{0:0}, at: set_work_pool_and_clear_pending kernel/workqueue.c:670 [inline]
+ #0: ffff888146250938 ((wq_completion)writeback){+.+.}-{0:0}, at: process_one_work+0x883/0x15e0 kernel/workqueue.c:2376
+ #1: ffffc90000117db0 ((work_completion)(&(&wb->dwork)->work)){+.+.}-{0:0}, at: process_one_work+0x8b7/0x15e0 kernel/workqueue.c:2380
+ #2: ffff888141756b98 (&sbi->s_writepages_rwsem){.+.+}-{0:0}, at: do_writepages+0x1a8/0x640 mm/page-writeback.c:2551
+ #3: 
+ffff88807628f088 (&ei->i_data_sem){++++}-{3:3}, at: ext4_map_blocks+0x707/0x18d0 fs/ext4/inode.c:616
+1 lock held by rcu_tasks_kthre/13:
+ #0: ffffffff8c7984f0 (rcu_tasks.tasks_gp_mutex){+.+.}-{3:3}, at: rcu_tasks_one_gp+0x31/0xd80 kernel/rcu/tasks.h:518
+1 lock held by rcu_tasks_trace/14:
+ #0: ffffffff8c7981f0 (rcu_tasks_trace.tasks_gp_mutex){+.+.}-{3:3}, at: rcu_tasks_one_gp+0x31/0xd80 kernel/rcu/tasks.h:518
+1 lock held by khungtaskd/27:
+ #0: ffffffff8c799100 (rcu_read_lock){....}-{1:2}, at: debug_show_all_locks+0x55/0x340 kernel/locking/lockdep.c:6559
+2 locks held by kworker/1:1/74:
+ #0: 
+ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: arch_atomic64_set arch/x86/include/asm/atomic64_64.h:34 [inline]
+ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: arch_atomic_long_set include/linux/atomic/atomic-long.h:41 [inline]
+ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: atomic_long_set include/linux/atomic/atomic-instrumented.h:1324 [inline]
+ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: set_work_data kernel/workqueue.c:643 [inline]
+ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: set_work_pool_and_clear_pending kernel/workqueue.c:670 [inline]
+ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: process_one_work+0x883/0x15e0 kernel/workqueue.c:2376
+ #1: ffffc900020cfdb0 ((work_completion)(&pwq->unbound_release_work)){+.+.}-{0:0}, at: process_one_work+0x8b7/0x15e0 kernel/workqueue.c:2380
+2 locks held by kworker/1:2/754:
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: arch_atomic64_set arch/x86/include/asm/atomic64_64.h:34 [inline]
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: arch_atomic_long_set include/linux/atomic/atomic-long.h:41 [inline]
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: atomic_long_set include/linux/atomic/atomic-instrumented.h:1324 [inline]
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: set_work_data kernel/workqueue.c:643 [inline]
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: set_work_pool_and_clear_pending kernel/workqueue.c:670 [inline]
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: process_one_work+0x883/0x15e0 kernel/workqueue.c:2376
+ #1: ffffc900045afdb0 ((work_completion)(&pwq->unbound_release_work)){+.+.}-{0:0}, at: process_one_work+0x8b7/0x15e0 kernel/workqueue.c:2380
+2 locks held by kworker/0:2/897:
+ #0: ffff888012472538 ((wq_completion)rcu_gp){+.+.}-{0:0}, at: arch_atomic64_set arch/x86/include/asm/atomic64_64.h:34 [inline]
+ #0: ffff888012472538 ((wq_completion)rcu_gp){+.+.}-{0:0}, at: arch_atomic_long_set include/linux/atomic/atomic-long.h:41 [inline]
+ #0: ffff888012472538 ((wq_completion)rcu_gp){+.+.}-{0:0}, at: atomic_long_set include/linux/atomic/atomic-instrumented.h:1324 [inline]
+ #0: ffff888012472538 ((wq_completion)rcu_gp){+.+.}-{0:0}, at: set_work_data kernel/workqueue.c:643 [inline]
+ #0: ffff888012472538 ((wq_completion)rcu_gp){+.+.}-{0:0}, at: set_work_pool_and_clear_pending kernel/workqueue.c:670 [inline]
+ #0: ffff888012472538 ((wq_completion)rcu_gp){+.+.}-{0:0}, at: process_one_work+0x883/0x15e0 kernel/workqueue.c:2376
+ #1: ffffc90004c97db0 ((work_completion)(&rew->rew_work)){+.+.}-{0:0}, at: process_one_work+0x8b7/0x15e0 kernel/workqueue.c:2380
+3 locks held by klogd/4444:
+ #0: ffff8880b993c3d8 (&rq->__lock){-.-.}-{2:2}, at: raw_spin_rq_lock_nested+0x2f/0x120 kernel/sched/core.c:558
+ #1: ffff8880b9928848 (&per_cpu_ptr(group->pcpu, cpu)->seq){-.-.}-{0:0}, at: psi_task_switch+0x2de/0x950 kernel/sched/psi.c:996
+ #2: ffff88807e26a7c0 (&p->pi_lock){-.-.}-{2:2}, at: try_to_wake_up+0xab/0x1c40 kernel/sched/core.c:4191
+2 locks held by getty/4755:
+ #0: ffff88802c6b0098 (&tty->ldisc_sem){++++}-{0:0}, at: tty_ldisc_ref_wait+0x26/0x80 drivers/tty/tty_ldisc.c:243
+ #1: ffffc900015a02f0 (&ldata->atomic_read_lock){+.+.}-{3:3}, at: n_tty_read+0xef4/0x13e0 drivers/tty/n_tty.c:2176
+1 lock held by syz-executor144/5055:
+ #0: ffffffff8c7a4578 (rcu_state.exp_mutex){+.+.}-{3:3}, at: exp_funnel_lock kernel/rcu/tree_exp.h:325 [inline]
+ #0: ffffffff8c7a4578 (rcu_state.exp_mutex){+.+.}-{3:3}, at: synchronize_rcu_expedited+0x3e8/0x770 kernel/rcu/tree_exp.h:992
+2 locks held by syz-executor144/5058:
+ #0: ffff888141b1a0e0 (&type->s_umount_key#31){++++}-{3:3}, at: deactivate_super+0xa9/0xd0 fs/super.c:361
+ #1: ffff88814074c7d0 (&bdi->wb_switch_rwsem){+.+.}-{3:3}, at: bdi_down_write_wb_switch_rwsem fs/fs-writeback.c:364 [inline]
+ #1: ffff88814074c7d0 (&bdi->wb_switch_rwsem){+.+.}-{3:3}, at: sync_inodes_sb+0x190/0xa60 fs/fs-writeback.c:2728
+2 locks held by kworker/1:3/5122:
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: arch_atomic64_set arch/x86/include/asm/atomic64_64.h:34 [inline]
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: arch_atomic_long_set include/linux/atomic/atomic-long.h:41 [inline]
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: atomic_long_set include/linux/atomic/atomic-instrumented.h:1324 [inline]
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: set_work_data kernel/workqueue.c:643 [inline]
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: set_work_pool_and_clear_pending kernel/workqueue.c:670 [inline]
+ #0: ffff888012470d38 ((wq_completion)events){+.+.}-{0:0}, at: process_one_work+0x883/0x15e0 kernel/workqueue.c:2376
+ #1: ffffc900040ffdb0 ((work_completion)(&pwq->unbound_release_work)){+.+.}-{0:0}, at: process_one_work+0x8b7/0x15e0 kernel/workqueue.c:2380
+2 locks held by kworker/u4:9/5230:
+ #0: ffff888012479138 ((wq_completion)events_unbound){+.+.}-{0:0}, at: arch_atomic64_set arch/x86/include/asm/atomic64_64.h:34 [inline]
+ #0: ffff888012479138 ((wq_completion)events_unbound){+.+.}-{0:0}, at: arch_atomic_long_set include/linux/atomic/atomic-long.h:41 [inline]
+ #0: ffff888012479138 ((wq_completion)events_unbound){+.+.}-{0:0}, at: atomic_long_set include/linux/atomic/atomic-instrumented.h:1324 [inline]
+ #0: ffff888012479138 ((wq_completion)events_unbound){+.+.}-{0:0}, at: set_work_data kernel/workqueue.c:643 [inline]
+ #0: ffff888012479138 ((wq_completion)events_unbound){+.+.}-{0:0}, at: set_work_pool_and_clear_pending kernel/workqueue.c:670 [inline]
+ #0: ffff888012479138 ((wq_completion)events_unbound){+.+.}-{0:0}, at: process_one_work+0x883/0x15e0 kernel/workqueue.c:2376
+ #1: ffff8880b9928848 (&per_cpu_ptr(group->pcpu, cpu)->seq){-.-.}-{0:0}, at: psi_task_switch+0x2de/0x950 kernel/sched/psi.c:996
+
+=============================================
+
+NMI backtrace for cpu 1
+CPU: 1 PID: 27 Comm: khungtaskd Not tainted 6.4.0-rc7-syzkaller-00072-gdad9774deaf1 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/27/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x150 lib/dump_stack.c:106
+ nmi_cpu_backtrace+0x29c/0x350 lib/nmi_backtrace.c:113
+ nmi_trigger_cpumask_backtrace+0x2a4/0x300 lib/nmi_backtrace.c:62
+ trigger_all_cpu_backtrace include/linux/nmi.h:148 [inline]
+ check_hung_uninterruptible_tasks kernel/hung_task.c:222 [inline]
+ watchdog+0xe16/0x1090 kernel/hung_task.c:379
+ kthread+0x344/0x440 kernel/kthread.c:379
+ ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308
+ </TASK>
+Sending NMI from CPU 1 to CPUs 0:
+NMI backtrace for cpu 0
+CPU: 0 PID: 5053 Comm: syz-executor144 Not tainted 6.4.0-rc7-syzkaller-00072-gdad9774deaf1 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/27/2023
+RIP: 0010:kernel_text_address+0x5/0x80 kernel/extable.c:95
+Code: 00 00 5b 44 89 e0 41 5c c3 48 c7 c7 84 60 7a 8e e8 e0 23 82 00 eb c3 66 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 00 66 0f 1f 00 55 <48> 89 fd 48 83 ec 08 e8 4f ff ff ff 85 c0 74 0b 48 83 c4 08 b8 01
+RSP: 0018:ffffc90003a5f6e8 EFLAGS: 00000246
+RAX: dffffc0000000000 RBX: ffffffff81e6cb91 RCX: 0000000000000000
+RDX: 1ffff9200074beed RSI: ffffc90003a5fde0 RDI: ffffffff81e6cb91
+RBP: ffffc90003a5f768 R08: 0000000000000001 R09: ffffc90003a5fdf0
+R10: ffffc90003a5f720 R11: 0000000000094001 R12: ffffc90003a5f7d8
+R13: 0000000000000000 R14: ffff888027839dc0 R15: 0000000000000000
+FS:  0000555555a3f400(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f3f1c7b3718 CR3: 0000000029d2c000 CR4: 0000000000350ef0
+Call Trace:
+ <NMI>
+ </NMI>
+ <TASK>
+ __kernel_text_address+0xd/0x30 kernel/extable.c:79
+ unwind_get_return_address arch/x86/kernel/unwind_orc.c:341 [inline]
+ unwind_get_return_address+0x55/0xa0 arch/x86/kernel/unwind_orc.c:336
+ arch_stack_walk+0x97/0xf0 arch/x86/kernel/stacktrace.c:26
+ stack_trace_save+0x90/0xc0 kernel/stacktrace.c:122
+ kasan_save_stack+0x22/0x40 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ __kasan_slab_alloc+0x7f/0x90 mm/kasan/common.c:328
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:711 [inline]
+ slab_alloc_node mm/slub.c:3451 [inline]
+ slab_alloc mm/slub.c:3459 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3466 [inline]
+ kmem_cache_alloc+0x17c/0x3b0 mm/slub.c:3475
+ mempool_alloc+0x158/0x360 mm/mempool.c:398
+ bio_alloc_bioset+0x41e/0x900 block/bio.c:543
+ bio_alloc include/linux/bio.h:427 [inline]
+ submit_bh_wbc+0x281/0x650 fs/buffer.c:2757
+ ext4_commit_super+0x329/0x560 fs/ext4/super.c:6144
+ ext4_put_super+0xafe/0xf00 fs/ext4/super.c:1310
+ generic_shutdown_super+0x158/0x480 fs/super.c:500
+ kill_block_super+0xa1/0x100 fs/super.c:1407
+ deactivate_locked_super+0x98/0x160 fs/super.c:331
+ deactivate_super+0xb1/0xd0 fs/super.c:362
+ cleanup_mnt+0x2ae/0x3d0 fs/namespace.c:1177
+ task_work_run+0x16f/0x270 kernel/task_work.c:179
+ resume_user_mode_work include/linux/resume_user_mode.h:49 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:171 [inline]
+ exit_to_user_mode_prepare+0x210/0x240 kernel/entry/common.c:204
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:286 [inline]
+ syscall_exit_to_user_mode+0x1d/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x46/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f3f24b324a7
+Code: ff d0 48 89 c7 b8 3c 00 00 00 0f 05 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48 83 c8 ff c3 66 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd5bfa1db8 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 000000000013aab9 RCX: 00007f3f24b324a7
+RDX: 00007ffd5bfa1e79 RSI: 000000000000000a RDI: 00007ffd5bfa1e70
+RBP: 00007ffd5bfa1e70 R08: 00000000ffffffff R09: 00007ffd5bfa1c50
+R10: 0000555555a40733 R11: 0000000000000206 R12: 00007ffd5bfa2f30
+R13: 0000555555a406f0 R14: 00007ffd5bfa1de0 R15: 00007ffd5bfa2f50
+ </TASK>

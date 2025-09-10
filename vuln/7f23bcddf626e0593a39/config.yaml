@@ -1,0 +1,50 @@
+id: 7f23bcddf626e0593a39
+bug_link: https://syzkaller.appspot.com/bug?extid=7f23bcddf626e0593a39
+title: general protection fault in nfc_alloc_send_skb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8c8963b27e685ec5d45696e51f95947a8c413727
+fix_commit: dded08927ca3c31a5c37f8e7f95fe98770475dd4
+datetime: '2022-01-19T14:11:30+00:00'
+fix_commit_message: "nfc: llcp: fix NULL error pointer dereference on sendmsg() after\
+  \ failed bind()\n\nSyzbot detected a NULL pointer dereference of nfc_llcp_sock->dev\
+  \ pointer\n(which is a 'struct nfc_dev *') with calls to llcp_sock_sendmsg() after\n\
+  a failed llcp_sock_bind(). The message being sent is a SOCK_DGRAM.\n\nKASAN report:\n\
+  \n  BUG: KASAN: null-ptr-deref in nfc_alloc_send_skb+0x2d/0xc0\n  Read of size 4\
+  \ at addr 00000000000005c8 by task llcp_sock_nfc_a/899\n\n  CPU: 5 PID: 899 Comm:\
+  \ llcp_sock_nfc_a Not tainted 5.16.0-rc6-next-20211224-00001-gc6437fbf18b0 #125\n\
+  \  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.14.0-2 04/01/2014\n\
+  \  Call Trace:\n   <TASK>\n   dump_stack_lvl+0x45/0x59\n   ? nfc_alloc_send_skb+0x2d/0xc0\n\
+  \   __kasan_report.cold+0x117/0x11c\n   ? mark_lock+0x480/0x4f0\n   ? nfc_alloc_send_skb+0x2d/0xc0\n\
+  \   kasan_report+0x38/0x50\n   nfc_alloc_send_skb+0x2d/0xc0\n   nfc_llcp_send_ui_frame+0x18c/0x2a0\n\
+  \   ? nfc_llcp_send_i_frame+0x230/0x230\n   ? __local_bh_enable_ip+0x86/0xe0\n \
+  \  ? llcp_sock_connect+0x470/0x470\n   ? llcp_sock_connect+0x470/0x470\n   sock_sendmsg+0x8e/0xa0\n\
+  \   ____sys_sendmsg+0x253/0x3f0\n   ...\n\nThe issue was visible only with multiple\
+  \ simultaneous calls to bind() and\nsendmsg(), which resulted in most of the bind()\
+  \ calls to fail.  The\nbind() was failing on checking if there is available WKS/SDP/SAP\n\
+  (respective bit in 'struct nfc_llcp_local' fields).  When there was no\navailable\
+  \ WKS/SDP/SAP, the bind returned error but the sendmsg() to such\nsocket was able\
+  \ to trigger mentioned NULL pointer dereference of\nnfc_llcp_sock->dev.\n\nThe code\
+  \ looks simply racy and currently it protects several paths\nagainst race with checks\
+  \ for (!nfc_llcp_sock->local) which is NULL-ified\nin error paths of bind().  The\
+  \ llcp_sock_sendmsg() did not have such\ncheck but called function nfc_llcp_send_ui_frame()\
+  \ had, although not\nprotected with lock_sock().\n\nTherefore the race could look\
+  \ like (same socket is used all the time):\n  CPU0                             \
+  \        CPU1\n  ====                                     ====\n  llcp_sock_bind()\n\
+  \  - lock_sock()\n    - success\n  - release_sock()\n  - return 0\n            \
+  \                               llcp_sock_sendmsg()\n                          \
+  \                 - lock_sock()\n                                           - release_sock()\n\
+  \  llcp_sock_bind(), same socket\n  - lock_sock()\n    - error\n               \
+  \                            - nfc_llcp_send_ui_frame()\n                      \
+  \                       - if (!llcp_sock->local)\n    - llcp_sock->local = NULL\n\
+  \    - nfc_put_device(dev)\n                                             - dereference\
+  \ llcp_sock->dev\n  - release_sock()\n  - return -ERRNO\n\nThe nfc_llcp_send_ui_frame()\
+  \ checked llcp_sock->local outside of the\nlock, which is racy and ineffective check.\
+  \  Instead, its caller\nllcp_sock_sendmsg(), should perform the check inside lock_sock().\n\
+  \nReported-and-tested-by: syzbot+7f23bcddf626e0593a39@syzkaller.appspotmail.com\n\
+  Fixes: b874dec21d1c (\"NFC: Implement LLCP connection less Tx path\")\nCc: <stable@vger.kernel.org>\n\
+  Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>\nSigned-off-by:\
+  \ David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/nfc
+hunk_count: 1
+covered_count: 1

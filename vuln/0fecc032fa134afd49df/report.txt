@@ -1,0 +1,73 @@
+BTRFS warning (device loop2 state EA): Skipping commit of aborted transaction.
+BTRFS: error (device loop2 state EA) in cleanup_transaction:1999: errno=-5 IO failure
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 5237 at fs/btrfs/transaction.c:146 btrfs_put_transaction+0x3d5/0x4d0 fs/btrfs/transaction.c:146
+Modules linked in:
+CPU: 1 PID: 5237 Comm: syz-executor.2 Not tainted 6.10.0-rc1-syzkaller-00027-g4a4be1ad3a6e #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+RIP: 0010:btrfs_put_transaction+0x3d5/0x4d0 fs/btrfs/transaction.c:146
+Code: fe 90 0f 0b 90 e9 b4 fc ff ff 4c 89 e7 e8 43 3e 5f fe e9 93 fc ff ff 48 89 df e8 66 3e 5f fe e9 2a fd ff ff e8 bc 0b 02 fe 90 <0f> 0b 90 e9 97 fd ff ff e8 ae 0b 02 fe 90 0f 0b 90 e9 49 ff ff ff
+RSP: 0018:ffffc90002d7fb38 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: ffff88802b0af028 RCX: ffffffff838c7071
+RDX: ffff888019844880 RSI: ffffffff838c73b4 RDI: ffff88802b0af320
+RBP: ffff88802b0af000 R08: 0000000000000005 R09: 0000000000000001
+R10: 0000000000000001 R11: 0000000000000001 R12: ffff88802b0af010
+R13: ffff888000e94bf8 R14: ffff888000e94520 R15: ffff888000e94cc8
+FS:  0000000000000000(0000) GS:ffff88802c100000(0063) knlGS:000000005816a400
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 000000005816b000 CR3: 0000000043444000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ cleanup_transaction fs/btrfs/transaction.c:2047 [inline]
+ btrfs_commit_transaction+0xdf4/0x3b40 fs/btrfs/transaction.c:2582
+ btrfs_sync_fs+0x13b/0x7c0 fs/btrfs/super.c:1014
+ sync_filesystem+0x1cc/0x290 fs/sync.c:66
+ generic_shutdown_super+0x7e/0x3d0 fs/super.c:621
+ kill_anon_super+0x3a/0x60 fs/super.c:1226
+ btrfs_kill_super+0x3b/0x50 fs/btrfs/super.c:2096
+ deactivate_locked_super+0xbe/0x1a0 fs/super.c:473
+ deactivate_super+0xde/0x100 fs/super.c:506
+ cleanup_mnt+0x222/0x450 fs/namespace.c:1267
+ task_work_run+0x14e/0x250 kernel/task_work.c:180
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:114 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x278/0x2a0 kernel/entry/common.c:218
+ __do_fast_syscall_32+0x80/0x120 arch/x86/entry/common.c:389
+ do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+ entry_SYSENTER_compat_after_hwframe+0x84/0x8e
+RIP: 0023:0xf729a579
+Code: b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
+RSP: 002b:00000000ff98d248 EFLAGS: 00000292 ORIG_RAX: 0000000000000034
+RAX: 0000000000000000 RBX: 00000000ff98d2f0 RCX: 0000000000000009
+RDX: 00000000f73f0ff4 RSI: 00000000f7341361 RDI: 00000000ff98e394
+RBP: 00000000ff98d2f0 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000292 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+----------------
+Code disassembly (best guess), 2 bytes skipped:
+   0:	10 06                	adc    %al,(%rsi)
+   2:	03 74 b4 01          	add    0x1(%rsp,%rsi,4),%esi
+   6:	10 07                	adc    %al,(%rdi)
+   8:	03 74 b0 01          	add    0x1(%rax,%rsi,4),%esi
+   c:	10 08                	adc    %cl,(%rax)
+   e:	03 74 d8 01          	add    0x1(%rax,%rbx,8),%esi
+  1e:	00 51 52             	add    %dl,0x52(%rcx)
+  21:	55                   	push   %rbp
+  22:	89 e5                	mov    %esp,%ebp
+  24:	0f 34                	sysenter
+  26:	cd 80                	int    $0x80
+* 28:	5d                   	pop    %rbp <-- trapping instruction
+  29:	5a                   	pop    %rdx
+  2a:	59                   	pop    %rcx
+  2b:	c3                   	ret
+  2c:	90                   	nop
+  2d:	90                   	nop
+  2e:	90                   	nop
+  2f:	90                   	nop
+  30:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi
+  37:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi

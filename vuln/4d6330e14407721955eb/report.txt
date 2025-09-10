@@ -1,0 +1,46 @@
+------------[ cut here ]------------
+verifier backtracking bug
+WARNING: CPU: 1 PID: 5060 at kernel/bpf/verifier.c:3681 backtrack_insn kernel/bpf/verifier.c:3681 [inline]
+WARNING: CPU: 1 PID: 5060 at kernel/bpf/verifier.c:3681 __mark_chain_precision+0x3c4b/0x4d70 kernel/bpf/verifier.c:4222
+Modules linked in:
+CPU: 1 PID: 5060 Comm: syz-executor147 Not tainted 6.7.0-rc5-syzkaller-01540-g5abde6246522 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+RIP: 0010:backtrack_insn kernel/bpf/verifier.c:3681 [inline]
+RIP: 0010:__mark_chain_precision+0x3c4b/0x4d70 kernel/bpf/verifier.c:4222
+Code: ff 89 de e8 67 df ec ff 84 db 0f 85 60 cf ff ff e8 2a e4 ec ff c6 05 b4 89 68 0d 01 90 48 c7 c7 40 22 d4 8a e8 e6 01 b3 ff 90 <0f> 0b 90 90 e9 42 cf ff ff 48 89 ee 48 c7 c7 a0 da 05 8d e8 3d 36
+RSP: 0018:ffffc900040d7458 EFLAGS: 00010282
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffffffff814dbd09
+RDX: ffff888018bd0000 RSI: ffffffff814dbd16 RDI: 0000000000000001
+RBP: 0000000000000400 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000001 R12: dffffc0000000000
+R13: 0000000000000001 R14: 0000000000000001 R15: 0000000000000000
+FS:  0000555556caf380(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000918398 CR3: 0000000076b67000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ mark_chain_precision kernel/bpf/verifier.c:4325 [inline]
+ check_return_code+0x8fa/0x11a0 kernel/bpf/verifier.c:15318
+ do_check kernel/bpf/verifier.c:17612 [inline]
+ do_check_common+0x8a17/0xc590 kernel/bpf/verifier.c:20092
+ do_check_main kernel/bpf/verifier.c:20183 [inline]
+ bpf_check+0x4fa4/0xa330 kernel/bpf/verifier.c:20820
+ bpf_prog_load+0x1534/0x2200 kernel/bpf/syscall.c:2753
+ __sys_bpf+0xbf7/0x4a00 kernel/bpf/syscall.c:5427
+ __do_sys_bpf kernel/bpf/syscall.c:5531 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5529 [inline]
+ __x64_sys_bpf+0x78/0xc0 kernel/bpf/syscall.c:5529
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x40/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7efe26d97469
+Code: 48 83 c4 28 c3 e8 37 17 00 00 0f 1f 80 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd22e83018 EFLAGS: 00000246 ORIG_RAX: 0000000000000141
+RAX: ffffffffffffffda RBX: 00007ffd22e831f8 RCX: 00007efe26d97469
+RDX: 0000000000000090 RSI: 0000000020000600 RDI: 0000000000000005
+RBP: 00007efe26e0a610 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffd22e831e8 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>

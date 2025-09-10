@@ -1,0 +1,47 @@
+id: a8430774139ec3ab7176
+bug_link: https://syzkaller.appspot.com/bug?extid=a8430774139ec3ab7176
+title: memory leak in ipv6_renew_options
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 51a83391d77bb0f7ff0aef06ca4c7f5aa9e80b4c
+fix_commit: e27326009a3d247b831eda38878c777f6f4eb3d1
+datetime: '2022-07-28T10:42:08-07:00'
+fix_commit_message: "net: ping6: Fix memleak in ipv6_renew_options().\n\nWhen we close\
+  \ ping6 sockets, some resources are left unfreed because\npingv6_prot is missing\
+  \ sk->sk_prot->destroy().  As reported by\nsyzbot [0], just three syscalls leak\
+  \ 96 bytes and easily cause OOM.\n\n    struct ipv6_sr_hdr *hdr;\n    char data[24]\
+  \ = {0};\n    int fd;\n\n    hdr = (struct ipv6_sr_hdr *)data;\n    hdr->hdrlen\
+  \ = 2;\n    hdr->type = IPV6_SRCRT_TYPE_4;\n\n    fd = socket(AF_INET6, SOCK_DGRAM,\
+  \ NEXTHDR_ICMP);\n    setsockopt(fd, IPPROTO_IPV6, IPV6_RTHDR, data, 24);\n    close(fd);\n\
+  \nTo fix memory leaks, let's add a destroy function.\n\nNote the socket() syscall\
+  \ checks if the GID is within the range of\nnet.ipv4.ping_group_range.  The default\
+  \ value is [1, 0] so that no\nGID meets the condition (1 <= GID <= 0).  Thus, the\
+  \ local DoS does\nnot succeed until we change the default value.  However, at least\n\
+  Ubuntu/Fedora/RHEL loosen it.\n\n    $ cat /usr/lib/sysctl.d/50-default.conf\n \
+  \   ...\n    -net.ipv4.ping_group_range = 0 2147483647\n\nAlso, there could be another\
+  \ path reported with these options, and\nsome of them require CAP_NET_RAW.\n\n \
+  \ setsockopt\n      IPV6_ADDRFORM (inet6_sk(sk)->pktoptions)\n      IPV6_RECVPATHMTU\
+  \ (inet6_sk(sk)->rxpmtu)\n      IPV6_HOPOPTS (inet6_sk(sk)->opt)\n      IPV6_RTHDRDSTOPTS\
+  \ (inet6_sk(sk)->opt)\n      IPV6_RTHDR (inet6_sk(sk)->opt)\n      IPV6_DSTOPTS\
+  \ (inet6_sk(sk)->opt)\n      IPV6_2292PKTOPTIONS (inet6_sk(sk)->opt)\n\n  getsockopt\n\
+  \      IPV6_FLOWLABEL_MGR (inet6_sk(sk)->ipv6_fl_list)\n\nFor the record, I left\
+  \ a different splat with syzbot's one.\n\n  unreferenced object 0xffff888006270c60\
+  \ (size 96):\n    comm \"repro2\", pid 231, jiffies 4294696626 (age 13.118s)\n \
+  \   hex dump (first 32 bytes):\n      01 00 00 00 44 00 00 00 00 00 00 00 00 00\
+  \ 00 00  ....D...........\n      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\
+  \  ................\n    backtrace:\n      [<00000000f6bc7ea9>] sock_kmalloc (net/core/sock.c:2564\
+  \ net/core/sock.c:2554)\n      [<000000006d699550>] do_ipv6_setsockopt.constprop.0\
+  \ (net/ipv6/ipv6_sockglue.c:715)\n      [<00000000c3c3b1f5>] ipv6_setsockopt (net/ipv6/ipv6_sockglue.c:1024)\n\
+  \      [<000000007096a025>] __sys_setsockopt (net/socket.c:2254)\n      [<000000003a8ff47b>]\
+  \ __x64_sys_setsockopt (net/socket.c:2265 net/socket.c:2262 net/socket.c:2262)\n\
+  \      [<000000007c409dcb>] do_syscall_64 (arch/x86/entry/common.c:50 arch/x86/entry/common.c:80)\n\
+  \      [<00000000e939c4a9>] entry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:120)\n\
+  \n[0]: https://syzkaller.appspot.com/bug?extid=a8430774139ec3ab7176\n\nFixes: 6d0bfe226116\
+  \ (\"net: ipv6: Add IPv6 support to the ping socket.\")\nReported-by: syzbot+a8430774139ec3ab7176@syzkaller.appspotmail.com\n\
+  Reported-by: Ayushman Dutta <ayudutta@amazon.com>\nSigned-off-by: Kuniyuki Iwashima\
+  \ <kuniyu@amazon.com>\nReviewed-by: David Ahern <dsahern@kernel.org>\nReviewed-by:\
+  \ Eric Dumazet <edumazet@google.com>\nLink: https://lore.kernel.org/r/20220728012220.46918-1-kuniyu@amazon.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/ipv6
+hunk_count: 2
+covered_count: 0

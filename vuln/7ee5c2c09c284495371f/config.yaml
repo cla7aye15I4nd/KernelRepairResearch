@@ -1,0 +1,54 @@
+id: 7ee5c2c09c284495371f
+bug_link: https://syzkaller.appspot.com/bug?extid=7ee5c2c09c284495371f
+title: 'WARNING: suspicious RCU usage in bpf_get_current_cgroup_id'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 519133debcc19f5c834e7e28480b60bdc234fe02
+fix_commit: 2d3a1e3615c5449a4583010f41a6f824a4ffa03e
+datetime: '2021-08-11T11:45:43-07:00'
+fix_commit_message: "bpf: Add rcu_read_lock in bpf_get_current_[ancestor_]cgroup_id()\
+  \ helpers\n\nCurrently, if bpf_get_current_cgroup_id() or\nbpf_get_current_ancestor_cgroup_id()\
+  \ helper is\ncalled with sleepable programs e.g., sleepable\nfentry/fmod_ret/fexit/lsm\
+  \ programs, a rcu warning\nmay appear. For example, if I added the following\nhack\
+  \ to test_progs/test_lsm sleepable fentry program\ntest_sys_setdomainname:\n\n \
+  \ --- a/tools/testing/selftests/bpf/progs/lsm.c\n  +++ b/tools/testing/selftests/bpf/progs/lsm.c\n\
+  \  @@ -168,6 +168,10 @@ int BPF_PROG(test_sys_setdomainname, struct pt_regs *regs)\n\
+  \          int buf = 0;\n          long ret;\n\n  +       __u64 cg_id = bpf_get_current_cgroup_id();\n\
+  \  +       if (cg_id == 1000)\n  +               copy_test++;\n  +\n          ret\
+  \ = bpf_copy_from_user(&buf, sizeof(buf), ptr);\n          if (len == -2 && ret\
+  \ == 0 && buf == 1234)\n                  copy_test++;\n\nI will hit the following\
+  \ rcu warning:\n\n  include/linux/cgroup.h:481 suspicious rcu_dereference_check()\
+  \ usage!\n  other info that might help us debug this:\n    rcu_scheduler_active\
+  \ = 2, debug_locks = 1\n    1 lock held by test_progs/260:\n      #0: ffffffffa5173360\
+  \ (rcu_read_lock_trace){....}-{0:0}, at: __bpf_prog_enter_sleepable+0x0/0xa0\n \
+  \   stack backtrace:\n    CPU: 1 PID: 260 Comm: test_progs Tainted: G          \
+  \ O      5.14.0-rc2+ #176\n    Hardware name: QEMU Standard PC (i440FX + PIIX, 1996),\
+  \ BIOS rel-1.14.0-0-g155821a1990b-prebuilt.qemu.org 04/01/2014\n    Call Trace:\n\
+  \      dump_stack_lvl+0x56/0x7b\n      bpf_get_current_cgroup_id+0x9c/0xb1\n   \
+  \   bpf_prog_a29888d1c6706e09_test_sys_setdomainname+0x3e/0x89c\n      bpf_trampoline_6442469132_0+0x2d/0x1000\n\
+  \      __x64_sys_setdomainname+0x5/0x110\n      do_syscall_64+0x3a/0x80\n      entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \nI can get similar warning using bpf_get_current_ancestor_cgroup_id() helper.\n\
+  syzbot reported a similar issue in [1] for syscall program. Helper\nbpf_get_current_cgroup_id()\
+  \ or bpf_get_current_ancestor_cgroup_id()\nhas the following callchain:\n   task_dfl_cgroup\n\
+  \     task_css_set\n       task_css_set_check\nand we have\n   #define task_css_set_check(task,\
+  \ __c)                                   \\\n           rcu_dereference_check((task)->cgroups,\
+  \                          \\\n                   lockdep_is_held(&cgroup_mutex)\
+  \ ||                       \\\n                   lockdep_is_held(&css_set_lock)\
+  \ ||                       \\\n                   ((task)->flags & PF_EXITING) ||\
+  \ (__c))\nSince cgroup_mutex/css_set_lock is not held and the task\nis not existing\
+  \ and rcu read_lock is not held, a warning\nwill be issued. Note that bpf sleepable\
+  \ program is protected by\nrcu_read_lock_trace().\n\nThe above sleepable bpf programs\
+  \ are already protected\nby migrate_disable(). Adding rcu_read_lock() in these\n\
+  two helpers will silence the above warning.\nI marked the patch fixing 95b861a7935b\n\
+  (\"bpf: Allow bpf_get_current_ancestor_cgroup_id for tracing\")\nwhich added bpf_get_current_ancestor_cgroup_id()\
+  \ to tracing programs\nin 5.14. I think backporting 5.14 is probably good enough\
+  \ as sleepable\nprogrems are not widely used.\n\nThis patch should fix [1] as well\
+  \ since syscall program is a sleepable\nprogram protected with migrate_disable().\n\
+  \n [1] https://lore.kernel.org/bpf/0000000000006d5cab05c7d9bb87@google.com/\n\n\
+  Fixes: 95b861a7935b (\"bpf: Allow bpf_get_current_ancestor_cgroup_id for tracing\"\
+  )\nReported-by: syzbot+7ee5c2c09c284495371f@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Yonghong Song <yhs@fb.com>\nSigned-off-by: Andrii Nakryiko <andrii@kernel.org>\n\
+  Link: https://lore.kernel.org/bpf/20210810230537.2864668-1-yhs@fb.com\n"
+submodule:
+- kernel/bpf
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,55 @@
+id: 10a9db47c3a0e13eb31c
+bug_link: https://syzkaller.appspot.com/bug?extid=10a9db47c3a0e13eb31c
+title: 'KASAN: use-after-free Read in tipc_group_bc_cong'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 65cab850f0eeaa9180bd2e10a231964f33743edf
+fix_commit: 143ece654f9f5b37bedea252a990be37e48ae3a5
+datetime: '2018-12-14T15:48:49-08:00'
+fix_commit_message: 'tipc: check tsk->group in tipc_wait_for_cond()
+
+
+  tipc_wait_for_cond() drops socket lock before going to sleep,
+
+  but tsk->group could be freed right after that release_sock().
+
+  So we have to re-check and reload tsk->group after it wakes up.
+
+
+  After this patch, tipc_wait_for_cond() returns -ERESTARTSYS when
+
+  tsk->group is NULL, instead of continuing with the assumption of
+
+  a non-NULL tsk->group.
+
+
+  (It looks like ''dsts'' should be re-checked and reloaded too, but
+
+  it is a different bug.)
+
+
+  Similar for tipc_send_group_unicast() and tipc_send_group_anycast().
+
+
+  Reported-by: syzbot+10a9db47c3a0e13eb31c@syzkaller.appspotmail.com
+
+  Fixes: b7d42635517f ("tipc: introduce flow control for group broadcast messages")
+
+  Fixes: ee106d7f942d ("tipc: introduce group anycast messaging")
+
+  Fixes: 27bd9ec027f3 ("tipc: introduce group unicast messaging")
+
+  Cc: Ying Xue <ying.xue@windriver.com>
+
+  Cc: Jon Maloy <jon.maloy@ericsson.com>
+
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+
+  Acked-by: Ying Xue <ying.xue@windriver.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/tipc
+hunk_count: 9
+covered_count: 4

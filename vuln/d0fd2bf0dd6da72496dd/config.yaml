@@ -1,0 +1,81 @@
+id: d0fd2bf0dd6da72496dd
+bug_link: https://syzkaller.appspot.com/bug?extid=d0fd2bf0dd6da72496dd
+title: WARNING in c_start
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1501278bb7ba0728b869d3399ea94b67853256a2
+fix_commit: 80493877d7d0ae0cbe62921d748682811c58026f
+datetime: '2022-10-16T10:45:17-07:00'
+fix_commit_message: 'Revert "cpumask: fix checking valid cpu range".
+
+
+  This reverts commit 78e5a3399421 ("cpumask: fix checking valid cpu range").
+
+
+  syzbot is hitting WARN_ON_ONCE(cpu >= nr_cpumask_bits) warning at
+
+  cpu_max_bits_warn() [1], for commit 78e5a3399421 ("cpumask: fix checking
+
+  valid cpu range") is broken.  Obviously that patch hits WARN_ON_ONCE()
+
+  when e.g.  reading /proc/cpuinfo because passing "cpu + 1" instead of
+
+  "cpu" will trivially hit cpu == nr_cpumask_bits condition.
+
+
+  Although syzbot found this problem in linux-next.git on 2022/09/27 [2],
+
+  this problem was not fixed immediately.  As a result, that patch was
+
+  sent to linux.git before the patch author recognizes this problem, and
+
+  syzbot started failing to test changes in linux.git since 2022/10/10
+
+  [3].
+
+
+  Andrew Jones proposed a fix for x86 and riscv architectures [4].  But
+
+  [2] and [5] indicate that affected locations are not limited to arch
+
+  code.  More delay before we find and fix affected locations, less tested
+
+  kernel (and more difficult to bisect and fix) before release.
+
+
+  We should have inspected and fixed basically all cpumask users before
+
+  applying that patch.  We should not crash kernels in order to ask
+
+  existing cpumask users to update their code, even if limited to
+
+  CONFIG_DEBUG_PER_CPU_MAPS=y case.
+
+
+  Link: https://syzkaller.appspot.com/bug?extid=d0fd2bf0dd6da72496dd [1]
+
+  Link: https://syzkaller.appspot.com/bug?extid=21da700f3c9f0bc40150 [2]
+
+  Link: https://syzkaller.appspot.com/bug?extid=51a652e2d24d53e75734 [3]
+
+  Link: https://lkml.kernel.org/r/20221014155845.1986223-1-ajones@ventanamicro.com
+  [4]
+
+  Link: https://syzkaller.appspot.com/bug?extid=4d46c43d81c3bd155060 [5]
+
+  Reported-by: Andrew Jones <ajones@ventanamicro.com>
+
+  Reported-by: syzbot+d0fd2bf0dd6da72496dd@syzkaller.appspotmail.com
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Cc: Yury Norov <yury.norov@gmail.com>
+
+  Cc: Borislav Petkov <bp@alien8.de>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- include/linux
+hunk_count: 4
+covered_count: 2

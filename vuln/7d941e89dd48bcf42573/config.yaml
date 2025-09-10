@@ -1,0 +1,46 @@
+id: 7d941e89dd48bcf42573
+bug_link: https://syzkaller.appspot.com/bug?extid=7d941e89dd48bcf42573
+title: 'BUG: sleeping function called from invalid context in __ipv6_dev_mc_dec'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3f8fca5d43357ab3ae678d908ac3c74e07503f0d
+fix_commit: a100243d95a60d74ae9bb9df1f5f2192e9aed6a7
+datetime: '2021-05-10T14:33:10-07:00'
+fix_commit_message: 'rtnetlink: avoid RCU read lock when holding RTNL
+
+
+  When we call af_ops->set_link_af() we hold a RCU read lock
+
+  as we retrieve af_ops from the RCU protected list, but this
+
+  is unnecessary because we already hold RTNL lock, which is
+
+  the writer lock for protecting rtnl_af_ops, so it is safer
+
+  than RCU read lock. Similar for af_ops->validate_link_af().
+
+
+  This was not a problem until we begin to take mutex lock
+
+  down the path of ->set_link_af() in __ipv6_dev_mc_dec()
+
+  recently. We can just drop the RCU read lock there and
+
+  assert RTNL lock.
+
+
+  Reported-and-tested-by: syzbot+7d941e89dd48bcf42573@syzkaller.appspotmail.com
+
+  Fixes: 63ed8de4be81 ("mld: add mc_lock for protecting per-interface mld data")
+
+  Tested-by: Taehee Yoo <ap420073@gmail.com>
+
+  Signed-off-by: Cong Wang <cong.wang@bytedance.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/core
+- net/ipv4
+hunk_count: 5
+covered_count: 2

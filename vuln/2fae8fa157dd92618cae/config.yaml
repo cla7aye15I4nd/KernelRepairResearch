@@ -1,0 +1,54 @@
+id: 2fae8fa157dd92618cae
+bug_link: https://syzkaller.appspot.com/bug?extid=2fae8fa157dd92618cae
+title: WARNING in cttimeout_default_get
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2a31e4bd9ad255ee40809b5c798c4b1c2b09703b
+fix_commit: 89259088c1b7fecb43e8e245dc931909132a4e03
+datetime: '2018-11-26T10:25:20+01:00'
+fix_commit_message: 'netfilter: nfnetlink_cttimeout: fetch timeouts for udplite and
+  gre, too
+
+
+  syzbot was able to trigger the WARN in cttimeout_default_get() by
+
+  passing UDPLITE as l4protocol.  Alias UDPLITE to UDP, both use
+
+  same timeout values.
+
+
+  Furthermore, also fetch GRE timeouts.  GRE is a bit more complicated,
+
+  as it still can be a module and its netns_proto_gre struct layout isn''t
+
+  visible outside of the gre module. Can''t move timeouts around, it
+
+  appears conntrack sysctl unregister assumes net_generic() returns
+
+  nf_proto_net, so we get crash. Expose layout of netns_proto_gre instead.
+
+
+  A followup nf-next patch could make gre tracker be built-in as well
+
+  if needed, its not that large.
+
+
+  Last, make the WARN() mention the missing protocol value in case
+
+  anything else is missing.
+
+
+  Reported-by: syzbot+2fae8fa157dd92618cae@syzkaller.appspotmail.com
+
+  Fixes: 8866df9264a3 ("netfilter: nfnetlink_cttimeout: pass default timeout policy
+  to obj_to_nlattr")
+
+  Signed-off-by: Florian Westphal <fw@strlen.de>
+
+  Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+
+  '
+submodule:
+- include/linux/netfilter
+- net/netfilter
+hunk_count: 5
+covered_count: 2

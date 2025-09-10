@@ -1,0 +1,42 @@
+id: 10a214d962941493d1dd
+bug_link: https://syzkaller.appspot.com/bug?extid=10a214d962941493d1dd
+title: kernel BUG in vfs_get_tree (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aed4ccbf4595e08f3fa80c7faaf1d2188d61bc70
+fix_commit: 9c618560994794d6f477e81f3b695fe799feec8a
+datetime: '2025-05-05T16:06:35-04:00'
+fix_commit_message: 'bcachefs: Call bch2_fs_start before getting vfs superblock
+
+
+  This reverts
+
+
+  1fdbe0b184c8 bcachefs: Make sure c->vfs_sb is set before starting fs
+
+
+  switched up bch2_fs_get_tree() so that we got a superblock before
+
+  calling bch2_fs_start, so that c->vfs_sb would always be initialized
+
+  while the filesystem was active.
+
+
+  This turned out not to be necessary, because blk_holder_ops were
+
+  implemented using our own locking, not vfs locking.
+
+
+  And this had the side effect of creating a super_block and doing our
+
+  full recovery (including potentially fsck) before setting SB_BORN, which
+
+  causes things like sync calls to hang until our recovery is finished.
+
+
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>
+
+  '
+submodule:
+- fs/bcachefs
+hunk_count: 2
+covered_count: 0

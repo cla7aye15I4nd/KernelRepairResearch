@@ -1,0 +1,22 @@
+id: 5fcfdc26bc84536f79bd
+bug_link: https://syzkaller.appspot.com/bug?extid=5fcfdc26bc84536f79bd
+title: 'WARNING: held lock freed in spi_unregister_controller'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6532582c353f4c83e3ccdd7255020ab852b90b0b
+fix_commit: 6c53b45c71b4920b5e62f0ea8079a1da382b9434
+datetime: '2021-11-12T18:18:03+00:00'
+fix_commit_message: "spi: fix use-after-free of the add_lock mutex\n\nCommit 6098475d4cb4\
+  \ (\"spi: Fix deadlock when adding SPI controllers on\nSPI buses\") introduced a\
+  \ per-controller mutex. But mutex_unlock() of\nsaid lock is called after the controller\
+  \ is already freed:\n\n  spi_unregister_controller(ctlr)\n  -> put_device(&ctlr->dev)\n\
+  \    -> spi_controller_release(dev)\n  -> mutex_unlock(&ctrl->add_lock)\n\nMove\
+  \ the put_device() after the mutex_unlock().\n\nFixes: 6098475d4cb4 (\"spi: Fix\
+  \ deadlock when adding SPI controllers on SPI buses\")\nSigned-off-by: Michael Walle\
+  \ <michael@walle.cc>\nReviewed-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>\n\
+  Reviewed-by: Lukas Wunner <lukas@wunner.de>\nCc: stable@vger.kernel.org # v5.15\n\
+  Link: https://lore.kernel.org/r/20211111083713.3335171-1-michael@walle.cc\nSigned-off-by:\
+  \ Mark Brown <broonie@kernel.org>\n"
+submodule:
+- drivers/spi
+hunk_count: 2
+covered_count: 0

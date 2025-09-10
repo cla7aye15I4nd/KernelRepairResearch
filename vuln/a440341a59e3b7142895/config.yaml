@@ -1,0 +1,39 @@
+id: a440341a59e3b7142895
+bug_link: https://syzkaller.appspot.com/bug?extid=a440341a59e3b7142895
+title: general protection fault in skb_dequeue (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 07073eb01c5f630344bc1c3e56b0e0d94aedf919
+fix_commit: 33b3b041543e8b3abf9a692d0f8c2ab0e07c50cd
+datetime: '2023-02-20T17:25:43-06:00'
+fix_commit_message: "splice: Add a func to do a splice from an O_DIRECT file without\
+  \ ITER_PIPE\n\nImplement a function, direct_file_splice(), that deals with this\
+  \ by using\nan ITER_BVEC iterator instead of an ITER_PIPE iterator as the former\
+  \ won't\nfree its buffers when reverted.  The function bulk allocates all the\n\
+  buffers it thinks it is going to use in advance, does the read\nsynchronously and\
+  \ only then trims the buffer down.  The pages we did use\nget pushed into the pipe.\n\
+  \nThis fixes a problem with the upcoming iov_iter_extract_pages() function,\nwhereby\
+  \ pages extracted from a non-user-backed iterator such as ITER_PIPE\naren't pinned.\
+  \  __iomap_dio_rw(), however, calls iov_iter_revert() to\nshorten the iterator to\
+  \ just the bufferage it is going to use - which has\nthe side-effect of freeing\
+  \ the excess pipe buffers, even though they're\nattached to a bio and may get written\
+  \ to by DMA (thanks to Hillf Danton for\nspotting this[1]).\n\nThis then causes\
+  \ memory corruption that is particularly noticeable when the\nsyzbot test[2] is\
+  \ run.  The test boils down to:\n\n\tout = creat(argv[1], 0666);\n\tftruncate(out,\
+  \ 0x800);\n\tlseek(out, 0x200, SEEK_SET);\n\tin = open(argv[1], O_RDONLY | O_DIRECT\
+  \ | O_NOFOLLOW);\n\tsendfile(out, in, NULL, 0x1dd00);\n\nrun repeatedly in parallel.\
+  \  What I think is happening is that ftruncate()\noccasionally shortens the DIO\
+  \ read that's about to be made by sendfile's\nsplice core by reducing i_size.\n\n\
+  This should be more efficient for DIO read by virtue of doing a bulk page\nallocation,\
+  \ but slightly less efficient by ignoring any partial page in the\npipe.\n\nReported-by:\
+  \ syzbot+a440341a59e3b7142895@syzkaller.appspotmail.com\nSigned-off-by: David Howells\
+  \ <dhowells@redhat.com>\nReviewed-by: Jens Axboe <axboe@kernel.dk>\ncc: Christoph\
+  \ Hellwig <hch@lst.de>\ncc: Al Viro <viro@zeniv.linux.org.uk>\ncc: David Hildenbrand\
+  \ <david@redhat.com>\ncc: John Hubbard <jhubbard@nvidia.com>\ncc: linux-mm@kvack.org\n\
+  cc: linux-block@vger.kernel.org\ncc: linux-fsdevel@vger.kernel.org\nLink: https://lore.kernel.org/r/20230207094731.1390-1-hdanton@sina.com/\
+  \ [1]\nLink: https://lore.kernel.org/r/000000000000b0b3c005f3a09383@google.com/\
+  \ [2]\nSigned-off-by: Steve French <stfrench@microsoft.com>\n"
+submodule:
+- fs
+- include/linux
+hunk_count: 2
+covered_count: 0

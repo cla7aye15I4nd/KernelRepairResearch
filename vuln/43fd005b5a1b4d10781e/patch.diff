@@ -1,0 +1,101 @@
+diff --git a/kernel/bpf/cgroup.c b/kernel/bpf/cgroup.c
+index 2ca643af9a54..43eb3501721b 100644
+--- a/kernel/bpf/cgroup.c
++++ b/kernel/bpf/cgroup.c
+@@ -1809,6 +1809,8 @@ sysctl_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
+ 		return &bpf_sysctl_get_new_value_proto;
+ 	case BPF_FUNC_sysctl_set_new_value:
+ 		return &bpf_sysctl_set_new_value_proto;
++	case BPF_FUNC_ktime_get_coarse_ns:
++		return &bpf_ktime_get_coarse_ns_proto;
+ 	default:
+ 		return cgroup_base_func_proto(func_id, prog);
+ 	}
+diff --git a/kernel/bpf/helpers.c b/kernel/bpf/helpers.c
+index 1ffd469c217f..649f07623df6 100644
+--- a/kernel/bpf/helpers.c
++++ b/kernel/bpf/helpers.c
+@@ -1364,8 +1364,6 @@ bpf_base_func_proto(enum bpf_func_id func_id)
+ 		return &bpf_ktime_get_ns_proto;
+ 	case BPF_FUNC_ktime_get_boot_ns:
+ 		return &bpf_ktime_get_boot_ns_proto;
+-	case BPF_FUNC_ktime_get_coarse_ns:
+-		return &bpf_ktime_get_coarse_ns_proto;
+ 	case BPF_FUNC_ringbuf_output:
+ 		return &bpf_ringbuf_output_proto;
+ 	case BPF_FUNC_ringbuf_reserve:
+diff --git a/kernel/bpf/verifier.c b/kernel/bpf/verifier.c
+index aab7482ed1c3..65d2f93b7030 100644
+--- a/kernel/bpf/verifier.c
++++ b/kernel/bpf/verifier.c
+@@ -11632,6 +11632,13 @@ static int check_map_prog_compatibility(struct bpf_verifier_env *env,
+ 		}
+ 	}
+ 
++	if (map_value_has_timer(map)) {
++		if (is_tracing_prog_type(prog_type)) {
++			verbose(env, "tracing progs cannot use bpf_timer yet\n");
++			return -EINVAL;
++		}
++	}
++
+ 	if ((bpf_prog_is_dev_bound(prog->aux) || bpf_map_is_dev_bound(map)) &&
+ 	    !bpf_offload_prog_map_match(prog, map)) {
+ 		verbose(env, "offload device mismatch between prog and map\n");
+diff --git a/kernel/trace/bpf_trace.c b/kernel/trace/bpf_trace.c
+index 7396488793ff..ae9755037b7e 100644
+--- a/kernel/trace/bpf_trace.c
++++ b/kernel/trace/bpf_trace.c
+@@ -1111,8 +1111,6 @@ bpf_tracing_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
+ 		return &bpf_ktime_get_ns_proto;
+ 	case BPF_FUNC_ktime_get_boot_ns:
+ 		return &bpf_ktime_get_boot_ns_proto;
+-	case BPF_FUNC_ktime_get_coarse_ns:
+-		return &bpf_ktime_get_coarse_ns_proto;
+ 	case BPF_FUNC_tail_call:
+ 		return &bpf_tail_call_proto;
+ 	case BPF_FUNC_get_current_pid_tgid:
+diff --git a/net/core/filter.c b/net/core/filter.c
+index e471c9b09670..6102f093d59a 100644
+--- a/net/core/filter.c
++++ b/net/core/filter.c
+@@ -7162,6 +7162,8 @@ sock_filter_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
+ #endif
+ 	case BPF_FUNC_sk_storage_get:
+ 		return &bpf_sk_storage_get_cg_sock_proto;
++	case BPF_FUNC_ktime_get_coarse_ns:
++		return &bpf_ktime_get_coarse_ns_proto;
+ 	default:
+ 		return bpf_base_func_proto(func_id);
+ 	}
+@@ -10327,6 +10329,8 @@ sk_reuseport_func_proto(enum bpf_func_id func_id,
+ 		return &sk_reuseport_load_bytes_relative_proto;
+ 	case BPF_FUNC_get_socket_cookie:
+ 		return &bpf_get_socket_ptr_cookie_proto;
++	case BPF_FUNC_ktime_get_coarse_ns:
++		return &bpf_ktime_get_coarse_ns_proto;
+ 	default:
+ 		return bpf_base_func_proto(func_id);
+ 	}
+@@ -10833,6 +10837,8 @@ bpf_sk_base_func_proto(enum bpf_func_id func_id)
+ 	case BPF_FUNC_skc_to_unix_sock:
+ 		func = &bpf_skc_to_unix_sock_proto;
+ 		break;
++	case BPF_FUNC_ktime_get_coarse_ns:
++		return &bpf_ktime_get_coarse_ns_proto;
+ 	default:
+ 		return bpf_base_func_proto(func_id);
+ 	}
+diff --git a/net/ipv4/bpf_tcp_ca.c b/net/ipv4/bpf_tcp_ca.c
+index 2cf02b4d77fb..4bb9401b0a3f 100644
+--- a/net/ipv4/bpf_tcp_ca.c
++++ b/net/ipv4/bpf_tcp_ca.c
+@@ -205,6 +205,8 @@ bpf_tcp_ca_get_func_proto(enum bpf_func_id func_id,
+ 		    offsetof(struct tcp_congestion_ops, release))
+ 			return &bpf_sk_getsockopt_proto;
+ 		return NULL;
++	case BPF_FUNC_ktime_get_coarse_ns:
++		return &bpf_ktime_get_coarse_ns_proto;
+ 	default:
+ 		return bpf_base_func_proto(func_id);
+ 	}

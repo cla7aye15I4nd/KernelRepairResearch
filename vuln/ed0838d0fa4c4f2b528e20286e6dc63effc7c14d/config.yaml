@@ -1,0 +1,53 @@
+id: ed0838d0fa4c4f2b528e20286e6dc63effc7c14d
+bug_link: https://syzkaller.appspot.com/bug?extid=ed0838d0fa4c4f2b528e20286e6dc63effc7c14d
+title: kernel BUG at net/core/skbuff.c:LINE! (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a84a8ab94ed5cb65a1355fe9e8d1d55283375808
+fix_commit: 02612bb05e51df8489db5e94d0cf8d1c81f87b0c
+datetime: '2018-01-23T19:44:44-05:00'
+fix_commit_message: "pppoe: take ->needed_headroom of lower device into account on\
+  \ xmit\n\nIn pppoe_sendmsg(), reserving dev->hard_header_len bytes of headroom\n\
+  was probably fine before the introduction of ->needed_headroom in\ncommit f5184d267c1a\
+  \ (\"net: Allow netdevices to specify needed head/tailroom\").\n\nBut now, virtual\
+  \ devices typically advertise the size of their overhead\nin dev->needed_headroom,\
+  \ so we must also take it into account in\nskb_reserve().\nAllocation size of skb\
+  \ is also updated to take dev->needed_tailroom\ninto account and replace the arbitrary\
+  \ 32 bytes with the real size of\na PPPoE header.\n\nThis issue was discovered by\
+  \ syzbot, who connected a pppoe socket to a\ngre device which had dev->header_ops->create\
+  \ == ipgre_header and\ndev->hard_header_len == 0. Therefore, PPPoE didn't reserve\
+  \ any\nheadroom, and dev_hard_header() crashed when ipgre_header() tried to\nprepend\
+  \ its header to skb->data.\n\nskbuff: skb_under_panic: text:000000001d390b3a len:31\
+  \ put:24\nhead:00000000d8ed776f data:000000008150e823 tail:0x7 end:0xc0 dev:gre0\n\
+  ------------[ cut here ]------------\nkernel BUG at net/core/skbuff.c:104!\ninvalid\
+  \ opcode: 0000 [#1] SMP KASAN\nDumping ftrace buffer:\n    (ftrace buffer empty)\n\
+  Modules linked in:\nCPU: 1 PID: 3670 Comm: syzkaller801466 Not tainted\n4.15.0-rc7-next-20180115+\
+  \ #97\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS\n\
+  Google 01/01/2011\nRIP: 0010:skb_panic+0x162/0x1f0 net/core/skbuff.c:100\nRSP: 0018:ffff8801d9bd7840\
+  \ EFLAGS: 00010282\nRAX: 0000000000000083 RBX: ffff8801d4f083c0 RCX: 0000000000000000\n\
+  RDX: 0000000000000083 RSI: 1ffff1003b37ae92 RDI: ffffed003b37aefc\nRBP: ffff8801d9bd78a8\
+  \ R08: 1ffff1003b37ae8a R09: 0000000000000000\nR10: 0000000000000001 R11: 0000000000000000\
+  \ R12: ffffffff86200de0\nR13: ffffffff84a981ad R14: 0000000000000018 R15: ffff8801d2d34180\n\
+  FS:  00000000019c4880(0000) GS:ffff8801db300000(0000) knlGS:0000000000000000\nCS:\
+  \  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 00000000208bc000 CR3: 00000001d9111001\
+  \ CR4: 00000000001606e0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \  skb_under_panic net/core/skbuff.c:114 [inline]\n  skb_push+0xce/0xf0 net/core/skbuff.c:1714\n\
+  \  ipgre_header+0x6d/0x4e0 net/ipv4/ip_gre.c:879\n  dev_hard_header include/linux/netdevice.h:2723\
+  \ [inline]\n  pppoe_sendmsg+0x58e/0x8b0 drivers/net/ppp/pppoe.c:890\n  sock_sendmsg_nosec\
+  \ net/socket.c:630 [inline]\n  sock_sendmsg+0xca/0x110 net/socket.c:640\n  sock_write_iter+0x31a/0x5d0\
+  \ net/socket.c:909\n  call_write_iter include/linux/fs.h:1775 [inline]\n  do_iter_readv_writev+0x525/0x7f0\
+  \ fs/read_write.c:653\n  do_iter_write+0x154/0x540 fs/read_write.c:932\n  vfs_writev+0x18a/0x340\
+  \ fs/read_write.c:977\n  do_writev+0xfc/0x2a0 fs/read_write.c:1012\n  SYSC_writev\
+  \ fs/read_write.c:1085 [inline]\n  SyS_writev+0x27/0x30 fs/read_write.c:1082\n \
+  \ entry_SYSCALL_64_fastpath+0x29/0xa0\n\nAdmittedly PPPoE shouldn't be allowed to\
+  \ run on non Ethernet-like\ninterfaces, but reserving space for ->needed_headroom\
+  \ is a more\nfundamental issue that needs to be addressed first.\n\nSame problem\
+  \ exists for __pppoe_xmit(), which also needs to take\ndev->needed_headroom into\
+  \ account in skb_cow_head().\n\nFixes: f5184d267c1a (\"net: Allow netdevices to\
+  \ specify needed head/tailroom\")\nReported-by: syzbot+ed0838d0fa4c4f2b528e20286e6dc63effc7c14d@syzkaller.appspotmail.com\n\
+  Signed-off-by: Guillaume Nault <g.nault@alphalink.fr>\nReviewed-by: Xin Long <lucien.xin@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- drivers/net/ppp
+hunk_count: 3
+covered_count: 3

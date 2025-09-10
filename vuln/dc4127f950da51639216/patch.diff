@@ -1,0 +1,14 @@
+diff --git a/drivers/net/wireless/marvell/mwifiex/usb.c b/drivers/net/wireless/marvell/mwifiex/usb.c
+index 6f3cfde4654c..426e39d4ccf0 100644
+--- a/drivers/net/wireless/marvell/mwifiex/usb.c
++++ b/drivers/net/wireless/marvell/mwifiex/usb.c
+@@ -1353,7 +1353,8 @@ static void mwifiex_usb_cleanup_tx_aggr(struct mwifiex_adapter *adapter)
+ 				skb_dequeue(&port->tx_aggr.aggr_list)))
+ 				mwifiex_write_data_complete(adapter, skb_tmp,
+ 							    0, -1);
+-		del_timer_sync(&port->tx_aggr.timer_cnxt.hold_timer);
++		if (port->tx_aggr.timer_cnxt.hold_timer.function)
++			del_timer_sync(&port->tx_aggr.timer_cnxt.hold_timer);
+ 		port->tx_aggr.timer_cnxt.is_hold_timer_set = false;
+ 		port->tx_aggr.timer_cnxt.hold_tmo_msecs = 0;
+ 	}

@@ -1,0 +1,25 @@
+id: 452ea4fbbef700ff0a56
+bug_link: https://syzkaller.appspot.com/bug?extid=452ea4fbbef700ff0a56
+title: possible deadlock in cfg80211_netdev_notifier_call (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bddc0c411a45d3718ac535a070f349be8eca8d48
+fix_commit: d5befb224edbe53056c2c18999d630dafb4a08b9
+datetime: '2021-06-08T11:33:07+02:00'
+fix_commit_message: "mac80211: fix deadlock in AP/VLAN handling\n\nSyzbot reports\
+  \ that when you have AP_VLAN interfaces that are up\nand close the AP interface\
+  \ they belong to, we get a deadlock. No\nsurprise - since we dev_close() them with\
+  \ the wiphy mutex held,\nwhich goes back into the netdev notifier in cfg80211 and\
+  \ tries to\nacquire the wiphy mutex there.\n\nTo fix this, we need to do two things:\n\
+  \ 1) prevent changing iftype while AP_VLANs are up, we can't\n    easily fix this\
+  \ case since cfg80211 already calls us with\n    the wiphy mutex held, but change_interface()\
+  \ is relatively\n    rare in drivers anyway, so changing iftype isn't used much\n\
+  \    (and userspace has to fall back to down/change/up anyway)\n 2) pull the dev_close()\
+  \ loop over VLANs out of the wiphy mutex\n    section in the normal stop case\n\n\
+  Cc: stable@vger.kernel.org\nReported-by: syzbot+452ea4fbbef700ff0a56@syzkaller.appspotmail.com\n\
+  Fixes: a05829a7222e (\"cfg80211: avoid holding the RTNL when calling the driver\"\
+  )\nLink: https://lore.kernel.org/r/20210517160322.9b8f356c0222.I392cb0e2fa5a1a94cf2e637555d702c7e512c1ff@changeid\n\
+  Signed-off-by: Johannes Berg <johannes.berg@intel.com>\n"
+submodule:
+- net/mac80211
+hunk_count: 3
+covered_count: 2

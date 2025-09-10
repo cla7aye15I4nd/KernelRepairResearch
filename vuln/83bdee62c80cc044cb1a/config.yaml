@@ -1,0 +1,54 @@
+id: 83bdee62c80cc044cb1a
+bug_link: https://syzkaller.appspot.com/bug?extid=83bdee62c80cc044cb1a
+title: possible deadlock in sock_hash_free
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 54fedb42c6537dcb0102e4a58a88456a6286999d
+fix_commit: e9db4ef6bf4ca9894bb324c76e01b8f1a16b2650
+datetime: '2018-07-01T01:21:32+02:00'
+fix_commit_message: "bpf: sockhash fix omitted bucket lock in sock_close\n\nFirst\
+  \ the sk_callback_lock() was being used to protect both the\nsock callback hooks\
+  \ and the psock->maps list. This got overly\nconvoluted after the addition of sockhash\
+  \ (in sockmap it made\nsome sense because masp and callbacks were tightly coupled)\
+  \ so\nlets split out a specific lock for maps and only use the callback\nlock for\
+  \ its intended purpose. This fixes a couple cases where\nwe missed using maps lock\
+  \ when it was in fact needed. Also this\nmakes it easier to follow the code because\
+  \ now we can put the\nlocking closer to the actual code its serializing.\n\nNext,\
+  \ in sock_hash_delete_elem() the pattern was as follows,\n\n  sock_hash_delete_elem()\n\
+  \     [...]\n     spin_lock(bucket_lock)\n     l = lookup_elem_raw()\n     if (l)\n\
+  \        hlist_del_rcu()\n        write_lock(sk_callback_lock)\n         .... destroy\
+  \ psock ...\n        write_unlock(sk_callback_lock)\n     spin_unlock(bucket_lock)\n\
+  \nThe ordering is necessary because we only know the {p}sock after\ndereferencing\
+  \ the hash table which we can't do unless we have the\nbucket lock held. Once we\
+  \ have the bucket lock and the psock element\nit is deleted from the hashmap to\
+  \ ensure any other path doing a lookup\nwill fail. Finally, the refcnt is decremented\
+  \ and if zero the psock\nis destroyed.\n\nIn parallel with the above (or free'ing\
+  \ the map) a tcp close event\nmay trigger tcp_close(). Which at the moment omits\
+  \ the bucket lock\naltogether (oops!) where the flow looks like this,\n\n  bpf_tcp_close()\n\
+  \     [...]\n     write_lock(sk_callback_lock)\n     for each psock->maps // list\
+  \ of maps this sock is part of\n         hlist_del_rcu(ref_hash_node);\n       \
+  \  .... destroy psock ...\n     write_unlock(sk_callback_lock)\n\nObviously, and\
+  \ demonstrated by syzbot, this is broken because\nwe can have multiple threads deleting\
+  \ entries via hlist_del_rcu().\n\nTo fix this we might be tempted to wrap the hlist\
+  \ operation in a\nbucket lock but that would create a lock inversion problem. In\n\
+  summary to follow locking rules the psocks maps list needs the\nsk_callback_lock\
+  \ (after this patch maps_lock) but we need the bucket\nlock to do the hlist_del_rcu.\n\
+  \nTo resolve the lock inversion problem pop the head of the maps list\nrepeatedly\
+  \ and remove the reference until no more are left. If a\ndelete happens in parallel\
+  \ from the BPF API that is OK as well because\nit will do a similar action, lookup\
+  \ the lock in the map/hash, delete\nit from the map/hash, and dec the refcnt. We\
+  \ check for this case\nbefore doing a destroy on the psock to ensure we don't have\
+  \ two\nthreads tearing down a psock. The new logic is as follows,\n\n  bpf_tcp_close()\n\
+  \  e = psock_map_pop(psock->maps) // done with map lock\n  bucket_lock() // lock\
+  \ hash list bucket\n  l = lookup_elem_raw(head, hash, key, key_size);\n  if (l)\
+  \ {\n     //only get here if elmnt was not already removed\n     hlist_del_rcu()\n\
+  \     ... destroy psock...\n  }\n  bucket_unlock()\n\nAnd finally for all the above\
+  \ to work add missing locking around  map\noperations per above. Then add RCU annotations\
+  \ and use\nrcu_dereference/rcu_assign_pointer to manage values relying on RCU so\n\
+  that the object is not free'd from sock_hash_free() while it is being\nreferenced\
+  \ in bpf_tcp_close().\n\nReported-by: syzbot+0ce137753c78f7b6acc1@syzkaller.appspotmail.com\n\
+  Fixes: 81110384441a (\"bpf: sockmap, add hash map support\")\nSigned-off-by: John\
+  \ Fastabend <john.fastabend@gmail.com>\nSigned-off-by: Daniel Borkmann <daniel@iogearbox.net>\n"
+submodule:
+- kernel/bpf
+hunk_count: 26
+covered_count: 6

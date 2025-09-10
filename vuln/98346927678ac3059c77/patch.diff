@@ -1,0 +1,14 @@
+diff --git a/fs/ext4/namei.c b/fs/ext4/namei.c
+index a789ea9b61a0..1c5518a4bdf9 100644
+--- a/fs/ext4/namei.c
++++ b/fs/ext4/namei.c
+@@ -3796,6 +3796,9 @@ static int ext4_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
+ 		return -EXDEV;
+ 
+ 	retval = dquot_initialize(old.dir);
++	if (retval)
++		return retval;
++	retval = dquot_initialize(old.inode);
+ 	if (retval)
+ 		return retval;
+ 	retval = dquot_initialize(new.dir);

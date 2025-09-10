@@ -1,0 +1,67 @@
+------------[ cut here ]------------
+==================================================================
+BUG: KASAN: global-out-of-bounds in string_nocheck lib/vsprintf.c:646 [inline]
+BUG: KASAN: global-out-of-bounds in string+0x398/0x3d0 lib/vsprintf.c:728
+Read of size 1 at addr ffffffff8b2e4842 by task kswapd0/111
+
+CPU: 3 PID: 111 Comm: kswapd0 Not tainted 6.9.0-syzkaller-11919-g5f16eb0549ab #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0xc3/0x620 mm/kasan/report.c:488
+ kasan_report+0xd9/0x110 mm/kasan/report.c:601
+ string_nocheck lib/vsprintf.c:646 [inline]
+ string+0x398/0x3d0 lib/vsprintf.c:728
+ vsnprintf+0xc67/0x1870 lib/vsprintf.c:2824
+ vprintk_store+0x3a2/0xbb0 kernel/printk/printk.c:2225
+ vprintk_emit kernel/printk/printk.c:2326 [inline]
+ vprintk_emit+0xac/0x5a0 kernel/printk/printk.c:2300
+ vprintk+0x7f/0xa0 kernel/printk/printk_safe.c:45
+ __warn_printk+0x181/0x350 kernel/panic.c:740
+ look_up_lock_class+0x132/0x140 kernel/locking/lockdep.c:932
+ register_lock_class+0xb1/0x1230 kernel/locking/lockdep.c:1284
+ __lock_acquire+0x111/0x3b30 kernel/locking/lockdep.c:5014
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+ __raw_spin_trylock include/linux/spinlock_api_smp.h:90 [inline]
+ _raw_spin_trylock+0x63/0x80 kernel/locking/spinlock.c:138
+ spin_lock_irqsave_sdp_contention kernel/rcu/srcutree.c:373 [inline]
+ srcu_gp_start_if_needed+0x75e/0xf00 kernel/rcu/srcutree.c:1233
+ bkey_cached_free fs/bcachefs/btree_key_cache.c:90 [inline]
+ bch2_btree_key_cache_scan+0xb90/0x1820 fs/bcachefs/btree_key_cache.c:886
+ do_shrink_slab+0x44f/0x11c0 mm/shrinker.c:435
+ shrink_slab+0x18a/0x1310 mm/shrinker.c:662
+ shrink_one+0x493/0x7c0 mm/vmscan.c:4790
+ shrink_many mm/vmscan.c:4851 [inline]
+ lru_gen_shrink_node+0x89f/0x1750 mm/vmscan.c:4951
+ shrink_node mm/vmscan.c:5910 [inline]
+ kswapd_shrink_node mm/vmscan.c:6720 [inline]
+ balance_pgdat+0x1105/0x1970 mm/vmscan.c:6911
+ kswapd+0x5ea/0xbf0 mm/vmscan.c:7180
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+
+The buggy address belongs to the variable:
+ str__rcu__trace_system_name+0x922/0xb40
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0xb2e4
+flags: 0xfff00000002000(reserved|node=0|zone=1|lastcpupid=0x7ff)
+raw: 00fff00000002000 ffffea00002cb908 ffffea00002cb908 0000000000000000
+raw: 0000000000000000 0000000000000000 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner info is not present (never set?)
+
+Memory state around the buggy address:
+ ffffffff8b2e4700: f9 f9 f9 f9 00 00 00 00 03 f9 f9 f9 f9 f9 f9 f9
+ ffffffff8b2e4780: 00 00 00 00 00 00 01 f9 f9 f9 f9 f9 00 00 00 07
+>ffffffff8b2e4800: f9 f9 f9 f9 00 00 00 03 f9 f9 f9 f9 00 00 00 06
+                                           ^
+ ffffffff8b2e4880: f9 f9 f9 f9 00 00 03 f9 f9 f9 f9 f9 00 00 00 00
+ ffffffff8b2e4900: 00 00 00 00 00 00 04 f9 f9 f9 f9 f9 00 01 f9 f9
+==================================================================

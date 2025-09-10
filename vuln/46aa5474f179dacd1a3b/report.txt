@@ -1,0 +1,66 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000006: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000030-0x0000000000000037]
+CPU: 0 UID: 0 PID: 9 Comm: kworker/0:1 Not tainted 6.12.0-syzkaller-10767-g31f1b55d5d7e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Workqueue: events cleanup_bearer
+RIP: 0010:read_pnet include/net/net_namespace.h:392 [inline]
+RIP: 0010:sock_net include/net/sock.h:655 [inline]
+RIP: 0010:cleanup_bearer+0x1f7/0x280 net/tipc/udp_media.c:820
+Code: 18 48 89 d8 48 c1 e8 03 42 80 3c 28 00 74 08 48 89 df e8 ec 2e 91 f6 48 8b 1b 48 83 c3 30 e8 80 97 63 00 48 89 d8 48 c1 e8 03 <42> 80 3c 28 00 74 08 48 89 df e8 ca 2e 91 f6 49 83 c7 e8 48 8b 1b
+RSP: 0018:ffffc900000e7b70 EFLAGS: 00010206
+RAX: 0000000000000006 RBX: 0000000000000030 RCX: ffff88801cef8000
+RDX: dffffc0000000000 RSI: ffffffff8c0ad980 RDI: 0000000000000001
+RBP: ffff8880287b5e08 R08: ffffffff9432398f R09: 1ffffffff2864731
+R10: dffffc0000000000 R11: fffffbfff2864732 R12: ffff8880287b5e98
+R13: dffffc0000000000 R14: 0000000000000001 R15: ffff8880287b5e18
+FS:  0000000000000000(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007efddcf2f208 CR3: 000000007aa02000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa63/0x1850 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:read_pnet include/net/net_namespace.h:392 [inline]
+RIP: 0010:sock_net include/net/sock.h:655 [inline]
+RIP: 0010:cleanup_bearer+0x1f7/0x280 net/tipc/udp_media.c:820
+Code: 18 48 89 d8 48 c1 e8 03 42 80 3c 28 00 74 08 48 89 df e8 ec 2e 91 f6 48 8b 1b 48 83 c3 30 e8 80 97 63 00 48 89 d8 48 c1 e8 03 <42> 80 3c 28 00 74 08 48 89 df e8 ca 2e 91 f6 49 83 c7 e8 48 8b 1b
+RSP: 0018:ffffc900000e7b70 EFLAGS: 00010206
+RAX: 0000000000000006 RBX: 0000000000000030 RCX: ffff88801cef8000
+RDX: dffffc0000000000 RSI: ffffffff8c0ad980 RDI: 0000000000000001
+RBP: ffff8880287b5e08 R08: ffffffff9432398f R09: 1ffffffff2864731
+R10: dffffc0000000000 R11: fffffbfff2864732 R12: ffff8880287b5e98
+R13: dffffc0000000000 R14: 0000000000000001 R15: ffff8880287b5e18
+FS:  0000000000000000(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055bf163e0cc0 CR3: 000000007e7d8000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	18 48 89             	sbb    %cl,-0x77(%rax)
+   3:	d8 48 c1             	fmuls  -0x3f(%rax)
+   6:	e8 03 42 80 3c       	call   0x3c80420e
+   b:	28 00                	sub    %al,(%rax)
+   d:	74 08                	je     0x17
+   f:	48 89 df             	mov    %rbx,%rdi
+  12:	e8 ec 2e 91 f6       	call   0xf6912f03
+  17:	48 8b 1b             	mov    (%rbx),%rbx
+  1a:	48 83 c3 30          	add    $0x30,%rbx
+  1e:	e8 80 97 63 00       	call   0x6397a3
+  23:	48 89 d8             	mov    %rbx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 80 3c 28 00       	cmpb   $0x0,(%rax,%r13,1) <-- trapping instruction
+  2f:	74 08                	je     0x39
+  31:	48 89 df             	mov    %rbx,%rdi
+  34:	e8 ca 2e 91 f6       	call   0xf6912f03
+  39:	49 83 c7 e8          	add    $0xffffffffffffffe8,%r15
+  3d:	48 8b 1b             	mov    (%rbx),%rbx

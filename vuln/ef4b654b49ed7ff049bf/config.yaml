@@ -1,0 +1,36 @@
+id: ef4b654b49ed7ff049bf
+bug_link: https://syzkaller.appspot.com/bug?extid=ef4b654b49ed7ff049bf
+title: possible deadlock in io_timeout_fn
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9b7adba9eaec28e0e4343c96d0dbeb9578802f5f
+fix_commit: 51a4cc112c7a42b62a91bcccdfac42e7c4561729
+datetime: '2020-08-10T15:19:25-06:00'
+fix_commit_message: 'io_uring: defer file table grabbing request cleanup for locked
+  requests
+
+
+  If we''re in the error path failing links and we have a link that has
+
+  grabbed a reference to the fs_struct, then we cannot safely drop our
+
+  reference to the table if we already hold the completion lock. This
+
+  adds a hardirq dependency to the fs_struct->lock, which it currently
+
+  doesn''t have.
+
+
+  Defer the final cleanup and free of such requests to avoid adding this
+
+  dependency.
+
+
+  Reported-by: syzbot+ef4b654b49ed7ff049bf@syzkaller.appspotmail.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- fs
+hunk_count: 8
+covered_count: 8

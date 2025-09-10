@@ -1,0 +1,43 @@
+bcachefs (loop0): Doing compatible version upgrade from 1.7: mi_btree_bitmap to 1.12: rebalance_work_acct_fix
+  running recovery passes: check_allocations
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in fs/bcachefs/ec.c:147:2
+shift exponent 108 is too large for 32-bit type 'unsigned int'
+CPU: 0 UID: 0 PID: 5088 Comm: syz-executor278 Not tainted 6.11.0-syzkaller-08068-g1ec6d097897a #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:93 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:119
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x3c8/0x420 lib/ubsan.c:468
+ bch2_stripe_to_text+0x899/0x8c0 fs/bcachefs/ec.c:147
+ __bch2_bkey_fsck_err+0x11f/0x230 fs/bcachefs/error.c:429
+ bch2_stripe_validate+0x3ca/0x630 fs/bcachefs/ec.c:116
+ bch2_btree_node_read_done+0x3dc6/0x5d60 fs/bcachefs/btree_io.c:1219
+ btree_node_read_work+0x68b/0x1260 fs/bcachefs/btree_io.c:1323
+ bch2_btree_node_read+0x2433/0x2a10
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1749 [inline]
+ bch2_btree_root_read+0x626/0x980 fs/bcachefs/btree_io.c:1773
+ read_btree_roots+0x296/0x840 fs/bcachefs/recovery.c:523
+ bch2_fs_recovery+0x24ac/0x38b0 fs/bcachefs/recovery.c:851
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1036
+ bch2_fs_get_tree+0xd61/0x1700 fs/bcachefs/fs.c:1956
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1800
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4055 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4032
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fbcc7b8a8fa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc0febe3f8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffc0febe410 RCX: 00007fbcc7b8a8fa
+RDX: 0000000020005d80 RSI: 0000000020005dc0 RDI: 00007ffc0febe410
+RBP: 0000000000000004 R08: 00007ffc0febe450 R09: 0000000000005d9a
+R10: 0000000000200400 R11: 0000000000000282 R12: 0000000000200400
+R13: 00007ffc0febe450 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+---[ end trace ]---

@@ -1,0 +1,18 @@
+diff --git a/fs/bcachefs/journal_io.c b/fs/bcachefs/journal_io.c
+index 492426c8d869..db24ce21b2ac 100644
+--- a/fs/bcachefs/journal_io.c
++++ b/fs/bcachefs/journal_io.c
+@@ -1677,6 +1677,13 @@ static CLOSURE_CALLBACK(journal_write_done)
+ 		mod_delayed_work(j->wq, &j->write_work, max(0L, delta));
+ 	}
+ 
++	/*
++	 * We don't typically trigger journal writes from her - the next journal
++	 * write will be triggered immediately after the previous one is
++	 * allocated, in bch2_journal_write() - but the journal write error path
++	 * is special:
++	 */
++	bch2_journal_do_writes(j);
+ 	spin_unlock(&j->lock);
+ }
+ 

@@ -1,0 +1,54 @@
+id: 3c4321e10eea460eb606
+bug_link: https://syzkaller.appspot.com/bug?extid=3c4321e10eea460eb606
+title: 'INFO: task hung in _free_event'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0cd575cab10e114e95921321f069a08d45bc412e
+fix_commit: 56799bc035658738f362acec3e7647bb84e68933
+datetime: '2025-04-08T20:55:43+02:00'
+fix_commit_message: "perf: Fix hang while freeing sigtrap event\n\nPerf can hang while\
+  \ freeing a sigtrap event if a related deferred\nsignal hadn't managed to be sent\
+  \ before the file got closed:\n\nperf_event_overflow()\n   task_work_add(perf_pending_task)\n\
+  \nfput()\n   task_work_add(____fput())\n\ntask_work_run()\n    ____fput()\n    \
+  \    perf_release()\n            perf_event_release_kernel()\n                _free_event()\n\
+  \                    perf_pending_task_sync()\n                        task_work_cancel()\
+  \ -> FAILED\n                        rcuwait_wait_event()\n\nOnce task_work_run()\
+  \ is running, the list of pending callbacks is\nremoved from the task_struct and\
+  \ from this point on task_work_cancel()\ncan't remove any pending and not yet started\
+  \ work items, hence the\ntask_work_cancel() failure and the hang on rcuwait_wait_event().\n\
+  \nTask work could be changed to remove one work at a time, so a work\nrunning on\
+  \ the current task can always cancel a pending one, however\nthe wait / wake design\
+  \ is still subject to inverted dependencies when\nremote targets are involved, as\
+  \ pictured by Oleg:\n\nT1                                                      T2\n\
+  \nfd = perf_event_open(pid => T2->pid);                  fd = perf_event_open(pid\
+  \ => T1->pid);\nclose(fd)                                              close(fd)\n\
+  \    <IRQ>                                                  <IRQ>\n    perf_event_overflow()\
+  \                                  perf_event_overflow()\n       task_work_add(perf_pending_task)\
+  \                        task_work_add(perf_pending_task)\n    </IRQ>          \
+  \                                       </IRQ>\n    fput()                     \
+  \                            fput()\n        task_work_add(____fput())         \
+  \                     task_work_add(____fput())\n\n    task_work_run()         \
+  \                               task_work_run()\n        ____fput()            \
+  \                                 ____fput()\n            perf_release()       \
+  \                                  perf_release()\n                perf_event_release_kernel()\
+  \                            perf_event_release_kernel()\n                    _free_event()\
+  \                                          _free_event()\n                     \
+  \   perf_pending_task_sync()                               perf_pending_task_sync()\n\
+  \                            rcuwait_wait_event()                              \
+  \     rcuwait_wait_event()\n\nTherefore the only option left is to acquire the event\
+  \ reference count\nupon queueing the perf task work and release it from the task\
+  \ work, just\nlike it was done before 3a5465418f5f (\"perf: Fix event leak upon\
+  \ exec and file release\")\nbut without the leaks it fixed.\n\nSome adjustments\
+  \ are necessary to make it work:\n\n* A child event might dereference its parent\
+  \ upon freeing. Care must be\n  taken to release the parent last.\n\n* Some places\
+  \ assuming the event doesn't have any reference held and\n  therefore can be freed\
+  \ right away must instead put the reference and\n  let the reference counting to\
+  \ its job.\n\nReported-by: \"Yi Lai\" <yi1.lai@linux.intel.com>\nCloses: https://lore.kernel.org/all/Zx9Losv4YcJowaP%2F@ly-workstation/\n\
+  Reported-by: syzbot+3c4321e10eea460eb606@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/all/673adf75.050a0220.87769.0024.GAE@google.com/\n\
+  Fixes: 3a5465418f5f (\"perf: Fix event leak upon exec and file release\")\nSigned-off-by:\
+  \ Frederic Weisbecker <frederic@kernel.org>\nSigned-off-by: Peter Zijlstra (Intel)\
+  \ <peterz@infradead.org>\nLink: https://lkml.kernel.org/r/20250304135446.18905-1-frederic@kernel.org\n"
+submodule:
+- include/linux
+- kernel/events
+hunk_count: 13
+covered_count: 2

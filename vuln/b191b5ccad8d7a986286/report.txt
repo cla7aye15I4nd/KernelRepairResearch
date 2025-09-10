@@ -1,0 +1,134 @@
+team0: entered promiscuous mode
+team_slave_0: entered promiscuous mode
+team_slave_1: entered promiscuous mode
+team0 (unregistering): left promiscuous mode
+BUG: sleeping function called from invalid context at kernel/locking/mutex.c:578
+in_atomic(): 0, irqs_disabled(): 0, non_block: 0, pid: 5831, name: syz-executor316
+preempt_count: 0, expected: 0
+RCU nest depth: 1, expected: 0
+2 locks held by syz-executor316/5831:
+ #0: ffffffff8f2f7408 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_lock net/core/rtnetlink.c:80 [inline]
+ #0: ffffffff8f2f7408 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_net_lock include/linux/rtnetlink.h:130 [inline]
+ #0: ffffffff8f2f7408 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_dellink+0x331/0x710 net/core/rtnetlink.c:3556
+ #1: ffffffff8df3dce0 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:331 [inline]
+ #1: ffffffff8df3dce0 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:841 [inline]
+ #1: ffffffff8df3dce0 (rcu_read_lock){....}-{1:3}, at: packet_notifier+0x78/0xa60 net/packet/af_packet.c:4240
+CPU: 0 UID: 0 PID: 5831 Comm: syz-executor316 Not tainted 6.15.0-rc6-syzkaller-00168-g239af1970bcb #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ __might_resched+0x495/0x610 kernel/sched/core.c:8818
+ __mutex_lock_common kernel/locking/mutex.c:578 [inline]
+ __mutex_lock+0x106/0xe80 kernel/locking/mutex.c:746
+ team_change_rx_flags+0x38/0x220 drivers/net/team/team_core.c:1781
+ dev_change_rx_flags net/core/dev.c:9145 [inline]
+ __dev_set_promiscuity+0x3f8/0x590 net/core/dev.c:9189
+ netif_set_promiscuity+0x50/0xe0 net/core/dev.c:9201
+ dev_set_promiscuity+0x126/0x260 net/core/dev_api.c:286
+ packet_dev_mc net/packet/af_packet.c:3698 [inline]
+ packet_dev_mclist_delete net/packet/af_packet.c:3722 [inline]
+ packet_notifier+0x292/0xa60 net/packet/af_packet.c:4247
+ notifier_call_chain+0x1b3/0x3e0 kernel/notifier.c:85
+ call_netdevice_notifiers_extack net/core/dev.c:2214 [inline]
+ call_netdevice_notifiers net/core/dev.c:2228 [inline]
+ unregister_netdevice_many_notify+0x15d8/0x2330 net/core/dev.c:11972
+ rtnl_delete_link net/core/rtnetlink.c:3522 [inline]
+ rtnl_dellink+0x488/0x710 net/core/rtnetlink.c:3564
+ rtnetlink_rcv_msg+0x7cf/0xb70 net/core/rtnetlink.c:6955
+ netlink_rcv_skb+0x219/0x490 net/netlink/af_netlink.c:2534
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x75b/0x8d0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x805/0xb30 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg+0x219/0x270 net/socket.c:727
+ ____sys_sendmsg+0x505/0x830 net/socket.c:2566
+ ___sys_sendmsg+0x21f/0x2a0 net/socket.c:2620
+ __sys_sendmsg net/socket.c:2652 [inline]
+ __do_sys_sendmsg net/socket.c:2657 [inline]
+ __se_sys_sendmsg net/socket.c:2655 [inline]
+ __x64_sys_sendmsg+0x19b/0x260 net/socket.c:2655
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa537a5c859
+Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff93fbcb88 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fa537a5c859
+RDX: 0000000000000000 RSI: 00002000000001c0 RDI: 0000000000000004
+RBP: 00007fa537aaa47d R08: 0000555500000000 R09: 0000555500000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007fa537aaa3e5
+R13: 0000000000000001 R14: 00007fff93fbcbd0 R15: 0000000000000003
+ </TASK>
+
+=============================
+[ BUG: Invalid wait context ]
+6.15.0-rc6-syzkaller-00168-g239af1970bcb #0 Tainted: G        W          
+-----------------------------
+syz-executor316/5831 is trying to lock:
+ffff888076094e00 (team->team_lock_key){+.+.}-{4:4}, at: team_change_rx_flags+0x38/0x220 drivers/net/team/team_core.c:1781
+other info that might help us debug this:
+context-{5:5}
+2 locks held by syz-executor316/5831:
+ #0: ffffffff8f2f7408 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_lock net/core/rtnetlink.c:80 [inline]
+ #0: ffffffff8f2f7408 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_net_lock include/linux/rtnetlink.h:130 [inline]
+ #0: ffffffff8f2f7408 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_dellink+0x331/0x710 net/core/rtnetlink.c:3556
+ #1: ffffffff8df3dce0 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:331 [inline]
+ #1: ffffffff8df3dce0 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:841 [inline]
+ #1: ffffffff8df3dce0 (rcu_read_lock){....}-{1:3}, at: packet_notifier+0x78/0xa60 net/packet/af_packet.c:4240
+stack backtrace:
+CPU: 0 UID: 0 PID: 5831 Comm: syz-executor316 Tainted: G        W           6.15.0-rc6-syzkaller-00168-g239af1970bcb #0 PREEMPT(full) 
+Tainted: [W]=WARN
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_lock_invalid_wait_context kernel/locking/lockdep.c:4831 [inline]
+ check_wait_context kernel/locking/lockdep.c:4903 [inline]
+ __lock_acquire+0xbcf/0xd20 kernel/locking/lockdep.c:5185
+ lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+ __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+ __mutex_lock+0x182/0xe80 kernel/locking/mutex.c:746
+ team_change_rx_flags+0x38/0x220 drivers/net/team/team_core.c:1781
+ dev_change_rx_flags net/core/dev.c:9145 [inline]
+ __dev_set_promiscuity+0x3f8/0x590 net/core/dev.c:9189
+ netif_set_promiscuity+0x50/0xe0 net/core/dev.c:9201
+ dev_set_promiscuity+0x126/0x260 net/core/dev_api.c:286
+ packet_dev_mc net/packet/af_packet.c:3698 [inline]
+ packet_dev_mclist_delete net/packet/af_packet.c:3722 [inline]
+ packet_notifier+0x292/0xa60 net/packet/af_packet.c:4247
+ notifier_call_chain+0x1b3/0x3e0 kernel/notifier.c:85
+ call_netdevice_notifiers_extack net/core/dev.c:2214 [inline]
+ call_netdevice_notifiers net/core/dev.c:2228 [inline]
+ unregister_netdevice_many_notify+0x15d8/0x2330 net/core/dev.c:11972
+ rtnl_delete_link net/core/rtnetlink.c:3522 [inline]
+ rtnl_dellink+0x488/0x710 net/core/rtnetlink.c:3564
+ rtnetlink_rcv_msg+0x7cf/0xb70 net/core/rtnetlink.c:6955
+ netlink_rcv_skb+0x219/0x490 net/netlink/af_netlink.c:2534
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x75b/0x8d0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x805/0xb30 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg+0x219/0x270 net/socket.c:727
+ ____sys_sendmsg+0x505/0x830 net/socket.c:2566
+ ___sys_sendmsg+0x21f/0x2a0 net/socket.c:2620
+ __sys_sendmsg net/socket.c:2652 [inline]
+ __do_sys_sendmsg net/socket.c:2657 [inline]
+ __se_sys_sendmsg net/socket.c:2655 [inline]
+ __x64_sys_sendmsg+0x19b/0x260 net/socket.c:2655
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa537a5c859
+Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff93fbcb88 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fa537a5c859
+RDX: 0000000000000000 RSI: 00002000000001c0 RDI: 0000000000000004
+RBP: 00007fa537aaa47d R08: 0000555500000000 R09: 0000555500000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007fa537aaa3e5
+R13: 0000000000000001 R14: 00007fff93fbcbd0 R15: 0000000000000003
+ </TASK>
+team_slave_0: left promiscuous mode
+team_slave_1: left promiscuous mode
+team0 (unregistering): Port device team_slave_0 removed
+team0 (unregistering): Port device team_slave_1 removed

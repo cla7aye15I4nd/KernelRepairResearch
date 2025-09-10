@@ -1,0 +1,42 @@
+id: b345a2c15a15db1262d2a9de77dd90e67e34f54d
+bug_link: https://syzkaller.appspot.com/bug?extid=b345a2c15a15db1262d2a9de77dd90e67e34f54d
+title: general protection fault in __lock_acquire (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a6cec1f5dee0e7fe4ab20f2708bfa24f64b87880
+fix_commit: 672ecbe1c977616aa720c9397589665b33e72610
+datetime: '2017-12-05T14:51:59-05:00'
+fix_commit_message: "tipc: fix a null pointer deref on error path\n\nIn tipc_topsrv_kern_subscr()\
+  \ when s->tipc_conn_new() fails\nwe call tipc_close_conn() to clean up, but in this\
+  \ case\ncalling conn_put() is just enough.\n\nThis fixes the folllowing crash:\n\
+  \n kasan: GPF could be caused by NULL-ptr deref or user memory access\n general\
+  \ protection fault: 0000 [#1] SMP KASAN\n Dumping ftrace buffer:\n    (ftrace buffer\
+  \ empty)\n Modules linked in:\n CPU: 0 PID: 3085 Comm: syzkaller064164 Not tainted\
+  \ 4.15.0-rc1+ #137\n Hardware name: Google Google Compute Engine/Google Compute\
+  \ Engine, BIOS Google 01/01/2011\n task: 00000000c24413a5 task.stack: 000000005e8160b5\n\
+  \ RIP: 0010:__lock_acquire+0xd55/0x47f0 kernel/locking/lockdep.c:3378\n RSP: 0018:ffff8801cb5474a8\
+  \ EFLAGS: 00010002\n RAX: dffffc0000000000 RBX: 0000000000000000 RCX: 0000000000000000\n\
+  \ RDX: 0000000000000004 RSI: 0000000000000000 RDI: ffffffff85ecb400\n RBP: ffff8801cb547830\
+  \ R08: 0000000000000001 R09: 0000000000000000\n R10: 0000000000000000 R11: ffffffff87489d60\
+  \ R12: ffff8801cd2980c0\n R13: 0000000000000000 R14: 0000000000000001 R15: 0000000000000020\n\
+  \ FS:  00000000014ee880(0000) GS:ffff8801db400000(0000) knlGS:0000000000000000\n\
+  \ CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n CR2: 00007ffee2426e40 CR3:\
+  \ 00000001cb85a000 CR4: 00000000001406f0\n DR0: 0000000000000000 DR1: 0000000000000000\
+  \ DR2: 0000000000000000\n DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\n\
+  \ Call Trace:\n  lock_acquire+0x1d5/0x580 kernel/locking/lockdep.c:4004\n  __raw_spin_lock_bh\
+  \ include/linux/spinlock_api_smp.h:135 [inline]\n  _raw_spin_lock_bh+0x31/0x40 kernel/locking/spinlock.c:175\n\
+  \  spin_lock_bh include/linux/spinlock.h:320 [inline]\n  tipc_subscrb_subscrp_delete+0x8f/0x470\
+  \ net/tipc/subscr.c:201\n  tipc_subscrb_delete net/tipc/subscr.c:238 [inline]\n\
+  \  tipc_subscrb_release_cb+0x17/0x30 net/tipc/subscr.c:316\n  tipc_close_conn+0x171/0x270\
+  \ net/tipc/server.c:204\n  tipc_topsrv_kern_subscr+0x724/0x810 net/tipc/server.c:514\n\
+  \  tipc_group_create+0x702/0x9c0 net/tipc/group.c:184\n  tipc_sk_join net/tipc/socket.c:2747\
+  \ [inline]\n  tipc_setsockopt+0x249/0xc10 net/tipc/socket.c:2861\n  SYSC_setsockopt\
+  \ net/socket.c:1851 [inline]\n  SyS_setsockopt+0x189/0x360 net/socket.c:1830\n \
+  \ entry_SYSCALL_64_fastpath+0x1f/0x96\n\nFixes: 14c04493cb77 (\"tipc: add ability\
+  \ to order and receive topology events in driver\")\nReported-by: syzbot <syzkaller@googlegroups.com>\n\
+  Cc: Jon Maloy <jon.maloy@ericsson.com>\nCc: Ying Xue <ying.xue@windriver.com>\n\
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 1
+covered_count: 1

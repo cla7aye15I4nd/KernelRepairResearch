@@ -1,0 +1,68 @@
+id: fb0d60a179096e8c2731
+bug_link: https://syzkaller.appspot.com/bug?extid=fb0d60a179096e8c2731
+title: 'KASAN: use-after-free Read in __d_alloc (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4b93c544e90e2b28326182d31ee008eb80e02074
+fix_commit: 0766ec82e5fb26fc5dc6d592bc61865608bdc651
+datetime: '2021-09-07T15:56:16-04:00'
+fix_commit_message: 'namei: Fix use after free in kern_path_locked
+
+
+  In 0ee50b47532a ("namei: change filename_parentat() calling
+
+  conventions"), filename_parentat() was made to always call putname() on
+
+  the  filename before returning, and kern_path_locked() was migrated to
+
+  this calling convention.  However, kern_path_locked() uses the "last"
+
+  parameter to lookup and potentially create a new dentry. The last
+
+  parameter contains the last component of the path and points within the
+
+  filename, which was recently freed at the end of filename_parentat().
+
+  Thus, when kern_path_locked() calls __lookup_hash(), it is using the
+
+  filename after it has already been freed.
+
+
+  In other words, these calling conventions had been wrong for the
+
+  only remaining caller of filename_parentat().  Everything else
+
+  is using __filename_parentat(), which does not drop the reference;
+
+  so should kern_path_locked().
+
+
+  Switch kern_path_locked() to use of __filename_parentat() and move
+
+  getting/dropping struct filename into wrapper.  Remove filename_parentat(),
+
+  now that we have no remaining callers.
+
+
+  Fixes: 0ee50b47532a ("namei: change filename_parentat() calling conventions")
+
+  Link: https://lore.kernel.org/linux-fsdevel/YS9D4AlEsaCxLFV0@infradead.org/
+
+  Link: https://lore.kernel.org/linux-fsdevel/YS+csMTV2tTXKg3s@zeniv-ca.linux.org.uk/
+
+  Cc: Christoph Hellwig <hch@infradead.org>
+
+  Cc: Al Viro <viro@zeniv.linux.org.uk>
+
+  Reported-by: syzbot+fb0d60a179096e8c2731@syzkaller.appspotmail.com
+
+  Signed-off-by: Stephen Brennan <stephen.s.brennan@oracle.com>
+
+  Co-authored-by: Dmitry Kadashev <dkadashev@gmail.com>
+
+  Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+
+  '
+submodule:
+- fs
+hunk_count: 3
+covered_count: 3

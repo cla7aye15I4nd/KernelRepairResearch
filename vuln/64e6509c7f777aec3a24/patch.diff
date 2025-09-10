@@ -1,0 +1,1216 @@
+diff --git a/fs/bcachefs/alloc_background.c b/fs/bcachefs/alloc_background.c
+index 1e9f53db4bb8..8846daaa1162 100644
+--- a/fs/bcachefs/alloc_background.c
++++ b/fs/bcachefs/alloc_background.c
+@@ -198,7 +198,7 @@ static unsigned bch_alloc_v1_val_u64s(const struct bch_alloc *a)
+ }
+ 
+ int bch2_alloc_v1_validate(struct bch_fs *c, struct bkey_s_c k,
+-			   enum bch_validate_flags flags)
++			   struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_alloc a = bkey_s_c_to_alloc(k);
+ 	int ret = 0;
+@@ -213,7 +213,7 @@ int bch2_alloc_v1_validate(struct bch_fs *c, struct bkey_s_c k,
+ }
+ 
+ int bch2_alloc_v2_validate(struct bch_fs *c, struct bkey_s_c k,
+-			   enum bch_validate_flags flags)
++			   struct bkey_validate_context from)
+ {
+ 	struct bkey_alloc_unpacked u;
+ 	int ret = 0;
+@@ -226,7 +226,7 @@ int bch2_alloc_v2_validate(struct bch_fs *c, struct bkey_s_c k,
+ }
+ 
+ int bch2_alloc_v3_validate(struct bch_fs *c, struct bkey_s_c k,
+-			   enum bch_validate_flags flags)
++			   struct bkey_validate_context from)
+ {
+ 	struct bkey_alloc_unpacked u;
+ 	int ret = 0;
+@@ -239,7 +239,7 @@ int bch2_alloc_v3_validate(struct bch_fs *c, struct bkey_s_c k,
+ }
+ 
+ int bch2_alloc_v4_validate(struct bch_fs *c, struct bkey_s_c k,
+-			   enum bch_validate_flags flags)
++			   struct bkey_validate_context from)
+ {
+ 	struct bch_alloc_v4 a;
+ 	int ret = 0;
+@@ -509,7 +509,7 @@ static unsigned alloc_gen(struct bkey_s_c k, unsigned offset)
+ }
+ 
+ int bch2_bucket_gens_validate(struct bch_fs *c, struct bkey_s_c k,
+-			     enum bch_validate_flags flags)
++			      struct bkey_validate_context from)
+ {
+ 	int ret = 0;
+ 
+diff --git a/fs/bcachefs/alloc_background.h b/fs/bcachefs/alloc_background.h
+index 57723a37abb8..8cacddd188f4 100644
+--- a/fs/bcachefs/alloc_background.h
++++ b/fs/bcachefs/alloc_background.h
+@@ -8,8 +8,6 @@
+ #include "debug.h"
+ #include "super.h"
+ 
+-enum bch_validate_flags;
+-
+ /* How out of date a pointer gen is allowed to be: */
+ #define BUCKET_GC_GEN_MAX	96U
+ 
+@@ -245,10 +243,14 @@ struct bkey_i_alloc_v4 *bch2_alloc_to_v4_mut(struct btree_trans *, struct bkey_s
+ 
+ int bch2_bucket_io_time_reset(struct btree_trans *, unsigned, size_t, int);
+ 
+-int bch2_alloc_v1_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
+-int bch2_alloc_v2_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
+-int bch2_alloc_v3_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
+-int bch2_alloc_v4_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_alloc_v1_validate(struct bch_fs *, struct bkey_s_c,
++			   struct bkey_validate_context);
++int bch2_alloc_v2_validate(struct bch_fs *, struct bkey_s_c,
++			   struct bkey_validate_context);
++int bch2_alloc_v3_validate(struct bch_fs *, struct bkey_s_c,
++			   struct bkey_validate_context);
++int bch2_alloc_v4_validate(struct bch_fs *, struct bkey_s_c,
++			   struct bkey_validate_context);
+ void bch2_alloc_v4_swab(struct bkey_s);
+ void bch2_alloc_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ 
+@@ -282,7 +284,7 @@ void bch2_alloc_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ })
+ 
+ int bch2_bucket_gens_validate(struct bch_fs *, struct bkey_s_c,
+-			     enum bch_validate_flags);
++			      struct bkey_validate_context);
+ void bch2_bucket_gens_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ 
+ #define bch2_bkey_ops_bucket_gens ((struct bkey_ops) {	\
+diff --git a/fs/bcachefs/backpointers.c b/fs/bcachefs/backpointers.c
+index cfd9b9ead473..ff08afd667a0 100644
+--- a/fs/bcachefs/backpointers.c
++++ b/fs/bcachefs/backpointers.c
+@@ -15,7 +15,7 @@
+ #include <linux/mm.h>
+ 
+ int bch2_backpointer_validate(struct bch_fs *c, struct bkey_s_c k,
+-			      enum bch_validate_flags flags)
++			      struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_backpointer bp = bkey_s_c_to_backpointer(k);
+ 	int ret = 0;
+diff --git a/fs/bcachefs/backpointers.h b/fs/bcachefs/backpointers.h
+index d8a15f5fa767..95caeabb8978 100644
+--- a/fs/bcachefs/backpointers.h
++++ b/fs/bcachefs/backpointers.h
+@@ -18,7 +18,8 @@ static inline u64 swab40(u64 x)
+ 		((x & 0xff00000000ULL) >> 32));
+ }
+ 
+-int bch2_backpointer_validate(struct bch_fs *, struct bkey_s_c k, enum bch_validate_flags);
++int bch2_backpointer_validate(struct bch_fs *, struct bkey_s_c k,
++			      struct bkey_validate_context);
+ void bch2_backpointer_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ void bch2_backpointer_swab(struct bkey_s);
+ 
+diff --git a/fs/bcachefs/bkey.h b/fs/bcachefs/bkey.h
+index 41df24a53d97..054e2d5e8448 100644
+--- a/fs/bcachefs/bkey.h
++++ b/fs/bcachefs/bkey.h
+@@ -9,13 +9,6 @@
+ #include "util.h"
+ #include "vstructs.h"
+ 
+-enum bch_validate_flags {
+-	BCH_VALIDATE_write		= BIT(0),
+-	BCH_VALIDATE_commit		= BIT(1),
+-	BCH_VALIDATE_journal		= BIT(2),
+-	BCH_VALIDATE_silent		= BIT(3),
+-};
+-
+ #if 0
+ 
+ /*
+diff --git a/fs/bcachefs/bkey_methods.c b/fs/bcachefs/bkey_methods.c
+index e7ac227ba7e8..15c93576b5c2 100644
+--- a/fs/bcachefs/bkey_methods.c
++++ b/fs/bcachefs/bkey_methods.c
+@@ -28,7 +28,7 @@ const char * const bch2_bkey_types[] = {
+ };
+ 
+ static int deleted_key_validate(struct bch_fs *c, struct bkey_s_c k,
+-				enum bch_validate_flags flags)
++				struct bkey_validate_context from)
+ {
+ 	return 0;
+ }
+@@ -42,7 +42,7 @@ static int deleted_key_validate(struct bch_fs *c, struct bkey_s_c k,
+ })
+ 
+ static int empty_val_key_validate(struct bch_fs *c, struct bkey_s_c k,
+-				 enum bch_validate_flags flags)
++				  struct bkey_validate_context from)
+ {
+ 	int ret = 0;
+ 
+@@ -59,7 +59,7 @@ static int empty_val_key_validate(struct bch_fs *c, struct bkey_s_c k,
+ })
+ 
+ static int key_type_cookie_validate(struct bch_fs *c, struct bkey_s_c k,
+-				    enum bch_validate_flags flags)
++				    struct bkey_validate_context from)
+ {
+ 	return 0;
+ }
+@@ -83,7 +83,7 @@ static void key_type_cookie_to_text(struct printbuf *out, struct bch_fs *c,
+ })
+ 
+ static int key_type_inline_data_validate(struct bch_fs *c, struct bkey_s_c k,
+-					 enum bch_validate_flags flags)
++					 struct bkey_validate_context from)
+ {
+ 	return 0;
+ }
+@@ -124,7 +124,7 @@ const struct bkey_ops bch2_bkey_null_ops = {
+ };
+ 
+ int bch2_bkey_val_validate(struct bch_fs *c, struct bkey_s_c k,
+-			   enum bch_validate_flags flags)
++			   struct bkey_validate_context from)
+ {
+ 	if (test_bit(BCH_FS_no_invalid_checks, &c->flags))
+ 		return 0;
+@@ -140,7 +140,7 @@ int bch2_bkey_val_validate(struct bch_fs *c, struct bkey_s_c k,
+ 	if (!ops->key_validate)
+ 		return 0;
+ 
+-	ret = ops->key_validate(c, k, flags);
++	ret = ops->key_validate(c, k, from);
+ fsck_err:
+ 	return ret;
+ }
+@@ -161,9 +161,10 @@ const char *bch2_btree_node_type_str(enum btree_node_type type)
+ }
+ 
+ int __bch2_bkey_validate(struct bch_fs *c, struct bkey_s_c k,
+-			 enum btree_node_type type,
+-			 enum bch_validate_flags flags)
++			 struct bkey_validate_context from)
+ {
++	enum btree_node_type type = __btree_node_type(from.level, from.btree);
++
+ 	if (test_bit(BCH_FS_no_invalid_checks, &c->flags))
+ 		return 0;
+ 
+@@ -177,7 +178,7 @@ int __bch2_bkey_validate(struct bch_fs *c, struct bkey_s_c k,
+ 		return 0;
+ 
+ 	bkey_fsck_err_on(k.k->type < KEY_TYPE_MAX &&
+-			 (type == BKEY_TYPE_btree || (flags & BCH_VALIDATE_commit)) &&
++			 (type == BKEY_TYPE_btree || (from.flags & BCH_VALIDATE_commit)) &&
+ 			 !(bch2_key_types_allowed[type] & BIT_ULL(k.k->type)),
+ 			 c, bkey_invalid_type_for_btree,
+ 			 "invalid key type for btree %s (%s)",
+@@ -228,15 +229,15 @@ int __bch2_bkey_validate(struct bch_fs *c, struct bkey_s_c k,
+ }
+ 
+ int bch2_bkey_validate(struct bch_fs *c, struct bkey_s_c k,
+-		      enum btree_node_type type,
+-		      enum bch_validate_flags flags)
++		       struct bkey_validate_context from)
+ {
+-	return __bch2_bkey_validate(c, k, type, flags) ?:
+-		bch2_bkey_val_validate(c, k, flags);
++	return __bch2_bkey_validate(c, k, from) ?:
++		bch2_bkey_val_validate(c, k, from);
+ }
+ 
+ int bch2_bkey_in_btree_node(struct bch_fs *c, struct btree *b,
+-			    struct bkey_s_c k, enum bch_validate_flags flags)
++			    struct bkey_s_c k,
++			    struct bkey_validate_context from)
+ {
+ 	int ret = 0;
+ 
+diff --git a/fs/bcachefs/bkey_methods.h b/fs/bcachefs/bkey_methods.h
+index 018fb72e32d3..bf34111cdf00 100644
+--- a/fs/bcachefs/bkey_methods.h
++++ b/fs/bcachefs/bkey_methods.h
+@@ -22,7 +22,7 @@ extern const struct bkey_ops bch2_bkey_null_ops;
+  */
+ struct bkey_ops {
+ 	int		(*key_validate)(struct bch_fs *c, struct bkey_s_c k,
+-					enum bch_validate_flags flags);
++					struct bkey_validate_context from);
+ 	void		(*val_to_text)(struct printbuf *, struct bch_fs *,
+ 				       struct bkey_s_c);
+ 	void		(*swab)(struct bkey_s);
+@@ -48,13 +48,14 @@ static inline const struct bkey_ops *bch2_bkey_type_ops(enum bch_bkey_type type)
+ 		: &bch2_bkey_null_ops;
+ }
+ 
+-int bch2_bkey_val_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
+-int __bch2_bkey_validate(struct bch_fs *, struct bkey_s_c, enum btree_node_type,
+-			 enum bch_validate_flags);
+-int bch2_bkey_validate(struct bch_fs *, struct bkey_s_c, enum btree_node_type,
+-		       enum bch_validate_flags);
++int bch2_bkey_val_validate(struct bch_fs *, struct bkey_s_c,
++			   struct bkey_validate_context);
++int __bch2_bkey_validate(struct bch_fs *, struct bkey_s_c,
++			 struct bkey_validate_context);
++int bch2_bkey_validate(struct bch_fs *, struct bkey_s_c,
++		       struct bkey_validate_context);
+ int bch2_bkey_in_btree_node(struct bch_fs *, struct btree *, struct bkey_s_c,
+-			    enum bch_validate_flags);
++			    struct bkey_validate_context from);
+ 
+ void bch2_bpos_to_text(struct printbuf *, struct bpos);
+ void bch2_bkey_to_text(struct printbuf *, const struct bkey *);
+diff --git a/fs/bcachefs/bkey_types.h b/fs/bcachefs/bkey_types.h
+index c9ae9e42b385..2af6279b02a9 100644
+--- a/fs/bcachefs/bkey_types.h
++++ b/fs/bcachefs/bkey_types.h
+@@ -210,4 +210,30 @@ static inline struct bkey_i_##name *bkey_##name##_init(struct bkey_i *_k)\
+ BCH_BKEY_TYPES();
+ #undef x
+ 
++enum bch_validate_flags {
++	BCH_VALIDATE_write		= BIT(0),
++	BCH_VALIDATE_commit		= BIT(1),
++	BCH_VALIDATE_journal		= BIT(2),
++	BCH_VALIDATE_silent		= BIT(3),
++};
++
++#define BKEY_VALIDATE_CONTEXTS()	\
++	x(unknown)			\
++	x(commit)			\
++	x(journal)			\
++	x(btree_root)			\
++	x(btree_node)
++
++struct bkey_validate_context {
++	enum {
++#define x(n)	BKEY_VALIDATE_##n,
++	BKEY_VALIDATE_CONTEXTS()
++#undef x
++	}			from:8;
++	u8			level;
++	enum btree_id		btree;
++	bool			root:1;
++	enum bch_validate_flags	flags:8;
++};
++
+ #endif /* _BCACHEFS_BKEY_TYPES_H */
+diff --git a/fs/bcachefs/btree_io.c b/fs/bcachefs/btree_io.c
+index 3bb6db9bd4a4..eedcb2445b99 100644
+--- a/fs/bcachefs/btree_io.c
++++ b/fs/bcachefs/btree_io.c
+@@ -831,13 +831,32 @@ static int validate_bset(struct bch_fs *c, struct bch_dev *ca,
+ 	return ret;
+ }
+ 
++static int btree_node_bkey_val_validate(struct bch_fs *c, struct btree *b,
++					struct bkey_s_c k,
++					enum bch_validate_flags flags)
++{
++	return bch2_bkey_val_validate(c, k, (struct bkey_validate_context) {
++		.from	= BKEY_VALIDATE_btree_node,
++		.level	= b->c.level,
++		.btree	= b->c.btree_id,
++		.flags	= flags
++	});
++}
++
+ static int bset_key_validate(struct bch_fs *c, struct btree *b,
+ 			     struct bkey_s_c k,
+-			     bool updated_range, int rw)
++			     bool updated_range,
++			     enum bch_validate_flags flags)
+ {
+-	return __bch2_bkey_validate(c, k, btree_node_type(b), 0) ?:
+-		(!updated_range ? bch2_bkey_in_btree_node(c, b, k, 0) : 0) ?:
+-		(rw == WRITE ? bch2_bkey_val_validate(c, k, 0) : 0);
++	struct bkey_validate_context from = (struct bkey_validate_context) {
++		.from	= BKEY_VALIDATE_btree_node,
++		.level	= b->c.level,
++		.btree	= b->c.btree_id,
++		.flags	= flags,
++	};
++	return __bch2_bkey_validate(c, k, from) ?:
++		(!updated_range ? bch2_bkey_in_btree_node(c, b, k, from) : 0) ?:
++		(flags & BCH_VALIDATE_write ? btree_node_bkey_val_validate(c, b, k, flags) : 0);
+ }
+ 
+ static bool bkey_packed_valid(struct bch_fs *c, struct btree *b,
+@@ -854,7 +873,13 @@ static bool bkey_packed_valid(struct bch_fs *c, struct btree *b,
+ 
+ 	struct bkey tmp;
+ 	struct bkey_s u = __bkey_disassemble(b, k, &tmp);
+-	return !__bch2_bkey_validate(c, u.s_c, btree_node_type(b), BCH_VALIDATE_silent);
++	return !__bch2_bkey_validate(c, u.s_c,
++				     (struct bkey_validate_context) {
++					.from	= BKEY_VALIDATE_btree_node,
++					.level	= b->c.level,
++					.btree	= b->c.btree_id,
++					.flags	= BCH_VALIDATE_silent
++				     });
+ }
+ 
+ static inline int btree_node_read_bkey_cmp(const struct btree *b,
+@@ -1224,7 +1249,7 @@ int bch2_btree_node_read_done(struct bch_fs *c, struct bch_dev *ca,
+ 		struct bkey tmp;
+ 		struct bkey_s u = __bkey_disassemble(b, k, &tmp);
+ 
+-		ret = bch2_bkey_val_validate(c, u.s_c, READ);
++		ret = btree_node_bkey_val_validate(c, b, u.s_c, READ);
+ 		if (ret == -BCH_ERR_fsck_delete_bkey ||
+ 		    (bch2_inject_invalid_keys &&
+ 		     !bversion_cmp(u.k->bversion, MAX_VERSION))) {
+@@ -1943,7 +1968,12 @@ static int validate_bset_for_write(struct bch_fs *c, struct btree *b,
+ 	bool saw_error;
+ 
+ 	int ret = bch2_bkey_validate(c, bkey_i_to_s_c(&b->key),
+-				     BKEY_TYPE_btree, WRITE);
++				     (struct bkey_validate_context) {
++					.from	= BKEY_VALIDATE_btree_node,
++					.level	= b->c.level + 1,
++					.btree	= b->c.btree_id,
++					.flags	= BCH_VALIDATE_write,
++				     });
+ 	if (ret) {
+ 		bch2_fs_inconsistent(c, "invalid btree node key before write");
+ 		return ret;
+diff --git a/fs/bcachefs/btree_node_scan.c b/fs/bcachefs/btree_node_scan.c
+index 327f1a1859b9..eeafb5e7354e 100644
+--- a/fs/bcachefs/btree_node_scan.c
++++ b/fs/bcachefs/btree_node_scan.c
+@@ -538,7 +538,12 @@ int bch2_get_scanned_nodes(struct bch_fs *c, enum btree_id btree,
+ 		bch_verbose(c, "%s(): recovering %s", __func__, buf.buf);
+ 		printbuf_exit(&buf);
+ 
+-		BUG_ON(bch2_bkey_validate(c, bkey_i_to_s_c(&tmp.k), BKEY_TYPE_btree, 0));
++		BUG_ON(bch2_bkey_validate(c, bkey_i_to_s_c(&tmp.k),
++					  (struct bkey_validate_context) {
++						.from	= BKEY_VALIDATE_btree_node,
++						.level	= level + 1,
++						.btree	= btree,
++					  }));
+ 
+ 		ret = bch2_journal_key_insert(c, btree, level + 1, &tmp.k);
+ 		if (ret)
+diff --git a/fs/bcachefs/btree_trans_commit.c b/fs/bcachefs/btree_trans_commit.c
+index cf313477567a..78d72c26083d 100644
+--- a/fs/bcachefs/btree_trans_commit.c
++++ b/fs/bcachefs/btree_trans_commit.c
+@@ -726,7 +726,12 @@ bch2_trans_commit_write_locked(struct btree_trans *trans, unsigned flags,
+ 			invalid_flags |= BCH_VALIDATE_write|BCH_VALIDATE_commit;
+ 
+ 		ret = bch2_bkey_validate(c, bkey_i_to_s_c(i->k),
+-					 i->bkey_type, invalid_flags);
++					 (struct bkey_validate_context) {
++						.from	= BKEY_VALIDATE_commit,
++						.level	= i->level,
++						.btree	= i->btree_id,
++						.flags	= invalid_flags,
++					 });
+ 		if (unlikely(ret)){
+ 			bch2_trans_inconsistent(trans, "invalid bkey on insert from %s -> %ps\n",
+ 						trans->fn, (void *) i->ip_allocated);
+diff --git a/fs/bcachefs/btree_update_interior.c b/fs/bcachefs/btree_update_interior.c
+index faa2816e02a0..56a70e95ef9a 100644
+--- a/fs/bcachefs/btree_update_interior.c
++++ b/fs/bcachefs/btree_update_interior.c
+@@ -1360,9 +1360,14 @@ static void bch2_insert_fixup_btree_ptr(struct btree_update *as,
+ 	if (unlikely(!test_bit(JOURNAL_replay_done, &c->journal.flags)))
+ 		bch2_journal_key_overwritten(c, b->c.btree_id, b->c.level, insert->k.p);
+ 
+-	if (bch2_bkey_validate(c, bkey_i_to_s_c(insert),
+-			      btree_node_type(b), BCH_VALIDATE_write) ?:
+-	    bch2_bkey_in_btree_node(c, b, bkey_i_to_s_c(insert), BCH_VALIDATE_write)) {
++	struct bkey_validate_context from = (struct bkey_validate_context) {
++		.from	= BKEY_VALIDATE_btree_node,
++		.level	= b->c.level,
++		.btree	= b->c.btree_id,
++		.flags	= BCH_VALIDATE_commit,
++	};
++	if (bch2_bkey_validate(c, bkey_i_to_s_c(insert), from) ?:
++	    bch2_bkey_in_btree_node(c, b, bkey_i_to_s_c(insert), from)) {
+ 		bch2_fs_inconsistent(c, "%s: inserting invalid bkey", __func__);
+ 		dump_stack();
+ 	}
+diff --git a/fs/bcachefs/data_update.c b/fs/bcachefs/data_update.c
+index e4af2ccdf4c8..31b2aeb0c6e6 100644
+--- a/fs/bcachefs/data_update.c
++++ b/fs/bcachefs/data_update.c
+@@ -318,8 +318,11 @@ static int __bch2_data_update_index_update(struct btree_trans *trans,
+ 		 * it's been hard to reproduce, so this should give us some more
+ 		 * information when it does occur:
+ 		 */
+-		int invalid = bch2_bkey_validate(c, bkey_i_to_s_c(insert), __btree_node_type(0, m->btree_id),
+-						 BCH_VALIDATE_commit);
++		int invalid = bch2_bkey_validate(c, bkey_i_to_s_c(insert),
++						 (struct bkey_validate_context) {
++							.btree	= m->btree_id,
++							.flags	= BCH_VALIDATE_commit,
++						 });
+ 		if (invalid) {
+ 			struct printbuf buf = PRINTBUF;
+ 
+diff --git a/fs/bcachefs/dirent.c b/fs/bcachefs/dirent.c
+index 4c22f78b0484..41813f9ce831 100644
+--- a/fs/bcachefs/dirent.c
++++ b/fs/bcachefs/dirent.c
+@@ -101,7 +101,7 @@ const struct bch_hash_desc bch2_dirent_hash_desc = {
+ };
+ 
+ int bch2_dirent_validate(struct bch_fs *c, struct bkey_s_c k,
+-			 enum bch_validate_flags flags)
++			 struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_dirent d = bkey_s_c_to_dirent(k);
+ 	struct qstr d_name = bch2_dirent_get_name(d);
+@@ -120,7 +120,7 @@ int bch2_dirent_validate(struct bch_fs *c, struct bkey_s_c k,
+ 	 * Check new keys don't exceed the max length
+ 	 * (older keys may be larger.)
+ 	 */
+-	bkey_fsck_err_on((flags & BCH_VALIDATE_commit) && d_name.len > BCH_NAME_MAX,
++	bkey_fsck_err_on((from.flags & BCH_VALIDATE_commit) && d_name.len > BCH_NAME_MAX,
+ 			 c, dirent_name_too_long,
+ 			 "dirent name too big (%u > %u)",
+ 			 d_name.len, BCH_NAME_MAX);
+diff --git a/fs/bcachefs/dirent.h b/fs/bcachefs/dirent.h
+index 53ad99666022..362b3b2f2f2e 100644
+--- a/fs/bcachefs/dirent.h
++++ b/fs/bcachefs/dirent.h
+@@ -4,10 +4,10 @@
+ 
+ #include "str_hash.h"
+ 
+-enum bch_validate_flags;
+ extern const struct bch_hash_desc bch2_dirent_hash_desc;
+ 
+-int bch2_dirent_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_dirent_validate(struct bch_fs *, struct bkey_s_c,
++			 struct bkey_validate_context);
+ void bch2_dirent_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ 
+ #define bch2_bkey_ops_dirent ((struct bkey_ops) {	\
+diff --git a/fs/bcachefs/disk_accounting.c b/fs/bcachefs/disk_accounting.c
+index c5e61265b709..71c49a7ee2fe 100644
+--- a/fs/bcachefs/disk_accounting.c
++++ b/fs/bcachefs/disk_accounting.c
+@@ -127,14 +127,14 @@ static inline bool is_zero(char *start, char *end)
+ #define field_end(p, member)	(((void *) (&p.member)) + sizeof(p.member))
+ 
+ int bch2_accounting_validate(struct bch_fs *c, struct bkey_s_c k,
+-			     enum bch_validate_flags flags)
++			     struct bkey_validate_context from)
+ {
+ 	struct disk_accounting_pos acc_k;
+ 	bpos_to_disk_accounting_pos(&acc_k, k.k->p);
+ 	void *end = &acc_k + 1;
+ 	int ret = 0;
+ 
+-	bkey_fsck_err_on((flags & BCH_VALIDATE_commit) &&
++	bkey_fsck_err_on((from.flags & BCH_VALIDATE_commit) &&
+ 			 bversion_zero(k.k->bversion),
+ 			 c, accounting_key_version_0,
+ 			 "accounting key with version=0");
+diff --git a/fs/bcachefs/disk_accounting.h b/fs/bcachefs/disk_accounting.h
+index 8b2b2f83e6a4..566aa2a8539d 100644
+--- a/fs/bcachefs/disk_accounting.h
++++ b/fs/bcachefs/disk_accounting.h
+@@ -83,7 +83,8 @@ int bch2_disk_accounting_mod(struct btree_trans *, struct disk_accounting_pos *,
+ 			     s64 *, unsigned, bool);
+ int bch2_mod_dev_cached_sectors(struct btree_trans *, unsigned, s64, bool);
+ 
+-int bch2_accounting_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_accounting_validate(struct bch_fs *, struct bkey_s_c,
++			     struct bkey_validate_context);
+ void bch2_accounting_key_to_text(struct printbuf *, struct disk_accounting_pos *);
+ void bch2_accounting_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ void bch2_accounting_swab(struct bkey_s);
+diff --git a/fs/bcachefs/ec.c b/fs/bcachefs/ec.c
+index cd377ce6cf64..eaca4c39d703 100644
+--- a/fs/bcachefs/ec.c
++++ b/fs/bcachefs/ec.c
+@@ -110,7 +110,7 @@ struct ec_bio {
+ /* Stripes btree keys: */
+ 
+ int bch2_stripe_validate(struct bch_fs *c, struct bkey_s_c k,
+-			 enum bch_validate_flags flags)
++			 struct bkey_validate_context from)
+ {
+ 	const struct bch_stripe *s = bkey_s_c_to_stripe(k).v;
+ 	int ret = 0;
+@@ -130,7 +130,7 @@ int bch2_stripe_validate(struct bch_fs *c, struct bkey_s_c k,
+ 			 "invalid csum granularity (%u >= 64)",
+ 			 s->csum_granularity_bits);
+ 
+-	ret = bch2_bkey_ptrs_validate(c, k, flags);
++	ret = bch2_bkey_ptrs_validate(c, k, from);
+ fsck_err:
+ 	return ret;
+ }
+diff --git a/fs/bcachefs/ec.h b/fs/bcachefs/ec.h
+index 43326370b410..583ca6a226da 100644
+--- a/fs/bcachefs/ec.h
++++ b/fs/bcachefs/ec.h
+@@ -6,9 +6,8 @@
+ #include "buckets_types.h"
+ #include "extents_types.h"
+ 
+-enum bch_validate_flags;
+-
+-int bch2_stripe_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_stripe_validate(struct bch_fs *, struct bkey_s_c,
++			 struct bkey_validate_context);
+ void bch2_stripe_to_text(struct printbuf *, struct bch_fs *,
+ 			 struct bkey_s_c);
+ int bch2_trigger_stripe(struct btree_trans *, enum btree_id, unsigned,
+diff --git a/fs/bcachefs/error.c b/fs/bcachefs/error.c
+index 2960baa023f6..9a695322b33c 100644
+--- a/fs/bcachefs/error.c
++++ b/fs/bcachefs/error.c
+@@ -1,5 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0
+ #include "bcachefs.h"
++#include "btree_cache.h"
+ #include "btree_iter.h"
+ #include "error.h"
+ #include "journal.h"
+@@ -443,23 +444,34 @@ int __bch2_fsck_err(struct bch_fs *c,
+ 	return ret;
+ }
+ 
++static const char * const bch2_bkey_validate_contexts[] = {
++#define x(n) #n,
++	BKEY_VALIDATE_CONTEXTS()
++#undef x
++	NULL
++};
++
+ int __bch2_bkey_fsck_err(struct bch_fs *c,
+ 			 struct bkey_s_c k,
+-			 enum bch_validate_flags validate_flags,
++			 struct bkey_validate_context from,
+ 			 enum bch_sb_error_id err,
+ 			 const char *fmt, ...)
+ {
+-	if (validate_flags & BCH_VALIDATE_silent)
++	if (from.flags & BCH_VALIDATE_silent)
+ 		return -BCH_ERR_fsck_delete_bkey;
+ 
+ 	unsigned fsck_flags = 0;
+-	if (!(validate_flags & (BCH_VALIDATE_write|BCH_VALIDATE_commit)))
++	if (!(from.flags & (BCH_VALIDATE_write|BCH_VALIDATE_commit)))
+ 		fsck_flags |= FSCK_AUTOFIX|FSCK_CAN_FIX;
+ 
+ 	struct printbuf buf = PRINTBUF;
+ 	va_list args;
+ 
+-	prt_str(&buf, "invalid bkey ");
++	prt_printf(&buf, "invalid bkey in %s btree=",
++		   bch2_bkey_validate_contexts[from.from]);
++	bch2_btree_id_to_text(&buf, from.btree);
++	prt_printf(&buf, " level=%u: ", from.level);
++
+ 	bch2_bkey_val_to_text(&buf, c, k);
+ 	prt_str(&buf, "\n  ");
+ 	va_start(args, fmt);
+diff --git a/fs/bcachefs/error.h b/fs/bcachefs/error.h
+index 8327a3461535..3b278f28e56b 100644
+--- a/fs/bcachefs/error.h
++++ b/fs/bcachefs/error.h
+@@ -153,7 +153,7 @@ enum bch_validate_flags;
+ __printf(5, 6)
+ int __bch2_bkey_fsck_err(struct bch_fs *,
+ 			 struct bkey_s_c,
+-			 enum bch_validate_flags,
++			 struct bkey_validate_context from,
+ 			 enum bch_sb_error_id,
+ 			 const char *, ...);
+ 
+@@ -163,7 +163,7 @@ int __bch2_bkey_fsck_err(struct bch_fs *,
+  */
+ #define bkey_fsck_err(c, _err_type, _err_msg, ...)			\
+ do {									\
+-	int _ret = __bch2_bkey_fsck_err(c, k, flags,			\
++	int _ret = __bch2_bkey_fsck_err(c, k, from,			\
+ 				BCH_FSCK_ERR_##_err_type,		\
+ 				_err_msg, ##__VA_ARGS__);		\
+ 	if (_ret != -BCH_ERR_fsck_fix &&				\
+diff --git a/fs/bcachefs/extents.c b/fs/bcachefs/extents.c
+index 83aeceb68847..aa3b88291814 100644
+--- a/fs/bcachefs/extents.c
++++ b/fs/bcachefs/extents.c
+@@ -178,7 +178,7 @@ int bch2_bkey_pick_read_device(struct bch_fs *c, struct bkey_s_c k,
+ /* KEY_TYPE_btree_ptr: */
+ 
+ int bch2_btree_ptr_validate(struct bch_fs *c, struct bkey_s_c k,
+-			    enum bch_validate_flags flags)
++			    struct bkey_validate_context from)
+ {
+ 	int ret = 0;
+ 
+@@ -186,7 +186,7 @@ int bch2_btree_ptr_validate(struct bch_fs *c, struct bkey_s_c k,
+ 			 c, btree_ptr_val_too_big,
+ 			 "value too big (%zu > %u)", bkey_val_u64s(k.k), BCH_REPLICAS_MAX);
+ 
+-	ret = bch2_bkey_ptrs_validate(c, k, flags);
++	ret = bch2_bkey_ptrs_validate(c, k, from);
+ fsck_err:
+ 	return ret;
+ }
+@@ -198,7 +198,7 @@ void bch2_btree_ptr_to_text(struct printbuf *out, struct bch_fs *c,
+ }
+ 
+ int bch2_btree_ptr_v2_validate(struct bch_fs *c, struct bkey_s_c k,
+-			       enum bch_validate_flags flags)
++			       struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_btree_ptr_v2 bp = bkey_s_c_to_btree_ptr_v2(k);
+ 	int ret = 0;
+@@ -212,13 +212,13 @@ int bch2_btree_ptr_v2_validate(struct bch_fs *c, struct bkey_s_c k,
+ 			 c, btree_ptr_v2_min_key_bad,
+ 			 "min_key > key");
+ 
+-	if ((flags & BCH_VALIDATE_write) &&
++	if ((from.flags & BCH_VALIDATE_write) &&
+ 	    c->sb.version_min >= bcachefs_metadata_version_btree_ptr_sectors_written)
+ 		bkey_fsck_err_on(!bp.v->sectors_written,
+ 				 c, btree_ptr_v2_written_0,
+ 				 "sectors_written == 0");
+ 
+-	ret = bch2_bkey_ptrs_validate(c, k, flags);
++	ret = bch2_bkey_ptrs_validate(c, k, from);
+ fsck_err:
+ 	return ret;
+ }
+@@ -405,7 +405,7 @@ bool bch2_extent_merge(struct bch_fs *c, struct bkey_s l, struct bkey_s_c r)
+ /* KEY_TYPE_reservation: */
+ 
+ int bch2_reservation_validate(struct bch_fs *c, struct bkey_s_c k,
+-			      enum bch_validate_flags flags)
++			      struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_reservation r = bkey_s_c_to_reservation(k);
+ 	int ret = 0;
+@@ -1231,7 +1231,7 @@ void bch2_bkey_ptrs_to_text(struct printbuf *out, struct bch_fs *c,
+ 
+ static int extent_ptr_validate(struct bch_fs *c,
+ 			       struct bkey_s_c k,
+-			       enum bch_validate_flags flags,
++			       struct bkey_validate_context from,
+ 			       const struct bch_extent_ptr *ptr,
+ 			       unsigned size_ondisk,
+ 			       bool metadata)
+@@ -1274,7 +1274,7 @@ static int extent_ptr_validate(struct bch_fs *c,
+ }
+ 
+ int bch2_bkey_ptrs_validate(struct bch_fs *c, struct bkey_s_c k,
+-			    enum bch_validate_flags flags)
++			    struct bkey_validate_context from)
+ {
+ 	struct bkey_ptrs_c ptrs = bch2_bkey_ptrs_c(k);
+ 	const union bch_extent_entry *entry;
+@@ -1301,7 +1301,7 @@ int bch2_bkey_ptrs_validate(struct bch_fs *c, struct bkey_s_c k,
+ 
+ 		switch (extent_entry_type(entry)) {
+ 		case BCH_EXTENT_ENTRY_ptr:
+-			ret = extent_ptr_validate(c, k, flags, &entry->ptr, size_ondisk, false);
++			ret = extent_ptr_validate(c, k, from, &entry->ptr, size_ondisk, false);
+ 			if (ret)
+ 				return ret;
+ 
+@@ -1348,7 +1348,7 @@ int bch2_bkey_ptrs_validate(struct bch_fs *c, struct bkey_s_c k,
+ 
+ 			bkey_fsck_err_on(crc_is_encoded(crc) &&
+ 					 (crc.uncompressed_size > c->opts.encoded_extent_max >> 9) &&
+-					 (flags & (BCH_VALIDATE_write|BCH_VALIDATE_commit)),
++					 (from.flags & (BCH_VALIDATE_write|BCH_VALIDATE_commit)),
+ 					 c, ptr_crc_uncompressed_size_too_big,
+ 					 "too large encoded extent");
+ 
+diff --git a/fs/bcachefs/extents.h b/fs/bcachefs/extents.h
+index ba33788fee36..620b284aa34f 100644
+--- a/fs/bcachefs/extents.h
++++ b/fs/bcachefs/extents.h
+@@ -8,7 +8,6 @@
+ 
+ struct bch_fs;
+ struct btree_trans;
+-enum bch_validate_flags;
+ 
+ /* extent entries: */
+ 
+@@ -410,12 +409,12 @@ int bch2_bkey_pick_read_device(struct bch_fs *, struct bkey_s_c,
+ /* KEY_TYPE_btree_ptr: */
+ 
+ int bch2_btree_ptr_validate(struct bch_fs *, struct bkey_s_c,
+-			    enum bch_validate_flags);
++			    struct bkey_validate_context);
+ void bch2_btree_ptr_to_text(struct printbuf *, struct bch_fs *,
+ 			    struct bkey_s_c);
+ 
+ int bch2_btree_ptr_v2_validate(struct bch_fs *, struct bkey_s_c,
+-			       enum bch_validate_flags);
++			       struct bkey_validate_context);
+ void bch2_btree_ptr_v2_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ void bch2_btree_ptr_v2_compat(enum btree_id, unsigned, unsigned,
+ 			      int, struct bkey_s);
+@@ -452,7 +451,7 @@ bool bch2_extent_merge(struct bch_fs *, struct bkey_s, struct bkey_s_c);
+ /* KEY_TYPE_reservation: */
+ 
+ int bch2_reservation_validate(struct bch_fs *, struct bkey_s_c,
+-			      enum bch_validate_flags);
++			      struct bkey_validate_context);
+ void bch2_reservation_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ bool bch2_reservation_merge(struct bch_fs *, struct bkey_s, struct bkey_s_c);
+ 
+@@ -696,7 +695,7 @@ void bch2_extent_ptr_to_text(struct printbuf *out, struct bch_fs *, const struct
+ void bch2_bkey_ptrs_to_text(struct printbuf *, struct bch_fs *,
+ 			    struct bkey_s_c);
+ int bch2_bkey_ptrs_validate(struct bch_fs *, struct bkey_s_c,
+-			    enum bch_validate_flags);
++			    struct bkey_validate_context);
+ 
+ static inline bool bch2_extent_ptr_eq(struct bch_extent_ptr ptr1,
+ 				      struct bch_extent_ptr ptr2)
+diff --git a/fs/bcachefs/inode.c b/fs/bcachefs/inode.c
+index 5c603ab66be0..8818e41883f2 100644
+--- a/fs/bcachefs/inode.c
++++ b/fs/bcachefs/inode.c
+@@ -429,7 +429,7 @@ struct bkey_i *bch2_inode_to_v3(struct btree_trans *trans, struct bkey_i *k)
+ }
+ 
+ static int __bch2_inode_validate(struct bch_fs *c, struct bkey_s_c k,
+-				 enum bch_validate_flags flags)
++				 struct bkey_validate_context from)
+ {
+ 	struct bch_inode_unpacked unpacked;
+ 	int ret = 0;
+@@ -469,7 +469,7 @@ static int __bch2_inode_validate(struct bch_fs *c, struct bkey_s_c k,
+ }
+ 
+ int bch2_inode_validate(struct bch_fs *c, struct bkey_s_c k,
+-			enum bch_validate_flags flags)
++			struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_inode inode = bkey_s_c_to_inode(k);
+ 	int ret = 0;
+@@ -479,13 +479,13 @@ int bch2_inode_validate(struct bch_fs *c, struct bkey_s_c k,
+ 			 "invalid str hash type (%llu >= %u)",
+ 			 INODEv1_STR_HASH(inode.v), BCH_STR_HASH_NR);
+ 
+-	ret = __bch2_inode_validate(c, k, flags);
++	ret = __bch2_inode_validate(c, k, from);
+ fsck_err:
+ 	return ret;
+ }
+ 
+ int bch2_inode_v2_validate(struct bch_fs *c, struct bkey_s_c k,
+-			   enum bch_validate_flags flags)
++			   struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_inode_v2 inode = bkey_s_c_to_inode_v2(k);
+ 	int ret = 0;
+@@ -495,13 +495,13 @@ int bch2_inode_v2_validate(struct bch_fs *c, struct bkey_s_c k,
+ 			 "invalid str hash type (%llu >= %u)",
+ 			 INODEv2_STR_HASH(inode.v), BCH_STR_HASH_NR);
+ 
+-	ret = __bch2_inode_validate(c, k, flags);
++	ret = __bch2_inode_validate(c, k, from);
+ fsck_err:
+ 	return ret;
+ }
+ 
+ int bch2_inode_v3_validate(struct bch_fs *c, struct bkey_s_c k,
+-			   enum bch_validate_flags flags)
++			   struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_inode_v3 inode = bkey_s_c_to_inode_v3(k);
+ 	int ret = 0;
+@@ -519,7 +519,7 @@ int bch2_inode_v3_validate(struct bch_fs *c, struct bkey_s_c k,
+ 			 "invalid str hash type (%llu >= %u)",
+ 			 INODEv3_STR_HASH(inode.v), BCH_STR_HASH_NR);
+ 
+-	ret = __bch2_inode_validate(c, k, flags);
++	ret = __bch2_inode_validate(c, k, from);
+ fsck_err:
+ 	return ret;
+ }
+@@ -780,7 +780,7 @@ int bch2_trigger_inode(struct btree_trans *trans,
+ }
+ 
+ int bch2_inode_generation_validate(struct bch_fs *c, struct bkey_s_c k,
+-				   enum bch_validate_flags flags)
++				   struct bkey_validate_context from)
+ {
+ 	int ret = 0;
+ 
+diff --git a/fs/bcachefs/inode.h b/fs/bcachefs/inode.h
+index f52336cb298f..927c875976da 100644
+--- a/fs/bcachefs/inode.h
++++ b/fs/bcachefs/inode.h
+@@ -7,15 +7,14 @@
+ #include "opts.h"
+ #include "snapshot.h"
+ 
+-enum bch_validate_flags;
+ extern const char * const bch2_inode_opts[];
+ 
+ int bch2_inode_validate(struct bch_fs *, struct bkey_s_c,
+-		       enum bch_validate_flags);
++			struct bkey_validate_context);
+ int bch2_inode_v2_validate(struct bch_fs *, struct bkey_s_c,
+-			  enum bch_validate_flags);
++			   struct bkey_validate_context);
+ int bch2_inode_v3_validate(struct bch_fs *, struct bkey_s_c,
+-			  enum bch_validate_flags);
++			   struct bkey_validate_context);
+ void bch2_inode_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ 
+ int __bch2_inode_has_child_snapshots(struct btree_trans *, struct bpos);
+@@ -60,7 +59,7 @@ static inline bool bkey_is_inode(const struct bkey *k)
+ }
+ 
+ int bch2_inode_generation_validate(struct bch_fs *, struct bkey_s_c,
+-				  enum bch_validate_flags);
++				   struct bkey_validate_context);
+ void bch2_inode_generation_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ 
+ #define bch2_bkey_ops_inode_generation ((struct bkey_ops) {	\
+diff --git a/fs/bcachefs/journal_io.c b/fs/bcachefs/journal_io.c
+index 768a3b950997..1627f3e16517 100644
+--- a/fs/bcachefs/journal_io.c
++++ b/fs/bcachefs/journal_io.c
+@@ -327,11 +327,11 @@ static void journal_entry_err_msg(struct printbuf *out,
+ static int journal_validate_key(struct bch_fs *c,
+ 				struct jset *jset,
+ 				struct jset_entry *entry,
+-				unsigned level, enum btree_id btree_id,
+ 				struct bkey_i *k,
+-				unsigned version, int big_endian,
+-				enum bch_validate_flags flags)
++				struct bkey_validate_context from,
++				unsigned version, int big_endian)
+ {
++	enum bch_validate_flags flags = from.flags;
+ 	int write = flags & BCH_VALIDATE_write;
+ 	void *next = vstruct_next(entry);
+ 	int ret = 0;
+@@ -366,11 +366,10 @@ static int journal_validate_key(struct bch_fs *c,
+ 	}
+ 
+ 	if (!write)
+-		bch2_bkey_compat(level, btree_id, version, big_endian,
++		bch2_bkey_compat(from.level, from.btree, version, big_endian,
+ 				 write, NULL, bkey_to_packed(k));
+ 
+-	ret = bch2_bkey_validate(c, bkey_i_to_s_c(k),
+-				 __btree_node_type(level, btree_id), write);
++	ret = bch2_bkey_validate(c, bkey_i_to_s_c(k), from);
+ 	if (ret == -BCH_ERR_fsck_delete_bkey) {
+ 		le16_add_cpu(&entry->u64s, -((u16) k->k.u64s));
+ 		memmove(k, bkey_next(k), next - (void *) bkey_next(k));
+@@ -381,7 +380,7 @@ static int journal_validate_key(struct bch_fs *c,
+ 		goto fsck_err;
+ 
+ 	if (write)
+-		bch2_bkey_compat(level, btree_id, version, big_endian,
++		bch2_bkey_compat(from.level, from.btree, version, big_endian,
+ 				 write, NULL, bkey_to_packed(k));
+ fsck_err:
+ 	return ret;
+@@ -394,13 +393,15 @@ static int journal_entry_btree_keys_validate(struct bch_fs *c,
+ 				enum bch_validate_flags flags)
+ {
+ 	struct bkey_i *k = entry->start;
++	struct bkey_validate_context from = {
++		.from	= BKEY_VALIDATE_journal,
++		.level	= entry->level,
++		.btree	= entry->btree_id,
++		.flags	= flags|BCH_VALIDATE_journal,
++	};
+ 
+ 	while (k != vstruct_last(entry)) {
+-		int ret = journal_validate_key(c, jset, entry,
+-					       entry->level,
+-					       entry->btree_id,
+-					       k, version, big_endian,
+-					       flags|BCH_VALIDATE_journal);
++		int ret = journal_validate_key(c, jset, entry, k, from, version, big_endian);
+ 		if (ret == FSCK_DELETED_KEY)
+ 			continue;
+ 		else if (ret)
+@@ -455,8 +456,14 @@ static int journal_entry_btree_root_validate(struct bch_fs *c,
+ 		return 0;
+ 	}
+ 
+-	ret = journal_validate_key(c, jset, entry, 1, entry->btree_id, k,
+-				   version, big_endian, flags);
++	struct bkey_validate_context from = {
++		.from	= BKEY_VALIDATE_journal,
++		.level	= entry->level + 1,
++		.btree	= entry->btree_id,
++		.root	= true,
++		.flags	= flags,
++	};
++	ret = journal_validate_key(c, jset, entry, k, from, version, big_endian);
+ 	if (ret == FSCK_DELETED_KEY)
+ 		ret = 0;
+ fsck_err:
+diff --git a/fs/bcachefs/lru.c b/fs/bcachefs/lru.c
+index c18242748ca3..ce794d55818f 100644
+--- a/fs/bcachefs/lru.c
++++ b/fs/bcachefs/lru.c
+@@ -12,7 +12,7 @@
+ 
+ /* KEY_TYPE_lru is obsolete: */
+ int bch2_lru_validate(struct bch_fs *c, struct bkey_s_c k,
+-		     enum bch_validate_flags flags)
++		      struct bkey_validate_context from)
+ {
+ 	int ret = 0;
+ 
+diff --git a/fs/bcachefs/lru.h b/fs/bcachefs/lru.h
+index e6a7d8241bb8..f31a6cf1514c 100644
+--- a/fs/bcachefs/lru.h
++++ b/fs/bcachefs/lru.h
+@@ -33,7 +33,7 @@ static inline enum bch_lru_type lru_type(struct bkey_s_c l)
+ 	return BCH_LRU_read;
+ }
+ 
+-int bch2_lru_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_lru_validate(struct bch_fs *, struct bkey_s_c, struct bkey_validate_context);
+ void bch2_lru_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ 
+ void bch2_lru_pos_to_text(struct printbuf *, struct bpos);
+diff --git a/fs/bcachefs/quota.c b/fs/bcachefs/quota.c
+index 74f45a8162ad..8b857fc33244 100644
+--- a/fs/bcachefs/quota.c
++++ b/fs/bcachefs/quota.c
+@@ -60,7 +60,7 @@ const struct bch_sb_field_ops bch_sb_field_ops_quota = {
+ };
+ 
+ int bch2_quota_validate(struct bch_fs *c, struct bkey_s_c k,
+-			enum bch_validate_flags flags)
++			struct bkey_validate_context from)
+ {
+ 	int ret = 0;
+ 
+diff --git a/fs/bcachefs/quota.h b/fs/bcachefs/quota.h
+index a62abcc5332a..1551800ff44c 100644
+--- a/fs/bcachefs/quota.h
++++ b/fs/bcachefs/quota.h
+@@ -5,10 +5,10 @@
+ #include "inode.h"
+ #include "quota_types.h"
+ 
+-enum bch_validate_flags;
+ extern const struct bch_sb_field_ops bch_sb_field_ops_quota;
+ 
+-int bch2_quota_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_quota_validate(struct bch_fs *, struct bkey_s_c,
++			struct bkey_validate_context);
+ void bch2_quota_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ 
+ #define bch2_bkey_ops_quota ((struct bkey_ops) {	\
+diff --git a/fs/bcachefs/recovery.c b/fs/bcachefs/recovery.c
+index 727e894762f5..e361057ffad4 100644
+--- a/fs/bcachefs/recovery.c
++++ b/fs/bcachefs/recovery.c
+@@ -569,6 +569,7 @@ static int read_btree_roots(struct bch_fs *c)
+ 				r->error = 0;
+ 
+ 			ret = bch2_btree_lost_data(c, i);
++			BUG_ON(ret);
+ 		}
+ 	}
+ 
+diff --git a/fs/bcachefs/reflink.c b/fs/bcachefs/reflink.c
+index 38db5a011702..e1911b9beb61 100644
+--- a/fs/bcachefs/reflink.c
++++ b/fs/bcachefs/reflink.c
+@@ -41,7 +41,7 @@ static inline unsigned bkey_type_to_indirect(const struct bkey *k)
+ /* reflink pointers */
+ 
+ int bch2_reflink_p_validate(struct bch_fs *c, struct bkey_s_c k,
+-			    enum bch_validate_flags flags)
++			    struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_reflink_p p = bkey_s_c_to_reflink_p(k);
+ 	int ret = 0;
+@@ -89,7 +89,7 @@ bool bch2_reflink_p_merge(struct bch_fs *c, struct bkey_s _l, struct bkey_s_c _r
+ /* indirect extents */
+ 
+ int bch2_reflink_v_validate(struct bch_fs *c, struct bkey_s_c k,
+-			    enum bch_validate_flags flags)
++			    struct bkey_validate_context from)
+ {
+ 	int ret = 0;
+ 
+@@ -98,7 +98,7 @@ int bch2_reflink_v_validate(struct bch_fs *c, struct bkey_s_c k,
+ 			 "indirect extent above maximum position 0:%llu",
+ 			 REFLINK_P_IDX_MAX);
+ 
+-	ret = bch2_bkey_ptrs_validate(c, k, flags);
++	ret = bch2_bkey_ptrs_validate(c, k, from);
+ fsck_err:
+ 	return ret;
+ }
+@@ -128,7 +128,7 @@ bool bch2_reflink_v_merge(struct bch_fs *c, struct bkey_s _l, struct bkey_s_c _r
+ /* indirect inline data */
+ 
+ int bch2_indirect_inline_data_validate(struct bch_fs *c, struct bkey_s_c k,
+-				      enum bch_validate_flags flags)
++				       struct bkey_validate_context from)
+ {
+ 	return 0;
+ }
+diff --git a/fs/bcachefs/reflink.h b/fs/bcachefs/reflink.h
+index b61a4bdd8e82..f119316adc81 100644
+--- a/fs/bcachefs/reflink.h
++++ b/fs/bcachefs/reflink.h
+@@ -2,9 +2,8 @@
+ #ifndef _BCACHEFS_REFLINK_H
+ #define _BCACHEFS_REFLINK_H
+ 
+-enum bch_validate_flags;
+-
+-int bch2_reflink_p_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_reflink_p_validate(struct bch_fs *, struct bkey_s_c,
++			    struct bkey_validate_context);
+ void bch2_reflink_p_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ bool bch2_reflink_p_merge(struct bch_fs *, struct bkey_s, struct bkey_s_c);
+ int bch2_trigger_reflink_p(struct btree_trans *, enum btree_id, unsigned,
+@@ -19,7 +18,8 @@ int bch2_trigger_reflink_p(struct btree_trans *, enum btree_id, unsigned,
+ 	.min_val_size	= 16,					\
+ })
+ 
+-int bch2_reflink_v_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_reflink_v_validate(struct bch_fs *, struct bkey_s_c,
++			    struct bkey_validate_context);
+ void bch2_reflink_v_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ int bch2_trigger_reflink_v(struct btree_trans *, enum btree_id, unsigned,
+ 			   struct bkey_s_c, struct bkey_s,
+@@ -34,7 +34,7 @@ int bch2_trigger_reflink_v(struct btree_trans *, enum btree_id, unsigned,
+ })
+ 
+ int bch2_indirect_inline_data_validate(struct bch_fs *, struct bkey_s_c,
+-				      enum bch_validate_flags);
++				       struct bkey_validate_context);
+ void bch2_indirect_inline_data_to_text(struct printbuf *,
+ 				struct bch_fs *, struct bkey_s_c);
+ int bch2_trigger_indirect_inline_data(struct btree_trans *,
+diff --git a/fs/bcachefs/snapshot.c b/fs/bcachefs/snapshot.c
+index 6a52090485dc..f368270d6d9b 100644
+--- a/fs/bcachefs/snapshot.c
++++ b/fs/bcachefs/snapshot.c
+@@ -32,7 +32,7 @@ void bch2_snapshot_tree_to_text(struct printbuf *out, struct bch_fs *c,
+ }
+ 
+ int bch2_snapshot_tree_validate(struct bch_fs *c, struct bkey_s_c k,
+-			       enum bch_validate_flags flags)
++				struct bkey_validate_context from)
+ {
+ 	int ret = 0;
+ 
+@@ -225,7 +225,7 @@ void bch2_snapshot_to_text(struct printbuf *out, struct bch_fs *c,
+ }
+ 
+ int bch2_snapshot_validate(struct bch_fs *c, struct bkey_s_c k,
+-			  enum bch_validate_flags flags)
++			   struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_snapshot s;
+ 	u32 i, id;
+diff --git a/fs/bcachefs/snapshot.h b/fs/bcachefs/snapshot.h
+index 29c94716293e..ae23d45fad66 100644
+--- a/fs/bcachefs/snapshot.h
++++ b/fs/bcachefs/snapshot.h
+@@ -2,11 +2,9 @@
+ #ifndef _BCACHEFS_SNAPSHOT_H
+ #define _BCACHEFS_SNAPSHOT_H
+ 
+-enum bch_validate_flags;
+-
+ void bch2_snapshot_tree_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ int bch2_snapshot_tree_validate(struct bch_fs *, struct bkey_s_c,
+-			       enum bch_validate_flags);
++				struct bkey_validate_context);
+ 
+ #define bch2_bkey_ops_snapshot_tree ((struct bkey_ops) {	\
+ 	.key_validate	= bch2_snapshot_tree_validate,		\
+@@ -19,7 +17,8 @@ struct bkey_i_snapshot_tree *__bch2_snapshot_tree_create(struct btree_trans *);
+ int bch2_snapshot_tree_lookup(struct btree_trans *, u32, struct bch_snapshot_tree *);
+ 
+ void bch2_snapshot_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+-int bch2_snapshot_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_snapshot_validate(struct bch_fs *, struct bkey_s_c,
++			   struct bkey_validate_context);
+ int bch2_mark_snapshot(struct btree_trans *, enum btree_id, unsigned,
+ 		       struct bkey_s_c, struct bkey_s,
+ 		       enum btree_iter_update_trigger_flags);
+diff --git a/fs/bcachefs/subvolume.c b/fs/bcachefs/subvolume.c
+index cb45ef769c54..5e5ae405cb28 100644
+--- a/fs/bcachefs/subvolume.c
++++ b/fs/bcachefs/subvolume.c
+@@ -207,7 +207,7 @@ int bch2_check_subvol_children(struct bch_fs *c)
+ /* Subvolumes: */
+ 
+ int bch2_subvolume_validate(struct bch_fs *c, struct bkey_s_c k,
+-			   enum bch_validate_flags flags)
++			    struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_subvolume subvol = bkey_s_c_to_subvolume(k);
+ 	int ret = 0;
+diff --git a/fs/bcachefs/subvolume.h b/fs/bcachefs/subvolume.h
+index 07b23dc08614..d53d292c22d7 100644
+--- a/fs/bcachefs/subvolume.h
++++ b/fs/bcachefs/subvolume.h
+@@ -5,12 +5,11 @@
+ #include "darray.h"
+ #include "subvolume_types.h"
+ 
+-enum bch_validate_flags;
+-
+ int bch2_check_subvols(struct bch_fs *);
+ int bch2_check_subvol_children(struct bch_fs *);
+ 
+-int bch2_subvolume_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_subvolume_validate(struct bch_fs *, struct bkey_s_c,
++			    struct bkey_validate_context);
+ void bch2_subvolume_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ int bch2_subvolume_trigger(struct btree_trans *, enum btree_id, unsigned,
+ 			   struct bkey_s_c, struct bkey_s,
+diff --git a/fs/bcachefs/xattr.c b/fs/bcachefs/xattr.c
+index 820c1791545a..aed7c6984173 100644
+--- a/fs/bcachefs/xattr.c
++++ b/fs/bcachefs/xattr.c
+@@ -71,7 +71,7 @@ const struct bch_hash_desc bch2_xattr_hash_desc = {
+ };
+ 
+ int bch2_xattr_validate(struct bch_fs *c, struct bkey_s_c k,
+-		       enum bch_validate_flags flags)
++			struct bkey_validate_context from)
+ {
+ 	struct bkey_s_c_xattr xattr = bkey_s_c_to_xattr(k);
+ 	unsigned val_u64s = xattr_val_u64s(xattr.v->x_name_len,
+diff --git a/fs/bcachefs/xattr.h b/fs/bcachefs/xattr.h
+index 2c96de051f3e..132fbbd15a66 100644
+--- a/fs/bcachefs/xattr.h
++++ b/fs/bcachefs/xattr.h
+@@ -6,7 +6,8 @@
+ 
+ extern const struct bch_hash_desc bch2_xattr_hash_desc;
+ 
+-int bch2_xattr_validate(struct bch_fs *, struct bkey_s_c, enum bch_validate_flags);
++int bch2_xattr_validate(struct bch_fs *, struct bkey_s_c,
++			struct bkey_validate_context);
+ void bch2_xattr_to_text(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+ 
+ #define bch2_bkey_ops_xattr ((struct bkey_ops) {	\

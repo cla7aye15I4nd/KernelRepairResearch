@@ -1,0 +1,23 @@
+id: 1fd9b69cde42967d1add
+bug_link: https://syzkaller.appspot.com/bug?extid=1fd9b69cde42967d1add
+title: general protection fault in tls_init
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3dd7d40b43663f58d11ee7a3d3798813b26a48f1
+fix_commit: 404cd9a22150f24acf23a8df2ad0c094ba379f57
+datetime: '2021-12-14T18:49:39-08:00'
+fix_commit_message: "mptcp: remove tcp ulp setsockopt support\n\nTCP_ULP setsockopt\
+  \ cannot be used for mptcp because its already\nused internally to plumb subflow\
+  \ (tcp) sockets to the mptcp layer.\n\nsyzbot managed to trigger a crash for mptcp\
+  \ connections that are\nin fallback mode:\n\nKASAN: null-ptr-deref in range [0x0000000000000020-0x0000000000000027]\n\
+  CPU: 1 PID: 1083 Comm: syz-executor.3 Not tainted 5.16.0-rc2-syzkaller #0\nRIP:\
+  \ 0010:tls_build_proto net/tls/tls_main.c:776 [inline]\n[..]\n __tcp_set_ulp net/ipv4/tcp_ulp.c:139\
+  \ [inline]\n tcp_set_ulp+0x428/0x4c0 net/ipv4/tcp_ulp.c:160\n do_tcp_setsockopt+0x455/0x37c0\
+  \ net/ipv4/tcp.c:3391\n mptcp_setsockopt+0x1b47/0x2400 net/mptcp/sockopt.c:638\n\
+  \nRemove support for TCP_ULP setsockopt.\n\nFixes: d9e4c1291810 (\"mptcp: only admit\
+  \ explicitly supported sockopt\")\nReported-by: syzbot+1fd9b69cde42967d1add@syzkaller.appspotmail.com\n\
+  Signed-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Mat Martineau <mathew.j.martineau@linux.intel.com>\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/mptcp
+hunk_count: 1
+covered_count: 0

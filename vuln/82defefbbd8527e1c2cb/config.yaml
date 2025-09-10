@@ -1,0 +1,58 @@
+id: 82defefbbd8527e1c2cb
+bug_link: https://syzkaller.appspot.com/bug?extid=82defefbbd8527e1c2cb
+title: 'WARNING: refcount bug in cdev_get'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c79f46a282390e0f5b306007bf7b11a46d529538
+fix_commit: 68faa679b8be1a74e6663c21c3a9d25d32f1c079
+datetime: '2020-01-06T20:10:26+01:00'
+fix_commit_message: "chardev: Avoid potential use-after-free in 'chrdev_open()'\n\n\
+  'chrdev_open()' calls 'cdev_get()' to obtain a reference to the\n'struct cdev *'\
+  \ stashed in the 'i_cdev' field of the target inode\nstructure. If the pointer is\
+  \ NULL, then it is initialised lazily by\nlooking up the kobject in the 'cdev_map'\
+  \ and so the whole procedure is\nprotected by the 'cdev_lock' spinlock to serialise\
+  \ initialisation of\nthe shared pointer.\n\nUnfortunately, it is possible for the\
+  \ initialising thread to fail *after*\ninstalling the new pointer, for example if\
+  \ the subsequent '->open()' call\non the file fails. In this case, 'cdev_put()'\
+  \ is called, the reference\ncount on the kobject is dropped and, if nobody else\
+  \ has taken a reference,\nthe release function is called which finally clears 'inode->i_cdev'\
+  \ from\n'cdev_purge()' before potentially freeing the object. The problem here\n\
+  is that a racing thread can happily take the 'cdev_lock' and see the\nnon-NULL pointer\
+  \ in the inode, which can result in a refcount increment\nfrom zero and a warning:\n\
+  \n  |  ------------[ cut here ]------------\n  |  refcount_t: addition on 0; use-after-free.\n\
+  \  |  WARNING: CPU: 2 PID: 6385 at lib/refcount.c:25 refcount_warn_saturate+0x6d/0xf0\n\
+  \  |  Modules linked in:\n  |  CPU: 2 PID: 6385 Comm: repro Not tainted 5.5.0-rc2+\
+  \ #22\n  |  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.12.0-1\
+  \ 04/01/2014\n  |  RIP: 0010:refcount_warn_saturate+0x6d/0xf0\n  |  Code: 05 55\
+  \ 9a 15 01 01 e8 9d aa c8 ff 0f 0b c3 80 3d 45 9a 15 01 00 75 ce 48 c7 c7 00 9c\
+  \ 62 b3 c6 08\n  |  RSP: 0018:ffffb524c1b9bc70 EFLAGS: 00010282\n  |  RAX: 0000000000000000\
+  \ RBX: ffff9e9da1f71390 RCX: 0000000000000000\n  |  RDX: ffff9e9dbbd27618 RSI: ffff9e9dbbd18798\
+  \ RDI: ffff9e9dbbd18798\n  |  RBP: 0000000000000000 R08: 000000000000095f R09: 0000000000000039\n\
+  \  |  R10: 0000000000000000 R11: ffffb524c1b9bb20 R12: ffff9e9da1e8c700\n  |  R13:\
+  \ ffffffffb25ee8b0 R14: 0000000000000000 R15: ffff9e9da1e8c700\n  |  FS:  00007f3b87d26700(0000)\
+  \ GS:ffff9e9dbbd00000(0000) knlGS:0000000000000000\n  |  CS:  0010 DS: 0000 ES:\
+  \ 0000 CR0: 0000000080050033\n  |  CR2: 00007fc16909c000 CR3: 000000012df9c000 CR4:\
+  \ 00000000000006e0\n  |  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  \  |  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\n  |  Call\
+  \ Trace:\n  |   kobject_get+0x5c/0x60\n  |   cdev_get+0x2b/0x60\n  |   chrdev_open+0x55/0x220\n\
+  \  |   ? cdev_put.part.3+0x20/0x20\n  |   do_dentry_open+0x13a/0x390\n  |   path_openat+0x2c8/0x1470\n\
+  \  |   do_filp_open+0x93/0x100\n  |   ? selinux_file_ioctl+0x17f/0x220\n  |   do_sys_open+0x186/0x220\n\
+  \  |   do_syscall_64+0x48/0x150\n  |   entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \  |  RIP: 0033:0x7f3b87efcd0e\n  |  Code: 89 54 24 08 e8 a3 f4 ff ff 8b 74 24 0c\
+  \ 48 8b 3c 24 41 89 c0 44 8b 54 24 08 b8 01 01 00 00 89 f4\n  |  RSP: 002b:00007f3b87d259f0\
+  \ EFLAGS: 00000293 ORIG_RAX: 0000000000000101\n  |  RAX: ffffffffffffffda RBX: 0000000000000000\
+  \ RCX: 00007f3b87efcd0e\n  |  RDX: 0000000000000000 RSI: 00007f3b87d25a80 RDI: 00000000ffffff9c\n\
+  \  |  RBP: 00007f3b87d25e90 R08: 0000000000000000 R09: 0000000000000000\n  |  R10:\
+  \ 0000000000000000 R11: 0000000000000293 R12: 00007ffe188f504e\n  |  R13: 00007ffe188f504f\
+  \ R14: 00007f3b87d26700 R15: 0000000000000000\n  |  ---[ end trace 24f53ca58db8180a\
+  \ ]---\n\nSince 'cdev_get()' can already fail to obtain a reference, simply move\n\
+  it over to use 'kobject_get_unless_zero()' instead of 'kobject_get()',\nwhich will\
+  \ cause the racing thread to return -ENXIO if the initialising\nthread fails unexpectedly.\n\
+  \nCc: Hillf Danton <hdanton@sina.com>\nCc: Andrew Morton <akpm@linux-foundation.org>\n\
+  Cc: Al Viro <viro@zeniv.linux.org.uk>\nReported-by: syzbot+82defefbbd8527e1c2cb@syzkaller.appspotmail.com\n\
+  Signed-off-by: Will Deacon <will@kernel.org>\nCc: stable <stable@vger.kernel.org>\n\
+  Link: https://lore.kernel.org/r/20191219120203.32691-1-will@kernel.org\nSigned-off-by:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

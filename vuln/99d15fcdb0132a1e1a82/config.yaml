@@ -1,0 +1,49 @@
+id: 99d15fcdb0132a1e1a82
+bug_link: https://syzkaller.appspot.com/bug?extid=99d15fcdb0132a1e1a82
+title: WARNING in mpls_gso_segment
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d2efeb52c344c3e987d143dc5232f53f9b96c86a
+fix_commit: 025f8ad20f2e3264d11683aa9cbbf0083eefbdcd
+datetime: '2024-02-23T16:22:56-08:00'
+fix_commit_message: "net: mpls: error out if inner headers are not set\n\nmpls_gso_segment()\
+  \ assumes skb_inner_network_header() returns\na valid result:\n\n  mpls_hlen = skb_inner_network_header(skb)\
+  \ - skb_network_header(skb);\n  if (unlikely(!mpls_hlen || mpls_hlen % MPLS_HLEN))\n\
+  \        goto out;\n  if (unlikely(!pskb_may_pull(skb, mpls_hlen)))\n\nWith syzbot\
+  \ reproducer, skb_inner_network_header() yields 0,\nskb_network_header() returns\
+  \ 108, so this will\n\"pskb_may_pull(skb, -108)))\" which triggers a newly added\n\
+  DEBUG_NET_WARN_ON_ONCE() check:\n\n------------[ cut here ]------------\nWARNING:\
+  \ CPU: 0 PID: 5068 at include/linux/skbuff.h:2723 pskb_may_pull_reason include/linux/skbuff.h:2723\
+  \ [inline]\nWARNING: CPU: 0 PID: 5068 at include/linux/skbuff.h:2723 pskb_may_pull\
+  \ include/linux/skbuff.h:2739 [inline]\nWARNING: CPU: 0 PID: 5068 at include/linux/skbuff.h:2723\
+  \ mpls_gso_segment+0x773/0xaa0 net/mpls/mpls_gso.c:34\n[..]\n skb_mac_gso_segment+0x383/0x740\
+  \ net/core/gso.c:53\n nsh_gso_segment+0x40a/0xad0 net/nsh/nsh.c:108\n skb_mac_gso_segment+0x383/0x740\
+  \ net/core/gso.c:53\n __skb_gso_segment+0x324/0x4c0 net/core/gso.c:124\n skb_gso_segment\
+  \ include/net/gso.h:83 [inline]\n [..]\n sch_direct_xmit+0x11a/0x5f0 net/sched/sch_generic.c:327\n\
+  \ [..]\n packet_sendmsg+0x46a9/0x6130 net/packet/af_packet.c:3113\n [..]\n\nFirst\
+  \ iteration of this patch made mpls_hlen signed and changed\ntest to error out to\
+  \ \"mpls_hlen <= 0 || ..\".\n\nEric Dumazet said:\n > I was thinking about adding\
+  \ a debug check in skb_inner_network_header()\n > if inner_network_header is zero\
+  \ (that would mean it is not 'set' yet),\n > but this would trigger even after your\
+  \ patch.\n\nSo add new skb_inner_network_header_was_set() helper and use that.\n\
+  \nThe syzbot reproducer injects data via packet socket. The skb that gets\nallocated\
+  \ and passed down the stack has ->protocol set to NSH (0x894f)\nand gso_type set\
+  \ to SKB_GSO_UDP | SKB_GSO_DODGY.\n\nThis gets passed to skb_mac_gso_segment(),\
+  \ which sees NSH as ptype to\nfind a callback for.  nsh_gso_segment() retrieves\
+  \ next type:\n\n        proto = tun_p_to_eth_p(nsh_hdr(skb)->np);\n\n... which is\
+  \ MPLS (TUN_P_MPLS_UC). It updates skb->protocol and then\ncalls mpls_gso_segment().\
+  \  Inner offsets are all 0, so mpls_gso_segment()\nends up with a negative header\
+  \ size.\n\nIn case more callers rely on silent handling of such large may_pull values\n\
+  we could also 'legalize' this behaviour, either replacing the debug check\nwith\
+  \ (len > INT_MAX) test or removing it and instead adding a comment\nbefore existing\n\
+  \n if (unlikely(len > skb->len))\n    return SKB_DROP_REASON_PKT_TOO_SMALL;\n\n\
+  test in pskb_may_pull_reason(), saying that this check also implicitly\ntakes care\
+  \ of callers that miscompute header sizes.\n\nCc: Simon Horman <horms@kernel.org>\n\
+  Fixes: 219eee9c0d16 (\"net: skbuff: add overflow debug check to pull/push helpers\"\
+  )\nReported-by: syzbot+99d15fcdb0132a1e1a82@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/netdev/00000000000043b1310611e388aa@google.com/raw\n\
+  Signed-off-by: Florian Westphal <fw@strlen.de>\nLink: https://lore.kernel.org/r/20240222140321.14080-1-fw@strlen.de\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- include/linux
+- net/mpls
+hunk_count: 2
+covered_count: 1

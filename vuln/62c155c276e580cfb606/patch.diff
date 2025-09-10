@@ -1,0 +1,72 @@
+diff --git a/include/linux/irqflags.h b/include/linux/irqflags.h
+index ceca42de4438..61a9ced3aa50 100644
+--- a/include/linux/irqflags.h
++++ b/include/linux/irqflags.h
+@@ -58,16 +58,21 @@ do {						\
+ } while (0)
+ 
+ # define lockdep_hrtimer_enter(__hrtimer)		\
+-	  do {						\
+-		  if (!__hrtimer->is_hard)		\
+-			current->irq_config = 1;	\
+-	  } while (0)
+-
+-# define lockdep_hrtimer_exit(__hrtimer)		\
+-	  do {						\
+-		  if (!__hrtimer->is_hard)		\
++({							\
++	bool __expires_hardirq = true;			\
++							\
++	if (!__hrtimer->is_hard) {			\
++		current->irq_config = 1;		\
++		__expires_hardirq = false;		\
++	}						\
++	__expires_hardirq;				\
++})
++
++# define lockdep_hrtimer_exit(__expires_hardirq)	\
++	do {						\
++		if (!__expires_hardirq)			\
+ 			current->irq_config = 0;	\
+-	  } while (0)
++	} while (0)
+ 
+ # define lockdep_posixtimer_enter()				\
+ 	  do {							\
+@@ -102,8 +107,8 @@ do {						\
+ # define lockdep_hardirq_exit()		do { } while (0)
+ # define lockdep_softirq_enter()	do { } while (0)
+ # define lockdep_softirq_exit()		do { } while (0)
+-# define lockdep_hrtimer_enter(__hrtimer)		do { } while (0)
+-# define lockdep_hrtimer_exit(__hrtimer)		do { } while (0)
++# define lockdep_hrtimer_enter(__hrtimer)	false
++# define lockdep_hrtimer_exit(__context)	do { } while (0)
+ # define lockdep_posixtimer_enter()		do { } while (0)
+ # define lockdep_posixtimer_exit()		do { } while (0)
+ # define lockdep_irq_work_enter(__work)		do { } while (0)
+diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
+index d0a5ba37aff4..d89da1c7e005 100644
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -1480,6 +1480,7 @@ static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base,
+ 			  unsigned long flags) __must_hold(&cpu_base->lock)
+ {
+ 	enum hrtimer_restart (*fn)(struct hrtimer *);
++	bool expires_in_hardirq;
+ 	int restart;
+ 
+ 	lockdep_assert_held(&cpu_base->lock);
+@@ -1514,11 +1515,11 @@ static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base,
+ 	 */
+ 	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
+ 	trace_hrtimer_expire_entry(timer, now);
+-	lockdep_hrtimer_enter(timer);
++	expires_in_hardirq = lockdep_hrtimer_enter(timer);
+ 
+ 	restart = fn(timer);
+ 
+-	lockdep_hrtimer_exit(timer);
++	lockdep_hrtimer_exit(expires_in_hardirq);
+ 	trace_hrtimer_expire_exit(timer);
+ 	raw_spin_lock_irq(&cpu_base->lock);
+ 

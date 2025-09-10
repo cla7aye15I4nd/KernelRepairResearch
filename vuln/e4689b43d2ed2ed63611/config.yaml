@@ -1,0 +1,26 @@
+id: e4689b43d2ed2ed63611
+bug_link: https://syzkaller.appspot.com/bug?extid=e4689b43d2ed2ed63611
+title: 'KASAN: use-after-free Read in nfc_llcp_put_ssap'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8d432592f30fcc34ef5a10aac4887b4897884493
+fix_commit: c61760e6940dd4039a7f5e84a6afc9cdbf4d82b6
+datetime: '2021-05-04T11:59:48-07:00'
+fix_commit_message: "net/nfc: fix use-after-free llcp_sock_bind/connect\n\nCommits\
+  \ 8a4cd82d (\"nfc: fix refcount leak in llcp_sock_connect()\")\nand c33b1cc62 (\"\
+  nfc: fix refcount leak in llcp_sock_bind()\")\nfixed a refcount leak bug in bind/connect\
+  \ but introduced a\nuse-after-free if the same local is assigned to 2 different\
+  \ sockets.\n\nThis can be triggered by the following simple program:\n    int sock1\
+  \ = socket( AF_NFC, SOCK_STREAM, NFC_SOCKPROTO_LLCP );\n    int sock2 = socket(\
+  \ AF_NFC, SOCK_STREAM, NFC_SOCKPROTO_LLCP );\n    memset( &addr, 0, sizeof(struct\
+  \ sockaddr_nfc_llcp) );\n    addr.sa_family = AF_NFC;\n    addr.nfc_protocol = NFC_PROTO_NFC_DEP;\n\
+  \    bind( sock1, (struct sockaddr*) &addr, sizeof(struct sockaddr_nfc_llcp) )\n\
+  \    bind( sock2, (struct sockaddr*) &addr, sizeof(struct sockaddr_nfc_llcp) )\n\
+  \    close(sock1);\n    close(sock2);\n\nFix this by assigning NULL to llcp_sock->local\
+  \ after calling\nnfc_llcp_local_put.\n\nThis addresses CVE-2021-23134.\n\nReported-by:\
+  \ Or Cohen <orcohen@paloaltonetworks.com>\nReported-by: Nadav Markus <nmarkus@paloaltonetworks.com>\n\
+  Fixes: c33b1cc62 (\"nfc: fix refcount leak in llcp_sock_bind()\")\nSigned-off-by:\
+  \ Or Cohen <orcohen@paloaltonetworks.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/nfc
+hunk_count: 3
+covered_count: 1

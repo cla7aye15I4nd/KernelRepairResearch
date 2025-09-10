@@ -1,0 +1,62 @@
+id: aa245f26d42b8305d157
+bug_link: https://syzkaller.appspot.com/bug?extid=aa245f26d42b8305d157
+title: 'KASAN: use-after-free Read in tipc_sub_unsubscribe (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1c2734b31d72316e3faaad88c0c9c46fa92a4b20
+fix_commit: c3317f4db831b7564ff8d1670326456a7fbbbcb3
+datetime: '2018-04-12T21:46:10-04:00'
+fix_commit_message: 'tipc: fix unbalanced reference counter
+
+
+  When a topology subscription is created, we may encounter (or KASAN
+
+  may provoke) a failure to create a corresponding service instance in
+
+  the binding table. Instead of letting the tipc_nametbl_subscribe()
+
+  report the failure back to the caller, the function just makes a warning
+
+  printout and returns, without incrementing the subscription reference
+
+  counter as expected by the caller.
+
+
+  This makes the caller believe that the subscription was successful, so
+
+  it will at a later moment try to unsubscribe the item. This involves
+
+  a sub_put() call. Since the reference counter never was incremented
+
+  in the first place, we get a premature delete of the subscription item,
+
+  followed by a "use-after-free" warning.
+
+
+  We fix this by adding a return value to tipc_nametbl_subscribe() and
+
+  make the caller aware of the failure to subscribe.
+
+
+  This bug seems to always have been around, but this fix only applies
+
+  back to the commit shown below. Given the low risk of this happening
+
+  we believe this to be sufficient.
+
+
+  Fixes: commit 218527fe27ad ("tipc: replace name table service range
+
+  array with rb tree")
+
+  Reported-by: syzbot+aa245f26d42b8305d157@syzkaller.appspotmail.com
+
+
+  Signed-off-by: Jon Maloy <jon.maloy@ericsson.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/tipc
+hunk_count: 4
+covered_count: 3

@@ -1,0 +1,50 @@
+id: 242ee56aaa9585553766
+bug_link: https://syzkaller.appspot.com/bug?extid=242ee56aaa9585553766
+title: general protection fault in z_erofs_gbuf_growsize
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e080a26725fb36f535f22ea42694c60ab005fb2e
+fix_commit: 0005e01e1e875c5e27130c5e2ed0189749d1e08a
+datetime: '2024-08-21T08:12:05+08:00'
+fix_commit_message: 'erofs: fix out-of-bound access when z_erofs_gbuf_growsize() partially
+  fails
+
+
+  If z_erofs_gbuf_growsize() partially fails on a global buffer due to
+
+  memory allocation failure or fault injection (as reported by syzbot [1]),
+
+  new pages need to be freed by comparing to the existing pages to avoid
+
+  memory leaks.
+
+
+  However, the old gbuf->pages[] array may not be large enough, which can
+
+  lead to null-ptr-deref or out-of-bound access.
+
+
+  Fix this by checking against gbuf->nrpages in advance.
+
+
+  [1] https://lore.kernel.org/r/000000000000f7b96e062018c6e3@google.com
+
+
+  Reported-by: syzbot+242ee56aaa9585553766@syzkaller.appspotmail.com
+
+  Fixes: d6db47e571dc ("erofs: do not use pagepool in z_erofs_gbuf_growsize()")
+
+  Cc: <stable@vger.kernel.org> # 6.10+
+
+  Reviewed-by: Chunhai Guo <guochunhai@vivo.com>
+
+  Reviewed-by: Sandeep Dhavale <dhavale@google.com>
+
+  Signed-off-by: Gao Xiang <hsiangkao@linux.alibaba.com>
+
+  Link: https://lore.kernel.org/r/20240820085619.1375963-1-hsiangkao@linux.alibaba.com
+
+  '
+submodule:
+- fs/erofs
+hunk_count: 1
+covered_count: 1

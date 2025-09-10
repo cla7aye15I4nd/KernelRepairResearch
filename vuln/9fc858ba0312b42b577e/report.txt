@@ -1,0 +1,88 @@
+netlink: 'syz-executor396': attribute type 1 has an invalid length.
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000055: 0000 [#1] SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x00000000000002a8-0x00000000000002af]
+CPU: 1 UID: 0 PID: 5831 Comm: syz-executor396 Not tainted 6.15.0-syzkaller-07817-gb56bbaf8c9ff #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:netdev_need_ops_lock include/net/netdev_lock.h:33 [inline]
+RIP: 0010:netdev_lock_ops include/net/netdev_lock.h:41 [inline]
+RIP: 0010:dev_set_group+0xc0/0x230 net/core/dev_api.c:82
+Code: 03 43 80 3c 2f 00 74 08 48 89 df e8 4a 40 d4 f8 41 bd a8 02 00 00 4c 03 2b 4c 89 e8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 74 08 4c 89 ef e8 22 40 d4 f8 31 c0 49 83 7d 00 00 0f
+RSP: 0018:ffffc900044b6e60 EFLAGS: 00010206
+RAX: 0000000000000055 RBX: ffff88807cd70008 RCX: dffffc0000000000
+RDX: 0000000000000000 RSI: 0000000055690764 RDI: ffff88807cd70000
+RBP: ffff88807cd70000 R08: 0000000000400dc0 R09: 00000000ffffffff
+R10: dffffc0000000000 R11: fffffbfff1f41637 R12: 0000000000000000
+R13: 00000000000002a8 R14: 1ffff1100f9ae198 R15: 1ffff1100f9ae001
+FS:  000055555a646380(0000) GS:ffff888125d66000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055b521ae8448 CR3: 000000007996a000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ rtnl_create_link+0x748/0xd10 net/core/rtnetlink.c:3674
+ rtnl_newlink_create+0x25c/0xb00 net/core/rtnetlink.c:3813
+ __rtnl_newlink net/core/rtnetlink.c:3940 [inline]
+ rtnl_newlink+0x16d6/0x1c70 net/core/rtnetlink.c:4055
+ rtnetlink_rcv_msg+0x7cf/0xb70 net/core/rtnetlink.c:6944
+ netlink_rcv_skb+0x208/0x470 net/netlink/af_netlink.c:2534
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x75b/0x8d0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x805/0xb30 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg+0x219/0x270 net/socket.c:727
+ ____sys_sendmsg+0x505/0x830 net/socket.c:2566
+ ___sys_sendmsg+0x21f/0x2a0 net/socket.c:2620
+ __sys_sendmsg net/socket.c:2652 [inline]
+ __do_sys_sendmsg net/socket.c:2657 [inline]
+ __se_sys_sendmsg net/socket.c:2655 [inline]
+ __x64_sys_sendmsg+0x19b/0x260 net/socket.c:2655
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7efdc7c37369
+Code: 48 83 c4 28 c3 e8 37 17 00 00 0f 1f 80 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fffd87eacb8 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 00007fffd87eae88 RCX: 00007efdc7c37369
+RDX: 0000000000000000 RSI: 0000200000000280 RDI: 0000000000000003
+RBP: 00007efdc7caa610 R08: 0000000000000000 R09: 00007fffd87eae88
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007fffd87eae78 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:netdev_need_ops_lock include/net/netdev_lock.h:33 [inline]
+RIP: 0010:netdev_lock_ops include/net/netdev_lock.h:41 [inline]
+RIP: 0010:dev_set_group+0xc0/0x230 net/core/dev_api.c:82
+Code: 03 43 80 3c 2f 00 74 08 48 89 df e8 4a 40 d4 f8 41 bd a8 02 00 00 4c 03 2b 4c 89 e8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 74 08 4c 89 ef e8 22 40 d4 f8 31 c0 49 83 7d 00 00 0f
+RSP: 0018:ffffc900044b6e60 EFLAGS: 00010206
+RAX: 0000000000000055 RBX: ffff88807cd70008 RCX: dffffc0000000000
+RDX: 0000000000000000 RSI: 0000000055690764 RDI: ffff88807cd70000
+RBP: ffff88807cd70000 R08: 0000000000400dc0 R09: 00000000ffffffff
+R10: dffffc0000000000 R11: fffffbfff1f41637 R12: 0000000000000000
+R13: 00000000000002a8 R14: 1ffff1100f9ae198 R15: 1ffff1100f9ae001
+FS:  000055555a646380(0000) GS:ffff888125d66000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055650cc784b0 CR3: 000000007996a000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	03 43 80             	add    -0x80(%rbx),%eax
+   3:	3c 2f                	cmp    $0x2f,%al
+   5:	00 74 08 48          	add    %dh,0x48(%rax,%rcx,1)
+   9:	89 df                	mov    %ebx,%edi
+   b:	e8 4a 40 d4 f8       	call   0xf8d4405a
+  10:	41 bd a8 02 00 00    	mov    $0x2a8,%r13d
+  16:	4c 03 2b             	add    (%rbx),%r13
+  19:	4c 89 e8             	mov    %r13,%rax
+  1c:	48 c1 e8 03          	shr    $0x3,%rax
+  20:	48 b9 00 00 00 00 00 	movabs $0xdffffc0000000000,%rcx
+  27:	fc ff df
+* 2a:	80 3c 08 00          	cmpb   $0x0,(%rax,%rcx,1) <-- trapping instruction
+  2e:	74 08                	je     0x38
+  30:	4c 89 ef             	mov    %r13,%rdi
+  33:	e8 22 40 d4 f8       	call   0xf8d4405a
+  38:	31 c0                	xor    %eax,%eax
+  3a:	49 83 7d 00 00       	cmpq   $0x0,0x0(%r13)
+  3f:	0f                   	.byte 0xf

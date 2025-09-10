@@ -1,0 +1,73 @@
+id: a3618a167af2021433cd
+bug_link: https://syzkaller.appspot.com/bug?extid=a3618a167af2021433cd
+title: 'INFO: rcu detected stall in unix_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: de43975721b97283d5f17eea4228faddf08f2681
+fix_commit: da71714e359b64bd7aab3bd56ec53f307f058133
+datetime: '2023-08-23T09:44:48+01:00'
+fix_commit_message: 'net/sched: fix a qdisc modification with ambiguous command request
+
+
+  When replacing an existing root qdisc, with one that is of the same kind, the
+
+  request boils down to essentially a parameterization change  i.e not one that
+
+  requires allocation and grafting of a new qdisc. syzbot was able to create a
+
+  scenario which resulted in a taprio qdisc replacing an existing taprio qdisc
+
+  with a combination of NLM_F_CREATE, NLM_F_REPLACE and NLM_F_EXCL leading to
+
+  create and graft scenario.
+
+  The fix ensures that only when the qdisc kinds are different that we should
+
+  allow a create and graft, otherwise it goes into the "change" codepath.
+
+
+  While at it, fix the code and comments to improve readability.
+
+
+  While syzbot was able to create the issue, it did not zone on the root cause.
+
+  Analysis from Vladimir Oltean <vladimir.oltean@nxp.com> helped narrow it down.
+
+
+  v1->V2 changes:
+
+  - remove "inline" function definition (Vladmir)
+
+  - remove extrenous braces in branches (Vladmir)
+
+  - change inline function names (Pedro)
+
+  - Run tdc tests (Victor)
+
+  v2->v3 changes:
+
+  - dont break else/if (Simon)
+
+
+  Fixes: 1da177e4c3f4 ("Linux-2.6.12-rc2")
+
+  Reported-by: syzbot+a3618a167af2021433cd@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/netdev/20230816225759.g25x76kmgzya2gei@skbuf/T/
+
+  Tested-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+
+  Tested-by: Victor Nogueira <victor@mojatatu.com>
+
+  Reviewed-by: Pedro Tammela <pctammela@mojatatu.com>
+
+  Reviewed-by: Victor Nogueira <victor@mojatatu.com>
+
+  Signed-off-by: Jamal Hadi Salim <jhs@mojatatu.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/sched
+hunk_count: 3
+covered_count: 0

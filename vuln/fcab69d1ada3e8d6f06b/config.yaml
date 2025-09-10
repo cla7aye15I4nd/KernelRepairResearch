@@ -1,0 +1,29 @@
+id: fcab69d1ada3e8d6f06b
+bug_link: https://syzkaller.appspot.com/bug?extid=fcab69d1ada3e8d6f06b
+title: 'KMSAN: uninit-value in simple_attr_read'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4dbe191c046e71d6ea1ba85365ecb33961b07c4f
+fix_commit: a65cab7d7f05c2061a3e2490257d3086ff3202c6
+datetime: '2020-03-24T13:27:16+01:00'
+fix_commit_message: "libfs: fix infoleak in simple_attr_read()\n\nReading from a debugfs\
+  \ file at a nonzero position, without first reading\nat position 0, leaks uninitialized\
+  \ memory to userspace.\n\nIt's a bit tricky to do this, since lseek() and pread()\
+  \ aren't allowed\non these files, and write() doesn't update the position on them.\
+  \  But\nwriting to them with splice() *does* update the position:\n\n\t#define _GNU_SOURCE\
+  \ 1\n\t#include <fcntl.h>\n\t#include <stdio.h>\n\t#include <unistd.h>\n\tint main()\n\
+  \t{\n\t\tint pipes[2], fd, n, i;\n\t\tchar buf[32];\n\n\t\tpipe(pipes);\n\t\twrite(pipes[1],\
+  \ \"0\", 1);\n\t\tfd = open(\"/sys/kernel/debug/fault_around_bytes\", O_RDWR);\n\
+  \t\tsplice(pipes[0], NULL, fd, NULL, 1, 0);\n\t\tn = read(fd, buf, sizeof(buf));\n\
+  \t\tfor (i = 0; i < n; i++)\n\t\t\tprintf(\"%02x\", buf[i]);\n\t\tprintf(\"\\n\"\
+  );\n\t}\n\nOutput:\n\t5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a30\n\nFix the\
+  \ infoleak by making simple_attr_read() always fill\nsimple_attr::get_buf if it\
+  \ hasn't been filled yet.\n\nReported-by: syzbot+fcab69d1ada3e8d6f06b@syzkaller.appspotmail.com\n\
+  Reported-by: Alexander Potapenko <glider@google.com>\nFixes: acaefc25d21f (\"[PATCH]\
+  \ libfs: add simple attribute files\")\nCc: stable@vger.kernel.org\nSigned-off-by:\
+  \ Eric Biggers <ebiggers@google.com>\nAcked-by: Kees Cook <keescook@chromium.org>\n\
+  Link: https://lore.kernel.org/r/20200308023849.988264-1-ebiggers@kernel.org\nSigned-off-by:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,88 @@
+R10: 0000000000000001 R11: 0000000000000246 R12: 0000200000000180
+R13: 00007ffd0a9a15d0 R14: 431bde82d7b634db R15: 00007f06760c301d
+ </TASK>
+(syz-executor335,5312,0):ocfs2_grab_folios_for_write:1073 ERROR: status = -12
+(syz-executor335,5312,0):ocfs2_write_begin_nolock:1791 ERROR: status = -12
+BUG: unable to handle page fault for address: fffffffffffffffc
+#PF: supervisor read access in kernel mode
+#PF: error_code(0x0000) - not-present page
+PGD df3d067 P4D df3d067 PUD df3f067 PMD 0 
+Oops: Oops: 0000 [#1] SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5312 Comm: syz-executor335 Not tainted 6.16.0-rc1-syzkaller-00010-g2c4a1f3fe03e #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:const_folio_flags include/linux/page-flags.h:347 [inline]
+RIP: 0010:folio_test_locked include/linux/page-flags.h:547 [inline]
+RIP: 0010:folio_unlock+0x3a/0x160 mm/filemap.c:1498
+Code: fb 49 bf 00 00 00 00 00 fc ff df e8 20 df c8 ff 4c 8d 73 08 4d 89 f4 49 c1 ec 03 43 80 3c 3c 00 74 08 4c 89 f7 e8 76 56 2c 00 <4d> 8b 2e 4c 89 ee 48 83 e6 01 31 ff e8 d5 e3 c8 ff 49 83 e5 01 0f
+RSP: 0018:ffffc9000d517128 EFLAGS: 00010246
+RAX: ffffffff81f77fd0 RBX: fffffffffffffff4 RCX: ffff8880007fc880
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: fffffffffffffff4
+RBP: 0000000000000001 R08: ffff88803fedc07f R09: 1ffff11007fdb80f
+R10: dffffc0000000000 R11: ffffed1007fdb810 R12: 1fffffffffffffff
+R13: 0000000000000000 R14: fffffffffffffffc R15: dffffc0000000000
+FS:  000055557d696380(0000) GS:ffff88808d252000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: fffffffffffffffc CR3: 0000000042b50000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ ocfs2_unlock_and_free_folios+0x71/0x1a0 fs/ocfs2/aops.c:765
+ ocfs2_free_write_ctxt fs/ocfs2/aops.c:813 [inline]
+ ocfs2_write_begin_nolock+0x3078/0x4340 fs/ocfs2/aops.c:1830
+ ocfs2_write_begin+0x1bb/0x310 fs/ocfs2/aops.c:1882
+ generic_perform_write+0x2c4/0x910 mm/filemap.c:4112
+ ocfs2_file_write_iter+0x157a/0x1d10 fs/ocfs2/file.c:2469
+ new_sync_write fs/read_write.c:593 [inline]
+ vfs_write+0x548/0xa90 fs/read_write.c:686
+ ksys_write+0x145/0x250 fs/read_write.c:738
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f0676081af9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 d1 1a 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd0a9a1498 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 00007ffd0a9a14c0 RCX: 00007f0676081af9
+RDX: 00000000fffffec6 RSI: 0000200000000180 RDI: 0000000000000005
+RBP: 0000000000000001 R08: 00007ffd0a9a1237 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000246 R12: 0000200000000180
+R13: 00007ffd0a9a15d0 R14: 431bde82d7b634db R15: 00007f06760c301d
+ </TASK>
+Modules linked in:
+CR2: fffffffffffffffc
+---[ end trace 0000000000000000 ]---
+RIP: 0010:const_folio_flags include/linux/page-flags.h:347 [inline]
+RIP: 0010:folio_test_locked include/linux/page-flags.h:547 [inline]
+RIP: 0010:folio_unlock+0x3a/0x160 mm/filemap.c:1498
+Code: fb 49 bf 00 00 00 00 00 fc ff df e8 20 df c8 ff 4c 8d 73 08 4d 89 f4 49 c1 ec 03 43 80 3c 3c 00 74 08 4c 89 f7 e8 76 56 2c 00 <4d> 8b 2e 4c 89 ee 48 83 e6 01 31 ff e8 d5 e3 c8 ff 49 83 e5 01 0f
+RSP: 0018:ffffc9000d517128 EFLAGS: 00010246
+RAX: ffffffff81f77fd0 RBX: fffffffffffffff4 RCX: ffff8880007fc880
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: fffffffffffffff4
+RBP: 0000000000000001 R08: ffff88803fedc07f R09: 1ffff11007fdb80f
+R10: dffffc0000000000 R11: ffffed1007fdb810 R12: 1fffffffffffffff
+R13: 0000000000000000 R14: fffffffffffffffc R15: dffffc0000000000
+FS:  000055557d696380(0000) GS:ffff88808d252000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: fffffffffffffffc CR3: 0000000042b50000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	fb                   	sti
+   1:	49 bf 00 00 00 00 00 	movabs $0xdffffc0000000000,%r15
+   8:	fc ff df
+   b:	e8 20 df c8 ff       	call   0xffc8df30
+  10:	4c 8d 73 08          	lea    0x8(%rbx),%r14
+  14:	4d 89 f4             	mov    %r14,%r12
+  17:	49 c1 ec 03          	shr    $0x3,%r12
+  1b:	43 80 3c 3c 00       	cmpb   $0x0,(%r12,%r15,1)
+  20:	74 08                	je     0x2a
+  22:	4c 89 f7             	mov    %r14,%rdi
+  25:	e8 76 56 2c 00       	call   0x2c56a0
+* 2a:	4d 8b 2e             	mov    (%r14),%r13 <-- trapping instruction
+  2d:	4c 89 ee             	mov    %r13,%rsi
+  30:	48 83 e6 01          	and    $0x1,%rsi
+  34:	31 ff                	xor    %edi,%edi
+  36:	e8 d5 e3 c8 ff       	call   0xffc8e410
+  3b:	49 83 e5 01          	and    $0x1,%r13
+  3f:	0f                   	.byte 0xf

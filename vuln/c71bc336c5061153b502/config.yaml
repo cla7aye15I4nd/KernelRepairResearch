@@ -1,0 +1,35 @@
+id: c71bc336c5061153b502
+bug_link: https://syzkaller.appspot.com/bug?extid=c71bc336c5061153b502
+title: general protection fault in dccp_write_xmit (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8c97ab5448f2096daba11edf8d18a44e1eb6f31d
+fix_commit: cac23b7d7627915d967ce25436d7aae26e88ed06
+datetime: '2023-12-15T10:48:51+00:00'
+fix_commit_message: "net: Return error from sk_stream_wait_connect() if sk_wait_event()\
+  \ fails\n\nThe following NULL pointer dereference issue occurred:\n\nBUG: kernel\
+  \ NULL pointer dereference, address: 0000000000000000\n<...>\nRIP: 0010:ccid_hc_tx_send_packet\
+  \ net/dccp/ccid.h:166 [inline]\nRIP: 0010:dccp_write_xmit+0x49/0x140 net/dccp/output.c:356\n\
+  <...>\nCall Trace:\n <TASK>\n dccp_sendmsg+0x642/0x7e0 net/dccp/proto.c:801\n inet_sendmsg+0x63/0x90\
+  \ net/ipv4/af_inet.c:846\n sock_sendmsg_nosec net/socket.c:730 [inline]\n __sock_sendmsg+0x83/0xe0\
+  \ net/socket.c:745\n ____sys_sendmsg+0x443/0x510 net/socket.c:2558\n ___sys_sendmsg+0xe5/0x150\
+  \ net/socket.c:2612\n __sys_sendmsg+0xa6/0x120 net/socket.c:2641\n __do_sys_sendmsg\
+  \ net/socket.c:2650 [inline]\n __se_sys_sendmsg net/socket.c:2648 [inline]\n __x64_sys_sendmsg+0x45/0x50\
+  \ net/socket.c:2648\n do_syscall_x64 arch/x86/entry/common.c:51 [inline]\n do_syscall_64+0x43/0x110\
+  \ arch/x86/entry/common.c:82\n entry_SYSCALL_64_after_hwframe+0x63/0x6b\n\nsk_wait_event()\
+  \ returns an error (-EPIPE) if disconnect() is called on the\nsocket waiting for\
+  \ the event. However, sk_stream_wait_connect() returns\nsuccess, i.e. zero, even\
+  \ if sk_wait_event() returns -EPIPE, so a function\nthat waits for a connection\
+  \ with sk_stream_wait_connect() may misbehave.\n\nIn the case of the above DCCP\
+  \ issue, dccp_sendmsg() is waiting for the\nconnection. If disconnect() is called\
+  \ in concurrently, the above issue\noccurs.\n\nThis patch fixes the issue by returning\
+  \ error from sk_stream_wait_connect()\nif sk_wait_event() fails.\n\nFixes: 419ce133ab92\
+  \ (\"tcp: allow again tcp_disconnect() when threads are waiting\")\nSigned-off-by:\
+  \ Shigeru Yoshida <syoshida@redhat.com>\nReviewed-by: Kuniyuki Iwashima <kuniyu@amazon.com>\n\
+  Reported-by: syzbot+c71bc336c5061153b502@syzkaller.appspotmail.com\nReviewed-by:\
+  \ Eric Dumazet <edumazet@google.com>\nReported-by: syzbot <syzkaller@googlegroups.com>\n\
+  Reported-by: syzkaller <syzkaller@googlegroups.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 0

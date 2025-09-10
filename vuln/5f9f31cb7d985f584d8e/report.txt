@@ -1,0 +1,147 @@
+==================================================================
+BUG: KASAN: slab-out-of-bounds in __xfrm_state_lookup_all net/xfrm/xfrm_state.c:1053 [inline]
+BUG: KASAN: slab-out-of-bounds in xfrm_state_find+0x712f/0x7c10 net/xfrm/xfrm_state.c:1404
+Read of size 8 at addr ffff888061f31670 by task syz.2.1009/12338
+
+CPU: 1 UID: 0 PID: 12338 Comm: syz.2.1009 Not tainted 6.13.0-rc4-syzkaller-00078-g059dd502b263 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0xc3/0x620 mm/kasan/report.c:489
+ kasan_report+0xd9/0x110 mm/kasan/report.c:602
+ __xfrm_state_lookup_all net/xfrm/xfrm_state.c:1053 [inline]
+ xfrm_state_find+0x712f/0x7c10 net/xfrm/xfrm_state.c:1404
+ xfrm_tmpl_resolve_one net/xfrm/xfrm_policy.c:2518 [inline]
+ xfrm_tmpl_resolve net/xfrm/xfrm_policy.c:2569 [inline]
+ xfrm_resolve_and_create_bundle+0x4b0/0x3530 net/xfrm/xfrm_policy.c:2863
+ xfrm_lookup_with_ifid+0x2a1/0x1e40 net/xfrm/xfrm_policy.c:3197
+ xfrm_lookup net/xfrm/xfrm_policy.c:3327 [inline]
+ xfrm_lookup_route+0x3b/0x200 net/xfrm/xfrm_policy.c:3338
+ ip_route_output_flow+0x11e/0x150 net/ipv4/route.c:2904
+ udp_sendmsg+0x1bbe/0x29e0 net/ipv4/udp.c:1396
+ inet_sendmsg+0x105/0x140 net/ipv4/af_inet.c:851
+ sock_sendmsg_nosec net/socket.c:711 [inline]
+ __sock_sendmsg net/socket.c:726 [inline]
+ ____sys_sendmsg+0x98c/0xc90 net/socket.c:2583
+ ___sys_sendmsg+0x135/0x1e0 net/socket.c:2637
+ __sys_sendmmsg+0x201/0x420 net/socket.c:2726
+ __do_sys_sendmmsg net/socket.c:2753 [inline]
+ __se_sys_sendmmsg net/socket.c:2750 [inline]
+ __x64_sys_sendmmsg+0x9c/0x100 net/socket.c:2750
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f50d7585d29
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f50d83a8038 EFLAGS: 00000246 ORIG_RAX: 0000000000000133
+RAX: ffffffffffffffda RBX: 00007f50d7776080 RCX: 00007f50d7585d29
+RDX: 000000000800001d RSI: 0000000020007fc0 RDI: 0000000000000005
+RBP: 00007f50d7601b08 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007f50d7776080 R15: 00007ffca426dcb8
+ </TASK>
+
+Allocated by task 8851:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __do_kmalloc_node mm/slub.c:4298 [inline]
+ __kmalloc_noprof+0x21c/0x510 mm/slub.c:4310
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1037 [inline]
+ xfrm_hash_alloc+0xd1/0x100 net/xfrm/xfrm_hash.c:21
+ xfrm_hash_resize+0x8c/0x22a0 net/xfrm/xfrm_state.c:168
+ process_one_work+0x9c8/0x1ba0 kernel/workqueue.c:3229
+ process_scheduled_works kernel/workqueue.c:3310 [inline]
+ worker_thread+0x6c8/0xf00 kernel/workqueue.c:3391
+ kthread+0x2c4/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x48/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+The buggy address belongs to the object at ffff888061f31400
+ which belongs to the cache kmalloc-512 of size 512
+The buggy address is located 112 bytes to the right of
+ allocated 512-byte region [ffff888061f31400, ffff888061f31600)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x61f30
+head: order:2 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+anon flags: 0xfff00000000040(head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000040 ffff88801b041c80 0000000000000000 dead000000000001
+raw: 0000000000000000 0000000000100010 00000001f5000000 0000000000000000
+head: 00fff00000000040 ffff88801b041c80 0000000000000000 dead000000000001
+head: 0000000000000000 0000000000100010 00000001f5000000 0000000000000000
+head: 00fff00000000002 ffffea000187cc01 ffffffffffffffff 0000000000000000
+head: 0000000000000004 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 2, migratetype Unmovable, gfp_mask 0x52820(GFP_ATOMIC|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 5828, tgid 5828 (syz-executor), ts 95547645231, free_ts 95534418085
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x2d1/0x350 mm/page_alloc.c:1558
+ prep_new_page mm/page_alloc.c:1566 [inline]
+ get_page_from_freelist+0xfce/0x2f80 mm/page_alloc.c:3476
+ __alloc_pages_noprof+0x223/0x25b0 mm/page_alloc.c:4753
+ alloc_pages_mpol_noprof+0x2c9/0x610 mm/mempolicy.c:2269
+ alloc_slab_page mm/slub.c:2423 [inline]
+ allocate_slab mm/slub.c:2589 [inline]
+ new_slab+0x2c9/0x410 mm/slub.c:2642
+ ___slab_alloc+0xd7d/0x17a0 mm/slub.c:3830
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3920
+ __slab_alloc_node mm/slub.c:3995 [inline]
+ slab_alloc_node mm/slub.c:4156 [inline]
+ __do_kmalloc_node mm/slub.c:4297 [inline]
+ __kmalloc_noprof+0x2ec/0x510 mm/slub.c:4310
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1037 [inline]
+ fib6_info_alloc+0x40/0x160 net/ipv6/ip6_fib.c:155
+ ip6_route_info_create+0x337/0x1910 net/ipv6/route.c:3761
+ ip6_route_add+0x26/0x1c0 net/ipv6/route.c:3853
+ addrconf_prefix_route+0x2fe/0x510 net/ipv6/addrconf.c:2486
+ fixup_permanent_addr net/ipv6/addrconf.c:3622 [inline]
+ addrconf_permanent_addr net/ipv6/addrconf.c:3646 [inline]
+ addrconf_notify+0x12bb/0x19c0 net/ipv6/addrconf.c:3718
+ notifier_call_chain+0xba/0x410 kernel/notifier.c:85
+ call_netdevice_notifiers_info+0xbe/0x140 net/core/dev.c:1996
+ call_netdevice_notifiers_extack net/core/dev.c:2034 [inline]
+ call_netdevice_notifiers net/core/dev.c:2048 [inline]
+ __dev_notify_flags+0x12d/0x2e0 net/core/dev.c:8988
+page last free pid 5831 tgid 5831 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_page+0x661/0x1080 mm/page_alloc.c:2659
+ qlink_free mm/kasan/quarantine.c:163 [inline]
+ qlist_free_all+0x4e/0x120 mm/kasan/quarantine.c:179
+ kasan_quarantine_reduce+0x195/0x1e0 mm/kasan/quarantine.c:286
+ __kasan_slab_alloc+0x69/0x90 mm/kasan/common.c:329
+ kasan_slab_alloc include/linux/kasan.h:250 [inline]
+ slab_post_alloc_hook mm/slub.c:4119 [inline]
+ slab_alloc_node mm/slub.c:4168 [inline]
+ kmem_cache_alloc_node_noprof+0x223/0x3c0 mm/slub.c:4220
+ __alloc_skb+0x2b1/0x380 net/core/skbuff.c:668
+ alloc_skb include/linux/skbuff.h:1323 [inline]
+ netlink_alloc_large_skb+0x69/0x130 net/netlink/af_netlink.c:1196
+ netlink_sendmsg+0x689/0xd70 net/netlink/af_netlink.c:1866
+ sock_sendmsg_nosec net/socket.c:711 [inline]
+ __sock_sendmsg net/socket.c:726 [inline]
+ __sys_sendto+0x48b/0x4f0 net/socket.c:2197
+ __do_sys_sendto net/socket.c:2204 [inline]
+ __se_sys_sendto net/socket.c:2200 [inline]
+ __x64_sys_sendto+0xe0/0x1c0 net/socket.c:2200
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff888061f31500: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff888061f31580: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff888061f31600: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+                                                             ^
+ ffff888061f31680: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff888061f31700: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

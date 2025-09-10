@@ -1,0 +1,68 @@
+warning: `syz-executor452' uses wireless extensions which will stop working for Wi-Fi 7 hardware; use nl80211
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 5199 at kernel/softirq.c:362 __local_bh_enable_ip+0xc3/0x120 kernel/softirq.c:362
+Modules linked in:
+CPU: 1 PID: 5199 Comm: syz-executor452 Not tainted 6.10.0-rc7-syzkaller-00141-g43db1e03c086 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:__local_bh_enable_ip+0xc3/0x120 kernel/softirq.c:362
+Code: 00 e8 01 91 0b 00 e8 ec 30 43 00 fb 65 8b 05 8c dd b1 7e 85 c0 74 52 5b 5d c3 cc cc cc cc 65 8b 05 ce 8c b0 7e 85 c0 75 9e 90 <0f> 0b 90 eb 98 e8 f3 2e 43 00 eb 99 48 89 ef e8 a9 0e 1a 00 eb a2
+RSP: 0018:ffffc900032af368 EFLAGS: 00010046
+RAX: 0000000000000000 RBX: 0000000000000200 RCX: 1ffffffff1fc96eb
+RDX: 0000000000000000 RSI: 0000000000000200 RDI: ffffffff88c4e35d
+RBP: ffffffff88c4e35d R08: 0000000000000000 R09: fffffbfff1fc9092
+R10: ffffffff8fe48497 R11: 000000000000001d R12: ffff888021f9e000
+R13: ffff888021f9e100 R14: ffff88801c1e40b8 R15: ffff88801c1e4000
+FS:  0000555593697380(0000) GS:ffff88806b100000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000555638997000 CR3: 0000000026c08000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ local_bh_enable include/linux/bottom_half.h:33 [inline]
+ rcu_read_unlock_bh include/linux/rcupdate.h:851 [inline]
+ __dev_queue_xmit+0x872/0x4130 net/core/dev.c:4420
+ dev_queue_xmit include/linux/netdevice.h:3095 [inline]
+ __netlink_deliver_tap_skb net/netlink/af_netlink.c:307 [inline]
+ __netlink_deliver_tap net/netlink/af_netlink.c:325 [inline]
+ netlink_deliver_tap+0xa7d/0xd90 net/netlink/af_netlink.c:338
+ __netlink_sendskb net/netlink/af_netlink.c:1279 [inline]
+ netlink_broadcast_deliver net/netlink/af_netlink.c:1412 [inline]
+ do_one_broadcast net/netlink/af_netlink.c:1499 [inline]
+ netlink_broadcast_filtered+0x938/0xf10 net/netlink/af_netlink.c:1544
+ nlmsg_multicast_filtered include/net/netlink.h:1125 [inline]
+ genlmsg_multicast_netns_filtered include/net/genetlink.h:491 [inline]
+ genlmsg_multicast_netns include/net/genetlink.h:508 [inline]
+ nl80211_frame_tx_status+0xa6d/0xd00 net/wireless/nl80211.c:18952
+ ieee80211_report_ack_skb net/mac80211/status.c:645 [inline]
+ ieee80211_report_used_skb+0x1241/0x21c0 net/mac80211/status.c:778
+ ieee80211_free_txskb+0x23/0x40 net/mac80211/status.c:1291
+ ieee80211_do_stop+0xd5d/0x2200 net/mac80211/iface.c:650
+ ieee80211_runtime_change_iftype net/mac80211/iface.c:1873 [inline]
+ ieee80211_if_change_type+0x360/0x790 net/mac80211/iface.c:1911
+ ieee80211_change_iface+0xa5/0x500 net/mac80211/cfg.c:219
+ rdev_change_virtual_intf net/wireless/rdev-ops.h:74 [inline]
+ cfg80211_change_iface+0x586/0xdd0 net/wireless/util.c:1215
+ cfg80211_wext_siwmode+0x222/0x2b0 net/wireless/wext-compat.c:67
+ ioctl_standard_call+0xd0/0x210 net/wireless/wext-core.c:1045
+ wireless_process_ioctl+0x4e3/0x5e0 net/wireless/wext-core.c:983
+ wext_ioctl_dispatch net/wireless/wext-core.c:1016 [inline]
+ wext_ioctl_dispatch net/wireless/wext-core.c:1004 [inline]
+ wext_handle_ioctl+0x23d/0x2c0 net/wireless/wext-core.c:1077
+ sock_ioctl+0x3ac/0x6c0 net/socket.c:1275
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl fs/ioctl.c:893 [inline]
+ __x64_sys_ioctl+0x193/0x220 fs/ioctl.c:893
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7ff609c12199
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 01 1a 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffdc08407c8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007ff609c5f48b RCX: 00007ff609c12199
+RDX: 0000000020000000 RSI: 0000000000008b06 RDI: 0000000000000003
+RBP: 00007ff609c5f469 R08: 00007ffdc08408f8 R09: 00007ffdc08408f8
+R10: 00007ffdc08408f8 R11: 0000000000000246 R12: 00007ff609c5f429
+R13: 0000000000000031 R14: 0000000000000047 R15: 0000000000000004
+ </TASK>

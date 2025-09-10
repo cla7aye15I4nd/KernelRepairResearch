@@ -1,0 +1,39 @@
+id: 4248e91deb3db78358a2
+bug_link: https://syzkaller.appspot.com/bug?extid=4248e91deb3db78358a2
+title: possible deadlock in xfs_icwalk_ag (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 28eb75e178d389d325f1666e422bc13bbbb9804c
+fix_commit: 45f69d091bab64a332fe751da9829dcd136348fd
+datetime: '2024-11-22T09:52:03+01:00'
+fix_commit_message: 'xfs: eliminate lockdep false positives in xfs_attr_shortform_list
+
+
+  xfs_attr_shortform_list() only called from a non-transactional context, it
+
+  hold ilock before alloc memory and maybe trapped in memory reclaim. Since
+
+  commit 204fae32d5f7("xfs: clean up remaining GFP_NOFS users") removed
+
+  GFP_NOFS flag, lockdep warning will be report as [1]. Eliminate lockdep
+
+  false positives by use __GFP_NOLOCKDEP to alloc memory
+
+  in xfs_attr_shortform_list().
+
+
+  [1] https://lore.kernel.org/linux-xfs/000000000000e33add0616358204@google.com/
+
+
+  Reported-by: syzbot+4248e91deb3db78358a2@syzkaller.appspotmail.com
+
+  Signed-off-by: Long Li <leo.lilong@huawei.com>
+
+  Reviewed-by: Dave Chinner <dchinner@redhat.com>
+
+  Signed-off-by: Carlos Maiolino <cem@kernel.org>
+
+  '
+submodule:
+- fs/xfs
+hunk_count: 1
+covered_count: 1

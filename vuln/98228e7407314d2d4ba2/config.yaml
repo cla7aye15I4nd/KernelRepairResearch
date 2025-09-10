@@ -1,0 +1,66 @@
+id: 98228e7407314d2d4ba2
+bug_link: https://syzkaller.appspot.com/bug?extid=98228e7407314d2d4ba2
+title: 'KASAN: use-after-free Read in hci_send_acl'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3a9d54b1947ecea8eea9a902c0b7eb58a98add8a
+fix_commit: 5c4c8c9544099bb9043a10a5318130a943e32fc3
+datetime: '2021-03-22T17:00:09+01:00'
+fix_commit_message: "Bluetooth: verify AMP hci_chan before amp_destroy\n\nhci_chan\
+  \ can be created in 2 places: hci_loglink_complete_evt() if\nit is an AMP hci_chan,\
+  \ or l2cap_conn_add() otherwise. In theory,\nOnly AMP hci_chan should be removed\
+  \ by a call to\nhci_disconn_loglink_complete_evt(). However, the controller might\
+  \ mess\nup, call that function, and destroy an hci_chan which is not initiated\n\
+  by hci_loglink_complete_evt().\n\nThis patch adds a verification that the destroyed\
+  \ hci_chan must have\nbeen init'd by hci_loglink_complete_evt().\n\nExample crash\
+  \ call trace:\nCall Trace:\n __dump_stack lib/dump_stack.c:77 [inline]\n dump_stack+0xe3/0x144\
+  \ lib/dump_stack.c:118\n print_address_description+0x67/0x22a mm/kasan/report.c:256\n\
+  \ kasan_report_error mm/kasan/report.c:354 [inline]\n kasan_report mm/kasan/report.c:412\
+  \ [inline]\n kasan_report+0x251/0x28f mm/kasan/report.c:396\n hci_send_acl+0x3b/0x56e\
+  \ net/bluetooth/hci_core.c:4072\n l2cap_send_cmd+0x5af/0x5c2 net/bluetooth/l2cap_core.c:877\n\
+  \ l2cap_send_move_chan_cfm_icid+0x8e/0xb1 net/bluetooth/l2cap_core.c:4661\n l2cap_move_fail\
+  \ net/bluetooth/l2cap_core.c:5146 [inline]\n l2cap_move_channel_rsp net/bluetooth/l2cap_core.c:5185\
+  \ [inline]\n l2cap_bredr_sig_cmd net/bluetooth/l2cap_core.c:5464 [inline]\n l2cap_sig_channel\
+  \ net/bluetooth/l2cap_core.c:5799 [inline]\n l2cap_recv_frame+0x1d12/0x51aa net/bluetooth/l2cap_core.c:7023\n\
+  \ l2cap_recv_acldata+0x2ea/0x693 net/bluetooth/l2cap_core.c:7596\n hci_acldata_packet\
+  \ net/bluetooth/hci_core.c:4606 [inline]\n hci_rx_work+0x2bd/0x45e net/bluetooth/hci_core.c:4796\n\
+  \ process_one_work+0x6f8/0xb50 kernel/workqueue.c:2175\n worker_thread+0x4fc/0x670\
+  \ kernel/workqueue.c:2321\n kthread+0x2f0/0x304 kernel/kthread.c:253\n ret_from_fork+0x3a/0x50\
+  \ arch/x86/entry/entry_64.S:415\n\nAllocated by task 38:\n set_track mm/kasan/kasan.c:460\
+  \ [inline]\n kasan_kmalloc+0x8d/0x9a mm/kasan/kasan.c:553\n kmem_cache_alloc_trace+0x102/0x129\
+  \ mm/slub.c:2787\n kmalloc include/linux/slab.h:515 [inline]\n kzalloc include/linux/slab.h:709\
+  \ [inline]\n hci_chan_create+0x86/0x26d net/bluetooth/hci_conn.c:1674\n l2cap_conn_add.part.0+0x1c/0x814\
+  \ net/bluetooth/l2cap_core.c:7062\n l2cap_conn_add net/bluetooth/l2cap_core.c:7059\
+  \ [inline]\n l2cap_connect_cfm+0x134/0x852 net/bluetooth/l2cap_core.c:7381\n hci_connect_cfm+0x9d/0x122\
+  \ include/net/bluetooth/hci_core.h:1404\n hci_remote_ext_features_evt net/bluetooth/hci_event.c:4161\
+  \ [inline]\n hci_event_packet+0x463f/0x72fa net/bluetooth/hci_event.c:5981\n hci_rx_work+0x197/0x45e\
+  \ net/bluetooth/hci_core.c:4791\n process_one_work+0x6f8/0xb50 kernel/workqueue.c:2175\n\
+  \ worker_thread+0x4fc/0x670 kernel/workqueue.c:2321\n kthread+0x2f0/0x304 kernel/kthread.c:253\n\
+  \ ret_from_fork+0x3a/0x50 arch/x86/entry/entry_64.S:415\n\nFreed by task 1732:\n\
+  \ set_track mm/kasan/kasan.c:460 [inline]\n __kasan_slab_free mm/kasan/kasan.c:521\
+  \ [inline]\n __kasan_slab_free+0x106/0x128 mm/kasan/kasan.c:493\n slab_free_hook\
+  \ mm/slub.c:1409 [inline]\n slab_free_freelist_hook+0xaa/0xf6 mm/slub.c:1436\n slab_free\
+  \ mm/slub.c:3009 [inline]\n kfree+0x182/0x21e mm/slub.c:3972\n hci_disconn_loglink_complete_evt\
+  \ net/bluetooth/hci_event.c:4891 [inline]\n hci_event_packet+0x6a1c/0x72fa net/bluetooth/hci_event.c:6050\n\
+  \ hci_rx_work+0x197/0x45e net/bluetooth/hci_core.c:4791\n process_one_work+0x6f8/0xb50\
+  \ kernel/workqueue.c:2175\n worker_thread+0x4fc/0x670 kernel/workqueue.c:2321\n\
+  \ kthread+0x2f0/0x304 kernel/kthread.c:253\n ret_from_fork+0x3a/0x50 arch/x86/entry/entry_64.S:415\n\
+  \nThe buggy address belongs to the object at ffff8881d7af9180\n which belongs to\
+  \ the cache kmalloc-128 of size 128\nThe buggy address is located 24 bytes inside\
+  \ of\n 128-byte region [ffff8881d7af9180, ffff8881d7af9200)\nThe buggy address belongs\
+  \ to the page:\npage:ffffea00075ebe40 count:1 mapcount:0 mapping:ffff8881da403200\
+  \ index:0x0\nflags: 0x8000000000000200(slab)\nraw: 8000000000000200 dead000000000100\
+  \ dead000000000200 ffff8881da403200\nraw: 0000000000000000 0000000080150015 00000001ffffffff\
+  \ 0000000000000000\npage dumped because: kasan: bad access detected\n\nMemory state\
+  \ around the buggy address:\n ffff8881d7af9080: fc fc fc fc fc fc fc fc fb fb fb\
+  \ fb fb fb fb fb\n ffff8881d7af9100: fb fb fb fb fb fb fb fb fc fc fc fc fc fc fc\
+  \ fc\n>ffff8881d7af9180: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n     \
+  \                       ^\n ffff8881d7af9200: fc fc fc fc fc fc fc fc fc fc fc fc\
+  \ fc fc fc fc\n ffff8881d7af9280: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc\n\
+  \nSigned-off-by: Archie Pusaka <apusaka@chromium.org>\nReported-by: syzbot+98228e7407314d2d4ba2@syzkaller.appspotmail.com\n\
+  Reviewed-by: Alain Michaud <alainm@chromium.org>\nReviewed-by: Abhishek Pandit-Subedi\
+  \ <abhishekpandit@chromium.org>\nSigned-off-by: Marcel Holtmann <marcel@holtmann.org>\n"
+submodule:
+- include/net/bluetooth
+- net/bluetooth
+hunk_count: 3
+covered_count: 1

@@ -1,0 +1,32 @@
+id: e7353c7141ff7cbb718e4c888a14fa92de41ebaa
+bug_link: https://syzkaller.appspot.com/bug?extid=e7353c7141ff7cbb718e4c888a14fa92de41ebaa
+title: possible deadlock in lru_add_drain_all
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0486a38bcc4749808edbc848f1bcf232042770fc
+fix_commit: 9852a7212324fd25f896932f4f4607ce47b0a22f
+datetime: '2018-01-31T17:18:36-08:00'
+fix_commit_message: "mm: drop hotplug lock from lru_add_drain_all()\n\nPulling cpu\
+  \ hotplug locks inside the mm core function like\nlru_add_drain_all just asks for\
+  \ problems and the recent lockdep splat\n[1] just proves this.  While the usage\
+  \ in that particular case might be\nwrong we should avoid the locking as lru_add_drain_all()\
+  \ is used in many\nplaces.  It seems that this is not all that hard to achieve actually.\n\
+  \nWe have done the same thing for drain_all_pages which is analogous by\ncommit\
+  \ a459eeb7b852 (\"mm, page_alloc: do not depend on cpu hotplug locks\ninside the\
+  \ allocator\").  All we have to care about is to handle\n\n      - the work item\
+  \ might be executed on a different cpu in worker from\n        unbound pool so it\
+  \ doesn't run on pinned on the cpu\n\n      - we have to make sure that we do not\
+  \ race with page_alloc_cpu_dead\n        calling lru_add_drain_cpu\n\nthe first\
+  \ part is already handled because the worker calls lru_add_drain\nwhich disables\
+  \ preemption when calling lru_add_drain_cpu on the local\ncpu it is draining.  The\
+  \ later is true because page_alloc_cpu_dead is\ncalled on the controlling CPU after\
+  \ the hotplugged CPU vanished\ncompletely.\n\n[1] http://lkml.kernel.org/r/089e0825eec8955c1f055c83d476@google.com\n\
+  \n[add a cpu hotplug locking interaction as per tglx]\nLink: http://lkml.kernel.org/r/20171116120535.23765-1-mhocko@kernel.org\n\
+  Signed-off-by: Michal Hocko <mhocko@suse.com>\nAcked-by: Thomas Gleixner <tglx@linutronix.de>\n\
+  Cc: Tejun Heo <tj@kernel.org>\nCc: Peter Zijlstra <peterz@infradead.org>\nCc: Johannes\
+  \ Weiner <hannes@cmpxchg.org>\nCc: Mel Gorman <mgorman@suse.de>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- include/linux
+- mm
+hunk_count: 4
+covered_count: 2

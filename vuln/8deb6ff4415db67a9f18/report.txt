@@ -1,0 +1,63 @@
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 1db8f60c84bb244c written 8 min_key POS_MIN durability: 1 ptr: 0:42:0 gen 0, fixing
+ done
+bcachefs (loop0): going read-write
+bcachefs (loop0): journal_replay...
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/btree_update.c:339!
+Oops: invalid opcode: 0000 [#1] SMP KASAN PTI
+CPU: 0 UID: 0 PID: 5842 Comm: syz-executor286 Not tainted 6.16.0-rc4-next-20250702-syzkaller #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:__btree_trans_update_by_path+0x1fd3/0x2010 fs/bcachefs/btree_update.c:339
+Code: f6 ff ff 48 8b 7c 24 28 e8 ca dd f5 fd 48 ba 00 00 00 00 00 fc ff df e9 3d f6 ff ff e8 a6 c9 91 fd 90 0f 0b e8 9e c9 91 fd 90 <0f> 0b e8 96 c9 91 fd 90 0f 0b e8 8e c9 91 fd 90 0f 0b e8 86 c9 91
+RSP: 0018:ffffc9000413ea18 EFLAGS: 00010293
+RAX: ffffffff842e0b42 RBX: 0000000000008542 RCX: ffff88802ea71e00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffff888031194010 R08: ffffffff84518baa R09: 0000000000000002
+R10: 0000000000000003 R11: 0000000000000000 R12: ffff888074e00000
+R13: ffff888031194000 R14: 0000000000000088 R15: 1ffff11006232802
+FS:  000055555e045380(0000) GS:ffff888125c1d000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055e03c677168 CR3: 0000000078920000 CR4: 00000000003526f0
+Call Trace:
+ <TASK>
+ bch2_trans_update_by_path fs/bcachefs/btree_update.c:454 [inline]
+ bch2_trans_update_ip+0x8f6/0x1f00 fs/bcachefs/btree_update.c:546
+ bch2_trans_update fs/bcachefs/btree_update.h:123 [inline]
+ bch2_journal_replay_key+0x4c1/0xb50 fs/bcachefs/recovery.c:311
+ bch2_journal_replay+0x171d/0x2630 fs/bcachefs/recovery.c:396
+ bch2_run_recovery_pass fs/bcachefs/recovery_passes.c:484 [inline]
+ __bch2_run_recovery_passes+0x392/0x1010 fs/bcachefs/recovery_passes.c:539
+ bch2_run_recovery_passes+0x184/0x210 fs/bcachefs/recovery_passes.c:610
+ bch2_fs_recovery+0x2690/0x3a50 fs/bcachefs/recovery.c:1005
+ bch2_fs_start+0xaaf/0xda0 fs/bcachefs/super.c:1212
+ bch2_fs_get_tree+0xb39/0x1540 fs/bcachefs/fs.c:2488
+ vfs_get_tree+0x92/0x2b0 fs/super.c:1804
+ do_new_mount+0x24a/0xa40 fs/namespace.c:3902
+ do_mount fs/namespace.c:4239 [inline]
+ __do_sys_mount fs/namespace.c:4450 [inline]
+ __se_sys_mount+0x317/0x410 fs/namespace.c:4427
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f878cb709ba
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc9f662588 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffc9f6625a0 RCX: 00007f878cb709ba
+RDX: 00002000000000c0 RSI: 0000200000000080 RDI: 00007ffc9f6625a0
+RBP: 0000200000000080 R08: 00007ffc9f6625e0 R09: 00000000000059b9
+R10: 0000000000818001 R11: 0000000000000282 R12: 00002000000000c0
+R13: 0000000000000004 R14: 0000000000000003 R15: 00007ffc9f6625e0
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__btree_trans_update_by_path+0x1fd3/0x2010 fs/bcachefs/btree_update.c:339
+Code: f6 ff ff 48 8b 7c 24 28 e8 ca dd f5 fd 48 ba 00 00 00 00 00 fc ff df e9 3d f6 ff ff e8 a6 c9 91 fd 90 0f 0b e8 9e c9 91 fd 90 <0f> 0b e8 96 c9 91 fd 90 0f 0b e8 8e c9 91 fd 90 0f 0b e8 86 c9 91
+RSP: 0018:ffffc9000413ea18 EFLAGS: 00010293
+RAX: ffffffff842e0b42 RBX: 0000000000008542 RCX: ffff88802ea71e00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffff888031194010 R08: ffffffff84518baa R09: 0000000000000002
+R10: 0000000000000003 R11: 0000000000000000 R12: ffff888074e00000
+R13: ffff888031194000 R14: 0000000000000088 R15: 1ffff11006232802
+FS:  000055555e045380(0000) GS:ffff888125d1d000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f8f8b3a1796 CR3: 0000000078920000 CR4: 00000000003526f0

@@ -1,0 +1,27 @@
+id: 9fcea5ef6dc4dc72d334
+bug_link: https://syzkaller.appspot.com/bug?extid=9fcea5ef6dc4dc72d334
+title: 'KASAN: slab-out-of-bounds Read in ntfs_listxattr'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9c689c8dc86f8ca99bf91c05f24c8bab38fe7d5f
+fix_commit: 8e7e27b2ee1e19c4040d4987e345f678a74c0aed
+datetime: '2023-09-28T15:04:04+03:00'
+fix_commit_message: "fs/ntfs3: fix panic about slab-out-of-bounds caused by ntfs_list_ea()\n\
+  \nHere is a BUG report about linux-6.1 from syzbot, but it still remains\nwithin\
+  \ upstream:\n\nBUG: KASAN: slab-out-of-bounds in ntfs_list_ea fs/ntfs3/xattr.c:191\
+  \ [inline]\nBUG: KASAN: slab-out-of-bounds in ntfs_listxattr+0x401/0x570 fs/ntfs3/xattr.c:710\n\
+  Read of size 1 at addr ffff888021acaf3d by task syz-executor128/3632\n\nCall Trace:\n\
+  \ kasan_report+0x139/0x170 mm/kasan/report.c:495\n ntfs_list_ea fs/ntfs3/xattr.c:191\
+  \ [inline]\n ntfs_listxattr+0x401/0x570 fs/ntfs3/xattr.c:710\n vfs_listxattr fs/xattr.c:457\
+  \ [inline]\n listxattr+0x293/0x2d0 fs/xattr.c:804\n path_listxattr fs/xattr.c:828\
+  \ [inline]\n __do_sys_llistxattr fs/xattr.c:846 [inline]\n\nBefore derefering field\
+  \ members of `ea` in unpacked_ea_size(), we need to\ncheck whether the EA_FULL struct\
+  \ is located in access validate range.\n\nSimilarly, when derefering `ea->name`\
+  \ field member, we need to check\nwhethe the ea->name is located in access validate\
+  \ range, too.\n\nFixes: be71b5cba2e6 (\"fs/ntfs3: Add attrib operations\")\nReported-by:\
+  \ syzbot+9fcea5ef6dc4dc72d334@syzkaller.appspotmail.com\nSigned-off-by: Zeng Heng\
+  \ <zengheng4@huawei.com>\n[almaz.alexandrovich@paragon-software.com: took the ret\
+  \ variable out of the loop block]\nSigned-off-by: Konstantin Komarov <almaz.alexandrovich@paragon-software.com>\n"
+submodule:
+- fs/ntfs3
+hunk_count: 2
+covered_count: 2

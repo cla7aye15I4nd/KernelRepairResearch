@@ -1,0 +1,71 @@
+id: 62dfea789a2cedac1298
+bug_link: https://syzkaller.appspot.com/bug?extid=62dfea789a2cedac1298
+title: general protection fault in clone_private_mount
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 29349a3d6da3be3210a2d0be3a17433dd10f9a40
+fix_commit: db04662e2f4fced10b93032c65ff03caaae21053
+datetime: '2025-02-12T12:12:24+01:00'
+fix_commit_message: 'fs: allow detached mounts in clone_private_mount()
+
+
+  In container workloads idmapped mounts are often used as layers for
+
+  overlayfs. Recently I added the ability to specify layers in overlayfs
+
+  as file descriptors instead of path names. It should be possible to
+
+  simply use the detached mounts directly when specifying layers instead
+
+  of having to attach them beforehand. They are discarded after overlayfs
+
+  is mounted anyway so it''s pointless system calls for userspace and
+
+  pointless locking for the kernel.
+
+
+  This just recently come up again in [1]. So enable clone_private_mount()
+
+  to use detached mounts directly. Following conditions must be met:
+
+
+  - Provided path must be the root of a detached mount tree.
+
+  - Provided path may not create mount namespace loops.
+
+  - Provided path must be mounted.
+
+
+  It would be possible to be stricter and require that the caller must
+
+  have CAP_SYS_ADMIN in the owning user namespace of the anonymous mount
+
+  namespace but since this restriction isn''t enforced for move_mount()
+
+  there''s no point in enforcing it for clone_private_mount().
+
+
+  This contains a folded fix for:
+
+  Reported-by: syzbot+62dfea789a2cedac1298@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=62dfea789a2cedac1298
+
+  provided by Lizhi Xu <lizhi.xu@windriver.com> in [2].
+
+
+  Link: https://lore.kernel.org/r/20250207071331.550952-1-lizhi.xu@windriver.com [2]
+
+  Link: https://lore.kernel.org/r/fd8f6574-f737-4743-b220-79c815ee1554@mbaynton.com
+  [1]
+
+  Link: https://lore.kernel.org/r/20250123-avancieren-erfreuen-3d61f6588fdd@brauner
+
+  Tested-by: Mike Baynton <mike@mbaynton.com>
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs
+hunk_count: 4
+covered_count: 2

@@ -1,0 +1,49 @@
+id: d6eb9cee2885ec06f5e3
+bug_link: https://syzkaller.appspot.com/bug?extid=d6eb9cee2885ec06f5e3
+title: WARNING in __cfg80211_connect_result (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 574e609c4e6a0843a9ed53de79e00da8fb3e7437
+fix_commit: b5d14b0c6716fad7f0c94ac6e1d6f60a49f985c7
+datetime: '2024-07-08T18:28:47+02:00'
+fix_commit_message: 'wifi: virt_wifi: avoid reporting connection success with wrong
+  SSID
+
+
+  When user issues a connection with a different SSID than the one
+
+  virt_wifi has advertised, the __cfg80211_connect_result() will
+
+  trigger the warning: WARN_ON(bss_not_found).
+
+
+  The issue is because the connection code in virt_wifi does not
+
+  check the SSID from user space (it only checks the BSSID), and
+
+  virt_wifi will call cfg80211_connect_result() with WLAN_STATUS_SUCCESS
+
+  even if the SSID is different from the one virt_wifi has advertised.
+
+  Eventually cfg80211 won''t be able to find the cfg80211_bss and generate
+
+  the warning.
+
+
+  Fixed it by checking the SSID (from user space) in the connection code.
+
+
+  Fixes: c7cdba31ed8b ("mac80211-next: rtnetlink wifi simulation device")
+
+  Reported-by: syzbot+d6eb9cee2885ec06f5e3@syzkaller.appspotmail.com
+
+  Signed-off-by: En-Wei Wu <en-wei.wu@canonical.com>
+
+  Link: https://patch.msgid.link/20240705023756.10954-1-en-wei.wu@canonical.com
+
+  Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+  '
+submodule:
+- drivers/net/wireless/virtual
+hunk_count: 5
+covered_count: 0

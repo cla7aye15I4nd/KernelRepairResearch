@@ -1,0 +1,125 @@
+id: caa188bdfc1eeafeb418
+bug_link: https://syzkaller.appspot.com/bug?extid=caa188bdfc1eeafeb418
+title: 'KASAN: use-after-free Write in nr_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 54aa39a513dbf2164ca462a19f04519b2407a224
+fix_commit: 611792920925fb088ddccbe2783c7f92fdfb6b64
+datetime: '2023-01-30T07:30:47+00:00'
+fix_commit_message: "netrom: Fix use-after-free caused by accept on already connected\
+  \ socket\n\nIf you call listen() and accept() on an already connect()ed\nAF_NETROM\
+  \ socket, accept() can successfully connect.\nThis is because when the peer socket\
+  \ sends data to sendmsg,\nthe skb with its own sk stored in the connected socket's\n\
+  sk->sk_receive_queue is connected, and nr_accept() dequeues\nthe skb waiting in\
+  \ the sk->sk_receive_queue.\n\nAs a result, nr_accept() allocates and returns a\
+  \ sock with\nthe sk of the parent AF_NETROM socket.\n\nAnd here use-after-free can\
+  \ happen through complex race conditions:\n```\n                  cpu0         \
+  \                                            cpu1\n                            \
+  \                                   1. socket_2 = socket(AF_NETROM)\n          \
+  \                                                              .\n             \
+  \                                                           .\n                \
+  \                                                  listen(socket_2)\n          \
+  \                                                        accepted_socket = accept(socket_2)\n\
+  \       2. socket_1 = socket(AF_NETROM)\n            nr_create()    // sk refcount\
+  \ : 1\n          connect(socket_1)\n                                           \
+  \                    3. write(accepted_socket)\n                               \
+  \                                     nr_sendmsg()\n                           \
+  \                                         nr_output()\n                        \
+  \                                            nr_kick()\n                       \
+  \                                             nr_send_iframe()\n               \
+  \                                                     nr_transmit_buffer()\n   \
+  \                                                                 nr_route_frame()\n\
+  \                                                                    nr_loopback_queue()\n\
+  \                                                                    nr_loopback_timer()\n\
+  \                                                                    nr_rx_frame()\n\
+  \                                                                    nr_process_rx_frame(sk,\
+  \ skb);    // sk : socket_1's sk\n                                             \
+  \                       nr_state3_machine()\n                                  \
+  \                                  nr_queue_rx_frame()\n                       \
+  \                                             sock_queue_rcv_skb()\n           \
+  \                                                         sock_queue_rcv_skb_reason()\n\
+  \                                                                    __sock_queue_rcv_skb()\n\
+  \                                                                    __skb_queue_tail(list,\
+  \ skb);    // list : socket_1's sk->sk_receive_queue\n       4. listen(socket_1)\n\
+  \            nr_listen()\n          uaf_socket = accept(socket_1)\n            nr_accept()\n\
+  \            skb_dequeue(&sk->sk_receive_queue);\n                             \
+  \                                  5. close(accepted_socket)\n                 \
+  \                                                   nr_release()\n             \
+  \                                                       nr_write_internal(sk, NR_DISCREQ)\n\
+  \                                                                    nr_transmit_buffer()\
+  \    // NR_DISCREQ\n                                                           \
+  \         nr_route_frame()\n                                                   \
+  \                 nr_loopback_queue()\n                                        \
+  \                            nr_loopback_timer()\n                             \
+  \                                       nr_rx_frame()    // sk : socket_1's sk\n\
+  \                                                                    nr_process_rx_frame()\
+  \  // NR_STATE_3\n                                                             \
+  \       nr_state3_machine()    // NR_DISCREQ\n                                 \
+  \                                   nr_disconnect()\n                          \
+  \                                          nr_sk(sk)->state = NR_STATE_0;\n    \
+  \   6. close(socket_1)    // sk refcount : 3\n            nr_release()    // NR_STATE_0\n\
+  \            sock_put(sk);    // sk refcount : 0\n            sk_free(sk);\n   \
+  \       close(uaf_socket)\n            nr_release()\n            sock_hold(sk);\
+  \    // UAF\n```\n\nKASAN report by syzbot:\n```\nBUG: KASAN: use-after-free in\
+  \ nr_release+0x66/0x460 net/netrom/af_netrom.c:520\nWrite of size 4 at addr ffff8880235d8080\
+  \ by task syz-executor564/5128\n\nCall Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:88\
+  \ [inline]\n dump_stack_lvl+0xd1/0x138 lib/dump_stack.c:106\n print_address_description\
+  \ mm/kasan/report.c:306 [inline]\n print_report+0x15e/0x461 mm/kasan/report.c:417\n\
+  \ kasan_report+0xbf/0x1f0 mm/kasan/report.c:517\n check_region_inline mm/kasan/generic.c:183\
+  \ [inline]\n kasan_check_range+0x141/0x190 mm/kasan/generic.c:189\n instrument_atomic_read_write\
+  \ include/linux/instrumented.h:102 [inline]\n atomic_fetch_add_relaxed include/linux/atomic/atomic-instrumented.h:116\
+  \ [inline]\n __refcount_add include/linux/refcount.h:193 [inline]\n __refcount_inc\
+  \ include/linux/refcount.h:250 [inline]\n refcount_inc include/linux/refcount.h:267\
+  \ [inline]\n sock_hold include/net/sock.h:775 [inline]\n nr_release+0x66/0x460 net/netrom/af_netrom.c:520\n\
+  \ __sock_release+0xcd/0x280 net/socket.c:650\n sock_close+0x1c/0x20 net/socket.c:1365\n\
+  \ __fput+0x27c/0xa90 fs/file_table.c:320\n task_work_run+0x16f/0x270 kernel/task_work.c:179\n\
+  \ exit_task_work include/linux/task_work.h:38 [inline]\n do_exit+0xaa8/0x2950 kernel/exit.c:867\n\
+  \ do_group_exit+0xd4/0x2a0 kernel/exit.c:1012\n get_signal+0x21c3/0x2450 kernel/signal.c:2859\n\
+  \ arch_do_signal_or_restart+0x79/0x5c0 arch/x86/kernel/signal.c:306\n exit_to_user_mode_loop\
+  \ kernel/entry/common.c:168 [inline]\n exit_to_user_mode_prepare+0x15f/0x250 kernel/entry/common.c:203\n\
+  \ __syscall_exit_to_user_mode_work kernel/entry/common.c:285 [inline]\n syscall_exit_to_user_mode+0x1d/0x50\
+  \ kernel/entry/common.c:296\n do_syscall_64+0x46/0xb0 arch/x86/entry/common.c:86\n\
+  \ entry_SYSCALL_64_after_hwframe+0x63/0xcd\nRIP: 0033:0x7f6c19e3c9b9\nCode: Unable\
+  \ to access opcode bytes at 0x7f6c19e3c98f.\nRSP: 002b:00007fffd4ba2ce8 EFLAGS:\
+  \ 00000246 ORIG_RAX: 0000000000000133\nRAX: 0000000000000116 RBX: 0000000000000003\
+  \ RCX: 00007f6c19e3c9b9\nRDX: 0000000000000318 RSI: 00000000200bd000 RDI: 0000000000000006\n\
+  RBP: 0000000000000003 R08: 000000000000000d R09: 000000000000000d\nR10: 0000000000000000\
+  \ R11: 0000000000000246 R12: 000055555566a2c0\nR13: 0000000000000011 R14: 0000000000000000\
+  \ R15: 0000000000000000\n </TASK>\n\nAllocated by task 5128:\n kasan_save_stack+0x22/0x40\
+  \ mm/kasan/common.c:45\n kasan_set_track+0x25/0x30 mm/kasan/common.c:52\n ____kasan_kmalloc\
+  \ mm/kasan/common.c:371 [inline]\n ____kasan_kmalloc mm/kasan/common.c:330 [inline]\n\
+  \ __kasan_kmalloc+0xa3/0xb0 mm/kasan/common.c:380\n kasan_kmalloc include/linux/kasan.h:211\
+  \ [inline]\n __do_kmalloc_node mm/slab_common.c:968 [inline]\n __kmalloc+0x5a/0xd0\
+  \ mm/slab_common.c:981\n kmalloc include/linux/slab.h:584 [inline]\n sk_prot_alloc+0x140/0x290\
+  \ net/core/sock.c:2038\n sk_alloc+0x3a/0x7a0 net/core/sock.c:2091\n nr_create+0xb6/0x5f0\
+  \ net/netrom/af_netrom.c:433\n __sock_create+0x359/0x790 net/socket.c:1515\n sock_create\
+  \ net/socket.c:1566 [inline]\n __sys_socket_create net/socket.c:1603 [inline]\n\
+  \ __sys_socket_create net/socket.c:1588 [inline]\n __sys_socket+0x133/0x250 net/socket.c:1636\n\
+  \ __do_sys_socket net/socket.c:1649 [inline]\n __se_sys_socket net/socket.c:1647\
+  \ [inline]\n __x64_sys_socket+0x73/0xb0 net/socket.c:1647\n do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n do_syscall_64+0x39/0xb0 arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\
+  \nFreed by task 5128:\n kasan_save_stack+0x22/0x40 mm/kasan/common.c:45\n kasan_set_track+0x25/0x30\
+  \ mm/kasan/common.c:52\n kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:518\n\
+  \ ____kasan_slab_free mm/kasan/common.c:236 [inline]\n ____kasan_slab_free+0x13b/0x1a0\
+  \ mm/kasan/common.c:200\n kasan_slab_free include/linux/kasan.h:177 [inline]\n __cache_free\
+  \ mm/slab.c:3394 [inline]\n __do_kmem_cache_free mm/slab.c:3580 [inline]\n __kmem_cache_free+0xcd/0x3b0\
+  \ mm/slab.c:3587\n sk_prot_free net/core/sock.c:2074 [inline]\n __sk_destruct+0x5df/0x750\
+  \ net/core/sock.c:2166\n sk_destruct net/core/sock.c:2181 [inline]\n __sk_free+0x175/0x460\
+  \ net/core/sock.c:2192\n sk_free+0x7c/0xa0 net/core/sock.c:2203\n sock_put include/net/sock.h:1991\
+  \ [inline]\n nr_release+0x39e/0x460 net/netrom/af_netrom.c:554\n __sock_release+0xcd/0x280\
+  \ net/socket.c:650\n sock_close+0x1c/0x20 net/socket.c:1365\n __fput+0x27c/0xa90\
+  \ fs/file_table.c:320\n task_work_run+0x16f/0x270 kernel/task_work.c:179\n exit_task_work\
+  \ include/linux/task_work.h:38 [inline]\n do_exit+0xaa8/0x2950 kernel/exit.c:867\n\
+  \ do_group_exit+0xd4/0x2a0 kernel/exit.c:1012\n get_signal+0x21c3/0x2450 kernel/signal.c:2859\n\
+  \ arch_do_signal_or_restart+0x79/0x5c0 arch/x86/kernel/signal.c:306\n exit_to_user_mode_loop\
+  \ kernel/entry/common.c:168 [inline]\n exit_to_user_mode_prepare+0x15f/0x250 kernel/entry/common.c:203\n\
+  \ __syscall_exit_to_user_mode_work kernel/entry/common.c:285 [inline]\n syscall_exit_to_user_mode+0x1d/0x50\
+  \ kernel/entry/common.c:296\n do_syscall_64+0x46/0xb0 arch/x86/entry/common.c:86\n\
+  \ entry_SYSCALL_64_after_hwframe+0x63/0xcd\n```\n\nTo fix this issue, nr_listen()\
+  \ returns -EINVAL for sockets that\nsuccessfully nr_connect().\n\nReported-by: syzbot+caa188bdfc1eeafeb418@syzkaller.appspotmail.com\n\
+  Fixes: 1da177e4c3f4 (\"Linux-2.6.12-rc2\")\nSigned-off-by: Hyunwoo Kim <v4bel@theori.io>\n\
+  Reviewed-by: Kuniyuki Iwashima <kuniyu@amazon.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/netrom
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,37 @@
+id: 84a67953651a971809ba
+bug_link: https://syzkaller.appspot.com/bug?extid=84a67953651a971809ba
+title: 'WARNING: bad unlock balance in xfs_iunlock'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 19957a181608d25c8f4136652d0ea00b3738972d
+fix_commit: 8241f7f983b972823431d762f7c3c9fe0f2a7b00
+datetime: '2018-03-11T20:27:56-07:00'
+fix_commit_message: 'xfs: don''t iunlock the quota ip when quota block
+
+
+  In xfs_qm_dqalloc, we join the locked quota inode to the transaction we
+
+  use to allocate blocks.  If the allocation or mapping fails, we''re not
+
+  allowed to unlock the inode because the transaction code is in charge of
+
+  unlocking it for us.  Therefore, remove the iunlock call to avoid
+
+  blowing asserts about unbalanced locking + mount hang.
+
+
+  Found by corrupting the AGF and allocating space in the filesystem
+
+  (quotacheck) immediately after mount.  The upcoming agfl wrapping fixup
+
+  test will trigger this scenario.
+
+
+  Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+
+  Reviewed-by: Brian Foster <bfoster@redhat.com>
+
+  '
+submodule:
+- fs/xfs
+hunk_count: 1
+covered_count: 0

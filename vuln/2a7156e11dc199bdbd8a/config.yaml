@@ -1,0 +1,39 @@
+id: 2a7156e11dc199bdbd8a
+bug_link: https://syzkaller.appspot.com/bug?extid=2a7156e11dc199bdbd8a
+title: WARNING in kvm_inject_emulated_page_fault
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 34d2618d3318bf4832a13ef71c96833dc996f7d5
+fix_commit: 7a35e515a7055f483f87d12041c41db11b36c9ee
+datetime: '2020-06-08T07:59:08-04:00'
+fix_commit_message: "KVM: VMX: Properly handle kvm_read/write_guest_virt*() result\n\
+  \nSyzbot reports the following issue:\n\nWARNING: CPU: 0 PID: 6819 at arch/x86/kvm/x86.c:618\n\
+  \ kvm_inject_emulated_page_fault+0x210/0x290 arch/x86/kvm/x86.c:618\n...\nCall Trace:\n\
+  ...\nRIP: 0010:kvm_inject_emulated_page_fault+0x210/0x290 arch/x86/kvm/x86.c:618\n\
+  ...\n nested_vmx_get_vmptr+0x1f9/0x2a0 arch/x86/kvm/vmx/nested.c:4638\n handle_vmon\
+  \ arch/x86/kvm/vmx/nested.c:4767 [inline]\n handle_vmon+0x168/0x3a0 arch/x86/kvm/vmx/nested.c:4728\n\
+  \ vmx_handle_exit+0x29c/0x1260 arch/x86/kvm/vmx/vmx.c:6067\n\n'exception' we're\
+  \ trying to inject with kvm_inject_emulated_page_fault()\ncomes from:\n\n  nested_vmx_get_vmptr()\n\
+  \   kvm_read_guest_virt()\n     kvm_read_guest_virt_helper()\n       vcpu->arch.walk_mmu->gva_to_gpa()\n\
+  \nbut it is only set when GVA to GPA conversion fails. In case it doesn't but\n\
+  we still fail kvm_vcpu_read_guest_page(), X86EMUL_IO_NEEDED is returned and\nnested_vmx_get_vmptr()\
+  \ calls kvm_inject_emulated_page_fault() with zeroed\n'exception'. This happen when\
+  \ the argument is MMIO.\n\nPaolo also noticed that nested_vmx_get_vmptr() is not\
+  \ the only place in\nKVM code where kvm_read/write_guest_virt*() return result is\
+  \ mishandled.\nVMX instructions along with INVPCID have the same issue. This was\
+  \ already\nnoticed before, e.g. see commit 541ab2aeb282 (\"KVM: x86: work around\n\
+  leak of uninitialized stack contents\") but was never fully fixed.\n\nKVM could've\
+  \ handled the request correctly by going to userspace and\nperforming I/O but there\
+  \ doesn't seem to be a good need for such requests\nin the first place.\n\nIntroduce\
+  \ vmx_handle_memory_failure() as an interim solution.\n\nNote, nested_vmx_get_vmptr()\
+  \ now has three possible outcomes: OK, PF,\nKVM_EXIT_INTERNAL_ERROR and callers\
+  \ need to know if userspace exit is\nneeded (for KVM_EXIT_INTERNAL_ERROR) in case\
+  \ of failure. We don't seem\nto have a good enum describing this tristate, just\
+  \ add \"int *ret\" to\nnested_vmx_get_vmptr() interface to pass the information.\n\
+  \nReported-by: syzbot+2a7156e11dc199bdbd8a@syzkaller.appspotmail.com\nSuggested-by:\
+  \ Sean Christopherson <sean.j.christopherson@intel.com>\nSigned-off-by: Vitaly Kuznetsov\
+  \ <vkuznets@redhat.com>\nMessage-Id: <20200605115906.532682-1-vkuznets@redhat.com>\n\
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm/vmx
+hunk_count: 18
+covered_count: 2

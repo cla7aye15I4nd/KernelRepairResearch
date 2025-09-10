@@ -1,0 +1,96 @@
+diff --git a/net/rxrpc/call_object.c b/net/rxrpc/call_object.c
+index f07970207b54..38a46167523f 100644
+--- a/net/rxrpc/call_object.c
++++ b/net/rxrpc/call_object.c
+@@ -288,7 +288,7 @@ struct rxrpc_call *rxrpc_new_client_call(struct rxrpc_sock *rx,
+ 	 */
+ 	ret = rxrpc_connect_call(rx, call, cp, srx, gfp);
+ 	if (ret < 0)
+-		goto error;
++		goto error_attached_to_socket;
+ 
+ 	trace_rxrpc_call(call->debug_id, rxrpc_call_connected,
+ 			 atomic_read(&call->usage), here, NULL);
+@@ -308,18 +308,29 @@ struct rxrpc_call *rxrpc_new_client_call(struct rxrpc_sock *rx,
+ error_dup_user_ID:
+ 	write_unlock(&rx->call_lock);
+ 	release_sock(&rx->sk);
+-	ret = -EEXIST;
+-
+-error:
+ 	__rxrpc_set_call_completion(call, RXRPC_CALL_LOCAL_ERROR,
+-				    RX_CALL_DEAD, ret);
++				    RX_CALL_DEAD, -EEXIST);
+ 	trace_rxrpc_call(call->debug_id, rxrpc_call_error,
+-			 atomic_read(&call->usage), here, ERR_PTR(ret));
++			 atomic_read(&call->usage), here, ERR_PTR(-EEXIST));
+ 	rxrpc_release_call(rx, call);
+ 	mutex_unlock(&call->user_mutex);
+ 	rxrpc_put_call(call, rxrpc_call_put);
+-	_leave(" = %d", ret);
+-	return ERR_PTR(ret);
++	_leave(" = -EEXIST");
++	return ERR_PTR(-EEXIST);
++
++	/* We got an error, but the call is attached to the socket and is in
++	 * need of release.  However, we might now race with recvmsg() when
++	 * completing the call queues it.  Return 0 from sys_sendmsg() and
++	 * leave the error to recvmsg() to deal with.
++	 */
++error_attached_to_socket:
++	trace_rxrpc_call(call->debug_id, rxrpc_call_error,
++			 atomic_read(&call->usage), here, ERR_PTR(ret));
++	set_bit(RXRPC_CALL_DISCONNECTED, &call->flags);
++	__rxrpc_set_call_completion(call, RXRPC_CALL_LOCAL_ERROR,
++				    RX_CALL_DEAD, ret);
++	_leave(" = c=%08x [err]", call->debug_id);
++	return call;
+ }
+ 
+ /*
+diff --git a/net/rxrpc/conn_object.c b/net/rxrpc/conn_object.c
+index 19e141eeed17..8cbe0bf20ed5 100644
+--- a/net/rxrpc/conn_object.c
++++ b/net/rxrpc/conn_object.c
+@@ -212,9 +212,11 @@ void rxrpc_disconnect_call(struct rxrpc_call *call)
+ 
+ 	call->peer->cong_cwnd = call->cong_cwnd;
+ 
+-	spin_lock_bh(&conn->params.peer->lock);
+-	hlist_del_rcu(&call->error_link);
+-	spin_unlock_bh(&conn->params.peer->lock);
++	if (!hlist_unhashed(&call->error_link)) {
++		spin_lock_bh(&call->peer->lock);
++		hlist_del_rcu(&call->error_link);
++		spin_unlock_bh(&call->peer->lock);
++	}
+ 
+ 	if (rxrpc_is_client_call(call))
+ 		return rxrpc_disconnect_client_call(call);
+diff --git a/net/rxrpc/recvmsg.c b/net/rxrpc/recvmsg.c
+index 490b1927215c..efecc5a8f67d 100644
+--- a/net/rxrpc/recvmsg.c
++++ b/net/rxrpc/recvmsg.c
+@@ -620,7 +620,7 @@ int rxrpc_recvmsg(struct socket *sock, struct msghdr *msg, size_t len,
+ 			goto error_unlock_call;
+ 	}
+ 
+-	if (msg->msg_name) {
++	if (msg->msg_name && call->peer) {
+ 		struct sockaddr_rxrpc *srx = msg->msg_name;
+ 		size_t len = sizeof(call->peer->srx);
+ 
+diff --git a/net/rxrpc/sendmsg.c b/net/rxrpc/sendmsg.c
+index 03a30d014bb6..f3f6da6e4ad2 100644
+--- a/net/rxrpc/sendmsg.c
++++ b/net/rxrpc/sendmsg.c
+@@ -681,6 +681,9 @@ int rxrpc_do_sendmsg(struct rxrpc_sock *rx, struct msghdr *msg, size_t len)
+ 		if (IS_ERR(call))
+ 			return PTR_ERR(call);
+ 		/* ... and we have the call lock. */
++		ret = 0;
++		if (READ_ONCE(call->state) == RXRPC_CALL_COMPLETE)
++			goto out_put_unlock;
+ 	} else {
+ 		switch (READ_ONCE(call->state)) {
+ 		case RXRPC_CALL_UNINITIALISED:

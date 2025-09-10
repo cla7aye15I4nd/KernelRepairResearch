@@ -1,0 +1,24 @@
+id: 91bdd8eece0f6629ec8b
+bug_link: https://syzkaller.appspot.com/bug?extid=91bdd8eece0f6629ec8b
+title: general protection fault in xt_rateest_put
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c120959387efa51479056fd01dc90adfba7a590c
+fix_commit: 212e7f56605ef9688d0846db60c6c6ec06544095
+datetime: '2020-01-13T19:22:10+01:00'
+fix_commit_message: "netfilter: arp_tables: init netns pointer in xt_tgdtor_param\
+  \ struct\n\nAn earlier commit (1b789577f655060d98d20e,\n\"netfilter: arp_tables:\
+  \ init netns pointer in xt_tgchk_param struct\")\nfixed missing net initialization\
+  \ for arptables, but turns out it was\nincomplete.  We can get a very similar struct\
+  \ net NULL deref during\nerror unwinding:\n\ngeneral protection fault: 0000 [#1]\
+  \ PREEMPT SMP KASAN\nRIP: 0010:xt_rateest_put+0xa1/0x440 net/netfilter/xt_RATEEST.c:77\n\
+  \ xt_rateest_tg_destroy+0x72/0xa0 net/netfilter/xt_RATEEST.c:175\n cleanup_entry\
+  \ net/ipv4/netfilter/arp_tables.c:509 [inline]\n translate_table+0x11f4/0x1d80 net/ipv4/netfilter/arp_tables.c:587\n\
+  \ do_replace net/ipv4/netfilter/arp_tables.c:981 [inline]\n do_arpt_set_ctl+0x317/0x650\
+  \ net/ipv4/netfilter/arp_tables.c:1461\n\nAlso init the netns pointer in xt_tgdtor_param\
+  \ struct.\n\nFixes: add67461240c1d (\"netfilter: add struct net * to target parameters\"\
+  )\nReported-by: syzbot+91bdd8eece0f6629ec8b@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Florian Westphal <fw@strlen.de>\nSigned-off-by: Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/ipv4
+hunk_count: 9
+covered_count: 4

@@ -1,0 +1,48 @@
+id: 03c4738ed29d5d366ddf
+bug_link: https://syzkaller.appspot.com/bug?extid=03c4738ed29d5d366ddf
+title: memory leak in em_nbyte_change
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f9e95555757915fc194288862d2978e370fe316b
+fix_commit: 55cd9f67f1e45de8517cdaab985fb8e56c0bc1d8
+datetime: '2020-01-27T10:55:26+01:00'
+fix_commit_message: "net_sched: ematch: reject invalid TCF_EM_SIMPLE\n\nIt is possible\
+  \ for malicious userspace to set TCF_EM_SIMPLE bit\neven for matches that should\
+  \ not have this bit set.\n\nThis can fool two places using tcf_em_is_simple()\n\n\
+  1) tcf_em_tree_destroy() -> memory leak of em->data\n   if ops->destroy() is NULL\n\
+  \n2) tcf_em_tree_dump() wrongly report/leak 4 low-order bytes\n   of a kernel pointer.\n\
+  \nBUG: memory leak\nunreferenced object 0xffff888121850a40 (size 32):\n  comm \"\
+  syz-executor927\", pid 7193, jiffies 4294941655 (age 19.840s)\n  hex dump (first\
+  \ 32 bytes):\n    00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00  ................\n\
+  \    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n  backtrace:\n\
+  \    [<00000000f67036ea>] kmemleak_alloc_recursive include/linux/kmemleak.h:43 [inline]\n\
+  \    [<00000000f67036ea>] slab_post_alloc_hook mm/slab.h:586 [inline]\n    [<00000000f67036ea>]\
+  \ slab_alloc mm/slab.c:3320 [inline]\n    [<00000000f67036ea>] __do_kmalloc mm/slab.c:3654\
+  \ [inline]\n    [<00000000f67036ea>] __kmalloc_track_caller+0x165/0x300 mm/slab.c:3671\n\
+  \    [<00000000fab0cc8e>] kmemdup+0x27/0x60 mm/util.c:127\n    [<00000000d9992e0a>]\
+  \ kmemdup include/linux/string.h:453 [inline]\n    [<00000000d9992e0a>] em_nbyte_change+0x5b/0x90\
+  \ net/sched/em_nbyte.c:32\n    [<000000007e04f711>] tcf_em_validate net/sched/ematch.c:241\
+  \ [inline]\n    [<000000007e04f711>] tcf_em_tree_validate net/sched/ematch.c:359\
+  \ [inline]\n    [<000000007e04f711>] tcf_em_tree_validate+0x332/0x46f net/sched/ematch.c:300\n\
+  \    [<000000007a769204>] basic_set_parms net/sched/cls_basic.c:157 [inline]\n \
+  \   [<000000007a769204>] basic_change+0x1d7/0x5f0 net/sched/cls_basic.c:219\n  \
+  \  [<00000000e57a5997>] tc_new_tfilter+0x566/0xf70 net/sched/cls_api.c:2104\n  \
+  \  [<0000000074b68559>] rtnetlink_rcv_msg+0x3b2/0x4b0 net/core/rtnetlink.c:5415\n\
+  \    [<00000000b7fe53fb>] netlink_rcv_skb+0x61/0x170 net/netlink/af_netlink.c:2477\n\
+  \    [<00000000e83a40d0>] rtnetlink_rcv+0x1d/0x30 net/core/rtnetlink.c:5442\n  \
+  \  [<00000000d62ba933>] netlink_unicast_kernel net/netlink/af_netlink.c:1302 [inline]\n\
+  \    [<00000000d62ba933>] netlink_unicast+0x223/0x310 net/netlink/af_netlink.c:1328\n\
+  \    [<0000000088070f72>] netlink_sendmsg+0x2c0/0x570 net/netlink/af_netlink.c:1917\n\
+  \    [<00000000f70b15ea>] sock_sendmsg_nosec net/socket.c:639 [inline]\n    [<00000000f70b15ea>]\
+  \ sock_sendmsg+0x54/0x70 net/socket.c:659\n    [<00000000ef95a9be>] ____sys_sendmsg+0x2d0/0x300\
+  \ net/socket.c:2330\n    [<00000000b650f1ab>] ___sys_sendmsg+0x8a/0xd0 net/socket.c:2384\n\
+  \    [<0000000055bfa74a>] __sys_sendmsg+0x80/0xf0 net/socket.c:2417\n    [<000000002abac183>]\
+  \ __do_sys_sendmsg net/socket.c:2426 [inline]\n    [<000000002abac183>] __se_sys_sendmsg\
+  \ net/socket.c:2424 [inline]\n    [<000000002abac183>] __x64_sys_sendmsg+0x23/0x30\
+  \ net/socket.c:2424\n\nFixes: 1da177e4c3f4 (\"Linux-2.6.12-rc2\")\nSigned-off-by:\
+  \ Eric Dumazet <edumazet@google.com>\nReported-by: syzbot+03c4738ed29d5d366ddf@syzkaller.appspotmail.com\n\
+  Cc: Cong Wang <xiyou.wangcong@gmail.com>\nAcked-by: Cong Wang <xiyou.wangcong@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sched
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,66 @@
+tipc: Node number set to 1055423674
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] SMP KASAN NOPTI
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 3 UID: 0 PID: 6017 Comm: kworker/3:5 Not tainted 6.15.0-rc1-syzkaller-00246-g900241a5cc15 #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: events tipc_net_finalize_work
+RIP: 0010:tipc_mon_reinit_self+0x11c/0x210 net/tipc/monitor.c:719
+Code: 8b 54 24 08 48 8d 78 10 48 89 f9 48 c1 e9 03 0f b6 0c 29 84 c9 74 09 80 f9 03 0f 8e b2 00 00 00 8b 48 10 48 89 d0 48 c1 e8 03 <0f> b6 04 28 84 c0 74 04 3c 03 7e 7d 89 0a 4c 89 ff e8 ce c1 65 00
+RSP: 0018:ffffc9000356fb68 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 000000003ee87cba
+RDX: 0000000000000000 RSI: ffffffff8dbc56a7 RDI: ffff88804c2cc010
+RBP: dffffc0000000000 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000000 R12: 0000000000000007
+R13: fffffbfff2111097 R14: ffff88804ead8000 R15: ffff88804ead9010
+FS:  0000000000000000(0000) GS:ffff888097ab9000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00000000f720eb00 CR3: 000000000e182000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ tipc_net_finalize+0x10b/0x180 net/tipc/net.c:140
+ process_one_work+0x9cc/0x1b70 kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3319 [inline]
+ worker_thread+0x6c8/0xf10 kernel/workqueue.c:3400
+ kthread+0x3c2/0x780 kernel/kthread.c:464
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:tipc_mon_reinit_self+0x11c/0x210 net/tipc/monitor.c:719
+Code: 8b 54 24 08 48 8d 78 10 48 89 f9 48 c1 e9 03 0f b6 0c 29 84 c9 74 09 80 f9 03 0f 8e b2 00 00 00 8b 48 10 48 89 d0 48 c1 e8 03 <0f> b6 04 28 84 c0 74 04 3c 03 7e 7d 89 0a 4c 89 ff e8 ce c1 65 00
+RSP: 0018:ffffc9000356fb68 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 000000003ee87cba
+RDX: 0000000000000000 RSI: ffffffff8dbc56a7 RDI: ffff88804c2cc010
+RBP: dffffc0000000000 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000000 R12: 0000000000000007
+R13: fffffbfff2111097 R14: ffff88804ead8000 R15: ffff88804ead9010
+FS:  0000000000000000(0000) GS:ffff888097ab9000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00000000f720eb00 CR3: 000000000e182000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	8b 54 24 08          	mov    0x8(%rsp),%edx
+   4:	48 8d 78 10          	lea    0x10(%rax),%rdi
+   8:	48 89 f9             	mov    %rdi,%rcx
+   b:	48 c1 e9 03          	shr    $0x3,%rcx
+   f:	0f b6 0c 29          	movzbl (%rcx,%rbp,1),%ecx
+  13:	84 c9                	test   %cl,%cl
+  15:	74 09                	je     0x20
+  17:	80 f9 03             	cmp    $0x3,%cl
+  1a:	0f 8e b2 00 00 00    	jle    0xd2
+  20:	8b 48 10             	mov    0x10(%rax),%ecx
+  23:	48 89 d0             	mov    %rdx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	0f b6 04 28          	movzbl (%rax,%rbp,1),%eax <-- trapping instruction
+  2e:	84 c0                	test   %al,%al
+  30:	74 04                	je     0x36
+  32:	3c 03                	cmp    $0x3,%al
+  34:	7e 7d                	jle    0xb3
+  36:	89 0a                	mov    %ecx,(%rdx)
+  38:	4c 89 ff             	mov    %r15,%rdi
+  3b:	e8 ce c1 65 00       	call   0x65c20e

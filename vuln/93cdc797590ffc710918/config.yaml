@@ -1,0 +1,52 @@
+id: 93cdc797590ffc710918
+bug_link: https://syzkaller.appspot.com/bug?extid=93cdc797590ffc710918
+title: WARNING in sg_remove_sfp_usercontext
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2a26a11e9c258b14be6fd98f8a85f20ac1fff66e
+fix_commit: d4e655c49f474deffaf5ed7e65034b8167ee39c8
+datetime: '2024-04-04T18:22:12-04:00'
+fix_commit_message: 'scsi: sg: Avoid race in error handling & drop bogus warn
+
+
+  Commit 27f58c04a8f4 ("scsi: sg: Avoid sg device teardown race") introduced
+
+  an incorrect WARN_ON_ONCE() and missed a sequence where sg_device_destroy()
+
+  was used after scsi_device_put().
+
+
+  sg_device_destroy() is accessing the parent scsi_device request_queue which
+
+  will already be set to NULL when the preceding call to scsi_device_put()
+
+  removed the last reference to the parent scsi_device.
+
+
+  Drop the incorrect WARN_ON_ONCE() - allowing more than one concurrent
+
+  access to the sg device - and make sure sg_device_destroy() is not used
+
+  after scsi_device_put() in the error handling.
+
+
+  Link: https://lore.kernel.org/all/5375B275-D137-4D5F-BE25-6AF8ACAE41EF@linux.ibm.com
+
+  Fixes: 27f58c04a8f4 ("scsi: sg: Avoid sg device teardown race")
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Alexander Wetzel <Alexander@wetzel-home.de>
+
+  Link: https://lore.kernel.org/r/20240401191038.18359-1-Alexander@wetzel-home.de
+
+  Tested-by: Sachin Sant <sachinp@linux.ibm.com>
+
+  Reviewed-by: Bart Van Assche <bvanassche@acm.org>
+
+  Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
+
+  '
+submodule:
+- drivers/scsi
+hunk_count: 6
+covered_count: 1

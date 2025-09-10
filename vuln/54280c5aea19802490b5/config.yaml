@@ -1,0 +1,57 @@
+id: 54280c5aea19802490b5
+bug_link: https://syzkaller.appspot.com/bug?extid=54280c5aea19802490b5
+title: general protection fault in drm_crtc_next_vblank_start
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9b539c4d1b921bc9c8c578d4d50f0a7e7874d384
+fix_commit: 6f1ccbf07453eb1ee6bb24d6b531b88dd44ad229
+datetime: '2023-04-04T22:38:03+02:00'
+fix_commit_message: "drm/vblank: Fix for drivers that do not drm_vblank_init()\n\n\
+  This should fix a crash that was reported on ast (and possibly other\ndrivers which\
+  \ do not initialize vblank).\n\n   fbcon: Taking over console\n   Unable to handle\
+  \ kernel NULL pointer dereference at virtual address 0000000000000074\n   Mem abort\
+  \ info:\n     ESR = 0x0000000096000004\n     EC = 0x25: DABT (current EL), IL =\
+  \ 32 bits\n     SET = 0, FnV = 0\n     EA = 0, S1PTW = 0\n     FSC = 0x04: level\
+  \ 0 translation fault\n   Data abort info:\n     ISV = 0, ISS = 0x00000004\n   \
+  \  CM = 0, WnR = 0\n   user pgtable: 4k pages, 48-bit VAs, pgdp=0000080009d16000\n\
+  \   [0000000000000074] pgd=0000000000000000, p4d=0000000000000000\n   Internal error:\
+  \ Oops: 0000000096000004 [#1] SMP\n   Modules linked in: ip6table_nat tun nft_fib_inet\
+  \ nft_fib_ipv4 nft_fib_ipv6 nft_fib nft_reject_inet nf_reject_ipv4 nf_reject_ipv6\
+  \ nft_reject nft_ct nft_chain_nat nf_nat nf_conntrack nf_defrag_ipv6 nf_defrag_ipv4\
+  \ rfkill ip_set nf_tables nfnetlink qrtr sunrpc binfmt_misc vfat fat xfs snd_usb_audio\
+  \ snd_hwdep snd_usbmidi_lib snd_seq snd_pcm snd_rawmidi snd_timer snd_seq_device\
+  \ snd soundcore joydev mc ipmi_ssif ipmi_devintf ipmi_msghandler arm_spe_pmu arm_cmn\
+  \ arm_dsu_pmu arm_dmc620_pmu cppc_cpufreq loop zram crct10dif_ce polyval_ce nvme\
+  \ polyval_generic ghash_ce sbsa_gwdt igb nvme_core ast nvme_common i2c_algo_bit\
+  \ xgene_hwmon gpio_dwapb scsi_dh_rdac scsi_dh_emc scsi_dh_alua ip6_tables ip_tables\
+  \ dm_multipath fuse\n   CPU: 12 PID: 469 Comm: kworker/12:1 Not tainted 6.3.0-rc2-00008-gd39e48ca80c0\
+  \ #1\n   Hardware name: ADLINK AVA Developer Platform/AVA Developer Platform, BIOS\
+  \ TianoCore 2.04.100.07 (SYS: 2.06.20220308) 09/08/2022\n   Workqueue: events fbcon_register_existing_fbs\n\
+  \   pstate: 20400009 (nzCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)\n   pc : drm_crtc_next_vblank_start+0x2c/0x98\n\
+  \   lr : drm_atomic_helper_wait_for_fences+0x90/0x240\n   sp : ffff80000d583960\n\
+  \   x29: ffff80000d583960 x28: ffff07ff8fc187b0 x27: 0000000000000000\n   x26: ffff07ff99c08c00\
+  \ x25: 0000000000000038 x24: ffff07ff99c0c000\n   x23: 0000000000000001 x22: 0000000000000038\
+  \ x21: 0000000000000000\n   x20: ffff07ff9640a280 x19: 0000000000000000 x18: ffffffffffffffff\n\
+  \   x17: 0000000000000000 x16: ffffb24d2eece1c0 x15: 0000003038303178\n   x14: 3032393100000048\
+  \ x13: 0000000000000000 x12: 0000000000000000\n   x11: 0000000000000000 x10: 0000000000000000\
+  \ x9 : ffffb24d2eeeaca0\n   x8 : ffff80000d583628 x7 : 0000080077783000 x6 : 0000000000000000\n\
+  \   x5 : ffff80000d584000 x4 : ffff07ff99c0c000 x3 : 0000000000000130\n   x2 : 0000000000000000\
+  \ x1 : ffff80000d5839c0 x0 : ffff07ff99c0cc08\n   Call trace:\n    drm_crtc_next_vblank_start+0x2c/0x98\n\
+  \    drm_atomic_helper_wait_for_fences+0x90/0x240\n    drm_atomic_helper_commit+0xb0/0x188\n\
+  \    drm_atomic_commit+0xb0/0xf0\n    drm_client_modeset_commit_atomic+0x218/0x280\n\
+  \    drm_client_modeset_commit_locked+0x64/0x1a0\n    drm_client_modeset_commit+0x38/0x68\n\
+  \    __drm_fb_helper_restore_fbdev_mode_unlocked+0xb0/0xf8\n    drm_fb_helper_set_par+0x44/0x88\n\
+  \    fbcon_init+0x1e0/0x4a8\n    visual_init+0xbc/0x118\n    do_bind_con_driver.isra.0+0x194/0x3a0\n\
+  \    do_take_over_console+0x50/0x70\n    do_fbcon_takeover+0x74/0xf8\n    do_fb_registered+0x13c/0x158\n\
+  \    fbcon_register_existing_fbs+0x78/0xc0\n    process_one_work+0x1ec/0x478\n \
+  \   worker_thread+0x74/0x418\n    kthread+0xec/0x100\n    ret_from_fork+0x10/0x20\n\
+  \   Code: f9400004 b9409013 f940a082 9ba30a73 (b9407662)\n   ---[ end trace 0000000000000000\
+  \ ]---\n\nv2: Use drm_dev_has_vblank()\n\nReported-by: Nathan Chancellor <nathan@kernel.org>\n\
+  Fixes: d39e48ca80c0 (\"drm/atomic-helper: Set fence deadline for vblank\")\nSigned-off-by:\
+  \ Rob Clark <robdclark@chromium.org>\nReviewed-by: Thomas Zimmermann <tzimmermann@suse.de>\n\
+  Tested-by: Nathan Chancellor <nathan@kernel.org>\nTested-by: Geert Uytterhoeven\
+  \ <geert+renesas@glider.be>\nSigned-off-by: Daniel Vetter <daniel.vetter@ffwll.ch>\n\
+  Link: https://patchwork.freedesktop.org/patch/msgid/20230403160314.1210533-1-robdclark@gmail.com\n"
+submodule:
+- drivers/gpu/drm
+hunk_count: 1
+covered_count: 1

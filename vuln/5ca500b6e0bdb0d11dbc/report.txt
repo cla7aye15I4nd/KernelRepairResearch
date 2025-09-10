@@ -1,0 +1,141 @@
+==================================================================
+BUG: KASAN: vmalloc-out-of-bounds in push_insn_history+0x615/0x690 kernel/bpf/verifier.c:3582
+Write of size 4 at addr ffffc90029d23010 by task syz.0.801/9803
+
+CPU: 0 UID: 0 PID: 9803 Comm: syz.0.801 Not tainted 6.13.0-rc1-syzkaller-00378-g62b5a46999c7 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0xc3/0x620 mm/kasan/report.c:489
+ kasan_report+0xd9/0x110 mm/kasan/report.c:602
+ push_insn_history+0x615/0x690 kernel/bpf/verifier.c:3582
+ check_stack_write_fixed_off kernel/bpf/verifier.c:4811 [inline]
+ check_stack_write kernel/bpf/verifier.c:5250 [inline]
+ check_mem_access+0x4624/0x88a0 kernel/bpf/verifier.c:7271
+ do_check kernel/bpf/verifier.c:18737 [inline]
+ do_check_common+0x5eee/0xd540 kernel/bpf/verifier.c:21857
+ do_check_main kernel/bpf/verifier.c:21948 [inline]
+ bpf_check+0x77c2/0xc9b0 kernel/bpf/verifier.c:22665
+ bpf_prog_load+0xe3f/0x2670 kernel/bpf/syscall.c:2947
+ __sys_bpf+0x5677/0x57a0 kernel/bpf/syscall.c:5790
+ __do_sys_bpf kernel/bpf/syscall.c:5897 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5895 [inline]
+ __ia32_sys_bpf+0x76/0xe0 kernel/bpf/syscall.c:5895
+ do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]
+ __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386
+ do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+ entry_SYSENTER_compat_after_hwframe+0x84/0x8e
+RIP: 0023:0xf73be579
+Code: b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
+RSP: 002b:00000000f50a657c EFLAGS: 00000292 ORIG_RAX: 0000000000000165
+RAX: ffffffffffffffda RBX: 0000000000000005 RCX: 0000000020000200
+RDX: 0000000000000048 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000296 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+
+The buggy address belongs to the virtual mapping at
+ [ffffc90029b23000, ffffc90029d25000) created by:
+ kvrealloc_noprof+0xfc/0x150 mm/util.c:747
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0xffff888068f7a000 pfn:0x68f7a
+flags: 0x4fff00000000000(node=1|zone=1|lastcpupid=0x7ff)
+raw: 04fff00000000000 0000000000000000 dead000000000122 0000000000000000
+raw: ffff888068f7a000 0000000000000000 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x102cc2(GFP_HIGHUSER|__GFP_NOWARN), pid 9803, tgid 9802 (syz.0.801), ts 456225763447, free_ts 451647053159
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x2d1/0x350 mm/page_alloc.c:1556
+ prep_new_page mm/page_alloc.c:1564 [inline]
+ get_page_from_freelist+0xfce/0x2f80 mm/page_alloc.c:3474
+ __alloc_pages_slowpath mm/page_alloc.c:4286 [inline]
+ __alloc_pages_noprof+0x6a6/0x25b0 mm/page_alloc.c:4764
+ alloc_pages_mpol_noprof+0x2c9/0x610 mm/mempolicy.c:2265
+ vm_area_alloc_pages mm/vmalloc.c:3589 [inline]
+ __vmalloc_area_node mm/vmalloc.c:3667 [inline]
+ __vmalloc_node_range_noprof+0x724/0x1530 mm/vmalloc.c:3844
+ __kvmalloc_node_noprof+0x14f/0x1a0 mm/util.c:672
+ kvrealloc_noprof+0xfc/0x150 mm/util.c:747
+ push_insn_history+0x2ac/0x690 kernel/bpf/verifier.c:3574
+ check_stack_read_fixed_off kernel/bpf/verifier.c:5118 [inline]
+ check_stack_read kernel/bpf/verifier.c:5216 [inline]
+ check_mem_access+0x62ad/0x88a0 kernel/bpf/verifier.c:7268
+ do_check kernel/bpf/verifier.c:18676 [inline]
+ do_check_common+0x5b75/0xd540 kernel/bpf/verifier.c:21857
+ do_check_main kernel/bpf/verifier.c:21948 [inline]
+ bpf_check+0x77c2/0xc9b0 kernel/bpf/verifier.c:22665
+ bpf_prog_load+0xe3f/0x2670 kernel/bpf/syscall.c:2947
+ __sys_bpf+0x5677/0x57a0 kernel/bpf/syscall.c:5790
+ __do_sys_bpf kernel/bpf/syscall.c:5897 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5895 [inline]
+ __ia32_sys_bpf+0x76/0xe0 kernel/bpf/syscall.c:5895
+ do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]
+ __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386
+ do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+page last free pid 9803 tgid 9802 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_page+0x661/0x1080 mm/page_alloc.c:2657
+ __put_partials+0x14c/0x170 mm/slub.c:3142
+ qlink_free mm/kasan/quarantine.c:163 [inline]
+ qlist_free_all+0x4e/0x120 mm/kasan/quarantine.c:179
+ kasan_quarantine_reduce+0x195/0x1e0 mm/kasan/quarantine.c:286
+ __kasan_krealloc+0x169/0x1a0 mm/kasan/common.c:443
+ kasan_krealloc include/linux/kasan.h:280 [inline]
+ __do_krealloc mm/slub.c:4805 [inline]
+ krealloc_noprof+0x19c/0x360 mm/slub.c:4862
+ kvrealloc_noprof+0x60/0x150 mm/util.c:744
+ push_insn_history+0x2ac/0x690 kernel/bpf/verifier.c:3574
+ check_stack_read_fixed_off kernel/bpf/verifier.c:5118 [inline]
+ check_stack_read kernel/bpf/verifier.c:5216 [inline]
+ check_mem_access+0x62ad/0x88a0 kernel/bpf/verifier.c:7268
+ do_check kernel/bpf/verifier.c:18676 [inline]
+ do_check_common+0x5b75/0xd540 kernel/bpf/verifier.c:21857
+ do_check_main kernel/bpf/verifier.c:21948 [inline]
+ bpf_check+0x77c2/0xc9b0 kernel/bpf/verifier.c:22665
+ bpf_prog_load+0xe3f/0x2670 kernel/bpf/syscall.c:2947
+ __sys_bpf+0x5677/0x57a0 kernel/bpf/syscall.c:5790
+ __do_sys_bpf kernel/bpf/syscall.c:5897 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5895 [inline]
+ __ia32_sys_bpf+0x76/0xe0 kernel/bpf/syscall.c:5895
+ do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]
+ __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386
+ do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+
+Memory state around the buggy address:
+ ffffc90029d22f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffffc90029d22f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffffc90029d23000: 00 00 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8
+                         ^
+ ffffc90029d23080: f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8
+ ffffc90029d23100: f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8
+==================================================================
+----------------
+Code disassembly (best guess), 2 bytes skipped:
+   0:	10 06                	adc    %al,(%rsi)
+   2:	03 74 b4 01          	add    0x1(%rsp,%rsi,4),%esi
+   6:	10 07                	adc    %al,(%rdi)
+   8:	03 74 b0 01          	add    0x1(%rax,%rsi,4),%esi
+   c:	10 08                	adc    %cl,(%rax)
+   e:	03 74 d8 01          	add    0x1(%rax,%rbx,8),%esi
+  1e:	00 51 52             	add    %dl,0x52(%rcx)
+  21:	55                   	push   %rbp
+  22:	89 e5                	mov    %esp,%ebp
+  24:	0f 34                	sysenter
+  26:	cd 80                	int    $0x80
+* 28:	5d                   	pop    %rbp <-- trapping instruction
+  29:	5a                   	pop    %rdx
+  2a:	59                   	pop    %rcx
+  2b:	c3                   	ret
+  2c:	90                   	nop
+  2d:	90                   	nop
+  2e:	90                   	nop
+  2f:	90                   	nop
+  30:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi
+  37:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi

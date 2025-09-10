@@ -1,0 +1,26 @@
+id: 06c885be0edcdaeab40c
+bug_link: https://syzkaller.appspot.com/bug?extid=06c885be0edcdaeab40c
+title: kernel BUG at fs/ext4/extents.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e40ff213898502d299351cc2fe1e350cd186f0d3
+fix_commit: 349fa7d6e1935f49bf4161c4900711b2989180a9
+datetime: '2018-04-12T11:48:09-04:00'
+fix_commit_message: "ext4: prevent right-shifting extents beyond EXT_MAX_BLOCKS\n\n\
+  During the \"insert range\" fallocate operation, extents starting at the\nrange\
+  \ offset are shifted \"right\" (to a higher file offset) by the range\nlength. \
+  \ But, as shown by syzbot, it's not validated that this doesn't\ncause extents to\
+  \ be shifted beyond EXT_MAX_BLOCKS.  In that case\n->ee_block can wrap around, corrupting\
+  \ the extent tree.\n\nFix it by returning an error if the space between the end\
+  \ of the last\nextent and EXT4_MAX_BLOCKS is smaller than the range being inserted.\n\
+  \nThis bug can be reproduced by running the following commands when the\ncurrent\
+  \ directory is on an ext4 filesystem with a 4k block size:\n\n        fallocate\
+  \ -l 8192 file\n        fallocate --keep-size -o 0xfffffffe000 -l 4096 -n file\n\
+  \        fallocate --insert-range -l 8192 file\n\nThen after unmounting the filesystem,\
+  \ e2fsck reports corruption.\n\nReported-by: syzbot+06c885be0edcdaeab40c@syzkaller.appspotmail.com\n\
+  Fixes: 331573febb6a (\"ext4: Add support FALLOC_FL_INSERT_RANGE for fallocate\"\
+  )\nCc: stable@vger.kernel.org # v4.2+\nSigned-off-by: Eric Biggers <ebiggers@google.com>\n\
+  Signed-off-by: Theodore Ts'o <tytso@mit.edu>\n"
+submodule:
+- fs/ext4
+hunk_count: 2
+covered_count: 0

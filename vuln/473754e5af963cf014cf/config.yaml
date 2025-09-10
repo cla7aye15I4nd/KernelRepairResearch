@@ -1,0 +1,43 @@
+id: 473754e5af963cf014cf
+bug_link: https://syzkaller.appspot.com/bug?extid=473754e5af963cf014cf
+title: WARNING in wireless_send_event
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d9e249704084982ac7581a560ffa284e11621d43
+fix_commit: e3e6e1d16a4cf7b63159ec71774e822194071954
+datetime: '2022-10-07T15:00:25+02:00'
+fix_commit_message: "wifi: wext: use flex array destination for memcpy()\n\nSyzkaller\
+  \ reports buffer overflow false positive as follows:\n------------[ cut here ]------------\n\
+  memcpy: detected field-spanning write (size 8) of single field\n\t\"&compat_event->pointer\"\
+  \ at net/wireless/wext-core.c:623 (size 4)\nWARNING: CPU: 0 PID: 3607 at net/wireless/wext-core.c:623\n\
+  \twireless_send_event+0xab5/0xca0 net/wireless/wext-core.c:623\nModules linked in:\n\
+  CPU: 1 PID: 3607 Comm: syz-executor659 Not tainted\n\t6.0.0-rc6-next-20220921-syzkaller\
+  \ #0\n[...]\nCall Trace:\n <TASK>\n ioctl_standard_call+0x155/0x1f0 net/wireless/wext-core.c:1022\n\
+  \ wireless_process_ioctl+0xc8/0x4c0 net/wireless/wext-core.c:955\n wext_ioctl_dispatch\
+  \ net/wireless/wext-core.c:988 [inline]\n wext_ioctl_dispatch net/wireless/wext-core.c:976\
+  \ [inline]\n wext_handle_ioctl+0x26b/0x280 net/wireless/wext-core.c:1049\n sock_ioctl+0x285/0x640\
+  \ net/socket.c:1220\n vfs_ioctl fs/ioctl.c:51 [inline]\n __do_sys_ioctl fs/ioctl.c:870\
+  \ [inline]\n __se_sys_ioctl fs/ioctl.c:856 [inline]\n __x64_sys_ioctl+0x193/0x200\
+  \ fs/ioctl.c:856\n do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x35/0xb0\
+  \ arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\n [...]\n\
+  \ </TASK>\n\nWireless events will be sent on the appropriate channels in\nwireless_send_event().\
+  \ Different wireless events may have different\npayload structure and size, so kernel\
+  \ uses **len** and **cmd** field\nin struct __compat_iw_event as wireless event\
+  \ common LCP part, uses\n**pointer** as a label to mark the position of remaining\
+  \ different part.\n\nYet the problem is that, **pointer** is a compat_caddr_t type,\
+  \ which may\nbe smaller than the relative structure at the same position. So during\n\
+  wireless_send_event() tries to parse the wireless events payload, it may\ntrigger\
+  \ the memcpy() run-time destination buffer bounds checking when the\nrelative structure's\
+  \ data is copied to the position marked by **pointer**.\n\nThis patch solves it\
+  \ by introducing flexible-array field **ptr_bytes**,\nto mark the position of the\
+  \ wireless events remaining part next to\nLCP part. What's more, this patch also\
+  \ adds **ptr_len** variable in\nwireless_send_event() to improve its maintainability.\n\
+  \nReported-and-tested-by: syzbot+473754e5af963cf014cf@syzkaller.appspotmail.com\n\
+  Link: https://lore.kernel.org/all/00000000000070db2005e95a5984@google.com/\nSuggested-by:\
+  \ Kees Cook <keescook@chromium.org>\nReviewed-by: Kees Cook <keescook@chromium.org>\n\
+  Signed-off-by: Hawkins Jiawei <yin31149@gmail.com>\nSigned-off-by: Johannes Berg\
+  \ <johannes.berg@intel.com>\n"
+submodule:
+- include/linux
+- net/wireless
+hunk_count: 4
+covered_count: 2

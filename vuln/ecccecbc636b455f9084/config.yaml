@@ -1,0 +1,27 @@
+id: ecccecbc636b455f9084
+bug_link: https://syzkaller.appspot.com/bug?extid=ecccecbc636b455f9084
+title: 'WARNING: suspicious RCU usage in kernfs_node_dentry'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2ce177e9b3649afa9c19cc71460f3ad50e7fd344
+fix_commit: 6ef5b6fae304091593956be59065c0c8633ad9e8
+datetime: '2025-02-19T17:07:41+01:00'
+fix_commit_message: "kernfs: Drop kernfs_rwsem while invoking lookup_positive_unlocked().\n\
+  \nsyzbot reported two warnings:\n- kernfs_node::name was accessed outside of a RCU\
+  \ section so it created\n  warning. The kernfs_rwsem was held so it was okay but\
+  \ it wasn't seen.\n\n- While kernfs_rwsem was held invoked lookup_positive_unlocked()->\n\
+  \  kernfs_dop_revalidate() which acquired kernfs_rwsem.\n\nkernfs_rwsem was both\
+  \ acquired as a read lock so it can be acquired\ntwice. However if a writer acquires\
+  \ the lock after the first reader then\nneither the writer nor the second reader\
+  \ can obtain the lock so it\ndeadlocks.\n\nThe reason for the lock is to ensure\
+  \ that kernfs_node::name remain\nstable during lookup_positive_unlocked()'s invocation.\
+  \ The function can\nnot be invoked within a RCU section because it may sleep.\n\n\
+  Make a temporary copy of the kernfs_node::name under the lock so\nGFP_KERNEL can\
+  \ be used and use this instead.\n\nReported-by: syzbot+ecccecbc636b455f9084@syzkaller.appspotmail.com\n\
+  Fixes: 5b2fabf7fe8f (\"kernfs: Acquire kernfs_rwsem in kernfs_node_dentry().\")\n\
+  Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>\nAcked-by: Tejun\
+  \ Heo <tj@kernel.org>\nLink: https://lore.kernel.org/r/20250218163938.xmvjlJ0K@linutronix.de\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- fs/kernfs
+hunk_count: 2
+covered_count: 2

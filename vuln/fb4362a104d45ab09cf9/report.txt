@@ -1,0 +1,46 @@
+comedi comedi3: 8255: I/O port conflict (0x2,4)
+comedi comedi3: 8255: I/O port conflict (0x10000,4)
+comedi comedi3: 8255: I/O port conflict (0x4,4)
+comedi comedi3: 8255: I/O port conflict (0x4,4)
+=====================================================
+BUG: KMSAN: kernel-infoleak-after-free in instrument_copy_to_user include/linux/instrumented.h:114 [inline]
+BUG: KMSAN: kernel-infoleak-after-free in _inline_copy_to_user include/linux/uaccess.h:196 [inline]
+BUG: KMSAN: kernel-infoleak-after-free in _copy_to_user+0xcc/0x120 lib/usercopy.c:26
+ instrument_copy_to_user include/linux/instrumented.h:114 [inline]
+ _inline_copy_to_user include/linux/uaccess.h:196 [inline]
+ _copy_to_user+0xcc/0x120 lib/usercopy.c:26
+ copy_to_user include/linux/uaccess.h:225 [inline]
+ do_insnlist_ioctl+0x66e/0x930 drivers/comedi/comedi_fops.c:1595
+ comedi_unlocked_ioctl+0x1e78/0x1f60 drivers/comedi/comedi_fops.c:2293
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:598 [inline]
+ __se_sys_ioctl+0x239/0x400 fs/ioctl.c:584
+ __x64_sys_ioctl+0x97/0xe0 fs/ioctl.c:584
+ x64_sys_call+0x1cbc/0x3e20 arch/x86/include/generated/asm/syscalls_64.h:17
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xd9/0x210 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ slab_free_hook mm/slub.c:2342 [inline]
+ slab_free mm/slub.c:4679 [inline]
+ kfree+0x252/0xec0 mm/slub.c:4878
+ tomoyo_supervisor+0xc57/0x3100 security/tomoyo/common.c:2250
+ tomoyo_audit_path_number_log security/tomoyo/file.c:235 [inline]
+ tomoyo_path_number_perm+0x4d8/0x7d0 security/tomoyo/file.c:734
+ tomoyo_file_ioctl+0x3d/0x50 security/tomoyo/tomoyo.c:350
+ security_file_ioctl+0x141/0x590 security/security.c:2943
+ __do_sys_ioctl fs/ioctl.c:592 [inline]
+ __se_sys_ioctl+0xbb/0x400 fs/ioctl.c:584
+ __x64_sys_ioctl+0x97/0xe0 fs/ioctl.c:584
+ x64_sys_call+0x1cbc/0x3e20 arch/x86/include/generated/asm/syscalls_64.h:17
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xd9/0x210 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Bytes 4-583 of 584 are uninitialized
+Memory access of size 584 starts at ffff88814448f800
+
+CPU: 1 UID: 0 PID: 5809 Comm: syz-executor572 Not tainted 6.16.0-syzkaller-06699-ge8d780dcd957 #0 PREEMPT(none) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2025
+=====================================================

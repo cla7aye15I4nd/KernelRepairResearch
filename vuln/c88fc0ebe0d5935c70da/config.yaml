@@ -1,0 +1,31 @@
+id: c88fc0ebe0d5935c70da
+bug_link: https://syzkaller.appspot.com/bug?extid=c88fc0ebe0d5935c70da
+title: 'KMSAN: uninit-value in dib3000mb_attach (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 40384c840ea1944d7c5a392e8975ed088ecf0b37
+fix_commit: 2dd59fe0e19e1ab955259978082b62e5751924c7
+datetime: '2024-12-11T17:54:19+01:00'
+fix_commit_message: "media: dvb-frontends: dib3000mb: fix uninit-value in dib3000_write_reg\n\
+  \nSyzbot reports [1] an uninitialized value issue found by KMSAN in\ndib3000_read_reg().\n\
+  \nLocal u8 rb[2] is used in i2c_transfer() as a read buffer; in case\nthat call\
+  \ fails, the buffer may end up with some undefined values.\n\nSince no elaborate\
+  \ error handling is expected in dib3000_write_reg(),\nsimply zero out rb buffer\
+  \ to mitigate the problem.\n\n[1] Syzkaller report\ndvb-usb: bulk message failed:\
+  \ -22 (6/0)\n=====================================================\nBUG: KMSAN:\
+  \ uninit-value in dib3000mb_attach+0x2d8/0x3c0 drivers/media/dvb-frontends/dib3000mb.c:758\n\
+  \ dib3000mb_attach+0x2d8/0x3c0 drivers/media/dvb-frontends/dib3000mb.c:758\n dibusb_dib3000mb_frontend_attach+0x155/0x2f0\
+  \ drivers/media/usb/dvb-usb/dibusb-mb.c:31\n dvb_usb_adapter_frontend_init+0xed/0x9a0\
+  \ drivers/media/usb/dvb-usb/dvb-usb-dvb.c:290\n dvb_usb_adapter_init drivers/media/usb/dvb-usb/dvb-usb-init.c:90\
+  \ [inline]\n dvb_usb_init drivers/media/usb/dvb-usb/dvb-usb-init.c:186 [inline]\n\
+  \ dvb_usb_device_init+0x25a8/0x3760 drivers/media/usb/dvb-usb/dvb-usb-init.c:310\n\
+  \ dibusb_probe+0x46/0x250 drivers/media/usb/dvb-usb/dibusb-mb.c:110\n...\nLocal\
+  \ variable rb created at:\n dib3000_read_reg+0x86/0x4e0 drivers/media/dvb-frontends/dib3000mb.c:54\n\
+  \ dib3000mb_attach+0x123/0x3c0 drivers/media/dvb-frontends/dib3000mb.c:758\n...\n\
+  \nFixes: 74340b0a8bc6 (\"V4L/DVB (4457): Remove dib3000-common-module\")\nReported-by:\
+  \ syzbot+c88fc0ebe0d5935c70da@syzkaller.appspotmail.com\nSigned-off-by: Nikita Zhandarovich\
+  \ <n.zhandarovich@fintech.ru>\nLink: https://lore.kernel.org/r/20240517155800.9881-1-n.zhandarovich@fintech.ru\n\
+  Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>\n"
+submodule:
+- drivers/media/dvb-frontends
+hunk_count: 1
+covered_count: 1

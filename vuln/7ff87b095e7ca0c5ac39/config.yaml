@@ -1,0 +1,33 @@
+id: 7ff87b095e7ca0c5ac39
+bug_link: https://syzkaller.appspot.com/bug?extid=7ff87b095e7ca0c5ac39
+title: 'KASAN: slab-use-after-free Read in z_erofs_decompress_queue'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 40384c840ea1944d7c5a392e8975ed088ecf0b37
+fix_commit: b10a1e5643e505c367c7e16aa6d8a9a0dc07354b
+datetime: '2024-12-13T00:24:12+08:00'
+fix_commit_message: "erofs: fix rare pcluster memory leak after unmounting\n\nThere\
+  \ may still exist some pcluster with valid reference counts\nduring unmounting.\
+  \  Instead of introducing another synchronization\nprimitive, just try again as\
+  \ unmounting is relatively rare.  This\napproach is similar to z_erofs_cache_invalidate_folio().\n\
+  \nIt was also reported by syzbot as a UAF due to commit f5ad9f9a603f\n(\"erofs:\
+  \ free pclusters if no cached folio is attached\"):\n\nBUG: KASAN: slab-use-after-free\
+  \ in do_raw_spin_trylock+0x72/0x1f0 kernel/locking/spinlock_debug.c:123\n..\n queued_spin_trylock\
+  \ include/asm-generic/qspinlock.h:92 [inline]\n do_raw_spin_trylock+0x72/0x1f0 kernel/locking/spinlock_debug.c:123\n\
+  \ __raw_spin_trylock include/linux/spinlock_api_smp.h:89 [inline]\n _raw_spin_trylock+0x20/0x80\
+  \ kernel/locking/spinlock.c:138\n spin_trylock include/linux/spinlock.h:361 [inline]\n\
+  \ z_erofs_put_pcluster fs/erofs/zdata.c:959 [inline]\n z_erofs_decompress_pcluster\
+  \ fs/erofs/zdata.c:1403 [inline]\n z_erofs_decompress_queue+0x3798/0x3ef0 fs/erofs/zdata.c:1425\n\
+  \ z_erofs_decompressqueue_work+0x99/0xe0 fs/erofs/zdata.c:1437\n process_one_work\
+  \ kernel/workqueue.c:3229 [inline]\n process_scheduled_works+0xa68/0x1840 kernel/workqueue.c:3310\n\
+  \ worker_thread+0x870/0xd30 kernel/workqueue.c:3391\n kthread+0x2f2/0x390 kernel/kthread.c:389\n\
+  \ ret_from_fork+0x4d/0x80 arch/x86/kernel/process.c:147\n ret_from_fork_asm+0x1a/0x30\
+  \ arch/x86/entry/entry_64.S:244\n </TASK>\n\nHowever, it seems a long outstanding\
+  \ memory leak.  Fix it now.\n\nFixes: f5ad9f9a603f (\"erofs: free pclusters if no\
+  \ cached folio is attached\")\nReported-by: syzbot+7ff87b095e7ca0c5ac39@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/r/674c1235.050a0220.ad585.0032.GAE@google.com\n\
+  Reviewed-by: Chao Yu <chao@kernel.org>\nSigned-off-by: Gao Xiang <hsiangkao@linux.alibaba.com>\n\
+  Link: https://lore.kernel.org/r/20241203072821.1885740-1-hsiangkao@linux.alibaba.com\n"
+submodule:
+- fs/erofs
+hunk_count: 1
+covered_count: 0

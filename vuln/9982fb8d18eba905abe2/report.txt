@@ -1,0 +1,87 @@
+loop0: detected capacity change from 0 to 2048
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000006: 0000 [#1] PREEMPT SMP KASAN NOPTI
+KASAN: null-ptr-deref in range [0x0000000000000030-0x0000000000000037]
+CPU: 0 UID: 0 PID: 5503 Comm: syz-executor197 Not tainted 6.12.0-rc5-syzkaller-00044-gc1e939a21eb1 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:perf_trace_block_buffer+0x293/0x490 include/trace/events/block.h:24
+Code: 24 18 48 8d 58 30 48 89 d8 48 c1 e8 03 42 80 3c 28 00 74 08 48 89 df e8 2b 82 62 fd 4c 8b 3b 49 83 c7 34 4c 89 f8 48 c1 e8 03 <42> 0f b6 04 28 84 c0 0f 85 6c 01 00 00 45 8b 3f 49 8d 5c 24 08 48
+RSP: 0018:ffffc9000d4ef420 EFLAGS: 00010207
+RAX: 0000000000000006 RBX: ffff888049091030 RCX: ffff88801f02c880
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffff88801fc37928
+RBP: ffffc9000d4ef518 R08: ffffffff819e732b R09: 1ffffffff203a095
+R10: dffffc0000000000 R11: fffffbfff203a096 R12: ffffe8ffffc33cd0
+R13: dffffc0000000000 R14: ffff88801fc378a0 R15: 0000000000000034
+FS:  00007f230dad76c0(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffebac93808 CR3: 0000000043d34000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ trace_block_touch_buffer include/trace/events/block.h:54 [inline]
+ touch_buffer+0x1d5/0x240 fs/buffer.c:64
+ __nilfs_get_folio_block fs/nilfs2/page.c:42 [inline]
+ nilfs_grab_buffer+0x321/0x440 fs/nilfs2/page.c:61
+ nilfs_mdt_submit_block+0xdc/0x890 fs/nilfs2/mdt.c:121
+ nilfs_mdt_read_block+0xeb/0x430 fs/nilfs2/mdt.c:176
+ nilfs_mdt_get_block+0x127/0xb70 fs/nilfs2/mdt.c:251
+ nilfs_palloc_get_block+0x181/0x2a0 fs/nilfs2/alloc.c:217
+ nilfs_palloc_get_entry_block+0x8e/0xb0 fs/nilfs2/alloc.c:319
+ nilfs_ifile_get_inode_block+0xed/0x180 fs/nilfs2/ifile.c:141
+ __nilfs_read_inode fs/nilfs2/inode.c:476 [inline]
+ nilfs_iget+0x240/0x810 fs/nilfs2/inode.c:581
+ nilfs_get_root_dentry+0x28/0x230 fs/nilfs2/super.c:909
+ nilfs_fill_super+0x50b/0x720 fs/nilfs2/super.c:1090
+ nilfs_get_tree+0x4f9/0x920 fs/nilfs2/super.c:1220
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1800
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f230db220da
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f230dad7088 EFLAGS: 00000286 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007f230dad70a0 RCX: 00007f230db220da
+RDX: 0000000020000000 RSI: 0000000020000040 RDI: 00007f230dad70a0
+RBP: 0000000000000004 R08: 00007f230dad70e0 R09: 0000000000000aa1
+R10: 0000000003200c00 R11: 0000000000000286 R12: 00007f230dad70e0
+R13: 0000000003200c00 R14: 0000000000000003 R15: 0000000000100000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:perf_trace_block_buffer+0x293/0x490 include/trace/events/block.h:24
+Code: 24 18 48 8d 58 30 48 89 d8 48 c1 e8 03 42 80 3c 28 00 74 08 48 89 df e8 2b 82 62 fd 4c 8b 3b 49 83 c7 34 4c 89 f8 48 c1 e8 03 <42> 0f b6 04 28 84 c0 0f 85 6c 01 00 00 45 8b 3f 49 8d 5c 24 08 48
+RSP: 0018:ffffc9000d4ef420 EFLAGS: 00010207
+RAX: 0000000000000006 RBX: ffff888049091030 RCX: ffff88801f02c880
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffff88801fc37928
+RBP: ffffc9000d4ef518 R08: ffffffff819e732b R09: 1ffffffff203a095
+R10: dffffc0000000000 R11: fffffbfff203a096 R12: ffffe8ffffc33cd0
+R13: dffffc0000000000 R14: ffff88801fc378a0 R15: 0000000000000034
+FS:  00007f230dad76c0(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffebac93808 CR3: 0000000043d34000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	24 18                	and    $0x18,%al
+   2:	48 8d 58 30          	lea    0x30(%rax),%rbx
+   6:	48 89 d8             	mov    %rbx,%rax
+   9:	48 c1 e8 03          	shr    $0x3,%rax
+   d:	42 80 3c 28 00       	cmpb   $0x0,(%rax,%r13,1)
+  12:	74 08                	je     0x1c
+  14:	48 89 df             	mov    %rbx,%rdi
+  17:	e8 2b 82 62 fd       	call   0xfd628247
+  1c:	4c 8b 3b             	mov    (%rbx),%r15
+  1f:	49 83 c7 34          	add    $0x34,%r15
+  23:	4c 89 f8             	mov    %r15,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 0f b6 04 28       	movzbl (%rax,%r13,1),%eax <-- trapping instruction
+  2f:	84 c0                	test   %al,%al
+  31:	0f 85 6c 01 00 00    	jne    0x1a3
+  37:	45 8b 3f             	mov    (%r15),%r15d
+  3a:	49 8d 5c 24 08       	lea    0x8(%r12),%rbx
+  3f:	48                   	rex.W

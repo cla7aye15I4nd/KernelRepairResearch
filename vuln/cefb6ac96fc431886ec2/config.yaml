@@ -1,0 +1,68 @@
+id: cefb6ac96fc431886ec2
+bug_link: https://syzkaller.appspot.com/bug?extid=cefb6ac96fc431886ec2
+title: general protection fault in put_fs_context
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c9ce29ed795fae86e594844857fad1b0d3be85f4
+fix_commit: 8d0347f6c3a9d4953ddd636a31c6584da082e084
+datetime: '2019-01-30T17:44:26-05:00'
+fix_commit_message: 'convert do_remount_sb() to fs_context
+
+
+  Replace do_remount_sb() with a function, reconfigure_super(), that''s
+
+  fs_context aware.  The fs_context is expected to be parameterised already
+
+  and have ->root pointing to the superblock to be reconfigured.
+
+
+  A legacy wrapper is provided that is intended to be called from the
+
+  fs_context ops when those appear, but for now is called directly from
+
+  reconfigure_super().  This wrapper invokes the ->remount_fs() superblock op
+
+  for the moment.  It is intended that the remount_fs() op will be phased
+
+  out.
+
+
+  The fs_context->purpose is set to FS_CONTEXT_FOR_RECONFIGURE to indicate
+
+  that the context is being used for reconfiguration.
+
+
+  do_umount_root() is provided to consolidate remount-to-R/O for umount and
+
+  emergency remount by creating a context and invoking reconfiguration.
+
+
+  do_remount(), do_umount() and do_emergency_remount_callback() are switched
+
+  to use the new process.
+
+
+  [AV -- fold UMOUNT and EMERGENCY_REMOUNT in; fixes the
+
+  umount / bug, gets rid of pointless complexity]
+
+  [AV -- set ->net_ns in all cases; nfs remount will need that]
+
+  [AV -- shift security_sb_remount() call into reconfigure_super(); the callers
+
+  that didn''t do security_sb_remount() have NULL fc->security anyway, so it''s
+
+  a no-op for them]
+
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  Co-developed-by: Al Viro <viro@zeniv.linux.org.uk>
+
+  Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+
+  '
+submodule:
+- fs
+- include/linux
+hunk_count: 20
+covered_count: 3

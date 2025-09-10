@@ -1,0 +1,14 @@
+diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
+index 70aa5cb0c659..2ef6db98e9ba 100644
+--- a/net/xfrm/xfrm_policy.c
++++ b/net/xfrm/xfrm_policy.c
+@@ -609,7 +609,8 @@ static void xfrm_hash_rebuild(struct work_struct *work)
+ 
+ 	/* re-insert all policies by order of creation */
+ 	list_for_each_entry_reverse(policy, &net->xfrm.policy_all, walk.all) {
+-		if (xfrm_policy_id2dir(policy->index) >= XFRM_POLICY_MAX) {
++		if (policy->walk.dead ||
++		    xfrm_policy_id2dir(policy->index) >= XFRM_POLICY_MAX) {
+ 			/* skip socket policies */
+ 			continue;
+ 		}

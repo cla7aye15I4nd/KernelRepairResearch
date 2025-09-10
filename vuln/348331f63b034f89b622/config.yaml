@@ -1,0 +1,74 @@
+id: 348331f63b034f89b622
+bug_link: https://syzkaller.appspot.com/bug?extid=348331f63b034f89b622
+title: WARNING in bcm5974_start_traffic/usb_submit_urb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 80441f76ee67002437db61f3b317ed80cce085d2
+fix_commit: 2b9c3eb32a699acdd4784d6b93743271b4970899
+datetime: '2024-01-31T10:32:59-08:00'
+fix_commit_message: 'Input: bcm5974 - check endpoint type before starting traffic
+
+
+  syzbot has found a type mismatch between a USB pipe and the transfer
+
+  endpoint, which is triggered by the bcm5974 driver[1].
+
+
+  This driver expects the device to provide input interrupt endpoints and
+
+  if that is not the case, the driver registration should terminate.
+
+
+  Repros are available to reproduce this issue with a certain setup for
+
+  the dummy_hcd, leading to an interrupt/bulk mismatch which is caught in
+
+  the USB core after calling usb_submit_urb() with the following message:
+
+  "BOGUS urb xfer, pipe 1 != type 3"
+
+
+  Some other device drivers (like the appletouch driver bcm5974 is mainly
+
+  based on) provide some checking mechanism to make sure that an IN
+
+  interrupt endpoint is available. In this particular case the endpoint
+
+  addresses are provided by a config table, so the checking can be
+
+  targeted to the provided endpoints.
+
+
+  Add some basic checking to guarantee that the endpoints available match
+
+  the expected type for both the trackpad and button endpoints.
+
+
+  This issue was only found for the trackpad endpoint, but the checking
+
+  has been added to the button endpoint as well for the same reasons.
+
+
+  Given that there was never a check for the endpoint type, this bug has
+
+  been there since the first implementation of the driver (f89bd95c5c94).
+
+
+  [1] https://syzkaller.appspot.com/bug?extid=348331f63b034f89b622
+
+
+  Fixes: f89bd95c5c94 ("Input: bcm5974 - add driver for Macbook Air and Pro Penryn
+  touchpads")
+
+  Signed-off-by: Javier Carrasco <javier.carrasco.cruz@gmail.com>
+
+  Reported-and-tested-by: syzbot+348331f63b034f89b622@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/20231007-topic-bcm5974_bulk-v3-1-d0f38b9d2935@gmail.com
+
+  Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+
+  '
+submodule:
+- drivers/input/mouse
+hunk_count: 4
+covered_count: 1

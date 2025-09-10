@@ -1,0 +1,27 @@
+diff --git a/net/rds/af_rds.c b/net/rds/af_rds.c
+index d6cc97fbbbb0..2b969f99ef13 100644
+--- a/net/rds/af_rds.c
++++ b/net/rds/af_rds.c
+@@ -543,6 +543,9 @@ static int rds_connect(struct socket *sock, struct sockaddr *uaddr,
+ 	struct rds_sock *rs = rds_sk_to_rs(sk);
+ 	int ret = 0;
+ 
++	if (addr_len < offsetofend(struct sockaddr, sa_family))
++		return -EINVAL;
++
+ 	lock_sock(sk);
+ 
+ 	switch (uaddr->sa_family) {
+diff --git a/net/rds/bind.c b/net/rds/bind.c
+index 17c9d9f0c848..0f4398e7f2a7 100644
+--- a/net/rds/bind.c
++++ b/net/rds/bind.c
+@@ -173,6 +173,8 @@ int rds_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
+ 	/* We allow an RDS socket to be bound to either IPv4 or IPv6
+ 	 * address.
+ 	 */
++	if (addr_len < offsetofend(struct sockaddr, sa_family))
++		return -EINVAL;
+ 	if (uaddr->sa_family == AF_INET) {
+ 		struct sockaddr_in *sin = (struct sockaddr_in *)uaddr;
+ 

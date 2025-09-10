@@ -1,0 +1,32 @@
+id: 9260555647a5132edd48
+bug_link: https://syzkaller.appspot.com/bug?extid=9260555647a5132edd48
+title: WARNING in nilfs_rmdir
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 74363ec674cb172d8856de25776c8f3103f05e2f
+fix_commit: 901ce9705fbb9f330ff1f19600e5daf9770b0175
+datetime: '2024-12-18T19:04:44-08:00'
+fix_commit_message: "nilfs2: prevent use of deleted inode\n\nsyzbot reported a WARNING\
+  \ in nilfs_rmdir. [1]\n\nBecause the inode bitmap is corrupted, an inode with an\
+  \ inode number that\nshould exist as a \".nilfs\" file was reassigned by nilfs_mkdir\
+  \ for \"file0\",\ncausing an inode duplication during execution.  And this causes\
+  \ an\nunderflow of i_nlink in rmdir operations.\n\nThe inode is used twice by the\
+  \ same task to unmount and remove directories\n\".nilfs\" and \"file0\", it trigger\
+  \ warning in nilfs_rmdir.\n\nAvoid to this issue, check i_nlink in nilfs_iget(),\
+  \ if it is 0, it means\nthat this inode has been deleted, and iput is executed to\
+  \ reclaim it.\n\n[1]\nWARNING: CPU: 1 PID: 5824 at fs/inode.c:407 drop_nlink+0xc4/0x110\
+  \ fs/inode.c:407\n...\nCall Trace:\n <TASK>\n nilfs_rmdir+0x1b0/0x250 fs/nilfs2/namei.c:342\n\
+  \ vfs_rmdir+0x3a3/0x510 fs/namei.c:4394\n do_rmdir+0x3b5/0x580 fs/namei.c:4453\n\
+  \ __do_sys_rmdir fs/namei.c:4472 [inline]\n __se_sys_rmdir fs/namei.c:4470 [inline]\n\
+  \ __x64_sys_rmdir+0x47/0x50 fs/namei.c:4470\n do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \nLink: https://lkml.kernel.org/r/20241209065759.6781-1-konishi.ryusuke@gmail.com\n\
+  Fixes: d25006523d0b (\"nilfs2: pathname operations\")\nSigned-off-by: Ryusuke Konishi\
+  \ <konishi.ryusuke@gmail.com>\nReported-by: syzbot+9260555647a5132edd48@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=9260555647a5132edd48\nTested-by:\
+  \ syzbot+9260555647a5132edd48@syzkaller.appspotmail.com\nSigned-off-by: Edward Adam\
+  \ Davis <eadavis@qq.com>\nCc: <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton\
+  \ <akpm@linux-foundation.org>\n"
+submodule:
+- fs/nilfs2
+hunk_count: 2
+covered_count: 1

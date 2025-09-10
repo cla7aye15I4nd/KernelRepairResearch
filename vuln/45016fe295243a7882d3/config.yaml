@@ -1,0 +1,54 @@
+id: 45016fe295243a7882d3
+bug_link: https://syzkaller.appspot.com/bug?extid=45016fe295243a7882d3
+title: 'WARNING: bad unlock balance in do_setlink'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4f038a6a02d20859a3479293cbf172b0f14cbdd6
+fix_commit: 445e99bdf68d62cc8cd9c129ea177b2b847d654d
+datetime: '2025-04-08T12:33:22-07:00'
+fix_commit_message: "rtnetlink: Fix bad unlock balance in do_setlink().\n\nWhen validate_linkmsg()\
+  \ fails in do_setlink(), we jump to the errout\nlabel and calls netdev_unlock_ops()\
+  \ even though we have not called\nnetdev_lock_ops() as reported by syzbot.  [0]\n\
+  \nLet's return an error directly in such a case.\n\n[0]\nWARNING: bad unlock balance\
+  \ detected!\n6.14.0-syzkaller-12504-g8bc251e5d874 #0 Not tainted\n\nsyz-executor814/5834\
+  \ is trying to release lock (&dev_instance_lock_key) at:\n[<ffffffff89f41f56>] netdev_unlock\
+  \ include/linux/netdevice.h:2756 [inline]\n[<ffffffff89f41f56>] netdev_unlock_ops\
+  \ include/net/netdev_lock.h:48 [inline]\n[<ffffffff89f41f56>] do_setlink+0xc26/0x43a0\
+  \ net/core/rtnetlink.c:3406\nbut there are no more locks to release!\n\nother info\
+  \ that might help us debug this:\n1 lock held by syz-executor814/5834:\n #0: ffffffff900fc408\
+  \ (rtnl_mutex){+.+.}-{4:4}, at: rtnl_lock net/core/rtnetlink.c:80 [inline]\n #0:\
+  \ ffffffff900fc408 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_nets_lock net/core/rtnetlink.c:341\
+  \ [inline]\n #0: ffffffff900fc408 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_newlink+0xd68/0x1fe0\
+  \ net/core/rtnetlink.c:4064\n\nstack backtrace:\nCPU: 0 UID: 0 PID: 5834 Comm: syz-executor814\
+  \ Not tainted 6.14.0-syzkaller-12504-g8bc251e5d874 #0 PREEMPT(full)\nHardware name:\
+  \ Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025\nCall\
+  \ Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:94 [inline]\n dump_stack_lvl+0x241/0x360\
+  \ lib/dump_stack.c:120\n print_unlock_imbalance_bug+0x185/0x1a0 kernel/locking/lockdep.c:5296\n\
+  \ __lock_release kernel/locking/lockdep.c:5535 [inline]\n lock_release+0x1ed/0x3e0\
+  \ kernel/locking/lockdep.c:5887\n __mutex_unlock_slowpath+0xee/0x800 kernel/locking/mutex.c:907\n\
+  \ netdev_unlock include/linux/netdevice.h:2756 [inline]\n netdev_unlock_ops include/net/netdev_lock.h:48\
+  \ [inline]\n do_setlink+0xc26/0x43a0 net/core/rtnetlink.c:3406\n rtnl_group_changelink\
+  \ net/core/rtnetlink.c:3783 [inline]\n __rtnl_newlink net/core/rtnetlink.c:3937\
+  \ [inline]\n rtnl_newlink+0x1619/0x1fe0 net/core/rtnetlink.c:4065\n rtnetlink_rcv_msg+0x80f/0xd70\
+  \ net/core/rtnetlink.c:6955\n netlink_rcv_skb+0x208/0x480 net/netlink/af_netlink.c:2534\n\
+  \ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]\n netlink_unicast+0x7f8/0x9a0\
+  \ net/netlink/af_netlink.c:1339\n netlink_sendmsg+0x8c3/0xcd0 net/netlink/af_netlink.c:1883\n\
+  \ sock_sendmsg_nosec net/socket.c:712 [inline]\n __sock_sendmsg+0x221/0x270 net/socket.c:727\n\
+  \ ____sys_sendmsg+0x523/0x860 net/socket.c:2566\n ___sys_sendmsg net/socket.c:2620\
+  \ [inline]\n __sys_sendmsg+0x271/0x360 net/socket.c:2652\n do_syscall_x64 arch/x86/entry/syscall_64.c:63\
+  \ [inline]\n do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  RIP: 0033:0x7f8427b614a9\nCode: 48 83 c4 28 c3 e8 37 17 00 00 0f 1f 80 00 00 00\
+  \ 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05\
+  \ <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48\nRSP: 002b:00007fff9b59f3a8\
+  \ EFLAGS: 00000246 ORIG_RAX: 000000000000002e\nRAX: ffffffffffffffda RBX: 00007fff9b59f578\
+  \ RCX: 00007f8427b614a9\nRDX: 0000000000000000 RSI: 0000200000000300 RDI: 0000000000000004\n\
+  RBP: 00007f8427bd4610 R08: 000000000000000c R09: 00007fff9b59f578\nR10: 000000000000001b\
+  \ R11: 0000000000000246 R12: 0000000000000001\nR13:\n\nFixes: 4c975fd70002 (\"net:\
+  \ hold instance lock during NETDEV_REGISTER/UP\")\nReported-by: syzbot+45016fe295243a7882d3@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=45016fe295243a7882d3\nSigned-off-by:\
+  \ Kuniyuki Iwashima <kuniyu@amazon.com>\nAcked-by: Stanislav Fomichev <sdf@fomichev.me>\n\
+  Link: https://patch.msgid.link/20250407164229.24414-1-kuniyu@amazon.com\nSigned-off-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 0

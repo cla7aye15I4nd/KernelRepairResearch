@@ -1,0 +1,55 @@
+diff --git a/arch/x86/include/asm/init.h b/arch/x86/include/asm/init.h
+index 6bfdaeddbae8..5a68e9db6518 100644
+--- a/arch/x86/include/asm/init.h
++++ b/arch/x86/include/asm/init.h
+@@ -5,7 +5,7 @@
+ #if defined(CONFIG_CC_IS_CLANG) && CONFIG_CLANG_VERSION < 170000
+ #define __head	__section(".head.text") __no_sanitize_undefined __no_stack_protector
+ #else
+-#define __head	__section(".head.text") __no_sanitize_undefined __no_sanitize_coverage
++#define __head	__section(".head.text") __no_sanitize_undefined __no_kstack_erase
+ #endif
+ 
+ struct x86_mapping_info {
+diff --git a/include/linux/compiler-clang.h b/include/linux/compiler-clang.h
+index 4fc8e26914ad..fa4ffe037bc7 100644
+--- a/include/linux/compiler-clang.h
++++ b/include/linux/compiler-clang.h
+@@ -89,6 +89,9 @@
+ #define __no_sanitize_coverage
+ #endif
+ 
++/* Only Clang needs to disable the coverage sanitizer for kstack_erase. */
++#define __no_kstack_erase	__no_sanitize_coverage
++
+ #if __has_feature(shadow_call_stack)
+ # define __noscs	__attribute__((__no_sanitize__("shadow-call-stack")))
+ #endif
+diff --git a/include/linux/compiler_types.h b/include/linux/compiler_types.h
+index 2b77d12e07b2..16755431fc11 100644
+--- a/include/linux/compiler_types.h
++++ b/include/linux/compiler_types.h
+@@ -424,6 +424,10 @@ struct ftrace_likely_data {
+ # define randomized_struct_fields_end
+ #endif
+ 
++#ifndef __no_kstack_erase
++# define __no_kstack_erase
++#endif
++
+ #ifndef __noscs
+ # define __noscs
+ #endif
+diff --git a/include/linux/init.h b/include/linux/init.h
+index c65a050d52a7..a60d32d227ee 100644
+--- a/include/linux/init.h
++++ b/include/linux/init.h
+@@ -51,7 +51,7 @@
+    discard it in modules) */
+ #define __init		__section(".init.text") __cold __latent_entropy	\
+ 						__noinitretpoline	\
+-						__no_sanitize_coverage
++						__no_kstack_erase
+ #define __initdata	__section(".init.data")
+ #define __initconst	__section(".init.rodata")
+ #define __exitdata	__section(".exit.data")

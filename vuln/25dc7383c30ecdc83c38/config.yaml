@@ -1,0 +1,48 @@
+id: 25dc7383c30ecdc83c38
+bug_link: https://syzkaller.appspot.com/bug?extid=25dc7383c30ecdc83c38
+title: divide error in iommufd_test
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 361d744ddd61de065fbeb042aaed590d32dd92ec
+fix_commit: 2e22aac3ea9cfc0ec3209c96644f60c1806a8117
+datetime: '2023-10-30T12:03:20-03:00'
+fix_commit_message: 'iommufd/selftest: Fix page-size check in iommufd_test_dirty()
+
+
+  iommufd_test_dirty()/IOMMU_TEST_OP_DIRTY sets the dirty bits in the mock
+
+  domain implementation that the userspace side validates against what it
+
+  obtains via the UAPI.
+
+
+  However in introducing iommufd_test_dirty() it forgot to validate page_size
+
+  being 0 leading to two possible divide-by-zero problems: one at the
+
+  beginning when calculating @max and while calculating the IOVA in the
+
+  XArray PFN tracking list.
+
+
+  While at it, validate the length to require non-zero value as well, as we
+
+  can''t be allocating a 0-sized bitmap.
+
+
+  Link: https://lore.kernel.org/r/20231030113446.7056-1-joao.m.martins@oracle.com
+
+  Reported-by: syzbot+25dc7383c30ecdc83c38@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/linux-iommu/00000000000005f6aa0608b9220f@google.com/
+
+  Fixes: a9af47e382a4 ("iommufd/selftest: Test IOMMU_HWPT_GET_DIRTY_BITMAP")
+
+  Signed-off-by: Joao Martins <joao.m.martins@oracle.com>
+
+  Signed-off-by: Jason Gunthorpe <jgg@nvidia.com>
+
+  '
+submodule:
+- drivers/iommu/iommufd
+hunk_count: 2
+covered_count: 2

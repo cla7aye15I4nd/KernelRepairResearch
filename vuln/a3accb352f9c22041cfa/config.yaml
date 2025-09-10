@@ -1,0 +1,29 @@
+id: a3accb352f9c22041cfa
+bug_link: https://syzkaller.appspot.com/bug?extid=a3accb352f9c22041cfa
+title: possible deadlock in io_submit_one
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b9705d8778e7adc97de38f405f835a2426e14d84
+fix_commit: cbcfa130a911c613a1d9d921af2eea171c414172
+datetime: '2019-07-05T11:12:07+09:00'
+fix_commit_message: "fs/userfaultfd.c: disable irqs for fault_pending and event locks\n\
+  \nWhen IOCB_CMD_POLL is used on a userfaultfd, aio_poll() disables IRQs\nand takes\
+  \ kioctx::ctx_lock, then userfaultfd_ctx::fd_wqh.lock.\n\nThis may have to wait\
+  \ for userfaultfd_ctx::fd_wqh.lock to be released by\nuserfaultfd_ctx_read(), which\
+  \ in turn can be waiting for\nuserfaultfd_ctx::fault_pending_wqh.lock or\nuserfaultfd_ctx::event_wqh.lock.\n\
+  \nBut elsewhere the fault_pending_wqh and event_wqh locks are taken with\nIRQs enabled.\
+  \  Since the IRQ handler may take kioctx::ctx_lock, lockdep\nreports that a deadlock\
+  \ is possible.\n\nFix it by always disabling IRQs when taking the fault_pending_wqh\
+  \ and\nevent_wqh locks.\n\nCommit ae62c16e105a (\"userfaultfd: disable irqs when\
+  \ taking the\nwaitqueue lock\") didn't fix this because it only accounted for the\n\
+  fd_wqh lock, not the other locks nested inside it.\n\nLink: http://lkml.kernel.org/r/20190627075004.21259-1-ebiggers@kernel.org\n\
+  Fixes: bfe4037e722e (\"aio: implement IOCB_CMD_POLL\")\nSigned-off-by: Eric Biggers\
+  \ <ebiggers@google.com>\nReported-by: syzbot+fab6de82892b6b9c6191@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+53c0b767f7ca0dc0c451@syzkaller.appspotmail.com\nReported-by:\
+  \ syzbot+a3accb352f9c22041cfa@syzkaller.appspotmail.com\nReviewed-by: Andrew Morton\
+  \ <akpm@linux-foundation.org>\nCc: Christoph Hellwig <hch@lst.de>\nCc: Andrea Arcangeli\
+  \ <aarcange@redhat.com>\nCc: <stable@vger.kernel.org>\t[4.19+]\nSigned-off-by: Andrew\
+  \ Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs
+hunk_count: 12
+covered_count: 4

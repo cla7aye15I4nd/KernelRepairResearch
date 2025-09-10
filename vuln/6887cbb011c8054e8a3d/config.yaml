@@ -1,0 +1,24 @@
+id: 6887cbb011c8054e8a3d
+bug_link: https://syzkaller.appspot.com/bug?extid=6887cbb011c8054e8a3d
+title: 'INFO: rcu detected stall in bitmap_parselist'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5df63c2a149ae65a9ec239e7c2af44efa6f79beb
+fix_commit: 8351760ff5b2042039554b4948ddabaac644a976
+datetime: '2018-04-05T21:36:21-07:00'
+fix_commit_message: "lib: fix stall in __bitmap_parselist()\n\nsyzbot is catching\
+  \ stalls at __bitmap_parselist()\n(https://syzkaller.appspot.com/bug?id=ad7e0351fbc90535558514a71cd3edc11681997a).\n\
+  The trigger is\n\n  unsigned long v = 0;\n  bitmap_parselist(\"7:,\", &v, BITS_PER_LONG);\n\
+  \nwhich results in hitting infinite loop at\n\n    while (a <= b) {\n\t    off =\
+  \ min(b - a + 1, used_size);\n\t    bitmap_set(maskp, a, off);\n\t    a += group_size;\n\
+  \    }\n\ndue to used_size == group_size == 0.\n\nLink: http://lkml.kernel.org/r/20180404162647.15763-1-ynorov@caviumnetworks.com\n\
+  Fixes: 0a5ce0831d04382a (\"lib/bitmap.c: make bitmap_parselist() thread-safe and\
+  \ much faster\")\nSigned-off-by: Yury Norov <ynorov@caviumnetworks.com>\nReported-by:\
+  \ Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nReported-by: syzbot <syzbot+6887cbb011c8054e8a3d@syzkaller.appspotmail.com>\n\
+  Cc: Noam Camus <noamca@mellanox.com>\nCc: Rasmus Villemoes <linux@rasmusvillemoes.dk>\n\
+  Cc: Matthew Wilcox <mawilcox@microsoft.com>\nCc: Mauro Carvalho Chehab <mchehab@kernel.org>\n\
+  Cc: <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- lib
+hunk_count: 2
+covered_count: 1

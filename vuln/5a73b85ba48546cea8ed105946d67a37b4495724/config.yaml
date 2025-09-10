@@ -1,0 +1,45 @@
+id: 5a73b85ba48546cea8ed105946d67a37b4495724
+bug_link: https://syzkaller.appspot.com/bug?extid=5a73b85ba48546cea8ed105946d67a37b4495724
+title: 'BUG: unable to handle kernel NULL pointer dereference in sctp_stream_free'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ba77919808c6dbfc51b9ed52458c31c06197414f
+fix_commit: 79d0895140e937ba111e6420b4cd83ee75efa788
+datetime: '2018-01-03T11:29:42-05:00'
+fix_commit_message: 'sctp: fix error path in sctp_stream_init
+
+
+  syzbot noticed a NULL pointer dereference panic in sctp_stream_free()
+
+  which was caused by an incomplete error handling in sctp_stream_init().
+
+  By not clearing stream->outcnt, it made a for() in sctp_stream_free()
+
+  think that it had elements to free, but not, leading to the panic.
+
+
+  As suggested by Xin Long, this patch also simplifies the error path by
+
+  moving it to the only if() that uses it.
+
+
+  See-also: https://www.spinics.net/lists/netdev/msg473756.html
+
+  See-also: https://www.spinics.net/lists/netdev/msg465024.html
+
+  Reported-by: syzbot <syzkaller@googlegroups.com>
+
+  Fixes: f952be79cebd ("sctp: introduce struct sctp_stream_out_ext")
+
+  Signed-off-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>
+
+  Reviewed-by: Xin Long <lucien.xin@gmail.com>
+
+  Acked-by: Neil Horman <nhorman@tuxdriver.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/sctp
+hunk_count: 2
+covered_count: 2

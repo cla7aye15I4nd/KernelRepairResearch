@@ -1,0 +1,30 @@
+bcachefs (loop0): sb invalid before write: Unsupported superblock version_min 0.0: (unknown version) (min 0.9: (unknown version), max 1.28: inode_has_case_insensitive)
+  emergency read only at seq 10
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in fs/bcachefs/bkey.c:163:16
+shift exponent 4294967127 is too large for 64-bit type 'u64' (aka 'unsigned long long')
+CPU: 0 UID: 0 PID: 5832 Comm: read_btree_node Not tainted 6.15.0-syzkaller-01958-g785cdec46e92 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ ubsan_epilogue+0xa/0x40 lib/ubsan.c:231
+ __ubsan_handle_shift_out_of_bounds+0x386/0x410 lib/ubsan.c:492
+ get_inc_field fs/bcachefs/bkey.c:163 [inline]
+ __bch2_bkey_unpack_key+0xdc4/0xe10 fs/bcachefs/bkey.c:284
+ __bch2_bkey_compat+0x4db/0xbd0 fs/bcachefs/bkey_methods.c:480
+ bch2_bkey_compat fs/bcachefs/bkey_methods.h:134 [inline]
+ validate_bset_keys+0x6c1/0x1390 fs/bcachefs/btree_io.c:983
+ bch2_btree_node_read_done+0x18c8/0x4f60 fs/bcachefs/btree_io.c:1211
+ btree_node_read_work+0x426/0xe30 fs/bcachefs/btree_io.c:1400
+ bch2_btree_node_read+0x887/0x29f0 fs/bcachefs/btree_io.c:-1
+ bch2_btree_node_fill+0xd12/0x14f0 fs/bcachefs/btree_cache.c:994
+ bch2_btree_node_get_noiter+0xa2c/0x1000 fs/bcachefs/btree_cache.c:1261
+ found_btree_node_is_readable fs/bcachefs/btree_node_scan.c:85 [inline]
+ try_read_btree_node fs/bcachefs/btree_node_scan.c:220 [inline]
+ read_btree_nodes_worker+0x1319/0x1e20 fs/bcachefs/btree_node_scan.c:269
+ kthread+0x711/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x4e/0x80 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+---[ end trace ]---

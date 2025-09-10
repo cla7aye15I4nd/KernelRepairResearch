@@ -1,0 +1,23 @@
+id: 7bf5a7b0f0a1f9446f4c
+bug_link: https://syzkaller.appspot.com/bug?extid=7bf5a7b0f0a1f9446f4c
+title: 'KASAN: use-after-free Read in usbhid_close (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b43f977dd281945960c26b3ef67bba0fa07d39d9
+fix_commit: 0ed08faded1da03eb3def61502b27f81aef2e615
+datetime: '2020-04-29T16:24:26+02:00'
+fix_commit_message: "HID: usbhid: Fix race between usbhid_close() and usbhid_stop()\n\
+  \nThe syzbot fuzzer discovered a bad race between in the usbhid driver\nbetween\
+  \ usbhid_stop() and usbhid_close().  In particular,\nusbhid_stop() does:\n\n\tusb_free_urb(usbhid->urbin);\n\
+  \t...\n\tusbhid->urbin = NULL; /* don't mess up next start */\n\nand usbhid_close()\
+  \ does:\n\n\tusb_kill_urb(usbhid->urbin);\n\nwith no mutual exclusion.  If the two\
+  \ routines happen to run\nconcurrently so that usb_kill_urb() is called in between\
+  \ the\nusb_free_urb() and the NULL assignment, it will access the\ndeallocated urb\
+  \ structure -- a use-after-free bug.\n\nThis patch adds a mutex to the usbhid private\
+  \ structure and uses it to\nenforce mutual exclusion of the usbhid_start(), usbhid_stop(),\n\
+  usbhid_open() and usbhid_close() callbacks.\n\nReported-and-tested-by: syzbot+7bf5a7b0f0a1f9446f4c@syzkaller.appspotmail.com\n\
+  Signed-off-by: Alan Stern <stern@rowland.harvard.edu>\nCC: <stable@vger.kernel.org>\n\
+  Signed-off-by: Jiri Kosina <jkosina@suse.cz>\n"
+submodule:
+- drivers/hid/usbhid
+hunk_count: 11
+covered_count: 8

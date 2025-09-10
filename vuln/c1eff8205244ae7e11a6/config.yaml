@@ -1,0 +1,32 @@
+id: c1eff8205244ae7e11a6
+bug_link: https://syzkaller.appspot.com/bug?extid=c1eff8205244ae7e11a6
+title: general protection fault in afs_dynroot_depopulate
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cd02217a5d813e2bbec984a9eeb8280ff290a150
+fix_commit: 5e0b17b026eb7c6de9baa9b0d45a51b05f05abe1
+datetime: '2020-08-21T10:56:40-07:00'
+fix_commit_message: "afs: Fix NULL deref in afs_dynroot_depopulate()\n\nIf an error\
+  \ occurs during the construction of an afs superblock, it's\npossible that an error\
+  \ occurs after a superblock is created, but before\nwe've created the root dentry.\
+  \  If the superblock has a dynamic root\n(ie.  what's normally mounted on /afs),\
+  \ the afs_kill_super() will call\nafs_dynroot_depopulate() to unpin any created\
+  \ dentries - but this will\noops if the root hasn't been created yet.\n\nFix this\
+  \ by skipping that bit of code if there is no root dentry.\n\nThis leads to an oops\
+  \ looking like:\n\n\tgeneral protection fault, ...\n\tKASAN: null-ptr-deref in range\
+  \ [0x0000000000000068-0x000000000000006f]\n\t...\n\tRIP: 0010:afs_dynroot_depopulate+0x25f/0x529\
+  \ fs/afs/dynroot.c:385\n\t...\n\tCall Trace:\n\t afs_kill_super+0x13b/0x180 fs/afs/super.c:535\n\
+  \t deactivate_locked_super+0x94/0x160 fs/super.c:335\n\t afs_get_tree+0x1124/0x1460\
+  \ fs/afs/super.c:598\n\t vfs_get_tree+0x89/0x2f0 fs/super.c:1547\n\t do_new_mount\
+  \ fs/namespace.c:2875 [inline]\n\t path_mount+0x1387/0x2070 fs/namespace.c:3192\n\
+  \t do_mount fs/namespace.c:3205 [inline]\n\t __do_sys_mount fs/namespace.c:3413\
+  \ [inline]\n\t __se_sys_mount fs/namespace.c:3390 [inline]\n\t __x64_sys_mount+0x27f/0x300\
+  \ fs/namespace.c:3390\n\t do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n\t\
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nwhich is oopsing on this line:\n\n\
+  \tinode_lock(root->d_inode);\n\npresumably because sb->s_root was NULL.\n\nFixes:\
+  \ 0da0b7fd73e4 (\"afs: Display manually added cells in dynamic root mount\")\nReported-by:\
+  \ syzbot+c1eff8205244ae7e11a6@syzkaller.appspotmail.com\nSigned-off-by: David Howells\
+  \ <dhowells@redhat.com>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs/afs
+hunk_count: 1
+covered_count: 1

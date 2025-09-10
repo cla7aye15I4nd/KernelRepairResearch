@@ -1,0 +1,67 @@
+id: 38f5d5cf7ae88c46b11a
+bug_link: https://syzkaller.appspot.com/bug?extid=38f5d5cf7ae88c46b11a
+title: WARNING in kernfs_create_dir_ns
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 797b82eb906eeba24dcd6e9ab92faef01fc684cb
+fix_commit: 810507fe6fd5ff3de429121adff49523fabb643a
+datetime: '2020-02-11T13:10:52+01:00'
+fix_commit_message: "locking/lockdep: Reuse freed chain_hlocks entries\n\nOnce a lock\
+  \ class is zapped, all the lock chains that include the zapped\nclass are essentially\
+  \ useless. The lock_chain structure itself can be\nreused, but not the corresponding\
+  \ chain_hlocks[] entries. Over time,\nwe will run out of chain_hlocks entries while\
+  \ there are still plenty\nof other lockdep array entries available.\n\nTo fix this\
+  \ imbalance, we have to make chain_hlocks entries reusable\njust like the others.\
+  \ As the freed chain_hlocks entries are in blocks of\nvarious lengths. A simple\
+  \ bitmap like the one used in the other reusable\nlockdep arrays isn't applicable.\
+  \ Instead the chain_hlocks entries are\nput into bucketed lists (MAX_CHAIN_BUCKETS)\
+  \ of chain blocks.  Bucket 0\nis the variable size bucket which houses chain blocks\
+  \ of size larger than\nMAX_CHAIN_BUCKETS sorted in decreasing size order.  Initially,\
+  \ the whole\narray is in one chain block (the primordial chain block) in bucket\
+  \ 0.\n\nThe minimum size of a chain block is 2 chain_hlocks entries. That will\n\
+  be the minimum allocation size. In other word, allocation requests\nfor one chain_hlocks\
+  \ entry will cause 2-entry block to be returned and\nhence 1 entry will be wasted.\n\
+  \nAllocation requests for the chain_hlocks are fulfilled first by looking\nfor chain\
+  \ block of matching size. If not found, the first chain block\nfrom bucket[0] (the\
+  \ largest one) is split. That can cause hlock entries\nfragmentation and reduce\
+  \ allocation efficiency if a chain block of size >\nMAX_CHAIN_BUCKETS is ever zapped\
+  \ and put back to after the primordial\nchain block. So the MAX_CHAIN_BUCKETS must\
+  \ be large enough that this\nshould seldom happen.\n\nBy reusing the chain_hlocks\
+  \ entries, we are able to handle workloads\nthat add and zap a lot of lock classes\
+  \ without the risk of running out\nof chain_hlocks entries as long as the total\
+  \ number of outstanding lock\nclasses at any time remain within a reasonable limit.\n\
+  \nTwo new tracking counters, nr_free_chain_hlocks & nr_large_chain_blocks,\nare\
+  \ added to track the total number of chain_hlocks entries in the\nfree bucketed\
+  \ lists and the number of large chain blocks in buckets[0]\nrespectively. The nr_free_chain_hlocks\
+  \ replaces nr_chain_hlocks.\n\nThe nr_large_chain_blocks counter enables to see\
+  \ if we should increase\nthe number of buckets (MAX_CHAIN_BUCKETS) available so\
+  \ as to avoid to\navoid the fragmentation problem in bucket[0].\n\nAn internal nfsd\
+  \ test that ran for more than an hour and kept on\nloading and unloading kernel\
+  \ modules could cause the following message\nto be displayed.\n\n  [ 4318.443670]\
+  \ BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!\n\nThe patched kernel was able to complete\
+  \ the test with a lot of free\nchain_hlocks entries to spare:\n\n  # cat /proc/lockdep_stats\n\
+  \     :\n   dependency chains:                   18867 [max: 65536]\n   dependency\
+  \ chain hlocks:             74926 [max: 327680]\n   dependency chain hlocks lost:\
+  \            0\n     :\n   zapped classes:                       1541\n   zapped\
+  \ lock chains:                  56765\n   large chain blocks:                  \
+  \    1\n\nBy changing MAX_CHAIN_BUCKETS to 3 and add a counter for the size of the\n\
+  largest chain block. The system still worked and We got the following\nlockdep_stats\
+  \ data:\n\n   dependency chains:                   18601 [max: 65536]\n   dependency\
+  \ chain hlocks used:        73133 [max: 327680]\n   dependency chain hlocks lost:\
+  \            0\n     :\n   zapped classes:                       1541\n   zapped\
+  \ lock chains:                  56702\n   large chain blocks:                  45165\n\
+  \   large chain block size:              20165\n\nBy running the test again, I was\
+  \ indeed able to cause chain_hlocks\nentries to get lost:\n\n   dependency chain\
+  \ hlocks used:        74806 [max: 327680]\n   dependency chain hlocks lost:    \
+  \      575\n     :\n   large chain blocks:                  48737\n   large chain\
+  \ block size:                  7\n\nDue to the fragmentation, it is possible that\
+  \ the\n\"MAX_LOCKDEP_CHAIN_HLOCKS too low!\" error can happen even if a lot of\n\
+  of chain_hlocks entries appear to be free.\n\nFortunately, a MAX_CHAIN_BUCKETS value\
+  \ of 16 should be big enough that\nfew variable sized chain blocks, other than the\
+  \ initial one, should\never be present in bucket 0.\n\nSuggested-by: Peter Zijlstra\
+  \ <peterz@infradead.org>\nSigned-off-by: Waiman Long <longman@redhat.com>\nSigned-off-by:\
+  \ Peter Zijlstra (Intel) <peterz@infradead.org>\nSigned-off-by: Ingo Molnar <mingo@kernel.org>\n\
+  Link: https://lkml.kernel.org/r/20200206152408.24165-7-longman@redhat.com\n"
+submodule:
+- kernel/locking
+hunk_count: 11
+covered_count: 0

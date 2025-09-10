@@ -1,0 +1,34 @@
+loop0: detected capacity change from 1764 to 1763
+=====================================================
+BUG: KMSAN: uninit-value in do_isofs_readdir fs/isofs/dir.c:150 [inline]
+BUG: KMSAN: uninit-value in isofs_readdir+0xa33/0x2610 fs/isofs/dir.c:262
+ do_isofs_readdir fs/isofs/dir.c:150 [inline]
+ isofs_readdir+0xa33/0x2610 fs/isofs/dir.c:262
+ iterate_dir+0x740/0x930 fs/readdir.c:108
+ __do_sys_getdents64 fs/readdir.c:403 [inline]
+ __se_sys_getdents64+0x170/0x540 fs/readdir.c:389
+ __x64_sys_getdents64+0x96/0xe0 fs/readdir.c:389
+ x64_sys_call+0x3b0f/0x3c30 arch/x86/include/generated/asm/syscalls_64.h:218
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ __alloc_frozen_pages_noprof+0x9a7/0xe00 mm/page_alloc.c:4762
+ alloc_pages_mpol+0x4cd/0x890 mm/mempolicy.c:2270
+ alloc_frozen_pages_noprof mm/mempolicy.c:2341 [inline]
+ alloc_pages_noprof+0x1b5/0x250 mm/mempolicy.c:2361
+ get_free_pages_noprof+0x34/0xc0 mm/page_alloc.c:4798
+ isofs_readdir+0x74/0x2610 fs/isofs/dir.c:256
+ iterate_dir+0x740/0x930 fs/readdir.c:108
+ __do_sys_getdents64 fs/readdir.c:403 [inline]
+ __se_sys_getdents64+0x170/0x540 fs/readdir.c:389
+ __x64_sys_getdents64+0x96/0xe0 fs/readdir.c:389
+ x64_sys_call+0x3b0f/0x3c30 arch/x86/include/generated/asm/syscalls_64.h:218
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 0 UID: 0 PID: 5784 Comm: syz-executor207 Not tainted 6.14.0-rc1-syzkaller-00028-g5c8c229261f1 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+=====================================================

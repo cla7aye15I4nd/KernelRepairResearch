@@ -1,0 +1,58 @@
+id: aa620fb1ece874a3f34c
+bug_link: https://syzkaller.appspot.com/bug?extid=aa620fb1ece874a3f34c
+title: 'KASAN: null-ptr-deref Read in ida_free (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8ffdc53a60049f3930afe161dc51c67959c8d83d
+fix_commit: 90bc2af24638659da56397ff835f3c95a948f991
+datetime: '2022-06-24T13:45:21+02:00'
+fix_commit_message: 'USB: gadget: Fix double-free bug in raw_gadget driver
+
+
+  Re-reading a recently merged fix to the raw_gadget driver showed that
+
+  it inadvertently introduced a double-free bug in a failure pathway.
+
+  If raw_ioctl_init() encounters an error after the driver ID number has
+
+  been allocated, it deallocates the ID number before returning.  But
+
+  when dev_free() runs later on, it will then try to deallocate the ID
+
+  number a second time.
+
+
+  Closely related to this issue is another error in the recent fix: The
+
+  ID number is stored in the raw_dev structure before the code checks to
+
+  see whether the structure has already been initialized, in which case
+
+  the new ID number would overwrite the earlier value.
+
+
+  The solution to both bugs is to keep the new ID number in a local
+
+  variable, and store it in the raw_dev structure only after the check
+
+  for prior initialization.  No errors can occur after that point, so
+
+  the double-free will never happen.
+
+
+  Fixes: f2d8c2606825 ("usb: gadget: Fix non-unique driver names in raw-gadget driver")
+
+  CC: Andrey Konovalov <andreyknvl@gmail.com>
+
+  CC: <stable@vger.kernel.org>
+
+  Signed-off-by: Alan Stern <stern@rowland.harvard.edu>
+
+  Link: https://lore.kernel.org/r/YrMrRw5AyIZghN0v@rowland.harvard.edu
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/gadget/legacy
+hunk_count: 5
+covered_count: 3

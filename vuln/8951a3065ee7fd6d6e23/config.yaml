@@ -1,0 +1,31 @@
+id: 8951a3065ee7fd6d6e23
+bug_link: https://syzkaller.appspot.com/bug?extid=8951a3065ee7fd6d6e23
+title: 'KMSAN: uninit-value in tipc_conn_rcv_sub'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d62f38c295e56147e8298af1e0e0ec9e7cc14937
+fix_commit: a88289f4ddee4165d5f796bd99e09eec3133c16b
+datetime: '2019-01-15T20:29:20-08:00'
+fix_commit_message: "tipc: fix uninit-value in in tipc_conn_rcv_sub\n\nsyzbot reported:\n\
+  \nBUG: KMSAN: uninit-value in tipc_conn_rcv_sub+0x184/0x950 net/tipc/topsrv.c:373\n\
+  CPU: 0 PID: 66 Comm: kworker/u4:4 Not tainted 4.17.0-rc3+ #88\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\nWorkqueue:\
+  \ tipc_rcv tipc_conn_recv_work\nCall Trace:\n __dump_stack lib/dump_stack.c:77 [inline]\n\
+  \ dump_stack+0x185/0x1d0 lib/dump_stack.c:113\n kmsan_report+0x142/0x240 mm/kmsan/kmsan.c:1067\n\
+  \ __msan_warning_32+0x6c/0xb0 mm/kmsan/kmsan_instr.c:683\n tipc_conn_rcv_sub+0x184/0x950\
+  \ net/tipc/topsrv.c:373\n tipc_conn_rcv_from_sock net/tipc/topsrv.c:409 [inline]\n\
+  \ tipc_conn_recv_work+0x3cd/0x560 net/tipc/topsrv.c:424\n process_one_work+0x12c6/0x1f60\
+  \ kernel/workqueue.c:2145\n worker_thread+0x113c/0x24f0 kernel/workqueue.c:2279\n\
+  \ kthread+0x539/0x720 kernel/kthread.c:239\n ret_from_fork+0x35/0x40 arch/x86/entry/entry_64.S:412\n\
+  \nLocal variable description: ----s.i@tipc_conn_recv_work\nVariable was created\
+  \ at:\n tipc_conn_recv_work+0x65/0x560 net/tipc/topsrv.c:419\n process_one_work+0x12c6/0x1f60\
+  \ kernel/workqueue.c:2145\n\nIn tipc_conn_rcv_from_sock(), it always supposes the\
+  \ length of message\nreceived from sock_recvmsg() is not smaller than the size of\
+  \ struct\ntipc_subscr. However, this assumption is false. Especially when the\n\
+  length of received message is shorter than struct tipc_subscr size,\nwe will end\
+  \ up touching uninitialized fields in tipc_conn_rcv_sub().\n\nReported-by: syzbot+8951a3065ee7fd6d6e23@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+75e6e042c5bbf691fc82@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Ying Xue <ying.xue@windriver.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 1
+covered_count: 1

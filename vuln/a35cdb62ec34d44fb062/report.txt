@@ -1,0 +1,71 @@
+loop0: detected capacity change from 0 to 32768
+workqueue: Failed to create a rescuer kthread for wq "bcachefs_copygc": -EINTR
+bcachefs (076a1832-646e-4f3c-b13d-b3e266154efd): shutdown complete
+Unable to handle kernel paging request at virtual address ffff7000249ff210
+KASAN: probably wild-memory-access in range [0xffff800124ff9080-0xffff800124ff9087]
+Mem abort info:
+  ESR = 0x0000000096000006
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x06: level 2 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000006, ISS2 = 0x00000000
+  CM = 0, WnR = 0, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+swapper pgtable: 4k pages, 48-bit VAs, pgdp=00000001ad5bd000
+[ffff7000249ff210] pgd=0000000000000000, p4d=000000023e882003, pud=000000023e880003, pmd=0000000000000000
+Internal error: Oops: 0000000096000006 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 1 PID: 6256 Comm: syz-executor158 Not tainted 6.9.0-rc4-syzkaller-g6a71d2909427 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+pstate: 80401005 (Nzcv daif +PAN -UAO -TCO -DIT +SSBS BTYPE=--)
+pc : bch2_fs_btree_key_cache_exit+0x7ec/0xfcc fs/bcachefs/btree_key_cache.c:974
+lr : bch2_fs_btree_key_cache_exit+0x78c/0xfcc fs/bcachefs/btree_key_cache.c:970
+sp : ffff8000980e6e80
+x29: ffff8000980e6f50 x28: 1fffe0001d160010 x27: ffff0000e8b044b0
+x26: 1ffff0001301cde0 x25: dfff800000000000 x24: 1ffff0001168e5d4
+x23: 0000000000000000 x22: ffff800124ff9080 x21: ffff8000980e6f00
+x20: ffff80008ee81218 x19: dfff800000000000 x18: 0000000000000008
+x17: 656c706d6f63206e x16: ffff8000802896e4 x15: 0000000000000001
+x14: 1fffe0001d160898 x13: 0000000000000000 x12: 0000000000000000
+x11: ffff60001d160899 x10: 0000000000ff0100 x9 : 0000000000000003
+x8 : 1ffff000249ff210 x7 : ffff80008275d4e8 x6 : 0000000000000000
+x5 : 0000000000000000 x4 : 0000000000000001 x3 : ffff80008275d4f8
+x2 : 0000000000000000 x1 : 0000000000000000 x0 : 0000000000000008
+Call trace:
+ bch2_fs_btree_key_cache_exit+0x7ec/0xfcc fs/bcachefs/btree_key_cache.c:974
+ __bch2_fs_free fs/bcachefs/super.c:562 [inline]
+ bch2_fs_release+0x1e0/0x564 fs/bcachefs/super.c:609
+ kobject_cleanup lib/kobject.c:689 [inline]
+ kobject_release lib/kobject.c:720 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ kobject_put+0x2a8/0x41c lib/kobject.c:737
+ bch2_fs_free+0x288/0x2f0 fs/bcachefs/super.c:674
+ bch2_fs_alloc+0xe4c/0x1c60 fs/bcachefs/super.c:965
+ bch2_fs_open+0x740/0xb64 fs/bcachefs/super.c:2080
+ bch2_mount+0x558/0xe10 fs/bcachefs/fs.c:1900
+ legacy_get_tree+0xd4/0x16c fs/fs_context.c:662
+ vfs_get_tree+0x90/0x288 fs/super.c:1779
+ do_new_mount+0x278/0x900 fs/namespace.c:3352
+ path_mount+0x590/0xe04 fs/namespace.c:3679
+ do_mount fs/namespace.c:3692 [inline]
+ __do_sys_mount fs/namespace.c:3898 [inline]
+ __se_sys_mount fs/namespace.c:3875 [inline]
+ __arm64_sys_mount+0x45c/0x594 fs/namespace.c:3875
+ __invoke_syscall arch/arm64/kernel/syscall.c:34 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:48
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:133
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:152
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:712
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:730
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:598
+Code: f90027e8 d343fec8 11000d29 f9002be8 (38f36908) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	f90027e8 	str	x8, [sp, #72]
+   4:	d343fec8 	lsr	x8, x22, #3
+   8:	11000d29 	add	w9, w9, #0x3
+   c:	f9002be8 	str	x8, [sp, #80]
+* 10:	38f36908 	ldrsb	w8, [x8, x19] <-- trapping instruction

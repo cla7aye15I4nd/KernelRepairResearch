@@ -1,0 +1,27 @@
+id: 9ca7a12fd736d93e0232
+bug_link: https://syzkaller.appspot.com/bug?extid=9ca7a12fd736d93e0232
+title: 'KASAN: use-after-free Read in si470x_int_in_callback (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: faaf901727eddcfbe889fe172ec9cdb5e63c8236
+fix_commit: 7d21e0b1b41b21d628bf2afce777727bd4479aa5
+datetime: '2022-12-07T17:58:47+01:00'
+fix_commit_message: "media: si470x: Fix use-after-free in si470x_int_in_callback()\n\
+  \nsyzbot reported use-after-free in si470x_int_in_callback() [1].  This\nindicates\
+  \ that urb->context, which contains struct si470x_device\nobject, is freed when\
+  \ si470x_int_in_callback() is called.\n\nThe cause of this issue is that si470x_int_in_callback()\
+  \ is called for\nfreed urb.\n\nsi470x_usb_driver_probe() calls si470x_start_usb(),\
+  \ which then calls\nusb_submit_urb() and si470x_start().  If si470x_start_usb()\
+  \ fails,\nsi470x_usb_driver_probe() doesn't kill urb, but it just frees struct\n\
+  si470x_device object, as depicted below:\n\nsi470x_usb_driver_probe()\n  ...\n \
+  \ si470x_start_usb()\n    ...\n    usb_submit_urb()\n    retval = si470x_start()\n\
+  \    return retval\n  if (retval < 0)\n    free struct si470x_device object, but\
+  \ don't kill urb\n\nThis patch fixes this issue by killing urb when si470x_start_usb()\n\
+  fails and urb is submitted.  If si470x_start_usb() fails and urb is\nnot submitted,\
+  \ i.e. submitting usb fails, it just frees struct\nsi470x_device object.\n\nReported-by:\
+  \ syzbot+9ca7a12fd736d93e0232@syzkaller.appspotmail.com\nLink: https://syzkaller.appspot.com/bug?id=94ed6dddd5a55e90fd4bab942aa4bb297741d977\
+  \ [1]\nSigned-off-by: Shigeru Yoshida <syoshida@redhat.com>\nSigned-off-by: Hans\
+  \ Verkuil <hverkuil-cisco@xs4all.nl>\n"
+submodule:
+- drivers/media/radio/si470x
+hunk_count: 1
+covered_count: 1

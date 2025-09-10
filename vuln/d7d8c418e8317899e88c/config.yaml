@@ -1,0 +1,34 @@
+id: d7d8c418e8317899e88c
+bug_link: https://syzkaller.appspot.com/bug?extid=d7d8c418e8317899e88c
+title: WARNING in ucan_probe
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4003c9e78778e93188a09d6043a74f7154449d43
+fix_commit: 1d22a122ffb116c3cf78053e812b8b21f8852ee9
+datetime: '2025-03-14T09:44:54+01:00'
+fix_commit_message: "can: ucan: fix out of bound read in strscpy() source\n\nCommit\
+  \ 7fdaf8966aae (\"can: ucan: use strscpy() to instead of strncpy()\")\nunintentionally\
+  \ introduced a one byte out of bound read on strscpy()'s\nsource argument (which\
+  \ is kind of ironic knowing that strscpy() is meant\nto be a more secure alternative\
+  \ :)).\n\nLet's consider below buffers:\n\n  dest[len + 1]; /* will be NUL terminated\
+  \ */\n  src[len]; /* may not be NUL terminated */\n\nWhen doing:\n\n  strncpy(dest,\
+  \ src, len);\n  dest[len] = '\\0';\n\nstrncpy() will read up to len bytes from src.\n\
+  \nOn the other hand:\n\n  strscpy(dest, src, len + 1);\n\nwill read up to len +\
+  \ 1 bytes from src, that is to say, an out of bound\nread of one byte will occur\
+  \ on src if it is not NUL terminated. Note\nthat the src[len] byte is never copied,\
+  \ but strscpy() still needs to\nread it to check whether a truncation occurred or\
+  \ not.\n\nThis exact pattern happened in ucan.\n\nThe root cause is that the source\
+  \ is not NUL terminated. Instead of\ndoing a copy in a local buffer, directly NUL\
+  \ terminate it as soon as\nusb_control_msg() returns. With this, the local firmware_str[]\
+  \ variable\ncan be removed.\n\nOn top of this do a couple refactors:\n\n  - ucan_ctl_payload->raw\
+  \ is only used for the firmware string, so\n    rename it to ucan_ctl_payload->fw_str\
+  \ and change its type from u8 to\n    char.\n\n  - ucan_device_request_in() is only\
+  \ used to retrieve the firmware\n    string, so rename it to ucan_get_fw_str() and\
+  \ refactor it to make it\n    directly handle all the string termination logic.\n\
+  \nReported-by: syzbot+d7d8c418e8317899e88c@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/linux-can/67b323a4.050a0220.173698.002b.GAE@google.com/\n\
+  Fixes: 7fdaf8966aae (\"can: ucan: use strscpy() to instead of strncpy()\")\nSigned-off-by:\
+  \ Vincent Mailhol <mailhol.vincent@wanadoo.fr>\nLink: https://patch.msgid.link/20250218143515.627682-2-mailhol.vincent@wanadoo.fr\n\
+  Cc: stable@vger.kernel.org\nSigned-off-by: Marc Kleine-Budde <mkl@pengutronix.de>\n"
+submodule:
+- drivers/net/can/usb
+hunk_count: 5
+covered_count: 3

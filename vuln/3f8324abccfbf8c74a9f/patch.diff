@@ -1,0 +1,16 @@
+diff --git a/net/tipc/netlink_compat.c b/net/tipc/netlink_compat.c
+index 82f665728382..6376467e78f8 100644
+--- a/net/tipc/netlink_compat.c
++++ b/net/tipc/netlink_compat.c
+@@ -185,7 +185,10 @@ static int __tipc_nl_compat_dumpit(struct tipc_nl_compat_cmd_dump *cmd,
+ 		return -ENOMEM;
+ 
+ 	buf->sk = msg->dst_sk;
+-	__tipc_dump_start(&cb, msg->net);
++	if (__tipc_dump_start(&cb, msg->net)) {
++		kfree_skb(buf);
++		return -ENOMEM;
++	}
+ 
+ 	do {
+ 		int rem;

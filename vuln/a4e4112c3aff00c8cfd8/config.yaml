@@ -1,0 +1,35 @@
+id: a4e4112c3aff00c8cfd8
+bug_link: https://syzkaller.appspot.com/bug?extid=a4e4112c3aff00c8cfd8
+title: 'KASAN: use-after-free Read in sctp_association_free (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0c3d5a96d5e5e6d5662d335a3bdfb76f35433f18
+fix_commit: 0aee4c259849099cb07ead6cd7fff74e561d5225
+datetime: '2018-03-15T14:32:04-04:00'
+fix_commit_message: "sctp: Fix double free in sctp_sendmsg_to_asoc\n\nsyzbot/kasan\
+  \ detected a double free in sctp_sendmsg_to_asoc:\nBUG: KASAN: use-after-free in\
+  \ sctp_association_free+0x7b7/0x930\nnet/sctp/associola.c:332\nRead of size 8 at\
+  \ addr ffff8801d8006ae0 by task syzkaller914861/4202\n\nCPU: 1 PID: 4202 Comm: syzkaller914861\
+  \ Not tainted 4.16.0-rc4+ #258\nHardware name: Google Google Compute Engine/Google\
+  \ Compute Engine\n01/01/2011\nCall Trace:\n __dump_stack lib/dump_stack.c:17 [inline]\n\
+  \ dump_stack+0x194/0x24d lib/dump_stack.c:53\n print_address_description+0x73/0x250\
+  \ mm/kasan/report.c:256\n kasan_report_error mm/kasan/report.c:354 [inline]\n kasan_report+0x23c/0x360\
+  \ mm/kasan/report.c:412\n __asan_report_load8_noabort+0x14/0x20 mm/kasan/report.c:433\n\
+  \ sctp_association_free+0x7b7/0x930 net/sctp/associola.c:332\n sctp_sendmsg+0xc67/0x1a80\
+  \ net/sctp/socket.c:2075\n inet_sendmsg+0x11f/0x5e0 net/ipv4/af_inet.c:763\n sock_sendmsg_nosec\
+  \ net/socket.c:629 [inline]\n sock_sendmsg+0xca/0x110 net/socket.c:639\n SYSC_sendto+0x361/0x5c0\
+  \ net/socket.c:1748\n SyS_sendto+0x40/0x50 net/socket.c:1716\n do_syscall_64+0x281/0x940\
+  \ arch/x86/entry/common.c:287\n entry_SYSCALL_64_after_hwframe+0x42/0xb7\n\nThis\
+  \ was introduced by commit:\nf84af33 sctp: factor out sctp_sendmsg_to_asoc from\
+  \ sctp_sendmsg\n\nAs the newly refactored function moved the wait_for_sndbuf call\
+  \ to a\npoint after the association was connected, allowing for peeloff events\n\
+  to occur, which in turn caused wait_for_sndbuf to return -EPIPE which\nwas not caught\
+  \ by the logic that determines if an association should be\nfreed or not.\n\nFix\
+  \ it the easy way by returning the ordering of\nsctp_primitive_ASSOCIATE and sctp_wait_for_sndbuf\
+  \ to the old order, to\nensure that EPIPE will not happen.\n\nTested by myself using\
+  \ the syzbot reproducers with positive results\n\nSigned-off-by: Neil Horman <nhorman@tuxdriver.com>\n\
+  CC: davem@davemloft.net\nCC: Xin Long <lucien.xin@gmail.com>\nReported-by: syzbot+a4e4112c3aff00c8cfd8@syzkaller.appspotmail.com\n\
+  Reviewed-by: Xin Long <lucien.xin@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 2
+covered_count: 2

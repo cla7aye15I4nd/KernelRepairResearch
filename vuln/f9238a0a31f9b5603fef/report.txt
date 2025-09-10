@@ -1,0 +1,75 @@
+8<--- cut here ---
+Unable to handle kernel NULL pointer dereference at virtual address 00000018 when write
+[00000018] *pgd=84374003, *pmd=fe515003
+Internal error: Oops: a05 [#1] PREEMPT SMP ARM
+Modules linked in:
+CPU: 1 PID: 3005 Comm: syz-executor196 Not tainted 6.10.0-rc4-syzkaller #0
+Hardware name: ARM-Versatile Express
+PC is at pagemap_scan_init_bounce_buffer fs/proc/task_mmu.c:2414 [inline]
+PC is at do_pagemap_scan+0x2ac/0x6f8 fs/proc/task_mmu.c:2460
+LR is at kmalloc_noprof include/linux/slab.h:664 [inline]
+LR is at kmalloc_array_noprof include/linux/slab.h:699 [inline]
+LR is at pagemap_scan_init_bounce_buffer fs/proc/task_mmu.c:2409 [inline]
+LR is at do_pagemap_scan+0x278/0x6f8 fs/proc/task_mmu.c:2460
+pc : [<805a74c4>]    lr : [<805a7490>]    psr: 20000013
+sp : df961e18  ip : df961e18  fp : df961f04
+r10: 00000000  r9 : 00000000  r8 : 00000000
+r7 : df961e50  r6 : 83708c00  r5 : 20165000  r4 : 83eb3c00
+r3 : 20ffb000  r2 : 00000000  r1 : 00000000  r0 : 00000010
+Flags: nzCv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment none
+Control: 30c5387d  Table: 8437a280  DAC: 00000000
+Register r0 information: zero-size pointer
+Register r1 information: NULL pointer
+Register r2 information: NULL pointer
+Register r3 information: non-paged memory
+Register r4 information: slab mm_struct start 83eb3c00 pointer offset 0 size 712
+Register r5 information: non-paged memory
+Register r6 information: slab task_struct start 83708c00 pointer offset 0 size 3072
+Register r7 information: 2-page vmalloc region starting at 0xdf960000 allocated at kernel_clone+0xac/0x3e4 kernel/fork.c:2797
+Register r8 information: NULL pointer
+Register r9 information: NULL pointer
+Register r10 information: NULL pointer
+Register r11 information: 2-page vmalloc region starting at 0xdf960000 allocated at kernel_clone+0xac/0x3e4 kernel/fork.c:2797
+Register r12 information: 2-page vmalloc region starting at 0xdf960000 allocated at kernel_clone+0xac/0x3e4 kernel/fork.c:2797
+Process syz-executor196 (pid: 3005, stack limit = 0xdf960000)
+Stack: (0xdf961e18 to 0xdf962000)
+1e00:                                                       00000000 00000000
+1e20: 00000000 00000000 200004c0 00000001 20165000 00000000 00000000 00000000
+1e40: 00000000 00000000 00000000 00000000 00000060 00000000 00000000 00000000
+1e60: 20165000 00000000 20ffb000 00000000 00000000 00000000 20000000 00000000
+1e80: 00000000 10000000 ffffffff 00000000 00000000 00000000 00000000 00000000
+1ea0: 00000000 00000000 00000000 00000000 00000000 00000000 00000010 00000000
+1ec0: 00000000 00000000 20000000 00000000 c0606610 9aa5d9ce df961ef4 c0606610
+1ee0: 00000000 83fe76c0 200004c0 83fe76c0 00000003 83708c00 df961f14 df961f08
+1f00: 805a7938 805a7224 df961fa4 df961f18 8051a27c 805a791c 804fe064 8050f77c
+1f20: 00000002 00000000 00000006 00000100 00000001 9aa5d9ce ffffff9c 7e981c18
+1f40: 00000000 00000142 df961fa4 df961f58 804fe480 804fdfc8 00000002 00000000
+1f60: 00000000 00000000 00000000 00000000 00000002 9aa5d9ce 00000000 ffffffff
+1f80: 00000000 00000000 00000036 8020029c 83708c00 00000036 00000000 df961fa8
+1fa0: 80200060 8051a154 ffffffff 00000000 00000003 c0606610 200004c0 00000000
+1fc0: ffffffff 00000000 00000000 00000036 7e981e0c 00000000 000f4240 00000000
+1fe0: 7e981bf8 7e981be8 000106b8 0002e820 00000010 00000003 00000000 00000000
+Call trace: 
+[<805a7218>] (do_pagemap_scan) from [<805a7938>] (do_pagemap_cmd+0x28/0x34 fs/proc/task_mmu.c:2527)
+ r10:83708c00 r9:00000003 r8:83fe76c0 r7:200004c0 r6:83fe76c0 r5:00000000
+ r4:c0606610
+[<805a7910>] (do_pagemap_cmd) from [<8051a27c>] (vfs_ioctl fs/ioctl.c:51 [inline])
+[<805a7910>] (do_pagemap_cmd) from [<8051a27c>] (do_vfs_ioctl fs/ioctl.c:861 [inline])
+[<805a7910>] (do_pagemap_cmd) from [<8051a27c>] (__do_sys_ioctl fs/ioctl.c:905 [inline])
+[<805a7910>] (do_pagemap_cmd) from [<8051a27c>] (sys_ioctl+0x134/0xda4 fs/ioctl.c:893)
+[<8051a148>] (sys_ioctl) from [<80200060>] (ret_fast_syscall+0x0/0x1c arch/arm/mm/proc-v7.S:67)
+Exception stack(0xdf961fa8 to 0xdf961ff0)
+1fa0:                   ffffffff 00000000 00000003 c0606610 200004c0 00000000
+1fc0: ffffffff 00000000 00000000 00000036 7e981e0c 00000000 000f4240 00000000
+1fe0: 7e981bf8 7e981be8 000106b8 0002e820
+ r10:00000036 r9:83708c00 r8:8020029c r7:00000036 r6:00000000 r5:00000000
+ r4:ffffffff
+Code: e51b309c e51b108c e50b103c e3a01000 (e1c080f8) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	e51b309c 	ldr	r3, [fp, #-156]	@ 0xffffff64
+   4:	e51b108c 	ldr	r1, [fp, #-140]	@ 0xffffff74
+   8:	e50b103c 	str	r1, [fp, #-60]	@ 0xffffffc4
+   c:	e3a01000 	mov	r1, #0
+* 10:	e1c080f8 	strd	r8, [r0, #8] <-- trapping instruction

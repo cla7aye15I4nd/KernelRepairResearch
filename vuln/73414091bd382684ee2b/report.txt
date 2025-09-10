@@ -1,0 +1,62 @@
+loop0: detected capacity change from 0 to 32768
+bcachefs (loop0): mounting version 1.7: mi_btree_bitmap opts=metadata_checksum=none,data_checksum=none,nojournal_transaction_names
+bcachefs (loop0): recovering from clean shutdown, journal seq 10
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/replicas.c:205!
+invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 PID: 5075 Comm: syz-executor128 Not tainted 6.9.0-rc7-syzkaller-00183-gcf87f46fd34d #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+RIP: 0010:cpu_replicas_add_entry+0x6c8/0x6f0 fs/bcachefs/replicas.c:205
+Code: 24 18 e8 ab 22 be fd e9 57 fd ff ff e8 f1 c5 5c fd 90 0f 0b e8 e9 c5 5c fd 90 0f 0b e8 e1 c5 5c fd 90 0f 0b e8 d9 c5 5c fd 90 <0f> 0b e8 d1 c5 5c fd 90 0f 0b e8 c9 c5 5c fd 90 0f 0b e8 c1 c5 5c
+RSP: 0018:ffffc9000346ef18 EFLAGS: 00010293
+RAX: ffffffff843941b7 RBX: dffffc0000000000 RCX: ffff888023cd5a00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000001 R08: ffffffff84393d28 R09: ffffffff843804ad
+R10: 0000000000000007 R11: ffff888023cd5a00 R12: 1ffff1100eb70101
+R13: ffff888071e440a3 R14: 0000000000000000 R15: ffff888071e440a0
+FS:  000055556e8b0380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000561d03c02678 CR3: 0000000074648000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_replicas_set_usage+0x3cf/0x710 fs/bcachefs/replicas.c:630
+ journal_replay_early+0xba/0x4f0 fs/bcachefs/recovery.c:411
+ bch2_fs_recovery+0x39c2/0x63b0 fs/bcachefs/recovery.c:747
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1043
+ bch2_fs_open+0xa8d/0xdf0 fs/bcachefs/super.c:2105
+ bch2_mount+0x71d/0x1320 fs/bcachefs/fs.c:1903
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2a0 fs/super.c:1779
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3352
+ do_mount fs/namespace.c:3692 [inline]
+ __do_sys_mount fs/namespace.c:3898 [inline]
+ __se_sys_mount+0x2d9/0x3c0 fs/namespace.c:3875
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7efe923c2b7a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffec93a6af8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffec93a6b10 RCX: 00007efe923c2b7a
+RDX: 0000000020011a00 RSI: 0000000020011a40 RDI: 00007ffec93a6b10
+RBP: 0000000000000004 R08: 00007ffec93a6b50 R09: 0066666666666666
+R10: 0000000001200014 R11: 0000000000000282 R12: 0000000001200014
+R13: 00007ffec93a6b50 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:cpu_replicas_add_entry+0x6c8/0x6f0 fs/bcachefs/replicas.c:205
+Code: 24 18 e8 ab 22 be fd e9 57 fd ff ff e8 f1 c5 5c fd 90 0f 0b e8 e9 c5 5c fd 90 0f 0b e8 e1 c5 5c fd 90 0f 0b e8 d9 c5 5c fd 90 <0f> 0b e8 d1 c5 5c fd 90 0f 0b e8 c9 c5 5c fd 90 0f 0b e8 c1 c5 5c
+RSP: 0018:ffffc9000346ef18 EFLAGS: 00010293
+RAX: ffffffff843941b7 RBX: dffffc0000000000 RCX: ffff888023cd5a00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000001 R08: ffffffff84393d28 R09: ffffffff843804ad
+R10: 0000000000000007 R11: ffff888023cd5a00 R12: 1ffff1100eb70101
+R13: ffff888071e440a3 R14: 0000000000000000 R15: ffff888071e440a0
+FS:  000055556e8b0380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000561d03c02678 CR3: 0000000074648000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

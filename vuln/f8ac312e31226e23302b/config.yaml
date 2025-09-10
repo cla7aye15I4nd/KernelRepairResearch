@@ -1,0 +1,134 @@
+id: f8ac312e31226e23302b
+bug_link: https://syzkaller.appspot.com/bug?extid=f8ac312e31226e23302b
+title: upstream-arm64 build error
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ad4a4d3aff21539263326201d7f5806ea0c1de90
+fix_commit: d54170812ef1c80e0fa3ed3e554a0bbfc2920d9d
+datetime: '2023-02-20T18:23:35+00:00'
+fix_commit_message: 'arm64: fix .idmap.text assertion for large kernels
+
+
+  When building a kernel with many debug options enabled (which happens in
+
+  test configurations use by myself and syzbot), the kernel can become
+
+  large enough that portions of .text can be more than 128M away from
+
+  .idmap.text (which is placed inside the .rodata section). Where idmap
+
+  code branches into .text, the linker will place veneers in the
+
+  .idmap.text section to make those branches possible.
+
+
+  Unfortunately, as Ard reports, GNU LD has bseen observed to add 4K of
+
+  padding when adding such veneers, e.g.
+
+
+  | .idmap.text    0xffffffc01e48e5c0      0x32c arch/arm64/mm/proc.o
+
+  |                0xffffffc01e48e5c0                idmap_cpu_replace_ttbr1
+
+  |                0xffffffc01e48e600                idmap_kpti_install_ng_mappings
+
+  |                0xffffffc01e48e800                __cpu_setup
+
+  | *fill*         0xffffffc01e48e8ec        0x4
+
+  | .idmap.text.stub
+
+  |                0xffffffc01e48e8f0       0x18 linker stubs
+
+  |                0xffffffc01e48f8f0                __idmap_text_end = .
+
+  |                0xffffffc01e48f000                . = ALIGN (0x1000)
+
+  | *fill*         0xffffffc01e48f8f0      0x710
+
+  |                0xffffffc01e490000                idmap_pg_dir = .
+
+
+  This makes the __idmap_text_start .. __idmap_text_end region bigger than
+
+  the 4K we require it to fit within, and triggers an assertion in arm64''s
+
+  vmlinux.lds.S, which breaks the build:
+
+
+  | LD      .tmp_vmlinux.kallsyms1
+
+  | aarch64-linux-gnu-ld: ID map text too big or misaligned
+
+  | make[1]: *** [scripts/Makefile.vmlinux:35: vmlinux] Error 1
+
+  | make: *** [Makefile:1264: vmlinux] Error 2
+
+
+  Avoid this by using an `ADRP+ADD+BLR` sequence for branches out of
+
+  .idmap.text, which avoids the need for veneers. These branches are only
+
+  executed once per boot, and only when the MMU is on, so there should be
+
+  no noticeable performance penalty in replacing `BL` with `ADRP+ADD+BLR`.
+
+
+  At the same time, remove the "x" and "w" attributes when placing code in
+
+  .idmap.text, as these are not necessary, and this will prevent the
+
+  linker from assuming that it is safe to place PLTs into .idmap.text,
+
+  causing it to warn if and when there are out-of-range branches within
+
+  .idmap.text, e.g.
+
+
+  |   LD      .tmp_vmlinux.kallsyms1
+
+  | arch/arm64/kernel/head.o: in function `primary_entry'':
+
+  | (.idmap.text+0x1c): relocation truncated to fit: R_AARCH64_CALL26 against symbol
+  `dcache_clean_poc'' defined in .text section in arch/arm64/mm/cache.o
+
+  | arch/arm64/kernel/head.o: in function `init_el2'':
+
+  | (.idmap.text+0x88): relocation truncated to fit: R_AARCH64_CALL26 against symbol
+  `dcache_clean_poc'' defined in .text section in arch/arm64/mm/cache.o
+
+  | make[1]: *** [scripts/Makefile.vmlinux:34: vmlinux] Error 1
+
+  | make: *** [Makefile:1252: vmlinux] Error 2
+
+
+  Thus, if future changes add out-of-range branches in .idmap.text, it
+
+  should be easy enough to identify those from the resulting linker
+
+  errors.
+
+
+  Reported-by: syzbot+f8ac312e31226e23302b@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/linux-arm-kernel/00000000000028ea4105f4e2ef54@google.com/
+
+  Signed-off-by: Mark Rutland <mark.rutland@arm.com>
+
+  Cc: Ard Biesheuvel <ardb@kernel.org>
+
+  Cc: Will Deacon <will@kernel.org>
+
+  Tested-by: Ard Biesheuvel <ardb@kernel.org>
+
+  Reviewed-by: Ard Biesheuvel <ardb@kernel.org>
+
+  Link: https://lore.kernel.org/r/20230220162317.1581208-1-mark.rutland@arm.com
+
+  Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+
+  '
+submodule:
+- arch/arm64/kernel
+hunk_count: 5
+covered_count: 0

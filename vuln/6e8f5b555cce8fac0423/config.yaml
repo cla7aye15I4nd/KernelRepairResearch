@@ -1,0 +1,35 @@
+id: 6e8f5b555cce8fac0423
+bug_link: https://syzkaller.appspot.com/bug?extid=6e8f5b555cce8fac0423
+title: possible deadlock in __lock_task_sighand
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 867a23eab52847d41a0a6eae41a64d76de7782a8
+fix_commit: fd7d6de2241453fc7d042336d366a939a25bc5a9
+datetime: '2020-08-23T11:03:53-06:00'
+fix_commit_message: 'io_uring: don''t recurse on tsk->sighand->siglock with signalfd
+
+
+  If an application is doing reads on signalfd, and we arm the poll handler
+
+  because there''s no data available, then the wakeup can recurse on the
+
+  tasks sighand->siglock as the signal delivery from task_work_add() will
+
+  use TWA_SIGNAL and that attempts to lock it again.
+
+
+  We can detect the signalfd case pretty easily by comparing the poll->head
+
+  wait_queue_head_t with the target task signalfd wait queue. Just use
+
+  normal task wakeup for this case.
+
+
+  Cc: stable@vger.kernel.org # v5.7+
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- fs
+hunk_count: 7
+covered_count: 4

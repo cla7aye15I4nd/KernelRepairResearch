@@ -1,0 +1,53 @@
+------------[ cut here ]------------
+refcount_t: underflow; use-after-free.
+WARNING: CPU: 1 PID: 11036 at lib/refcount.c:28 refcount_warn_saturate+0x14a/0x210 lib/refcount.c:28
+Modules linked in:
+CPU: 1 UID: 0 PID: 11036 Comm: syz.5.1209 Not tainted 6.14.0-rc7-syzkaller-00186-gd07de43e3f05 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+RIP: 0010:refcount_warn_saturate+0x14a/0x210 lib/refcount.c:28
+Code: ff 89 de e8 e8 1b f5 fc 84 db 0f 85 66 ff ff ff e8 3b 21 f5 fc c6 05 77 2b 86 0b 01 90 48 c7 c7 20 17 d3 8b e8 87 51 b5 fc 90 <0f> 0b 90 90 e9 43 ff ff ff e8 18 21 f5 fc 0f b6 1d 52 2b 86 0b 31
+RSP: 0018:ffffc9000bd979c8 EFLAGS: 00010286
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffffc9001d01c000
+RDX: 0000000000080000 RSI: ffffffff817a2276 RDI: 0000000000000001
+RBP: ffff888049207010 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000001 R12: 0000000000000001
+R13: 0000000000000000 R14: ffff888049207010 R15: ffff88802a564000
+FS:  00007fa9b395d6c0(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f53a8057d58 CR3: 000000002b110000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000097 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __refcount_sub_and_test include/linux/refcount.h:275 [inline]
+ __refcount_dec_and_test include/linux/refcount.h:307 [inline]
+ refcount_dec_and_test include/linux/refcount.h:325 [inline]
+ io_tx_ubuf_complete+0x236/0x280 io_uring/notif.c:50
+ io_notif_flush io_uring/notif.h:40 [inline]
+ io_send_zc_cleanup+0x8a/0x1c0 io_uring/net.c:1222
+ io_clean_op io_uring/io_uring.c:406 [inline]
+ io_free_batch_list io_uring/io_uring.c:1429 [inline]
+ __io_submit_flush_completions+0xcb3/0x1df0 io_uring/io_uring.c:1470
+ io_submit_flush_completions io_uring/io_uring.h:159 [inline]
+ ctx_flush_and_put.constprop.0+0x9a/0x410 io_uring/io_uring.c:1031
+ io_handle_tw_list+0x3df/0x540 io_uring/io_uring.c:1071
+ tctx_task_work_run+0xac/0x390 io_uring/io_uring.c:1123
+ tctx_task_work+0x7b/0xd0 io_uring/io_uring.c:1141
+ task_work_run+0x14e/0x250 kernel/task_work.c:227
+ get_signal+0x1d3/0x26c0 kernel/signal.c:2809
+ arch_do_signal_or_restart+0x90/0x7e0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x150/0x2a0 kernel/entry/common.c:218
+ do_syscall_64+0xda/0x250 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa9b2b8d169
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fa9b395d038 EFLAGS: 00000246 ORIG_RAX: 00000000000001aa
+RAX: 0000000000000800 RBX: 00007fa9b2da5fa0 RCX: 00007fa9b2b8d169
+RDX: 0000000000000000 RSI: 00000000000047bc RDI: 0000000000000005
+RBP: 00007fa9b2c0e2a0 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007fa9b2da5fa0 R15: 00007ffee776f038
+ </TASK>

@@ -1,0 +1,47 @@
+id: 174210f958eea85df206
+bug_link: https://syzkaller.appspot.com/bug?extid=174210f958eea85df206
+title: 'INFO: task hung in sock_sendmsg'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 09a44ca2114737e0932257619c16a2b50c7807f1
+fix_commit: 8236b0ae31c837d2b3a2565c5f8d77f637e824cc
+datetime: '2018-05-03T09:25:47-06:00'
+fix_commit_message: 'bdi: wake up concurrent wb_shutdown() callers.
+
+
+  syzbot is reporting hung tasks at wait_on_bit(WB_shutting_down) in
+
+  wb_shutdown() [1]. This seems to be because commit 5318ce7d46866e1d ("bdi:
+
+  Shutdown writeback on all cgwbs in cgwb_bdi_destroy()") forgot to call
+
+  wake_up_bit(WB_shutting_down) after clear_bit(WB_shutting_down).
+
+
+  Introduce a helper function clear_and_wake_up_bit() and use it, in order
+
+  to avoid similar errors in future.
+
+
+  [1] https://syzkaller.appspot.com/bug?id=b297474817af98d5796bc544e1bb806fc3da0e5e
+
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Reported-by: syzbot <syzbot+c0cf869505e03bdf1a24@syzkaller.appspotmail.com>
+
+  Fixes: 5318ce7d46866e1d ("bdi: Shutdown writeback on all cgwbs in cgwb_bdi_destroy()")
+
+  Cc: Tejun Heo <tj@kernel.org>
+
+  Reviewed-by: Jan Kara <jack@suse.cz>
+
+  Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- include/linux
+- mm
+hunk_count: 2
+covered_count: 1

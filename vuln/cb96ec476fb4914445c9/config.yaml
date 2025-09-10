@@ -1,0 +1,80 @@
+id: cb96ec476fb4914445c9
+bug_link: https://syzkaller.appspot.com/bug?extid=cb96ec476fb4914445c9
+title: 'KMSAN: uninit-value in dt2817_dio_insn_bits'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 70f2b28b5243df557f51c054c20058ae207baaac
+fix_commit: e9cb26291d009243a4478a7ffb37b3a9175bfce9
+datetime: '2025-07-16T15:02:44+02:00'
+fix_commit_message: 'comedi: Fix use of uninitialized data in insn_rw_emulate_bits()
+
+
+  For Comedi `INSN_READ` and `INSN_WRITE` instructions on "digital"
+
+  subdevices (subdevice types `COMEDI_SUBD_DI`, `COMEDI_SUBD_DO`, and
+
+  `COMEDI_SUBD_DIO`), it is common for the subdevice driver not to have
+
+  `insn_read` and `insn_write` handler functions, but to have an
+
+  `insn_bits` handler function for handling Comedi `INSN_BITS`
+
+  instructions.  In that case, the subdevice''s `insn_read` and/or
+
+  `insn_write` function handler pointers are set to point to the
+
+  `insn_rw_emulate_bits()` function by `__comedi_device_postconfig()`.
+
+
+  For `INSN_WRITE`, `insn_rw_emulate_bits()` currently assumes that the
+
+  supplied `data[0]` value is a valid copy from user memory.  It will at
+
+  least exist because `do_insnlist_ioctl()` and `do_insn_ioctl()` in
+
+  "comedi_fops.c" ensure at lease `MIN_SAMPLES` (16) elements are
+
+  allocated.  However, if `insn->n` is 0 (which is allowable for
+
+  `INSN_READ` and `INSN_WRITE` instructions, then `data[0]` may contain
+
+  uninitialized data, and certainly contains invalid data, possibly from a
+
+  different instruction in the array of instructions handled by
+
+  `do_insnlist_ioctl()`.  This will result in an incorrect value being
+
+  written to the digital output channel (or to the digital input/output
+
+  channel if configured as an output), and may be reflected in the
+
+  internal saved state of the channel.
+
+
+  Fix it by returning 0 early if `insn->n` is 0, before reaching the code
+
+  that accesses `data[0]`.  Previously, the function always returned 1 on
+
+  success, but it is supposed to be the number of data samples actually
+
+  read or written up to `insn->n`, which is 0 in this case.
+
+
+  Reported-by: syzbot+cb96ec476fb4914445c9@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=cb96ec476fb4914445c9
+
+  Fixes: ed9eccbe8970 ("Staging: add comedi core")
+
+  Cc: stable@vger.kernel.org # 5.13+
+
+  Signed-off-by: Ian Abbott <abbotti@mev.co.uk>
+
+  Link: https://lore.kernel.org/r/20250707153355.82474-1-abbotti@mev.co.uk
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/comedi
+hunk_count: 1
+covered_count: 1

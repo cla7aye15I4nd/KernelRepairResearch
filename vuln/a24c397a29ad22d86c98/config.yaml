@@ -1,0 +1,46 @@
+id: a24c397a29ad22d86c98
+bug_link: https://syzkaller.appspot.com/bug?extid=a24c397a29ad22d86c98
+title: 'KASAN: use-after-free Write in _free_event'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e5eb08ac81d237e19fc68888bbba2cf88891bbe9
+fix_commit: 1cf8dfe8a661f0462925df943140e9f6d1ea5233
+datetime: '2019-07-13T11:21:25+02:00'
+fix_commit_message: "perf/core: Fix race between close() and fork()\n\nSyzcaller reported\
+  \ the following Use-after-Free bug:\n\n\tclose()\t\t\t\t\t\tclone()\n\n\t\t\t\t\t\
+  \t\t  copy_process()\n\t\t\t\t\t\t\t    perf_event_init_task()\n\t\t\t\t\t\t\t \
+  \     perf_event_init_context()\n\t\t\t\t\t\t\t        mutex_lock(parent_ctx->mutex)\n\
+  \t\t\t\t\t\t\t\tinherit_task_group()\n\t\t\t\t\t\t\t\t  inherit_group()\n\t\t\t\t\
+  \t\t\t\t    inherit_event()\n\t\t\t\t\t\t\t\t      mutex_lock(event->child_mutex)\n\
+  \t\t\t\t\t\t\t\t      // expose event on child list\n\t\t\t\t\t\t\t\t      list_add_tail()\n\
+  \t\t\t\t\t\t\t\t      mutex_unlock(event->child_mutex)\n\t\t\t\t\t\t\t        mutex_unlock(parent_ctx->mutex)\n\
+  \n\t\t\t\t\t\t\t    ...\n\t\t\t\t\t\t\t    goto bad_fork_*\n\n\t\t\t\t\t\t\t  bad_fork_cleanup_perf:\n\
+  \t\t\t\t\t\t\t    perf_event_free_task()\n\n\t  perf_release()\n\t    perf_event_release_kernel()\n\
+  \t      list_for_each_entry()\n\t\tmutex_lock(ctx->mutex)\n\t\tmutex_lock(event->child_mutex)\n\
+  \t\t// event is from the failing inherit\n\t\t// on the other CPU\n\t\tperf_remove_from_context()\n\
+  \t\tlist_move()\n\t\tmutex_unlock(event->child_mutex)\n\t\tmutex_unlock(ctx->mutex)\n\
+  \n\t\t\t\t\t\t\t      mutex_lock(ctx->mutex)\n\t\t\t\t\t\t\t      list_for_each_entry_safe()\n\
+  \t\t\t\t\t\t\t        // event already stolen\n\t\t\t\t\t\t\t      mutex_unlock(ctx->mutex)\n\
+  \n\t\t\t\t\t\t\t    delayed_free_task()\n\t\t\t\t\t\t\t      free_task()\n\n\t \
+  \    list_for_each_entry_safe()\n\t       list_del()\n\t       free_event()\n\t\
+  \         _free_event()\n\t\t   // and so event->hw.target\n\t\t   // is the already\
+  \ freed failed clone()\n\t\t   if (event->hw.target)\n\t\t     put_task_struct(event->hw.target)\n\
+  \t\t       // WHOOPSIE, already quite dead\n\nWhich puts the lie to the the comment\
+  \ on perf_event_free_task():\n'unexposed, unused context' not so much.\n\nWhich\
+  \ is a 'fun' confluence of fail; copy_process() doing an\nunconditional free_task()\
+  \ and not respecting refcounts, and perf having\ncreative locking. In particular:\n\
+  \n  82d94856fa22 (\"perf/core: Fix lock inversion between perf,trace,cpuhp\")\n\n\
+  seems to have overlooked this 'fun' parade.\n\nSolve it by using the fact that detached\
+  \ events still have a reference\ncount on their (previous) context. With this perf_event_free_task()\n\
+  can detect when events have escaped and wait for their destruction.\n\nDebugged-by:\
+  \ Alexander Shishkin <alexander.shishkin@linux.intel.com>\nReported-by: syzbot+a24c397a29ad22d86c98@syzkaller.appspotmail.com\n\
+  Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>\nAcked-by: Mark Rutland\
+  \ <mark.rutland@arm.com>\nCc: <stable@vger.kernel.org>\nCc: Alexander Shishkin <alexander.shishkin@linux.intel.com>\n\
+  Cc: Arnaldo Carvalho de Melo <acme@redhat.com>\nCc: Jiri Olsa <jolsa@redhat.com>\n\
+  Cc: Linus Torvalds <torvalds@linux-foundation.org>\nCc: Peter Zijlstra <peterz@infradead.org>\n\
+  Cc: Stephane Eranian <eranian@google.com>\nCc: Thomas Gleixner <tglx@linutronix.de>\n\
+  Cc: Vince Weaver <vincent.weaver@maine.edu>\nFixes: 82d94856fa22 (\"perf/core: Fix\
+  \ lock inversion between perf,trace,cpuhp\")\nSigned-off-by: Ingo Molnar <mingo@kernel.org>\n"
+submodule:
+- kernel/events
+hunk_count: 4
+covered_count: 2

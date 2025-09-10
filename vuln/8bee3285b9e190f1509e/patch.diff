@@ -1,0 +1,17 @@
+diff --git a/fs/kernfs/dir.c b/fs/kernfs/dir.c
+index 7fb5a72cc96d..3990f3e270cb 100644
+--- a/fs/kernfs/dir.c
++++ b/fs/kernfs/dir.c
+@@ -1621,8 +1621,11 @@ int kernfs_remove_by_name_ns(struct kernfs_node *parent, const char *name,
+ 	down_write(&root->kernfs_rwsem);
+ 
+ 	kn = kernfs_find_ns(parent, name, ns);
+-	if (kn)
++	if (kn) {
++		kernfs_get(kn);
+ 		__kernfs_remove(kn);
++		kernfs_put(kn);
++	}
+ 
+ 	up_write(&root->kernfs_rwsem);
+ 

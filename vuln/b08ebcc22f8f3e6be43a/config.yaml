@@ -1,0 +1,63 @@
+id: b08ebcc22f8f3e6be43a
+bug_link: https://syzkaller.appspot.com/bug?extid=b08ebcc22f8f3e6be43a
+title: 'KASAN: slab-use-after-free Read in nilfs_segctor_thread'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 618a8a917dbf5830e2064d2fa0568940eb5d2584
+fix_commit: 6be49d100c22ffea3287a4b19d7639d259888e33
+datetime: '2023-04-05T18:06:23-07:00'
+fix_commit_message: 'nilfs2: fix potential UAF of struct nilfs_sc_info in nilfs_segctor_thread()
+
+
+  The finalization of nilfs_segctor_thread() can race with
+
+  nilfs_segctor_kill_thread() which terminates that thread, potentially
+
+  causing a use-after-free BUG as KASAN detected.
+
+
+  At the end of nilfs_segctor_thread(), it assigns NULL to "sc_task" member
+
+  of "struct nilfs_sc_info" to indicate the thread has finished, and then
+
+  notifies nilfs_segctor_kill_thread() of this using waitqueue
+
+  "sc_wait_task" on the struct nilfs_sc_info.
+
+
+  However, here, immediately after the NULL assignment to "sc_task", it is
+
+  possible that nilfs_segctor_kill_thread() will detect it and return to
+
+  continue the deallocation, freeing the nilfs_sc_info structure before the
+
+  thread does the notification.
+
+
+  This fixes the issue by protecting the NULL assignment to "sc_task" and
+
+  its notification, with spinlock "sc_state_lock" of the struct
+
+  nilfs_sc_info.  Since nilfs_segctor_kill_thread() does a final check to
+
+  see if "sc_task" is NULL with "sc_state_lock" locked, this can eliminate
+
+  the race.
+
+
+  Link: https://lkml.kernel.org/r/20230327175318.8060-1-konishi.ryusuke@gmail.com
+
+  Reported-by: syzbot+b08ebcc22f8f3e6be43a@syzkaller.appspotmail.com
+
+  Link: https://lkml.kernel.org/r/00000000000000660d05f7dfa877@google.com
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 1
+covered_count: 1

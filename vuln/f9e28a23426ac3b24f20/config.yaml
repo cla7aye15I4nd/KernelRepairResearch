@@ -1,0 +1,92 @@
+id: f9e28a23426ac3b24f20
+bug_link: https://syzkaller.appspot.com/bug?extid=f9e28a23426ac3b24f20
+title: general protection fault in splice_to_socket
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d9ffa069e006fa2873b94fbf2387546942d4f85b
+fix_commit: ca2d49f77ce4531c74ba207b1e07b55f5ced5ab4
+datetime: '2023-06-15T22:50:02-07:00'
+fix_commit_message: 'splice, net: Fix splice_to_socket() to handle pipe bufs larger
+  than a page
+
+
+  splice_to_socket() assumes that a pipe_buffer won''t hold more than a single
+
+  page of data - but this assumption can be violated by skb_splice_bits()
+
+  when it splices from a socket into a pipe.
+
+
+  The problem is that splice_to_socket() doesn''t advance the pipe_buffer
+
+  length and offset when transcribing from the pipe buf into a bio_vec, so if
+
+  the buf is >PAGE_SIZE, it keeps repeating the same initial chunk and
+
+  doesn''t advance the tail index.  It then subtracts this from "remain" and
+
+  overcounts the amount of data to be sent.
+
+
+  The cleanup phase then tries to overclean the pipe, hits an unused pipe buf
+
+  and a NULL-pointer dereference occurs.
+
+
+  Fix this by not restricting the bio_vec size to PAGE_SIZE and instead
+
+  transcribing the entirety of each pipe_buffer into a single bio_vec and
+
+  advancing the tail index if remain hasn''t hit zero yet.
+
+
+  Large bio_vecs will then be split up by iterator functions such as
+
+  iov_iter_extract_pages().
+
+
+  This resulted in a KASAN report looking like:
+
+
+  general protection fault, probably for non-canonical address 0xdffffc0000000001:
+  0000 [#1] PREEMPT SMP KASAN
+
+  KASAN: null-ptr-deref in range [0x0000000000000008-0x000000000000000f]
+
+  ...
+
+  RIP: 0010:pipe_buf_release include/linux/pipe_fs_i.h:203 [inline]
+
+  RIP: 0010:splice_to_socket+0xa91/0xe30 fs/splice.c:933
+
+
+  Fixes: 2dc334f1a63a ("splice, net: Use sendmsg(MSG_SPLICE_PAGES) rather than ->sendpage()")
+
+  Reported-by: syzbot+f9e28a23426ac3b24f20@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/0000000000000900e905fdeb8e39@google.com/
+
+  Tested-by: syzbot+f9e28a23426ac3b24f20@syzkaller.appspotmail.com
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  cc: Willem de Bruijn <willemdebruijn.kernel@gmail.com>
+
+  cc: David Ahern <dsahern@kernel.org>
+
+  cc: Jens Axboe <axboe@kernel.dk>
+
+  cc: Matthew Wilcox <willy@infradead.org>
+
+  cc: Christian Brauner <brauner@kernel.org>
+
+  cc: Alexander Viro <viro@zeniv.linux.org.uk>
+
+  Link: https://lore.kernel.org/r/1428985.1686737388@warthog.procyon.org.uk
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

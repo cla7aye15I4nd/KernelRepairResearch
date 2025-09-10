@@ -1,0 +1,42 @@
+id: 2add91c08eb181fea1bf
+bug_link: https://syzkaller.appspot.com/bug?extid=2add91c08eb181fea1bf
+title: memory leak in fdb_create (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 42c17fa69f9866a3f80ac196ce70b4fda1242717
+fix_commit: c4b4c421857dc7b1cf0dccbd738472360ff2cd70
+datetime: '2019-12-03T11:21:20-08:00'
+fix_commit_message: "net: bridge: deny dev_set_mac_address() when unregistering\n\n\
+  We have an interesting memory leak in the bridge when it is being\nunregistered\
+  \ and is a slave to a master device which would change the\nmac of its slaves on\
+  \ unregister (e.g. bond, team). This is a very\nunusual setup but we do end up leaking\
+  \ 1 fdb entry because\ndev_set_mac_address() would cause the bridge to insert the\
+  \ new mac address\ninto its table after all fdbs are flushed, i.e. after dellink()\
+  \ on the\nbridge has finished and we call NETDEV_UNREGISTER the bond/team would\n\
+  release it and will call dev_set_mac_address() to restore its original\naddress\
+  \ and that in turn will add an fdb in the bridge.\nOne fix is to check for the bridge\
+  \ dev's reg_state in its\nndo_set_mac_address callback and return an error if the\
+  \ bridge is not in\nNETREG_REGISTERED.\n\nEasy steps to reproduce:\n 1. add bond\
+  \ in mode != A/B\n 2. add any slave to the bond\n 3. add bridge dev as a slave to\
+  \ the bond\n 4. destroy the bridge device\n\nTrace:\n unreferenced object 0xffff888035c4d080\
+  \ (size 128):\n   comm \"ip\", pid 4068, jiffies 4296209429 (age 1413.753s)\n  \
+  \ hex dump (first 32 bytes):\n     41 1d c9 36 80 88 ff ff 00 00 00 00 00 00 00\
+  \ 00  A..6............\n     d2 19 c9 5e 3f d7 00 00 00 00 00 00 00 00 00 00  ...^?...........\n\
+  \   backtrace:\n     [<00000000ddb525dc>] kmem_cache_alloc+0x155/0x26f\n     [<00000000633ff1e0>]\
+  \ fdb_create+0x21/0x486 [bridge]\n     [<0000000092b17e9c>] fdb_insert+0x91/0xdc\
+  \ [bridge]\n     [<00000000f2a0f0ff>] br_fdb_change_mac_address+0xb3/0x175 [bridge]\n\
+  \     [<000000001de02dbd>] br_stp_change_bridge_id+0xf/0xff [bridge]\n     [<00000000ac0e32b1>]\
+  \ br_set_mac_address+0x76/0x99 [bridge]\n     [<000000006846a77f>] dev_set_mac_address+0x63/0x9b\n\
+  \     [<00000000d30738fc>] __bond_release_one+0x3f6/0x455 [bonding]\n     [<00000000fc7ec01d>]\
+  \ bond_netdev_event+0x2f2/0x400 [bonding]\n     [<00000000305d7795>] notifier_call_chain+0x38/0x56\n\
+  \     [<0000000028885d4a>] call_netdevice_notifiers+0x1e/0x23\n     [<000000008279477b>]\
+  \ rollback_registered_many+0x353/0x6a4\n     [<0000000018ef753a>] unregister_netdevice_many+0x17/0x6f\n\
+  \     [<00000000ba854b7a>] rtnl_delete_link+0x3c/0x43\n     [<00000000adf8618d>]\
+  \ rtnl_dellink+0x1dc/0x20a\n     [<000000009b6395fd>] rtnetlink_rcv_msg+0x23d/0x268\n\
+  \nFixes: 43598813386f (\"bridge: add local MAC address to forwarding table (v2)\"\
+  )\nReported-by: syzbot+2add91c08eb181fea1bf@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Nikolay Aleksandrov <nikolay@cumulusnetworks.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/bridge
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,63 @@
+------------[ cut here ]------------
+UBSAN: array-index-out-of-bounds in net/sched/sch_cake.c:1862:6
+index 65535 is out of range for type 'u16[1025]' (aka 'unsigned short[1025]')
+CPU: 1 UID: 0 PID: 8219 Comm: syz.0.325 Not tainted 6.13.0-rc3-syzkaller-g573067a5a685 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call trace:
+ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:466 (C)
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0xe4/0x150 lib/dump_stack.c:120
+ dump_stack+0x1c/0x28 lib/dump_stack.c:129
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_out_of_bounds+0xf8/0x148 lib/ubsan.c:429
+ cake_enqueue+0x6000/0x78d4 net/sched/sch_cake.c:1862
+ dev_qdisc_enqueue+0x60/0x374 net/core/dev.c:3793
+ __dev_xmit_skb net/core/dev.c:3889 [inline]
+ __dev_queue_xmit+0xbe4/0x35b4 net/core/dev.c:4400
+ dev_queue_xmit include/linux/netdevice.h:3168 [inline]
+ packet_xmit+0x6c/0x318 net/packet/af_packet.c:276
+ packet_snd net/packet/af_packet.c:3146 [inline]
+ packet_sendmsg+0x3ca8/0x52fc net/packet/af_packet.c:3178
+ sock_sendmsg_nosec net/socket.c:711 [inline]
+ __sock_sendmsg net/socket.c:726 [inline]
+ __sys_sendto+0x360/0x4d8 net/socket.c:2197
+ __do_sys_sendto net/socket.c:2204 [inline]
+ __se_sys_sendto net/socket.c:2200 [inline]
+ __arm64_sys_sendto+0xd8/0xf8 net/socket.c:2200
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+ el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+---[ end trace ]---
+FAULT_INJECTION: forcing a failure.
+name fail_usercopy, interval 1, probability 0, space 0, times 0
+CPU: 1 UID: 0 PID: 8219 Comm: syz.0.325 Not tainted 6.13.0-rc3-syzkaller-g573067a5a685 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call trace:
+ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:466 (C)
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0xe4/0x150 lib/dump_stack.c:120
+ dump_stack+0x1c/0x28 lib/dump_stack.c:129
+ fail_dump lib/fault-inject.c:53 [inline]
+ should_fail_ex+0x3b0/0x50c lib/fault-inject.c:154
+ should_fail+0x14/0x24 lib/fault-inject.c:164
+ should_fail_usercopy+0x20/0x30 lib/fault-inject-usercopy.c:37
+ _inline_copy_to_user include/linux/uaccess.h:193 [inline]
+ copy_to_user include/linux/uaccess.h:223 [inline]
+ simple_read_from_buffer+0xd4/0x248 fs/libfs.c:1128
+ proc_fail_nth_read+0x134/0x1a0 fs/proc/base.c:1482
+ vfs_read+0x22c/0x970 fs/read_write.c:563
+ ksys_read+0x15c/0x26c fs/read_write.c:708
+ __do_sys_read fs/read_write.c:717 [inline]
+ __se_sys_read fs/read_write.c:715 [inline]
+ __arm64_sys_read+0x7c/0x90 fs/read_write.c:715
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+ el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600

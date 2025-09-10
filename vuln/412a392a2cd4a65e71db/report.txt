@@ -1,0 +1,133 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.10.0-rc5-syzkaller-00012-g626737a5791b #0 Not tainted
+------------------------------------------------------
+kswapd0/111 is trying to acquire lock:
+ffff8880290380e0 (&sbi->s_lock#2){+.+.}-{3:3}, at: exfat_evict_inode+0x25b/0x340 fs/exfat/inode.c:725
+
+but task is already holding lock:
+ffffffff8dd3ab20 (fs_reclaim){+.+.}-{0:0}, at: balance_pgdat+0x166/0x1970 mm/vmscan.c:6798
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (fs_reclaim){+.+.}-{0:0}:
+       __fs_reclaim_acquire mm/page_alloc.c:3801 [inline]
+       fs_reclaim_acquire+0x102/0x160 mm/page_alloc.c:3815
+       might_alloc include/linux/sched/mm.h:334 [inline]
+       slab_pre_alloc_hook mm/slub.c:3891 [inline]
+       slab_alloc_node mm/slub.c:3981 [inline]
+       __do_kmalloc_node mm/slub.c:4121 [inline]
+       __kmalloc_noprof+0xb5/0x420 mm/slub.c:4135
+       kmalloc_noprof include/linux/slab.h:664 [inline]
+       kmalloc_array_noprof include/linux/slab.h:699 [inline]
+       __exfat_get_dentry_set+0x81e/0xa90 fs/exfat/dir.c:816
+       exfat_get_dentry_set+0x36/0x210 fs/exfat/dir.c:859
+       exfat_get_uniname_from_ext_entry fs/exfat/dir.c:39 [inline]
+       exfat_readdir+0x950/0x1520 fs/exfat/dir.c:155
+       exfat_iterate+0x3c7/0xad0 fs/exfat/dir.c:261
+       wrap_directory_iterator+0xa5/0xe0 fs/readdir.c:67
+       iterate_dir+0x53e/0xb60 fs/readdir.c:110
+       __do_sys_getdents64 fs/readdir.c:409 [inline]
+       __se_sys_getdents64 fs/readdir.c:394 [inline]
+       __ia32_sys_getdents64+0x14f/0x2e0 fs/readdir.c:394
+       do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]
+       __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386
+       do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+       entry_SYSENTER_compat_after_hwframe+0x84/0x8e
+
+-> #0 (&sbi->s_lock#2){+.+.}-{3:3}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain kernel/locking/lockdep.c:3869 [inline]
+       __lock_acquire+0x2478/0x3b30 kernel/locking/lockdep.c:5137
+       lock_acquire kernel/locking/lockdep.c:5754 [inline]
+       lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+       __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+       __mutex_lock+0x175/0x9c0 kernel/locking/mutex.c:752
+       exfat_evict_inode+0x25b/0x340 fs/exfat/inode.c:725
+       evict+0x2ed/0x6c0 fs/inode.c:667
+       iput_final fs/inode.c:1741 [inline]
+       iput.part.0+0x5a8/0x7f0 fs/inode.c:1767
+       iput+0x5c/0x80 fs/inode.c:1757
+       dentry_unlink_inode+0x295/0x480 fs/dcache.c:400
+       __dentry_kill+0x1d0/0x600 fs/dcache.c:603
+       shrink_kill fs/dcache.c:1048 [inline]
+       shrink_dentry_list+0x140/0x5d0 fs/dcache.c:1075
+       prune_dcache_sb+0xeb/0x150 fs/dcache.c:1156
+       super_cache_scan+0x32a/0x550 fs/super.c:221
+       do_shrink_slab+0x44f/0x11c0 mm/shrinker.c:435
+       shrink_slab_memcg mm/shrinker.c:548 [inline]
+       shrink_slab+0xa87/0x1310 mm/shrinker.c:626
+       shrink_one+0x493/0x7c0 mm/vmscan.c:4790
+       shrink_many mm/vmscan.c:4851 [inline]
+       lru_gen_shrink_node+0x89f/0x1750 mm/vmscan.c:4951
+       shrink_node mm/vmscan.c:5910 [inline]
+       kswapd_shrink_node mm/vmscan.c:6720 [inline]
+       balance_pgdat+0x1105/0x1970 mm/vmscan.c:6911
+       kswapd+0x5ea/0xbf0 mm/vmscan.c:7180
+       kthread+0x2c1/0x3a0 kernel/kthread.c:389
+       ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(fs_reclaim);
+                               lock(&sbi->s_lock#2);
+                               lock(fs_reclaim);
+  lock(&sbi->s_lock#2);
+
+ *** DEADLOCK ***
+
+2 locks held by kswapd0/111:
+ #0: ffffffff8dd3ab20 (fs_reclaim){+.+.}-{0:0}, at: balance_pgdat+0x166/0x1970 mm/vmscan.c:6798
+ #1: ffff8880123560e0 (&type->s_umount_key#68){++++}-{3:3}, at: super_trylock_shared fs/super.c:562 [inline]
+ #1: ffff8880123560e0 (&type->s_umount_key#68){++++}-{3:3}, at: super_cache_scan+0x96/0x550 fs/super.c:196
+
+stack backtrace:
+CPU: 1 PID: 111 Comm: kswapd0 Not tainted 6.10.0-rc5-syzkaller-00012-g626737a5791b #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ check_noncircular+0x31a/0x400 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain kernel/locking/lockdep.c:3869 [inline]
+ __lock_acquire+0x2478/0x3b30 kernel/locking/lockdep.c:5137
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+ __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+ __mutex_lock+0x175/0x9c0 kernel/locking/mutex.c:752
+ exfat_evict_inode+0x25b/0x340 fs/exfat/inode.c:725
+ evict+0x2ed/0x6c0 fs/inode.c:667
+ iput_final fs/inode.c:1741 [inline]
+ iput.part.0+0x5a8/0x7f0 fs/inode.c:1767
+ iput+0x5c/0x80 fs/inode.c:1757
+ dentry_unlink_inode+0x295/0x480 fs/dcache.c:400
+ __dentry_kill+0x1d0/0x600 fs/dcache.c:603
+ shrink_kill fs/dcache.c:1048 [inline]
+ shrink_dentry_list+0x140/0x5d0 fs/dcache.c:1075
+ prune_dcache_sb+0xeb/0x150 fs/dcache.c:1156
+ super_cache_scan+0x32a/0x550 fs/super.c:221
+ do_shrink_slab+0x44f/0x11c0 mm/shrinker.c:435
+ shrink_slab_memcg mm/shrinker.c:548 [inline]
+ shrink_slab+0xa87/0x1310 mm/shrinker.c:626
+ shrink_one+0x493/0x7c0 mm/vmscan.c:4790
+ shrink_many mm/vmscan.c:4851 [inline]
+ lru_gen_shrink_node+0x89f/0x1750 mm/vmscan.c:4951
+ shrink_node mm/vmscan.c:5910 [inline]
+ kswapd_shrink_node mm/vmscan.c:6720 [inline]
+ balance_pgdat+0x1105/0x1970 mm/vmscan.c:6911
+ kswapd+0x5ea/0xbf0 mm/vmscan.c:7180
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

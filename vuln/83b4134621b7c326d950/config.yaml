@@ -1,0 +1,32 @@
+id: 83b4134621b7c326d950
+bug_link: https://syzkaller.appspot.com/bug?extid=83b4134621b7c326d950
+title: general protection fault in shm_close
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a6f810efabfd789d3bbafeacb4502958ec56c5ce
+fix_commit: b6305049f30652f1efcf78d627fc6656151a7929
+datetime: '2022-11-22T18:50:42-08:00'
+fix_commit_message: "ipc/shm: call underlying open/close vm_ops\n\nShared memory segments\
+  \ can be created that are backed by hugetlb pages. \nWhen this happens, the vmas\
+  \ associated with any mappings (shmat) are\nmarked VM_HUGETLB, yet the vm_ops for\
+  \ such mappings are provided by\nipc/shm (shm_vm_ops).  There is a mechanism to\
+  \ call the underlying hugetlb\nvm_ops, and this is done for most operations.  However,\
+  \ it is not done for\nopen and close.\n\nThis was not an issue until the introduction\
+  \ of the hugetlb vma_lock. \nThis lock structure is pointed to by vm_private_data\
+  \ and the open/close\nvm_ops help maintain this structure.  The special hugetlb\
+  \ routine called\nat fork took care of structure updates at fork time.  However,\n\
+  vma_splitting is not properly handled for ipc shared memory mappings\nbacked by\
+  \ hugetlb pages.  This can result in a \"kernel NULL pointer\ndereference\" BUG\
+  \ or use after free as two vmas point to the same lock\nstructure.\n\nUpdate the\
+  \ shm open and close routines to always call the underlying open\nand close routines.\n\
+  \nLink: https://lkml.kernel.org/r/20221114210018.49346-1-mike.kravetz@oracle.com\n\
+  Fixes: 8d9bfb260814 (\"hugetlb: add vma based lock for pmd sharing\")\nSigned-off-by:\
+  \ Mike Kravetz <mike.kravetz@oracle.com>\nReported-by: Doug Nelson <doug.nelson@intel.com>\n\
+  Reported-by: <syzbot+83b4134621b7c326d950@syzkaller.appspotmail.com>\nCc: Alexander\
+  \ Mikhalitsyn <alexander.mikhalitsyn@virtuozzo.com>\nCc: \"Eric W . Biederman\"\
+  \ <ebiederm@xmission.com>\nCc: Manfred Spraul <manfred@colorfullife.com>\nCc: Matthew\
+  \ Wilcox <willy@infradead.org>\nCc: Miaohe Lin <linmiaohe@huawei.com>\nCc: Michal\
+  \ Hocko <mhocko@suse.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- ipc
+hunk_count: 5
+covered_count: 3

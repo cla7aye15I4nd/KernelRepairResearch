@@ -1,0 +1,41 @@
+diff --git a/include/net/netlink.h b/include/net/netlink.h
+index 82e07e272290..90a560dc167a 100644
+--- a/include/net/netlink.h
++++ b/include/net/netlink.h
+@@ -321,7 +321,13 @@ enum nla_policy_validation {
+  *    All other            Unused - but note that it's a union
+  *
+  * Meaning of `validate' field, use via NLA_POLICY_VALIDATE_FN:
++ *    NLA_U8, NLA_U16,
++ *    NLA_U32, NLA_U64,
++ *    NLA_S8, NLA_S16,
++ *    NLA_S32, NLA_S64,
++ *    NLA_MSECS,
+  *    NLA_BINARY           Validation function called for the attribute.
++ *
+  *    All other            Unused - but note that it's a union
+  *
+  * Example:
+diff --git a/net/netlink/policy.c b/net/netlink/policy.c
+index 1f8909c16f14..99458da6be32 100644
+--- a/net/netlink/policy.c
++++ b/net/netlink/policy.c
+@@ -311,6 +311,8 @@ __netlink_policy_dump_write_attr(struct netlink_policy_dump_state *state,
+ 					      NL_POLICY_TYPE_ATTR_PAD))
+ 				goto nla_put_failure;
+ 			break;
++		} else if (pt->validation_type == NLA_VALIDATE_FUNCTION) {
++			break;
+ 		}
+ 
+ 		nla_get_range_unsigned(pt, &range);
+@@ -340,6 +342,9 @@ __netlink_policy_dump_write_attr(struct netlink_policy_dump_state *state,
+ 		else
+ 			type = NL_ATTR_TYPE_SINT;
+ 
++		if (pt->validation_type == NLA_VALIDATE_FUNCTION)
++			break;
++
+ 		nla_get_range_signed(pt, &range);
+ 
+ 		if (nla_put_s64(skb, NL_POLICY_TYPE_ATTR_MIN_VALUE_S,

@@ -1,0 +1,182 @@
+diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
+index 7e8f66ba17f4..6948d673bba2 100644
+--- a/fs/ext4/ext4.h
++++ b/fs/ext4/ext4.h
+@@ -1684,6 +1684,30 @@ static inline struct ext4_inode_info *EXT4_I(struct inode *inode)
+ 	return container_of(inode, struct ext4_inode_info, vfs_inode);
+ }
+ 
++static inline int ext4_writepages_down_read(struct super_block *sb)
++{
++	percpu_down_read(&EXT4_SB(sb)->s_writepages_rwsem);
++	return memalloc_nofs_save();
++}
++
++static inline void ext4_writepages_up_read(struct super_block *sb, int ctx)
++{
++	memalloc_nofs_restore(ctx);
++	percpu_up_read(&EXT4_SB(sb)->s_writepages_rwsem);
++}
++
++static inline int ext4_writepages_down_write(struct super_block *sb)
++{
++	percpu_down_write(&EXT4_SB(sb)->s_writepages_rwsem);
++	return memalloc_nofs_save();
++}
++
++static inline void ext4_writepages_up_write(struct super_block *sb, int ctx)
++{
++	memalloc_nofs_restore(ctx);
++	percpu_up_write(&EXT4_SB(sb)->s_writepages_rwsem);
++}
++
+ static inline int ext4_valid_inum(struct super_block *sb, unsigned long ino)
+ {
+ 	return ino == EXT4_ROOT_INO ||
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index 0d5ba922e411..3cb774d9e3f1 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -2783,11 +2783,12 @@ static int ext4_writepages(struct address_space *mapping,
+ 		.can_map = 1,
+ 	};
+ 	int ret;
++	int alloc_ctx;
+ 
+ 	if (unlikely(ext4_forced_shutdown(EXT4_SB(sb))))
+ 		return -EIO;
+ 
+-	percpu_down_read(&EXT4_SB(sb)->s_writepages_rwsem);
++	alloc_ctx = ext4_writepages_down_read(sb);
+ 	ret = ext4_do_writepages(&mpd);
+ 	/*
+ 	 * For data=journal writeback we could have come across pages marked
+@@ -2796,7 +2797,7 @@ static int ext4_writepages(struct address_space *mapping,
+ 	 */
+ 	if (!ret && mpd.journalled_more_data)
+ 		ret = ext4_do_writepages(&mpd);
+-	percpu_up_read(&EXT4_SB(sb)->s_writepages_rwsem);
++	ext4_writepages_up_read(sb, alloc_ctx);
+ 
+ 	return ret;
+ }
+@@ -2824,17 +2825,18 @@ static int ext4_dax_writepages(struct address_space *mapping,
+ 	long nr_to_write = wbc->nr_to_write;
+ 	struct inode *inode = mapping->host;
+ 	struct ext4_sb_info *sbi = EXT4_SB(mapping->host->i_sb);
++	int alloc_ctx;
+ 
+ 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
+ 		return -EIO;
+ 
+-	percpu_down_read(&sbi->s_writepages_rwsem);
++	alloc_ctx = ext4_writepages_down_read(inode->i_sb);
+ 	trace_ext4_writepages(inode, wbc);
+ 
+ 	ret = dax_writeback_mapping_range(mapping, sbi->s_daxdev, wbc);
+ 	trace_ext4_writepages_result(inode, wbc, ret,
+ 				     nr_to_write - wbc->nr_to_write);
+-	percpu_up_read(&sbi->s_writepages_rwsem);
++	ext4_writepages_up_read(inode->i_sb, alloc_ctx);
+ 	return ret;
+ }
+ 
+@@ -5928,7 +5930,7 @@ int ext4_change_inode_journal_flag(struct inode *inode, int val)
+ 	journal_t *journal;
+ 	handle_t *handle;
+ 	int err;
+-	struct ext4_sb_info *sbi = EXT4_SB(inode->i_sb);
++	int alloc_ctx;
+ 
+ 	/*
+ 	 * We have to be very careful here: changing a data block's
+@@ -5966,7 +5968,7 @@ int ext4_change_inode_journal_flag(struct inode *inode, int val)
+ 		}
+ 	}
+ 
+-	percpu_down_write(&sbi->s_writepages_rwsem);
++	alloc_ctx = ext4_writepages_down_write(inode->i_sb);
+ 	jbd2_journal_lock_updates(journal);
+ 
+ 	/*
+@@ -5983,7 +5985,7 @@ int ext4_change_inode_journal_flag(struct inode *inode, int val)
+ 		err = jbd2_journal_flush(journal, 0);
+ 		if (err < 0) {
+ 			jbd2_journal_unlock_updates(journal);
+-			percpu_up_write(&sbi->s_writepages_rwsem);
++			ext4_writepages_up_write(inode->i_sb, alloc_ctx);
+ 			return err;
+ 		}
+ 		ext4_clear_inode_flag(inode, EXT4_INODE_JOURNAL_DATA);
+@@ -5991,7 +5993,7 @@ int ext4_change_inode_journal_flag(struct inode *inode, int val)
+ 	ext4_set_aops(inode);
+ 
+ 	jbd2_journal_unlock_updates(journal);
+-	percpu_up_write(&sbi->s_writepages_rwsem);
++	ext4_writepages_up_write(inode->i_sb, alloc_ctx);
+ 
+ 	if (val)
+ 		filemap_invalidate_unlock(inode->i_mapping);
+diff --git a/fs/ext4/migrate.c b/fs/ext4/migrate.c
+index a19a9661646e..d98ac2af8199 100644
+--- a/fs/ext4/migrate.c
++++ b/fs/ext4/migrate.c
+@@ -408,7 +408,6 @@ static int free_ext_block(handle_t *handle, struct inode *inode)
+ 
+ int ext4_ext_migrate(struct inode *inode)
+ {
+-	struct ext4_sb_info *sbi = EXT4_SB(inode->i_sb);
+ 	handle_t *handle;
+ 	int retval = 0, i;
+ 	__le32 *i_data;
+@@ -418,6 +417,7 @@ int ext4_ext_migrate(struct inode *inode)
+ 	unsigned long max_entries;
+ 	__u32 goal, tmp_csum_seed;
+ 	uid_t owner[2];
++	int alloc_ctx;
+ 
+ 	/*
+ 	 * If the filesystem does not support extents, or the inode
+@@ -434,7 +434,7 @@ int ext4_ext_migrate(struct inode *inode)
+ 		 */
+ 		return retval;
+ 
+-	percpu_down_write(&sbi->s_writepages_rwsem);
++	alloc_ctx = ext4_writepages_down_write(inode->i_sb);
+ 
+ 	/*
+ 	 * Worst case we can touch the allocation bitmaps and a block
+@@ -586,7 +586,7 @@ int ext4_ext_migrate(struct inode *inode)
+ 	unlock_new_inode(tmp_inode);
+ 	iput(tmp_inode);
+ out_unlock:
+-	percpu_up_write(&sbi->s_writepages_rwsem);
++	ext4_writepages_up_write(inode->i_sb, alloc_ctx);
+ 	return retval;
+ }
+ 
+@@ -605,6 +605,7 @@ int ext4_ind_migrate(struct inode *inode)
+ 	ext4_fsblk_t			blk;
+ 	handle_t			*handle;
+ 	int				ret, ret2 = 0;
++	int				alloc_ctx;
+ 
+ 	if (!ext4_has_feature_extents(inode->i_sb) ||
+ 	    (!ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS)))
+@@ -621,7 +622,7 @@ int ext4_ind_migrate(struct inode *inode)
+ 	if (test_opt(inode->i_sb, DELALLOC))
+ 		ext4_alloc_da_blocks(inode);
+ 
+-	percpu_down_write(&sbi->s_writepages_rwsem);
++	alloc_ctx = ext4_writepages_down_write(inode->i_sb);
+ 
+ 	handle = ext4_journal_start(inode, EXT4_HT_MIGRATE, 1);
+ 	if (IS_ERR(handle)) {
+@@ -665,6 +666,6 @@ int ext4_ind_migrate(struct inode *inode)
+ 	ext4_journal_stop(handle);
+ 	up_write(&EXT4_I(inode)->i_data_sem);
+ out_unlock:
+-	percpu_up_write(&sbi->s_writepages_rwsem);
++	ext4_writepages_up_write(inode->i_sb, alloc_ctx);
+ 	return ret;
+ }

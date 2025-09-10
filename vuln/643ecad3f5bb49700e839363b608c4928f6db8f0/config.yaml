@@ -1,0 +1,37 @@
+id: 643ecad3f5bb49700e839363b608c4928f6db8f0
+bug_link: https://syzkaller.appspot.com/bug?extid=643ecad3f5bb49700e839363b608c4928f6db8f0
+title: 'KASAN: use-after-free Read in rds_tcp_dev_event'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2d746c93b6e55d34a98c8983b30d991707a2059b
+fix_commit: 681648e67d43cf269c5590ecf021ed481f4551fc
+datetime: '2017-12-01T15:25:15-05:00'
+fix_commit_message: "rds: tcp: correctly sequence cleanup on netns deletion.\n\nCommit\
+  \ 8edc3affc077 (\"rds: tcp: Take explicit refcounts on struct net\")\nintroduces\
+  \ a regression in rds-tcp netns cleanup. The cleanup_net(),\n(and thus rds_tcp_dev_event\
+  \ notification) is only called from put_net()\nwhen all netns refcounts go to 0,\
+  \ but this cannot happen if the\nrds_connection itself is holding a c_net ref that\
+  \ it expects to\nrelease in rds_tcp_kill_sock.\n\nInstead, the rds_tcp_kill_sock\
+  \ callback should make sure to\ntear down state carefully, ensuring that the socket\
+  \ teardown\nis only done after all data-structures and workqs that depend\non it\
+  \ are quiesced.\n\nThe original motivation for commit 8edc3affc077 (\"rds: tcp:\
+  \ Take explicit\nrefcounts on struct net\") was to resolve a race condition reported\
+  \ by\nsyzkaller where workqs for tx/rx/connect were triggered after the\nnamespace\
+  \ was deleted. Those worker threads should have been\ncancelled/flushed before socket\
+  \ tear-down and indeed,\nrds_conn_path_destroy() does try to sequence this by doing\n\
+  \     /* cancel cp_send_w */\n     /* cancel cp_recv_w */\n     /* flush cp_down_w\
+  \ */\n     /* free data structures */\nHere the \"flush cp_down_w\" will trigger\
+  \ rds_conn_shutdown and thus\ninvoke rds_tcp_conn_path_shutdown() to close the tcp\
+  \ socket, so that\nwe ought to have satisfied the requirement that \"socket-close\
+  \ is\ndone after all other dependent state is quiesced\". However,\nrds_conn_shutdown\
+  \ has a bug in that it *always* triggers the reconnect\nworkq (and if connection\
+  \ is successful, we always restart tx/rx\nworkqs so with the right timing, we risk\
+  \ the race conditions reported\nby syzkaller).\n\nNetns deletion is like module\
+  \ teardown- no need to restart a\nreconnect in this case. We can use the c_destroy_in_prog\
+  \ bit\nto avoid restarting the reconnect.\n\nFixes: 8edc3affc077 (\"rds: tcp: Take\
+  \ explicit refcounts on struct net\")\nSigned-off-by: Sowmini Varadhan <sowmini.varadhan@oracle.com>\n\
+  Acked-by: Santosh Shilimkar <santosh.shilimkar@oracle.com>\nSigned-off-by: David\
+  \ S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/rds
+hunk_count: 6
+covered_count: 2

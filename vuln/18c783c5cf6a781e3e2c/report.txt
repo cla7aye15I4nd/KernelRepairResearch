@@ -1,0 +1,108 @@
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 5923 at net/mac80211/tx.c:5041 __ieee80211_beacon_update_cntdwn net/mac80211/tx.c:5041 [inline]
+WARNING: CPU: 1 PID: 5923 at net/mac80211/tx.c:5041 __ieee80211_beacon_update_cntdwn net/mac80211/tx.c:5036 [inline]
+WARNING: CPU: 1 PID: 5923 at net/mac80211/tx.c:5041 __ieee80211_beacon_get+0x14f4/0x1720 net/mac80211/tx.c:5470
+Modules linked in:
+CPU: 1 UID: 0 PID: 5923 Comm: syz-executor190 Not tainted 6.15.0-rc3-syzkaller-00001-g9d7a0577c9db #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+RIP: 0010:__ieee80211_beacon_update_cntdwn net/mac80211/tx.c:5041 [inline]
+RIP: 0010:__ieee80211_beacon_update_cntdwn net/mac80211/tx.c:5036 [inline]
+RIP: 0010:__ieee80211_beacon_get+0x14f4/0x1720 net/mac80211/tx.c:5470
+Code: 24 89 df 89 ee e8 ec 65 cb f6 40 38 eb 72 a2 e8 c2 6b cb f6 4c 89 e7 e8 5a 2e 25 f7 45 31 e4 e9 9b fe ff ff e8 ad 6b cb f6 90 <0f> 0b 90 e9 3e f6 ff ff 48 89 c6 48 c7 c7 40 69 53 90 48 89 44 24
+RSP: 0018:ffffc90000a08b70 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: ffff88803076a9d0 RCX: ffffffff8aefc9d1
+RDX: ffff888030629e00 RSI: ffffffff8aefd393 RDI: 0000000000000001
+RBP: 0000000000000000 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000000 R12: ffffc90000a08c28
+R13: ffff88807ea7b400 R14: 0000000000000041 R15: ffff88803076a500
+FS:  000055558fed3380(0000) GS:ffff888124ab8000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f2192bd9960 CR3: 0000000074ac6000 CR4: 0000000000350ef0
+Call Trace:
+ <IRQ>
+ ieee80211_beacon_get_tim+0xa6/0x280 net/mac80211/tx.c:5597
+ ieee80211_beacon_get include/net/mac80211.h:5648 [inline]
+ mac80211_hwsim_beacon_tx+0x4dc/0xa40 drivers/net/wireless/virtual/mac80211_hwsim.c:2313
+ __iterate_interfaces+0x2e5/0x650 net/mac80211/util.c:761
+ ieee80211_iterate_active_interfaces_atomic+0x71/0x1b0 net/mac80211/util.c:797
+ mac80211_hwsim_beacon+0x105/0x200 drivers/net/wireless/virtual/mac80211_hwsim.c:2347
+ __run_hrtimer kernel/time/hrtimer.c:1761 [inline]
+ __hrtimer_run_queues+0x202/0xad0 kernel/time/hrtimer.c:1825
+ hrtimer_run_softirq+0x17d/0x350 kernel/time/hrtimer.c:1842
+ handle_softirqs+0x219/0x8e0 kernel/softirq.c:579
+ __do_softirq kernel/softirq.c:613 [inline]
+ invoke_softirq kernel/softirq.c:453 [inline]
+ __irq_exit_rcu+0x109/0x170 kernel/softirq.c:680
+ irq_exit_rcu+0x9/0x30 kernel/softirq.c:696
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1049 [inline]
+ sysvec_apic_timer_interrupt+0xa4/0xc0 arch/x86/kernel/apic/apic.c:1049
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:rcu_is_watching+0x84/0xc0 kernel/rcu/tree.c:739
+Code: ea 03 0f b6 14 02 48 89 d8 83 e0 07 83 c0 03 38 d0 7c 04 84 d2 75 24 8b 03 c1 e8 02 83 e0 01 65 ff 0d 50 96 05 12 74 07 5b 5d <e9> 22 57 6f ff e8 02 4b 8b ff 5b 5d e9 16 57 6f ff 48 89 df e8 13
+RSP: 0018:ffffc9000422f608 EFLAGS: 00000282
+RAX: 0000000000000001 RBX: ffffea0001e89f00 RCX: ffffffff81f157fb
+RDX: 0000000000000000 RSI: ffffffff8bf450c0 RDI: ffffffff8dcf6d08
+RBP: ffffc9000422f780 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000000 R12: ffff888075740dc0
+R13: 0000000000000000 R14: 0000000000000001 R15: 1ffff92000845ef3
+ rcu_read_lock_held_common kernel/rcu/update.c:109 [inline]
+ rcu_read_lock_held+0x1e/0x50 kernel/rcu/update.c:349
+ xa_entry include/linux/xarray.h:1220 [inline]
+ xas_reload+0x29e/0x4a0 include/linux/xarray.h:1618
+ next_uptodate_folio+0x114/0x4a0 mm/filemap.c:3568
+ filemap_map_pages+0x63a/0x1680 mm/filemap.c:3746
+ do_fault_around mm/memory.c:5476 [inline]
+ do_read_fault mm/memory.c:5509 [inline]
+ do_fault mm/memory.c:5652 [inline]
+ do_pte_missing+0xf1d/0x3fb0 mm/memory.c:4160
+ handle_pte_fault mm/memory.c:5997 [inline]
+ __handle_mm_fault+0x103d/0x2a40 mm/memory.c:6140
+ handle_mm_fault+0x3fe/0xad0 mm/memory.c:6309
+ faultin_page mm/gup.c:1193 [inline]
+ __get_user_pages+0x771/0x36f0 mm/gup.c:1491
+ populate_vma_page_range+0x278/0x3a0 mm/gup.c:1929
+ __mm_populate+0x1d8/0x380 mm/gup.c:2032
+ mm_populate include/linux/mm.h:3487 [inline]
+ vm_mmap_pgoff+0x362/0x450 mm/util.c:584
+ ksys_mmap_pgoff+0x7d/0x5c0 mm/mmap.c:607
+ __do_sys_mmap arch/x86/kernel/sys_x86_64.c:89 [inline]
+ __se_sys_mmap arch/x86/kernel/sys_x86_64.c:82 [inline]
+ __x64_sys_mmap+0x125/0x190 arch/x86/kernel/sys_x86_64.c:82
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f2192bade39
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 01 1a 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd4e5bbe28 EFLAGS: 00000216 ORIG_RAX: 0000000000000009
+RAX: ffffffffffffffda RBX: 000000000001d98c RCX: 00007f2192bade39
+RDX: b635773f06ebbeee RSI: 0000000000b36000 RDI: 0000200000000000
+RBP: 0000000000000000 R08: ffffffffffffffff R09: 0000000000000000
+R10: 0000000000008031 R11: 0000000000000216 R12: 00007ffd4e5bbe5c
+R13: 00007ffd4e5bbe90 R14: 00007ffd4e5bbe70 R15: 0000000000000009
+ </TASK>
+----------------
+Code disassembly (best guess), 1 bytes skipped:
+   0:	03 0f                	add    (%rdi),%ecx
+   2:	b6 14                	mov    $0x14,%dh
+   4:	02 48 89             	add    -0x77(%rax),%cl
+   7:	d8 83 e0 07 83 c0    	fadds  -0x3f7cf820(%rbx)
+   d:	03 38                	add    (%rax),%edi
+   f:	d0 7c 04 84          	sarb   -0x7c(%rsp,%rax,1)
+  13:	d2 75 24             	shlb   %cl,0x24(%rbp)
+  16:	8b 03                	mov    (%rbx),%eax
+  18:	c1 e8 02             	shr    $0x2,%eax
+  1b:	83 e0 01             	and    $0x1,%eax
+  1e:	65 ff 0d 50 96 05 12 	decl   %gs:0x12059650(%rip)        # 0x12059675
+  25:	74 07                	je     0x2e
+  27:	5b                   	pop    %rbx
+  28:	5d                   	pop    %rbp
+* 29:	e9 22 57 6f ff       	jmp    0xff6f5750 <-- trapping instruction
+  2e:	e8 02 4b 8b ff       	call   0xff8b4b35
+  33:	5b                   	pop    %rbx
+  34:	5d                   	pop    %rbp
+  35:	e9 16 57 6f ff       	jmp    0xff6f5750
+  3a:	48 89 df             	mov    %rbx,%rdi
+  3d:	e8                   	.byte 0xe8
+  3e:	13                   	.byte 0x13

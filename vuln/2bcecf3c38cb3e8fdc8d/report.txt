@@ -1,0 +1,144 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.16.0-rc1-syzkaller-gfda589c28604 #0 Not tainted
+------------------------------------------------------
+syz.1.845/9424 is trying to acquire lock:
+ffffaf8018594a30 (&nbd->config_lock){+.+.}-{4:4}, at: refcount_dec_and_mutex_lock+0x60/0xd8 lib/refcount.c:118
+
+but task is already holding lock:
+ffffaf801a3bc358 (&disk->open_mutex){+.+.}-{4:4}, at: bdev_release+0x12c/0x600 block/bdev.c:1128
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (&disk->open_mutex){+.+.}-{4:4}:
+       lock_acquire kernel/locking/lockdep.c:5871 [inline]
+       lock_acquire+0x1ac/0x448 kernel/locking/lockdep.c:5828
+       __mutex_lock_common kernel/locking/mutex.c:602 [inline]
+       __mutex_lock+0x166/0x1292 kernel/locking/mutex.c:747
+       mutex_lock_nested+0x14/0x1c kernel/locking/mutex.c:799
+       __del_gendisk+0x132/0xac6 block/genhd.c:706
+       del_gendisk+0xf6/0x19a block/genhd.c:819
+       loop_remove drivers/block/loop.c:2085 [inline]
+       loop_control_remove drivers/block/loop.c:2144 [inline]
+       loop_control_ioctl+0x4ce/0x600 drivers/block/loop.c:2182
+       vfs_ioctl fs/ioctl.c:51 [inline]
+       __do_sys_ioctl fs/ioctl.c:907 [inline]
+       __se_sys_ioctl fs/ioctl.c:893 [inline]
+       __riscv_sys_ioctl+0x180/0x1e4 fs/ioctl.c:893
+       syscall_handler+0x94/0x118 arch/riscv/include/asm/syscall.h:112
+       do_trap_ecall_u+0x396/0x530 arch/riscv/kernel/traps.c:341
+       handle_exception+0x146/0x152 arch/riscv/kernel/entry.S:197
+
+-> #1 (&set->update_nr_hwq_lock){++++}-{4:4}:
+       lock_acquire kernel/locking/lockdep.c:5871 [inline]
+       lock_acquire+0x1ac/0x448 kernel/locking/lockdep.c:5828
+       down_write+0x9c/0x19a kernel/locking/rwsem.c:1577
+       blk_mq_update_nr_hw_queues+0x3e/0xb86 block/blk-mq.c:5041
+       nbd_start_device+0x140/0xb2c drivers/block/nbd.c:1476
+       nbd_genl_connect+0xae0/0x1b24 drivers/block/nbd.c:2201
+       genl_family_rcv_msg_doit+0x206/0x2e6 net/netlink/genetlink.c:1115
+       genl_family_rcv_msg net/netlink/genetlink.c:1195 [inline]
+       genl_rcv_msg+0x514/0x78e net/netlink/genetlink.c:1210
+       netlink_rcv_skb+0x206/0x3be net/netlink/af_netlink.c:2534
+       genl_rcv+0x36/0x4c net/netlink/genetlink.c:1219
+       netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+       netlink_unicast+0x4f0/0x82c net/netlink/af_netlink.c:1339
+       netlink_sendmsg+0x85e/0xdd6 net/netlink/af_netlink.c:1883
+       sock_sendmsg_nosec net/socket.c:712 [inline]
+       __sock_sendmsg+0xcc/0x160 net/socket.c:727
+       ____sys_sendmsg+0x63e/0x79c net/socket.c:2566
+       ___sys_sendmsg+0x144/0x1e6 net/socket.c:2620
+       __sys_sendmsg+0x188/0x246 net/socket.c:2652
+       __do_sys_sendmsg net/socket.c:2657 [inline]
+       __se_sys_sendmsg net/socket.c:2655 [inline]
+       __riscv_sys_sendmsg+0x70/0xa2 net/socket.c:2655
+       syscall_handler+0x94/0x118 arch/riscv/include/asm/syscall.h:112
+       do_trap_ecall_u+0x396/0x530 arch/riscv/kernel/traps.c:341
+       handle_exception+0x146/0x152 arch/riscv/kernel/entry.S:197
+
+-> #0 (&nbd->config_lock){+.+.}-{4:4}:
+       check_noncircular+0x132/0x146 kernel/locking/lockdep.c:2178
+       check_prev_add kernel/locking/lockdep.c:3168 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3287 [inline]
+       validate_chain kernel/locking/lockdep.c:3911 [inline]
+       __lock_acquire+0x12b2/0x24ea kernel/locking/lockdep.c:5240
+       lock_acquire kernel/locking/lockdep.c:5871 [inline]
+       lock_acquire+0x1ac/0x448 kernel/locking/lockdep.c:5828
+       __mutex_lock_common kernel/locking/mutex.c:602 [inline]
+       __mutex_lock+0x166/0x1292 kernel/locking/mutex.c:747
+       mutex_lock_nested+0x14/0x1c kernel/locking/mutex.c:799
+       refcount_dec_and_mutex_lock+0x60/0xd8 lib/refcount.c:118
+       nbd_config_put+0x3a/0x610 drivers/block/nbd.c:1423
+       nbd_release+0x94/0x15c drivers/block/nbd.c:1735
+       blkdev_put_whole+0xac/0xee block/bdev.c:721
+       bdev_release+0x3fe/0x600 block/bdev.c:1144
+       blkdev_release+0x1a/0x26 block/fops.c:684
+       __fput+0x382/0xa8c fs/file_table.c:465
+       ____fput+0x1c/0x26 fs/file_table.c:493
+       task_work_run+0x16a/0x25e kernel/task_work.c:227
+       resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+       exit_to_user_mode_loop+0x118/0x134 kernel/entry/common.c:114
+       exit_to_user_mode_prepare include/linux/entry-common.h:330 [inline]
+       syscall_exit_to_user_mode_work include/linux/entry-common.h:414 [inline]
+       syscall_exit_to_user_mode include/linux/entry-common.h:449 [inline]
+       do_trap_ecall_u+0x3f0/0x530 arch/riscv/kernel/traps.c:355
+       handle_exception+0x146/0x152 arch/riscv/kernel/entry.S:197
+
+other info that might help us debug this:
+
+Chain exists of:
+  &nbd->config_lock --> &set->update_nr_hwq_lock --> &disk->open_mutex
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&disk->open_mutex);
+                               lock(&set->update_nr_hwq_lock);
+                               lock(&disk->open_mutex);
+  lock(&nbd->config_lock);
+
+ *** DEADLOCK ***
+
+1 lock held by syz.1.845/9424:
+ #0: ffffaf801a3bc358 (&disk->open_mutex){+.+.}-{4:4}, at: bdev_release+0x12c/0x600 block/bdev.c:1128
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 9424 Comm: syz.1.845 Not tainted 6.16.0-rc1-syzkaller-gfda589c28604 #0 PREEMPT 
+Hardware name: riscv-virtio,qemu (DT)
+Call Trace:
+[<ffffffff80078bbe>] dump_backtrace+0x2e/0x3c arch/riscv/kernel/stacktrace.c:132
+[<ffffffff8000327a>] show_stack+0x30/0x3c arch/riscv/kernel/stacktrace.c:138
+[<ffffffff8006103e>] __dump_stack lib/dump_stack.c:94 [inline]
+[<ffffffff8006103e>] dump_stack_lvl+0x12e/0x1a6 lib/dump_stack.c:120
+[<ffffffff800610d2>] dump_stack+0x1c/0x24 lib/dump_stack.c:129
+[<ffffffff802ce116>] print_circular_bug+0x254/0x29a kernel/locking/lockdep.c:2046
+[<ffffffff802ce28e>] check_noncircular+0x132/0x146 kernel/locking/lockdep.c:2178
+[<ffffffff802d1468>] check_prev_add kernel/locking/lockdep.c:3168 [inline]
+[<ffffffff802d1468>] check_prevs_add kernel/locking/lockdep.c:3287 [inline]
+[<ffffffff802d1468>] validate_chain kernel/locking/lockdep.c:3911 [inline]
+[<ffffffff802d1468>] __lock_acquire+0x12b2/0x24ea kernel/locking/lockdep.c:5240
+[<ffffffff802d32de>] lock_acquire kernel/locking/lockdep.c:5871 [inline]
+[<ffffffff802d32de>] lock_acquire+0x1ac/0x448 kernel/locking/lockdep.c:5828
+[<ffffffff86334b34>] __mutex_lock_common kernel/locking/mutex.c:602 [inline]
+[<ffffffff86334b34>] __mutex_lock+0x166/0x1292 kernel/locking/mutex.c:747
+[<ffffffff86335c74>] mutex_lock_nested+0x14/0x1c kernel/locking/mutex.c:799
+[<ffffffff8173119c>] refcount_dec_and_mutex_lock+0x60/0xd8 lib/refcount.c:118
+[<ffffffff82c30b40>] nbd_config_put+0x3a/0x610 drivers/block/nbd.c:1423
+[<ffffffff82c31336>] nbd_release+0x94/0x15c drivers/block/nbd.c:1735
+[<ffffffff815304f6>] blkdev_put_whole+0xac/0xee block/bdev.c:721
+[<ffffffff81534274>] bdev_release+0x3fe/0x600 block/bdev.c:1144
+[<ffffffff81535462>] blkdev_release+0x1a/0x26 block/fops.c:684
+[<ffffffff80bfbe7a>] __fput+0x382/0xa8c fs/file_table.c:465
+[<ffffffff80bfc632>] ____fput+0x1c/0x26 fs/file_table.c:493
+[<ffffffff801d7c16>] task_work_run+0x16a/0x25e kernel/task_work.c:227
+[<ffffffff803b556e>] resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+[<ffffffff803b556e>] exit_to_user_mode_loop+0x118/0x134 kernel/entry/common.c:114
+[<ffffffff8632339c>] exit_to_user_mode_prepare include/linux/entry-common.h:330 [inline]
+[<ffffffff8632339c>] syscall_exit_to_user_mode_work include/linux/entry-common.h:414 [inline]
+[<ffffffff8632339c>] syscall_exit_to_user_mode include/linux/entry-common.h:449 [inline]
+[<ffffffff8632339c>] do_trap_ecall_u+0x3f0/0x530 arch/riscv/kernel/traps.c:355
+[<ffffffff8634b7da>] handle_exception+0x146/0x152 arch/riscv/kernel/entry.S:197

@@ -1,0 +1,51 @@
+=====================================================
+BUG: KMSAN: uninit-value in memcmp lib/string.c:692 [inline]
+BUG: KMSAN: uninit-value in bcmp+0x186/0x1c0 lib/string.c:713
+ memcmp lib/string.c:692 [inline]
+ bcmp+0x186/0x1c0 lib/string.c:713
+ fanotify_fh_equal fs/notify/fanotify/fanotify.c:51 [inline]
+ fanotify_fid_event_equal fs/notify/fanotify/fanotify.c:72 [inline]
+ fanotify_should_merge fs/notify/fanotify/fanotify.c:168 [inline]
+ fanotify_merge+0x15f5/0x27e0 fs/notify/fanotify/fanotify.c:209
+ fsnotify_insert_event+0x1d0/0x600 fs/notify/notification.c:113
+ fanotify_handle_event+0x47f7/0x6140 fs/notify/fanotify/fanotify.c:966
+ send_to_group fs/notify/fsnotify.c:360 [inline]
+ fsnotify+0x2510/0x3530 fs/notify/fsnotify.c:570
+ fsnotify_parent include/linux/fsnotify.h:80 [inline]
+ fsnotify_file include/linux/fsnotify.h:100 [inline]
+ fsnotify_close include/linux/fsnotify.h:362 [inline]
+ __fput+0x578/0x10c0 fs/file_table.c:368
+ __fput_sync+0x74/0x90 fs/file_table.c:467
+ __do_sys_close fs/open.c:1554 [inline]
+ __se_sys_close+0x28a/0x4c0 fs/open.c:1539
+ __x64_sys_close+0x48/0x60 fs/open.c:1539
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x6d/0x140 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Uninit was created at:
+ slab_post_alloc_hook+0x129/0xa70 mm/slab.h:768
+ slab_alloc_node mm/slub.c:3478 [inline]
+ slab_alloc mm/slub.c:3486 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3493 [inline]
+ kmem_cache_alloc+0x579/0xa90 mm/slub.c:3502
+ fanotify_alloc_fid_event fs/notify/fanotify/fanotify.c:584 [inline]
+ fanotify_alloc_event fs/notify/fanotify/fanotify.c:817 [inline]
+ fanotify_handle_event+0x2ff6/0x6140 fs/notify/fanotify/fanotify.c:952
+ send_to_group fs/notify/fsnotify.c:360 [inline]
+ fsnotify+0x2510/0x3530 fs/notify/fsnotify.c:570
+ fsnotify_parent include/linux/fsnotify.h:80 [inline]
+ fsnotify_file include/linux/fsnotify.h:100 [inline]
+ fsnotify_close include/linux/fsnotify.h:362 [inline]
+ __fput+0x578/0x10c0 fs/file_table.c:368
+ __fput_sync+0x74/0x90 fs/file_table.c:467
+ __do_sys_close fs/open.c:1554 [inline]
+ __se_sys_close+0x28a/0x4c0 fs/open.c:1539
+ __x64_sys_close+0x48/0x60 fs/open.c:1539
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x6d/0x140 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+CPU: 0 PID: 5010 Comm: syz-executor120 Not tainted 6.7.0-syzkaller-00562-g9f8413c4a66f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/25/2024
+=====================================================

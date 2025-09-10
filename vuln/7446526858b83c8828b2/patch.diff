@@ -1,0 +1,22 @@
+diff --git a/drivers/infiniband/core/ucma.c b/drivers/infiniband/core/ucma.c
+index 5b87eee8ccc8..d03dacaef788 100644
+--- a/drivers/infiniband/core/ucma.c
++++ b/drivers/infiniband/core/ucma.c
+@@ -1084,6 +1084,8 @@ static ssize_t ucma_connect(struct ucma_file *file, const char __user *inbuf,
+ 	size_t in_size;
+ 	int ret;
+ 
++	if (in_len < offsetofend(typeof(cmd), reserved))
++		return -EINVAL;
+ 	in_size = min_t(size_t, in_len, sizeof(cmd));
+ 	if (copy_from_user(&cmd, inbuf, in_size))
+ 		return -EFAULT;
+@@ -1141,6 +1143,8 @@ static ssize_t ucma_accept(struct ucma_file *file, const char __user *inbuf,
+ 	size_t in_size;
+ 	int ret;
+ 
++	if (in_len < offsetofend(typeof(cmd), reserved))
++		return -EINVAL;
+ 	in_size = min_t(size_t, in_len, sizeof(cmd));
+ 	if (copy_from_user(&cmd, inbuf, in_size))
+ 		return -EFAULT;

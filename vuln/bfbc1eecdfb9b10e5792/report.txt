@@ -1,0 +1,65 @@
+loop0: detected capacity change from 0 to 32768
+XFS (loop0): Mounting V5 Filesystem
+XFS (loop0): Ending clean mount
+XFS (loop0): Quotacheck needed: Please wait.
+XFS (loop0): Quotacheck: Done.
+Unable to handle kernel NULL pointer dereference at virtual address 0000000000000008
+Mem abort info:
+  ESR = 0x0000000096000006
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x06: level 2 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000006
+  CM = 0, WnR = 0
+user pgtable: 4k pages, 48-bit VAs, pgdp=0000000109fa7000
+[0000000000000008] pgd=080000010b97c003, p4d=080000010b97c003, pud=080000010b335003, pmd=0000000000000000
+Internal error: Oops: 0000000096000006 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 1 PID: 3073 Comm: syz-executor418 Not tainted 6.1.0-rc8-syzkaller-33330-ga5541c0811a0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/26/2022
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : xfs_free_extent_fix_freelist fs/xfs/libxfs/xfs_alloc.c:3358 [inline]
+pc : __xfs_free_extent+0x88/0x274 fs/xfs/libxfs/xfs_alloc.c:3407
+lr : __xfs_free_extent+0x60/0x274 fs/xfs/libxfs/xfs_alloc.c:3406
+sp : ffff80000fee39d0
+x29: ffff80000fee3a70 x28: 0000000000002000 x27: 0000000000000001
+x26: ffff0000c9e44000 x25: ffff80000c1ff898 x24: 000000000000000d
+x23: ffff0000ca430200 x22: ffff0000c9e44000 x21: 0000000000000000
+x20: ffff0000c9f46000 x19: ffff0000cb210800 x18: 00000000000000c0
+x17: ffff80000dda8198 x16: ffff80000dbe6158 x15: ffff0000c66ab480
+x14: 0000000000000000 x13: 00000000ffffffff x12: ffff0000c66ab480
+x11: ff80800008daa450 x10: 0000000000000000 x9 : ffff800008daa450
+x8 : ffff0000c9e44000 x7 : ffff800008dacf34 x6 : 0000000000000000
+x5 : 0000000000000000 x4 : 0000000000000000 x3 : ffff800008db2880
+x2 : 0000000000000000 x1 : 0000000100000000 x0 : 0000000000000000
+Call trace:
+ xfs_free_extent_fix_freelist fs/xfs/libxfs/xfs_alloc.c:3357 [inline]
+ __xfs_free_extent+0x88/0x274 fs/xfs/libxfs/xfs_alloc.c:3407
+ xfs_free_extent fs/xfs/libxfs/xfs_alloc.h:147 [inline]
+ xfs_ag_extend_space+0x168/0x220 fs/xfs/libxfs/xfs_ag.c:985
+ xfs_resizefs_init_new_ags+0x160/0x1a0 fs/xfs/xfs_fsops.c:77
+ xfs_growfs_data_private+0x2c0/0x514 fs/xfs/xfs_fsops.c:151
+ xfs_growfs_data+0xf0/0x244 fs/xfs/xfs_fsops.c:294
+ xfs_file_ioctl+0x1108/0x17bc fs/xfs/xfs_ioctl.c:2068
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:870 [inline]
+ __se_sys_ioctl fs/ioctl.c:856 [inline]
+ __arm64_sys_ioctl+0xd0/0x140 fs/ioctl.c:856
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall arch/arm64/kernel/syscall.c:52 [inline]
+ el0_svc_common+0x138/0x220 arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x48/0x140 arch/arm64/kernel/syscall.c:197
+ el0_svc+0x58/0x150 arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:584
+Code: a903ffff a902ffff a901ffff a900a3f4 (b940081a) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	a903ffff 	stp	xzr, xzr, [sp, #56]
+   4:	a902ffff 	stp	xzr, xzr, [sp, #40]
+   8:	a901ffff 	stp	xzr, xzr, [sp, #24]
+   c:	a900a3f4 	stp	x20, x8, [sp, #8]
+* 10:	b940081a 	ldr	w26, [x0, #8] <-- trapping instruction

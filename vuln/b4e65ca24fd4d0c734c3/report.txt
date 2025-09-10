@@ -1,0 +1,44 @@
+=====================================================
+BUG: KMSAN: uninit-value in array_map_lookup_elem+0x14d/0x170 kernel/bpf/arraymap.c:168
+ array_map_lookup_elem+0x14d/0x170 kernel/bpf/arraymap.c:168
+ ____bpf_map_lookup_elem kernel/bpf/helpers.c:42 [inline]
+ bpf_map_lookup_elem+0x5c/0x80 kernel/bpf/helpers.c:38
+ ___bpf_prog_run+0x13fe/0xe0f0 kernel/bpf/core.c:1997
+ __bpf_prog_run64+0xb5/0xe0 kernel/bpf/core.c:2236
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run3+0x132/0x320 kernel/trace/bpf_trace.c:2421
+ __bpf_trace_ext4_es_insert_delayed_block+0x34/0x50 include/trace/events/ext4.h:2481
+ trace_ext4_es_insert_delayed_block include/trace/events/ext4.h:2481 [inline]
+ ext4_es_insert_delayed_block+0x11e1/0x1290 fs/ext4/extents_status.c:2082
+ ext4_insert_delayed_block fs/ext4/inode.c:1676 [inline]
+ ext4_da_map_blocks fs/ext4/inode.c:1777 [inline]
+ ext4_da_get_block_prep+0x1714/0x1d30 fs/ext4/inode.c:1817
+ ext4_block_write_begin+0x749/0x1df0 fs/ext4/inode.c:1055
+ ext4_da_write_begin+0x889/0xec0 fs/ext4/inode.c:2894
+ generic_perform_write+0x400/0xc60 mm/filemap.c:3974
+ ext4_buffered_write_iter+0x564/0xaa0 fs/ext4/file.c:299
+ ext4_file_write_iter+0x208/0x3450
+ call_write_iter include/linux/fs.h:2108 [inline]
+ new_sync_write fs/read_write.c:497 [inline]
+ vfs_write+0xb63/0x1520 fs/read_write.c:590
+ ksys_write+0x20f/0x4c0 fs/read_write.c:643
+ __do_sys_write fs/read_write.c:655 [inline]
+ __se_sys_write fs/read_write.c:652 [inline]
+ __x64_sys_write+0x93/0xe0 fs/read_write.c:652
+ do_syscall_64+0xd5/0x1f0
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+Local variable stack created at:
+ __bpf_prog_run64+0x45/0xe0 kernel/bpf/core.c:2236
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run3+0x132/0x320 kernel/trace/bpf_trace.c:2421
+
+CPU: 0 PID: 5016 Comm: syz-executor308 Not tainted 6.8.0-syzkaller-11409-gf6cef5f8c37f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+=====================================================

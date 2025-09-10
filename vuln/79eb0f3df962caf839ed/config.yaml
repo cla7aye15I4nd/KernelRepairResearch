@@ -1,0 +1,60 @@
+id: 79eb0f3df962caf839ed
+bug_link: https://syzkaller.appspot.com/bug?extid=79eb0f3df962caf839ed
+title: kernel BUG at fs/namei.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1edc8eb2e93130e36ac74ac9c80913815a57d413
+fix_commit: c64cd6e34ea340adbb2a0a2f99cc884b96dcdca5
+datetime: '2020-01-15T01:36:06-05:00'
+fix_commit_message: 'reimplement path_mountpoint() with less magic
+
+
+  ... and get rid of a bunch of bugs in it.  Background:
+
+  the reason for path_mountpoint() is that umount() really doesn''t
+
+  want attempts to revalidate the root of what it''s trying to umount.
+
+  The thing we want to avoid actually happen from complete_walk();
+
+  solution was to do something parallel to normal path_lookupat()
+
+  and it both went overboard and got the boilerplate subtly
+
+  (and not so subtly) wrong.
+
+
+  A better solution is to do pretty much what the normal path_lookupat()
+
+  does, but instead of complete_walk() do unlazy_walk().  All it takes
+
+  to avoid that ->d_weak_revalidate() call...  mountpoint_last() goes
+
+  away, along with everything it got wrong, and so does the magic around
+
+  LOOKUP_NO_REVAL.
+
+
+  Another source of bugs is that when we traverse mounts at the final
+
+  location (and we need to do that - umount . expects to get whatever''s
+
+  overmounting ., if any, out of the lookup) we really ought to take
+
+  care of ->d_manage() - as it is, manual umount of autofs automount
+
+  in progress can lead to unpleasant surprises for the daemon.  Easily
+
+  solved by using handle_lookup_down() instead of follow_mount().
+
+
+  Tested-by: Ian Kent <raven@themaw.net>
+
+  Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+
+  '
+submodule:
+- fs
+- fs/nfs
+- include/linux
+hunk_count: 6
+covered_count: 0

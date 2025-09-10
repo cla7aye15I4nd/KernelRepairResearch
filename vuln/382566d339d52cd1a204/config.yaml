@@ -1,0 +1,55 @@
+id: 382566d339d52cd1a204
+bug_link: https://syzkaller.appspot.com/bug?extid=382566d339d52cd1a204
+title: general protection fault in call_fib6_multipath_entry_notifiers
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: de467c116ca2ffc141d2abf8aef18b360fb19b21
+fix_commit: 9eee3b4913d734b2c2496ddeea625d5b56583757
+datetime: '2019-06-22T16:50:35-07:00'
+fix_commit_message: "ipv6: Error when route does not have any valid nexthops\n\nWhen\
+  \ user space sends invalid information in RTA_MULTIPATH, the nexthop\nlist in ip6_route_multipath_add()\
+  \ is empty and 'rt_notif' is set to\nNULL.\n\nThe code that emits the in-kernel\
+  \ notifications does not check for this\ncondition, which results in a NULL pointer\
+  \ dereference [1].\n\nFix this by bailing earlier in the function if the parsed\
+  \ nexthop list\nis empty. This is consistent with the corresponding IPv4 code.\n\
+  \nv2:\n* Check if parsed nexthop list is empty and bail with extack set\n\n[1]\n\
+  kasan: CONFIG_KASAN_INLINE enabled\nkasan: GPF could be caused by NULL-ptr deref\
+  \ or user memory access\ngeneral protection fault: 0000 [#1] PREEMPT SMP KASAN\n\
+  CPU: 0 PID: 9190 Comm: syz-executor149 Not tainted 5.2.0-rc5+ #38\nHardware name:\
+  \ Google Google Compute Engine/Google Compute Engine, BIOS\nGoogle 01/01/2011\n\
+  RIP: 0010:call_fib6_multipath_entry_notifiers+0xd1/0x1a0\nnet/ipv6/ip6_fib.c:396\n\
+  Code: 8b b5 30 ff ff ff 48 c7 85 68 ff ff ff 00 00 00 00 48 c7 85 70 ff ff\nff 00\
+  \ 00 00 00 89 45 88 4c 89 e0 48 c1 e8 03 4c 89 65 80 <42> 80 3c 28 00\n0f 85 9a\
+  \ 00 00 00 48 b8 00 00 00 00 00 fc ff df 4d\nRSP: 0018:ffff88809788f2c0 EFLAGS:\
+  \ 00010246\nRAX: 0000000000000000 RBX: 1ffff11012f11e59 RCX: 00000000ffffffff\n\
+  RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000\nRBP: ffff88809788f390\
+  \ R08: ffff88809788f8c0 R09: 000000000000000c\nR10: ffff88809788f5d8 R11: ffff88809788f527\
+  \ R12: 0000000000000000\nR13: dffffc0000000000 R14: ffff88809788f8c0 R15: ffffffff89541d80\n\
+  FS:  000055555632c880(0000) GS:ffff8880ae800000(0000) knlGS:0000000000000000\nCS:\
+  \  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 0000000020000080 CR3: 000000009ba7c000\
+  \ CR4: 00000000001406f0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \  ip6_route_multipath_add+0xc55/0x1490 net/ipv6/route.c:5094\n  inet6_rtm_newroute+0xed/0x180\
+  \ net/ipv6/route.c:5208\n  rtnetlink_rcv_msg+0x463/0xb00 net/core/rtnetlink.c:5219\n\
+  \  netlink_rcv_skb+0x177/0x450 net/netlink/af_netlink.c:2477\n  rtnetlink_rcv+0x1d/0x30\
+  \ net/core/rtnetlink.c:5237\n  netlink_unicast_kernel net/netlink/af_netlink.c:1302\
+  \ [inline]\n  netlink_unicast+0x531/0x710 net/netlink/af_netlink.c:1328\n  netlink_sendmsg+0x8ae/0xd70\
+  \ net/netlink/af_netlink.c:1917\n  sock_sendmsg_nosec net/socket.c:646 [inline]\n\
+  \  sock_sendmsg+0xd7/0x130 net/socket.c:665\n  ___sys_sendmsg+0x803/0x920 net/socket.c:2286\n\
+  \  __sys_sendmsg+0x105/0x1d0 net/socket.c:2324\n  __do_sys_sendmsg net/socket.c:2333\
+  \ [inline]\n  __se_sys_sendmsg net/socket.c:2331 [inline]\n  __x64_sys_sendmsg+0x78/0xb0\
+  \ net/socket.c:2331\n  do_syscall_64+0xfd/0x680 arch/x86/entry/common.c:301\n  entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  RIP: 0033:0x4401f9\nCode: 18 89 d0 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 00 48\
+  \ 89 f8 48 89 f7\n48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48>\
+  \ 3d 01 f0 ff\nff 0f 83 fb 13 fc ff c3 66 2e 0f 1f 84 00 00 00 00\nRSP: 002b:00007ffc09fd0028\
+  \ EFLAGS: 00000246 ORIG_RAX: 000000000000002e\nRAX: ffffffffffffffda RBX: 00000000004002c8\
+  \ RCX: 00000000004401f9\nRDX: 0000000000000000 RSI: 0000000020000080 RDI: 0000000000000003\n\
+  RBP: 00000000006ca018 R08: 0000000000000000 R09: 00000000004002c8\nR10: 0000000000000000\
+  \ R11: 0000000000000246 R12: 0000000000401a80\nR13: 0000000000401b10 R14: 0000000000000000\
+  \ R15: 0000000000000000\n\nReported-by: syzbot+382566d339d52cd1a204@syzkaller.appspotmail.com\n\
+  Fixes: ebee3cad835f (\"ipv6: Add IPv6 multipath notifications for add / replace\"\
+  )\nSigned-off-by: Ido Schimmel <idosch@mellanox.com>\nReviewed-by: Jiri Pirko <jiri@mellanox.com>\n\
+  Reviewed-by: David Ahern <dsahern@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv6
+hunk_count: 1
+covered_count: 1

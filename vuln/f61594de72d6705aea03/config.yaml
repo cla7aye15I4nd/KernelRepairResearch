@@ -1,0 +1,29 @@
+id: f61594de72d6705aea03
+bug_link: https://syzkaller.appspot.com/bug?extid=f61594de72d6705aea03
+title: 'KASAN: vmalloc-out-of-bounds Read in __ebt_unregister_table'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: efb056e5f1f0036179b2f92c1c15f5ea7a891d70
+fix_commit: e58a171d35e32e6e8c37cfe0e8a94406732a331f
+datetime: '2023-02-22T00:22:31+01:00'
+fix_commit_message: "netfilter: ebtables: fix table blob use-after-free\n\nWe are\
+  \ not allowed to return an error at this point.\nLooking at the code it looks like\
+  \ ret is always 0 at this\npoint, but its not.\n\nt = find_table_lock(net, repl->name,\
+  \ &ret, &ebt_mutex);\n\n... this can return a valid table, with ret != 0.\n\nThis\
+  \ bug causes update of table->private with the new\nblob, but then frees the blob\
+  \ right away in the caller.\n\nSyzbot report:\n\nBUG: KASAN: vmalloc-out-of-bounds\
+  \ in __ebt_unregister_table+0xc00/0xcd0 net/bridge/netfilter/ebtables.c:1168\nRead\
+  \ of size 4 at addr ffffc90005425000 by task kworker/u4:4/74\nWorkqueue: netns cleanup_net\n\
+  Call Trace:\n kasan_report+0xbf/0x1f0 mm/kasan/report.c:517\n __ebt_unregister_table+0xc00/0xcd0\
+  \ net/bridge/netfilter/ebtables.c:1168\n ebt_unregister_table+0x35/0x40 net/bridge/netfilter/ebtables.c:1372\n\
+  \ ops_exit_list+0xb0/0x170 net/core/net_namespace.c:169\n cleanup_net+0x4ee/0xb10\
+  \ net/core/net_namespace.c:613\n...\n\nip(6)tables appears to be ok (ret should\
+  \ be 0 at this point) but make\nthis more obvious.\n\nFixes: c58dd2dd443c (\"netfilter:\
+  \ Can't fail and free after table replacement\")\nReported-by: syzbot+f61594de72d6705aea03@syzkaller.appspotmail.com\n\
+  Signed-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Pablo Neira Ayuso\
+  \ <pablo@netfilter.org>\n"
+submodule:
+- net/bridge
+- net/ipv4
+- net/ipv6
+hunk_count: 5
+covered_count: 0

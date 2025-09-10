@@ -1,0 +1,29 @@
+id: 36315852ece4132ec193
+bug_link: https://syzkaller.appspot.com/bug?extid=36315852ece4132ec193
+title: 'UBSAN: shift-out-of-bounds in chkSuper'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a0b96314870f7eff6d15a242cb162dfc46b3c284
+fix_commit: 3bef198f1b17d1bb89260bad947ef084c0a2d1a6
+datetime: '2020-12-18T15:23:33-06:00'
+fix_commit_message: "JFS: more checks for invalid superblock\n\nsyzbot is feeding\
+  \ invalid superblock data to JFS for mount testing.\nJFS does not check several\
+  \ of the fields -- just assumes that they\nare good since the JFS_MAGIC and version\
+  \ fields are good.\n\nIn this case (syzbot reproducer), we have s_l2bsize == 0xda0c,\n\
+  pad == 0xf045, and s_state == 0x50, all of which are invalid IMO.\nHaving s_l2bsize\
+  \ == 0xda0c causes this UBSAN warning:\n  UBSAN: shift-out-of-bounds in fs/jfs/jfs_mount.c:373:25\n\
+  \  shift exponent -9716 is negative\n\ns_l2bsize can be tested for correctness.\
+  \ pad can be tested for non-0\nand punted. s_state can be tested for its valid values\
+  \ and punted.\n\nDo those 3 tests and if any of them fails, report the superblock\
+  \ as\ninvalid/corrupt and let fsck handle it.\n\nWith this patch, chkSuper() says\
+  \ this when JFS_DEBUG is enabled:\n  jfs_mount: Mount Failure: superblock is corrupt!\n\
+  \  Mount JFS Failure: -22\n  jfs_mount failed w/return code = -22\n\nThe obvious\
+  \ problem with this method is that next week there could\nbe another syzbot test\
+  \ that uses different fields for invalid values,\nthis making this like a game of\
+  \ whack-a-mole.\n\nsyzkaller link: https://syzkaller.appspot.com/bug?extid=36315852ece4132ec193\n\
+  \nReported-by: syzbot+36315852ece4132ec193@syzkaller.appspotmail.com\nReported-by:\
+  \ kernel test robot <lkp@intel.com> # v2\nSigned-off-by: Randy Dunlap <rdunlap@infradead.org>\n\
+  Signed-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>\nCc: jfs-discussion@lists.sourceforge.net\n"
+submodule:
+- fs/jfs
+hunk_count: 3
+covered_count: 2

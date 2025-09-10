@@ -1,0 +1,40 @@
+id: 4a06d4373fd52f0b2f9c
+bug_link: https://syzkaller.appspot.com/bug?extid=4a06d4373fd52f0b2f9c
+title: 'KCSAN: data-race in inotify_handle_inode_event / inotify_remove_from_idr'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 173ea743bf7a9eef04460e03b00ba267cc52aee2
+fix_commit: c915d8f5918bea7c3962b09b8884ca128bfd9b0c
+datetime: '2023-04-25T12:36:55+02:00'
+fix_commit_message: 'inotify: Avoid reporting event with invalid wd
+
+
+  When inotify_freeing_mark() races with inotify_handle_inode_event() it
+
+  can happen that inotify_handle_inode_event() sees that i_mark->wd got
+
+  already reset to -1 and reports this value to userspace which can
+
+  confuse the inotify listener. Avoid the problem by validating that wd is
+
+  sensible (and pretend the mark got removed before the event got
+
+  generated otherwise).
+
+
+  CC: stable@vger.kernel.org
+
+  Fixes: 7e790dd5fc93 ("inotify: fix error paths in inotify_update_watch")
+
+  Message-Id: <20230424163219.9250-1-jack@suse.cz>
+
+  Reported-by: syzbot+4a06d4373fd52f0b2f9c@syzkaller.appspotmail.com
+
+  Reviewed-by: Amir Goldstein <amir73il@gmail.com>
+
+  Signed-off-by: Jan Kara <jack@suse.cz>
+
+  '
+submodule:
+- fs/notify
+hunk_count: 3
+covered_count: 3

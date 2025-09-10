@@ -1,0 +1,70 @@
+diff --git a/fs/bcachefs/btree_iter.c b/fs/bcachefs/btree_iter.c
+index 80c3b55ce763..9c54891c737a 100644
+--- a/fs/bcachefs/btree_iter.c
++++ b/fs/bcachefs/btree_iter.c
+@@ -1007,7 +1007,7 @@ static int bch2_btree_path_traverse_all(struct btree_trans *trans)
+ 
+ 	bch2_trans_unlock(trans);
+ 	cond_resched();
+-	trans_set_locked(trans);
++	trans_set_locked(trans, false);
+ 
+ 	if (unlikely(trans->memory_allocation_failure)) {
+ 		struct closure cl;
+@@ -3248,7 +3248,7 @@ u32 bch2_trans_begin(struct btree_trans *trans)
+ 
+ 	trans->last_begin_ip = _RET_IP_;
+ 
+-	trans_set_locked(trans);
++	trans_set_locked(trans, false);
+ 
+ 	if (trans->restarted) {
+ 		bch2_btree_path_traverse_all(trans);
+@@ -3354,7 +3354,7 @@ struct btree_trans *__bch2_trans_get(struct bch_fs *c, unsigned fn_idx)
+ 	trans->srcu_idx		= srcu_read_lock(&c->btree_trans_barrier);
+ 	trans->srcu_lock_time	= jiffies;
+ 	trans->srcu_held	= true;
+-	trans_set_locked(trans);
++	trans_set_locked(trans, false);
+ 
+ 	closure_init_stack_release(&trans->ref);
+ 	return trans;
+@@ -3622,7 +3622,7 @@ int bch2_fs_btree_iter_init(struct bch_fs *c)
+ #ifdef CONFIG_LOCKDEP
+ 	fs_reclaim_acquire(GFP_KERNEL);
+ 	struct btree_trans *trans = bch2_trans_get(c);
+-	trans_set_locked(trans);
++	trans_set_locked(trans, false);
+ 	bch2_trans_put(trans);
+ 	fs_reclaim_release(GFP_KERNEL);
+ #endif
+diff --git a/fs/bcachefs/btree_locking.c b/fs/bcachefs/btree_locking.c
+index efe2a007b482..d343df9f0ad2 100644
+--- a/fs/bcachefs/btree_locking.c
++++ b/fs/bcachefs/btree_locking.c
+@@ -782,7 +782,7 @@ static inline int __bch2_trans_relock(struct btree_trans *trans, bool trace)
+ 			return bch2_trans_relock_fail(trans, path, &f, trace);
+ 	}
+ 
+-	trans_set_locked(trans);
++	trans_set_locked(trans, true);
+ out:
+ 	bch2_trans_verify_locks(trans);
+ 	return 0;
+diff --git a/fs/bcachefs/btree_locking.h b/fs/bcachefs/btree_locking.h
+index ca4aeefd631e..7474ab6ce019 100644
+--- a/fs/bcachefs/btree_locking.h
++++ b/fs/bcachefs/btree_locking.h
+@@ -188,10 +188,10 @@ int bch2_six_check_for_deadlock(struct six_lock *lock, void *p);
+ 
+ /* lock: */
+ 
+-static inline void trans_set_locked(struct btree_trans *trans)
++static inline void trans_set_locked(struct btree_trans *trans, bool try)
+ {
+ 	if (!trans->locked) {
+-		lock_acquire_exclusive(&trans->dep_map, 0, 0, NULL, _THIS_IP_);
++		lock_acquire_exclusive(&trans->dep_map, 0, try, NULL, _THIS_IP_);
+ 		trans->locked = true;
+ 		trans->last_unlock_ip = 0;
+ 

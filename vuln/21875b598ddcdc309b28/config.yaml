@@ -1,0 +1,38 @@
+id: 21875b598ddcdc309b28
+bug_link: https://syzkaller.appspot.com/bug?extid=21875b598ddcdc309b28
+title: 'INFO: trying to register non-static key in finish_writeback_work'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6d0e9849417bfcbe997405371e0ed712b364ba0a
+fix_commit: 8e00c4e9dd852f7a9bf12234fad65a2f2f93788f
+datetime: '2019-10-07T15:47:19-07:00'
+fix_commit_message: "writeback: fix use-after-free in finish_writeback_work()\n\n\
+  finish_writeback_work() reads @done->waitq after decrementing\n@done->cnt.  However,\
+  \ once @done->cnt reaches zero, @done may be freed\n(from stack) at any moment and\
+  \ @done->waitq can contain something\nunrelated by the time finish_writeback_work()\
+  \ tries to read it.  This\nled to the following crash.\n\n  \"BUG: kernel NULL pointer\
+  \ dereference, address: 0000000000000002\"\n  #PF: supervisor write access in kernel\
+  \ mode\n  #PF: error_code(0x0002) - not-present page\n  PGD 0 P4D 0\n  Oops: 0002\
+  \ [#1] SMP DEBUG_PAGEALLOC\n  CPU: 40 PID: 555153 Comm: kworker/u98:50 Kdump: loaded\
+  \ Not tainted\n  ...\n  Workqueue: writeback wb_workfn (flush-btrfs-1)\n  RIP: 0010:_raw_spin_lock_irqsave+0x10/0x30\n\
+  \  Code: 48 89 d8 5b c3 e8 50 db 6b ff eb f4 0f 1f 40 00 66 2e 0f 1f 84 00 00 00\
+  \ 00 00 0f 1f 44 00 00 53 9c 5b fa 31 c0 ba 01 00 00 00 <f0> 0f b1 17 75 05 48 89\
+  \ d8 5b c3 89 c6 e8 fe ca 6b ff eb f2 66 90\n  RSP: 0018:ffffc90049b27d98 EFLAGS:\
+  \ 00010046\n  RAX: 0000000000000000 RBX: 0000000000000246 RCX: 0000000000000000\n\
+  \  RDX: 0000000000000001 RSI: 0000000000000003 RDI: 0000000000000002\n  RBP: 0000000000000000\
+  \ R08: 0000000000000000 R09: 0000000000000001\n  R10: ffff889fff407600 R11: ffff88ba9395d740\
+  \ R12: 000000000000e300\n  R13: 0000000000000003 R14: 0000000000000000 R15: 0000000000000000\n\
+  \  FS:  0000000000000000(0000) GS:ffff88bfdfa00000(0000) knlGS:0000000000000000\n\
+  \  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n  CR2: 0000000000000002 CR3:\
+  \ 0000000002409005 CR4: 00000000001606e0\n  Call Trace:\n   __wake_up_common_lock+0x63/0xc0\n\
+  \   wb_workfn+0xd2/0x3e0\n   process_one_work+0x1f5/0x3f0\n   worker_thread+0x2d/0x3d0\n\
+  \   kthread+0x111/0x130\n   ret_from_fork+0x1f/0x30\n\nFix it by reading and caching\
+  \ @done->waitq before decrementing\n@done->cnt.\n\nLink: http://lkml.kernel.org/r/20190924010631.GH2233839@devbig004.ftw2.facebook.com\n\
+  Fixes: 5b9cce4c7eb069 (\"writeback: Generalize and expose wb_completion\")\nSigned-off-by:\
+  \ Tejun Heo <tj@kernel.org>\nDebugged-by: Chris Mason <clm@fb.com>\nReviewed-by:\
+  \ Jens Axboe <axboe@kernel.dk>\nCc: Jan Kara <jack@suse.cz>\nCc: <stable@vger.kernel.org>\t\
+  [5.2+]\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

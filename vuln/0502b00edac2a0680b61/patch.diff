@@ -1,0 +1,113 @@
+diff --git a/include/linux/netfilter/x_tables.h b/include/linux/netfilter/x_tables.h
+index 1313b35c3ab7..14529511c4b8 100644
+--- a/include/linux/netfilter/x_tables.h
++++ b/include/linux/netfilter/x_tables.h
+@@ -285,6 +285,8 @@ unsigned int *xt_alloc_entry_offsets(unsigned int size);
+ bool xt_find_jump_offset(const unsigned int *offsets,
+ 			 unsigned int target, unsigned int size);
+ 
++int xt_check_proc_name(const char *name, unsigned int size);
++
+ int xt_check_match(struct xt_mtchk_param *, unsigned int size, u_int8_t proto,
+ 		   bool inv_proto);
+ int xt_check_target(struct xt_tgchk_param *, unsigned int size, u_int8_t proto,
+diff --git a/net/netfilter/x_tables.c b/net/netfilter/x_tables.c
+index fa1655aff8d3..4aa01c90e9d1 100644
+--- a/net/netfilter/x_tables.c
++++ b/net/netfilter/x_tables.c
+@@ -423,6 +423,36 @@ textify_hooks(char *buf, size_t size, unsigned int mask, uint8_t nfproto)
+ 	return buf;
+ }
+ 
++/**
++ * xt_check_proc_name - check that name is suitable for /proc file creation
++ *
++ * @name: file name candidate
++ * @size: length of buffer
++ *
++ * some x_tables modules wish to create a file in /proc.
++ * This function makes sure that the name is suitable for this
++ * purpose, it checks that name is NUL terminated and isn't a 'special'
++ * name, like "..".
++ *
++ * returns negative number on error or 0 if name is useable.
++ */
++int xt_check_proc_name(const char *name, unsigned int size)
++{
++	if (name[0] == '\0')
++		return -EINVAL;
++
++	if (strnlen(name, size) == size)
++		return -ENAMETOOLONG;
++
++	if (strcmp(name, ".") == 0 ||
++	    strcmp(name, "..") == 0 ||
++	    strchr(name, '/'))
++		return -EINVAL;
++
++	return 0;
++}
++EXPORT_SYMBOL(xt_check_proc_name);
++
+ int xt_check_match(struct xt_mtchk_param *par,
+ 		   unsigned int size, u_int8_t proto, bool inv_proto)
+ {
+diff --git a/net/netfilter/xt_hashlimit.c b/net/netfilter/xt_hashlimit.c
+index 66f5aca62a08..3360f13dc208 100644
+--- a/net/netfilter/xt_hashlimit.c
++++ b/net/netfilter/xt_hashlimit.c
+@@ -917,8 +917,9 @@ static int hashlimit_mt_check_v1(const struct xt_mtchk_param *par)
+ 	struct hashlimit_cfg3 cfg = {};
+ 	int ret;
+ 
+-	if (info->name[sizeof(info->name) - 1] != '\0')
+-		return -EINVAL;
++	ret = xt_check_proc_name(info->name, sizeof(info->name));
++	if (ret)
++		return ret;
+ 
+ 	ret = cfg_copy(&cfg, (void *)&info->cfg, 1);
+ 
+@@ -935,8 +936,9 @@ static int hashlimit_mt_check_v2(const struct xt_mtchk_param *par)
+ 	struct hashlimit_cfg3 cfg = {};
+ 	int ret;
+ 
+-	if (info->name[sizeof(info->name) - 1] != '\0')
+-		return -EINVAL;
++	ret = xt_check_proc_name(info->name, sizeof(info->name));
++	if (ret)
++		return ret;
+ 
+ 	ret = cfg_copy(&cfg, (void *)&info->cfg, 2);
+ 
+@@ -950,9 +952,11 @@ static int hashlimit_mt_check_v2(const struct xt_mtchk_param *par)
+ static int hashlimit_mt_check(const struct xt_mtchk_param *par)
+ {
+ 	struct xt_hashlimit_mtinfo3 *info = par->matchinfo;
++	int ret;
+ 
+-	if (info->name[sizeof(info->name) - 1] != '\0')
+-		return -EINVAL;
++	ret = xt_check_proc_name(info->name, sizeof(info->name));
++	if (ret)
++		return ret;
+ 
+ 	return hashlimit_mt_check_common(par, &info->hinfo, &info->cfg,
+ 					 info->name, 3);
+diff --git a/net/netfilter/xt_recent.c b/net/netfilter/xt_recent.c
+index 6d232d18faff..81ee1d6543b2 100644
+--- a/net/netfilter/xt_recent.c
++++ b/net/netfilter/xt_recent.c
+@@ -361,9 +361,9 @@ static int recent_mt_check(const struct xt_mtchk_param *par,
+ 				    info->hit_count, XT_RECENT_MAX_NSTAMPS - 1);
+ 		return -EINVAL;
+ 	}
+-	if (info->name[0] == '\0' ||
+-	    strnlen(info->name, XT_RECENT_NAME_LEN) == XT_RECENT_NAME_LEN)
+-		return -EINVAL;
++	ret = xt_check_proc_name(info->name, sizeof(info->name));
++	if (ret)
++		return ret;
+ 
+ 	if (ip_pkt_list_tot && info->hit_count < ip_pkt_list_tot)
+ 		nstamp_mask = roundup_pow_of_two(ip_pkt_list_tot) - 1;

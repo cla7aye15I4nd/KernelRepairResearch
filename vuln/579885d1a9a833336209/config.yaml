@@ -1,0 +1,25 @@
+id: 579885d1a9a833336209
+bug_link: https://syzkaller.appspot.com/bug?extid=579885d1a9a833336209
+title: possible deadlock in pipe_lock (5)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9011c2791e63fc05721b545c41ad025d8073566e
+fix_commit: 9b91b6b019fda817eb52f728eb9c79b3579760bc
+datetime: '2021-08-10T10:21:30+02:00'
+fix_commit_message: "ovl: fix deadlock in splice write\n\nThere's possibility of an\
+  \ ABBA deadlock in case of a splice write to an\noverlayfs file and a concurrent\
+  \ splice write to a corresponding real file.\n\nThe call chain for splice to an\
+  \ overlay file:\n\n -> do_splice                     [takes sb_writers on overlay\
+  \ file]\n   -> do_splice_from\n     -> iter_file_splice_write    [takes pipe->mutex]\n\
+  \       -> vfs_iter_write\n         ...\n         -> ovl_write_iter        [takes\
+  \ sb_writers on real file]\n\nAnd the call chain for splice to a real file:\n\n\
+  \ -> do_splice                     [takes sb_writers on real file]\n   -> do_splice_from\n\
+  \     -> iter_file_splice_write    [takes pipe->mutex]\n\nSyzbot successfully bisected\
+  \ this to commit 82a763e61e2b (\"ovl: simplify\nfile splice\").\n\nFix by reverting\
+  \ the write part of the above commit and by adding missing\nbits from ovl_write_iter()\
+  \ into ovl_splice_write().\n\nFixes: 82a763e61e2b (\"ovl: simplify file splice\"\
+  )\nReported-and-tested-by: syzbot+579885d1a9a833336209@syzkaller.appspotmail.com\n\
+  Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>\n"
+submodule:
+- fs/overlayfs
+hunk_count: 2
+covered_count: 1

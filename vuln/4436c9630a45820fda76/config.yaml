@@ -1,0 +1,42 @@
+id: 4436c9630a45820fda76
+bug_link: https://syzkaller.appspot.com/bug?extid=4436c9630a45820fda76
+title: 'KMSAN: uninit-value in qrtr_tx_resume'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 59d3efd27c11c59b32291e5ebc307bed2edb65ee
+fix_commit: 6417070918de3bcdbe0646e7256dae58fd8083ba
+datetime: '2023-04-13T09:35:30+02:00'
+fix_commit_message: "net: qrtr: Fix an uninit variable access bug in qrtr_tx_resume()\n\
+  \nSyzbot reported a bug as following:\n\n=====================================================\n\
+  BUG: KMSAN: uninit-value in qrtr_tx_resume+0x185/0x1f0 net/qrtr/af_qrtr.c:230\n\
+  \ qrtr_tx_resume+0x185/0x1f0 net/qrtr/af_qrtr.c:230\n qrtr_endpoint_post+0xf85/0x11b0\
+  \ net/qrtr/af_qrtr.c:519\n qrtr_tun_write_iter+0x270/0x400 net/qrtr/tun.c:108\n\
+  \ call_write_iter include/linux/fs.h:2189 [inline]\n aio_write+0x63a/0x950 fs/aio.c:1600\n\
+  \ io_submit_one+0x1d1c/0x3bf0 fs/aio.c:2019\n __do_sys_io_submit fs/aio.c:2078 [inline]\n\
+  \ __se_sys_io_submit+0x293/0x770 fs/aio.c:2048\n __x64_sys_io_submit+0x92/0xd0 fs/aio.c:2048\n\
+  \ do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x3d/0xb0 arch/x86/entry/common.c:80\n\
+  \ entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nUninit was created at:\n slab_post_alloc_hook\
+  \ mm/slab.h:766 [inline]\n slab_alloc_node mm/slub.c:3452 [inline]\n __kmem_cache_alloc_node+0x71f/0xce0\
+  \ mm/slub.c:3491\n __do_kmalloc_node mm/slab_common.c:967 [inline]\n __kmalloc_node_track_caller+0x114/0x3b0\
+  \ mm/slab_common.c:988\n kmalloc_reserve net/core/skbuff.c:492 [inline]\n __alloc_skb+0x3af/0x8f0\
+  \ net/core/skbuff.c:565\n __netdev_alloc_skb+0x120/0x7d0 net/core/skbuff.c:630\n\
+  \ qrtr_endpoint_post+0xbd/0x11b0 net/qrtr/af_qrtr.c:446\n qrtr_tun_write_iter+0x270/0x400\
+  \ net/qrtr/tun.c:108\n call_write_iter include/linux/fs.h:2189 [inline]\n aio_write+0x63a/0x950\
+  \ fs/aio.c:1600\n io_submit_one+0x1d1c/0x3bf0 fs/aio.c:2019\n __do_sys_io_submit\
+  \ fs/aio.c:2078 [inline]\n __se_sys_io_submit+0x293/0x770 fs/aio.c:2048\n __x64_sys_io_submit+0x92/0xd0\
+  \ fs/aio.c:2048\n do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x3d/0xb0\
+  \ arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nIt is\
+  \ because that skb->len requires at least sizeof(struct qrtr_ctrl_pkt)\nin qrtr_tx_resume().\
+  \ And skb->len equals to size in qrtr_endpoint_post().\nBut size is less than sizeof(struct\
+  \ qrtr_ctrl_pkt) when qrtr_cb->type\nequals to QRTR_TYPE_RESUME_TX in qrtr_endpoint_post()\
+  \ under the syzbot\nscenario. This triggers the uninit variable access bug.\n\n\
+  Add size check when qrtr_cb->type equals to QRTR_TYPE_RESUME_TX in\nqrtr_endpoint_post()\
+  \ to fix the bug.\n\nFixes: 5fdeb0d372ab (\"net: qrtr: Implement outgoing flow control\"\
+  )\nReported-by: syzbot+4436c9630a45820fda76@syzkaller.appspotmail.com\nLink: https://syzkaller.appspot.com/bug?id=c14607f0963d27d5a3d5f4c8639b500909e43540\n\
+  Suggested-by: Manivannan Sadhasivam <mani@kernel.org>\nSigned-off-by: Ziyang Xuan\
+  \ <william.xuanziyang@huawei.com>\nReviewed-by: Simon Horman <simon.horman@corigine.com>\n\
+  Link: https://lore.kernel.org/r/20230410012352.3997823-1-william.xuanziyang@huawei.com\n\
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>\n"
+submodule:
+- net/qrtr
+hunk_count: 2
+covered_count: 2

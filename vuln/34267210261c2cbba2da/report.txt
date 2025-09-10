@@ -1,0 +1,256 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.9.0-syzkaller-08544-g4b377b4868ef #0 Not tainted
+------------------------------------------------------
+syz-executor361/5098 is trying to acquire lock:
+ffff88802937c0d8 (&sighand->siglock){-...}-{2:2}, at: __lock_task_sighand+0x149/0x2d0 kernel/signal.c:1414
+
+but task is already holding lock:
+ffff8880b9538828 (lock#9){+.+.}-{2:2}, at: local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+ffff8880b9538828 (lock#9){+.+.}-{2:2}, at: __mmap_lock_do_trace_acquire_returned+0x8f/0x630 mm/mmap_lock.c:237
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #3 (lock#9){+.+.}-{2:2}:
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+       local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+       __mmap_lock_do_trace_acquire_returned+0xa8/0x630 mm/mmap_lock.c:237
+       __mmap_lock_trace_acquire_returned include/linux/mmap_lock.h:36 [inline]
+       mmap_read_trylock include/linux/mmap_lock.h:166 [inline]
+       stack_map_get_build_id_offset+0x9b2/0x9d0 kernel/bpf/stackmap.c:141
+       __bpf_get_stack+0x4ad/0x5a0 kernel/bpf/stackmap.c:449
+       ____bpf_get_stack_raw_tp kernel/trace/bpf_trace.c:1994 [inline]
+       bpf_get_stack_raw_tp+0x1a3/0x240 kernel/trace/bpf_trace.c:1984
+       bpf_prog_ec3b2eefa702d8d3+0x1e/0x46
+       bpf_dispatcher_nop_func include/linux/bpf.h:1243 [inline]
+       __bpf_prog_run include/linux/filter.h:691 [inline]
+       bpf_prog_run include/linux/filter.h:698 [inline]
+       __bpf_trace_run kernel/trace/bpf_trace.c:2403 [inline]
+       bpf_trace_run2+0x2ec/0x540 kernel/trace/bpf_trace.c:2444
+       trace_tlb_flush+0x118/0x140 include/trace/events/tlb.h:38
+       switch_mm_irqs_off+0x7cb/0xae0
+       context_switch kernel/sched/core.c:5392 [inline]
+       __schedule+0x1066/0x4a50 kernel/sched/core.c:6745
+       preempt_schedule_notrace+0x100/0x140 kernel/sched/core.c:7017
+       preempt_schedule_notrace_thunk+0x1a/0x30 arch/x86/entry/thunk.S:13
+       rcu_is_watching+0x7e/0xb0 kernel/rcu/tree.c:725
+       trace_lock_acquire include/trace/events/lock.h:24 [inline]
+       lock_acquire+0xe3/0x550 kernel/locking/lockdep.c:5725
+       sched_submit_work kernel/sched/core.c:6778 [inline]
+       schedule+0xb0/0x320 kernel/sched/core.c:6836
+       ptrace_stop+0x5b4/0x940 kernel/signal.c:2358
+       ptrace_do_notify kernel/signal.c:2395 [inline]
+       ptrace_notify+0x255/0x380 kernel/signal.c:2407
+       ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+       ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]
+       syscall_exit_work+0xc6/0x190 kernel/entry/common.c:173
+       syscall_exit_to_user_mode_prepare kernel/entry/common.c:200 [inline]
+       __syscall_exit_to_user_mode_work kernel/entry/common.c:205 [inline]
+       syscall_exit_to_user_mode+0x273/0x370 kernel/entry/common.c:218
+       do_syscall_64+0x102/0x240 arch/x86/entry/common.c:89
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #2 (&rq->__lock){-.-.}-{2:2}:
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+       _raw_spin_lock_nested+0x31/0x40 kernel/locking/spinlock.c:378
+       raw_spin_rq_lock_nested+0x2a/0x140 kernel/sched/core.c:559
+       raw_spin_rq_lock kernel/sched/sched.h:1406 [inline]
+       rq_lock kernel/sched/sched.h:1702 [inline]
+       task_fork_fair+0x61/0x1e0 kernel/sched/fair.c:12709
+       sched_cgroup_fork+0x37c/0x410 kernel/sched/core.c:4844
+       copy_process+0x2217/0x3dc0 kernel/fork.c:2499
+       kernel_clone+0x226/0x8f0 kernel/fork.c:2797
+       user_mode_thread+0x132/0x1a0 kernel/fork.c:2875
+       rest_init+0x23/0x300 init/main.c:707
+       start_kernel+0x47a/0x500 init/main.c:1084
+       x86_64_start_reservations+0x2a/0x30 arch/x86/kernel/head64.c:507
+       x86_64_start_kernel+0x99/0xa0 arch/x86/kernel/head64.c:488
+       common_startup_64+0x13e/0x147
+
+-> #1 (&p->pi_lock){-.-.}-{2:2}:
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+       _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+       class_raw_spinlock_irqsave_constructor include/linux/spinlock.h:553 [inline]
+       try_to_wake_up+0xb0/0x1470 kernel/sched/core.c:4262
+       signal_wake_up_state+0xb4/0x120 kernel/signal.c:773
+       signal_wake_up include/linux/sched/signal.h:448 [inline]
+       complete_signal+0x94a/0xcf0 kernel/signal.c:1065
+       __send_signal_locked+0xb1b/0xdc0 kernel/signal.c:1185
+       do_notify_parent+0xd96/0x10a0 kernel/signal.c:2143
+       exit_notify kernel/exit.c:756 [inline]
+       do_exit+0x1811/0x27e0 kernel/exit.c:897
+       do_group_exit+0x207/0x2c0 kernel/exit.c:1026
+       __do_sys_exit_group kernel/exit.c:1037 [inline]
+       __se_sys_exit_group kernel/exit.c:1035 [inline]
+       __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1035
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&sighand->siglock){-...}-{2:2}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+       __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+       _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+       __lock_task_sighand+0x149/0x2d0 kernel/signal.c:1414
+       lock_task_sighand include/linux/sched/signal.h:746 [inline]
+       do_send_sig_info kernel/signal.c:1300 [inline]
+       group_send_sig_info+0x274/0x310 kernel/signal.c:1453
+       bpf_send_signal_common+0x2dd/0x430 kernel/trace/bpf_trace.c:881
+       ____bpf_send_signal_thread kernel/trace/bpf_trace.c:898 [inline]
+       bpf_send_signal_thread+0x16/0x20 kernel/trace/bpf_trace.c:896
+       bpf_prog_7bb747c56a8bcba8+0x1d/0x25
+       bpf_dispatcher_nop_func include/linux/bpf.h:1243 [inline]
+       __bpf_prog_run include/linux/filter.h:691 [inline]
+       bpf_prog_run include/linux/filter.h:698 [inline]
+       __bpf_trace_run kernel/trace/bpf_trace.c:2403 [inline]
+       bpf_trace_run4+0x334/0x590 kernel/trace/bpf_trace.c:2446
+       trace_mmap_lock_acquire_returned include/trace/events/mmap_lock.h:52 [inline]
+       __mmap_lock_do_trace_acquire_returned+0x5c8/0x630 mm/mmap_lock.c:237
+       __mmap_lock_trace_acquire_returned include/linux/mmap_lock.h:36 [inline]
+       mmap_read_trylock include/linux/mmap_lock.h:166 [inline]
+       stack_map_get_build_id_offset+0x9b2/0x9d0 kernel/bpf/stackmap.c:141
+       __bpf_get_stack+0x4ad/0x5a0 kernel/bpf/stackmap.c:449
+       ____bpf_get_stack_raw_tp kernel/trace/bpf_trace.c:1994 [inline]
+       bpf_get_stack_raw_tp+0x1a3/0x240 kernel/trace/bpf_trace.c:1984
+       bpf_prog_ec3b2eefa702d8d3+0x42/0x46
+       bpf_dispatcher_nop_func include/linux/bpf.h:1243 [inline]
+       __bpf_prog_run include/linux/filter.h:691 [inline]
+       bpf_prog_run include/linux/filter.h:698 [inline]
+       __bpf_trace_run kernel/trace/bpf_trace.c:2403 [inline]
+       bpf_trace_run2+0x2ec/0x540 kernel/trace/bpf_trace.c:2444
+       trace_tlb_flush+0x118/0x140 include/trace/events/tlb.h:38
+       native_flush_tlb_multi+0x78/0xd0
+       __flush_tlb_multi arch/x86/include/asm/paravirt.h:91 [inline]
+       flush_tlb_multi arch/x86/mm/tlb.c:941 [inline]
+       flush_tlb_mm_range+0x330/0x5c0 arch/x86/mm/tlb.c:1027
+       flush_tlb_page arch/x86/include/asm/tlbflush.h:254 [inline]
+       ptep_clear_flush+0x11a/0x170 mm/pgtable-generic.c:101
+       wp_page_copy mm/memory.c:3329 [inline]
+       do_wp_page+0x1ce9/0x5370 mm/memory.c:3655
+       handle_pte_fault mm/memory.c:5311 [inline]
+       __handle_mm_fault+0x264a/0x7250 mm/memory.c:5436
+       handle_mm_fault+0x3c2/0x8a0 mm/memory.c:5601
+       do_user_addr_fault arch/x86/mm/fault.c:1332 [inline]
+       handle_page_fault arch/x86/mm/fault.c:1475 [inline]
+       exc_page_fault+0x446/0x8a0 arch/x86/mm/fault.c:1533
+       asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+
+other info that might help us debug this:
+
+Chain exists of:
+  &sighand->siglock --> &rq->__lock --> lock#9
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(lock#9);
+                               lock(&rq->__lock);
+                               lock(lock#9);
+  lock(&sighand->siglock);
+
+ *** DEADLOCK ***
+
+9 locks held by syz-executor361/5098:
+ #0: ffff88801a35da90 (&vma->vm_lock->lock){++++}-{3:3}, at: vma_start_read include/linux/mm.h:677 [inline]
+ #0: ffff88801a35da90 (&vma->vm_lock->lock){++++}-{3:3}, at: lock_vma_under_rcu+0x2f9/0x730 mm/memory.c:5757
+ #1: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #1: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #1: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: __pte_offset_map+0x82/0x380 mm/pgtable-generic.c:285
+ #2: ffff88801f172a98 (ptlock_ptr(ptdesc)#2){+.+.}-{2:2}, at: spin_lock include/linux/spinlock.h:351 [inline]
+ #2: ffff88801f172a98 (ptlock_ptr(ptdesc)#2){+.+.}-{2:2}, at: __pte_offset_map_lock+0x1ba/0x300 mm/pgtable-generic.c:373
+ #3: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #3: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #3: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: __bpf_trace_run kernel/trace/bpf_trace.c:2402 [inline]
+ #3: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: bpf_trace_run2+0x1fc/0x540 kernel/trace/bpf_trace.c:2444
+ #4: ffff8880227401a0 (&mm->mmap_lock){++++}-{3:3}, at: mmap_read_trylock include/linux/mmap_lock.h:165 [inline]
+ #4: ffff8880227401a0 (&mm->mmap_lock){++++}-{3:3}, at: stack_map_get_build_id_offset+0x237/0x9d0 kernel/bpf/stackmap.c:141
+ #5: ffff8880b9538828 (lock#9){+.+.}-{2:2}, at: local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+ #5: ffff8880b9538828 (lock#9){+.+.}-{2:2}, at: __mmap_lock_do_trace_acquire_returned+0x8f/0x630 mm/mmap_lock.c:237
+ #6: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #6: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #6: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: get_memcg_path_buf mm/mmap_lock.c:139 [inline]
+ #6: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: get_mm_memcg_path+0xb1/0x600 mm/mmap_lock.c:209
+ #7: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #7: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #7: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: __bpf_trace_run kernel/trace/bpf_trace.c:2402 [inline]
+ #7: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: bpf_trace_run4+0x244/0x590 kernel/trace/bpf_trace.c:2446
+ #8: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #8: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #8: ffffffff8e333d20 (rcu_read_lock){....}-{1:2}, at: __lock_task_sighand+0x29/0x2d0 kernel/signal.c:1397
+
+stack backtrace:
+CPU: 1 PID: 5098 Comm: syz-executor361 Not tainted 6.9.0-syzkaller-08544-g4b377b4868ef #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ check_noncircular+0x36a/0x4a0 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+ __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+ _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+ __lock_task_sighand+0x149/0x2d0 kernel/signal.c:1414
+ lock_task_sighand include/linux/sched/signal.h:746 [inline]
+ do_send_sig_info kernel/signal.c:1300 [inline]
+ group_send_sig_info+0x274/0x310 kernel/signal.c:1453
+ bpf_send_signal_common+0x2dd/0x430 kernel/trace/bpf_trace.c:881
+ ____bpf_send_signal_thread kernel/trace/bpf_trace.c:898 [inline]
+ bpf_send_signal_thread+0x16/0x20 kernel/trace/bpf_trace.c:896
+ bpf_prog_7bb747c56a8bcba8+0x1d/0x25
+ bpf_dispatcher_nop_func include/linux/bpf.h:1243 [inline]
+ __bpf_prog_run include/linux/filter.h:691 [inline]
+ bpf_prog_run include/linux/filter.h:698 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2403 [inline]
+ bpf_trace_run4+0x334/0x590 kernel/trace/bpf_trace.c:2446
+ trace_mmap_lock_acquire_returned include/trace/events/mmap_lock.h:52 [inline]
+ __mmap_lock_do_trace_acquire_returned+0x5c8/0x630 mm/mmap_lock.c:237
+ __mmap_lock_trace_acquire_returned include/linux/mmap_lock.h:36 [inline]
+ mmap_read_trylock include/linux/mmap_lock.h:166 [inline]
+ stack_map_get_build_id_offset+0x9b2/0x9d0 kernel/bpf/stackmap.c:141
+ __bpf_get_stack+0x4ad/0x5a0 kernel/bpf/stackmap.c:449
+ ____bpf_get_stack_raw_tp kernel/trace/bpf_trace.c:1994 [inline]
+ bpf_get_stack_raw_tp+0x1a3/0x240 kernel/trace/bpf_trace.c:1984
+ bpf_prog_ec3b2eefa702d8d3+0x42/0x46
+ bpf_dispatcher_nop_func include/linux/bpf.h:1243 [inline]
+ __bpf_prog_run include/linux/filter.h:691 [inline]
+ bpf_prog_run include/linux/filter.h:698 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2403 [inline]
+ bpf_trace_run2+0x2ec/0x540 kernel/trace/bpf_trace.c:2444
+ trace_tlb_flush+0x118/0x140 include/trace/events/tlb.h:38
+ native_flush_tlb_multi+0x78/0xd0
+ __flush_tlb_multi arch/x86/include/asm/paravirt.h:91 [inline]
+ flush_tlb_multi arch/x86/mm/tlb.c:941 [inline]
+ flush_tlb_mm_range+0x330/0x5c0 arch/x86/mm/tlb.c:1027
+ flush_tlb_page arch/x86/include/asm/tlbflush.h:254 [inline]
+ ptep_clear_flush+0x11a/0x170 mm/pgtable-generic.c:101
+ wp_page_copy mm/memory.c:3329 [inline]
+ do_wp_page+0x1ce9/0x5370 mm/memory.c:3655
+ handle_pte_fault mm/memory.c:5311 [inline]
+ __handle_mm_fault+0x264a/0x7250 mm/memory.c:5436
+ handle_mm_fault+0x3c2/0x8a0 mm/memory.c:5601
+ do_user_addr_fault arch/x86/mm/fault.c:1332 [inline]
+ handle_page_fault arch/x86/mm/fault.c:1475 [inline]
+ exc_page_fault+0x446/0x8a0 arch/x86/mm/fault.c:1533
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+RIP: 0033:0x7f769f6c6260
+Code: 41 54 55 48 89 f5 53 89 fb 48 83 ec 18 48 83 3d 8d 0d 0a 00 00 89 54 24 0c 74 08 84 c9 0f 85 09 02 00 00 31 c0 ba 01 00 00 00 <f0> 0f b1 15 80 3a 0a 00 0f 85 0f 02 00 00 4c 8d 25 73 3a 0a 00 4c
+RSP: 002b:00007fff40e80f80 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000000001
+RDX: 0000000000000001 RSI: 00007f769f767120 RDI: 0000000000000000
+RBP: 00007f769f767120 R08: 0000000000000006 R09: 0000000000000006
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>

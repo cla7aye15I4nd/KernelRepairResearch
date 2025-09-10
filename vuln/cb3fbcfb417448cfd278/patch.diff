@@ -1,0 +1,121 @@
+diff --git a/fs/bcachefs/compress.c b/fs/bcachefs/compress.c
+index 2813e4556f0d..f99ff1819597 100644
+--- a/fs/bcachefs/compress.c
++++ b/fs/bcachefs/compress.c
+@@ -2,7 +2,9 @@
+ #include "bcachefs.h"
+ #include "checksum.h"
+ #include "compress.h"
++#include "error.h"
+ #include "extents.h"
++#include "opts.h"
+ #include "super-io.h"
+ 
+ #include <linux/lz4.h>
+@@ -178,7 +180,16 @@ static int __bio_uncompress(struct bch_fs *c, struct bio *src,
+ 
+ 	enum bch_compression_opts opt = bch2_compression_type_to_opt(crc.compression_type);
+ 	mempool_t *workspace_pool = &c->compress_workspace[opt];
+-	BUG_ON(!mempool_initialized(workspace_pool));
++	if (unlikely(!mempool_initialized(workspace_pool))) {
++		if (fsck_err(c, compression_type_not_marked_in_sb,
++			     "compression type %s set but not marked in superblock",
++			     __bch2_compression_types[crc.compression_type]))
++			ret = bch2_check_set_has_compressed_data(c, opt);
++		else
++			ret = -BCH_ERR_compression_workspace_not_initialized;
++		if (ret)
++			goto out;
++	}
+ 
+ 	src_data = bio_map_or_bounce(c, src, READ);
+ 
+@@ -234,6 +245,7 @@ static int __bio_uncompress(struct bch_fs *c, struct bio *src,
+ 		BUG();
+ 	}
+ 	ret = 0;
++fsck_err:
+ out:
+ 	bio_unmap_or_unbounce(c, src_data);
+ 	return ret;
+@@ -420,7 +432,17 @@ static unsigned __bio_compress(struct bch_fs *c,
+ 	BUG_ON(compression.type >= BCH_COMPRESSION_OPT_NR);
+ 
+ 	mempool_t *workspace_pool = &c->compress_workspace[compression.type];
+-	BUG_ON(!mempool_initialized(workspace_pool));
++	if (unlikely(!mempool_initialized(workspace_pool))) {
++		if (fsck_err(c, compression_opt_not_marked_in_sb,
++			     "compression opt %s set but not marked in superblock",
++			     bch2_compression_opts[compression.type])) {
++			ret = bch2_check_set_has_compressed_data(c, compression.type);
++			if (ret) /* memory allocation failure, don't compress */
++				return 0;
++		} else {
++			return 0;
++		}
++	}
+ 
+ 	/* If it's only one block, don't bother trying to compress: */
+ 	if (src->bi_iter.bi_size <= c->opts.block_size)
+@@ -502,6 +524,9 @@ static unsigned __bio_compress(struct bch_fs *c,
+ err:
+ 	ret = BCH_COMPRESSION_TYPE_incompressible;
+ 	goto out;
++fsck_err:
++	ret = 0;
++	goto out;
+ }
+ 
+ unsigned bch2_bio_compress(struct bch_fs *c,
+diff --git a/fs/bcachefs/errcode.h b/fs/bcachefs/errcode.h
+index 3affdafc2c04..2dda7f962e5b 100644
+--- a/fs/bcachefs/errcode.h
++++ b/fs/bcachefs/errcode.h
+@@ -54,6 +54,7 @@
+ 	x(ENOMEM,			ENOMEM_compression_bounce_read_init)	\
+ 	x(ENOMEM,			ENOMEM_compression_bounce_write_init)	\
+ 	x(ENOMEM,			ENOMEM_compression_workspace_init)	\
++	x(EIO,				compression_workspace_not_initialized)	\
+ 	x(ENOMEM,			ENOMEM_bucket_gens)			\
+ 	x(ENOMEM,			ENOMEM_buckets_nouse)			\
+ 	x(ENOMEM,			ENOMEM_usage_init)			\
+diff --git a/fs/bcachefs/opts.c b/fs/bcachefs/opts.c
+index 0ba58d74c21f..6772faf385a5 100644
+--- a/fs/bcachefs/opts.c
++++ b/fs/bcachefs/opts.c
+@@ -54,7 +54,7 @@ const char * const __bch2_csum_opts[] = {
+ 	NULL
+ };
+ 
+-static const char * const __bch2_compression_types[] = {
++const char * const __bch2_compression_types[] = {
+ 	BCH_COMPRESSION_TYPES()
+ 	NULL
+ };
+diff --git a/fs/bcachefs/opts.h b/fs/bcachefs/opts.h
+index 6b29339ea725..ea69099e681d 100644
+--- a/fs/bcachefs/opts.h
++++ b/fs/bcachefs/opts.h
+@@ -17,6 +17,7 @@ extern const char * const bch2_sb_features[];
+ extern const char * const bch2_sb_compat[];
+ extern const char * const __bch2_btree_ids[];
+ extern const char * const __bch2_csum_opts[];
++extern const char * const __bch2_compression_types[];
+ extern const char * const bch2_compression_opts[];
+ extern const char * const __bch2_str_hash_types[];
+ extern const char * const bch2_str_hash_opts[];
+diff --git a/fs/bcachefs/sb-errors_format.h b/fs/bcachefs/sb-errors_format.h
+index f2b38493356d..d5b18ff1645c 100644
+--- a/fs/bcachefs/sb-errors_format.h
++++ b/fs/bcachefs/sb-errors_format.h
+@@ -305,7 +305,9 @@ enum bch_fsck_flags {
+ 	x(accounting_key_replicas_devs_unsorted,		280,	FSCK_AUTOFIX)	\
+ 	x(accounting_key_version_0,				282,	FSCK_AUTOFIX)	\
+ 	x(logged_op_but_clean,					283,	FSCK_AUTOFIX)	\
+-	x(MAX,							295,	0)
++	x(compression_opt_not_marked_in_sb,			295,	FSCK_AUTOFIX)	\
++	x(compression_type_not_marked_in_sb,			296,	FSCK_AUTOFIX)	\
++	x(MAX,							297,	0)
+ 
+ enum bch_sb_error_id {
+ #define x(t, n, ...) BCH_FSCK_ERR_##t = n,

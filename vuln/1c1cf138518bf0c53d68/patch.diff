@@ -1,0 +1,32 @@
+diff --git a/net/ipv4/ip_gre.c b/net/ipv4/ip_gre.c
+index 7b16c211b904..57ddcd8c62f6 100644
+--- a/net/ipv4/ip_gre.c
++++ b/net/ipv4/ip_gre.c
+@@ -280,8 +280,13 @@ static int erspan_rcv(struct sk_buff *skb, struct tnl_ptk_info *tpi,
+ 					  tpi->flags | TUNNEL_NO_KEY,
+ 					  iph->saddr, iph->daddr, 0);
+ 	} else {
++		if (unlikely(!pskb_may_pull(skb,
++					    gre_hdr_len + sizeof(*ershdr))))
++			return PACKET_REJECT;
++
+ 		ershdr = (struct erspan_base_hdr *)(skb->data + gre_hdr_len);
+ 		ver = ershdr->ver;
++		iph = ip_hdr(skb);
+ 		tunnel = ip_tunnel_lookup(itn, skb->dev->ifindex,
+ 					  tpi->flags | TUNNEL_KEY,
+ 					  iph->saddr, iph->daddr, tpi->key);
+diff --git a/net/ipv6/ip6_gre.c b/net/ipv6/ip6_gre.c
+index ca7e77e84283..c89aef524df9 100644
+--- a/net/ipv6/ip6_gre.c
++++ b/net/ipv6/ip6_gre.c
+@@ -528,6 +528,9 @@ static int ip6erspan_rcv(struct sk_buff *skb,
+ 	struct ip6_tnl *tunnel;
+ 	u8 ver;
+ 
++	if (unlikely(!pskb_may_pull(skb, sizeof(*ershdr))))
++		return PACKET_REJECT;
++
+ 	ipv6h = ipv6_hdr(skb);
+ 	ershdr = (struct erspan_base_hdr *)skb->data;
+ 	ver = ershdr->ver;

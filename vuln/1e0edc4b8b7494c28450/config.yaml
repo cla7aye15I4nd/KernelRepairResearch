@@ -1,0 +1,26 @@
+id: 1e0edc4b8b7494c28450
+bug_link: https://syzkaller.appspot.com/bug?extid=1e0edc4b8b7494c28450
+title: kernel BUG at net/rxrpc/local_object.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8c25d0887a8bd0e1ca2074ac0c6dff173787a83b
+fix_commit: 730c5fd42c1e3652a065448fd235cb9fafb2bd10
+datetime: '2019-08-09T15:21:19+01:00'
+fix_commit_message: "rxrpc: Fix local endpoint refcounting\n\nThe object lifetime\
+  \ management on the rxrpc_local struct is broken in that\nthe rxrpc_local_processor()\
+  \ function is expected to clean up and remove an\nobject - but it may get requeued\
+  \ by packets coming in on the backing UDP\nsocket once it starts running.\n\nThis\
+  \ may result in the assertion in rxrpc_local_rcu() firing because the\nmemory has\
+  \ been scheduled for RCU destruction whilst still queued:\n\n\trxrpc: Assertion\
+  \ failed\n\t------------[ cut here ]------------\n\tkernel BUG at net/rxrpc/local_object.c:468!\n\
+  \nNote that if the processor comes around before the RCU free function, it\nwill\
+  \ just do nothing because ->dead is true.\n\nFix this by adding a separate refcount\
+  \ to count active users of the\nendpoint that causes the endpoint to be destroyed\
+  \ when it reaches 0.\n\nThe original refcount can then be used to refcount objects\
+  \ through the work\nprocessor and cause the memory to be rcu freed when that reaches\
+  \ 0.\n\nFixes: 4f95dd78a77e (\"rxrpc: Rework local endpoint management\")\nReported-by:\
+  \ syzbot+1e0edc4b8b7494c28450@syzkaller.appspotmail.com\nSigned-off-by: David Howells\
+  \ <dhowells@redhat.com>\n"
+submodule:
+- net/rxrpc
+hunk_count: 16
+covered_count: 6

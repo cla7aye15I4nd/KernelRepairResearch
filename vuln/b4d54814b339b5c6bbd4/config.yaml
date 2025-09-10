@@ -1,0 +1,38 @@
+id: b4d54814b339b5c6bbd4
+bug_link: https://syzkaller.appspot.com/bug?extid=b4d54814b339b5c6bbd4
+title: memory leak in zr364xx_probe
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9d3b7ca42d6f70556c10ce3f6bdb32457077d947
+fix_commit: ea354b6ddd6f09be29424f41fa75a3e637fea234
+datetime: '2021-01-27T14:44:13+01:00'
+fix_commit_message: "media: zr364xx: fix memory leaks in probe()\n\nSyzbot discovered\
+  \ that the probe error handling doesn't clean up the\nresources allocated in zr364xx_board_init().\
+  \  There are several\nrelated bugs in this code so I have re-written the error handling.\n\
+  \n1)  Introduce a new function zr364xx_board_uninit() which cleans up\n    the resources\
+  \ in zr364xx_board_init().\n2)  In zr364xx_board_init() if the call to zr364xx_start_readpipe()\n\
+  \    fails then release the \"cam->buffer.frame[i].lpvbits\" memory\n    before\
+  \ returning.  This way every function either allocates\n    everything successfully\
+  \ or it cleans up after itself.\n3)  Re-write the probe function so that each failure\
+  \ path goto frees\n    the most recent allocation.  That way we don't free anything\n\
+  \    before it has been allocated and we can also verify that\n    everything is\
+  \ freed.\n4)  Originally, in the probe function the \"cam->v4l2_dev.release\"\n\
+  \    pointer was set to \"zr364xx_release\" near the start but I moved\n    that\
+  \ assignment to the end, after everything had succeeded.  The\n    release function\
+  \ was never actually called during the probe cleanup\n    process, but with this\
+  \ change I wanted to make it clear that we\n    don't want to call zr364xx_release()\
+  \ until everything is\n    allocated successfully.\n\nNext I re-wrote the zr364xx_release()\
+  \ function.  Ideally this would\nhave been a simple matter of copy and pasting the\
+  \ cleanup code from\nprobe and adding an additional call to video_unregister_device().\
+  \  But\nthere are a couple quirks to note.\n\n1)  The probe function does not call\
+  \ videobuf_mmap_free() and I don't\n    know where the videobuf_mmap is allocated.\
+  \  I left the code as-is to\n    avoid introducing a bug in code I don't understand.\n\
+  2)  The zr364xx_board_uninit() has a call to zr364xx_stop_readpipe()\n    which\
+  \ is a change from the original behavior with regards to\n    unloading the driver.\
+  \  Calling zr364xx_stop_readpipe() on a stopped\n    pipe is not a problem so this\
+  \ is safe and is potentially a bugfix.\n\nReported-by: syzbot+b4d54814b339b5c6bbd4@syzkaller.appspotmail.com\n\
+  Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>\nSigned-off-by: Hans Verkuil\
+  \ <hverkuil-cisco@xs4all.nl>\nSigned-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>\n"
+submodule:
+- drivers/media/usb/zr364xx
+hunk_count: 8
+covered_count: 4

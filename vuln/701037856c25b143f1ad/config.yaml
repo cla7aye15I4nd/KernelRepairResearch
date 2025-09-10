@@ -1,0 +1,41 @@
+id: 701037856c25b143f1ad
+bug_link: https://syzkaller.appspot.com/bug?extid=701037856c25b143f1ad
+title: 'KCSAN: data-race in __fsnotify_parent / __fsnotify_recalc_mask (5)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9852d85ec9d492ebef56dc5f229416c925758edc
+fix_commit: 35ceae44742e1101f9d20adadbbbd92c05d7d659
+datetime: '2024-10-02T15:11:40+02:00'
+fix_commit_message: 'fsnotify: Avoid data race between fsnotify_recalc_mask() and
+  fsnotify_object_watched()
+
+
+  When __fsnotify_recalc_mask() recomputes the mask on the watched object,
+
+  the compiler can "optimize" the code to perform partial updates to the
+
+  mask (including zeroing it at the beginning). Thus places checking
+
+  the object mask without conn->lock such as fsnotify_object_watched()
+
+  could see invalid states of the mask. Make sure the mask update is
+
+  performed by one memory store using WRITE_ONCE().
+
+
+  Reported-by: syzbot+701037856c25b143f1ad@syzkaller.appspotmail.com
+
+  Reported-by: Dmitry Vyukov <dvyukov@google.com>
+
+  Link: https://lore.kernel.org/all/CACT4Y+Zk0ohwwwHSD63U2-PQ=UuamXczr1mKBD6xtj2dyYKBvA@mail.gmail.com
+
+  Signed-off-by: Jan Kara <jack@suse.cz>
+
+  Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+
+  Link: https://patch.msgid.link/20240717140623.27768-1-jack@suse.cz
+
+  '
+submodule:
+- fs/notify
+hunk_count: 7
+covered_count: 6

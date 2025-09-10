@@ -1,0 +1,73 @@
+=====================================================
+BUG: KMSAN: uninit-value in vring_map_one_sg drivers/virtio/virtio_ring.c:380 [inline]
+BUG: KMSAN: uninit-value in virtqueue_add_split drivers/virtio/virtio_ring.c:614 [inline]
+BUG: KMSAN: uninit-value in virtqueue_add+0x1e86/0x65c0 drivers/virtio/virtio_ring.c:2210
+ vring_map_one_sg drivers/virtio/virtio_ring.c:380 [inline]
+ virtqueue_add_split drivers/virtio/virtio_ring.c:614 [inline]
+ virtqueue_add+0x1e86/0x65c0 drivers/virtio/virtio_ring.c:2210
+ virtqueue_add_sgs+0x186/0x1b0 drivers/virtio/virtio_ring.c:2244
+ __virtscsi_add_cmd drivers/scsi/virtio_scsi.c:471 [inline]
+ virtscsi_add_cmd+0x838/0xad0 drivers/scsi/virtio_scsi.c:505
+ virtscsi_queuecommand+0x898/0xa60 drivers/scsi/virtio_scsi.c:602
+ scsi_dispatch_cmd drivers/scsi/scsi_lib.c:1609 [inline]
+ scsi_queue_rq+0x4cc7/0x5a80 drivers/scsi/scsi_lib.c:1851
+ blk_mq_dispatch_rq_list+0x79b/0x3440 block/blk-mq.c:2037
+ __blk_mq_do_dispatch_sched block/blk-mq-sched.c:170 [inline]
+ blk_mq_do_dispatch_sched block/blk-mq-sched.c:184 [inline]
+ __blk_mq_sched_dispatch_requests+0x11b7/0x26e0 block/blk-mq-sched.c:309
+ blk_mq_sched_dispatch_requests+0x12f/0x270 block/blk-mq-sched.c:331
+ blk_mq_run_work_fn+0xd0/0x280 block/blk-mq.c:2420
+ process_one_work kernel/workqueue.c:3267 [inline]
+ process_scheduled_works+0xa81/0x1bd0 kernel/workqueue.c:3348
+ worker_thread+0xea5/0x1560 kernel/workqueue.c:3429
+ kthread+0x3e2/0x540 kernel/kthread.c:389
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Uninit was stored to memory at:
+ memcpy_from_iter lib/iov_iter.c:73 [inline]
+ iterate_bvec include/linux/iov_iter.h:122 [inline]
+ iterate_and_advance2 include/linux/iov_iter.h:249 [inline]
+ iterate_and_advance include/linux/iov_iter.h:271 [inline]
+ __copy_from_iter lib/iov_iter.c:249 [inline]
+ copy_page_from_iter_atomic+0x12b7/0x2ae0 lib/iov_iter.c:481
+ generic_perform_write+0x4c1/0xc60 mm/filemap.c:3982
+ ext4_buffered_write_iter+0x564/0xaa0 fs/ext4/file.c:299
+ ext4_file_write_iter+0x208/0x3450
+ __kernel_write_iter+0x64d/0xc80 fs/read_write.c:523
+ dump_emit_page fs/coredump.c:895 [inline]
+ dump_user_range+0x8dc/0xee0 fs/coredump.c:956
+ elf_core_dump+0x57c7/0x5ae0 fs/binfmt_elf.c:2083
+ do_coredump+0x32d5/0x4920 fs/coredump.c:769
+ get_signal+0x267e/0x2d00 kernel/signal.c:2896
+ arch_do_signal_or_restart+0x53/0xcb0 arch/x86/kernel/signal.c:310
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x5d/0x160 kernel/entry/common.c:218
+ do_syscall_64+0xdc/0x1e0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ __alloc_pages+0x9d6/0xe70 mm/page_alloc.c:4598
+ alloc_pages_mpol+0x299/0x990 mm/mempolicy.c:2264
+ alloc_pages+0x1bf/0x1e0 mm/mempolicy.c:2335
+ dump_user_range+0x4a/0xee0 fs/coredump.c:940
+ elf_core_dump+0x57c7/0x5ae0 fs/binfmt_elf.c:2083
+ do_coredump+0x32d5/0x4920 fs/coredump.c:769
+ get_signal+0x267e/0x2d00 kernel/signal.c:2896
+ arch_do_signal_or_restart+0x53/0xcb0 arch/x86/kernel/signal.c:310
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x5d/0x160 kernel/entry/common.c:218
+ do_syscall_64+0xdc/0x1e0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Bytes 0-4095 of 4096 are uninitialized
+Memory access of size 4096 starts at ffff888130508000
+
+CPU: 0 PID: 55 Comm: kworker/0:1H Not tainted 6.9.0-syzkaller-02707-g614da38e2f7a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Workqueue: kblockd blk_mq_run_work_fn
+=====================================================

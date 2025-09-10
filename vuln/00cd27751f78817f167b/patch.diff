@@ -1,0 +1,14 @@
+diff --git a/block/genhd.c b/block/genhd.c
+index f71f82991434..a94952ae9e39 100644
+--- a/block/genhd.c
++++ b/block/genhd.c
+@@ -366,7 +366,8 @@ int disk_scan_partitions(struct gendisk *disk, blk_mode_t mode)
+ 	}
+ 
+ 	set_bit(GD_NEED_PART_SCAN, &disk->state);
+-	bdev = blkdev_get_by_dev(disk_devt(disk), mode, NULL, NULL);
++	bdev = blkdev_get_by_dev(disk_devt(disk), mode & ~FMODE_EXEC, NULL,
++				 NULL);
+ 	if (IS_ERR(bdev))
+ 		ret =  PTR_ERR(bdev);
+ 	else

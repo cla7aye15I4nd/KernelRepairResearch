@@ -1,0 +1,36 @@
+id: 3b3296d032353c33184b
+bug_link: https://syzkaller.appspot.com/bug?extid=3b3296d032353c33184b
+title: memory leak in copy_net_ns
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 76db2d466f6a929a04775f0f87d837e3bcba44e8
+fix_commit: 82ecff655e7968151b0047f1b5de03b249e5c1c4
+datetime: '2019-10-24T14:40:02-07:00'
+fix_commit_message: "keys: Fix memory leak in copy_net_ns\n\nIf copy_net_ns() failed\
+  \ after net_alloc(), net->key_domain is leaked.\nFix this, by freeing key_domain\
+  \ in error path.\n\nsyzbot report:\nBUG: memory leak\nunreferenced object 0xffff8881175007e0\
+  \ (size 32):\n  comm \"syz-executor902\", pid 7069, jiffies 4294944350 (age 28.400s)\n\
+  \  hex dump (first 32 bytes):\n    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\
+  \ 00  ................\n    01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n\
+  \  backtrace:\n    [<00000000a83ed741>] kmemleak_alloc_recursive include/linux/kmemleak.h:43\
+  \ [inline]\n    [<00000000a83ed741>] slab_post_alloc_hook mm/slab.h:439 [inline]\n\
+  \    [<00000000a83ed741>] slab_alloc mm/slab.c:3326 [inline]\n    [<00000000a83ed741>]\
+  \ kmem_cache_alloc_trace+0x13d/0x280 mm/slab.c:3553\n    [<0000000059fc92b9>] kmalloc\
+  \ include/linux/slab.h:547 [inline]\n    [<0000000059fc92b9>] kzalloc include/linux/slab.h:742\
+  \ [inline]\n    [<0000000059fc92b9>] net_alloc net/core/net_namespace.c:398 [inline]\n\
+  \    [<0000000059fc92b9>] copy_net_ns+0xb2/0x220 net/core/net_namespace.c:445\n\
+  \    [<00000000a9d74bbc>] create_new_namespaces+0x141/0x2a0 kernel/nsproxy.c:103\n\
+  \    [<000000008047d645>] unshare_nsproxy_namespaces+0x7f/0x100 kernel/nsproxy.c:202\n\
+  \    [<000000005993ea6e>] ksys_unshare+0x236/0x490 kernel/fork.c:2674\n    [<0000000019417e75>]\
+  \ __do_sys_unshare kernel/fork.c:2742 [inline]\n    [<0000000019417e75>] __se_sys_unshare\
+  \ kernel/fork.c:2740 [inline]\n    [<0000000019417e75>] __x64_sys_unshare+0x16/0x20\
+  \ kernel/fork.c:2740\n    [<00000000f4c5f2c8>] do_syscall_64+0x76/0x1a0 arch/x86/entry/common.c:296\n\
+  \    [<0000000038550184>] entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nsyzbot also\
+  \ reported other leak in copy_net_ns -> setup_net.\nThis problem is already fixed\
+  \ by cf47a0b882a4e5f6b34c7949d7b293e9287f1972.\n\nFixes: 9b242610514f (\"keys: Network\
+  \ namespace domain tag\")\nReported-and-tested-by: syzbot+3b3296d032353c33184b@syzkaller.appspotmail.com\n\
+  Signed-off-by: Takeshi Misawa <jeliantsurux@gmail.com>\nSigned-off-by: David S.\
+  \ Miller <davem@davemloft.net>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 1

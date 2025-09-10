@@ -1,0 +1,113 @@
+Doing incompatible version upgrade from 0.32: (unknown version) to 1.28: inode_has_case_insensitive
+  running recovery passes: check_allocations,check_extents_to_backpointers,check_snapshots,check_subvols,check_inodes,check_dirents,set_fs_needs_rebalance
+==================================================================
+BUG: KASAN: use-after-free in poly1305_update+0x145/0x1b0 lib/crypto/poly1305.c:44
+Read of size 8 at addr ffff888076fa0070 by task syz-executor293/5828
+
+CPU: 0 UID: 0 PID: 5828 Comm: syz-executor293 Not tainted 6.16.0-rc1-syzkaller-00157-g02adc1490e6d #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0xd2/0x2b0 mm/kasan/report.c:521
+ kasan_report+0x118/0x150 mm/kasan/report.c:634
+ check_region_inline mm/kasan/generic.c:-1 [inline]
+ kasan_check_range+0x2b0/0x2c0 mm/kasan/generic.c:189
+ __asan_memcpy+0x29/0x70 mm/kasan/shadow.c:105
+ poly1305_update+0x145/0x1b0 lib/crypto/poly1305.c:44
+ bch2_checksum+0x209/0x490 fs/bcachefs/checksum.c:157
+ bch2_btree_node_read_done+0x1127/0x51f0 fs/bcachefs/btree_io.c:1155
+ btree_node_read_work+0x426/0xe30 fs/bcachefs/btree_io.c:1411
+ bch2_btree_node_read+0x887/0x2a00 fs/bcachefs/btree_io.c:-1
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1877 [inline]
+ bch2_btree_root_read+0x5f0/0x760 fs/bcachefs/btree_io.c:1899
+ read_btree_roots+0x2c2/0x880 fs/bcachefs/recovery.c:604
+ bch2_fs_recovery+0x2574/0x3950 fs/bcachefs/recovery.c:979
+ bch2_fs_start+0xa99/0xd90 fs/bcachefs/super.c:1203
+ bch2_fs_get_tree+0xb02/0x14f0 fs/bcachefs/fs.c:2489
+ vfs_get_tree+0x92/0x2b0 fs/super.c:1802
+ do_new_mount+0x24a/0xa40 fs/namespace.c:3885
+ do_mount fs/namespace.c:4222 [inline]
+ __do_sys_mount fs/namespace.c:4433 [inline]
+ __se_sys_mount+0x317/0x410 fs/namespace.c:4410
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f8057524e2a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffce30c85f8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffce30c8610 RCX: 00007f8057524e2a
+RDX: 000020000000f640 RSI: 000020000000f680 RDI: 00007ffce30c8610
+RBP: 000020000000f680 R08: 00007ffce30c8650 R09: 000000000000f635
+R10: 0000000000000180 R11: 0000000000000282 R12: 000020000000f640
+R13: 00007ffce30c8650 R14: 0000000000000003 R15: 0000000000000180
+ </TASK>
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x76fa0
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+raw: 00fff00000000000 dead000000000100 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as freed
+page last allocated via order 5, migratetype Reclaimable, gfp_mask 0x4428d0(GFP_NOWAIT|__GFP_RECLAIMABLE|__GFP_IO|__GFP_FS|__GFP_COMP|__GFP_ACCOUNT), pid 5828, tgid 5828 (syz-executor293), ts 89876168872, free_ts 90094598083
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x240/0x2a0 mm/page_alloc.c:1704
+ prep_new_page mm/page_alloc.c:1712 [inline]
+ get_page_from_freelist+0x21d5/0x22b0 mm/page_alloc.c:3669
+ __alloc_frozen_pages_noprof+0x181/0x370 mm/page_alloc.c:4959
+ __alloc_pages_noprof+0xa/0x30 mm/page_alloc.c:4993
+ __alloc_pages_node_noprof include/linux/gfp.h:284 [inline]
+ alloc_pages_node_noprof include/linux/gfp.h:311 [inline]
+ ___kmalloc_large_node+0x85/0x210 mm/slub.c:4272
+ __kmalloc_large_node_noprof+0x18/0x90 mm/slub.c:4300
+ __do_kmalloc_node mm/slub.c:4316 [inline]
+ __kvmalloc_node_noprof+0x6d/0x5f0 mm/slub.c:5015
+ btree_node_data_alloc+0xdc/0x270 fs/bcachefs/btree_cache.c:150
+ __bch2_btree_node_mem_alloc+0x1ef/0x420 fs/bcachefs/btree_cache.c:195
+ bch2_fs_btree_cache_init+0x2de/0x690 fs/bcachefs/btree_cache.c:656
+ bch2_fs_alloc fs/bcachefs/super.c:999 [inline]
+ bch2_fs_open+0x1ceb/0x2570 fs/bcachefs/super.c:2423
+ bch2_fs_get_tree+0x437/0x14f0 fs/bcachefs/fs.c:2473
+ vfs_get_tree+0x92/0x2b0 fs/super.c:1802
+ do_new_mount+0x24a/0xa40 fs/namespace.c:3885
+ do_mount fs/namespace.c:4222 [inline]
+ __do_sys_mount fs/namespace.c:4433 [inline]
+ __se_sys_mount+0x317/0x410 fs/namespace.c:4410
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+page last free pid 5828 tgid 5828 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1248 [inline]
+ __free_pages_ok+0xa3b/0xc10 mm/page_alloc.c:1424
+ __folio_put+0x21b/0x2c0 mm/swap.c:112
+ folio_put include/linux/mm.h:1356 [inline]
+ free_large_kmalloc+0x145/0x200 mm/slub.c:4768
+ btree_bounce_free fs/bcachefs/btree_io.c:115 [inline]
+ bch2_btree_node_read_done+0x329a/0x51f0 fs/bcachefs/btree_io.c:1294
+ btree_node_read_work+0x426/0xe30 fs/bcachefs/btree_io.c:1411
+ bch2_btree_node_read+0x887/0x2a00 fs/bcachefs/btree_io.c:-1
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1877 [inline]
+ bch2_btree_root_read+0x5f0/0x760 fs/bcachefs/btree_io.c:1899
+ read_btree_roots+0x2c2/0x880 fs/bcachefs/recovery.c:604
+ bch2_fs_recovery+0x2574/0x3950 fs/bcachefs/recovery.c:979
+ bch2_fs_start+0xa99/0xd90 fs/bcachefs/super.c:1203
+ bch2_fs_get_tree+0xb02/0x14f0 fs/bcachefs/fs.c:2489
+ vfs_get_tree+0x92/0x2b0 fs/super.c:1802
+ do_new_mount+0x24a/0xa40 fs/namespace.c:3885
+ do_mount fs/namespace.c:4222 [inline]
+ __do_sys_mount fs/namespace.c:4433 [inline]
+ __se_sys_mount+0x317/0x410 fs/namespace.c:4410
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff888076f9ff00: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff888076f9ff80: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+>ffff888076fa0000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+                                                             ^
+ ffff888076fa0080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff888076fa0100: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+==================================================================

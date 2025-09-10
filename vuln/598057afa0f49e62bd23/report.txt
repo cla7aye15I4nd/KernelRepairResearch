@@ -1,0 +1,128 @@
+ntfs3(loop0): failed to convert "0000" to maccroatian
+==================================================================
+BUG: KASAN: slab-out-of-bounds in ntfs_utf16_to_nls+0x3c9/0x5a0 fs/ntfs3/dir.c:49
+Read of size 2 at addr ffff88807c7f1000 by task syz-executor243/5824
+
+CPU: 0 UID: 0 PID: 5824 Comm: syz-executor243 Not tainted 6.15.0-syzkaller-09161-g0f70f5b08a47 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0xd2/0x2b0 mm/kasan/report.c:521
+ kasan_report+0x118/0x150 mm/kasan/report.c:634
+ ntfs_utf16_to_nls+0x3c9/0x5a0 fs/ntfs3/dir.c:49
+ ntfs_dir_emit fs/ntfs3/dir.c:307 [inline]
+ ntfs_read_hdr+0x508/0xbc0 fs/ntfs3/dir.c:383
+ ntfs_readdir+0xa5c/0xdd0 fs/ntfs3/dir.c:494
+ iterate_dir+0x5ac/0x770 fs/readdir.c:108
+ __do_sys_getdents64 fs/readdir.c:410 [inline]
+ __se_sys_getdents64+0xe4/0x260 fs/readdir.c:396
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f34189bde59
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff44014e48 EFLAGS: 00000246 ORIG_RAX: 00000000000000d9
+RAX: ffffffffffffffda RBX: 0000200000000080 RCX: 00007f34189bde59
+RDX: 0000000000001000 RSI: 0000200000000f80 RDI: 0000000000000004
+RBP: 00007f3418a515f0 R08: 000055556d8c34c0 R09: 000055556d8c34c0
+R10: 000055556d8c34c0 R11: 0000000000000246 R12: 00007fff44014e70
+R13: 00007fff44015098 R14: 431bde82d7b634db R15: 00007f3418a0703b
+ </TASK>
+
+Allocated by task 5824:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3e/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0x93/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __do_kmalloc_node mm/slub.c:4327 [inline]
+ __kmalloc_noprof+0x27a/0x4f0 mm/slub.c:4339
+ kmalloc_noprof include/linux/slab.h:909 [inline]
+ indx_read+0x27c/0xc20 fs/ntfs3/index.c:1059
+ ntfs_readdir+0x9d8/0xdd0 fs/ntfs3/dir.c:489
+ iterate_dir+0x5ac/0x770 fs/readdir.c:108
+ __do_sys_getdents64 fs/readdir.c:410 [inline]
+ __se_sys_getdents64+0xe4/0x260 fs/readdir.c:396
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88807c7f0000
+ which belongs to the cache kmalloc-4k of size 4096
+The buggy address is located 0 bytes to the right of
+ allocated 4096-byte region [ffff88807c7f0000, ffff88807c7f1000)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x7c7f0
+head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000000040(head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000040 ffff88801a442140 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000080040004 00000000f5000000 0000000000000000
+head: 00fff00000000040 ffff88801a442140 dead000000000122 0000000000000000
+head: 0000000000000000 0000000080040004 00000000f5000000 0000000000000000
+head: 00fff00000000003 ffffea0001f1fc01 00000000ffffffff 00000000ffffffff
+head: ffffffffffffffff 0000000000000000 00000000ffffffff 0000000000000008
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd2040(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 5824, tgid 5824 (syz-executor243), ts 94062103587, free_ts 87837995758
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x240/0x2a0 mm/page_alloc.c:1710
+ prep_new_page mm/page_alloc.c:1718 [inline]
+ get_page_from_freelist+0x21d1/0x22b0 mm/page_alloc.c:3680
+ __alloc_frozen_pages_noprof+0x181/0x370 mm/page_alloc.c:4970
+ alloc_pages_mpol+0x232/0x4a0 mm/mempolicy.c:2301
+ alloc_slab_page mm/slub.c:2450 [inline]
+ allocate_slab+0x8a/0x3b0 mm/slub.c:2618
+ new_slab mm/slub.c:2672 [inline]
+ ___slab_alloc+0xbfc/0x1480 mm/slub.c:3858
+ __slab_alloc mm/slub.c:3948 [inline]
+ __slab_alloc_node mm/slub.c:4023 [inline]
+ slab_alloc_node mm/slub.c:4184 [inline]
+ __do_kmalloc_node mm/slub.c:4326 [inline]
+ __kmalloc_noprof+0x305/0x4f0 mm/slub.c:4339
+ kmalloc_noprof include/linux/slab.h:909 [inline]
+ indx_read+0x27c/0xc20 fs/ntfs3/index.c:1059
+ ntfs_readdir+0x9d8/0xdd0 fs/ntfs3/dir.c:489
+ iterate_dir+0x5ac/0x770 fs/readdir.c:108
+ __do_sys_getdents64 fs/readdir.c:410 [inline]
+ __se_sys_getdents64+0xe4/0x260 fs/readdir.c:396
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+page last free pid 5814 tgid 5814 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1254 [inline]
+ __free_frozen_pages+0xc65/0xe50 mm/page_alloc.c:2717
+ discard_slab mm/slub.c:2716 [inline]
+ __put_partials+0x161/0x1c0 mm/slub.c:3185
+ put_cpu_partial+0x17c/0x250 mm/slub.c:3260
+ __slab_free+0x2f7/0x400 mm/slub.c:4512
+ qlink_free mm/kasan/quarantine.c:163 [inline]
+ qlist_free_all+0x97/0x140 mm/kasan/quarantine.c:179
+ kasan_quarantine_reduce+0x148/0x160 mm/kasan/quarantine.c:286
+ __kasan_slab_alloc+0x22/0x80 mm/kasan/common.c:329
+ kasan_slab_alloc include/linux/kasan.h:250 [inline]
+ slab_post_alloc_hook mm/slub.c:4147 [inline]
+ slab_alloc_node mm/slub.c:4196 [inline]
+ kmem_cache_alloc_noprof+0x1c1/0x3c0 mm/slub.c:4203
+ vm_area_dup+0x28/0x540 kernel/fork.c:488
+ __split_vma+0x1a0/0x9b0 mm/vma.c:477
+ vms_gather_munmap_vmas+0x2de/0x12b0 mm/vma.c:1315
+ do_vmi_align_munmap+0x25d/0x420 mm/vma.c:1483
+ __do_sys_brk mm/mmap.c:176 [inline]
+ __se_sys_brk+0x74e/0xb90 mm/mmap.c:115
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff88807c7f0f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff88807c7f0f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff88807c7f1000: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+                   ^
+ ffff88807c7f1080: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88807c7f1100: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

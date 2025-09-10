@@ -1,0 +1,58 @@
+------------[ cut here ]------------
+strnlen: detected buffer overflow: 129 byte read of buffer size 128
+WARNING: CPU: 0 PID: 9 at lib/string_helpers.c:1033 __fortify_report+0x9d/0xb0 lib/string_helpers.c:1032
+Modules linked in:
+CPU: 0 UID: 0 PID: 9 Comm: kworker/0:1 Not tainted 6.14.0-rc2-syzkaller-00281-g496659003dac #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+Workqueue: usb_hub_wq hub_event
+RIP: 0010:__fortify_report+0x9d/0xb0 lib/string_helpers.c:1032
+Code: 84 ed 48 8b 33 48 c7 c0 a0 ae 80 8c 48 c7 c1 c0 ae 80 8c 48 0f 44 c8 48 c7 c7 20 ac 80 8c 4c 89 fa 4d 89 f0 e8 04 dd 8b fc 90 <0f> 0b 90 90 5b 41 5e 41 5f 5d c3 cc cc cc cc 0f 1f 40 00 90 90 90
+RSP: 0018:ffffc900000e6b50 EFLAGS: 00010246
+RAX: e8edca93825f5800 RBX: ffffffff8c80ab68 RCX: ffff88801c2f8000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff81817e32 R09: fffffbfff1d3a614
+R10: dffffc0000000000 R11: fffffbfff1d3a614 R12: dffffc0000000000
+R13: 1ffff9200001cd84 R14: 0000000000000080 R15: 0000000000000081
+FS:  0000000000000000(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055d6c3b85e50 CR3: 0000000078508000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __fortify_panic+0x9/0x10 lib/string_helpers.c:1039
+ _Z7strnlenPKcU25pass_dynamic_object_size1m include/linux/fortify-string.h:235 [inline]
+ _Z13sized_strscpyPcU25pass_dynamic_object_size1PKcU25pass_dynamic_object_size1m include/linux/fortify-string.h:309 [inline]
+ ucan_probe+0x195e/0x1980 drivers/net/can/usb/ucan.c:1535
+ usb_probe_interface+0x641/0xbb0 drivers/usb/core/driver.c:396
+ really_probe+0x2b9/0xad0 drivers/base/dd.c:658
+ __driver_probe_device+0x1a2/0x390 drivers/base/dd.c:800
+ driver_probe_device+0x50/0x430 drivers/base/dd.c:830
+ __device_attach_driver+0x2d6/0x530 drivers/base/dd.c:958
+ bus_for_each_drv+0x24e/0x2e0 drivers/base/bus.c:462
+ __device_attach+0x333/0x520 drivers/base/dd.c:1030
+ bus_probe_device+0x189/0x260 drivers/base/bus.c:537
+ device_add+0x856/0xbf0 drivers/base/core.c:3665
+ usb_set_configuration+0x1976/0x1fb0 drivers/usb/core/message.c:2210
+ usb_generic_driver_probe+0x88/0x140 drivers/usb/core/generic.c:250
+ usb_probe_device+0x1b8/0x380 drivers/usb/core/driver.c:291
+ really_probe+0x2b9/0xad0 drivers/base/dd.c:658
+ __driver_probe_device+0x1a2/0x390 drivers/base/dd.c:800
+ driver_probe_device+0x50/0x430 drivers/base/dd.c:830
+ __device_attach_driver+0x2d6/0x530 drivers/base/dd.c:958
+ bus_for_each_drv+0x24e/0x2e0 drivers/base/bus.c:462
+ __device_attach+0x333/0x520 drivers/base/dd.c:1030
+ bus_probe_device+0x189/0x260 drivers/base/bus.c:537
+ device_add+0x856/0xbf0 drivers/base/core.c:3665
+ usb_new_device+0x104a/0x19a0 drivers/usb/core/hub.c:2652
+ hub_port_connect drivers/usb/core/hub.c:5523 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5663 [inline]
+ port_event drivers/usb/core/hub.c:5823 [inline]
+ hub_event+0x2d6d/0x5150 drivers/usb/core/hub.c:5905
+ process_one_work kernel/workqueue.c:3236 [inline]
+ process_scheduled_works+0xabe/0x18e0 kernel/workqueue.c:3317
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3398
+ kthread+0x7a9/0x920 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

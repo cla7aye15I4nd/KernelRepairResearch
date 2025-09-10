@@ -1,0 +1,74 @@
+skbuff: skb_under_panic: text:ffffffff89fd546a len:24 put:20 head:ffff88802a0b9b00 data:ffff88802a0b9afe tail:0x16 end:0x140 dev:nr0.2
+------------[ cut here ]------------
+kernel BUG at net/core/skbuff.c:205!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 2 UID: 0 PID: 5056 Comm: dhcpcd Not tainted 6.11.0-rc5-syzkaller-00207-gfb24560f31f9 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:skb_panic+0x157/0x1d0 net/core/skbuff.c:205
+Code: b6 04 01 84 c0 74 04 3c 03 7e 21 8b 4b 70 41 56 45 89 e8 48 c7 c7 80 3f 7a 8c 41 57 56 48 89 ee 52 4c 89 e2 e8 0a ee 83 f8 90 <0f> 0b 4c 89 4c 24 10 48 89 54 24 08 48 89 34 24 e8 04 38 02 f9 4c
+RSP: 0018:ffffc9000404f668 EFLAGS: 00010286
+RAX: 0000000000000086 RBX: ffff88802335c780 RCX: ffffffff816c4a19
+RDX: 0000000000000000 RSI: ffffffff816cde56 RDI: 0000000000000005
+RBP: ffffffff8c7a52a0 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000000000201 R11: 0000000000000000 R12: ffffffff89fd546a
+R13: 0000000000000014 R14: ffff88805209a130 R15: 0000000000000140
+FS:  00007f4e4cfb9740(0000) GS:ffff88806a800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00000000203e9000 CR3: 0000000028878000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 000000000000000e DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ skb_under_panic net/core/skbuff.c:215 [inline]
+ skb_push+0xca/0xf0 net/core/skbuff.c:2617
+ nr_header+0x2a/0x3e0 net/netrom/nr_dev.c:69
+ dev_hard_header include/linux/netdevice.h:3159 [inline]
+ vlan_dev_hard_header+0x13f/0x520 net/8021q/vlan_dev.c:83
+ dev_hard_header include/linux/netdevice.h:3159 [inline]
+ lapbeth_data_transmit+0x2a0/0x350 drivers/net/wan/lapbether.c:257
+ lapb_data_transmit+0x93/0xc0 net/lapb/lapb_iface.c:447
+ lapb_transmit_buffer+0xce/0x390 net/lapb/lapb_out.c:149
+ lapb_send_control+0x1c8/0x320 net/lapb/lapb_subr.c:251
+ lapb_establish_data_link+0xeb/0x110 net/lapb/lapb_out.c:163
+ lapb_device_event+0x398/0x570 net/lapb/lapb_iface.c:512
+ notifier_call_chain+0xb9/0x410 kernel/notifier.c:93
+ call_netdevice_notifiers_info+0xbe/0x140 net/core/dev.c:1994
+ call_netdevice_notifiers_extack net/core/dev.c:2032 [inline]
+ call_netdevice_notifiers net/core/dev.c:2046 [inline]
+ __dev_notify_flags+0x12d/0x2e0 net/core/dev.c:8877
+ dev_change_flags+0x10c/0x160 net/core/dev.c:8915
+ devinet_ioctl+0x127a/0x1f10 net/ipv4/devinet.c:1177
+ inet_ioctl+0x3aa/0x3f0 net/ipv4/af_inet.c:1003
+ sock_do_ioctl+0x116/0x280 net/socket.c:1222
+ sock_ioctl+0x22e/0x6c0 net/socket.c:1341
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl fs/ioctl.c:893 [inline]
+ __x64_sys_ioctl+0x193/0x220 fs/ioctl.c:893
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f4e4d087d49
+Code: 5c c3 48 8d 44 24 08 48 89 54 24 e0 48 89 44 24 c0 48 8d 44 24 d0 48 89 44 24 c8 b8 10 00 00 00 c7 44 24 b8 10 00 00 00 0f 05 <41> 89 c0 3d 00 f0 ff ff 76 10 48 8b 15 ae 60 0d 00 f7 d8 41 83 c8
+RSP: 002b:00007ffeb96a1d98 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007f4e4cfb96c0 RCX: 00007f4e4d087d49
+RDX: 00007ffeb96b1f88 RSI: 0000000000008914 RDI: 000000000000001b
+RBP: 00007ffeb96c2148 R08: 00007ffeb96b1f48 R09: 00007ffeb96b1ef8
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007ffeb96b1f88 R14: 0000000000000028 R15: 0000000000008914
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:skb_panic+0x157/0x1d0 net/core/skbuff.c:205
+Code: b6 04 01 84 c0 74 04 3c 03 7e 21 8b 4b 70 41 56 45 89 e8 48 c7 c7 80 3f 7a 8c 41 57 56 48 89 ee 52 4c 89 e2 e8 0a ee 83 f8 90 <0f> 0b 4c 89 4c 24 10 48 89 54 24 08 48 89 34 24 e8 04 38 02 f9 4c
+RSP: 0018:ffffc9000404f668 EFLAGS: 00010286
+RAX: 0000000000000086 RBX: ffff88802335c780 RCX: ffffffff816c4a19
+RDX: 0000000000000000 RSI: ffffffff816cde56 RDI: 0000000000000005
+RBP: ffffffff8c7a52a0 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000000000201 R11: 0000000000000000 R12: ffffffff89fd546a
+R13: 0000000000000014 R14: ffff88805209a130 R15: 0000000000000140
+FS:  00007f4e4cfb9740(0000) GS:ffff88806a800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00000000203e9000 CR3: 0000000028878000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 000000000000000e DR6: 00000000ffff0ff0 DR7: 0000000000000400

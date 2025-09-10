@@ -1,0 +1,57 @@
+id: b305848212deec86eabe
+bug_link: https://syzkaller.appspot.com/bug?extid=b305848212deec86eabe
+title: 'KASAN: use-after-free Write in page_counter_uncharge'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 59126901f200f5fc907153468b03c64e0081b6e6
+fix_commit: f1796544a0ca0f14386a679d3d05fbc69235015e
+datetime: '2020-09-05T12:14:29-07:00'
+fix_commit_message: "memcg: fix use-after-free in uncharge_batch\n\nsyzbot has reported\
+  \ an use-after-free in the uncharge_batch path\n\n  BUG: KASAN: use-after-free in\
+  \ instrument_atomic_write include/linux/instrumented.h:71 [inline]\n  BUG: KASAN:\
+  \ use-after-free in atomic64_sub_return include/asm-generic/atomic-instrumented.h:970\
+  \ [inline]\n  BUG: KASAN: use-after-free in atomic_long_sub_return include/asm-generic/atomic-long.h:113\
+  \ [inline]\n  BUG: KASAN: use-after-free in page_counter_cancel mm/page_counter.c:54\
+  \ [inline]\n  BUG: KASAN: use-after-free in page_counter_uncharge+0x3d/0xc0 mm/page_counter.c:155\n\
+  \  Write of size 8 at addr ffff8880371c0148 by task syz-executor.0/9304\n\n  CPU:\
+  \ 0 PID: 9304 Comm: syz-executor.0 Not tainted 5.8.0-syzkaller #0\n  Hardware name:\
+  \ Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n \
+  \ Call Trace:\n    __dump_stack lib/dump_stack.c:77 [inline]\n    dump_stack+0x1f0/0x31e\
+  \ lib/dump_stack.c:118\n    print_address_description+0x66/0x620 mm/kasan/report.c:383\n\
+  \    __kasan_report mm/kasan/report.c:513 [inline]\n    kasan_report+0x132/0x1d0\
+  \ mm/kasan/report.c:530\n    check_memory_region_inline mm/kasan/generic.c:183 [inline]\n\
+  \    check_memory_region+0x2b5/0x2f0 mm/kasan/generic.c:192\n    instrument_atomic_write\
+  \ include/linux/instrumented.h:71 [inline]\n    atomic64_sub_return include/asm-generic/atomic-instrumented.h:970\
+  \ [inline]\n    atomic_long_sub_return include/asm-generic/atomic-long.h:113 [inline]\n\
+  \    page_counter_cancel mm/page_counter.c:54 [inline]\n    page_counter_uncharge+0x3d/0xc0\
+  \ mm/page_counter.c:155\n    uncharge_batch+0x6c/0x350 mm/memcontrol.c:6764\n  \
+  \  uncharge_page+0x115/0x430 mm/memcontrol.c:6796\n    uncharge_list mm/memcontrol.c:6835\
+  \ [inline]\n    mem_cgroup_uncharge_list+0x70/0xe0 mm/memcontrol.c:6877\n    release_pages+0x13a2/0x1550\
+  \ mm/swap.c:911\n    tlb_batch_pages_flush mm/mmu_gather.c:49 [inline]\n    tlb_flush_mmu_free\
+  \ mm/mmu_gather.c:242 [inline]\n    tlb_flush_mmu+0x780/0x910 mm/mmu_gather.c:249\n\
+  \    tlb_finish_mmu+0xcb/0x200 mm/mmu_gather.c:328\n    exit_mmap+0x296/0x550 mm/mmap.c:3185\n\
+  \    __mmput+0x113/0x370 kernel/fork.c:1076\n    exit_mm+0x4cd/0x550 kernel/exit.c:483\n\
+  \    do_exit+0x576/0x1f20 kernel/exit.c:793\n    do_group_exit+0x161/0x2d0 kernel/exit.c:903\n\
+  \    get_signal+0x139b/0x1d30 kernel/signal.c:2743\n    arch_do_signal+0x33/0x610\
+  \ arch/x86/kernel/signal.c:811\n    exit_to_user_mode_loop kernel/entry/common.c:135\
+  \ [inline]\n    exit_to_user_mode_prepare+0x8d/0x1b0 kernel/entry/common.c:166\n\
+  \    syscall_exit_to_user_mode+0x5e/0x1a0 kernel/entry/common.c:241\n    entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \nCommit 1a3e1f40962c (\"mm: memcontrol: decouple reference counting from\npage\
+  \ accounting\") reworked the memcg lifetime to be bound the the struct\npage rather\
+  \ than charges.  It also removed the css_put_many from\nuncharge_batch and that\
+  \ is causing the above splat.\n\nuncharge_batch() is supposed to uncharge accumulated\
+  \ charges for all\npages freed from the same memcg.  The queuing is done by uncharge_page\n\
+  which however drops the memcg reference after it adds charges to the\nbatch.  If\
+  \ the current page happens to be the last one holding the\nreference for its memcg\
+  \ then the memcg is OK to go and the next page to\nbe freed will trigger batched\
+  \ uncharge which needs to access the memcg\nwhich is gone already.\n\nFix the issue\
+  \ by taking a reference for the memcg in the current batch.\n\nFixes: 1a3e1f40962c\
+  \ (\"mm: memcontrol: decouple reference counting from page accounting\")\nReported-by:\
+  \ syzbot+b305848212deec86eabe@syzkaller.appspotmail.com\nReported-by: syzbot+b5ea6fb6f139c8b9482b@syzkaller.appspotmail.com\n\
+  Signed-off-by: Michal Hocko <mhocko@suse.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Reviewed-by: Shakeel Butt <shakeelb@google.com>\nAcked-by: Johannes Weiner <hannes@cmpxchg.org>\n\
+  Cc: Roman Gushchin <guro@fb.com>\nCc: Hugh Dickins <hughd@google.com>\nLink: https://lkml.kernel.org/r/20200820090341.GC5033@dhcp22.suse.cz\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 2
+covered_count: 2

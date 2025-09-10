@@ -1,0 +1,24 @@
+id: e6416dabb497a650da40
+bug_link: https://syzkaller.appspot.com/bug?extid=e6416dabb497a650da40
+title: 'KASAN: use-after-free Read in smk_write_relabel_self'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b3a9e3b9622ae10064826dccb4f7a52bd88c7407
+fix_commit: beb4ee6770a89646659e6a2178538d2b13e2654e
+datetime: '2020-07-14T11:19:58-07:00'
+fix_commit_message: "Smack: fix use-after-free in smk_write_relabel_self()\n\nsmk_write_relabel_self()\
+  \ frees memory from the task's credentials with\nno locking, which can easily cause\
+  \ a use-after-free because multiple\ntasks can share the same credentials structure.\n\
+  \nFix this by using prepare_creds() and commit_creds() to correctly modify\nthe\
+  \ task's credentials.\n\nReproducer for \"BUG: KASAN: use-after-free in smk_write_relabel_self\"\
+  :\n\n\t#include <fcntl.h>\n\t#include <pthread.h>\n\t#include <unistd.h>\n\n\tstatic\
+  \ void *thrproc(void *arg)\n\t{\n\t\tint fd = open(\"/sys/fs/smackfs/relabel-self\"\
+  , O_WRONLY);\n\t\tfor (;;) write(fd, \"foo\", 3);\n\t}\n\n\tint main()\n\t{\n\t\t\
+  pthread_t t;\n\t\tpthread_create(&t, NULL, thrproc, NULL);\n\t\tthrproc(NULL);\n\
+  \t}\n\nReported-by: syzbot+e6416dabb497a650da40@syzkaller.appspotmail.com\nFixes:\
+  \ 38416e53936e (\"Smack: limited capability for changing process label\")\nCc: <stable@vger.kernel.org>\
+  \ # v4.4+\nSigned-off-by: Eric Biggers <ebiggers@google.com>\nSigned-off-by: Casey\
+  \ Schaufler <casey@schaufler-ca.com>\n"
+submodule:
+- security/smack
+hunk_count: 2
+covered_count: 2

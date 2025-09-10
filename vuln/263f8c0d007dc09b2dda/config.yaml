@@ -1,0 +1,37 @@
+id: 263f8c0d007dc09b2dda
+bug_link: https://syzkaller.appspot.com/bug?extid=263f8c0d007dc09b2dda
+title: 'BUG: using smp_processor_id() in preemptible code in tipc_crypto_xmit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c8146fe292a726d71e302719df90b53e2f84f7a5
+fix_commit: bb8872a1e6bc911869a729240781076ed950764b
+datetime: '2020-08-30T19:12:17-07:00'
+fix_commit_message: 'tipc: fix using smp_processor_id() in preemptible
+
+
+  The ''this_cpu_ptr()'' is used to obtain the AEAD key'' TFM on the current
+
+  CPU for encryption, however the execution can be preemptible since it''s
+
+  actually user-space context, so the ''using smp_processor_id() in
+
+  preemptible'' has been observed.
+
+
+  We fix the issue by using the ''get/put_cpu_ptr()'' API which consists of
+
+  a ''preempt_disable()'' instead.
+
+
+  Fixes: fc1b6d6de220 ("tipc: introduce TIPC encryption & authentication")
+
+  Acked-by: Jon Maloy <jmaloy@redhat.com>
+
+  Signed-off-by: Tuong Lien <tuong.t.lien@dektech.com.au>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/tipc
+hunk_count: 2
+covered_count: 1

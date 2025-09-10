@@ -1,0 +1,43 @@
+diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+index cc4a507d7ca4..842f9189537b 100644
+--- a/include/linux/mmzone.h
++++ b/include/linux/mmzone.h
+@@ -520,6 +520,12 @@ enum pgdat_flags {
+ 	PGDAT_RECLAIM_LOCKED,		/* prevents concurrent reclaim */
+ };
+ 
++enum zone_flags {
++	ZONE_BOOSTED_WATERMARK,		/* zone recently boosted watermarks.
++					 * Cleared when kswapd is woken.
++					 */
++};
++
+ static inline unsigned long zone_managed_pages(struct zone *zone)
+ {
+ 	return (unsigned long)atomic_long_read(&zone->managed_pages);
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index cde5dac6229a..d295c9bc01a8 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -2214,7 +2214,7 @@ static void steal_suitable_fallback(struct zone *zone, struct page *page,
+ 	 */
+ 	boost_watermark(zone);
+ 	if (alloc_flags & ALLOC_KSWAPD)
+-		wakeup_kswapd(zone, 0, 0, zone_idx(zone));
++		set_bit(ZONE_BOOSTED_WATERMARK, &zone->flags);
+ 
+ 	/* We are not allowed to try stealing from the whole block */
+ 	if (!whole_block)
+@@ -3102,6 +3102,12 @@ struct page *rmqueue(struct zone *preferred_zone,
+ 	local_irq_restore(flags);
+ 
+ out:
++	/* Separate test+clear to avoid unnecessary atomics */
++	if (test_bit(ZONE_BOOSTED_WATERMARK, &zone->flags)) {
++		clear_bit(ZONE_BOOSTED_WATERMARK, &zone->flags);
++		wakeup_kswapd(zone, 0, 0, zone_idx(zone));
++	}
++
+ 	VM_BUG_ON_PAGE(page && bad_range(zone, page), page);
+ 	return page;
+ 

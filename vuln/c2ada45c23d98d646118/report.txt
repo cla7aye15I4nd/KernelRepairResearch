@@ -1,0 +1,74 @@
+ntfs3: loop0: ino=5, "/" ntfs_iget5
+============================================
+WARNING: possible recursive locking detected
+6.8.0-syzkaller-08951-gfe46a7dd189e #0 Not tainted
+--------------------------------------------
+syz-executor437/5077 is trying to acquire lock:
+ffff8880789d8100 (&ni->ni_lock#3){+.+.}-{3:3}, at: ntfs_set_state+0x1d2/0x6a0 fs/ntfs3/fsntfs.c:947
+
+but task is already holding lock:
+ffff888078a15980 (&ni->ni_lock#3){+.+.}-{3:3}, at: ni_trylock fs/ntfs3/ntfs_fs.h:1141 [inline]
+ffff888078a15980 (&ni->ni_lock#3){+.+.}-{3:3}, at: ni_write_inode+0x24a/0x2920 fs/ntfs3/frecord.c:3265
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&ni->ni_lock#3);
+  lock(&ni->ni_lock#3);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+3 locks held by syz-executor437/5077:
+ #0: ffff88802293c420 (sb_writers#9){.+.+}-{0:0}, at: do_sys_ftruncate fs/open.c:199 [inline]
+ #0: ffff88802293c420 (sb_writers#9){.+.+}-{0:0}, at: __do_sys_ftruncate fs/open.c:207 [inline]
+ #0: ffff88802293c420 (sb_writers#9){.+.+}-{0:0}, at: __se_sys_ftruncate fs/open.c:205 [inline]
+ #0: ffff88802293c420 (sb_writers#9){.+.+}-{0:0}, at: __x64_sys_ftruncate+0xa9/0x110 fs/open.c:205
+ #1: ffff888078a15c20 (&sb->s_type->i_mutex_key#15){+.+.}-{3:3}, at: inode_lock include/linux/fs.h:793 [inline]
+ #1: ffff888078a15c20 (&sb->s_type->i_mutex_key#15){+.+.}-{3:3}, at: do_truncate+0x14b/0x220 fs/open.c:63
+ #2: ffff888078a15980 (&ni->ni_lock#3){+.+.}-{3:3}, at: ni_trylock fs/ntfs3/ntfs_fs.h:1141 [inline]
+ #2: ffff888078a15980 (&ni->ni_lock#3){+.+.}-{3:3}, at: ni_write_inode+0x24a/0x2920 fs/ntfs3/frecord.c:3265
+
+stack backtrace:
+CPU: 0 PID: 5077 Comm: syz-executor437 Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ check_deadlock kernel/locking/lockdep.c:3062 [inline]
+ validate_chain kernel/locking/lockdep.c:3856 [inline]
+ __lock_acquire+0x20e6/0x3b30 kernel/locking/lockdep.c:5137
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+ __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+ __mutex_lock+0x175/0x9c0 kernel/locking/mutex.c:752
+ ntfs_set_state+0x1d2/0x6a0 fs/ntfs3/fsntfs.c:947
+ ntfs_iget5+0x245/0x3860 fs/ntfs3/inode.c:535
+ ni_update_parent fs/ntfs3/frecord.c:3218 [inline]
+ ni_write_inode+0x1603/0x2920 fs/ntfs3/frecord.c:3324
+ ntfs_truncate fs/ntfs3/file.c:410 [inline]
+ ntfs3_setattr+0x739/0xc40 fs/ntfs3/file.c:703
+ notify_change+0x745/0x11c0 fs/attr.c:497
+ do_truncate+0x15c/0x220 fs/open.c:65
+ do_ftruncate+0x5e5/0x720 fs/open.c:181
+ do_sys_ftruncate fs/open.c:199 [inline]
+ __do_sys_ftruncate fs/open.c:207 [inline]
+ __se_sys_ftruncate fs/open.c:205 [inline]
+ __x64_sys_ftruncate+0xa9/0x110 fs/open.c:205
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xd5/0x260 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f830c4e7a99
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe3e2c1778 EFLAGS: 00000246 ORIG_RAX: 000000000000004d
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f830c4e7a99
+RDX: 00007f830c4e7a99 RSI: 0000000000000000 RDI: 0000000000000004
+RBP: 00007f830c57a5f0 R08: 00005555728774c0 R09: 00005555728774c0
+R10: 000000000001f20a R11: 0000000000000246 R12: 00007ffe3e2c17a0
+R13: 00007ffe3e2c19c8 R14: 431bde82d7b634db R15: 00007f830c53003b
+ </TASK>
+ntfs3: loop0: Mark volume as dirty due to NTFS errors

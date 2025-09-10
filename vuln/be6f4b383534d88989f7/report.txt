@@ -1,0 +1,136 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.14.0-syzkaller-13189-ge48e99b6edf4 #0 Not tainted
+------------------------------------------------------
+syz-executor200/5838 is trying to acquire lock:
+ffffffff900fc808 (rtnl_mutex){+.+.}-{4:4}, at: ipv6_sock_ac_close+0xc9/0x130 net/ipv6/anycast.c:220
+
+but task is already holding lock:
+ffff888035260aa0 (&smc->clcsock_release_lock){+.+.}-{4:4}, at: smc_clcsock_release+0x82/0xf0 net/smc/smc_close.c:30
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (&smc->clcsock_release_lock){+.+.}-{4:4}:
+       lock_acquire+0x116/0x2f0 kernel/locking/lockdep.c:5866
+       __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+       __mutex_lock+0x1a5/0x10c0 kernel/locking/mutex.c:746
+       smc_switch_to_fallback+0x35/0xda0 net/smc/af_smc.c:903
+       smc_setsockopt+0x765/0xd50 net/smc/af_smc.c:3104
+       do_sock_setsockopt+0x3b1/0x710 net/socket.c:2296
+       __sys_setsockopt net/socket.c:2321 [inline]
+       __do_sys_setsockopt net/socket.c:2327 [inline]
+       __se_sys_setsockopt net/socket.c:2324 [inline]
+       __x64_sys_setsockopt+0x1ee/0x280 net/socket.c:2324
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #1 (sk_lock-AF_INET6){+.+.}-{0:0}:
+       lock_acquire+0x116/0x2f0 kernel/locking/lockdep.c:5866
+       lock_sock_nested+0x48/0x100 net/core/sock.c:3697
+       do_ipv6_setsockopt+0xccd/0x3680 net/ipv6/ipv6_sockglue.c:567
+       ipv6_setsockopt+0x5d/0x170 net/ipv6/ipv6_sockglue.c:993
+       do_sock_setsockopt+0x3b1/0x710 net/socket.c:2296
+       __sys_setsockopt net/socket.c:2321 [inline]
+       __do_sys_setsockopt net/socket.c:2327 [inline]
+       __se_sys_setsockopt net/socket.c:2324 [inline]
+       __x64_sys_setsockopt+0x1ee/0x280 net/socket.c:2324
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (rtnl_mutex){+.+.}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3166 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+       validate_chain+0xa69/0x24e0 kernel/locking/lockdep.c:3909
+       __lock_acquire+0xad5/0xd80 kernel/locking/lockdep.c:5235
+       lock_acquire+0x116/0x2f0 kernel/locking/lockdep.c:5866
+       __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+       __mutex_lock+0x1a5/0x10c0 kernel/locking/mutex.c:746
+       ipv6_sock_ac_close+0xc9/0x130 net/ipv6/anycast.c:220
+       inet6_release+0x4f/0x70 net/ipv6/af_inet6.c:485
+       __sock_release net/socket.c:647 [inline]
+       sock_release+0x82/0x150 net/socket.c:675
+       smc_clcsock_release+0xcc/0xf0 net/smc/smc_close.c:34
+       __smc_release+0x683/0x800 net/smc/af_smc.c:301
+       smc_release+0x2dc/0x540 net/smc/af_smc.c:344
+       __sock_release net/socket.c:647 [inline]
+       sock_close+0xbc/0x240 net/socket.c:1391
+       __fput+0x3e9/0x9f0 fs/file_table.c:465
+       task_work_run+0x251/0x310 kernel/task_work.c:227
+       exit_task_work include/linux/task_work.h:40 [inline]
+       do_exit+0xa11/0x27f0 kernel/exit.c:953
+       do_group_exit+0x207/0x2c0 kernel/exit.c:1102
+       __do_sys_exit_group kernel/exit.c:1113 [inline]
+       __se_sys_exit_group kernel/exit.c:1111 [inline]
+       __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1111
+       x64_sys_call+0x26c3/0x26d0 arch/x86/include/generated/asm/syscalls_64.h:232
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+Chain exists of:
+  rtnl_mutex --> sk_lock-AF_INET6 --> &smc->clcsock_release_lock
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&smc->clcsock_release_lock);
+                               lock(sk_lock-AF_INET6);
+                               lock(&smc->clcsock_release_lock);
+  lock(rtnl_mutex);
+
+ *** DEADLOCK ***
+
+2 locks held by syz-executor200/5838:
+ #0: ffff888078efc408 (&sb->s_type->i_mutex_key#10){+.+.}-{4:4}, at: inode_lock include/linux/fs.h:867 [inline]
+ #0: ffff888078efc408 (&sb->s_type->i_mutex_key#10){+.+.}-{4:4}, at: __sock_release net/socket.c:646 [inline]
+ #0: ffff888078efc408 (&sb->s_type->i_mutex_key#10){+.+.}-{4:4}, at: sock_close+0x90/0x240 net/socket.c:1391
+ #1: ffff888035260aa0 (&smc->clcsock_release_lock){+.+.}-{4:4}, at: smc_clcsock_release+0x82/0xf0 net/smc/smc_close.c:30
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 5838 Comm: syz-executor200 Not tainted 6.14.0-syzkaller-13189-ge48e99b6edf4 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_circular_bug+0x2e1/0x300 kernel/locking/lockdep.c:2079
+ check_noncircular+0x142/0x160 kernel/locking/lockdep.c:2211
+ check_prev_add kernel/locking/lockdep.c:3166 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+ validate_chain+0xa69/0x24e0 kernel/locking/lockdep.c:3909
+ __lock_acquire+0xad5/0xd80 kernel/locking/lockdep.c:5235
+ lock_acquire+0x116/0x2f0 kernel/locking/lockdep.c:5866
+ __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+ __mutex_lock+0x1a5/0x10c0 kernel/locking/mutex.c:746
+ ipv6_sock_ac_close+0xc9/0x130 net/ipv6/anycast.c:220
+ inet6_release+0x4f/0x70 net/ipv6/af_inet6.c:485
+ __sock_release net/socket.c:647 [inline]
+ sock_release+0x82/0x150 net/socket.c:675
+ smc_clcsock_release+0xcc/0xf0 net/smc/smc_close.c:34
+ __smc_release+0x683/0x800 net/smc/af_smc.c:301
+ smc_release+0x2dc/0x540 net/smc/af_smc.c:344
+ __sock_release net/socket.c:647 [inline]
+ sock_close+0xbc/0x240 net/socket.c:1391
+ __fput+0x3e9/0x9f0 fs/file_table.c:465
+ task_work_run+0x251/0x310 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0xa11/0x27f0 kernel/exit.c:953
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1102
+ __do_sys_exit_group kernel/exit.c:1113 [inline]
+ __se_sys_exit_group kernel/exit.c:1111 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1111
+ x64_sys_call+0x26c3/0x26d0 arch/x86/include/generated/asm/syscalls_64.h:232
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fd6e1b18d39
+Code: Unable to access opcode bytes at 0x7fd6e1b18d0f.
+R

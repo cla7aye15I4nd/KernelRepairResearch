@@ -1,0 +1,38 @@
+id: f3a0e80c34b3fc28ac5e
+bug_link: https://syzkaller.appspot.com/bug?extid=f3a0e80c34b3fc28ac5e
+title: 'WARNING: locking bug in dev_mc_seq_show'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8027bc0307ce59759b90679fa5d8b22949586d20
+fix_commit: 845e0ebb4408d4473cf60d21224a897037e9a77a
+datetime: '2020-06-09T12:59:45-07:00'
+fix_commit_message: "net: change addr_list_lock back to static key\n\nThe dynamic\
+  \ key update for addr_list_lock still causes troubles,\nfor example the following\
+  \ race condition still exists:\n\nCPU 0:\t\t\t\tCPU 1:\n(RCU read lock)\t\t\t(RTNL\
+  \ lock)\ndev_mc_seq_show()\t\tnetdev_update_lockdep_key()\n\t\t\t\t  -> lockdep_unregister_key()\n\
+  \ -> netif_addr_lock_bh()\n\nbecause lockdep doesn't provide an API to update it\
+  \ atomically.\nTherefore, we have to move it back to static keys and use subclass\n\
+  for nest locking like before.\n\nIn commit 1a33e10e4a95 (\"net: partially revert\
+  \ dynamic lockdep key\nchanges\"), I already reverted most parts of commit ab92d68fc22f\n\
+  (\"net: core: add generic lockdep keys\").\n\nThis patch reverts the rest and also\
+  \ part of commit f3b0a18bb6cb\n(\"net: remove unnecessary variables and callback\"\
+  ). After this\npatch, addr_list_lock changes back to using static keys and\nsubclasses\
+  \ to satisfy lockdep. Thanks to dev->lower_level, we do\nnot have to change back\
+  \ to ->ndo_get_lock_subclass().\n\nAnd hopefully this reduces some syzbot lockdep\
+  \ noises too.\n\nReported-by: syzbot+f3a0e80c34b3fc28ac5e@syzkaller.appspotmail.com\n\
+  Cc: Taehee Yoo <ap420073@gmail.com>\nCc: Dmitry Vyukov <dvyukov@google.com>\nSigned-off-by:\
+  \ Cong Wang <xiyou.wangcong@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- drivers/net
+- drivers/net/bonding
+- drivers/net/hamradio
+- drivers/net/wireless/intersil/hostap
+- include/linux
+- net/8021q
+- net/batman-adv
+- net/bridge
+- net/core
+- net/dsa
+- net/netrom
+- net/rose
+hunk_count: 43
+covered_count: 0

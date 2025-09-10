@@ -1,0 +1,44 @@
+id: 854768b99f19e89d7f81
+bug_link: https://syzkaller.appspot.com/bug?extid=854768b99f19e89d7f81
+title: 'INFO: task hung in wdm_flush'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fb58cf4f2881eeb21b2a5997871a1678772b746d
+fix_commit: 37d2a36394d954413a495da61da1b2a51ecd28ab
+datetime: '2020-10-02T11:30:10+02:00'
+fix_commit_message: "USB: cdc-wdm: Make wdm_flush() interruptible and add wdm_fsync().\n\
+  \nsyzbot is reporting hung task at wdm_flush() [1], for there is a circular\ndependency\
+  \ that wdm_flush() from flip_close() for /dev/cdc-wdm0 forever\nwaits for /dev/raw-gadget\
+  \ to be closed while close() for /dev/raw-gadget\ncannot be called unless close()\
+  \ for /dev/cdc-wdm0 completes.\n\nTetsuo Handa considered that such circular dependency\
+  \ is an usage error [2]\nwhich corresponds to an unresponding broken hardware [3].\
+  \ But Alan Stern\nresponded that we should be prepared for such hardware [4]. Therefore,\n\
+  this patch changes wdm_flush() to use wait_event_interruptible_timeout()\nwhich\
+  \ gives up after 30 seconds, for hardware that remains silent must be\nignored.\
+  \ The 30 seconds are coming out of thin air.\n\nChanging wait_event() to wait_event_interruptible_timeout()\
+  \ makes error\nreporting from close() syscall less reliable. To compensate it, this\
+  \ patch\nalso implements wdm_fsync() which does not use timeout. Those who want\
+  \ to\nbe very sure that data has gone out to the device are now advised to call\n\
+  fsync(), with a caveat that fsync() can return -EINVAL when running on\nolder kernels\
+  \ which do not implement wdm_fsync().\n\nThis patch also fixes three more problems\
+  \ (listed below) found during\nexhaustive discussion and testing.\n\n  Since multiple\
+  \ threads can concurrently call wdm_write()/wdm_flush(),\n  we need to use wake_up_all()\
+  \ whenever clearing WDM_IN_USE in order to\n  make sure that all waiters are woken\
+  \ up. Also, error reporting needs\n  to use fetch-and-clear approach in order not\
+  \ to report same error for\n  multiple times.\n\n  Since wdm_flush() checks WDM_DISCONNECTING,\
+  \ wdm_write() should as well\n  check WDM_DISCONNECTING.\n\n  In wdm_flush(), since\
+  \ locks are not held, it is not safe to dereference\n  desc->intf after checking\
+  \ that WDM_DISCONNECTING is not set [5]. Thus,\n  remove dev_err() from wdm_flush().\n\
+  \n[1] https://syzkaller.appspot.com/bug?id=e7b761593b23eb50855b9ea31e3be5472b711186\n\
+  [2] https://lkml.kernel.org/r/27b7545e-8f41-10b8-7c02-e35a08eb1611@i-love.sakura.ne.jp\n\
+  [3] https://lkml.kernel.org/r/79ba410f-e0ef-2465-b94f-6b9a4a82adf5@i-love.sakura.ne.jp\n\
+  [4] https://lkml.kernel.org/r/20200530011040.GB12419@rowland.harvard.edu\n[5] https://lkml.kernel.org/r/c85331fc-874c-6e46-a77f-0ef1dc075308@i-love.sakura.ne.jp\n\
+  \nReported-by: syzbot <syzbot+854768b99f19e89d7f81@syzkaller.appspotmail.com>\n\
+  Cc: stable <stable@vger.kernel.org>\nCo-developed-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\n\
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nSigned-off-by:\
+  \ Oliver Neukum <oneukum@suse.com>\nCc: Alan Stern <stern@rowland.harvard.edu>\n\
+  Link: https://lore.kernel.org/r/20200928141755.3476-1-penguin-kernel@I-love.SAKURA.ne.jp\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/class
+hunk_count: 6
+covered_count: 2

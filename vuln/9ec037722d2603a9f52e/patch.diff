@@ -1,0 +1,102 @@
+diff --git a/net/ipv4/cipso_ipv4.c b/net/ipv4/cipso_ipv4.c
+index 471d33a0d095..be09c7669a79 100644
+--- a/net/ipv4/cipso_ipv4.c
++++ b/net/ipv4/cipso_ipv4.c
+@@ -519,16 +519,10 @@ int cipso_v4_doi_remove(u32 doi, struct netlbl_audit *audit_info)
+ 		ret_val = -ENOENT;
+ 		goto doi_remove_return;
+ 	}
+-	if (!refcount_dec_and_test(&doi_def->refcount)) {
+-		spin_unlock(&cipso_v4_doi_list_lock);
+-		ret_val = -EBUSY;
+-		goto doi_remove_return;
+-	}
+ 	list_del_rcu(&doi_def->list);
+ 	spin_unlock(&cipso_v4_doi_list_lock);
+ 
+-	cipso_v4_cache_invalidate();
+-	call_rcu(&doi_def->rcu, cipso_v4_doi_free_rcu);
++	cipso_v4_doi_putdef(doi_def);
+ 	ret_val = 0;
+ 
+ doi_remove_return:
+@@ -585,9 +579,6 @@ void cipso_v4_doi_putdef(struct cipso_v4_doi *doi_def)
+ 
+ 	if (!refcount_dec_and_test(&doi_def->refcount))
+ 		return;
+-	spin_lock(&cipso_v4_doi_list_lock);
+-	list_del_rcu(&doi_def->list);
+-	spin_unlock(&cipso_v4_doi_list_lock);
+ 
+ 	cipso_v4_cache_invalidate();
+ 	call_rcu(&doi_def->rcu, cipso_v4_doi_free_rcu);
+diff --git a/net/ipv6/calipso.c b/net/ipv6/calipso.c
+index 51184a70ac7e..1578ed9e97d8 100644
+--- a/net/ipv6/calipso.c
++++ b/net/ipv6/calipso.c
+@@ -83,6 +83,9 @@ struct calipso_map_cache_entry {
+ 
+ static struct calipso_map_cache_bkt *calipso_cache;
+ 
++static void calipso_cache_invalidate(void);
++static void calipso_doi_putdef(struct calipso_doi *doi_def);
++
+ /* Label Mapping Cache Functions
+  */
+ 
+@@ -444,15 +447,10 @@ static int calipso_doi_remove(u32 doi, struct netlbl_audit *audit_info)
+ 		ret_val = -ENOENT;
+ 		goto doi_remove_return;
+ 	}
+-	if (!refcount_dec_and_test(&doi_def->refcount)) {
+-		spin_unlock(&calipso_doi_list_lock);
+-		ret_val = -EBUSY;
+-		goto doi_remove_return;
+-	}
+ 	list_del_rcu(&doi_def->list);
+ 	spin_unlock(&calipso_doi_list_lock);
+ 
+-	call_rcu(&doi_def->rcu, calipso_doi_free_rcu);
++	calipso_doi_putdef(doi_def);
+ 	ret_val = 0;
+ 
+ doi_remove_return:
+@@ -508,10 +506,8 @@ static void calipso_doi_putdef(struct calipso_doi *doi_def)
+ 
+ 	if (!refcount_dec_and_test(&doi_def->refcount))
+ 		return;
+-	spin_lock(&calipso_doi_list_lock);
+-	list_del_rcu(&doi_def->list);
+-	spin_unlock(&calipso_doi_list_lock);
+ 
++	calipso_cache_invalidate();
+ 	call_rcu(&doi_def->rcu, calipso_doi_free_rcu);
+ }
+ 
+diff --git a/net/netlabel/netlabel_cipso_v4.c b/net/netlabel/netlabel_cipso_v4.c
+index 726dda95934c..4f50a64315cf 100644
+--- a/net/netlabel/netlabel_cipso_v4.c
++++ b/net/netlabel/netlabel_cipso_v4.c
+@@ -575,6 +575,7 @@ static int netlbl_cipsov4_list(struct sk_buff *skb, struct genl_info *info)
+ 
+ 		break;
+ 	}
++	cipso_v4_doi_putdef(doi_def);
+ 	rcu_read_unlock();
+ 
+ 	genlmsg_end(ans_skb, data);
+@@ -583,12 +584,14 @@ static int netlbl_cipsov4_list(struct sk_buff *skb, struct genl_info *info)
+ list_retry:
+ 	/* XXX - this limit is a guesstimate */
+ 	if (nlsze_mult < 4) {
++		cipso_v4_doi_putdef(doi_def);
+ 		rcu_read_unlock();
+ 		kfree_skb(ans_skb);
+ 		nlsze_mult *= 2;
+ 		goto list_start;
+ 	}
+ list_failure_lock:
++	cipso_v4_doi_putdef(doi_def);
+ 	rcu_read_unlock();
+ list_failure:
+ 	kfree_skb(ans_skb);

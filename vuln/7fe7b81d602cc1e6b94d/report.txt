@@ -1,0 +1,35 @@
+------------[ cut here ]------------
+UBSAN: array-index-out-of-bounds in net/sched/sch_cake.c:1876:6
+index 65535 is out of range for type 'u16[1025]' (aka 'unsigned short[1025]')
+CPU: 0 UID: 0 PID: 5282 Comm: kworker/0:6 Not tainted 6.11.0-rc3-syzkaller-00482-ga99ef548bba0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+Workqueue: wg-crypt-wg0 wg_packet_tx_worker
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:93 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:119
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_out_of_bounds+0x121/0x150 lib/ubsan.c:429
+ cake_enqueue+0x785e/0x9340 net/sched/sch_cake.c:1876
+ dev_qdisc_enqueue+0x4b/0x290 net/core/dev.c:3775
+ __dev_xmit_skb net/core/dev.c:3871 [inline]
+ __dev_queue_xmit+0xf4a/0x3e90 net/core/dev.c:4389
+ dev_queue_xmit include/linux/netdevice.h:3073 [inline]
+ neigh_hh_output include/net/neighbour.h:526 [inline]
+ neigh_output include/net/neighbour.h:540 [inline]
+ ip6_finish_output2+0xfc2/0x1680 net/ipv6/ip6_output.c:137
+ ip6_finish_output+0x41e/0x810 net/ipv6/ip6_output.c:222
+ ip6tunnel_xmit include/net/ip6_tunnel.h:161 [inline]
+ udp_tunnel6_xmit_skb+0x590/0x9d0 net/ipv6/ip6_udp_tunnel.c:111
+ send6+0x6da/0xaf0 drivers/net/wireguard/socket.c:152
+ wg_socket_send_skb_to_peer+0x115/0x1d0 drivers/net/wireguard/socket.c:178
+ wg_packet_create_data_done drivers/net/wireguard/send.c:251 [inline]
+ wg_packet_tx_worker+0x1bf/0x810 drivers/net/wireguard/send.c:276
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3312
+ worker_thread+0x86d/0xd40 kernel/workqueue.c:3390
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+---[ end trace ]---

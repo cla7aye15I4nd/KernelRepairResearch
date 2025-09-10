@@ -1,0 +1,34 @@
+diff --git a/net/9p/trans_fd.c b/net/9p/trans_fd.c
+index bd28e63d7666..27c5c938ccd1 100644
+--- a/net/9p/trans_fd.c
++++ b/net/9p/trans_fd.c
+@@ -324,14 +324,6 @@ static void p9_read_work(struct work_struct *work)
+ 			goto error;
+ 		}
+ 
+-		if (m->rc.size >= m->client->msize) {
+-			p9_debug(P9_DEBUG_ERROR,
+-				 "requested packet size too big: %d\n",
+-				 m->rc.size);
+-			err = -EIO;
+-			goto error;
+-		}
+-
+ 		p9_debug(P9_DEBUG_TRANS,
+ 			 "mux %p pkt: size: %d bytes tag: %d\n",
+ 			 m, m->rc.size, m->rc.tag);
+@@ -344,6 +336,14 @@ static void p9_read_work(struct work_struct *work)
+ 			goto error;
+ 		}
+ 
++		if (m->rc.size > m->rreq->rc.capacity) {
++			p9_debug(P9_DEBUG_ERROR,
++				 "requested packet size too big: %d for tag %d with capacity %zd\n",
++				 m->rc.size, m->rc.tag, m->rreq->rc.capacity);
++			err = -EIO;
++			goto error;
++		}
++
+ 		if (!m->rreq->rc.sdata) {
+ 			p9_debug(P9_DEBUG_ERROR,
+ 				 "No recv fcall for tag %d (req %p), disconnecting!\n",

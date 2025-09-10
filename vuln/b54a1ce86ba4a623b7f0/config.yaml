@@ -1,0 +1,45 @@
+id: b54a1ce86ba4a623b7f0
+bug_link: https://syzkaller.appspot.com/bug?extid=b54a1ce86ba4a623b7f0
+title: 'WARNING: refcount bug in sk_psock_get'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2c16db6c92b0ee4aa61e88366df82169e83c3f7e
+fix_commit: 8621436671f3a4bba5db57482e1ee604708bf1eb
+datetime: '2021-05-05T12:52:45-07:00'
+fix_commit_message: 'smc: disallow TCP_ULP in smc_setsockopt()
+
+
+  syzbot is able to setup kTLS on an SMC socket which coincidentally
+
+  uses sk_user_data too. Later, kTLS treats it as psock so triggers a
+
+  refcnt warning. The root cause is that smc_setsockopt() simply calls
+
+  TCP setsockopt() which includes TCP_ULP. I do not think it makes
+
+  sense to setup kTLS on top of SMC sockets, so we should just disallow
+
+  this setup.
+
+
+  It is hard to find a commit to blame, but we can apply this patch
+
+  since the beginning of TCP_ULP.
+
+
+  Reported-and-tested-by: syzbot+b54a1ce86ba4a623b7f0@syzkaller.appspotmail.com
+
+  Fixes: 734942cc4ea6 ("tcp: ULP infrastructure")
+
+  Cc: John Fastabend <john.fastabend@gmail.com>
+
+  Signed-off-by: Karsten Graul <kgraul@linux.ibm.com>
+
+  Signed-off-by: Cong Wang <cong.wang@bytedance.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/smc
+hunk_count: 2
+covered_count: 0

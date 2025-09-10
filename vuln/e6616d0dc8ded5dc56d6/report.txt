@@ -1,0 +1,66 @@
+=====================================================
+BUG: KMSAN: uninit-value in io_req_cqe_overflow+0x193/0x1c0 io_uring/io_uring.c:810
+ io_req_cqe_overflow+0x193/0x1c0 io_uring/io_uring.c:810
+ __io_submit_flush_completions+0x7eb/0x1be0 io_uring/io_uring.c:1464
+ io_submit_flush_completions io_uring/io_uring.h:148 [inline]
+ ctx_flush_and_put+0x16c/0x360 io_uring/io_uring.c:1055
+ io_handle_tw_list+0x58b/0x5c0 io_uring/io_uring.c:1095
+ tctx_task_work_run+0xf8/0x3d0 io_uring/io_uring.c:1155
+ tctx_task_work+0x6d/0xc0 io_uring/io_uring.c:1173
+ task_work_run+0x268/0x310 kernel/task_work.c:180
+ ptrace_notify+0x304/0x320 kernel/signal.c:2404
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]
+ syscall_exit_work+0x14e/0x3e0 kernel/entry/common.c:173
+ syscall_exit_to_user_mode_prepare kernel/entry/common.c:200 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:205 [inline]
+ syscall_exit_to_user_mode+0x135/0x160 kernel/entry/common.c:218
+ do_syscall_64+0xdc/0x1e0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was stored to memory at:
+ io_req_set_res io_uring/io_uring.h:215 [inline]
+ io_recv_finish+0xf10/0x1560 io_uring/net.c:861
+ io_recv+0x12ec/0x1ea0 io_uring/net.c:1175
+ io_issue_sqe+0x429/0x22c0 io_uring/io_uring.c:1751
+ io_poll_issue+0x32/0x40 io_uring/io_uring.c:1782
+ io_poll_check_events io_uring/poll.c:331 [inline]
+ io_poll_task_func+0x5f9/0x14d0 io_uring/poll.c:357
+ io_handle_tw_list+0x23a/0x5c0 io_uring/io_uring.c:1083
+ tctx_task_work_run+0xf8/0x3d0 io_uring/io_uring.c:1155
+ tctx_task_work+0x6d/0xc0 io_uring/io_uring.c:1173
+ task_work_run+0x268/0x310 kernel/task_work.c:180
+ ptrace_notify+0x304/0x320 kernel/signal.c:2404
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]
+ syscall_exit_work+0x14e/0x3e0 kernel/entry/common.c:173
+ syscall_exit_to_user_mode_prepare kernel/entry/common.c:200 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:205 [inline]
+ syscall_exit_to_user_mode+0x135/0x160 kernel/entry/common.c:218
+ do_syscall_64+0xdc/0x1e0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ slab_post_alloc_hook mm/slub.c:3877 [inline]
+ slab_alloc_node mm/slub.c:3918 [inline]
+ __do_kmalloc_node mm/slub.c:4038 [inline]
+ __kmalloc+0x6e4/0x1060 mm/slub.c:4052
+ kmalloc include/linux/slab.h:632 [inline]
+ io_alloc_async_data+0xc0/0x220 io_uring/io_uring.c:1662
+ io_msg_alloc_async io_uring/net.c:166 [inline]
+ io_recvmsg_prep_setup io_uring/net.c:725 [inline]
+ io_recvmsg_prep+0xbe8/0x1a20 io_uring/net.c:806
+ io_init_req io_uring/io_uring.c:2135 [inline]
+ io_submit_sqe io_uring/io_uring.c:2182 [inline]
+ io_submit_sqes+0x1135/0x2f10 io_uring/io_uring.c:2335
+ __do_sys_io_uring_enter io_uring/io_uring.c:3246 [inline]
+ __se_sys_io_uring_enter+0x40f/0x3c80 io_uring/io_uring.c:3183
+ __x64_sys_io_uring_enter+0x11f/0x1a0 io_uring/io_uring.c:3183
+ x64_sys_call+0x2c0/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:427
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 1 PID: 5049 Comm: syz-executor107 Not tainted 6.9.0-syzkaller-02707-g614da38e2f7a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+=====================================================

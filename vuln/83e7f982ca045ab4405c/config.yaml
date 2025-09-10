@@ -1,0 +1,53 @@
+id: 83e7f982ca045ab4405c
+bug_link: https://syzkaller.appspot.com/bug?extid=83e7f982ca045ab4405c
+title: possible deadlock in force_sig_info_to_task
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 720a22fd6c1cdadf691281909950c0cbc5cdf17e
+fix_commit: 02b670c1f88e78f42a6c5aee155c7b26960ca054
+datetime: '2024-05-01T09:41:43+02:00'
+fix_commit_message: "x86/mm: Remove broken vsyscall emulation code from the page fault\
+  \ code\n\nThe syzbot-reported stack trace from hell in this discussion thread\n\
+  actually has three nested page faults:\n\n  https://lore.kernel.org/r/000000000000d5f4fc0616e816d4@google.com\n\
+  \n... and I think that's actually the important thing here:\n\n - the first page\
+  \ fault is from user space, and triggers the vsyscall\n   emulation.\n\n - the second\
+  \ page fault is from __do_sys_gettimeofday(), and that should\n   just have caused\
+  \ the exception that then sets the return value to\n   -EFAULT\n\n - the third nested\
+  \ page fault is due to _raw_spin_unlock_irqrestore() ->\n   preempt_schedule() ->\
+  \ trace_sched_switch(), which then causes a BPF\n   trace program to run, which\
+  \ does that bpf_probe_read_compat(), which\n   causes that page fault under pagefault_disable().\n\
+  \nIt's quite the nasty backtrace, and there's a lot going on.\n\nThe problem is\
+  \ literally the vsyscall emulation, which sets\n\n        current->thread.sig_on_uaccess_err\
+  \ = 1;\n\nand that causes the fixup_exception() code to send the signal *despite*\
+  \ the\nexception being caught.\n\nAnd I think that is in fact completely bogus.\
+  \  It's completely bogus\nexactly because it sends that signal even when it *shouldn't*\
+  \ be sent -\nlike for the BPF user mode trace gathering.\n\nIn other words, I think\
+  \ the whole \"sig_on_uaccess_err\" thing is entirely\nbroken, because it makes any\
+  \ nested page-faults do all the wrong things.\n\nNow, arguably, I don't think anybody\
+  \ should enable vsyscall emulation any\nmore, but this test case clearly does.\n\
+  \nI think we should just make the \"send SIGSEGV\" be something that the\nvsyscall\
+  \ emulation does on its own, not this broken per-thread state for\nsomething that\
+  \ isn't actually per thread.\n\nThe x86 page fault code actually tried to deal with\
+  \ the \"incorrect nesting\"\nby having that:\n\n                if (in_interrupt())\n\
+  \                        return;\n\nwhich ignores the sig_on_uaccess_err case when\
+  \ it happens in interrupts,\nbut as shown by this example, these nested page faults\
+  \ do not need to be\nabout interrupts at all.\n\nIOW, I think the only right thing\
+  \ is to remove that horrendously broken\ncode.\n\nThe attached patch looks like\
+  \ the ObviouslyCorrect(tm) thing to do.\n\nNOTE! This broken code goes back to this\
+  \ commit in 2011:\n\n  4fc3490114bb (\"x86-64: Set siginfo and context on vsyscall\
+  \ emulation faults\")\n\n... and back then the reason was to get all the siginfo\
+  \ details right.\nHonestly, I do not for a moment believe that it's worth getting\
+  \ the siginfo\ndetails right here, but part of the commit says:\n\n    This fixes\
+  \ issues with UML when vsyscall=emulate.\n\n... and so my patch to remove this garbage\
+  \ will probably break UML in this\nsituation.\n\nI do not believe that anybody should\
+  \ be running with vsyscall=emulate in\n2024 in the first place, much less if you\
+  \ are doing things like UML. But\nlet's see if somebody screams.\n\nReported-and-tested-by:\
+  \ syzbot+83e7f982ca045ab4405c@syzkaller.appspotmail.com\nSigned-off-by: Linus Torvalds\
+  \ <torvalds@linux-foundation.org>\nSigned-off-by: Ingo Molnar <mingo@kernel.org>\n\
+  Tested-by: Jiri Olsa <jolsa@kernel.org>\nAcked-by: Andy Lutomirski <luto@kernel.org>\n\
+  Link: https://lore.kernel.org/r/CAHk-=wh9D6f7HUkDgZHKmDCHUQmp+Co89GP+b8+z+G56BKeyNg@mail.gmail.com\n"
+submodule:
+- arch/x86/entry/vsyscall
+- arch/x86/include/asm
+- arch/x86/mm
+hunk_count: 7
+covered_count: 2

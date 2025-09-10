@@ -1,0 +1,46 @@
+id: dcd73ff9291e6d34b3ab
+bug_link: https://syzkaller.appspot.com/bug?extid=dcd73ff9291e6d34b3ab
+title: possible deadlock in rds_wake_sk_sleep (4)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9f30831390ede02d9fcd54fd9ea5a585ab649f4a
+fix_commit: f1acf1ac84d2ae97b7889b87223c1064df850069
+datetime: '2024-02-13T10:25:30+01:00'
+fix_commit_message: 'net:rds: Fix possible deadlock in rds_message_put
+
+
+  Functions rds_still_queued and rds_clear_recv_queue lock a given socket
+
+  in order to safely iterate over the incoming rds messages. However
+
+  calling rds_inc_put while under this lock creates a potential deadlock.
+
+  rds_inc_put may eventually call rds_message_purge, which will lock
+
+  m_rs_lock. This is the incorrect locking order since m_rs_lock is
+
+  meant to be locked before the socket. To fix this, we move the message
+
+  item to a local list or variable that wont need rs_recv_lock protection.
+
+  Then we can safely call rds_inc_put on any item stored locally after
+
+  rs_recv_lock is released.
+
+
+  Fixes: bdbe6fbc6a2f ("RDS: recv.c")
+
+  Reported-by: syzbot+f9db6ff27b9bfdcfeca0@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+dcd73ff9291e6d34b3ab@syzkaller.appspotmail.com
+
+  Signed-off-by: Allison Henderson <allison.henderson@oracle.com>
+
+  Link: https://lore.kernel.org/r/20240209022854.200292-1-allison.henderson@oracle.com
+
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+
+  '
+submodule:
+- net/rds
+hunk_count: 3
+covered_count: 1

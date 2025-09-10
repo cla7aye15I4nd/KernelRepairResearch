@@ -1,0 +1,25 @@
+id: e52a2ae091b628f72765583c9faedc961c83b7e7
+bug_link: https://syzkaller.appspot.com/bug?extid=e52a2ae091b628f72765583c9faedc961c83b7e7
+title: suspicious RCU usage at ./include/linux/inetdevice.h:LINE
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e73b49ebd9deeb0ff2cd9ac6fd9c72a433d1e062
+fix_commit: 25dd169aea6553aea548197a5d4580bbdeda1c85
+datetime: '2017-11-03T14:27:46+09:00'
+fix_commit_message: "fib: fib_dump_info can no longer use __in_dev_get_rtnl\n\nsyzbot\
+  \ reported yet another regression added with DOIT_UNLOCKED.\nWhen nexthop is marked\
+  \ as dead, fib_dump_info uses __in_dev_get_rtnl():\n\n./include/linux/inetdevice.h:230\
+  \ suspicious rcu_dereference_protected() usage!\nrcu_scheduler_active = 2, debug_locks\
+  \ = 1\n1 lock held by syz-executor2/23859:\n #0:  (rcu_read_lock){....}, at: [<ffffffff840283f0>]\n\
+  inet_rtm_getroute+0xaa0/0x2d70 net/ipv4/route.c:2738\n[..]\n  lockdep_rcu_suspicious+0x123/0x170\
+  \ kernel/locking/lockdep.c:4665\n  __in_dev_get_rtnl include/linux/inetdevice.h:230\
+  \ [inline]\n  fib_dump_info+0x1136/0x13d0 net/ipv4/fib_semantics.c:1377\n  inet_rtm_getroute+0xf97/0x2d70\
+  \ net/ipv4/route.c:2785\n..\n\nThis isn't safe anymore, callers either hold RTNL\
+  \ mutex or rcu read lock,\nso these spots must use rcu_dereference_rtnl() or plain\
+  \ rcu_derefence()\n(plus unconditional rcu read lock).\n\nThis does the latter.\n\
+  \nFixes: 394f51abb3d04f (\"ipv4: route: set ipv4 RTM_GETROUTE to not use rtnl\"\
+  )\nReported-by: syzbot <syzkaller@googlegroups.com>\nSigned-off-by: Florian Westphal\
+  \ <fw@strlen.de>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv4
+hunk_count: 3
+covered_count: 3

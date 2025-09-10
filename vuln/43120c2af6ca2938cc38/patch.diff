@@ -1,0 +1,19 @@
+diff --git a/sound/core/timer.c b/sound/core/timer.c
+index 4d2ee99c12a3..d104adc75a8b 100644
+--- a/sound/core/timer.c
++++ b/sound/core/timer.c
+@@ -544,6 +544,14 @@ static int snd_timer_start1(struct snd_timer_instance *timeri,
+ 			     SNDRV_TIMER_IFLG_START))
+ 		return -EBUSY;
+ 
++	/* check the actual time for the start tick;
++	 * bail out as error if it's way too low (< 100us)
++	 */
++	if (start) {
++		if ((u64)snd_timer_hw_resolution(timer) * ticks < 100000)
++			return -EINVAL;
++	}
++
+ 	if (start)
+ 		timeri->ticks = timeri->cticks = ticks;
+ 	else if (!timeri->cticks)

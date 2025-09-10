@@ -1,0 +1,151 @@
+diff --git a/include/linux/bpf.h b/include/linux/bpf.h
+index 95a7abd0ee92..486e65e3db26 100644
+--- a/include/linux/bpf.h
++++ b/include/linux/bpf.h
+@@ -339,8 +339,8 @@ int bpf_prog_array_copy_to_user(struct bpf_prog_array __rcu *progs,
+ void bpf_prog_array_delete_safe(struct bpf_prog_array __rcu *progs,
+ 				struct bpf_prog *old_prog);
+ int bpf_prog_array_copy_info(struct bpf_prog_array __rcu *array,
+-			     __u32 __user *prog_ids, u32 request_cnt,
+-			     __u32 __user *prog_cnt);
++			     u32 *prog_ids, u32 request_cnt,
++			     u32 *prog_cnt);
+ int bpf_prog_array_copy(struct bpf_prog_array __rcu *old_array,
+ 			struct bpf_prog *exclude_prog,
+ 			struct bpf_prog *include_prog,
+diff --git a/kernel/bpf/core.c b/kernel/bpf/core.c
+index d315b393abdd..ba03ec39efb3 100644
+--- a/kernel/bpf/core.c
++++ b/kernel/bpf/core.c
+@@ -1572,13 +1572,32 @@ int bpf_prog_array_length(struct bpf_prog_array __rcu *progs)
+ 	return cnt;
+ }
+ 
++static bool bpf_prog_array_copy_core(struct bpf_prog **prog,
++				     u32 *prog_ids,
++				     u32 request_cnt)
++{
++	int i = 0;
++
++	for (; *prog; prog++) {
++		if (*prog == &dummy_bpf_prog.prog)
++			continue;
++		prog_ids[i] = (*prog)->aux->id;
++		if (++i == request_cnt) {
++			prog++;
++			break;
++		}
++	}
++
++	return !!(*prog);
++}
++
+ int bpf_prog_array_copy_to_user(struct bpf_prog_array __rcu *progs,
+ 				__u32 __user *prog_ids, u32 cnt)
+ {
+ 	struct bpf_prog **prog;
+ 	unsigned long err = 0;
+-	u32 i = 0, *ids;
+ 	bool nospc;
++	u32 *ids;
+ 
+ 	/* users of this function are doing:
+ 	 * cnt = bpf_prog_array_length();
+@@ -1595,16 +1614,7 @@ int bpf_prog_array_copy_to_user(struct bpf_prog_array __rcu *progs,
+ 		return -ENOMEM;
+ 	rcu_read_lock();
+ 	prog = rcu_dereference(progs)->progs;
+-	for (; *prog; prog++) {
+-		if (*prog == &dummy_bpf_prog.prog)
+-			continue;
+-		ids[i] = (*prog)->aux->id;
+-		if (++i == cnt) {
+-			prog++;
+-			break;
+-		}
+-	}
+-	nospc = !!(*prog);
++	nospc = bpf_prog_array_copy_core(prog, ids, cnt);
+ 	rcu_read_unlock();
+ 	err = copy_to_user(prog_ids, ids, cnt * sizeof(u32));
+ 	kfree(ids);
+@@ -1683,22 +1693,25 @@ int bpf_prog_array_copy(struct bpf_prog_array __rcu *old_array,
+ }
+ 
+ int bpf_prog_array_copy_info(struct bpf_prog_array __rcu *array,
+-			     __u32 __user *prog_ids, u32 request_cnt,
+-			     __u32 __user *prog_cnt)
++			     u32 *prog_ids, u32 request_cnt,
++			     u32 *prog_cnt)
+ {
++	struct bpf_prog **prog;
+ 	u32 cnt = 0;
+ 
+ 	if (array)
+ 		cnt = bpf_prog_array_length(array);
+ 
+-	if (copy_to_user(prog_cnt, &cnt, sizeof(cnt)))
+-		return -EFAULT;
++	*prog_cnt = cnt;
+ 
+ 	/* return early if user requested only program count or nothing to copy */
+ 	if (!request_cnt || !cnt)
+ 		return 0;
+ 
+-	return bpf_prog_array_copy_to_user(array, prog_ids, request_cnt);
++	/* this function is called under trace/bpf_trace.c: bpf_event_mutex */
++	prog = rcu_dereference_check(array, 1)->progs;
++	return bpf_prog_array_copy_core(prog, prog_ids, request_cnt) ? -ENOSPC
++								     : 0;
+ }
+ 
+ static void bpf_prog_free_deferred(struct work_struct *work)
+diff --git a/kernel/trace/bpf_trace.c b/kernel/trace/bpf_trace.c
+index d88e96d4e12c..56ba0f2a01db 100644
+--- a/kernel/trace/bpf_trace.c
++++ b/kernel/trace/bpf_trace.c
+@@ -977,6 +977,7 @@ int perf_event_query_prog_array(struct perf_event *event, void __user *info)
+ {
+ 	struct perf_event_query_bpf __user *uquery = info;
+ 	struct perf_event_query_bpf query = {};
++	u32 *ids, prog_cnt, ids_len;
+ 	int ret;
+ 
+ 	if (!capable(CAP_SYS_ADMIN))
+@@ -985,16 +986,32 @@ int perf_event_query_prog_array(struct perf_event *event, void __user *info)
+ 		return -EINVAL;
+ 	if (copy_from_user(&query, uquery, sizeof(query)))
+ 		return -EFAULT;
+-	if (query.ids_len > BPF_TRACE_MAX_PROGS)
++
++	ids_len = query.ids_len;
++	if (ids_len > BPF_TRACE_MAX_PROGS)
+ 		return -E2BIG;
++	ids = kcalloc(ids_len, sizeof(u32), GFP_USER | __GFP_NOWARN);
++	if (!ids)
++		return -ENOMEM;
++	/*
++	 * The above kcalloc returns ZERO_SIZE_PTR when ids_len = 0, which
++	 * is required when user only wants to check for uquery->prog_cnt.
++	 * There is no need to check for it since the case is handled
++	 * gracefully in bpf_prog_array_copy_info.
++	 */
+ 
+ 	mutex_lock(&bpf_event_mutex);
+ 	ret = bpf_prog_array_copy_info(event->tp_event->prog_array,
+-				       uquery->ids,
+-				       query.ids_len,
+-				       &uquery->prog_cnt);
++				       ids,
++				       ids_len,
++				       &prog_cnt);
+ 	mutex_unlock(&bpf_event_mutex);
+ 
++	if (copy_to_user(&uquery->prog_cnt, &prog_cnt, sizeof(prog_cnt)) ||
++	    copy_to_user(uquery->ids, ids, ids_len * sizeof(u32)))
++		ret = -EFAULT;
++
++	kfree(ids);
+ 	return ret;
+ }
+ 

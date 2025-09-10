@@ -1,0 +1,29 @@
+id: d910bd780e6efac35869
+bug_link: https://syzkaller.appspot.com/bug?extid=d910bd780e6efac35869
+title: general protection fault in soft_cursor
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 518ecb6a209f6ff678aeadf9f2bf870c0982ca85
+fix_commit: d78bd6cc68276bd57f766f7cb98bfe32c23ab327
+datetime: '2023-05-27T19:18:59+02:00'
+fix_commit_message: "fbcon: Fix null-ptr-deref in soft_cursor\n\nsyzbot repored this\
+  \ bug in the softcursor code:\n\nBUG: KASAN: null-ptr-deref in soft_cursor+0x384/0x6b4\
+  \ drivers/video/fbdev/core/softcursor.c:70\nRead of size 16 at addr 0000000000000200\
+  \ by task kworker/u4:1/12\n\nCPU: 0 PID: 12 Comm: kworker/u4:1 Not tainted 6.4.0-rc3-syzkaller-geb0f1697d729\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 04/28/2023\nWorkqueue: events_power_efficient fb_flashcursor\nCall trace:\n dump_backtrace+0x1b8/0x1e4\
+  \ arch/arm64/kernel/stacktrace.c:233\n show_stack+0x2c/0x44 arch/arm64/kernel/stacktrace.c:240\n\
+  \ __dump_stack lib/dump_stack.c:88 [inline]\n dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106\n\
+  \ print_report+0xe4/0x514 mm/kasan/report.c:465\n kasan_report+0xd4/0x130 mm/kasan/report.c:572\n\
+  \ kasan_check_range+0x264/0x2a4 mm/kasan/generic.c:187\n __asan_memcpy+0x3c/0x84\
+  \ mm/kasan/shadow.c:105\n soft_cursor+0x384/0x6b4 drivers/video/fbdev/core/softcursor.c:70\n\
+  \ bit_cursor+0x113c/0x1a64 drivers/video/fbdev/core/bitblit.c:377\n fb_flashcursor+0x35c/0x54c\
+  \ drivers/video/fbdev/core/fbcon.c:380\n process_one_work+0x788/0x12d4 kernel/workqueue.c:2405\n\
+  \ worker_thread+0x8e0/0xfe8 kernel/workqueue.c:2552\n kthread+0x288/0x310 kernel/kthread.c:379\n\
+  \ ret_from_fork+0x10/0x20 arch/arm64/kernel/entry.S:853\n\nThis fix let bit_cursor()\
+  \ bail out early when a font bitmap\nisn't available yet.\n\nSigned-off-by: Helge\
+  \ Deller <deller@gmx.de>\nReported-by: syzbot+d910bd780e6efac35869@syzkaller.appspotmail.com\n\
+  Acked-by: Sam Ravnborg <sam@ravnborg.org>\nCc: stable@kernel.org\n"
+submodule:
+- drivers/video/fbdev/core
+hunk_count: 1
+covered_count: 0

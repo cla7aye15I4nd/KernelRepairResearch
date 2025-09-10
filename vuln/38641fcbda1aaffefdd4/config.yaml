@@ -1,0 +1,31 @@
+id: 38641fcbda1aaffefdd4
+bug_link: https://syzkaller.appspot.com/bug?extid=38641fcbda1aaffefdd4
+title: possible deadlock in __bch2_fsck_err
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 54dacdada6de8d97e7ca7e51eadc96c61032bdb4
+fix_commit: 49f2d182638a54ecda9cb35ede5224f8d9f5f2e6
+datetime: '2024-12-21T01:36:22-05:00'
+fix_commit_message: 'bcachefs: Kill unnecessary mark_lock usage
+
+
+  We can''t hold mark_lock while calling fsck_err() - that''s a deadlock,
+
+  mark_lock is meant to be a leaf node lock.
+
+
+  It''s also unnecessary for gc_bucket() and bucket_gen(); rcu suffices
+
+  since the bucket_gens array describes its size, and we can''t race with
+
+  device removal or resize during gc/fsck since that takes state lock.
+
+
+  Reported-by: syzbot+38641fcbda1aaffefdd4@syzkaller.appspotmail.com
+
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>
+
+  '
+submodule:
+- fs/bcachefs
+hunk_count: 24
+covered_count: 5

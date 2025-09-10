@@ -1,0 +1,45 @@
+id: 2792672c6a63f1dc867c
+bug_link: https://syzkaller.appspot.com/bug?extid=2792672c6a63f1dc867c
+title: 'WARNING: suspicious RCU usage in xfrm_get_sadinfo'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6ed69184ed9c43873b8a1ee721e3bf3c08c2c6be
+fix_commit: f10e0010fae8174dc20bdc872bcaa85baa925cb7
+datetime: '2019-03-08T13:17:31+01:00'
+fix_commit_message: 'net: xfrm: Add ''_rcu'' tag for rcu protected pointer in netns_xfrm
+
+
+  For rcu protected pointers, we''d better add ''__rcu'' for them.
+
+
+  Once added ''__rcu'' tag for rcu protected pointer, the sparse tool reports
+
+  warnings.
+
+
+  net/xfrm/xfrm_user.c:1198:39: sparse:    expected struct sock *sk
+
+  net/xfrm/xfrm_user.c:1198:39: sparse:    got struct sock [noderef] <asn:4> *nlsk
+
+  [...]
+
+
+  So introduce a new wrapper function of nlmsg_unicast  to handle type
+
+  conversions.
+
+
+  This patch also fixes a direct access of a rcu protected socket.
+
+
+  Fixes: be33690d8fcf("[XFRM]: Fix aevent related crash")
+
+  Signed-off-by: Su Yanjun <suyj.fnst@cn.fujitsu.com>
+
+  Signed-off-by: Steffen Klassert <steffen.klassert@secunet.com>
+
+  '
+submodule:
+- include/net/netns
+- net/xfrm
+hunk_count: 8
+covered_count: 3

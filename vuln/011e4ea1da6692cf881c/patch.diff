@@ -1,0 +1,35 @@
+diff --git a/fs/pipe.c b/fs/pipe.c
+index 804a7d789452..226e7f66b590 100644
+--- a/fs/pipe.c
++++ b/fs/pipe.c
+@@ -446,6 +446,18 @@ pipe_write(struct kiocb *iocb, struct iov_iter *from)
+ 	bool was_empty = false;
+ 	bool wake_next_writer = false;
+ 
++	/*
++	 * Reject writing to watch queue pipes before the point where we lock
++	 * the pipe.
++	 * Otherwise, lockdep would be unhappy if the caller already has another
++	 * pipe locked.
++	 * If we had to support locking a normal pipe and a notification pipe at
++	 * the same time, we could set up lockdep annotations for that, but
++	 * since we don't actually need that, it's simpler to just bail here.
++	 */
++	if (pipe_has_watch_queue(pipe))
++		return -EXDEV;
++
+ 	/* Null write succeeds. */
+ 	if (unlikely(total_len == 0))
+ 		return 0;
+@@ -458,11 +470,6 @@ pipe_write(struct kiocb *iocb, struct iov_iter *from)
+ 		goto out;
+ 	}
+ 
+-	if (pipe_has_watch_queue(pipe)) {
+-		ret = -EXDEV;
+-		goto out;
+-	}
+-
+ 	/*
+ 	 * If it wasn't empty we try to merge new data into
+ 	 * the last buffer.

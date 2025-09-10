@@ -1,0 +1,37 @@
+id: c5d5a51dcbb558ca0cb5
+bug_link: https://syzkaller.appspot.com/bug?extid=c5d5a51dcbb558ca0cb5
+title: general protection fault in unlink_file_vma
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 512b557ac8a869932e03f1fd522419f4348118bf
+fix_commit: bc4fe4cdd602b3bee5eeb49d843bd6b3296cfc86
+datetime: '2020-10-11T10:31:10-07:00'
+fix_commit_message: "mm: mmap: Fix general protection fault in unlink_file_vma()\n\
+  \nThe syzbot reported the below general protection fault:\n\n  general protection\
+  \ fault, probably for non-canonical address\n  0xe00eeaee0000003b: 0000 [#1] PREEMPT\
+  \ SMP KASAN\n  KASAN: maybe wild-memory-access in range [0x00777770000001d8-0x00777770000001df]\n\
+  \  CPU: 1 PID: 10488 Comm: syz-executor721 Not tainted 5.9.0-rc3-syzkaller #0\n\
+  \  RIP: 0010:unlink_file_vma+0x57/0xb0 mm/mmap.c:164\n  Call Trace:\n     free_pgtables+0x1b3/0x2f0\
+  \ mm/memory.c:415\n     exit_mmap+0x2c0/0x530 mm/mmap.c:3184\n     __mmput+0x122/0x470\
+  \ kernel/fork.c:1076\n     mmput+0x53/0x60 kernel/fork.c:1097\n     exit_mm kernel/exit.c:483\
+  \ [inline]\n     do_exit+0xa8b/0x29f0 kernel/exit.c:793\n     do_group_exit+0x125/0x310\
+  \ kernel/exit.c:903\n     get_signal+0x428/0x1f00 kernel/signal.c:2757\n     arch_do_signal+0x82/0x2520\
+  \ arch/x86/kernel/signal.c:811\n     exit_to_user_mode_loop kernel/entry/common.c:136\
+  \ [inline]\n     exit_to_user_mode_prepare+0x1ae/0x200 kernel/entry/common.c:167\n\
+  \     syscall_exit_to_user_mode+0x7e/0x2e0 kernel/entry/common.c:242\n     entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \nIt's because the ->mmap() callback can change vma->vm_file and fput the\noriginal\
+  \ file.  But the commit d70cec898324 (\"mm: mmap: merge vma after\ncall_mmap() if\
+  \ possible\") failed to catch this case and always fput()\nthe original file, hence\
+  \ add an extra fput().\n\n[ Thanks Hillf for pointing this extra fput() out. ]\n\
+  \nFixes: d70cec898324 (\"mm: mmap: merge vma after call_mmap() if possible\")\n\
+  Reported-by: syzbot+c5d5a51dcbb558ca0cb5@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Miaohe Lin <linmiaohe@huawei.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Cc: Christian König <ckoenig.leichtzumerken@gmail.com>\nCc: Hongxiang Lou <louhongxiang@huawei.com>\n\
+  Cc: Chris Wilson <chris@chris-wilson.co.uk>\nCc: Dave Airlie <airlied@redhat.com>\n\
+  Cc: Daniel Vetter <daniel@ffwll.ch>\nCc: Sumit Semwal <sumit.semwal@linaro.org>\n\
+  Cc: Matthew Wilcox (Oracle) <willy@infradead.org>\nCc: John Hubbard <jhubbard@nvidia.com>\n\
+  Link: https://lkml.kernel.org/r/20200916090733.31427-1-linmiaohe@huawei.com\nSigned-off-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 0

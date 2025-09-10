@@ -1,0 +1,55 @@
+id: deb6abc36aad4008f407
+bug_link: https://syzkaller.appspot.com/bug?extid=deb6abc36aad4008f407
+title: 'INFO: task hung in __input_unregister_device (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 80b9ebd3e478cd41526cbf84f80c3e0eb885d1d3
+fix_commit: 98e01215708b6d416345465c09dce2bd4868c67a
+datetime: '2022-08-27T20:54:06-07:00'
+fix_commit_message: 'Input: iforce - wake up after clearing IFORCE_XMIT_RUNNING flag
+
+
+  syzbot is reporting hung task at __input_unregister_device() [1], for
+
+  iforce_close() waiting at wait_event_interruptible() with dev->mutex held
+
+  is blocking input_disconnect_device() from __input_unregister_device().
+
+
+  It seems that the cause is simply that commit c2b27ef672992a20 ("Input:
+
+  iforce - wait for command completion when closing the device") forgot to
+
+  call wake_up() after clear_bit().
+
+
+  Fix this problem by introducing a helper that calls clear_bit() followed
+
+  by wake_up_all().
+
+
+  Reported-by: syzbot <syzbot+deb6abc36aad4008f407@syzkaller.appspotmail.com>
+
+  Fixes: c2b27ef672992a20 ("Input: iforce - wait for command completion when closing
+  the device")
+
+  Tested-by: syzbot <syzbot+deb6abc36aad4008f407@syzkaller.appspotmail.com>
+
+  Suggested-by: Fabio M. De Francesco <fmdefrancesco@gmail.com>
+
+  Co-developed-by: Hillf Danton <hdanton@sina.com>
+
+  Signed-off-by: Hillf Danton <hdanton@sina.com>
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Link: https://lore.kernel.org/r/887021c3-4f13-40ce-c8b9-aa6e09faa3a7@I-love.SAKURA.ne.jp
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+
+  '
+submodule:
+- drivers/input/joystick/iforce
+hunk_count: 7
+covered_count: 2

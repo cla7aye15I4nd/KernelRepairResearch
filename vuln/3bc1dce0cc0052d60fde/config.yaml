@@ -1,0 +1,73 @@
+id: 3bc1dce0cc0052d60fde
+bug_link: https://syzkaller.appspot.com/bug?extid=3bc1dce0cc0052d60fde
+title: WARNING in mcba_usb_probe/usb_submit_urb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 04c9b00ba83594a29813d6b1fb8fdc93a3915174
+fix_commit: 136bed0bfd3bc9c95c88aafff2d22ecb3a919f23
+datetime: '2022-03-31T09:55:27+02:00'
+fix_commit_message: 'can: mcba_usb: properly check endpoint type
+
+
+  Syzbot reported warning in usb_submit_urb() which is caused by wrong
+
+  endpoint type. We should check that in endpoint is actually present to
+
+  prevent this warning.
+
+
+  Found pipes are now saved to struct mcba_priv and code uses them
+
+  directly instead of making pipes in place.
+
+
+  Fail log:
+
+
+  | usb 5-1: BOGUS urb xfer, pipe 3 != type 1
+
+  | WARNING: CPU: 1 PID: 49 at drivers/usb/core/urb.c:502 usb_submit_urb+0xed2/0x18a0
+  drivers/usb/core/urb.c:502
+
+  | Modules linked in:
+
+  | CPU: 1 PID: 49 Comm: kworker/1:2 Not tainted 5.17.0-rc6-syzkaller-00184-g38f80f42147f
+  #0
+
+  | Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.14.0-2 04/01/2014
+
+  | Workqueue: usb_hub_wq hub_event
+
+  | RIP: 0010:usb_submit_urb+0xed2/0x18a0 drivers/usb/core/urb.c:502
+
+  | ...
+
+  | Call Trace:
+
+  |  <TASK>
+
+  |  mcba_usb_start drivers/net/can/usb/mcba_usb.c:662 [inline]
+
+  |  mcba_usb_probe+0x8a3/0xc50 drivers/net/can/usb/mcba_usb.c:858
+
+  |  usb_probe_interface+0x315/0x7f0 drivers/usb/core/driver.c:396
+
+  |  call_driver_probe drivers/base/dd.c:517 [inline]
+
+
+  Fixes: 51f3baad7de9 ("can: mcba_usb: Add support for Microchip CAN BUS Analyzer")
+
+  Link: https://lore.kernel.org/all/20220313100903.10868-1-paskripkin@gmail.com
+
+  Reported-and-tested-by: syzbot+3bc1dce0cc0052d60fde@syzkaller.appspotmail.com
+
+  Signed-off-by: Pavel Skripkin <paskripkin@gmail.com>
+
+  Reviewed-by: Vincent Mailhol <mailhol.vincent@wanadoo.fr>
+
+  Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+
+  '
+submodule:
+- drivers/net/can/usb
+hunk_count: 7
+covered_count: 5

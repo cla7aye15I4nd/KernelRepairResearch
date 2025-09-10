@@ -1,0 +1,27 @@
+id: e4df4e1389e28972e955
+bug_link: https://syzkaller.appspot.com/bug?extid=e4df4e1389e28972e955
+title: 'KASAN: use-after-free Read in vlan_dev_real_dev (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 250962e4684678629afd2feeaefdc40c5db501f4
+fix_commit: 563bcbae3ba233c275c244bfce2efe12938f5363
+datetime: '2021-11-03T14:19:23+00:00'
+fix_commit_message: "net: vlan: fix a UAF in vlan_dev_real_dev()\n\nThe real_dev of\
+  \ a vlan net_device may be freed after\nunregister_vlan_dev(). Access the real_dev\
+  \ continually by\nvlan_dev_real_dev() will trigger the UAF problem for the\nreal_dev\
+  \ like following:\n\n==================================================================\n\
+  BUG: KASAN: use-after-free in vlan_dev_real_dev+0xf9/0x120\nCall Trace:\n kasan_report.cold+0x83/0xdf\n\
+  \ vlan_dev_real_dev+0xf9/0x120\n is_eth_port_of_netdev_filter.part.0+0xb1/0x2c0\n\
+  \ is_eth_port_of_netdev_filter+0x28/0x40\n ib_enum_roce_netdev+0x1a3/0x300\n ib_enum_all_roce_netdevs+0xc7/0x140\n\
+  \ netdevice_event_work_handler+0x9d/0x210\n...\n\nFreed by task 9288:\n kasan_save_stack+0x1b/0x40\n\
+  \ kasan_set_track+0x1c/0x30\n kasan_set_free_info+0x20/0x30\n __kasan_slab_free+0xfc/0x130\n\
+  \ slab_free_freelist_hook+0xdd/0x240\n kfree+0xe4/0x690\n kvfree+0x42/0x50\n device_release+0x9f/0x240\n\
+  \ kobject_put+0x1c8/0x530\n put_device+0x1b/0x30\n free_netdev+0x370/0x540\n ppp_destroy_interface+0x313/0x3d0\n\
+  ...\n\nMove the put_device(real_dev) to vlan_dev_free(). Ensure\nreal_dev not be\
+  \ freed before vlan_dev unregistered.\n\nFixes: 1da177e4c3f4 (\"Linux-2.6.12-rc2\"\
+  )\nReported-by: syzbot+e4df4e1389e28972e955@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Ziyang Xuan <william.xuanziyang@huawei.com>\nReviewed-by: Jason Gunthorpe <jgg@nvidia.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/8021q
+hunk_count: 2
+covered_count: 0

@@ -1,0 +1,54 @@
+id: 4c7e0f9b94ad65811efb
+bug_link: https://syzkaller.appspot.com/bug?extid=4c7e0f9b94ad65811efb
+title: possible deadlock in elv_iosched_store
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fb585552119907e9bde4d4a76b0afd0cdff3f079
+fix_commit: 01b91bf14f6d4893e03e357006e7af3a20c03fee
+datetime: '2025-04-03T08:32:03-06:00'
+fix_commit_message: 'block: don''t grab elevator lock during queue initialization
+
+
+  ->elevator_lock depends on queue freeze lock, see block/blk-sysfs.c.
+
+
+  queue freeze lock depends on fs_reclaim.
+
+
+  So don''t grab elevator lock during queue initialization which needs to
+
+  call kmalloc(GFP_KERNEL), and we can cut the dependency between
+
+  ->elevator_lock and fs_reclaim, then the lockdep warning can be killed.
+
+
+  This way is safe because elevator setting isn''t ready to run during
+
+  queue initialization.
+
+
+  There isn''t such issue in __blk_mq_update_nr_hw_queues() because
+
+  memalloc_noio_save() is called before acquiring elevator lock.
+
+
+  Fixes the following lockdep warning:
+
+
+  https://lore.kernel.org/linux-block/67e6b425.050a0220.2f068f.007b.GAE@google.com/
+
+
+  Reported-by: syzbot+4c7e0f9b94ad65811efb@syzkaller.appspotmail.com
+
+  Cc: Nilay Shroff <nilay@linux.ibm.com>
+
+  Signed-off-by: Ming Lei <ming.lei@redhat.com>
+
+  Link: https://lore.kernel.org/r/20250403105402.1334206-1-ming.lei@redhat.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- block
+hunk_count: 4
+covered_count: 3

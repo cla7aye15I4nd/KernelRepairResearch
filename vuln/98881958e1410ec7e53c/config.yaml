@@ -1,0 +1,35 @@
+id: 98881958e1410ec7e53c
+bug_link: https://syzkaller.appspot.com/bug?extid=98881958e1410ec7e53c
+title: 'KASAN: invalid-free in hub_event'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d7859905301880ad3e16272399d26900af3ac496
+fix_commit: d81bb019d7bb30091e3c796102c00935d6dd7ca9
+datetime: '2018-12-05T10:37:29+01:00'
+fix_commit_message: "USB: Fix invalid-free bug in port_over_current_notify()\n\nSyzbot\
+  \ and KASAN found the following invalid-free bug in\nport_over_current_notify():\n\
+  \n--------------------------------------------------------------------------\nBUG:\
+  \ KASAN: double-free or invalid-free in port_over_current_notify\ndrivers/usb/core/hub.c:5192\
+  \ [inline]\nBUG: KASAN: double-free or invalid-free in port_event\ndrivers/usb/core/hub.c:5241\
+  \ [inline]\nBUG: KASAN: double-free or invalid-free in hub_event+0xd97/0x4140\n\
+  drivers/usb/core/hub.c:5384\n\nCPU: 1 PID: 32710 Comm: kworker/1:3 Not tainted 4.20.0-rc3+\
+  \ #129\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS\n\
+  Google 01/01/2011\nWorkqueue: usb_hub_wq hub_event\nCall Trace:\n  __dump_stack\
+  \ lib/dump_stack.c:77 [inline]\n  dump_stack+0x244/0x39d lib/dump_stack.c:113\n\
+  \  print_address_description.cold.7+0x9/0x1ff mm/kasan/report.c:256\n  kasan_report_invalid_free+0x64/0xa0\
+  \ mm/kasan/report.c:336\n  __kasan_slab_free+0x13a/0x150 mm/kasan/kasan.c:501\n\
+  \  kasan_slab_free+0xe/0x10 mm/kasan/kasan.c:528\n  __cache_free mm/slab.c:3498\
+  \ [inline]\n  kfree+0xcf/0x230 mm/slab.c:3817\n  port_over_current_notify drivers/usb/core/hub.c:5192\
+  \ [inline]\n  port_event drivers/usb/core/hub.c:5241 [inline]\n  hub_event+0xd97/0x4140\
+  \ drivers/usb/core/hub.c:5384\n  process_one_work+0xc90/0x1c40 kernel/workqueue.c:2153\n\
+  \  worker_thread+0x17f/0x1390 kernel/workqueue.c:2296\n  kthread+0x35a/0x440 kernel/kthread.c:246\n\
+  \  ret_from_fork+0x3a/0x50 arch/x86/entry/entry_64.S:352\n--------------------------------------------------------------------------\n\
+  \nThe problem is caused by use of a static array to store\nenvironment-string pointers.\
+  \  When the routine is called by multiple\nthreads concurrently, the pointers from\
+  \ one thread can overwrite those\nfrom another.\n\nThe solution is to use an ordinary\
+  \ automatic array instead of a static\narray.\n\nSigned-off-by: Alan Stern <stern@rowland.harvard.edu>\n\
+  Reported-by: syzbot+98881958e1410ec7e53c@syzkaller.appspotmail.com\nCc: stable <stable@vger.kernel.org>\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/core
+hunk_count: 2
+covered_count: 2

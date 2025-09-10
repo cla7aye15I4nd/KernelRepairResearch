@@ -1,0 +1,36 @@
+id: 04625c80899f4555de39
+bug_link: https://syzkaller.appspot.com/bug?extid=04625c80899f4555de39
+title: WARNING in blkdev_put (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 985958b8584cc143555f1bd735e7ab5066c944a7
+fix_commit: c576c4bf9ecfa3fb9f7b11681cc2f60aba5276c4
+datetime: '2023-06-20T07:19:15-06:00'
+fix_commit_message: "reiserfs: fix blkdev_put() warning from release_journal_dev()\n\
+  \nIn journal_init_dev(), if super bdev is used as 'j_dev_bd', then\nblkdev_get_by_dev()\
+  \ is called with NULL holder, otherwise, holder will\nbe journal. However, later\
+  \ in release_journal_dev(), blkdev_put() is\ncalled with journal unconditionally,\
+  \ cause following warning:\n\nWARNING: CPU: 1 PID: 5034 at block/bdev.c:617 bd_end_claim\
+  \ block/bdev.c:617 [inline]\nWARNING: CPU: 1 PID: 5034 at block/bdev.c:617 blkdev_put+0x562/0x8a0\
+  \ block/bdev.c:901\nRIP: 0010:blkdev_put+0x562/0x8a0 block/bdev.c:901\nCall Trace:\n\
+  \ <TASK>\n release_journal_dev fs/reiserfs/journal.c:2592 [inline]\n free_journal_ram+0x421/0x5c0\
+  \ fs/reiserfs/journal.c:1896\n do_journal_release fs/reiserfs/journal.c:1960 [inline]\n\
+  \ journal_release+0x276/0x630 fs/reiserfs/journal.c:1971\n reiserfs_put_super+0xe4/0x5c0\
+  \ fs/reiserfs/super.c:616\n generic_shutdown_super+0x158/0x480 fs/super.c:499\n\
+  \ kill_block_super+0x64/0xb0 fs/super.c:1422\n deactivate_locked_super+0x98/0x160\
+  \ fs/super.c:330\n deactivate_super+0xb1/0xd0 fs/super.c:361\n cleanup_mnt+0x2ae/0x3d0\
+  \ fs/namespace.c:1247\n task_work_run+0x16f/0x270 kernel/task_work.c:179\n exit_task_work\
+  \ include/linux/task_work.h:38 [inline]\n do_exit+0xadc/0x2a30 kernel/exit.c:874\n\
+  \ do_group_exit+0xd4/0x2a0 kernel/exit.c:1024\n __do_sys_exit_group kernel/exit.c:1035\
+  \ [inline]\n __se_sys_exit_group kernel/exit.c:1033 [inline]\n __x64_sys_exit_group+0x3e/0x50\
+  \ kernel/exit.c:1033\n do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x39/0xb0\
+  \ arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nFix this\
+  \ problem by passing in NULL holder in this case.\n\nReported-by: syzbot+04625c80899f4555de39@syzkaller.appspotmail.com\n\
+  Link: https://syzkaller.appspot.com/bug?extid=04625c80899f4555de39\nFixes: 2736e8eeb0cc\
+  \ (\"block: use the holder as indication for exclusive opens\")\nSigned-off-by:\
+  \ Yu Kuai <yukuai3@huawei.com>\nReviewed-by: Christian Brauner <brauner@kernel.org>\n\
+  Reviewed-by: Christoph Hellwig <hch@lst.de>\nLink: https://lore.kernel.org/r/20230620111322.1014775-1-yukuai1@huaweicloud.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs/reiserfs
+hunk_count: 1
+covered_count: 1

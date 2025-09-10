@@ -1,0 +1,37 @@
+id: da4ed53f6a834e1bf57f
+bug_link: https://syzkaller.appspot.com/bug?extid=da4ed53f6a834e1bf57f
+title: WARNING in fuse_request_end
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 42815f8ac54c5113bf450ec4b7ccc5b62af0f6a7
+fix_commit: 246014876d782bbf2e652267482cd2e799fb5fcd
+datetime: '2024-05-10T11:10:39+02:00'
+fix_commit_message: "fuse: clear FR_SENT when re-adding requests into pending list\n\
+  \nThe following warning was reported by lee bruce:\n\n  ------------[ cut here ]------------\n\
+  \  WARNING: CPU: 0 PID: 8264 at fs/fuse/dev.c:300\n  fuse_request_end+0x685/0x7e0\
+  \ fs/fuse/dev.c:300\n  Modules linked in:\n  CPU: 0 PID: 8264 Comm: ab2 Not tainted\
+  \ 6.9.0-rc7\n  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996)\n  RIP: 0010:fuse_request_end+0x685/0x7e0\
+  \ fs/fuse/dev.c:300\n  ......\n  Call Trace:\n  <TASK>\n  fuse_dev_do_read.constprop.0+0xd36/0x1dd0\
+  \ fs/fuse/dev.c:1334\n  fuse_dev_read+0x166/0x200 fs/fuse/dev.c:1367\n  call_read_iter\
+  \ include/linux/fs.h:2104 [inline]\n  new_sync_read fs/read_write.c:395 [inline]\n\
+  \  vfs_read+0x85b/0xba0 fs/read_write.c:476\n  ksys_read+0x12f/0x260 fs/read_write.c:619\n\
+  \  do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n  do_syscall_64+0xce/0x260\
+  \ arch/x86/entry/common.c:83\n  entry_SYSCALL_64_after_hwframe+0x77/0x7f\n  ......\n\
+  \  </TASK>\n\nThe warning is due to the FUSE_NOTIFY_RESEND notify sent by the write()\n\
+  syscall in the reproducer program and it happens as follows:\n\n(1) calls fuse_dev_read()\
+  \ to read the INIT request\nThe read succeeds. During the read, bit FR_SENT will\
+  \ be set on the\nrequest.\n(2) calls fuse_dev_write() to send an USE_NOTIFY_RESEND\
+  \ notify\nThe resend notify will resend all processing requests, so the INIT\nrequest\
+  \ is moved from processing list to pending list again.\n(3) calls fuse_dev_read()\
+  \ with an invalid output address\nfuse_dev_read() will try to copy the same INIT\
+  \ request to the output\naddress, but it will fail due to the invalid address, so\
+  \ the INIT\nrequest is ended and triggers the warning in fuse_request_end().\n\n\
+  Fix it by clearing FR_SENT when re-adding requests into pending list.\n\nAcked-by:\
+  \ Miklos Szeredi <mszeredi@redhat.com>\nReported-by: xingwei lee <xrivendell7@gmail.com>\n\
+  Reported-by: yue sun <samsun1006219@gmail.com>\nCloses: https://lore.kernel.org/linux-fsdevel/58f13e47-4765-fce4-daf4-dffcc5ae2330@huaweicloud.com/T/#m091614e5ea2af403b259e7cea6a49e51b9ee07a7\n\
+  Fixes: 760eac73f9f6 (\"fuse: Introduce a new notification type for resend pending\
+  \ requests\")\nSigned-off-by: Hou Tao <houtao1@huawei.com>\nSigned-off-by: Miklos\
+  \ Szeredi <mszeredi@redhat.com>\n"
+submodule:
+- fs/fuse
+hunk_count: 1
+covered_count: 0

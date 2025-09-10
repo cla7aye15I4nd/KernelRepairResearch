@@ -1,0 +1,27 @@
+id: 6e2de48f06cdb2884bfc
+bug_link: https://syzkaller.appspot.com/bug?extid=6e2de48f06cdb2884bfc
+title: memory leak in keyctl_watch_key
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a635415a064e77bcfbf43da413fd9dfe0bbed9cb
+fix_commit: 3d8dcf278b1ee1eff1e90be848fa2237db4c07a7
+datetime: '2022-03-21T12:48:32+00:00'
+fix_commit_message: "watch_queue: Actually free the watch\n\nfree_watch() does everything\
+  \ barring actually freeing the watch object.  Fix\nthis by adding the missing kfree.\n\
+  \nkmemleak produces a report something like the following.  Note that as an\naddress\
+  \ can be seen in the first word, the watch would appear to have gone\nthrough call_rcu().\n\
+  \nBUG: memory leak\nunreferenced object 0xffff88810ce4a200 (size 96):\n  comm \"\
+  syz-executor352\", pid 3605, jiffies 4294947473 (age 13.720s)\n  hex dump (first\
+  \ 32 bytes):\n    e0 82 48 0d 81 88 ff ff 00 00 00 00 00 00 00 00  ..H.............\n\
+  \    80 a2 e4 0c 81 88 ff ff 00 00 00 00 00 00 00 00  ................\n  backtrace:\n\
+  \    [<ffffffff8214e6cc>] kmalloc include/linux/slab.h:581 [inline]\n    [<ffffffff8214e6cc>]\
+  \ kzalloc include/linux/slab.h:714 [inline]\n    [<ffffffff8214e6cc>] keyctl_watch_key+0xec/0x2e0\
+  \ security/keys/keyctl.c:1800\n    [<ffffffff8214ec84>] __do_sys_keyctl+0x3c4/0x490\
+  \ security/keys/keyctl.c:2016\n    [<ffffffff84493a25>] do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n    [<ffffffff84493a25>] do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n\
+  \    [<ffffffff84600068>] entry_SYSCALL_64_after_hwframe+0x44/0xae\n\nFixes: c73be61cede5\
+  \ (\"pipe: Add general notification queue support\")\nReported-and-tested-by: syzbot+6e2de48f06cdb2884bfc@syzkaller.appspotmail.com\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 0

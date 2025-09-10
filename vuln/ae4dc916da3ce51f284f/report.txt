@@ -1,0 +1,42 @@
+loop0: detected capacity change from 0 to 32768
+bcachefs (loop0): mounting version 1.7: mi_btree_bitmap opts=metadata_checksum=none,data_checksum=none,nojournal_transaction_names
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in fs/bcachefs/bkey_methods.c:174:2
+shift exponent 255 is too large for 64-bit type 'unsigned long long'
+CPU: 0 PID: 5076 Comm: syz-executor289 Not tainted 6.9.0-rc6-syzkaller-00290-gb9158815de52 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x3c8/0x420 lib/ubsan.c:468
+ __bch2_bkey_invalid+0x70f/0x740 fs/bcachefs/bkey_methods.c:174
+ bch2_bkey_invalid+0x3b/0x200 fs/bcachefs/bkey_methods.c:230
+ journal_validate_key+0x73a/0xec0 fs/bcachefs/journal_io.c:344
+ journal_entry_btree_root_validate+0x165/0x480 fs/bcachefs/journal_io.c:440
+ bch2_sb_clean_validate_late fs/bcachefs/sb-clean.c:40 [inline]
+ bch2_read_superblock_clean+0x1b9/0x4c0 fs/bcachefs/sb-clean.c:168
+ bch2_fs_recovery+0x1e8/0x6390 fs/bcachefs/recovery.c:573
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1043
+ bch2_fs_open+0xa8d/0xdf0 fs/bcachefs/super.c:2102
+ bch2_mount+0x71d/0x1320 fs/bcachefs/fs.c:1903
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2a0 fs/super.c:1779
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3352
+ do_mount fs/namespace.c:3692 [inline]
+ __do_sys_mount fs/namespace.c:3898 [inline]
+ __se_sys_mount+0x2d9/0x3c0 fs/namespace.c:3875
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f241b297bba
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe72e34988 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffe72e349a0 RCX: 00007f241b297bba
+RDX: 0000000020011a00 RSI: 0000000020011a40 RDI: 00007ffe72e349a0
+RBP: 0000000000000004 R08: 00007ffe72e349e0 R09: 00000000000119f0
+R10: 0000000002000002 R11: 0000000000000282 R12: 0000000002000002
+R13: 00007ffe72e349e0 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+---[ end trace ]---

@@ -1,0 +1,29 @@
+id: f2a1633f249cece865fe
+bug_link: https://syzkaller.appspot.com/bug?extid=f2a1633f249cece865fe
+title: 'BUG: Bad rss-counter state (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 906f9cdfc2a0800f13683f9e4ebdfd08c12ee81b
+fix_commit: 173d9d9fd3ddae84c110fea8aedf1f26af6be9ec
+datetime: '2018-11-30T14:56:15-08:00'
+fix_commit_message: "mm/huge_memory: splitting set mapping+index before unfreeze\n\
+  \nHuge tmpfs stress testing has occasionally hit shmem_undo_range()'s\nVM_BUG_ON_PAGE(page_to_pgoff(page)\
+  \ != index, page).\n\nMove the setting of mapping and index up before the page_ref_unfreeze()\n\
+  in __split_huge_page_tail() to fix this: so that a page cache lookup\ncannot get\
+  \ a reference while the tail's mapping and index are unstable.\n\nIn fact, might\
+  \ as well move them up before the smp_wmb(): I don't see an\nactual need for that,\
+  \ but if I'm missing something, this way round is\nsafer than the other, and no\
+  \ less efficient.\n\nYou might argue that VM_BUG_ON_PAGE(page_to_pgoff(page) !=\
+  \ index, page) is\nmisplaced, and should be left until after the trylock_page();\
+  \ but left as\nis has not crashed since, and gives more stringent assurance.\n\n\
+  Link: http://lkml.kernel.org/r/alpine.LSU.2.11.1811261516380.2275@eggly.anvils\n\
+  Fixes: e9b61f19858a5 (\"thp: reintroduce split_huge_page()\")\nRequires: 605ca5ede764\
+  \ (\"mm/huge_memory.c: reorder operations in __split_huge_page_tail()\")\nSigned-off-by:\
+  \ Hugh Dickins <hughd@google.com>\nAcked-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>\n\
+  Cc: Konstantin Khlebnikov <khlebnikov@yandex-team.ru>\nCc: Jerome Glisse <jglisse@redhat.com>\n\
+  Cc: Matthew Wilcox <willy@infradead.org>\nCc: <stable@vger.kernel.org>\t[4.8+]\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds\
+  \ <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 2
+covered_count: 0

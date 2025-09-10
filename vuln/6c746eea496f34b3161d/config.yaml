@@ -1,0 +1,25 @@
+id: 6c746eea496f34b3161d
+bug_link: https://syzkaller.appspot.com/bug?extid=6c746eea496f34b3161d
+title: 'KMSAN: uninit-value in z_erofs_lz4_decompress (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 652cdaa886e3ad1d051e5aef733c5a546171362f
+fix_commit: 496530c7c1dfc159d59a75ae00b572f570710c53
+datetime: '2024-01-10T19:59:39+08:00'
+fix_commit_message: "erofs: avoid debugging output for (de)compressed data\n\nSyzbot\
+  \ reported a KMSAN warning,\nerofs: (device loop0): z_erofs_lz4_decompress_mem:\
+  \ failed to decompress -12 in[46, 4050] out[917]\n=====================================================\n\
+  BUG: KMSAN: uninit-value in hex_dump_to_buffer+0xae9/0x10f0 lib/hexdump.c:194\n\
+  \  ..\n  print_hex_dump+0x13d/0x3e0 lib/hexdump.c:276\n  z_erofs_lz4_decompress_mem\
+  \ fs/erofs/decompressor.c:252 [inline]\n  z_erofs_lz4_decompress+0x257e/0x2a70 fs/erofs/decompressor.c:311\n\
+  \  z_erofs_decompress_pcluster fs/erofs/zdata.c:1290 [inline]\n  z_erofs_decompress_queue+0x338c/0x6460\
+  \ fs/erofs/zdata.c:1372\n  z_erofs_runqueue+0x36cd/0x3830\n  z_erofs_read_folio+0x435/0x810\
+  \ fs/erofs/zdata.c:1843\n\nThe root cause is that the printed decompressed buffer\
+  \ may be filled\nincompletely due to decompression failure.  Since they were once\
+  \ only\nused for debugging, get rid of them now.\n\nReported-and-tested-by: syzbot+6c746eea496f34b3161d@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/r/000000000000321c24060d7cfa1c@google.com\nReviewed-by:\
+  \ Yue Hu <huyue2@coolpad.com>\nSigned-off-by: Gao Xiang <hsiangkao@linux.alibaba.com>\n\
+  Link: https://lore.kernel.org/r/20231227151903.2900413-1-hsiangkao@linux.alibaba.com\n"
+submodule:
+- fs/erofs
+hunk_count: 1
+covered_count: 1

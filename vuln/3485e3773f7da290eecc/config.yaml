@@ -1,0 +1,37 @@
+id: 3485e3773f7da290eecc
+bug_link: https://syzkaller.appspot.com/bug?extid=3485e3773f7da290eecc
+title: WARNING in get_signal
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3f08842098e842c51e3b97d0dcdebf810b32558e
+fix_commit: 7b3c36fc4c231ca532120bbc0df67a12f09c1d96
+datetime: '2020-11-02T12:14:19-08:00'
+fix_commit_message: "ptrace: fix task_join_group_stop() for the case when current\
+  \ is traced\n\nThis testcase\n\n\t#include <stdio.h>\n\t#include <unistd.h>\n\t\
+  #include <signal.h>\n\t#include <sys/ptrace.h>\n\t#include <sys/wait.h>\n\t#include\
+  \ <pthread.h>\n\t#include <assert.h>\n\n\tvoid *tf(void *arg)\n\t{\n\t\treturn NULL;\n\
+  \t}\n\n\tint main(void)\n\t{\n\t\tint pid = fork();\n\t\tif (!pid) {\n\t\t\tkill(getpid(),\
+  \ SIGSTOP);\n\n\t\t\tpthread_t th;\n\t\t\tpthread_create(&th, NULL, tf, NULL);\n\
+  \n\t\t\treturn 0;\n\t\t}\n\n\t\twaitpid(pid, NULL, WSTOPPED);\n\n\t\tptrace(PTRACE_SEIZE,\
+  \ pid, 0, PTRACE_O_TRACECLONE);\n\t\twaitpid(pid, NULL, 0);\n\n\t\tptrace(PTRACE_CONT,\
+  \ pid, 0,0);\n\t\twaitpid(pid, NULL, 0);\n\n\t\tint status;\n\t\tint thread = waitpid(-1,\
+  \ &status, 0);\n\t\tassert(thread > 0 && thread != pid);\n\t\tassert(status == 0x80137f);\n\
+  \n\t\treturn 0;\n\t}\n\nfails and triggers WARN_ON_ONCE(!signr) in do_jobctl_trap().\n\
+  \nThis is because task_join_group_stop() has 2 problems when current is traced:\n\
+  \n\t1. We can't rely on the \"JOBCTL_STOP_PENDING\" check, a stopped tracee\n\t\
+  \   can be woken up by debugger and it can clone another thread which\n\t   should\
+  \ join the group-stop.\n\n\t   We need to check group_stop_count || SIGNAL_STOP_STOPPED.\n\
+  \n\t2. If SIGNAL_STOP_STOPPED is already set, we should not increment\n\t   sig->group_stop_count\
+  \ and add JOBCTL_STOP_CONSUME. The new thread\n\t   should stop without another\
+  \ do_notify_parent_cldstop() report.\n\nTo clarify, the problem is very old and\
+  \ we should blame\nptrace_init_task().  But now that we have task_join_group_stop()\
+  \ it makes\nmore sense to fix this helper to avoid the code duplication.\n\nReported-by:\
+  \ syzbot+3485e3773f7da290eecc@syzkaller.appspotmail.com\nSigned-off-by: Oleg Nesterov\
+  \ <oleg@redhat.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Cc: Jens Axboe <axboe@kernel.dk>\nCc: Christian Brauner <christian@brauner.io>\n\
+  Cc: \"Eric W . Biederman\" <ebiederm@xmission.com>\nCc: Zhiqiang Liu <liuzhiqiang26@huawei.com>\n\
+  Cc: Tejun Heo <tj@kernel.org>\nCc: <stable@vger.kernel.org>\nLink: https://lkml.kernel.org/r/20201019134237.GA18810@redhat.com\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 0

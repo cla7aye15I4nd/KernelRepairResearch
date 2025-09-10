@@ -1,0 +1,22 @@
+id: 903a2ad71fb3f1e47cf5
+bug_link: https://syzkaller.appspot.com/bug?extid=903a2ad71fb3f1e47cf5
+title: 'KCSAN: data-race in io_req_task_cancel / io_wq_free_work'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 57ed58c1325690ff6a46da776e9b42b14a7c37b1
+fix_commit: 390513642ee6763c7ada07f0a1470474986e6c1c
+datetime: '2025-04-03T08:31:57-06:00'
+fix_commit_message: "io_uring: always do atomic put from iowq\n\nio_uring always switches\
+  \ requests to atomic refcounting for iowq\nexecution before there is any parallilism\
+  \ by setting REQ_F_REFCOUNT,\nand the flag is not cleared until the request completes.\
+  \ That should be\nfine as long as the compiler doesn't make up a non existing value\
+  \ for\nthe flags, however KCSAN still complains when the request owner changes\n\
+  oter flag bits:\n\nBUG: KCSAN: data-race in io_req_task_cancel / io_wq_free_work\n\
+  ...\nread to 0xffff888117207448 of 8 bytes by task 3871 on cpu 0:\n req_ref_put_and_test\
+  \ io_uring/refs.h:22 [inline]\n\nSkip REQ_F_REFCOUNT checks for iowq, we know it's\
+  \ set.\n\nReported-by: syzbot+903a2ad71fb3f1e47cf5@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Pavel Begunkov <asml.silence@gmail.com>\nLink: https://lore.kernel.org/r/d880bc27fb8c3209b54641be4ff6ac02b0e5789a.1743679736.git.asml.silence@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- io_uring
+hunk_count: 2
+covered_count: 2

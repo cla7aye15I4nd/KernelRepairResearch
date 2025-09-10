@@ -1,0 +1,116 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.9.0-rc7-syzkaller-00148-gaea27a92a41d #0 Not tainted
+------------------------------------------------------
+kworker/u8:7/2863 is trying to acquire lock:
+ffff88807e42e820 (&htab->buckets[i].lock){+...}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ffff88807e42e820 (&htab->buckets[i].lock){+...}-{2:2}, at: sock_hash_delete_elem+0x17c/0x400 net/core/sock_map.c:945
+
+but task is already holding lock:
+ffff888023356290 (&psock->link_lock){+...}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ffff888023356290 (&psock->link_lock){+...}-{2:2}, at: sock_map_del_link net/core/sock_map.c:145 [inline]
+ffff888023356290 (&psock->link_lock){+...}-{2:2}, at: sock_map_unref+0xcc/0x5e0 net/core/sock_map.c:180
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&psock->link_lock){+...}-{2:2}:
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+       __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+       _raw_spin_lock_bh+0x35/0x50 kernel/locking/spinlock.c:178
+       spin_lock_bh include/linux/spinlock.h:356 [inline]
+       sock_map_add_link net/core/sock_map.c:134 [inline]
+       sock_hash_update_common+0x624/0xa30 net/core/sock_map.c:1029
+       sock_map_update_elem_sys+0x5a4/0x910 net/core/sock_map.c:584
+       map_update_elem+0x53a/0x6f0 kernel/bpf/syscall.c:1641
+       __sys_bpf+0x76f/0x810 kernel/bpf/syscall.c:5653
+       __do_sys_bpf kernel/bpf/syscall.c:5772 [inline]
+       __se_sys_bpf kernel/bpf/syscall.c:5770 [inline]
+       __x64_sys_bpf+0x7c/0x90 kernel/bpf/syscall.c:5770
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&htab->buckets[i].lock){+...}-{2:2}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+       __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+       __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+       _raw_spin_lock_bh+0x35/0x50 kernel/locking/spinlock.c:178
+       spin_lock_bh include/linux/spinlock.h:356 [inline]
+       sock_hash_delete_elem+0x17c/0x400 net/core/sock_map.c:945
+       0xffffffffa0001db3
+       bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+       __bpf_prog_run include/linux/filter.h:657 [inline]
+       bpf_prog_run include/linux/filter.h:664 [inline]
+       __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+       bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+       __traceiter_kfree+0x2b/0x50 include/trace/events/kmem.h:94
+       trace_kfree include/trace/events/kmem.h:94 [inline]
+       kfree+0x2bd/0x3b0 mm/slub.c:4383
+       sk_psock_free_link include/linux/skmsg.h:421 [inline]
+       sock_map_del_link net/core/sock_map.c:158 [inline]
+       sock_map_unref+0x3ac/0x5e0 net/core/sock_map.c:180
+       sock_hash_free+0x580/0x820 net/core/sock_map.c:1174
+       bpf_map_free_deferred+0xe6/0x110 kernel/bpf/syscall.c:734
+       process_one_work kernel/workqueue.c:3267 [inline]
+       process_scheduled_works+0xa10/0x17c0 kernel/workqueue.c:3348
+       worker_thread+0x86d/0xd70 kernel/workqueue.c:3429
+       kthread+0x2f0/0x390 kernel/kthread.c:388
+       ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&psock->link_lock);
+                               lock(&htab->buckets[i].lock);
+                               lock(&psock->link_lock);
+  lock(&htab->buckets[i].lock);
+
+ *** DEADLOCK ***
+
+6 locks held by kworker/u8:7/2863:
+ #0: ffff888015089148 ((wq_completion)events_unbound){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3242 [inline]
+ #0: ffff888015089148 ((wq_completion)events_unbound){+.+.}-{0:0}, at: process_scheduled_works+0x8e0/0x17c0 kernel/workqueue.c:3348
+ #1: ffffc9000ae47d00 ((work_completion)(&map->work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3243 [inline]
+ #1: ffffc9000ae47d00 ((work_completion)(&map->work)){+.+.}-{0:0}, at: process_scheduled_works+0x91b/0x17c0 kernel/workqueue.c:3348
+ #2: ffff88801fba8a58 (sk_lock-AF_UNIX){+.+.}-{0:0}, at: lock_sock include/net/sock.h:1673 [inline]
+ #2: ffff88801fba8a58 (sk_lock-AF_UNIX){+.+.}-{0:0}, at: sock_hash_free+0x4b3/0x820 net/core/sock_map.c:1172
+ #3: ffffffff8e334da0 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #3: ffffffff8e334da0 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #3: ffffffff8e334da0 (rcu_read_lock){....}-{1:2}, at: sock_hash_free+0x4bf/0x820 net/core/sock_map.c:1173
+ #4: ffff888023356290 (&psock->link_lock){+...}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ #4: ffff888023356290 (&psock->link_lock){+...}-{2:2}, at: sock_map_del_link net/core/sock_map.c:145 [inline]
+ #4: ffff888023356290 (&psock->link_lock){+...}-{2:2}, at: sock_map_unref+0xcc/0x5e0 net/core/sock_map.c:180
+ #5: ffffffff8e334da0 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #5: ffffffff8e334da0 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #5: ffffffff8e334da0 (rcu_read_lock){....}-{1:2}, at: __bpf_trace_run kernel/trace/bpf_trace.c:2380 [inline]
+ #5: ffffffff8e334da0 (rcu_read_lock){....}-{1:2}, at: bpf_trace_run2+0x114/0x420 kernel/trace/bpf_trace.c:2420
+
+stack backtrace:
+CPU: 1 PID: 2863 Comm: kworker/u8:7 Not tainted 6.9.0-rc7-syzkaller-00148-gaea27a92a41d #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Workqueue: events_unbound bpf_map_free_deferred
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ check_noncircular+0x36a/0x4a0 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+ __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+ __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+ _raw_spin_lock_bh+0x35/0x50 kernel/locking/spinlock.c:178
+ spin_lock_bh include/linux/spinlock.h:356 [inline]
+ sock_hash_delete_elem+0x17c/0x400 net/core/sock_map.c:945
+ </TASK>

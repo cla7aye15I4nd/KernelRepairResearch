@@ -1,0 +1,30 @@
+id: f4b9f49e38e25eb4ef52
+bug_link: https://syzkaller.appspot.com/bug?extid=f4b9f49e38e25eb4ef52
+title: inconsistent lock state in padata_do_parallel
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c195d66a8a75c60515819b101975f38b7ec6577f
+fix_commit: 1b0df11fde0f14a269a181b3b7f5122415bc5ed7
+datetime: '2020-09-04T17:51:55+10:00'
+fix_commit_message: "padata: fix possible padata_works_lock deadlock\n\nsyzbot reports,\n\
+  \n  WARNING: inconsistent lock state\n  5.9.0-rc2-syzkaller #0 Not tainted\n  --------------------------------\n\
+  \  inconsistent {IN-SOFTIRQ-W} -> {SOFTIRQ-ON-W} usage.\n  syz-executor.0/26715\
+  \ takes:\n  (padata_works_lock){+.?.}-{2:2}, at: padata_do_parallel kernel/padata.c:220\n\
+  \  {IN-SOFTIRQ-W} state was registered at:\n    spin_lock include/linux/spinlock.h:354\
+  \ [inline]\n    padata_do_parallel kernel/padata.c:220\n    ...\n    __do_softirq\
+  \ kernel/softirq.c:298\n    ...\n    sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1091\n\
+  \    asm_sysvec_apic_timer_interrupt arch/x86/include/asm/idtentry.h:581\n\n   Possible\
+  \ unsafe locking scenario:\n\n         CPU0\n         ----\n    lock(padata_works_lock);\n\
+  \    <Interrupt>\n      lock(padata_works_lock);\n\npadata_do_parallel() takes padata_works_lock\
+  \ with softirqs enabled, so a\ndeadlock is possible if, on the same CPU, the lock\
+  \ is acquired in\nprocess context and then softirq handling done in an interrupt\
+  \ leads to\nthe same path.\n\nFix by leaving softirqs disabled while do_parallel\
+  \ holds\npadata_works_lock.\n\nReported-by: syzbot+f4b9f49e38e25eb4ef52@syzkaller.appspotmail.com\n\
+  Fixes: 4611ce2246889 (\"padata: allocate work structures for parallel jobs from\
+  \ a pool\")\nSigned-off-by: Daniel Jordan <daniel.m.jordan@oracle.com>\nCc: Herbert\
+  \ Xu <herbert@gondor.apana.org.au>\nCc: Steffen Klassert <steffen.klassert@secunet.com>\n\
+  Cc: linux-crypto@vger.kernel.org\nCc: linux-kernel@vger.kernel.org\nSigned-off-by:\
+  \ Herbert Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,49 @@
+id: cf155def4e717db68a12
+bug_link: https://syzkaller.appspot.com/bug?extid=cf155def4e717db68a12
+title: 'INFO: trying to register non-static key in gsmld_write'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f16c6d2e58a4c2b972efcf9eb12390ee0ba3befb
+fix_commit: 4bb1a53be85fcb1e24c14860e326a00cdd362c28
+datetime: '2022-08-30T14:35:04+02:00'
+fix_commit_message: 'tty: n_gsm: initialize more members at gsm_alloc_mux()
+
+
+  syzbot is reporting use of uninitialized spinlock at gsmld_write() [1], for
+
+  commit 32dd59f96924f45e ("tty: n_gsm: fix race condition in gsmld_write()")
+
+  allows accessing gsm->tx_lock before gsm_activate_mux() initializes it.
+
+
+  Since object initialization should be done right after allocation in order
+
+  to avoid accessing uninitialized memory, move initialization of
+
+  timer/work/waitqueue/spinlock from gsmld_open()/gsm_activate_mux() to
+
+  gsm_alloc_mux().
+
+
+  Link: https://syzkaller.appspot.com/bug?extid=cf155def4e717db68a12 [1]
+
+  Fixes: 32dd59f96924f45e ("tty: n_gsm: fix race condition in gsmld_write()")
+
+  Reported-by: syzbot <syzbot+cf155def4e717db68a12@syzkaller.appspotmail.com>
+
+  Tested-by: syzbot <syzbot+cf155def4e717db68a12@syzkaller.appspotmail.com>
+
+  Cc: stable <stable@kernel.org>
+
+  Acked-by: Jiri Slaby <jirislaby@kernel.org>
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Link: https://lore.kernel.org/r/2110618e-57f0-c1ce-b2ad-b6cacef3f60e@I-love.SAKURA.ne.jp
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/tty
+hunk_count: 3
+covered_count: 0

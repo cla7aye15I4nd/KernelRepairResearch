@@ -1,0 +1,48 @@
+id: 427f0a9138719ba183c0d37d8c2d070567f7761a
+bug_link: https://syzkaller.appspot.com/bug?extid=427f0a9138719ba183c0d37d8c2d070567f7761a
+title: WARNING in xfrm_state_fini
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d51aae68b142f48232257e96ce317db25445418d
+fix_commit: 6a53b7593233ab9e4f96873ebacc0f653a55c3e1
+datetime: '2017-11-29T08:55:29+01:00'
+fix_commit_message: 'xfrm: check id proto in validate_tmpl()
+
+
+  syzbot reported a kernel warning in xfrm_state_fini(), which
+
+  indicates that we have entries left in the list
+
+  net->xfrm.state_all whose proto is zero. And
+
+  xfrm_id_proto_match() doesn''t consider them as a match with
+
+  IPSEC_PROTO_ANY in this case.
+
+
+  Proto with value 0 is probably not a valid value, at least
+
+  verify_newsa_info() doesn''t consider it valid either.
+
+
+  This patch fixes it by checking the proto value in
+
+  validate_tmpl() and rejecting invalid ones, like what iproute2
+
+  does in xfrm_xfrmproto_getbyname().
+
+
+  Reported-by: syzbot <syzkaller@googlegroups.com>
+
+  Cc: Steffen Klassert <steffen.klassert@secunet.com>
+
+  Cc: Herbert Xu <herbert@gondor.apana.org.au>
+
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+
+  Signed-off-by: Steffen Klassert <steffen.klassert@secunet.com>
+
+  '
+submodule:
+- net/xfrm
+hunk_count: 1
+covered_count: 0

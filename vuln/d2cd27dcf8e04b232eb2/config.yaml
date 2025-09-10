@@ -1,0 +1,24 @@
+id: d2cd27dcf8e04b232eb2
+bug_link: https://syzkaller.appspot.com/bug?extid=d2cd27dcf8e04b232eb2
+title: 'UBSAN: shift-out-of-bounds in dbFree'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 692b7dc87ca6d55ab254f8259e6f970171dc9d01
+fix_commit: 11509910c599cbd04585ec35a6d5e1a0053d84c1
+datetime: '2023-06-20T12:37:50-05:00'
+fix_commit_message: "jfs: jfs_dmap: Validate db_l2nbperpage while mounting\n\nIn jfs_dmap.c\
+  \ at line 381, BLKTODMAP is used to get a logical block\nnumber inside dbFree().\
+  \ db_l2nbperpage, which is the log2 number of\nblocks per page, is passed as an\
+  \ argument to BLKTODMAP which uses it\nfor shifting.\n\nSyzbot reported a shift\
+  \ out-of-bounds crash because db_l2nbperpage is\ntoo big. This happens because the\
+  \ large value is set without any\nvalidation in dbMount() at line 181.\n\nThus,\
+  \ make sure that db_l2nbperpage is correct while mounting.\n\nMax number of blocks\
+  \ per page = Page size / Min block size\n=> log2(Max num_block per page) = log2(Page\
+  \ size / Min block size)\n\t\t\t\t= log2(Page size) - log2(Min block size)\n\n=>\
+  \ Max db_l2nbperpage = L2PSIZE - L2MINBLOCKSIZE\n\nReported-and-tested-by: syzbot+d2cd27dcf8e04b232eb2@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?id=2a70a453331db32ed491f5cbb07e81bf2d225715\n\
+  Cc: stable@vger.kernel.org\nSuggested-by: Dave Kleikamp <dave.kleikamp@oracle.com>\n\
+  Signed-off-by: Siddh Raman Pant <code@siddh.me>\nSigned-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>\n"
+submodule:
+- fs/jfs
+hunk_count: 2
+covered_count: 0

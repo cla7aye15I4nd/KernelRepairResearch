@@ -1,0 +1,35 @@
+id: bf285fcc0a048e028118
+bug_link: https://syzkaller.appspot.com/bug?extid=bf285fcc0a048e028118
+title: 'KCSAN: data-race in next_expiry_recalc / update_process_times (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4381b895f544bb84b8cfb34ada64df67c9b2a4f0
+fix_commit: 79f8b28e85f83563c86f528b91eff19c0c4d1177
+datetime: '2024-09-04T11:57:56+02:00'
+fix_commit_message: "timers: Annotate possible non critical data race of next_expiry\n\
+  \nGlobal timers could be expired remotely when the target CPU is idle. After\na\
+  \ remote timer expiry, the remote timer_base->next_expiry value is updated\nwhile\
+  \ holding the timer_base->lock. When the formerly idle CPU becomes\nactive at the\
+  \ same time and checks whether timers need to expire, this\ncheck is done lockless\
+  \ as it is on the local CPU. This could lead to a data\nrace, which was reported\
+  \ by sysbot:\n\n  https://lore.kernel.org/r/000000000000916e55061f969e14@google.com\n\
+  \nWhen the value is read lockless but changed by the remote CPU, only two non\n\
+  critical scenarios could happen:\n\n1) The already update value is read -> everything\
+  \ is perfect\n\n2) The old value is read -> a superfluous timer soft interrupt is\
+  \ raised\n\nThe same situation could happen when enqueueing a new first pinned timer\
+  \ by\na remote CPU also with non critical scenarios:\n\n1) The already update value\
+  \ is read -> everything is perfect\n\n2) The old value is read -> when the CPU is\
+  \ idle, an IPI is executed\nnevertheless and when the CPU isn't idle, the updated\
+  \ value will be visible\non the next tick and the timer might be late one jiffie.\n\
+  \nAs this is very unlikely to happen, the overhead of doing the check under\nthe\
+  \ lock is a way more effort, than a superfluous timer soft interrupt or a\npossible\
+  \ 1 jiffie delay of the timer.\n\nDocument and annotate this non critical behavior\
+  \ in the code by using\nREAD/WRITE_ONCE() pair when accessing timer_base->next_expiry.\n\
+  \nReported-by: syzbot+bf285fcc0a048e028118@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Anna-Maria Behnsen <anna-maria@linutronix.de>\nSigned-off-by: Thomas Gleixner\
+  \ <tglx@linutronix.de>\nReviewed-by: Frederic Weisbecker <frederic@kernel.org>\n\
+  Link: https://lore.kernel.org/all/20240829154305.19259-1-anna-maria@linutronix.de\n\
+  Closes: https://lore.kernel.org/lkml/000000000000916e55061f969e14@google.com\n"
+submodule:
+- kernel/time
+hunk_count: 4
+covered_count: 2

@@ -1,0 +1,70 @@
+ ... Log Wrap ... Log Wrap ... Log Wrap ...
+ ... Log Wrap ... Log Wrap ... Log Wrap ...
+jfs_dirty_inode called on read-only volume
+Is remount racy?
+Unable to handle kernel paging request at virtual address dfff800000000008
+KASAN: null-ptr-deref in range [0x0000000000000040-0x0000000000000047]
+Mem abort info:
+  ESR = 0x0000000096000005
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x05: level 1 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000005, ISS2 = 0x00000000
+  CM = 0, WnR = 0, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+[dfff800000000008] address between user and kernel address ranges
+Internal error: Oops: 0000000096000005 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 0 PID: 6247 Comm: syz-executor229 Tainted: G        W          6.10.0-rc3-syzkaller-gac2193b4b460 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+pstate: 60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : generic_test_bit include/asm-generic/bitops/generic-non-atomic.h:128 [inline]
+pc : txBeginAnon+0xac/0x154 fs/jfs/jfs_txnmgr.c:465
+lr : spin_lock include/linux/spinlock.h:351 [inline]
+lr : txBeginAnon+0x78/0x154 fs/jfs/jfs_txnmgr.c:458
+sp : ffff8000994471c0
+x29: ffff8000994471c0 x28: ffff80009398d508 x27: ffff80009398d000
+x26: ffff80009398d000 x25: 0000000000000008 x24: 0000000000000150
+x23: dfff800000000000 x22: 0000000000000001 x21: 0000000000000000
+x20: 0000000000000040 x19: ffff80008f577d80 x18: ffff800099446e80
+x17: 000000000000d288 x16: ffff800080350d3c x15: ffff700013288e20
+x14: 1ffff00013288e20 x13: 0000000000000004 x12: ffffffffffffffff
+x11: ffff700013288e20 x10: 1ffff00013288e20 x9 : b37f4c3d59063b00
+x8 : b37f4c3d59063b00 x7 : 0000000000000000 x6 : 0000000000000000
+x5 : 0000000000000020 x4 : 0000000000000000 x3 : ffff800080350e64
+x2 : 0000000000000001 x1 : 0000000000000000 x0 : 0000000000000001
+Call trace:
+ txBeginAnon+0xac/0x154
+ extAlloc+0xe8/0xdec fs/jfs/jfs_extent.c:78
+ jfs_get_block+0x340/0xb98 fs/jfs/inode.c:248
+ __block_write_begin_int+0x580/0x166c fs/buffer.c:2128
+ __block_write_begin fs/buffer.c:2177 [inline]
+ block_write_begin+0x98/0x11c fs/buffer.c:2236
+ jfs_write_begin+0x44/0x88 fs/jfs/inode.c:299
+ generic_perform_write+0x28c/0x588 mm/filemap.c:4015
+ __generic_file_write_iter+0xfc/0x204 mm/filemap.c:4110
+ generic_file_write_iter+0xb8/0x2b4 mm/filemap.c:4136
+ do_iter_readv_writev+0x438/0x658
+ vfs_writev+0x410/0xb80 fs/read_write.c:971
+ do_pwritev fs/read_write.c:1072 [inline]
+ __do_sys_pwritev2 fs/read_write.c:1131 [inline]
+ __se_sys_pwritev2 fs/read_write.c:1122 [inline]
+ __arm64_sys_pwritev2+0x1dc/0x2f0 fs/read_write.c:1122
+ __invoke_syscall arch/arm64/kernel/syscall.c:34 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:48
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:133
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:152
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:712
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:730
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:598
+Code: aa1803e0 97ffff65 aa1303e0 9591dbed (38776b28) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	aa1803e0 	mov	x0, x24
+   4:	97ffff65 	bl	0xfffffffffffffd98
+   8:	aa1303e0 	mov	x0, x19
+   c:	9591dbed 	bl	0x6476fc0
+* 10:	38776b28 	ldrb	w8, [x25, x23] <-- trapping instruction

@@ -1,0 +1,47 @@
+id: 91585b36b538053343e4
+bug_link: https://syzkaller.appspot.com/bug?extid=91585b36b538053343e4
+title: possible deadlock in blk_unregister_queue
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fd9b0244f5c5f63461ca9752eebd2423ae02bb59
+fix_commit: b769a2f409e7a356db852a1bb62a32f7809b3a3c
+datetime: '2024-12-23T08:17:22-07:00'
+fix_commit_message: 'blktrace: move copy_[to|from]_user() out of ->debugfs_lock
+
+
+  Move copy_[to|from]_user() out of ->debugfs_lock and cut the dependency
+
+  between mm->mmap_lock and q->debugfs_lock, then we avoids lots of
+
+  lockdep false positive warning. Obviously ->debug_lock isn''t needed
+
+  for copy_[to|from]_user().
+
+
+  The only behavior change is to call blk_trace_remove() in case of setup
+
+  failure handling by re-grabbing ->debugfs_lock, and this way is just
+
+  fine since we do cover concurrent setup() & remove().
+
+
+  Reported-by: syzbot+91585b36b538053343e4@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/linux-block/67450fd4.050a0220.1286eb.0007.GAE@google.com/
+
+  Closes: https://lore.kernel.org/linux-block/6742e584.050a0220.1cc393.0038.GAE@google.com/
+
+  Closes: https://lore.kernel.org/linux-block/6742a600.050a0220.1cc393.002e.GAE@google.com/
+
+  Closes: https://lore.kernel.org/linux-block/67420102.050a0220.1cc393.0019.GAE@google.com/
+
+  Signed-off-by: Ming Lei <ming.lei@redhat.com>
+
+  Link: https://lore.kernel.org/r/20241128125029.4152292-3-ming.lei@redhat.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- kernel/trace
+hunk_count: 4
+covered_count: 4

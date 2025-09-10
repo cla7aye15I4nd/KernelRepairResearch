@@ -1,0 +1,81 @@
+8<--- cut here ---
+Unable to handle kernel NULL pointer dereference at virtual address 00000010 when read
+[00000010] *pgd=8423f003, *pmd=fe0d5003
+Internal error: Oops: 207 [#1] PREEMPT SMP ARM
+Modules linked in:
+CPU: 0 PID: 2983 Comm: syz-executor360 Not tainted 6.8.0-rc5-syzkaller #0
+Hardware name: ARM-Versatile Express
+PC is at __dev_map_hash_lookup_elem kernel/bpf/devmap.c:269 [inline]
+PC is at __dev_map_hash_update_elem kernel/bpf/devmap.c:972 [inline]
+PC is at dev_map_hash_update_elem+0x90/0x210 kernel/bpf/devmap.c:1010
+LR is at get_lock_parent_ip include/linux/ftrace.h:977 [inline]
+LR is at preempt_latency_start kernel/sched/core.c:5843 [inline]
+LR is at preempt_count_add+0x12c/0x150 kernel/sched/core.c:5868
+pc : [<803e5f34>]    lr : [<8027b29c>]    psr: 60000093
+sp : df96dda8  ip : df96dd68  fp : df96dde4
+r10: 00000000  r9 : 828f71c0  r8 : 8417bb10
+r7 : 00000000  r6 : 20000013  r5 : 8417ba00  r4 : ffffffff
+r3 : 00000000  r2 : 00000010  r1 : 00000000  r0 : 20000013
+Flags: nZCv  IRQs off  FIQs on  Mode SVC_32  ISA ARM  Segment user
+Control: 30c5387d  Table: 84656480  DAC: fffffffd
+Register r0 information: non-paged memory
+Register r1 information: NULL pointer
+Register r2 information: zero-size pointer
+Register r3 information: NULL pointer
+Register r4 information: non-paged memory
+Register r5 information: slab kmalloc-512 start 8417ba00 pointer offset 0 size 512
+Register r6 information: non-paged memory
+Register r7 information: NULL pointer
+Register r8 information: slab kmalloc-512 start 8417ba00 pointer offset 272 size 512
+Register r9 information: non-slab/vmalloc memory
+Register r10 information: NULL pointer
+Register r11 information: 2-page vmalloc region starting at 0xdf96c000 allocated at kernel_clone+0xac/0x3c8 kernel/fork.c:2902
+Register r12 information: 2-page vmalloc region starting at 0xdf96c000 allocated at kernel_clone+0xac/0x3c8 kernel/fork.c:2902
+Process syz-executor360 (pid: 2983, stack limit = 0xdf96c000)
+Stack: (0xdf96dda8 to 0xdf96e000)
+dda0:                   df96ddc4 00000004 00000000 1b98af0a df96dde4 8417ba00
+ddc0: 824aeaf0 843ef140 8442a040 8365a9c0 00000004 8417ba00 df96de14 df96dde8
+dde0: 8038c0b8 803e5eb0 00000000 00000000 80884220 8417bab8 8365a9c0 8365a9c0
+de00: df96dec8 843ef140 df96de6c df96de18 8038d040 8038bec8 00000000 00000000
+de20: 8027b44c 00000004 20000140 00000004 00000000 8442a040 20000200 00000000
+de40: df96de6c 00000000 00000020 df96dea0 00000002 20000200 00000020 00000000
+de60: df96df8c df96de70 80392aa0 8038cdf8 8088300c 81856650 00000000 841ee000
+de80: df96dee0 df96dfb0 df96dea4 df96de98 80884220 df96dee0 df96dfb0 80200288
+dea0: 20000200 00000000 00000008 00000000 00000008 8041ad98 841ee000 ffffffff
+dec0: df96df2c 80200b9c 00000003 00000000 200000c0 00000000 20000140 00000000
+dee0: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+df00: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+df20: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+df40: 00000000 00000000 00000000 00000000 00000000 00000000 df96df94 1b98af0a
+df60: 8134e0a0 ffffffff 00000000 0008e058 00000182 80200288 841ee000 00000182
+df80: df96dfa4 df96df90 80394ea4 80392830 20000200 00000000 00000000 df96dfa8
+dfa0: 80200060 80394e84 ffffffff 00000000 00000002 20000200 00000020 00000000
+dfc0: ffffffff 00000000 0008e058 00000182 000f4240 00000000 00000001 00003a97
+dfe0: 7e973c70 7e973c60 000106cc 0002e810 00000010 00000002 00000000 00000000
+Backtrace: 
+[<803e5ea4>] (dev_map_hash_update_elem) from [<8038c0b8>] (bpf_map_update_value+0x1fc/0x2d4 kernel/bpf/syscall.c:202)
+ r10:8417ba00 r9:00000004 r8:8365a9c0 r7:8442a040 r6:843ef140 r5:824aeaf0
+ r4:8417ba00
+[<8038bebc>] (bpf_map_update_value) from [<8038d040>] (map_update_elem+0x254/0x460 kernel/bpf/syscall.c:1553)
+ r8:843ef140 r7:df96dec8 r6:8365a9c0 r5:8365a9c0 r4:8417bab8
+[<8038cdec>] (map_update_elem) from [<80392aa0>] (__sys_bpf+0x27c/0x2104 kernel/bpf/syscall.c:5445)
+ r10:00000000 r9:00000020 r8:20000200 r7:00000002 r6:df96dea0 r5:00000020
+ r4:00000000
+[<80392824>] (__sys_bpf) from [<80394ea4>] (__do_sys_bpf kernel/bpf/syscall.c:5561 [inline])
+[<80392824>] (__sys_bpf) from [<80394ea4>] (sys_bpf+0x2c/0x48 kernel/bpf/syscall.c:5559)
+ r10:00000182 r9:841ee000 r8:80200288 r7:00000182 r6:0008e058 r5:00000000
+ r4:ffffffff
+[<80394e78>] (sys_bpf) from [<80200060>] (ret_fast_syscall+0x0/0x1c arch/arm/mm/proc-v7.S:66)
+Exception stack(0xdf96dfa8 to 0xdf96dff0)
+dfa0:                   ffffffff 00000000 00000002 20000200 00000020 00000000
+dfc0: ffffffff 00000000 0008e058 00000182 000f4240 00000000 00000001 00003a97
+dfe0: 7e973c70 7e973c60 000106cc 0002e810
+Code: e595210c e1a06000 e2433001 e003300a (e7924103) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	e595210c 	ldr	r2, [r5, #268]	@ 0x10c
+   4:	e1a06000 	mov	r6, r0
+   8:	e2433001 	sub	r3, r3, #1
+   c:	e003300a 	and	r3, r3, sl
+* 10:	e7924103 	ldr	r4, [r2, r3, lsl #2] <-- trapping instruction

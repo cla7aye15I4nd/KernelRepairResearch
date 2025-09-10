@@ -1,0 +1,27 @@
+id: 6e72317008eef84a216b
+bug_link: https://syzkaller.appspot.com/bug?extid=6e72317008eef84a216b
+title: 'WARNING: suspicious RCU usage in bpf_prog_array_copy_core'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 817b89beb9d8876450fcde9155e17425c329569d
+fix_commit: 965931e3a803a506482616f89239eff6901c17b8
+datetime: '2018-08-16T21:55:32+02:00'
+fix_commit_message: "bpf: fix a rcu usage warning in bpf_prog_array_copy_core()\n\n\
+  Commit 394e40a29788 (\"bpf: extend bpf_prog_array to store pointers\nto the cgroup\
+  \ storage\") refactored the bpf_prog_array_copy_core()\nto accommodate new structure\
+  \ bpf_prog_array_item which contains\nbpf_prog array itself.\n\nIn the old code,\
+  \ we had\n   perf_event_query_prog_array():\n     mutex_lock(...)\n     bpf_prog_array_copy_call():\n\
+  \       prog = rcu_dereference_check(array, 1)->progs\n       bpf_prog_array_copy_core(prog,\
+  \ ...)\n     mutex_unlock(...)\n\nWith the above commit, we had\n   perf_event_query_prog_array():\n\
+  \     mutex_lock(...)\n     bpf_prog_array_copy_call():\n       bpf_prog_array_copy_core(array,\
+  \ ...):\n         item = rcu_dereference(array)->items;\n         ...\n     mutex_unlock(...)\n\
+  \nThe new code will trigger a lockdep rcu checking warning.\nThe fix is to change\
+  \ rcu_dereference() to rcu_dereference_check()\nto prevent such a warning.\n\nReported-by:\
+  \ syzbot+6e72317008eef84a216b@syzkaller.appspotmail.com\nFixes: 394e40a29788 (\"\
+  bpf: extend bpf_prog_array to store pointers to the cgroup storage\")\nCc: Roman\
+  \ Gushchin <guro@fb.com>\nSigned-off-by: Yonghong Song <yhs@fb.com>\nAcked-by: Alexei\
+  \ Starovoitov <ast@kernel.org>\nAcked-by: Roman Gushchin <guro@fb.com>\nSigned-off-by:\
+  \ Daniel Borkmann <daniel@iogearbox.net>\n"
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 1

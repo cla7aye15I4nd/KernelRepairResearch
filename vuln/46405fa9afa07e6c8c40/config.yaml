@@ -1,0 +1,22 @@
+id: 46405fa9afa07e6c8c40
+bug_link: https://syzkaller.appspot.com/bug?extid=46405fa9afa07e6c8c40
+title: 'BUG: MAX_LOCK_DEPTH too low! (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1a616c2fe96b357894b74b41787d4ea6987f6199
+fix_commit: 375476c41405ff6fc379cdbf1ad1df35c737500c
+datetime: '2024-07-14T19:00:16-04:00'
+fix_commit_message: "bcachefs: Add lockdep support for btree node locks\n\nThis adds\
+  \ lockdep tracking for held btree locks with a single dep_map in\nbtree_trans, i.e.\
+  \ tracking all held btree locks as one object.\n\nThis is more practical and more\
+  \ useful than having lockdep track held\nbtree locks individually, because\n - we\
+  \ can take more locks than lockdep can track (unbounded, now that we\n   have dynamically\
+  \ resizable btree paths)\n - there's no lock ordering between btree locks for lockdep\
+  \ to track (we\n   do cycle detection)\n - and this makes it easy to teach lockdep\
+  \ that btree locks are not safe\n   to hold while invoking memory reclaim.\n\nThe\
+  \ last rule is one that lockdep would never learn, because we only do\ntrylock()\
+  \ from within shrinkers - but we very much do not want to be\ninvoking memory reclaim\
+  \ while holding btree node locks.\n\nSigned-off-by: Kent Overstreet <kent.overstreet@linux.dev>\n"
+submodule:
+- fs/bcachefs
+hunk_count: 5
+covered_count: 2

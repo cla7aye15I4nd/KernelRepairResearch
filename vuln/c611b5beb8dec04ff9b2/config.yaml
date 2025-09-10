@@ -1,0 +1,25 @@
+id: c611b5beb8dec04ff9b2
+bug_link: https://syzkaller.appspot.com/bug?extid=c611b5beb8dec04ff9b2
+title: 'KCSAN: data-race in __se_sys_perf_event_open / find_get_context'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8124c8a6b35386f73523d27eacb71b5364a68c4c
+fix_commit: 6c605f8371159432ec61cbb1488dcf7ad24ad19a
+datetime: '2021-05-31T10:14:51+02:00'
+fix_commit_message: "perf: Fix data race between pin_count increment/decrement\n\n\
+  KCSAN reports a data race between increment and decrement of pin_count:\n\n  write\
+  \ to 0xffff888237c2d4e0 of 4 bytes by task 15740 on cpu 1:\n   find_get_context\t\
+  \tkernel/events/core.c:4617\n   __do_sys_perf_event_open\tkernel/events/core.c:12097\
+  \ [inline]\n   __se_sys_perf_event_open\tkernel/events/core.c:11933\n   ...\n  read\
+  \ to 0xffff888237c2d4e0 of 4 bytes by task 15743 on cpu 0:\n   perf_unpin_context\t\
+  \tkernel/events/core.c:1525 [inline]\n   __do_sys_perf_event_open\tkernel/events/core.c:12328\
+  \ [inline]\n   __se_sys_perf_event_open\tkernel/events/core.c:11933\n   ...\n\n\
+  Because neither read-modify-write here is atomic, this can lead to one\nof the operations\
+  \ being lost, resulting in an inconsistent pin_count.\nFix it by adding the missing\
+  \ locking in the CPU-event case.\n\nFixes: fe4b04fa31a6 (\"perf: Cure task_oncpu_function_call()\
+  \ races\")\nReported-by: syzbot+142c9018f5962db69c7e@syzkaller.appspotmail.com\n\
+  Signed-off-by: Marco Elver <elver@google.com>\nSigned-off-by: Peter Zijlstra (Intel)\
+  \ <peterz@infradead.org>\nLink: https://lkml.kernel.org/r/20210527104711.2671610-1-elver@google.com\n"
+submodule:
+- kernel/events
+hunk_count: 1
+covered_count: 1

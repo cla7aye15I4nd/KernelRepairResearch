@@ -1,0 +1,55 @@
+id: c4b7aa0513823e2ea880
+bug_link: https://syzkaller.appspot.com/bug?extid=c4b7aa0513823e2ea880
+title: 'KASAN: vmalloc-out-of-bounds Write in imageblit (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 038d61fd642278bab63ee8ef722c50d10ab01e8f
+fix_commit: af0db3c1f898144846d4c172531a199bb3ca375d
+datetime: '2025-08-02T21:47:32+02:00'
+fix_commit_message: 'fbdev: Fix vmalloc out-of-bounds write in fast_imageblit
+
+
+  This issue triggers when a userspace program does an ioctl
+
+  FBIOPUT_CON2FBMAP by passing console number and frame buffer number.
+
+  Ideally this maps console to frame buffer and updates the screen if
+
+  console is visible.
+
+
+  As part of mapping it has to do resize of console according to frame
+
+  buffer info. if this resize fails and returns from vc_do_resize() and
+
+  continues further. At this point console and new frame buffer are mapped
+
+  and sets display vars. Despite failure still it continue to proceed
+
+  updating the screen at later stages where vc_data is related to previous
+
+  frame buffer and frame buffer info and display vars are mapped to new
+
+  frame buffer and eventully leading to out-of-bounds write in
+
+  fast_imageblit(). This bheviour is excepted only when fg_console is
+
+  equal to requested console which is a visible console and updates screen
+
+  with invalid struct references in fbcon_putcs().
+
+
+  Reported-and-tested-by: syzbot+c4b7aa0513823e2ea880@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=c4b7aa0513823e2ea880
+
+  Signed-off-by: Sravan Kumar Gundu <sravankumarlpu@gmail.com>
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Helge Deller <deller@gmx.de>
+
+  '
+submodule:
+- drivers/video/fbdev/core
+hunk_count: 3
+covered_count: 1

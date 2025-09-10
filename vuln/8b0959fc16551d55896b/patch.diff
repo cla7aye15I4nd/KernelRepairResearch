@@ -1,0 +1,28 @@
+diff --git a/include/net/inet_timewait_sock.h b/include/net/inet_timewait_sock.h
+index beb533a0e880..62c0a7e65d6b 100644
+--- a/include/net/inet_timewait_sock.h
++++ b/include/net/inet_timewait_sock.h
+@@ -45,6 +45,8 @@ struct inet_timewait_sock {
+ #define tw_node			__tw_common.skc_nulls_node
+ #define tw_bind_node		__tw_common.skc_bind_node
+ #define tw_refcnt		__tw_common.skc_refcnt
++#define tw_tx_queue_mapping	__tw_common.skc_tx_queue_mapping
++#define tw_rx_queue_mapping	__tw_common.skc_rx_queue_mapping
+ #define tw_hash			__tw_common.skc_hash
+ #define tw_prot			__tw_common.skc_prot
+ #define tw_net			__tw_common.skc_net
+diff --git a/net/ipv4/tcp_minisocks.c b/net/ipv4/tcp_minisocks.c
+index bb1fe1ba867a..7121d8573928 100644
+--- a/net/ipv4/tcp_minisocks.c
++++ b/net/ipv4/tcp_minisocks.c
+@@ -326,6 +326,10 @@ void tcp_time_wait(struct sock *sk, int state, int timeo)
+ 		tcptw->tw_last_oow_ack_time = 0;
+ 		tcptw->tw_tx_delay	= tp->tcp_tx_delay;
+ 		tw->tw_txhash		= sk->sk_txhash;
++		tw->tw_tx_queue_mapping = sk->sk_tx_queue_mapping;
++#ifdef CONFIG_SOCK_RX_QUEUE_MAPPING
++		tw->tw_rx_queue_mapping = sk->sk_rx_queue_mapping;
++#endif
+ #if IS_ENABLED(CONFIG_IPV6)
+ 		if (tw->tw_family == PF_INET6) {
+ 			struct ipv6_pinfo *np = inet6_sk(sk);

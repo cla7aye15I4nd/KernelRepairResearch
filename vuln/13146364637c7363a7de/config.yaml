@@ -1,0 +1,40 @@
+id: 13146364637c7363a7de
+bug_link: https://syzkaller.appspot.com/bug?extid=13146364637c7363a7de
+title: 'KASAN: slab-out-of-bounds Write in ext4_write_inline_data_end'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b33d9f5909c8d30f1429fb9aefbb32760901a023
+fix_commit: a54c4613dac1500b40e4ab55199f7c51f028e848
+datetime: '2021-08-30T23:36:50-04:00'
+fix_commit_message: 'ext4: fix race writing to an inline_data file while its xattrs
+  are changing
+
+
+  The location of the system.data extended attribute can change whenever
+
+  xattr_sem is not taken.  So we need to recalculate the i_inline_off
+
+  field since it mgiht have changed between ext4_write_begin() and
+
+  ext4_write_end().
+
+
+  This means that caching i_inline_off is probably not helpful, so in
+
+  the long run we should probably get rid of it and shrink the in-memory
+
+  ext4 inode slightly, but let''s fix the race the simple way for now.
+
+
+  Cc: stable@kernel.org
+
+  Fixes: f19d5870cbf72 ("ext4: add normal write support for inline data")
+
+  Reported-by: syzbot+13146364637c7363a7de@syzkaller.appspotmail.com
+
+  Signed-off-by: Theodore Ts''o <tytso@mit.edu>
+
+  '
+submodule:
+- fs/ext4
+hunk_count: 1
+covered_count: 1

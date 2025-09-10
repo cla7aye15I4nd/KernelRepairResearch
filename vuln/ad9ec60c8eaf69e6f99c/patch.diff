@@ -1,0 +1,94 @@
+diff --git a/include/linux/bpf.h b/include/linux/bpf.h
+index f16d0753f518..f560ea0c2b36 100644
+--- a/include/linux/bpf.h
++++ b/include/linux/bpf.h
+@@ -920,6 +920,7 @@ static_assert(__BPF_REG_TYPE_MAX <= BPF_BASE_TYPE_LIMIT);
+  */
+ struct bpf_insn_access_aux {
+ 	enum bpf_reg_type reg_type;
++	bool is_ldsx;
+ 	union {
+ 		int ctx_field_size;
+ 		struct {
+diff --git a/kernel/bpf/verifier.c b/kernel/bpf/verifier.c
+index c419005a29dc..2ab59db5837f 100644
+--- a/kernel/bpf/verifier.c
++++ b/kernel/bpf/verifier.c
+@@ -5626,12 +5626,13 @@ static int check_packet_access(struct bpf_verifier_env *env, u32 regno, int off,
+ /* check access to 'struct bpf_context' fields.  Supports fixed offsets only */
+ static int check_ctx_access(struct bpf_verifier_env *env, int insn_idx, int off, int size,
+ 			    enum bpf_access_type t, enum bpf_reg_type *reg_type,
+-			    struct btf **btf, u32 *btf_id, bool *is_retval)
++			    struct btf **btf, u32 *btf_id, bool *is_retval, bool is_ldsx)
+ {
+ 	struct bpf_insn_access_aux info = {
+ 		.reg_type = *reg_type,
+ 		.log = &env->log,
+ 		.is_retval = false,
++		.is_ldsx = is_ldsx,
+ 	};
+ 
+ 	if (env->ops->is_valid_access &&
+@@ -6945,7 +6946,7 @@ static int check_mem_access(struct bpf_verifier_env *env, int insn_idx, u32 regn
+ 			return err;
+ 
+ 		err = check_ctx_access(env, insn_idx, off, size, t, &reg_type, &btf,
+-				       &btf_id, &is_retval);
++				       &btf_id, &is_retval, is_ldsx);
+ 		if (err)
+ 			verbose_linfo(env, insn_idx, "; ");
+ 		if (!err && t == BPF_READ && value_regno >= 0) {
+diff --git a/net/core/filter.c b/net/core/filter.c
+index f3c72cf86099..78a6f746ea0b 100644
+--- a/net/core/filter.c
++++ b/net/core/filter.c
+@@ -8579,13 +8579,16 @@ static bool bpf_skb_is_valid_access(int off, int size, enum bpf_access_type type
+ 		if (off + size > offsetofend(struct __sk_buff, cb[4]))
+ 			return false;
+ 		break;
++	case bpf_ctx_range(struct __sk_buff, data):
++	case bpf_ctx_range(struct __sk_buff, data_meta):
++	case bpf_ctx_range(struct __sk_buff, data_end):
++		if (info->is_ldsx || size != size_default)
++			return false;
++		break;
+ 	case bpf_ctx_range_till(struct __sk_buff, remote_ip6[0], remote_ip6[3]):
+ 	case bpf_ctx_range_till(struct __sk_buff, local_ip6[0], local_ip6[3]):
+ 	case bpf_ctx_range_till(struct __sk_buff, remote_ip4, remote_ip4):
+ 	case bpf_ctx_range_till(struct __sk_buff, local_ip4, local_ip4):
+-	case bpf_ctx_range(struct __sk_buff, data):
+-	case bpf_ctx_range(struct __sk_buff, data_meta):
+-	case bpf_ctx_range(struct __sk_buff, data_end):
+ 		if (size != size_default)
+ 			return false;
+ 		break;
+@@ -9029,6 +9032,14 @@ static bool xdp_is_valid_access(int off, int size,
+ 			}
+ 		}
+ 		return false;
++	} else {
++		switch (off) {
++		case offsetof(struct xdp_md, data_meta):
++		case offsetof(struct xdp_md, data):
++		case offsetof(struct xdp_md, data_end):
++			if (info->is_ldsx)
++				return false;
++		}
+ 	}
+ 
+ 	switch (off) {
+@@ -9354,12 +9365,12 @@ static bool flow_dissector_is_valid_access(int off, int size,
+ 
+ 	switch (off) {
+ 	case bpf_ctx_range(struct __sk_buff, data):
+-		if (size != size_default)
++		if (info->is_ldsx || size != size_default)
+ 			return false;
+ 		info->reg_type = PTR_TO_PACKET;
+ 		return true;
+ 	case bpf_ctx_range(struct __sk_buff, data_end):
+-		if (size != size_default)
++		if (info->is_ldsx || size != size_default)
+ 			return false;
+ 		info->reg_type = PTR_TO_PACKET_END;
+ 		return true;

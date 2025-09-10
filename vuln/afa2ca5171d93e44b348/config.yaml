@@ -1,0 +1,43 @@
+id: afa2ca5171d93e44b348
+bug_link: https://syzkaller.appspot.com/bug?extid=afa2ca5171d93e44b348
+title: 'KASAN: use-after-free Read in jbd2_journal_wait_updates'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e3952fcce1aad934f1322843b564ff86256444b2
+fix_commit: cc16eecae687912238ee6efbff71ad31e2bc414e
+datetime: '2022-02-25T21:28:10-05:00'
+fix_commit_message: 'jbd2: fix use-after-free of transaction_t race
+
+
+  jbd2_journal_wait_updates() is called with j_state_lock held. But if
+
+  there is a commit in progress, then this transaction might get committed
+
+  and freed via jbd2_journal_commit_transaction() ->
+
+  jbd2_journal_free_transaction(), when we release j_state_lock.
+
+  So check for journal->j_running_transaction everytime we release and
+
+  acquire j_state_lock to avoid use-after-free issue.
+
+
+  Link: https://lore.kernel.org/r/948c2fed518ae739db6a8f7f83f1d58b504f87d0.1644497105.git.ritesh.list@gmail.com
+
+  Fixes: 4f98186848707f53 ("jbd2: refactor wait logic for transaction updates into
+  a common function")
+
+  Cc: stable@kernel.org
+
+  Reported-and-tested-by: syzbot+afa2ca5171d93e44b348@syzkaller.appspotmail.com
+
+  Reviewed-by: Jan Kara <jack@suse.cz>
+
+  Signed-off-by: Ritesh Harjani <riteshh@linux.ibm.com>
+
+  Signed-off-by: Theodore Ts''o <tytso@mit.edu>
+
+  '
+submodule:
+- fs/jbd2
+hunk_count: 2
+covered_count: 2

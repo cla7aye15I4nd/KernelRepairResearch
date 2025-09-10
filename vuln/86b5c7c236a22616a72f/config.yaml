@@ -1,0 +1,28 @@
+id: 86b5c7c236a22616a72f
+bug_link: https://syzkaller.appspot.com/bug?extid=86b5c7c236a22616a72f
+title: 'KMSAN: kernel-infoleak in sctp_getsockopt (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d1b58fc607583f31c314ff41d524db5c19a5f719
+fix_commit: 09279e615c81ce55e04835970601ae286e3facbe
+datetime: '2019-04-01T18:08:19-07:00'
+fix_commit_message: "sctp: initialize _pad of sockaddr_in before copying to user memory\n\
+  \nSyzbot report a kernel-infoleak:\n\n  BUG: KMSAN: kernel-infoleak in _copy_to_user+0x16b/0x1f0\
+  \ lib/usercopy.c:32\n  Call Trace:\n    _copy_to_user+0x16b/0x1f0 lib/usercopy.c:32\n\
+  \    copy_to_user include/linux/uaccess.h:174 [inline]\n    sctp_getsockopt_peer_addrs\
+  \ net/sctp/socket.c:5911 [inline]\n    sctp_getsockopt+0x1668e/0x17f70 net/sctp/socket.c:7562\n\
+  \    ...\n  Uninit was stored to memory at:\n    sctp_transport_init net/sctp/transport.c:61\
+  \ [inline]\n    sctp_transport_new+0x16d/0x9a0 net/sctp/transport.c:115\n    sctp_assoc_add_peer+0x532/0x1f70\
+  \ net/sctp/associola.c:637\n    sctp_process_param net/sctp/sm_make_chunk.c:2548\
+  \ [inline]\n    sctp_process_init+0x1a1b/0x3ed0 net/sctp/sm_make_chunk.c:2361\n\
+  \    ...\n  Bytes 8-15 of 16 are uninitialized\n\nIt was caused by that th _pad\
+  \ field (the 8-15 bytes) of a v4 addr (saved in\nstruct sockaddr_in) wasn't initialized,\
+  \ but directly copied to user memory\nin sctp_getsockopt_peer_addrs().\n\nSo fix\
+  \ it by calling memset(addr->v4.sin_zero, 0, 8) to initialize _pad of\nsockaddr_in\
+  \ before copying it to user memory in sctp_v4_addr_to_user(), as\nsctp_v6_addr_to_user()\
+  \ does.\n\nReported-by: syzbot+86b5c7c236a22616a72f@syzkaller.appspotmail.com\n\
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>\nTested-by: Alexander Potapenko <glider@google.com>\n\
+  Acked-by: Neil Horman <nhorman@tuxdriver.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 1
+covered_count: 0

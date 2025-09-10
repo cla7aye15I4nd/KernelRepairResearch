@@ -1,0 +1,45 @@
+id: ad1b592fc4483655438b
+bug_link: https://syzkaller.appspot.com/bug?extid=ad1b592fc4483655438b
+title: 'KASAN: slab-use-after-free Read in __vma_reservation_common'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 682886ec69d22363819a83ddddd5d66cb5c791e1
+fix_commit: 37641efaa3faa4b8292aba4bbd7d71c0b703a239
+datetime: '2024-04-24T19:34:26-07:00'
+fix_commit_message: 'hugetlb: check for anon_vma prior to folio allocation
+
+
+  Commit 9acad7ba3e25 ("hugetlb: use vmf_anon_prepare() instead of
+
+  anon_vma_prepare()") may bailout after allocating a folio if we do not
+
+  hold the mmap lock.  When this occurs, vmf_anon_prepare() will release the
+
+  vma lock.  Hugetlb then attempts to call restore_reserve_on_error(), which
+
+  depends on the vma lock being held.
+
+
+  We can move vmf_anon_prepare() prior to the folio allocation in order to
+
+  avoid calling restore_reserve_on_error() without the vma lock.
+
+
+  Link: https://lkml.kernel.org/r/ZiFqSrSRLhIV91og@fedora
+
+  Fixes: 9acad7ba3e25 ("hugetlb: use vmf_anon_prepare() instead of anon_vma_prepare()")
+
+  Reported-by: syzbot+ad1b592fc4483655438b@syzkaller.appspotmail.com
+
+  Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
+
+  Cc: Muchun Song <muchun.song@linux.dev>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 2
+covered_count: 0

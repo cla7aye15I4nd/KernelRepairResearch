@@ -1,0 +1,22 @@
+diff --git a/net/kcm/kcmsock.c b/net/kcm/kcmsock.c
+index d75d775e9462..d0537c1c8cd7 100644
+--- a/net/kcm/kcmsock.c
++++ b/net/kcm/kcmsock.c
+@@ -661,6 +661,7 @@ static int kcm_write_msgs(struct kcm_sock *kcm)
+ 				kcm_abort_tx_psock(psock, ret ? -ret : EPIPE,
+ 						   true);
+ 				unreserve_psock(kcm);
++				psock = NULL;
+ 
+ 				txm->started_tx = false;
+ 				kcm_report_tx_retry(kcm);
+@@ -696,7 +697,8 @@ static int kcm_write_msgs(struct kcm_sock *kcm)
+ 	if (!head) {
+ 		/* Done with all queued messages. */
+ 		WARN_ON(!skb_queue_empty(&sk->sk_write_queue));
+-		unreserve_psock(kcm);
++		if (psock)
++			unreserve_psock(kcm);
+ 	}
+ 
+ 	/* Check if write space is available */

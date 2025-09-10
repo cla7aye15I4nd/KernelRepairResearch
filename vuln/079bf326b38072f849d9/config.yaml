@@ -1,0 +1,46 @@
+id: 079bf326b38072f849d9
+bug_link: https://syzkaller.appspot.com/bug?extid=079bf326b38072f849d9
+title: memory leak in sctp_get_port_local
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8ec3ede559956f8ad58db7b57d25ac724bab69e9
+fix_commit: 9b6c08878e23adb7cc84bdca94d8a944b03f099e
+datetime: '2019-06-29T10:48:45-07:00'
+fix_commit_message: 'sctp: not bind the socket in sctp_connect
+
+
+  Now when sctp_connect() is called with a wrong sa_family, it binds
+
+  to a port but doesn''t set bp->port, then sctp_get_af_specific will
+
+  return NULL and sctp_connect() returns -EINVAL.
+
+
+  Then if sctp_bind() is called to bind to another port, the last
+
+  port it has bound will leak due to bp->port is NULL by then.
+
+
+  sctp_connect() doesn''t need to bind ports, as later __sctp_connect
+
+  will do it if bp->port is NULL. So remove it from sctp_connect().
+
+  While at it, remove the unnecessary sockaddr.sa_family len check
+
+  as it''s already done in sctp_inet_connect.
+
+
+  Fixes: 644fbdeacf1d ("sctp: fix the issue that flags are ignored when using kernel_connect")
+
+  Reported-by: syzbot+079bf326b38072f849d9@syzkaller.appspotmail.com
+
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>
+
+  Acked-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/sctp
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,37 @@
+id: 3ce8520484b0d4e260a5
+bug_link: https://syzkaller.appspot.com/bug?extid=3ce8520484b0d4e260a5
+title: 'KMSAN: uninit-value in tipc_nl_compat_name_table_dump (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8c63bf9ab4be8b83bd8c34aacfd2f1d2c8901c8a
+fix_commit: 2ac695d1d602ce00b12170242f58c3d3a8e36d04
+datetime: '2019-03-31T16:45:57-07:00'
+fix_commit_message: "tipc: handle the err returned from cmd header function\n\nSyzbot\
+  \ found a crash:\n\n  BUG: KMSAN: uninit-value in tipc_nl_compat_name_table_dump+0x54f/0xcd0\
+  \ net/tipc/netlink_compat.c:872\n  Call Trace:\n    tipc_nl_compat_name_table_dump+0x54f/0xcd0\
+  \ net/tipc/netlink_compat.c:872\n    __tipc_nl_compat_dumpit+0x59e/0xda0 net/tipc/netlink_compat.c:215\n\
+  \    tipc_nl_compat_dumpit+0x63a/0x820 net/tipc/netlink_compat.c:280\n    tipc_nl_compat_handle\
+  \ net/tipc/netlink_compat.c:1226 [inline]\n    tipc_nl_compat_recv+0x1b5f/0x2750\
+  \ net/tipc/netlink_compat.c:1265\n    genl_family_rcv_msg net/netlink/genetlink.c:601\
+  \ [inline]\n    genl_rcv_msg+0x185f/0x1a60 net/netlink/genetlink.c:626\n    netlink_rcv_skb+0x431/0x620\
+  \ net/netlink/af_netlink.c:2477\n    genl_rcv+0x63/0x80 net/netlink/genetlink.c:637\n\
+  \    netlink_unicast_kernel net/netlink/af_netlink.c:1310 [inline]\n    netlink_unicast+0xf3e/0x1020\
+  \ net/netlink/af_netlink.c:1336\n    netlink_sendmsg+0x127f/0x1300 net/netlink/af_netlink.c:1917\n\
+  \    sock_sendmsg_nosec net/socket.c:622 [inline]\n    sock_sendmsg net/socket.c:632\
+  \ [inline]\n\n  Uninit was created at:\n    __alloc_skb+0x309/0xa20 net/core/skbuff.c:208\n\
+  \    alloc_skb include/linux/skbuff.h:1012 [inline]\n    netlink_alloc_large_skb\
+  \ net/netlink/af_netlink.c:1182 [inline]\n    netlink_sendmsg+0xb82/0x1300 net/netlink/af_netlink.c:1892\n\
+  \    sock_sendmsg_nosec net/socket.c:622 [inline]\n    sock_sendmsg net/socket.c:632\
+  \ [inline]\n\nIt was supposed to be fixed on commit 974cb0e3e7c9 (\"tipc: fix uninit-value\n\
+  in tipc_nl_compat_name_table_dump\") by checking TLV_GET_DATA_LEN(msg->req)\nin\
+  \ cmd->header()/tipc_nl_compat_name_table_dump_header(), which is called\nahead\
+  \ of tipc_nl_compat_name_table_dump().\n\nHowever, tipc_nl_compat_dumpit() doesn't\
+  \ handle the error returned from cmd\nheader function. It means even when the check\
+  \ added in that fix fails, it\nwon't stop calling tipc_nl_compat_name_table_dump(),\
+  \ and the issue will be\ntriggered again.\n\nSo this patch is to add the process\
+  \ for the err returned from cmd header\nfunction in tipc_nl_compat_dumpit().\n\n\
+  Reported-by: syzbot+3ce8520484b0d4e260a5@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Xin Long <lucien.xin@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 1
+covered_count: 1

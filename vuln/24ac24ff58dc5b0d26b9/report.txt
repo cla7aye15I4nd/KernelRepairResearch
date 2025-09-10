@@ -1,0 +1,47 @@
+loop0: detected capacity change from 0 to 8
+=====================================================
+BUG: KMSAN: uninit-value in pick_link+0xd8c/0x1690 fs/namei.c:1850
+ pick_link+0xd8c/0x1690 fs/namei.c:1850
+ step_into+0x156f/0x1640 fs/namei.c:1909
+ open_last_lookups fs/namei.c:3674 [inline]
+ path_openat+0x39da/0x6100 fs/namei.c:3883
+ do_filp_open+0x20e/0x590 fs/namei.c:3913
+ do_sys_openat2+0x1bf/0x2f0 fs/open.c:1416
+ do_sys_open fs/open.c:1431 [inline]
+ __do_sys_openat fs/open.c:1447 [inline]
+ __se_sys_openat fs/open.c:1442 [inline]
+ __x64_sys_openat+0x2a1/0x310 fs/open.c:1442
+ x64_sys_call+0x1fe/0x3c10 arch/x86/include/generated/asm/syscalls_64.h:258
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ __alloc_pages_noprof+0x9d6/0xe70 mm/page_alloc.c:4719
+ alloc_pages_mpol_noprof+0x299/0x990 mm/mempolicy.c:2263
+ alloc_pages_noprof mm/mempolicy.c:2343 [inline]
+ folio_alloc_noprof+0x1db/0x310 mm/mempolicy.c:2350
+ filemap_alloc_folio_noprof+0xa6/0x440 mm/filemap.c:1008
+ do_read_cache_folio+0x12a/0xfd0 mm/filemap.c:3753
+ do_read_cache_page mm/filemap.c:3855 [inline]
+ read_cache_page+0x63/0x1d0 mm/filemap.c:3864
+ read_mapping_page include/linux/pagemap.h:907 [inline]
+ page_get_link+0x73/0xab0 fs/namei.c:5272
+ pick_link+0xd6c/0x1690
+ step_into+0x156f/0x1640 fs/namei.c:1909
+ open_last_lookups fs/namei.c:3674 [inline]
+ path_openat+0x39da/0x6100 fs/namei.c:3883
+ do_filp_open+0x20e/0x590 fs/namei.c:3913
+ do_sys_openat2+0x1bf/0x2f0 fs/open.c:1416
+ do_sys_open fs/open.c:1431 [inline]
+ __do_sys_openat fs/open.c:1447 [inline]
+ __se_sys_openat fs/open.c:1442 [inline]
+ __x64_sys_openat+0x2a1/0x310 fs/open.c:1442
+ x64_sys_call+0x1fe/0x3c10 arch/x86/include/generated/asm/syscalls_64.h:258
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 0 UID: 0 PID: 5191 Comm: syz-executor190 Not tainted 6.10.0-syzkaller-12708-g2f8c4f506285 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/27/2024
+=====================================================

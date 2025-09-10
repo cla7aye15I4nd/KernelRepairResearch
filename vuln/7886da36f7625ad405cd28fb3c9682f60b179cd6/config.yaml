@@ -1,0 +1,32 @@
+id: 7886da36f7625ad405cd28fb3c9682f60b179cd6
+bug_link: https://syzkaller.appspot.com/bug?extid=7886da36f7625ad405cd28fb3c9682f60b179cd6
+title: 'INFO: rcu detected stall in n_tty_ioctl'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 50c4c4e268a2d7a3e58ebb698ac74da0de40ae36
+fix_commit: 966031f340185eddd05affcf72b740549f056348
+datetime: '2017-12-21T11:19:22+01:00'
+fix_commit_message: "n_tty: fix EXTPROC vs ICANON interaction with TIOCINQ (aka FIONREAD)\n\
+  \nWe added support for EXTPROC back in 2010 in commit 26df6d13406d (\"tty:\nAdd\
+  \ EXTPROC support for LINEMODE\") and the intent was to allow it to\noverride some\
+  \ (all?) ICANON behavior.  Quoting from that original commit\nmessage:\n\n     \
+  \    There is a new bit in the termios local flag word, EXTPROC.\n         When\
+  \ this bit is set, several aspects of the terminal driver\n         are disabled.\
+  \  Input line editing, character echo, and mapping\n         of signals are all\
+  \ disabled.  This allows the telnetd to turn\n         off these functions when\
+  \ in linemode, but still keep track of\n         what state the user wants the terminal\
+  \ to be in.\n\nbut the problem turns out that \"several aspects of the terminal\
+  \ driver\nare disabled\" is a bit ambiguous, and you can really confuse the n_tty\n\
+  layer by setting EXTPROC and then causing some of the ICANON invariants\nto no longer\
+  \ be maintained.\n\nThis fixes at least one such case (TIOCINQ) becoming unhappy\
+  \ because of\nthe confusion over whether ICANON really means ICANON when EXTPROC\
+  \ is set.\n\nThis basically makes TIOCINQ match the case of read: if EXTPROC is\
+  \ set,\nwe ignore ICANON.  Also, make sure to reset the ICANON state ie EXTPROC\n\
+  changes, not just if ICANON changes.\n\nFixes: 26df6d13406d (\"tty: Add EXTPROC\
+  \ support for LINEMODE\")\nReported-by: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>\n\
+  Reported-by: syzkaller <syzkaller@googlegroups.com>\nCc: Jiri Slaby <jslaby@suse.com>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\nSigned-off-by: Greg\
+  \ Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty
+hunk_count: 2
+covered_count: 1

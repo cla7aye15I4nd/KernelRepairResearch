@@ -1,0 +1,92 @@
+diff --git a/fs/hfsplus/bfind.c b/fs/hfsplus/bfind.c
+index ca2ba8c9f82e..901e83d65d20 100644
+--- a/fs/hfsplus/bfind.c
++++ b/fs/hfsplus/bfind.c
+@@ -25,19 +25,8 @@ int hfs_find_init(struct hfs_btree *tree, struct hfs_find_data *fd)
+ 	fd->key = ptr + tree->max_key_len + 2;
+ 	hfs_dbg(BNODE_REFS, "find_init: %d (%p)\n",
+ 		tree->cnid, __builtin_return_address(0));
+-	switch (tree->cnid) {
+-	case HFSPLUS_CAT_CNID:
+-		mutex_lock_nested(&tree->tree_lock, CATALOG_BTREE_MUTEX);
+-		break;
+-	case HFSPLUS_EXT_CNID:
+-		mutex_lock_nested(&tree->tree_lock, EXTENTS_BTREE_MUTEX);
+-		break;
+-	case HFSPLUS_ATTR_CNID:
+-		mutex_lock_nested(&tree->tree_lock, ATTR_BTREE_MUTEX);
+-		break;
+-	default:
+-		BUG();
+-	}
++	mutex_lock_nested(&tree->tree_lock,
++			hfsplus_btree_lock_class(tree));
+ 	return 0;
+ }
+ 
+diff --git a/fs/hfsplus/extents.c b/fs/hfsplus/extents.c
+index 3c572e44f2ad..9c51867dddc5 100644
+--- a/fs/hfsplus/extents.c
++++ b/fs/hfsplus/extents.c
+@@ -430,7 +430,8 @@ int hfsplus_free_fork(struct super_block *sb, u32 cnid,
+ 		hfsplus_free_extents(sb, ext_entry, total_blocks - start,
+ 				     total_blocks);
+ 		total_blocks = start;
+-		mutex_lock(&fd.tree->tree_lock);
++		mutex_lock_nested(&fd.tree->tree_lock,
++			hfsplus_btree_lock_class(fd.tree));
+ 	} while (total_blocks > blocks);
+ 	hfs_find_exit(&fd);
+ 
+@@ -592,7 +593,8 @@ void hfsplus_file_truncate(struct inode *inode)
+ 					     alloc_cnt, alloc_cnt - blk_cnt);
+ 			hfsplus_dump_extent(hip->first_extents);
+ 			hip->first_blocks = blk_cnt;
+-			mutex_lock(&fd.tree->tree_lock);
++			mutex_lock_nested(&fd.tree->tree_lock,
++				hfsplus_btree_lock_class(fd.tree));
+ 			break;
+ 		}
+ 		res = __hfsplus_ext_cache_extent(&fd, inode, alloc_cnt);
+@@ -606,7 +608,8 @@ void hfsplus_file_truncate(struct inode *inode)
+ 		hfsplus_free_extents(sb, hip->cached_extents,
+ 				     alloc_cnt - start, alloc_cnt - blk_cnt);
+ 		hfsplus_dump_extent(hip->cached_extents);
+-		mutex_lock(&fd.tree->tree_lock);
++		mutex_lock_nested(&fd.tree->tree_lock,
++				hfsplus_btree_lock_class(fd.tree));
+ 		if (blk_cnt > start) {
+ 			hip->extent_state |= HFSPLUS_EXT_DIRTY;
+ 			break;
+diff --git a/fs/hfsplus/hfsplus_fs.h b/fs/hfsplus/hfsplus_fs.h
+index 012a3d003fbe..9e78f181c24f 100644
+--- a/fs/hfsplus/hfsplus_fs.h
++++ b/fs/hfsplus/hfsplus_fs.h
+@@ -553,6 +553,27 @@ static inline __be32 __hfsp_ut2mt(time64_t ut)
+ 	return cpu_to_be32(lower_32_bits(ut) + HFSPLUS_UTC_OFFSET);
+ }
+ 
++static inline enum hfsplus_btree_mutex_classes
++hfsplus_btree_lock_class(struct hfs_btree *tree)
++{
++	enum hfsplus_btree_mutex_classes class;
++
++	switch (tree->cnid) {
++	case HFSPLUS_CAT_CNID:
++		class = CATALOG_BTREE_MUTEX;
++		break;
++	case HFSPLUS_EXT_CNID:
++		class = EXTENTS_BTREE_MUTEX;
++		break;
++	case HFSPLUS_ATTR_CNID:
++		class = ATTR_BTREE_MUTEX;
++		break;
++	default:
++		BUG();
++	}
++	return class;
++}
++
+ /* compatibility */
+ #define hfsp_mt2ut(t)		(struct timespec64){ .tv_sec = __hfsp_mt2ut(t) }
+ #define hfsp_ut2mt(t)		__hfsp_ut2mt((t).tv_sec)

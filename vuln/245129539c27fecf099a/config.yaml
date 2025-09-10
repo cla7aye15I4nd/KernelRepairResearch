@@ -1,0 +1,50 @@
+id: 245129539c27fecf099a
+bug_link: https://syzkaller.appspot.com/bug?extid=245129539c27fecf099a
+title: WARNING in bpf_check (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 89dc8d0c38e0df27e580876a1681a55c686a51ff
+fix_commit: 34dd3bad1a6f1dc7d18ee8dd53f1d31bffd2aee8
+datetime: '2022-09-05T15:33:05+02:00'
+fix_commit_message: 'bpf: Relax the requirement to use preallocated hash maps in tracing
+  progs.
+
+
+  Since bpf hash map was converted to use bpf_mem_alloc it is safe to use
+
+  from tracing programs and in RT kernels.
+
+  But per-cpu hash map is still using dynamic allocation for per-cpu map
+
+  values, hence keep the warning for this map type.
+
+  In the future alloc_percpu_gfp can be front-end-ed with bpf_mem_cache
+
+  and this restriction will be completely lifted.
+
+  perf_event (NMI) bpf programs have to use preallocated hash maps,
+
+  because free_htab_elem() is using call_rcu which might crash if re-entered.
+
+
+  Sleepable bpf programs have to use preallocated hash maps, because
+
+  life time of the map elements is not protected by rcu_read_lock/unlock.
+
+  This restriction can be lifted in the future as well.
+
+
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>
+
+  Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+
+  Acked-by: Kumar Kartikeya Dwivedi <memxor@gmail.com>
+
+  Acked-by: Andrii Nakryiko <andrii@kernel.org>
+
+  Link: https://lore.kernel.org/bpf/20220902211058.60789-6-alexei.starovoitov@gmail.com
+
+  '
+submodule:
+- kernel/bpf
+hunk_count: 2
+covered_count: 2

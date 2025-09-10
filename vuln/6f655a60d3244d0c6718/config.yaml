@@ -1,0 +1,59 @@
+id: 6f655a60d3244d0c6718
+bug_link: https://syzkaller.appspot.com/bug?extid=6f655a60d3244d0c6718
+title: 'KMSAN: uninit-value in bch2_bkey_cmp_packed_inlined'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 51b7cc7c0f964fed976399a3ab876ae4a308fb1b
+fix_commit: 0696a18a8cc3f0941efe64008a997dc4701f9587
+datetime: '2024-09-27T21:46:34-04:00'
+fix_commit_message: 'bcachefs: memset bounce buffer portion to 0 after key_sort_fix_overlapping
+
+
+  Zero-initialize part of allocated bounce buffer which wasn''t touched by
+
+  subsequent bch2_key_sort_fix_overlapping to mitigate later uinit-value
+
+  use KMSAN bug[1].
+
+
+  After applying the patch reproducer still triggers stack overflow[2] but
+
+  it seems unrelated to the uninit-value use warning. After further
+
+  investigation it was found that stack overflow occurs because KMSAN adds
+
+  too many function calls[3]. Backtrace of where the stack magic number gets
+
+  smashed was added as a reply to syzkaller thread[3].
+
+
+  It was confirmed that task''s stack magic number gets smashed after the code
+
+  path where KSMAN detects uninit-value use is executed, so it can be assumed
+
+  that it doesn''t contribute in any way to uninit-value use detection.
+
+
+  [1] https://syzkaller.appspot.com/bug?extid=6f655a60d3244d0c6718
+
+  [2] https://lore.kernel.org/lkml/66e57e46.050a0220.115905.0002.GAE@google.com
+
+  [3] https://lore.kernel.org/all/rVaWgPULej8K7HqMPNIu8kVNyXNjjCiTB-QBtItLFBmk0alH6fV2tk4joVPk97Evnuv4ZRDd8HB5uDCkiFG6u81xKdzDj-KrtIMJSlF6Kt8=@proton.me
+
+
+  Reported-by: syzbot+6f655a60d3244d0c6718@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=6f655a60d3244d0c6718
+
+  Fixes: ec4edd7b9d20 ("bcachefs: Prep work for variable size btree node buffers")
+
+  Suggested-by: Kent Overstreet <kent.overstreet@linux.dev>
+
+  Signed-off-by: Piotr Zalewski <pZ010001011111@proton.me>
+
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>
+
+  '
+submodule:
+- fs/bcachefs
+hunk_count: 1
+covered_count: 1

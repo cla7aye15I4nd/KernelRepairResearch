@@ -1,0 +1,33 @@
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2961f1e1e778..5e1b15e69ed6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5769,21 +5769,24 @@ static int btrfs_set_inode_index_count(struct btrfs_inode *inode)
+ 
+ static int btrfs_get_dir_last_index(struct btrfs_inode *dir, u64 *index)
+ {
+-	if (dir->index_cnt == (u64)-1) {
+-		int ret;
++	int ret = 0;
+ 
++	btrfs_inode_lock(dir, 0);
++	if (dir->index_cnt == (u64)-1) {
+ 		ret = btrfs_inode_delayed_dir_index_count(dir);
+ 		if (ret) {
+ 			ret = btrfs_set_inode_index_count(dir);
+ 			if (ret)
+-				return ret;
++				goto out;
+ 		}
+ 	}
+ 
+ 	/* index_cnt is the index number of next new entry, so decrement it. */
+ 	*index = dir->index_cnt - 1;
++out:
++	btrfs_inode_unlock(dir, 0);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ /*

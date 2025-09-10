@@ -1,0 +1,26 @@
+id: f0d9d7cba052f9344b03
+bug_link: https://syzkaller.appspot.com/bug?extid=f0d9d7cba052f9344b03
+title: WARNING in sctp_assoc_update_frag_point
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 33bd5ac54dc47e002da4a395aaf9bf158dd17709
+fix_commit: a65925475571953da12a9bc2082aec29d4e2c0e7
+datetime: '2018-07-04T21:36:34+09:00'
+fix_commit_message: "sctp: fix the issue that pathmtu may be set lower than MINSEGMENT\n\
+  \nAfter commit b6c5734db070 (\"sctp: fix the handling of ICMP Frag Needed\nfor too\
+  \ small MTUs\"), sctp_transport_update_pmtu would refetch pathmtu\nfrom the dst\
+  \ and set it to transport's pathmtu without any check.\n\nThe new pathmtu may be\
+  \ lower than MINSEGMENT if the dst is obsolete and\nupdated by .get_dst() in sctp_transport_update_pmtu.\
+  \ In this case, it\ncould have a smaller MTU as well, and thus we should validate\
+  \ it\nagainst MINSEGMENT instead.\n\nSyzbot reported a warning in sctp_mtu_payload\
+  \ caused by this.\n\nThis patch refetches the pathmtu by calling sctp_dst_mtu where\
+  \ it does\nthe check against MINSEGMENT.\n\nv1->v2:\n  - refetch the pathmtu by\
+  \ calling sctp_dst_mtu instead as Marcelo's\n    suggestion.\n\nFixes: b6c5734db070\
+  \ (\"sctp: fix the handling of ICMP Frag Needed for too small MTUs\")\nReported-by:\
+  \ syzbot+f0d9d7cba052f9344b03@syzkaller.appspotmail.com\nSuggested-by: Marcelo Ricardo\
+  \ Leitner <marcelo.leitner@gmail.com>\nSigned-off-by: Xin Long <lucien.xin@gmail.com>\n\
+  Acked-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>\nAcked-by: Neil Horman\
+  \ <nhorman@tuxdriver.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 1
+covered_count: 0

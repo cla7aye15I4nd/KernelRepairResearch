@@ -1,0 +1,67 @@
+id: 180dd013ba371eabc162
+bug_link: https://syzkaller.appspot.com/bug?extid=180dd013ba371eabc162
+title: possible deadlock in deactivate_super (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8f947e0fd595951460f5a6e1ac29baa82fa02eab
+fix_commit: fcaf3b2683b05a9684acdebda706a12025a6927a
+datetime: '2025-05-07T23:39:40-07:00'
+fix_commit_message: 'ocfs2: stop quota recovery before disabling quotas
+
+
+  Currently quota recovery is synchronized with unmount using sb->s_umount
+
+  semaphore.  That is however prone to deadlocks because
+
+  flush_workqueue(osb->ocfs2_wq) called from umount code can wait for quota
+
+  recovery to complete while ocfs2_finish_quota_recovery() waits for
+
+  sb->s_umount semaphore.
+
+
+  Grabbing of sb->s_umount semaphore in ocfs2_finish_quota_recovery() is
+
+  only needed to protect that function from disabling of quotas from
+
+  ocfs2_dismount_volume().  Handle this problem by disabling quota recovery
+
+  early during unmount in ocfs2_dismount_volume() instead so that we can
+
+  drop acquisition of sb->s_umount from ocfs2_finish_quota_recovery().
+
+
+  Link: https://lkml.kernel.org/r/20250424134515.18933-6-jack@suse.cz
+
+  Fixes: 5f530de63cfc ("ocfs2: Use s_umount for quota recovery protection")
+
+  Signed-off-by: Jan Kara <jack@suse.cz>
+
+  Reported-by: Shichangkuo <shi.changkuo@h3c.com>
+
+  Reported-by: Murad Masimov <m.masimov@mt-integration.ru>
+
+  Reviewed-by: Heming Zhao <heming.zhao@suse.com>
+
+  Tested-by: Heming Zhao <heming.zhao@suse.com>
+
+  Acked-by: Joseph Qi <joseph.qi@linux.alibaba.com>
+
+  Cc: Changwei Ge <gechangwei@live.cn>
+
+  Cc: Joel Becker <jlbec@evilplan.org>
+
+  Cc: Jun Piao <piaojun@huawei.com>
+
+  Cc: Junxiao Bi <junxiao.bi@oracle.com>
+
+  Cc: Mark Fasheh <mark@fasheh.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/ocfs2
+hunk_count: 11
+covered_count: 3

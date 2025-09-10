@@ -1,0 +1,81 @@
+syz-executor110: attempt to access beyond end of device
+loop0: rw=1, sector=131324, nr_sectors = 4 limit=32768
+gfs2: fsid=syz:syz.0: Error 10 writing to journal, jid=0
+gfs2: fsid=syz:syz.0: fatal: I/O error(s)
+gfs2: fsid=syz:syz.0: about to withdraw this file system
+BUG: sleeping function called from invalid context at fs/gfs2/util.c:157
+in_atomic(): 1, irqs_disabled(): 0, non_block: 0, pid: 5035, name: syz-executor110
+preempt_count: 1, expected: 0
+RCU nest depth: 0, expected: 0
+5 locks held by syz-executor110/5035:
+ #0: ffff888078fe40e0 (&type->s_umount_key#61){+.+.}-{3:3}, at: __super_lock fs/super.c:56 [inline]
+ #0: ffff888078fe40e0 (&type->s_umount_key#61){+.+.}-{3:3}, at: __super_lock_excl fs/super.c:71 [inline]
+ #0: ffff888078fe40e0 (&type->s_umount_key#61){+.+.}-{3:3}, at: deactivate_super+0xd6/0x100 fs/super.c:513
+ #1: ffff88802b5a4b78 (&sdp->sd_quota_sync_mutex){+.+.}-{3:3}, at: gfs2_quota_sync+0x19e/0x630 fs/gfs2/quota.c:1331
+ #2: ffff88802b5a5060 (&sdp->sd_log_flush_lock){++++}-{3:3}, at: gfs2_log_flush+0xe4/0x27f0 fs/gfs2/log.c:1042
+ #3: ffff88802b5a4e88 (&sdp->sd_log_lock){+.+.}-{2:2}, at: spin_lock include/linux/spinlock.h:351 [inline]
+ #3: ffff88802b5a4e88 (&sdp->sd_log_lock){+.+.}-{2:2}, at: gfs2_log_lock fs/gfs2/log.h:32 [inline]
+ #3: ffff88802b5a4e88 (&sdp->sd_log_lock){+.+.}-{2:2}, at: gfs2_flush_revokes+0x60/0x90 fs/gfs2/log.c:814
+ #4: ffff88802b5a5248 (&sdp->sd_freeze_mutex){+.+.}-{3:3}, at: signal_our_withdraw fs/gfs2/util.c:152 [inline]
+ #4: ffff88802b5a5248 (&sdp->sd_freeze_mutex){+.+.}-{3:3}, at: gfs2_withdraw+0xc38/0x1280 fs/gfs2/util.c:342
+Preemption disabled at:
+[<0000000000000000>] 0x0
+CPU: 1 PID: 5035 Comm: syz-executor110 Not tainted 6.6.0-rc3-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/04/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x125/0x1b0 lib/dump_stack.c:106
+ __might_resched+0x3c3/0x5e0 kernel/sched/core.c:10187
+ signal_our_withdraw fs/gfs2/util.c:157 [inline]
+ gfs2_withdraw+0xc7d/0x1280 fs/gfs2/util.c:342
+ gfs2_ail1_empty+0x8cc/0xab0 fs/gfs2/log.c:377
+ gfs2_flush_revokes+0x6b/0x90 fs/gfs2/log.c:815
+ revoke_lo_before_commit+0x22/0x640 fs/gfs2/lops.c:867
+ lops_before_commit fs/gfs2/lops.h:40 [inline]
+ gfs2_log_flush+0x105e/0x27f0 fs/gfs2/log.c:1101
+ do_sync+0x550/0xd30 fs/gfs2/quota.c:985
+ gfs2_quota_sync+0x419/0x630 fs/gfs2/quota.c:1347
+ gfs2_sync_fs+0x44/0xb0 fs/gfs2/super.c:667
+ sync_filesystem fs/sync.c:56 [inline]
+ sync_filesystem+0x109/0x280 fs/sync.c:30
+ generic_shutdown_super+0x7e/0x3c0 fs/super.c:666
+ kill_block_super+0x3b/0x70 fs/super.c:1646
+ gfs2_kill_sb+0x361/0x410 fs/gfs2/ops_fstype.c:1811
+ deactivate_locked_super+0x9a/0x170 fs/super.c:481
+ deactivate_super+0xde/0x100 fs/super.c:514
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:180
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2387
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:251 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:278
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:283 [inline]
+ syscall_exit_to_user_mode+0xd/0x60 kernel/entry/common.c:296
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f347240f307
+Code: 09 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b8 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffdb4a6a238 EFLAGS: 00000202 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f347240f307
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffdb4a6a2f0
+RBP: 00007ffdb4a6a2f0 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000202 R12: 00007ffdb4a6b350
+R13: 00005555565a36c0 R14: 0000000000000001 R15: 431bde82d7b634db
+ </TASK>
+BUG: scheduling while atomic: syz-executor110/5035/0x00000002
+5 locks held by syz-executor110/5035:
+ #0: ffff888078fe40e0 (&type->s_umount_key#61){+.+.}-{3:3}, at: __super_lock fs/super.c:56 [inline]
+ #0: ffff888078fe40e0 (&type->s_umount_key#61){+.+.}-{3:3}, at: __super_lock_excl fs/super.c:71 [inline]
+ #0: ffff888078fe40e0 (&type->s_umount_key#61){+.+.}-{3:3}, at: deactivate_super+0xd6/0x100 fs/super.c:513
+ #1: ffff88802b5a4b78 (&sdp->sd_quota_sync_mutex){+.+.}-{3:3}, at: gfs2_quota_sync+0x19e/0x630 fs/gfs2/quota.c:1331
+ #2: ffff88802b5a5060 (&sdp->sd_log_flush_lock){++++}-{3:3}, at: gfs2_log_flush+0xe4/0x27f0 fs/gfs2/log.c:1042
+ #3: ffff88802b5a4e88 (&sdp->sd_log_lock){+.+.}-{2:2}, at: spin_lock include/linux/spinlock.h:351 [inline]
+ #3: ffff88802b5a4e88 (&sdp->sd_log_lock){+.+.}-{2:2}, at: gfs2_log_lock fs/gfs2/log.h:32 [inline]
+ #3: ffff88802b5a4e88 (&sdp->sd_log_lock){+.+.}-{2:2}, at: gfs2_flush_revokes+0x60/0x90 fs/gfs2/log.c:814
+ #4: ffff88802b5a5248 (&sdp->sd_freeze_mutex){+.+.}-{3:3}, at: signal_our_withdraw fs/gfs2/util.c:152 [inline]
+ #4: ffff88802b5a5248 (&sdp->sd_freeze_mutex){+.+.}-{3:3}, at: gfs2_withdraw+0xc38/0x1280 fs/gfs2/util.c:342
+Modules linked in:
+Preemption disabled at:
+[<0000000000000000>] 0x0

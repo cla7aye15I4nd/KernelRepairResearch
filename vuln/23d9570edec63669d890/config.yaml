@@ -1,0 +1,42 @@
+id: 23d9570edec63669d890
+bug_link: https://syzkaller.appspot.com/bug?extid=23d9570edec63669d890
+title: general protection fault in tls_setsockopt
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4130741736d4bc27add2ab4f7e53bc401846ce27
+fix_commit: 5d92e631b8be8965a90c144320f06e096081a551
+datetime: '2019-08-05T13:15:30-07:00'
+fix_commit_message: 'net/tls: partially revert fix transition through disconnect with
+  close
+
+
+  Looks like we were slightly overzealous with the shutdown()
+
+  cleanup. Even though the sock->sk_state can reach CLOSED again,
+
+  socket->state will not got back to SS_UNCONNECTED once
+
+  connections is ESTABLISHED. Meaning we will see EISCONN if
+
+  we try to reconnect, and EINVAL if we try to listen.
+
+
+  Only listen sockets can be shutdown() and reused, but since
+
+  ESTABLISHED sockets can never be re-connected() or used for
+
+  listen() we don''t need to try to clean up the ULP state early.
+
+
+  Fixes: 32857cf57f92 ("net/tls: fix transition through disconnect with close")
+
+  Signed-off-by: Jakub Kicinski <jakub.kicinski@netronome.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- Documentation/networking
+- include/net
+- net/tls
+hunk_count: 6
+covered_count: 0

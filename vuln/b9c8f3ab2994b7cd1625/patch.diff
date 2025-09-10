@@ -1,0 +1,139 @@
+diff --git a/net/tipc/diag.c b/net/tipc/diag.c
+index aaabb0b776dd..73137f4aeb68 100644
+--- a/net/tipc/diag.c
++++ b/net/tipc/diag.c
+@@ -84,7 +84,9 @@ static int tipc_sock_diag_handler_dump(struct sk_buff *skb,
+ 
+ 	if (h->nlmsg_flags & NLM_F_DUMP) {
+ 		struct netlink_dump_control c = {
++			.start = tipc_dump_start,
+ 			.dump = tipc_diag_dump,
++			.done = tipc_dump_done,
+ 		};
+ 		netlink_dump_start(net->diag_nlsk, skb, h, &c);
+ 		return 0;
+diff --git a/net/tipc/netlink.c b/net/tipc/netlink.c
+index 6ff2254088f6..99ee419210ba 100644
+--- a/net/tipc/netlink.c
++++ b/net/tipc/netlink.c
+@@ -167,7 +167,9 @@ static const struct genl_ops tipc_genl_v2_ops[] = {
+ 	},
+ 	{
+ 		.cmd	= TIPC_NL_SOCK_GET,
++		.start = tipc_dump_start,
+ 		.dumpit	= tipc_nl_sk_dump,
++		.done	= tipc_dump_done,
+ 		.policy = tipc_nl_policy,
+ 	},
+ 	{
+diff --git a/net/tipc/socket.c b/net/tipc/socket.c
+index c9a50b62c738..ab7a2a7178f7 100644
+--- a/net/tipc/socket.c
++++ b/net/tipc/socket.c
+@@ -3229,45 +3229,69 @@ int tipc_nl_sk_walk(struct sk_buff *skb, struct netlink_callback *cb,
+ 				       struct netlink_callback *cb,
+ 				       struct tipc_sock *tsk))
+ {
+-	struct net *net = sock_net(skb->sk);
+-	struct tipc_net *tn = tipc_net(net);
+-	const struct bucket_table *tbl;
+-	u32 prev_portid = cb->args[1];
+-	u32 tbl_id = cb->args[0];
+-	struct rhash_head *pos;
++	struct rhashtable_iter *iter = (void *)cb->args[0];
+ 	struct tipc_sock *tsk;
+ 	int err;
+ 
+-	rcu_read_lock();
+-	tbl = rht_dereference_rcu((&tn->sk_rht)->tbl, &tn->sk_rht);
+-	for (; tbl_id < tbl->size; tbl_id++) {
+-		rht_for_each_entry_rcu(tsk, pos, tbl, tbl_id, node) {
+-			spin_lock_bh(&tsk->sk.sk_lock.slock);
+-			if (prev_portid && prev_portid != tsk->portid) {
+-				spin_unlock_bh(&tsk->sk.sk_lock.slock);
++	rhashtable_walk_start(iter);
++	while ((tsk = rhashtable_walk_next(iter)) != NULL) {
++		if (IS_ERR(tsk)) {
++			err = PTR_ERR(tsk);
++			if (err == -EAGAIN) {
++				err = 0;
+ 				continue;
+ 			}
++			break;
++		}
+ 
+-			err = skb_handler(skb, cb, tsk);
+-			if (err) {
+-				prev_portid = tsk->portid;
+-				spin_unlock_bh(&tsk->sk.sk_lock.slock);
+-				goto out;
+-			}
+-
+-			prev_portid = 0;
+-			spin_unlock_bh(&tsk->sk.sk_lock.slock);
++		sock_hold(&tsk->sk);
++		rhashtable_walk_stop(iter);
++		lock_sock(&tsk->sk);
++		err = skb_handler(skb, cb, tsk);
++		if (err) {
++			release_sock(&tsk->sk);
++			sock_put(&tsk->sk);
++			goto out;
+ 		}
++		release_sock(&tsk->sk);
++		rhashtable_walk_start(iter);
++		sock_put(&tsk->sk);
+ 	}
++	rhashtable_walk_stop(iter);
+ out:
+-	rcu_read_unlock();
+-	cb->args[0] = tbl_id;
+-	cb->args[1] = prev_portid;
+-
+ 	return skb->len;
+ }
+ EXPORT_SYMBOL(tipc_nl_sk_walk);
+ 
++int tipc_dump_start(struct netlink_callback *cb)
++{
++	struct rhashtable_iter *iter = (void *)cb->args[0];
++	struct net *net = sock_net(cb->skb->sk);
++	struct tipc_net *tn = tipc_net(net);
++
++	if (!iter) {
++		iter = kmalloc(sizeof(*iter), GFP_KERNEL);
++		if (!iter)
++			return -ENOMEM;
++
++		cb->args[0] = (long)iter;
++	}
++
++	rhashtable_walk_enter(&tn->sk_rht, iter);
++	return 0;
++}
++EXPORT_SYMBOL(tipc_dump_start);
++
++int tipc_dump_done(struct netlink_callback *cb)
++{
++	struct rhashtable_iter *hti = (void *)cb->args[0];
++
++	rhashtable_walk_exit(hti);
++	kfree(hti);
++	return 0;
++}
++EXPORT_SYMBOL(tipc_dump_done);
++
+ int tipc_sk_fill_sock_diag(struct sk_buff *skb, struct netlink_callback *cb,
+ 			   struct tipc_sock *tsk, u32 sk_filter_state,
+ 			   u64 (*tipc_diag_gen_cookie)(struct sock *sk))
+diff --git a/net/tipc/socket.h b/net/tipc/socket.h
+index aff9b2ae5a1f..d43032e26532 100644
+--- a/net/tipc/socket.h
++++ b/net/tipc/socket.h
+@@ -68,4 +68,6 @@ int tipc_nl_sk_walk(struct sk_buff *skb, struct netlink_callback *cb,
+ 		    int (*skb_handler)(struct sk_buff *skb,
+ 				       struct netlink_callback *cb,
+ 				       struct tipc_sock *tsk));
++int tipc_dump_start(struct netlink_callback *cb);
++int tipc_dump_done(struct netlink_callback *cb);
+ #endif

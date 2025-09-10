@@ -1,0 +1,58 @@
+id: c3d0d9c42d59ff644ea6
+bug_link: https://syzkaller.appspot.com/bug?extid=c3d0d9c42d59ff644ea6
+title: 'net test error: WARNING: suspicious RCU usage in veth_set_xdp_features'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5000fe6c27827a61d8250a7e4a1d26c3298ef4f6
+fix_commit: 5ce76fe1eead179c058d9151ee1f4088cfdc1c6b
+datetime: '2023-03-15T00:38:33-07:00'
+fix_commit_message: "veth: rely on rtnl_dereference() instead of on rcu_dereference()\
+  \ in veth_set_xdp_features()\n\nFix the following kernel warning in veth_set_xdp_features\
+  \ routine\nrelying on rtnl_dereference() instead of on rcu_dereference():\n\n=============================\n\
+  WARNING: suspicious RCU usage\n6.3.0-rc1-00144-g064d70527aaa #149 Not tainted\n\
+  -----------------------------\ndrivers/net/veth.c:1265 suspicious rcu_dereference_check()\
+  \ usage!\n\nother info that might help us debug this:\n\nrcu_scheduler_active =\
+  \ 2, debug_locks = 1\n1 lock held by ip/135:\n(net/core/rtnetlink.c:6172)\n\nstack\
+  \ backtrace:\nCPU: 1 PID: 135 Comm: ip Not tainted 6.3.0-rc1-00144-g064d70527aaa\
+  \ #149\nHardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.15.0-1\n04/01/2014\n\
+  Call Trace:\n <TASK>\ndump_stack_lvl (lib/dump_stack.c:107)\nlockdep_rcu_suspicious\
+  \ (include/linux/context_tracking.h:152)\nveth_set_xdp_features (drivers/net/veth.c:1265\
+  \ (discriminator 9))\nveth_newlink (drivers/net/veth.c:1892)\n? veth_set_features\
+  \ (drivers/net/veth.c:1774)\n? kasan_save_stack (mm/kasan/common.c:47)\n? kasan_save_stack\
+  \ (mm/kasan/common.c:46)\n? kasan_set_track (mm/kasan/common.c:52)\n? alloc_netdev_mqs\
+  \ (include/linux/slab.h:737)\n? rcu_read_lock_sched_held (kernel/rcu/update.c:125)\n\
+  ? trace_kmalloc (include/trace/events/kmem.h:54)\n? __xdp_rxq_info_reg (net/core/xdp.c:188)\n\
+  ? alloc_netdev_mqs (net/core/dev.c:10657)\n? rtnl_create_link (net/core/rtnetlink.c:3312)\n\
+  rtnl_newlink_create (net/core/rtnetlink.c:3440)\n? rtnl_link_get_net_capable.constprop.0\
+  \ (net/core/rtnetlink.c:3391)\n__rtnl_newlink (net/core/rtnetlink.c:3657)\n? lock_downgrade\
+  \ (kernel/locking/lockdep.c:5321)\n? rtnl_link_unregister (net/core/rtnetlink.c:3487)\n\
+  rtnl_newlink (net/core/rtnetlink.c:3671)\nrtnetlink_rcv_msg (net/core/rtnetlink.c:6174)\n\
+  ? rtnl_link_fill (net/core/rtnetlink.c:6070)\n? mark_usage (kernel/locking/lockdep.c:4914)\n\
+  ? mark_usage (kernel/locking/lockdep.c:4914)\nnetlink_rcv_skb (net/netlink/af_netlink.c:2574)\n\
+  ? rtnl_link_fill (net/core/rtnetlink.c:6070)\n? netlink_ack (net/netlink/af_netlink.c:2551)\n\
+  ? lock_acquire (kernel/locking/lockdep.c:467)\n? net_generic (include/linux/rcupdate.h:805)\n\
+  ? netlink_deliver_tap (include/linux/rcupdate.h:805)\nnetlink_unicast (net/netlink/af_netlink.c:1340)\n\
+  ? netlink_attachskb (net/netlink/af_netlink.c:1350)\nnetlink_sendmsg (net/netlink/af_netlink.c:1942)\n\
+  ? netlink_unicast (net/netlink/af_netlink.c:1861)\n? netlink_unicast (net/netlink/af_netlink.c:1861)\n\
+  sock_sendmsg (net/socket.c:727)\n____sys_sendmsg (net/socket.c:2501)\n? kernel_sendmsg\
+  \ (net/socket.c:2448)\n? __copy_msghdr (net/socket.c:2428)\n___sys_sendmsg (net/socket.c:2557)\n\
+  ? mark_usage (kernel/locking/lockdep.c:4914)\n? do_recvmmsg (net/socket.c:2544)\n\
+  ? lock_acquire (kernel/locking/lockdep.c:467)\n? find_held_lock (kernel/locking/lockdep.c:5159)\n\
+  ? __lock_release (kernel/locking/lockdep.c:5345)\n? __might_fault (mm/memory.c:5625)\n\
+  ? lock_downgrade (kernel/locking/lockdep.c:5321)\n? __fget_light (include/linux/atomic/atomic-arch-fallback.h:227)\n\
+  __sys_sendmsg (include/linux/file.h:31)\n? __sys_sendmsg_sock (net/socket.c:2572)\n\
+  ? rseq_get_rseq_cs (kernel/rseq.c:275)\n? lockdep_hardirqs_on_prepare.part.0 (kernel/locking/lockdep.c:4263)\n\
+  do_syscall_64 (arch/x86/entry/common.c:50)\nentry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:120)\n\
+  RIP: 0033:0x7f0d1aadeb17\nCode: 0f 00 f7 d8 64 89 02 48 c7 c0 ff ff ff ff eb b9\
+  \ 0f 1f 00 f3 0f 1e\nfa 64 8b 04 25 18 00 00 00 85 c0 75 10 b8 2e 00 00 00 0f 05\
+  \ <48> 3d 00\nf0 ff ff 77 51 c3 48 83 ec 28 89 54 24 1c 48 89 74 24 10\n\nFixes:\
+  \ fccca038f300 (\"veth: take into account device reconfiguration for xdp_features\
+  \ flag\")\nSuggested-by: Eric Dumazet <edumazet@google.com>\nReported-by: Matthieu\
+  \ Baerts <matthieu.baerts@tessares.net>\nLink: https://lore.kernel.org/netdev/cover.1678364612.git.lorenzo@kernel.org/T/#me4c9d8e985ec7ebee981cfdb5bc5ec651ef4035d\n\
+  Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>\nReported-by: syzbot+c3d0d9c42d59ff644ea6@syzkaller.appspotmail.com\n\
+  Reviewed-by: Eric Dumazet <edumazet@google.com>\nTested-by: Matthieu Baerts <matthieu.baerts@tessares.net>\n\
+  Link: https://lore.kernel.org/r/dfd6a9a7d85e9113063165e1f47b466b90ad7b8a.1678748579.git.lorenzo@kernel.org\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net
+hunk_count: 1
+covered_count: 1

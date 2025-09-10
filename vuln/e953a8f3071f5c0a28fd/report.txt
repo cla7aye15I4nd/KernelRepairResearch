@@ -1,0 +1,150 @@
+netlink: 24 bytes leftover after parsing attributes in process `syz.2.539'.
+======================================================
+WARNING: possible circular locking dependency detected
+6.15.0-rc1-syzkaller-00301-g3bde70a2c827 #0 Not tainted
+------------------------------------------------------
+syz.2.539/8251 is trying to acquire lock:
+ffff888079aae718 (sk_lock-AF_INET){+.+.}-{0:0}, at: lock_sock include/net/sock.h:1651 [inline]
+ffff888079aae718 (sk_lock-AF_INET){+.+.}-{0:0}, at: gtp_encap_enable_socket+0x287/0x4f0 drivers/net/gtp.c:1676
+
+but task is already holding lock:
+ffffffff9012be68 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_lock net/core/rtnetlink.c:80 [inline]
+ffffffff9012be68 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_nets_lock net/core/rtnetlink.c:341 [inline]
+ffffffff9012be68 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_newlink+0x600/0x2000 net/core/rtnetlink.c:4067
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (rtnl_mutex){+.+.}-{4:4}:
+       __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+       __mutex_lock+0x199/0xb90 kernel/locking/mutex.c:746
+       start_sync_thread+0x120/0x28b0 net/netfilter/ipvs/ip_vs_sync.c:1761
+       do_ip_vs_set_ctl+0x451/0x11d0 net/netfilter/ipvs/ip_vs_ctl.c:2732
+       nf_setsockopt+0x8a/0xf0 net/netfilter/nf_sockopt.c:101
+       ip_setsockopt+0xcb/0xf0 net/ipv4/ip_sockglue.c:1424
+       tcp_setsockopt+0xa4/0x100 net/ipv4/tcp.c:4077
+       smc_setsockopt+0x1b3/0xa00 net/smc/af_smc.c:3081
+       do_sock_setsockopt+0x221/0x470 net/socket.c:2296
+       __sys_setsockopt+0x1a0/0x230 net/socket.c:2321
+       __do_sys_setsockopt net/socket.c:2327 [inline]
+       __se_sys_setsockopt net/socket.c:2324 [inline]
+       __x64_sys_setsockopt+0xbd/0x160 net/socket.c:2324
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #1 (&smc->clcsock_release_lock){+.+.}-{4:4}:
+       __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+       __mutex_lock+0x199/0xb90 kernel/locking/mutex.c:746
+       smc_switch_to_fallback+0x2d/0x9f0 net/smc/af_smc.c:903
+       smc_sendmsg+0x13d/0x520 net/smc/af_smc.c:2781
+       sock_sendmsg_nosec net/socket.c:712 [inline]
+       __sock_sendmsg net/socket.c:727 [inline]
+       __sys_sendto+0x495/0x510 net/socket.c:2180
+       __do_sys_sendto net/socket.c:2187 [inline]
+       __se_sys_sendto net/socket.c:2183 [inline]
+       __x64_sys_sendto+0xe0/0x1c0 net/socket.c:2183
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (sk_lock-AF_INET){+.+.}-{0:0}:
+       check_prev_add kernel/locking/lockdep.c:3166 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+       validate_chain kernel/locking/lockdep.c:3909 [inline]
+       __lock_acquire+0x1173/0x1ba0 kernel/locking/lockdep.c:5235
+       lock_acquire kernel/locking/lockdep.c:5866 [inline]
+       lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5823
+       lock_sock_nested+0x41/0xf0 net/core/sock.c:3702
+       lock_sock include/net/sock.h:1651 [inline]
+       gtp_encap_enable_socket+0x287/0x4f0 drivers/net/gtp.c:1676
+       gtp_encap_enable drivers/net/gtp.c:1720 [inline]
+       gtp_newlink+0xf93/0x1390 drivers/net/gtp.c:1513
+       rtnl_newlink_create net/core/rtnetlink.c:3836 [inline]
+       __rtnl_newlink net/core/rtnetlink.c:3953 [inline]
+       rtnl_newlink+0xc42/0x2000 net/core/rtnetlink.c:4068
+       rtnetlink_rcv_msg+0x95b/0xe90 net/core/rtnetlink.c:6958
+       netlink_rcv_skb+0x16a/0x440 net/netlink/af_netlink.c:2534
+       netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+       netlink_unicast+0x53a/0x7f0 net/netlink/af_netlink.c:1339
+       netlink_sendmsg+0x8d1/0xdd0 net/netlink/af_netlink.c:1883
+       sock_sendmsg_nosec net/socket.c:712 [inline]
+       __sock_sendmsg net/socket.c:727 [inline]
+       ____sys_sendmsg+0xa95/0xc70 net/socket.c:2566
+       ___sys_sendmsg+0x134/0x1d0 net/socket.c:2620
+       __sys_sendmsg+0x16d/0x220 net/socket.c:2652
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+Chain exists of:
+  sk_lock-AF_INET --> &smc->clcsock_release_lock --> rtnl_mutex
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(rtnl_mutex);
+                               lock(&smc->clcsock_release_lock);
+                               lock(rtnl_mutex);
+  lock(sk_lock-AF_INET);
+
+ *** DEADLOCK ***
+
+2 locks held by syz.2.539/8251:
+ #0: ffffffff908698a0 (&ops->srcu#2){.+.+}-{0:0}, at: srcu_lock_acquire include/linux/srcu.h:161 [inline]
+ #0: ffffffff908698a0 (&ops->srcu#2){.+.+}-{0:0}, at: srcu_read_lock include/linux/srcu.h:253 [inline]
+ #0: ffffffff908698a0 (&ops->srcu#2){.+.+}-{0:0}, at: rtnl_link_ops_get+0x113/0x2c0 net/core/rtnetlink.c:574
+ #1: ffffffff9012be68 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_lock net/core/rtnetlink.c:80 [inline]
+ #1: ffffffff9012be68 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_nets_lock net/core/rtnetlink.c:341 [inline]
+ #1: ffffffff9012be68 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_newlink+0x600/0x2000 net/core/rtnetlink.c:4067
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 8251 Comm: syz.2.539 Not tainted 6.15.0-rc1-syzkaller-00301-g3bde70a2c827 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_circular_bug+0x275/0x350 kernel/locking/lockdep.c:2079
+ check_noncircular+0x14c/0x170 kernel/locking/lockdep.c:2211
+ check_prev_add kernel/locking/lockdep.c:3166 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+ validate_chain kernel/locking/lockdep.c:3909 [inline]
+ __lock_acquire+0x1173/0x1ba0 kernel/locking/lockdep.c:5235
+ lock_acquire kernel/locking/lockdep.c:5866 [inline]
+ lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5823
+ lock_sock_nested+0x41/0xf0 net/core/sock.c:3702
+ lock_sock include/net/sock.h:1651 [inline]
+ gtp_encap_enable_socket+0x287/0x4f0 drivers/net/gtp.c:1676
+ gtp_encap_enable drivers/net/gtp.c:1720 [inline]
+ gtp_newlink+0xf93/0x1390 drivers/net/gtp.c:1513
+ rtnl_newlink_create net/core/rtnetlink.c:3836 [inline]
+ __rtnl_newlink net/core/rtnetlink.c:3953 [inline]
+ rtnl_newlink+0xc42/0x2000 net/core/rtnetlink.c:4068
+ rtnetlink_rcv_msg+0x95b/0xe90 net/core/rtnetlink.c:6958
+ netlink_rcv_skb+0x16a/0x440 net/netlink/af_netlink.c:2534
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x53a/0x7f0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x8d1/0xdd0 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg net/socket.c:727 [inline]
+ ____sys_sendmsg+0xa95/0xc70 net/socket.c:2566
+ ___sys_sendmsg+0x134/0x1d0 net/socket.c:2620
+ __sys_sendmsg+0x16d/0x220 net/socket.c:2652
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fc6a358d169
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fc6a4359038 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 00007fc6a37a6160 RCX: 00007fc6a358d169
+RDX: 0000000000000000 RSI: 0000200000000040 RDI: 0000000000000004
+RBP: 00007fc6a360e990 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007fc6a37a6160 R15: 00007ffd5b712c38
+ </TASK>

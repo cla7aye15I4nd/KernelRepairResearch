@@ -1,0 +1,35 @@
+id: 56c7151cad94eec37c521f0e47d2eee53f9361c4
+bug_link: https://syzkaller.appspot.com/bug?extid=56c7151cad94eec37c521f0e47d2eee53f9361c4
+title: 'INFO: task hung in aead_recvmsg'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 45a536e3a7e0aeba257c708e023482df3b4ec052
+fix_commit: bbefa1dd6a6d53537c11624752219e39959d04fb
+datetime: '2019-12-11T16:36:45+08:00'
+fix_commit_message: "crypto: pcrypt - Avoid deadlock by using per-instance padata\
+  \ queues\n\nIf the pcrypt template is used multiple times in an algorithm, then\
+  \ a\ndeadlock occurs because all pcrypt instances share the same\npadata_instance,\
+  \ which completes requests in the order submitted.  That\nis, the inner pcrypt request\
+  \ waits for the outer pcrypt request while\nthe outer request is already waiting\
+  \ for the inner.\n\nThis patch fixes this by allocating a set of queues for each\
+  \ pcrypt\ninstance instead of using two global queues.  In order to maintain\nthe\
+  \ existing user-space interface, the pinst structure remains global\nso any sysfs\
+  \ modifications will apply to every pcrypt instance.\n\nNote that when an update\
+  \ occurs we have to allocate memory for\nevery pcrypt instance.  Should one of the\
+  \ allocations fail we\nwill abort the update without rolling back changes already\
+  \ made.\n\nThe new per-instance data structure is called padata_shell and is\nessentially\
+  \ a wrapper around parallel_data.\n\nReproducer:\n\n\t#include <linux/if_alg.h>\n\
+  \t#include <sys/socket.h>\n\t#include <unistd.h>\n\n\tint main()\n\t{\n\t\tstruct\
+  \ sockaddr_alg addr = {\n\t\t\t.salg_type = \"aead\",\n\t\t\t.salg_name = \"pcrypt(pcrypt(rfc4106-gcm-aesni))\"\
+  \n\t\t};\n\t\tint algfd, reqfd;\n\t\tchar buf[32] = { 0 };\n\n\t\talgfd = socket(AF_ALG,\
+  \ SOCK_SEQPACKET, 0);\n\t\tbind(algfd, (void *)&addr, sizeof(addr));\n\t\tsetsockopt(algfd,\
+  \ SOL_ALG, ALG_SET_KEY, buf, 20);\n\t\treqfd = accept(algfd, 0, 0);\n\t\twrite(reqfd,\
+  \ buf, 32);\n\t\tread(reqfd, buf, 16);\n\t}\n\nReported-by: syzbot+56c7151cad94eec37c521f0e47d2eee53f9361c4@syzkaller.appspotmail.com\n\
+  Fixes: 5068c7a883d1 (\"crypto: pcrypt - Add pcrypt crypto parallelization wrapper\"\
+  )\nSigned-off-by: Herbert Xu <herbert@gondor.apana.org.au>\nTested-by: Eric Biggers\
+  \ <ebiggers@kernel.org>\nSigned-off-by: Herbert Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- crypto
+- include/linux
+- kernel
+hunk_count: 30
+covered_count: 0

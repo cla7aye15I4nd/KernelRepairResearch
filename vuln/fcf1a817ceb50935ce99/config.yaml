@@ -1,0 +1,52 @@
+id: fcf1a817ceb50935ce99
+bug_link: https://syzkaller.appspot.com/bug?extid=fcf1a817ceb50935ce99
+title: kernel BUG in page_table_check_clear
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 81a31a860bb61d54eb688af2568d9332ed9b8942
+fix_commit: 44d0fb387b53e56c8a050bac5c7d460e21eb226f
+datetime: '2023-05-29T16:14:28+01:00'
+fix_commit_message: 'mm: page_table_check: Ensure user pages are not slab pages
+
+
+  The current uses of PageAnon in page table check functions can lead to
+
+  type confusion bugs between struct page and slab [1], if slab pages are
+
+  accidentally mapped into the user space. This is because slab reuses the
+
+  bits in struct page to store its internal states, which renders PageAnon
+
+  ineffective on slab pages.
+
+
+  Since slab pages are not expected to be mapped into the user space, this
+
+  patch adds BUG_ON(PageSlab(page)) checks to make sure that slab pages
+
+  are not inadvertently mapped. Otherwise, there must be some bugs in the
+
+  kernel.
+
+
+  Reported-by: syzbot+fcf1a817ceb50935ce99@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/lkml/000000000000258e5e05fae79fc1@google.com/ [1]
+
+  Fixes: df4e817b7108 ("mm: page table check")
+
+  Cc: <stable@vger.kernel.org> # 5.17
+
+  Signed-off-by: Ruihan Li <lrh2000@pku.edu.cn>
+
+  Acked-by: Pasha Tatashin <pasha.tatashin@soleen.com>
+
+  Link: https://lore.kernel.org/r/20230515130958.32471-5-lrh2000@pku.edu.cn
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- include/linux
+- mm
+hunk_count: 4
+covered_count: 3

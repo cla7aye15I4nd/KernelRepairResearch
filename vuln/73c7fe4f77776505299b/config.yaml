@@ -1,0 +1,33 @@
+id: 73c7fe4f77776505299b
+bug_link: https://syzkaller.appspot.com/bug?extid=73c7fe4f77776505299b
+title: 'BUG: unable to handle kernel paging request in do_mount'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 846e56621897a63966b7f03a70be29060394c363
+fix_commit: 3e1aeb00e6d132efc151dacc062b38269bc9eccc
+datetime: '2019-02-28T03:29:26-05:00'
+fix_commit_message: "vfs: Implement a filesystem superblock creation/configuration\
+  \ context\n\n[AV - unfuck kern_mount_data(); we want non-NULL ->mnt_ns on long-living\n\
+  mounts]\n[AV - reordering fs/namespace.c is badly overdue, but let's keep it\nseparate\
+  \ from that series]\n[AV - drop simple_pin_fs() change]\n[AV - clean vfs_kern_mount()\
+  \ failure exits up]\n\nImplement a filesystem context concept to be used during\
+  \ superblock\ncreation for mount and superblock reconfiguration for remount.\n\n\
+  The mounting procedure then becomes:\n\n (1) Allocate new fs_context context.\n\n\
+  \ (2) Configure the context.\n\n (3) Create superblock.\n\n (4) Query the superblock.\n\
+  \n (5) Create a mount for the superblock.\n\n (6) Destroy the context.\n\nRather\
+  \ than calling fs_type->mount(), an fs_context struct is created and\nfs_type->init_fs_context()\
+  \ is called to set it up.  Pointers exist for the\nfilesystem and LSM to hang their\
+  \ private data off.\n\nA set of operations has to be set by ->init_fs_context()\
+  \ to provide\nfreeing, duplication, option parsing, binary data parsing, validation,\n\
+  mounting and superblock filling.\n\nLegacy filesystems are supported by the provision\
+  \ of a set of legacy\nfs_context operations that build up a list of mount options\
+  \ and then invoke\nfs_type->mount() from within the fs_context ->get_tree() operation.\
+  \  This\nallows all filesystems to be accessed using fs_context.\n\nIt should be\
+  \ noted that, whilst this patch adds a lot of lines of code,\nthere is quite a bit\
+  \ of duplication with existing code that can be\neliminated should all filesystems\
+  \ be converted over.\n\nSigned-off-by: David Howells <dhowells@redhat.com>\nSigned-off-by:\
+  \ Al Viro <viro@zeniv.linux.org.uk>\n"
+submodule:
+- fs
+- include/linux
+hunk_count: 14
+covered_count: 0

@@ -1,0 +1,31 @@
+BUG: sleeping function called from invalid context at include/linux/sched/mm.h:337
+in_atomic(): 0, irqs_disabled(): 0, non_block: 0, pid: 5092, name: syz-executor156
+preempt_count: 0, expected: 0
+RCU nest depth: 1, expected: 0
+INFO: lockdep is turned off.
+CPU: 1 UID: 0 PID: 5092 Comm: syz-executor156 Not tainted 6.10.0-rc7-next-20240712-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ __might_resched+0x5d4/0x780 kernel/sched/core.c:8526
+ might_alloc include/linux/sched/mm.h:337 [inline]
+ prepare_alloc_pages+0x1c9/0x5d0 mm/page_alloc.c:4503
+ __alloc_pages_noprof+0x166/0x6c0 mm/page_alloc.c:4721
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2263
+ folio_alloc_mpol_noprof mm/mempolicy.c:2281 [inline]
+ vma_alloc_folio_noprof+0x12e/0x230 mm/mempolicy.c:2312
+ folio_prealloc+0x31/0x170
+ wp_page_copy mm/memory.c:3342 [inline]
+ do_wp_page+0x11cc/0x52f0 mm/memory.c:3734
+ handle_pte_fault+0x1138/0x6eb0 mm/memory.c:5545
+ __handle_mm_fault mm/memory.c:5672 [inline]
+ handle_mm_fault+0xff1/0x19a0 mm/memory.c:5837
+ do_user_addr_fault arch/x86/mm/fault.c:1338 [inline]
+ handle_page_fault arch/x86/mm/fault.c:1481 [inline]
+ exc_page_fault+0x459/0x8c0 arch/x86/mm/fault.c:1539
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+RIP: 0033:0x7f3a8171eb80
+Code: 84 dd fe ff ff 4c 89 e7 e8 ed 90 00 00 e9 d0 fe ff ff 0f 1f 84 00 00 00 00 00 49 8b 06 48 89 45 00 48 85 c0 0f 85 85 00 00 00 <c6> 05 49 25 0a 00 01 31 c0 87 05 19 21 0a 00 83 f8 01 0f 8f 84 00
+RSP: 002b:00007ffc347a4150 EFLAGS: 00010246

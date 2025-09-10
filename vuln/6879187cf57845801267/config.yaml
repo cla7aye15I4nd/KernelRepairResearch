@@ -1,0 +1,24 @@
+id: 6879187cf57845801267
+bug_link: https://syzkaller.appspot.com/bug?extid=6879187cf57845801267
+title: 'BUG: corrupted list in io_file_get'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6195ba09822c87cad09189bbf550d0fbe714687a
+fix_commit: f609cbb8911e40e15f9055e8f945f926ac906924
+datetime: '2021-01-28T11:44:12-07:00'
+fix_commit_message: "io_uring: fix list corruption for splice file_get\n\nkernel BUG\
+  \ at lib/list_debug.c:29!\nCall Trace:\n __list_add include/linux/list.h:67 [inline]\n\
+  \ list_add include/linux/list.h:86 [inline]\n io_file_get+0x8cc/0xdb0 fs/io_uring.c:6466\n\
+  \ __io_splice_prep+0x1bc/0x530 fs/io_uring.c:3866\n io_splice_prep fs/io_uring.c:3920\
+  \ [inline]\n io_req_prep+0x3546/0x4e80 fs/io_uring.c:6081\n io_queue_sqe+0x609/0x10d0\
+  \ fs/io_uring.c:6628\n io_submit_sqe fs/io_uring.c:6705 [inline]\n io_submit_sqes+0x1495/0x2720\
+  \ fs/io_uring.c:6953\n __do_sys_io_uring_enter+0x107d/0x1f30 fs/io_uring.c:9353\n\
+  \ do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \nio_file_get() may be called from splice, and so REQ_F_INFLIGHT may\nalready be\
+  \ set.\n\nFixes: 02a13674fa0e8 (\"io_uring: account io_uring internal files as REQ_F_INFLIGHT\"\
+  )\nCc: stable@vger.kernel.org # 5.9+\nReported-by: syzbot+6879187cf57845801267@syzkaller.appspotmail.com\n\
+  Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>\nSigned-off-by: Jens Axboe\
+  \ <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,79 @@
+id: 9bff4c7b992038a7409f
+bug_link: https://syzkaller.appspot.com/bug?extid=9bff4c7b992038a7409f
+title: general protection fault in nilfs_btree_insert (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 546f02823df82cddc411e8db236d296a51308dfa
+fix_commit: 9403001ad65ae4f4c5de368bdda3a0636b51d51a
+datetime: '2024-09-09T16:47:42-07:00'
+fix_commit_message: 'nilfs2: fix potential null-ptr-deref in nilfs_btree_insert()
+
+
+  Patch series "nilfs2: fix potential issues with empty b-tree nodes".
+
+
+  This series addresses three potential issues with empty b-tree nodes that
+
+  can occur with corrupted filesystem images, including one recently
+
+  discovered by syzbot.
+
+
+
+  This patch (of 3):
+
+
+  If a b-tree is broken on the device, and the b-tree height is greater than
+
+  2 (the level of the root node is greater than 1) even if the number of
+
+  child nodes of the b-tree root is 0, a NULL pointer dereference occurs in
+
+  nilfs_btree_prepare_insert(), which is called from nilfs_btree_insert().
+
+
+  This is because, when the number of child nodes of the b-tree root is 0,
+
+  nilfs_btree_do_lookup() does not set the block buffer head in any of
+
+  path[x].bp_bh, leaving it as the initial value of NULL, but if the level
+
+  of the b-tree root node is greater than 1, nilfs_btree_get_nonroot_node(),
+
+  which accesses the buffer memory of path[x].bp_bh, is called.
+
+
+  Fix this issue by adding a check to nilfs_btree_root_broken(), which
+
+  performs sanity checks when reading the root node from the device, to
+
+  detect this inconsistency.
+
+
+  Thanks to Lizhi Xu for trying to solve the bug and clarifying the cause
+
+  early on.
+
+
+  Link: https://lkml.kernel.org/r/20240904081401.16682-1-konishi.ryusuke@gmail.com
+
+  Link: https://lkml.kernel.org/r/20240902084101.138971-1-lizhi.xu@windriver.com
+
+  Link: https://lkml.kernel.org/r/20240904081401.16682-2-konishi.ryusuke@gmail.com
+
+  Fixes: 17c76b0104e4 ("nilfs2: B-tree based block mapping")
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+9bff4c7b992038a7409f@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=9bff4c7b992038a7409f
+
+  Cc: Lizhi Xu <lizhi.xu@windriver.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 1
+covered_count: 1

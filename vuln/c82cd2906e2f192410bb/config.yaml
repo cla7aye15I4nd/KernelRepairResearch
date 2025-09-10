@@ -1,0 +1,47 @@
+id: c82cd2906e2f192410bb
+bug_link: https://syzkaller.appspot.com/bug?extid=c82cd2906e2f192410bb
+title: 'BUG: sleeping function called from invalid context in bch2_printbuf_make_room
+  (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9364f17ba40422d2661da295bb0da68ca87cc57e
+fix_commit: b2ffadcc7f8fd2059e389d640f9c81febd606daf
+datetime: '2025-04-03T12:11:42-04:00'
+fix_commit_message: "bcachefs: Fix scheduling while atomic from logging changes\n\n\
+  Two fixes from the recent logging changes:\n\nbch2_inconsistent(), bch2_fs_inconsistent()\
+  \ be called from interrupt\ncontext, or with rcu_read_lock() held.\n\nThe one syzbot\
+  \ found is in\n  bch2_bkey_pick_read_device\n  bch2_dev_rcu\n  bch2_fs_inconsistent\n\
+  \nWe're starting to switch to lift the printbufs up to higher levels so we\ncan\
+  \ emit better log messages and print them all in one go (avoid\ngarbling), so that\
+  \ conversion will help with spotting these in the\nfuture; when we declare a printbuf\
+  \ it must be flagged if we're in an\natomic context.\n\nSecondly, in btree_node_write_endio:\n\
+  \n00085 BUG: sleeping function called from invalid context at include/linux/sched/mm.h:321\n\
+  00085 in_atomic(): 1, irqs_disabled(): 1, non_block: 0, pid: 618, name: bch-reclaim/fa6\n\
+  00085 preempt_count: 10001, expected: 0\n00085 RCU nest depth: 0, expected: 0\n\
+  00085 4 locks held by bch-reclaim/fa6/618:\n00085  #0: ffffff80d7ccad68 (&j->reclaim_lock){+.+.}-{4:4},\
+  \ at: bch2_journal_reclaim_thread+0x84/0x198\n00085  #1: ffffff80d7c84218 (&c->btree_trans_barrier){.+.+}-{0:0},\
+  \ at: __bch2_trans_get+0x1c0/0x440\n00085  #2: ffffff80cd3f8140 (bcachefs_btree){+.+.}-{0:0},\
+  \ at: __bch2_trans_get+0x22c/0x440\n00085  #3: ffffff80c3823c20 (&vblk->vqs[i].lock){-.-.}-{3:3},\
+  \ at: virtblk_done+0x58/0x130\n00085 irq event stamp: 328\n00085 hardirqs last \
+  \ enabled at (327): [<ffffffc080073a14>] finish_task_switch.isra.0+0xbc/0x2a0\n\
+  00085 hardirqs last disabled at (328): [<ffffffc080971a10>] el1_interrupt+0x20/0x60\n\
+  00085 softirqs last  enabled at (0): [<ffffffc08002f920>] copy_process+0x7c8/0x2118\n\
+  00085 softirqs last disabled at (0): [<0000000000000000>] 0x0\n00085 Preemption\
+  \ disabled at:\n00085 [<ffffffc08003ada0>] irq_enter_rcu+0x18/0x90\n00085 CPU: 8\
+  \ UID: 0 PID: 618 Comm: bch-reclaim/fa6 Not tainted 6.14.0-rc6-ktest-g04630bde23e8\
+  \ #18798\n00085 Hardware name: linux,dummy-virt (DT)\n00085 Call trace:\n00085 \
+  \ show_stack+0x1c/0x30 (C)\n00085  dump_stack_lvl+0x84/0xc0\n00085  dump_stack+0x14/0x20\n\
+  00085  __might_resched+0x180/0x288\n00085  __might_sleep+0x4c/0x88\n00085  __kmalloc_node_track_caller_noprof+0x34c/0x3e0\n\
+  00085  krealloc_noprof+0x1a0/0x2d8\n00085  bch2_printbuf_make_room+0x9c/0x120\n\
+  00085  bch2_prt_printf+0x60/0x1b8\n00085  btree_node_write_endio+0x1b0/0x2d8\n00085\
+  \  bio_endio+0x138/0x1f0\n00085  btree_node_write_endio+0xe8/0x2d8\n00085  bio_endio+0x138/0x1f0\n\
+  00085  blk_update_request+0x220/0x4c0\n00085  blk_mq_end_request+0x28/0x148\n00085\
+  \  virtblk_request_done+0x64/0xe8\n00085  blk_mq_complete_request+0x34/0x40\n00085\
+  \  virtblk_done+0x78/0x130\n00085  vring_interrupt+0x6c/0xb0\n00085  __handle_irq_event_percpu+0x8c/0x2e0\n\
+  00085  handle_irq_event+0x50/0xb0\n00085  handle_fasteoi_irq+0xc4/0x250\n00085 \
+  \ handle_irq_desc+0x44/0x60\n00085  generic_handle_domain_irq+0x20/0x30\n00085 \
+  \ gic_handle_irq+0x54/0xc8\n00085  call_on_irq_stack+0x24/0x40\n\nReported-by: syzbot+c82cd2906e2f192410bb@syzkaller.appspotmail.com\n\
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>\n"
+submodule:
+- fs/bcachefs
+hunk_count: 3
+covered_count: 2

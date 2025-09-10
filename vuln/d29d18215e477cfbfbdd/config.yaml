@@ -1,0 +1,40 @@
+id: d29d18215e477cfbfbdd
+bug_link: https://syzkaller.appspot.com/bug?extid=d29d18215e477cfbfbdd
+title: 'INFO: rcu detected stall in vprintk_emit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 83ed7d1fe2d2d4a11b30660dec20168bb473d9c1
+fix_commit: 3bc53be9db21040b5d2de4d455f023c8c494aa68
+datetime: '2018-07-18T10:51:45-07:00'
+fix_commit_message: 'net/nfc: Avoid stalls when nfc_alloc_send_skb() returned NULL.
+
+
+  syzbot is reporting stalls at nfc_llcp_send_ui_frame() [1]. This is
+
+  because nfc_llcp_send_ui_frame() is retrying the loop without any delay
+
+  when nonblocking nfc_alloc_send_skb() returned NULL.
+
+
+  Since there is no need to use MSG_DONTWAIT if we retry until
+
+  sock_alloc_send_pskb() succeeds, let''s use blocking call.
+
+  Also, in case an unexpected error occurred, let''s break the loop
+
+  if blocking nfc_alloc_send_skb() failed.
+
+
+  [1] https://syzkaller.appspot.com/bug?id=4a131cc571c3733e0eff6bc673f4e36ae48f19c6
+
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Reported-by: syzbot <syzbot+d29d18215e477cfbfbdd@syzkaller.appspotmail.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/nfc
+hunk_count: 1
+covered_count: 1

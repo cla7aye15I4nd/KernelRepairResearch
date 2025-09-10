@@ -1,0 +1,59 @@
+id: aa5bebed695edaccf0df
+bug_link: https://syzkaller.appspot.com/bug?extid=aa5bebed695edaccf0df
+title: 'KCSAN: data-race in flush_tlb_batched_pending / try_to_unmap_one'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8c57c07741bf28e7d867f1200aa80120b8ca663e
+fix_commit: 5ee2fa2f063649570c702164f47a558a3432dd9e
+datetime: '2022-01-15T16:30:31+02:00'
+fix_commit_message: "mm/rmap: fix potential batched TLB flush race\n\nIn theory, the\
+  \ following race is possible for batched TLB flushing.\n\n  CPU0               \
+  \                CPU1\n  ----                               ----\n  shrink_page_list()\n\
+  \                                     unmap\n                                  \
+  \     zap_pte_range()\n                                         flush_tlb_batched_pending()\n\
+  \                                           flush_tlb_mm()\n    try_to_unmap()\n\
+  \      set_tlb_ubc_flush_pending()\n        mm->tlb_flush_batched = true\n     \
+  \                                      mm->tlb_flush_batched = false\n\nAfter the\
+  \ TLB is flushed on CPU1 via flush_tlb_mm() and before\nmm->tlb_flush_batched is\
+  \ set to false, some PTE is unmapped on CPU0 and\nthe TLB flushing is pended.  Then\
+  \ the pended TLB flushing will be lost.\nAlthough both set_tlb_ubc_flush_pending()\
+  \ and\nflush_tlb_batched_pending() are called with PTL locked, different PTL\ninstances\
+  \ may be used.\n\nBecause the race window is really small, and the lost TLB flushing\
+  \ will\ncause problem only if a TLB entry is inserted before the unmapping in\n\
+  the race window, the race is only theoretical.  But the fix is simple\nand cheap\
+  \ too.\n\nSyzbot has reported this too as follows:\n\n    ==================================================================\n\
+  \    BUG: KCSAN: data-race in flush_tlb_batched_pending / try_to_unmap_one\n\n \
+  \   write to 0xffff8881072cfbbc of 1 bytes by task 17406 on cpu 1:\n     flush_tlb_batched_pending+0x5f/0x80\
+  \ mm/rmap.c:691\n     madvise_free_pte_range+0xee/0x7d0 mm/madvise.c:594\n     walk_pmd_range\
+  \ mm/pagewalk.c:128 [inline]\n     walk_pud_range mm/pagewalk.c:205 [inline]\n \
+  \    walk_p4d_range mm/pagewalk.c:240 [inline]\n     walk_pgd_range mm/pagewalk.c:277\
+  \ [inline]\n     __walk_page_range+0x981/0x1160 mm/pagewalk.c:379\n     walk_page_range+0x131/0x300\
+  \ mm/pagewalk.c:475\n     madvise_free_single_vma mm/madvise.c:734 [inline]\n  \
+  \   madvise_dontneed_free mm/madvise.c:822 [inline]\n     madvise_vma mm/madvise.c:996\
+  \ [inline]\n     do_madvise+0xe4a/0x1140 mm/madvise.c:1202\n     __do_sys_madvise\
+  \ mm/madvise.c:1228 [inline]\n     __se_sys_madvise mm/madvise.c:1226 [inline]\n\
+  \     __x64_sys_madvise+0x5d/0x70 mm/madvise.c:1226\n     do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n     do_syscall_64+0x44/0xd0 arch/x86/entry/common.c:80\n     entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \n    write to 0xffff8881072cfbbc of 1 bytes by task 71 on cpu 0:\n     set_tlb_ubc_flush_pending\
+  \ mm/rmap.c:636 [inline]\n     try_to_unmap_one+0x60e/0x1220 mm/rmap.c:1515\n  \
+  \   rmap_walk_anon+0x2fb/0x470 mm/rmap.c:2301\n     try_to_unmap+0xec/0x110\n  \
+  \   shrink_page_list+0xe91/0x2620 mm/vmscan.c:1719\n     shrink_inactive_list+0x3fb/0x730\
+  \ mm/vmscan.c:2394\n     shrink_list mm/vmscan.c:2621 [inline]\n     shrink_lruvec+0x3c9/0x710\
+  \ mm/vmscan.c:2940\n     shrink_node_memcgs+0x23e/0x410 mm/vmscan.c:3129\n     shrink_node+0x8f6/0x1190\
+  \ mm/vmscan.c:3252\n     kswapd_shrink_node mm/vmscan.c:4022 [inline]\n     balance_pgdat+0x702/0xd30\
+  \ mm/vmscan.c:4213\n     kswapd+0x200/0x340 mm/vmscan.c:4473\n     kthread+0x2c7/0x2e0\
+  \ kernel/kthread.c:327\n     ret_from_fork+0x1f/0x30\n\n    value changed: 0x01\
+  \ -> 0x00\n\n    Reported by Kernel Concurrency Sanitizer on:\n    CPU: 0 PID: 71\
+  \ Comm: kswapd0 Not tainted 5.16.0-rc1-syzkaller #0\n    Hardware name: Google Google\
+  \ Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n    ==================================================================\n\
+  \n[akpm@linux-foundation.org: tweak comments]\n\nLink: https://lkml.kernel.org/r/20211201021104.126469-1-ying.huang@intel.com\n\
+  Signed-off-by: \"Huang, Ying\" <ying.huang@intel.com>\nReported-by: syzbot+aa5bebed695edaccf0df@syzkaller.appspotmail.com\n\
+  Cc: Nadav Amit <namit@vmware.com>\nCc: Mel Gorman <mgorman@techsingularity.net>\n\
+  Cc: Andrea Arcangeli <aarcange@redhat.com>\nCc: Andy Lutomirski <luto@kernel.org>\n\
+  Cc: Dave Hansen <dave.hansen@linux.intel.com>\nCc: Will Deacon <will@kernel.org>\n\
+  Cc: Yu Zhao <yuzhao@google.com>\nCc: Marco Elver <elver@google.com>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- include/linux
+- mm
+hunk_count: 4
+covered_count: 3

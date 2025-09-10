@@ -1,0 +1,37 @@
+kasan: CONFIG_KASAN_INLINE enabled
+kasan: GPF could be caused by NULL-ptr deref or user memory access
+general protection fault: 0000 [#1] PREEMPT SMP KASAN
+CPU: 1 PID: 721 Comm: kworker/u4:9 Not tainted 5.5.0-rc1-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
+Workqueue: pencrypt_parallel padata_parallel_worker
+RIP: 0010:scatterwalk_start include/crypto/scatterwalk.h:68 [inline]
+RIP: 0010:scatterwalk_pagedone include/crypto/scatterwalk.h:93 [inline]
+RIP: 0010:scatterwalk_done include/crypto/scatterwalk.h:101 [inline]
+RIP: 0010:gcmaes_crypt_by_sg.constprop.0+0x1035/0x1aa0 arch/x86/crypto/aesni-intel_glue.c:786
+Code: e8 30 f7 52 02 48 89 84 24 a8 00 00 00 48 83 c0 08 48 89 c2 48 89 84 24 90 00 00 00 48 b8 00 00 00 00 00 fc ff df 48 c1 ea 03 <0f> b6 04 02 84 c0 74 08 3c 03 0f 8e 30 09 00 00 48 8b 84 24 a8 00
+RSP: 0018:ffffc90003307750 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 0000000000004000 RCX: ffffffff838ccec9
+RDX: 0000000000000001 RSI: ffffffff838ccf1b RDI: 0000000000000007
+RBP: ffffc90003307b20 R08: ffff8880a742c040 R09: 000000000000000d
+R10: ffff88809afb6660 R11: 00000000000000d0 R12: 0000000000004000
+R13: 0000000000000000 R14: ffff88809afb6300 R15: 0000000000004000
+FS:  0000000000000000(0000) GS:ffff8880ae900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffd3f512e5c CR3: 000000000986d000 CR4: 00000000001406e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ gcmaes_encrypt arch/x86/crypto/aesni-intel_glue.c:840 [inline]
+ generic_gcmaes_encrypt+0x10d/0x160 arch/x86/crypto/aesni-intel_glue.c:1019
+ crypto_aead_encrypt+0xaf/0xf0 crypto/aead.c:94
+ simd_aead_encrypt+0x1a6/0x2b0 crypto/simd.c:335
+ crypto_aead_encrypt+0xaf/0xf0 crypto/aead.c:94
+ pcrypt_aead_enc+0x19/0x80 crypto/pcrypt.c:76
+ padata_parallel_worker+0x28f/0x470 kernel/padata.c:81
+ process_one_work+0x9af/0x1740 kernel/workqueue.c:2264
+ worker_thread+0x98/0xe40 kernel/workqueue.c:2410
+ kthread+0x361/0x430 kernel/kthread.c:255
+ ret_from_fork+0x24/0x30 arch/x86/entry/entry_64.S:352
+Modules linked in:
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 721 at kernel/locking/mutex.c:1419 mutex_trylock+0x279/0x2f0 kernel/locking/mutex.c:1427

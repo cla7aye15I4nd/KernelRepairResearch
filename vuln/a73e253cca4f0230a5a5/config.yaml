@@ -1,0 +1,31 @@
+id: a73e253cca4f0230a5a5
+bug_link: https://syzkaller.appspot.com/bug?extid=a73e253cca4f0230a5a5
+title: 'KMSAN: uninit-value in ocfs2_file_read_iter'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 62bf7065cc6056a51a240c810b95d887e5bb7c8c
+fix_commit: adc77b19f62d7e80f98400b2fca9d700d2afdd6f
+datetime: '2024-11-11T17:17:04-08:00'
+fix_commit_message: "ocfs2: fix uninitialized value in ocfs2_file_read_iter()\n\n\
+  Syzbot has reported the following KMSAN splat:\n\nBUG: KMSAN: uninit-value in ocfs2_file_read_iter+0x9a4/0xf80\n\
+  \ ocfs2_file_read_iter+0x9a4/0xf80\n __io_read+0x8d4/0x20f0\n io_read+0x3e/0xf0\n\
+  \ io_issue_sqe+0x42b/0x22c0\n io_wq_submit_work+0xaf9/0xdc0\n io_worker_handle_work+0xd13/0x2110\n\
+  \ io_wq_worker+0x447/0x1410\n ret_from_fork+0x6f/0x90\n ret_from_fork_asm+0x1a/0x30\n\
+  \nUninit was created at:\n __alloc_pages_noprof+0x9a7/0xe00\n alloc_pages_mpol_noprof+0x299/0x990\n\
+  \ alloc_pages_noprof+0x1bf/0x1e0\n allocate_slab+0x33a/0x1250\n ___slab_alloc+0x12ef/0x35e0\n\
+  \ kmem_cache_alloc_bulk_noprof+0x486/0x1330\n __io_alloc_req_refill+0x84/0x560\n\
+  \ io_submit_sqes+0x172f/0x2f30\n __se_sys_io_uring_enter+0x406/0x41c0\n __x64_sys_io_uring_enter+0x11f/0x1a0\n\
+  \ x64_sys_call+0x2b54/0x3ba0\n do_syscall_64+0xcd/0x1e0\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \nSince an instance of 'struct kiocb' may be passed from the block layer\nwith 'private'\
+  \ field uninitialized, introduce 'ocfs2_iocb_init_rw_locked()'\nand use it from\
+  \ where 'ocfs2_dio_end_io()' might take care, i.e. in\n'ocfs2_file_read_iter()'\
+  \ and 'ocfs2_file_write_iter()'.\n\nLink: https://lkml.kernel.org/r/20241029091736.1501946-1-dmantipov@yandex.ru\n\
+  Fixes: 7cdfc3a1c397 (\"ocfs2: Remember rw lock level during direct io\")\nSigned-off-by:\
+  \ Dmitry Antipov <dmantipov@yandex.ru>\nReported-by: syzbot+a73e253cca4f0230a5a5@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=a73e253cca4f0230a5a5\nCc: Mark Fasheh\
+  \ <mark@fasheh.com>\nCc: Joel Becker <jlbec@evilplan.org>\nCc: Junxiao Bi <junxiao.bi@oracle.com>\n\
+  Cc: Joseph Qi <jiangqi903@gmail.com>\nCc: Changwei Ge <gechangwei@live.cn>\nCc:\
+  \ Jun Piao <piaojun@huawei.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- fs/ocfs2
+hunk_count: 3
+covered_count: 1

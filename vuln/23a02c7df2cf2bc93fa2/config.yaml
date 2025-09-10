@@ -1,0 +1,41 @@
+id: 23a02c7df2cf2bc93fa2
+bug_link: https://syzkaller.appspot.com/bug?extid=23a02c7df2cf2bc93fa2
+title: WARNING in __get_free_pages
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fb48febce7e30baed94dd791e19521abd2c3fd83
+fix_commit: 545a32498c536ee152331cd2e7d2416aa0f20e01
+datetime: '2021-12-03T06:32:40-07:00'
+fix_commit_message: "floppy: Add max size check for user space request\n\nWe need\
+  \ to check the max request size that is from user space before\nallocating pages.\
+  \ If the request size exceeds the limit, return -EINVAL.\nThis check can avoid the\
+  \ warning below from page allocator.\n\nWARNING: CPU: 3 PID: 16525 at mm/page_alloc.c:5344\
+  \ current_gfp_context include/linux/sched/mm.h:195 [inline]\nWARNING: CPU: 3 PID:\
+  \ 16525 at mm/page_alloc.c:5344 __alloc_pages+0x45d/0x500 mm/page_alloc.c:5356\n\
+  Modules linked in:\nCPU: 3 PID: 16525 Comm: syz-executor.3 Not tainted 5.15.0-syzkaller\
+  \ #0\nHardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.14.0-2 04/01/2014\n\
+  RIP: 0010:__alloc_pages+0x45d/0x500 mm/page_alloc.c:5344\nCode: be c9 00 00 00 48\
+  \ c7 c7 20 4a 97 89 c6 05 62 32 a7 0b 01 e8 74 9a 42 07 e9 6a ff ff ff 0f 0b e9\
+  \ a0 fd ff ff 40 80 e5 3f eb 88 <0f> 0b e9 18 ff ff ff 4c 89 ef 44 89 e6 45 31 ed\
+  \ e8 1e 76 ff ff e9\nRSP: 0018:ffffc90023b87850 EFLAGS: 00010246\nRAX: 0000000000000000\
+  \ RBX: 1ffff92004770f0b RCX: dffffc0000000000\nRDX: 0000000000000000 RSI: 0000000000000033\
+  \ RDI: 0000000000010cc1\nRBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000001\n\
+  R10: ffffffff81bb4686 R11: 0000000000000001 R12: ffffffff902c1960\nR13: 0000000000000033\
+  \ R14: 0000000000000000 R15: ffff88804cf64a30\nFS:  0000000000000000(0000) GS:ffff88802cd00000(0063)\
+  \ knlGS:00000000f44b4b40\nCS:  0010 DS: 002b ES: 002b CR0: 0000000080050033\nCR2:\
+  \ 000000002c921000 CR3: 000000004f507000 CR4: 0000000000150ee0\nDR0: 0000000000000000\
+  \ DR1: 0000000000000000 DR2: 0000000000000000\nDR3: 0000000000000000 DR6: 00000000fffe0ff0\
+  \ DR7: 0000000000000400\nCall Trace:\n <TASK>\n alloc_pages+0x1a7/0x300 mm/mempolicy.c:2191\n\
+  \ __get_free_pages+0x8/0x40 mm/page_alloc.c:5418\n raw_cmd_copyin drivers/block/floppy.c:3113\
+  \ [inline]\n raw_cmd_ioctl drivers/block/floppy.c:3160 [inline]\n fd_locked_ioctl+0x12e5/0x2820\
+  \ drivers/block/floppy.c:3528\n fd_ioctl drivers/block/floppy.c:3555 [inline]\n\
+  \ fd_compat_ioctl+0x891/0x1b60 drivers/block/floppy.c:3869\n compat_blkdev_ioctl+0x3b8/0x810\
+  \ block/ioctl.c:662\n __do_compat_sys_ioctl+0x1c7/0x290 fs/ioctl.c:972\n do_syscall_32_irqs_on\
+  \ arch/x86/entry/common.c:112 [inline]\n __do_fast_syscall_32+0x65/0xf0 arch/x86/entry/common.c:178\n\
+  \ do_fast_syscall_32+0x2f/0x70 arch/x86/entry/common.c:203\n entry_SYSENTER_compat_after_hwframe+0x4d/0x5c\n\
+  \nReported-by: syzbot+23a02c7df2cf2bc93fa2@syzkaller.appspotmail.com\nLink: https://lore.kernel.org/r/20211116131033.27685-1-sxwjean@me.com\n\
+  Signed-off-by: Xiongwei Song <sxwjean@gmail.com>\nSigned-off-by: Denis Efremov <efremov@linux.com>\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 2
+covered_count: 2

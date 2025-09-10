@@ -1,0 +1,31 @@
+id: 376a289e86a0fd02b9ba
+bug_link: https://syzkaller.appspot.com/bug?extid=376a289e86a0fd02b9ba
+title: WARNING in tcx_uninstall
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: df41fa677d9b4717c930afbe88b06f5cefdacb21
+fix_commit: 079082c60affefeb9d2bd4176a4f2b390a9ccfda
+datetime: '2023-07-31T14:44:02-07:00'
+fix_commit_message: "tcx: Fix splat during dev unregister\n\nDuring unregister_netdevice_many_notify(),\
+  \ the ordering of our concerned\nfunction calls is like this:\n\n  unregister_netdevice_many_notify\n\
+  \    dev_shutdown\n\tqdisc_put\n            clsact_destroy\n    tcx_uninstall\n\n\
+  The syzbot reproducer triggered a case that the qdisc refcnt is not\nzero during\
+  \ dev_shutdown().\n\ntcx_uninstall() will then WARN_ON_ONCE(tcx_entry(entry)->miniq_active)\n\
+  because the miniq is still active and the entry should not be freed.\nThe latter\
+  \ assumed that qdisc destruction happens before tcx teardown.\n\nThis fix is to\
+  \ avoid tcx_uninstall() doing tcx_entry_free() when the\nminiq is still alive and\
+  \ let the clsact_destroy() do the free later, so\nthat we do not assume any specific\
+  \ ordering for either of them.\n\nIf still active, tcx_uninstall() does clear the\
+  \ entry when flushing out\nthe prog/link. clsact_destroy() will then notice the\
+  \ \"!tcx_entry_is_active()\"\nand then does the tcx_entry_free() eventually.\n\n\
+  Fixes: e420bed02507 (\"bpf: Add fd-based tcx multi-prog infra with link support\"\
+  )\nReported-by: syzbot+376a289e86a0fd02b9ba@syzkaller.appspotmail.com\nReported-by:\
+  \ Leon Romanovsky <leonro@nvidia.com>\nSigned-off-by: Martin KaFai Lau <martin.lau@kernel.org>\n\
+  Co-developed-by: Daniel Borkmann <daniel@iogearbox.net>\nSigned-off-by: Daniel Borkmann\
+  \ <daniel@iogearbox.net>\nTested-by: syzbot+376a289e86a0fd02b9ba@syzkaller.appspotmail.com\n\
+  Tested-by: Leon Romanovsky <leonro@nvidia.com>\nLink: https://lore.kernel.org/r/222255fe07cb58f15ee662e7ee78328af5b438e4.1690549248.git.daniel@iogearbox.net\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- include/linux
+- kernel/bpf
+hunk_count: 3
+covered_count: 2

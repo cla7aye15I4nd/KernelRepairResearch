@@ -1,0 +1,39 @@
+id: e27980339d305f2dbfd9
+bug_link: https://syzkaller.appspot.com/bug?extid=e27980339d305f2dbfd9
+title: possible deadlock in shmem_mfill_atomic_pte
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ea0dfeb4209b4eab954d6e00ed136bc6b48b380d
+fix_commit: 94b7cc01da5a3cc4f3da5e0ff492ef008bb555d6
+datetime: '2020-04-21T11:11:56-07:00'
+fix_commit_message: "mm: shmem: disable interrupt when acquiring info->lock in userfaultfd_copy\
+  \ path\n\nSyzbot reported the below lockdep splat:\n\n    WARNING: possible irq\
+  \ lock inversion dependency detected\n    5.6.0-rc7-syzkaller #0 Not tainted\n \
+  \   --------------------------------------------------------\n    syz-executor.0/10317\
+  \ just changed the state of lock:\n    ffff888021d16568 (&(&info->lock)->rlock){+.+.},\
+  \ at: spin_lock include/linux/spinlock.h:338 [inline]\n    ffff888021d16568 (&(&info->lock)->rlock){+.+.},\
+  \ at: shmem_mfill_atomic_pte+0x1012/0x21c0 mm/shmem.c:2407\n    but this lock was\
+  \ taken by another, SOFTIRQ-safe lock in the past:\n     (&(&xa->xa_lock)->rlock#5){..-.}\n\
+  \n    and interrupts could create inverse lock ordering between them.\n\n    other\
+  \ info that might help us debug this:\n     Possible interrupt unsafe locking scenario:\n\
+  \n           CPU0                    CPU1\n           ----                    ----\n\
+  \      lock(&(&info->lock)->rlock);\n                                   local_irq_disable();\n\
+  \                                   lock(&(&xa->xa_lock)->rlock#5);\n          \
+  \                         lock(&(&info->lock)->rlock);\n      <Interrupt>\n    \
+  \    lock(&(&xa->xa_lock)->rlock#5);\n\n     *** DEADLOCK ***\n\nThe full report\
+  \ is quite lengthy, please see:\n\n  https://lore.kernel.org/linux-mm/alpine.LSU.2.11.2004152007370.13597@eggly.anvils/T/#m813b412c5f78e25ca8c6c7734886ed4de43f241d\n\
+  \nIt is because CPU 0 held info->lock with IRQ enabled in userfaultfd_copy\npath,\
+  \ then CPU 1 is splitting a THP which held xa_lock and info->lock in\nIRQ disabled\
+  \ context at the same time.  If softirq comes in to acquire\nxa_lock, the deadlock\
+  \ would be triggered.\n\nThe fix is to acquire/release info->lock with *_irq version\
+  \ instead of\nplain spin_{lock,unlock} to make it softirq safe.\n\nFixes: 4c27fe4c4c84\
+  \ (\"userfaultfd: shmem: add shmem_mcopy_atomic_pte for userfaultfd support\")\n\
+  Reported-by: syzbot+e27980339d305f2dbfd9@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Yang Shi <yang.shi@linux.alibaba.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Tested-by: syzbot+e27980339d305f2dbfd9@syzkaller.appspotmail.com\nAcked-by: Hugh\
+  \ Dickins <hughd@google.com>\nCc: Andrea Arcangeli <aarcange@redhat.com>\nLink:\
+  \ http://lkml.kernel.org/r/1587061357-122619-1-git-send-email-yang.shi@linux.alibaba.com\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

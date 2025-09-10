@@ -1,0 +1,56 @@
+vxcan1: j1939_tp_rxtimer: 0xffff8880326cb400: rx timeout, send abort
+vxcan1: j1939_xtp_rx_abort_one: 0xffff8880326cb400: 0x00000: (3) A timeout occurred and this is the connection abort to close the session.
+------------[ cut here ]------------
+refcount_t: underflow; use-after-free.
+WARNING: CPU: 0 PID: 16 at lib/refcount.c:28 refcount_warn_saturate+0x14a/0x210 lib/refcount.c:28
+Modules linked in:
+CPU: 0 UID: 0 PID: 16 Comm: ksoftirqd/0 Not tainted 6.11.0-syzkaller-02574-ga430d95c5efa #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+RIP: 0010:refcount_warn_saturate+0x14a/0x210 lib/refcount.c:28
+Code: ff 89 de e8 58 80 04 fd 84 db 0f 85 66 ff ff ff e8 6b 7e 04 fd c6 05 59 3d 7f 0b 01 90 48 c7 c7 00 ba b0 8b e8 67 d1 c6 fc 90 <0f> 0b 90 90 e9 43 ff ff ff e8 48 7e 04 fd 0f b6 1d 34 3d 7f 0b 31
+RSP: 0018:ffffc900001577c8 EFLAGS: 00010286
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffffffff814e2c79
+RDX: ffff88801cadda00 RSI: ffffffff814e2c86 RDI: 0000000000000001
+RBP: ffff88802e405224 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000002
+R13: 0000000000000000 R14: ffff88802e405224 R15: 0000000000000001
+FS:  0000000000000000(0000) GS:ffff8880b8800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055772d12ee40 CR3: 000000002853a000 CR4: 0000000000350ef0
+Call Trace:
+ <TASK>
+ __refcount_sub_and_test include/linux/refcount.h:275 [inline]
+ __refcount_dec_and_test include/linux/refcount.h:307 [inline]
+ refcount_dec_and_test include/linux/refcount.h:325 [inline]
+ skb_unref include/linux/skbuff.h:1232 [inline]
+ __sk_skb_reason_drop net/core/skbuff.c:1213 [inline]
+ sk_skb_reason_drop+0x183/0x1a0 net/core/skbuff.c:1241
+ kfree_skb_reason include/linux/skbuff.h:1262 [inline]
+ kfree_skb include/linux/skbuff.h:1271 [inline]
+ j1939_session_destroy+0x163/0x460 net/can/j1939/transport.c:282
+ __j1939_session_release net/can/j1939/transport.c:294 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ j1939_session_put net/can/j1939/transport.c:299 [inline]
+ j1939_xtp_rx_abort_one+0x3f9/0x560 net/can/j1939/transport.c:1354
+ j1939_xtp_rx_abort net/can/j1939/transport.c:1362 [inline]
+ j1939_tp_cmd_recv net/can/j1939/transport.c:2128 [inline]
+ j1939_tp_recv+0xcf8/0xf50 net/can/j1939/transport.c:2161
+ j1939_can_recv+0x78f/0xa50 net/can/j1939/main.c:108
+ deliver net/can/af_can.c:572 [inline]
+ can_rcv_filter+0x2ab/0x900 net/can/af_can.c:606
+ can_receive+0x320/0x5c0 net/can/af_can.c:663
+ can_rcv+0x1e2/0x280 net/can/af_can.c:687
+ __netif_receive_skb_one_core+0x1b4/0x1e0 net/core/dev.c:5662
+ __netif_receive_skb+0x1d/0x160 net/core/dev.c:5775
+ process_backlog+0x443/0x15f0 net/core/dev.c:6107
+ __napi_poll.constprop.0+0xba/0x550 net/core/dev.c:6771
+ napi_poll net/core/dev.c:6840 [inline]
+ net_rx_action+0xa92/0x1010 net/core/dev.c:6962
+ handle_softirqs+0x219/0x8f0 kernel/softirq.c:554
+ run_ksoftirqd kernel/softirq.c:928 [inline]
+ run_ksoftirqd+0x3a/0x60 kernel/softirq.c:920
+ smpboot_thread_fn+0x664/0xa10 kernel/smpboot.c:164
+ kthread+0x2c4/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x48/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

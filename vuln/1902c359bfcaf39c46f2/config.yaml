@@ -1,0 +1,49 @@
+id: 1902c359bfcaf39c46f2
+bug_link: https://syzkaller.appspot.com/bug?extid=1902c359bfcaf39c46f2
+title: 'BUG: corrupted list in efivar_entry_remove'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 547713d502f7b4b8efccd409cff84d731a23853b
+fix_commit: cdb46a8aefbf7fd36772bb206aaaf7e45d7cf8f6
+datetime: '2023-12-11T11:19:18+01:00'
+fix_commit_message: 'efivarfs: Move efivarfs list into superblock s_fs_info
+
+
+  syzbot reports issues with concurrent fsopen()/fsconfig() invocations on
+
+  efivarfs, which are the result of the fact that the efivarfs list (which
+
+  caches the names and GUIDs of existing EFI variables) is a global
+
+  structure. In normal use, these issues are unlikely to trigger, even in
+
+  the presence of multiple mounts of efivarfs, but the execution pattern
+
+  used by the syzkaller reproducer may result in multiple instances of the
+
+  superblock that share the global efivarfs list, and this causes list
+
+  corruption when the list is reinitialized by one user while another is
+
+  traversing it.
+
+
+  So let''s move the list head into the superblock s_fs_info field, so that
+
+  it will never be shared between distinct instances of the superblock. In
+
+  the common case, there will still be a single instance of this list, but
+
+  in the artificial syzkaller case, no list corruption can occur any
+
+  longer.
+
+
+  Reported-by: syzbot+1902c359bfcaf39c46f2@syzkaller.appspotmail.com
+
+  Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
+
+  '
+submodule:
+- fs/efivarfs
+hunk_count: 14
+covered_count: 4

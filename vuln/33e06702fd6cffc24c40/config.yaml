@@ -1,0 +1,48 @@
+id: 33e06702fd6cffc24c40
+bug_link: https://syzkaller.appspot.com/bug?extid=33e06702fd6cffc24c40
+title: WARNING in nf_nat_unregister_fn
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bc8e71314e8444c6315c482441f3204c032ab327
+fix_commit: b4faef1739dd1f3b3981b8bf173a2266ea86b1eb
+datetime: '2020-04-19T14:59:31+02:00'
+fix_commit_message: "netfilter: nat: fix error handling upon registering inet hook\n\
+  \nA case of warning was reported by syzbot.\n\n------------[ cut here ]------------\n\
+  WARNING: CPU: 0 PID: 19934 at net/netfilter/nf_nat_core.c:1106\nnf_nat_unregister_fn+0x532/0x5c0\
+  \ net/netfilter/nf_nat_core.c:1106\nKernel panic - not syncing: panic_on_warn set\
+  \ ...\nCPU: 0 PID: 19934 Comm: syz-executor.5 Not tainted 5.6.0-syzkaller #0\nHardware\
+  \ name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n\
+  Call Trace:\n __dump_stack lib/dump_stack.c:77 [inline]\n dump_stack+0x188/0x20d\
+  \ lib/dump_stack.c:118\n panic+0x2e3/0x75c kernel/panic.c:221\n __warn.cold+0x2f/0x35\
+  \ kernel/panic.c:582\n report_bug+0x27b/0x2f0 lib/bug.c:195\n fixup_bug arch/x86/kernel/traps.c:175\
+  \ [inline]\n fixup_bug arch/x86/kernel/traps.c:170 [inline]\n do_error_trap+0x12b/0x220\
+  \ arch/x86/kernel/traps.c:267\n do_invalid_op+0x32/0x40 arch/x86/kernel/traps.c:286\n\
+  \ invalid_op+0x23/0x30 arch/x86/entry/entry_64.S:1027\nRIP: 0010:nf_nat_unregister_fn+0x532/0x5c0\
+  \ net/netfilter/nf_nat_core.c:1106\nCode: ff df 48 c1 ea 03 80 3c 02 00 75 75 48\
+  \ 8b 44 24 10 4c 89 ef 48 c7 00 00 00 00 00 e8 e8 f8 53 fb e9 4d fe ff ff e8 ee\
+  \ 9c 16 fb <0f> 0b e9 41 fe ff ff e8 e2 45 54 fb e9 b5 fd ff ff 48 8b 7c 24 20\n\
+  RSP: 0018:ffffc90005487208 EFLAGS: 00010246\nRAX: 0000000000040000 RBX: 0000000000000004\
+  \ RCX: ffffc9001444a000\nRDX: 0000000000040000 RSI: ffffffff865c94a2 RDI: 0000000000000005\n\
+  RBP: ffff88808b5cf000 R08: ffff8880a2620140 R09: fffffbfff14bcd79\nR10: ffffc90005487208\
+  \ R11: fffffbfff14bcd78 R12: 0000000000000000\nR13: 0000000000000001 R14: 0000000000000001\
+  \ R15: 0000000000000000\n nf_nat_ipv6_unregister_fn net/netfilter/nf_nat_proto.c:1017\
+  \ [inline]\n nf_nat_inet_register_fn net/netfilter/nf_nat_proto.c:1038 [inline]\n\
+  \ nf_nat_inet_register_fn+0xfc/0x140 net/netfilter/nf_nat_proto.c:1023\n nf_tables_register_hook\
+  \ net/netfilter/nf_tables_api.c:224 [inline]\n nf_tables_addchain.constprop.0+0x82e/0x13c0\
+  \ net/netfilter/nf_tables_api.c:1981\n nf_tables_newchain+0xf68/0x16a0 net/netfilter/nf_tables_api.c:2235\n\
+  \ nfnetlink_rcv_batch+0x83a/0x1610 net/netfilter/nfnetlink.c:433\n nfnetlink_rcv_skb_batch\
+  \ net/netfilter/nfnetlink.c:543 [inline]\n nfnetlink_rcv+0x3af/0x420 net/netfilter/nfnetlink.c:561\n\
+  \ netlink_unicast_kernel net/netlink/af_netlink.c:1303 [inline]\n netlink_unicast+0x537/0x740\
+  \ net/netlink/af_netlink.c:1329\n netlink_sendmsg+0x882/0xe10 net/netlink/af_netlink.c:1918\n\
+  \ sock_sendmsg_nosec net/socket.c:652 [inline]\n sock_sendmsg+0xcf/0x120 net/socket.c:672\n\
+  \ ____sys_sendmsg+0x6bf/0x7e0 net/socket.c:2362\n ___sys_sendmsg+0x100/0x170 net/socket.c:2416\n\
+  \ __sys_sendmsg+0xec/0x1b0 net/socket.c:2449\n do_syscall_64+0xf6/0x7d0 arch/x86/entry/common.c:295\n\
+  \ entry_SYSCALL_64_after_hwframe+0x49/0xb3\n\nand to quiesce it, unregister NFPROTO_IPV6\
+  \ hook instead of NFPROTO_INET\nin case of failing to register NFPROTO_IPV4 hook.\n\
+  \nReported-by: syzbot <syzbot+33e06702fd6cffc24c40@syzkaller.appspotmail.com>\n\
+  Fixes: d164385ec572 (\"netfilter: nat: add inet family nat support\")\nCc: Florian\
+  \ Westphal <fw@strlen.de>\nCc: Stefano Brivio <sbrivio@redhat.com>\nSigned-off-by:\
+  \ Hillf Danton <hdanton@sina.com>\nSigned-off-by: Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 1
+covered_count: 1

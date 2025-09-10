@@ -1,0 +1,27 @@
+id: e1de8986786b3722050e
+bug_link: https://syzkaller.appspot.com/bug?extid=e1de8986786b3722050e
+title: memory leak in cinergyt2_fe_attach
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 321c0d383dc3aa1b00a1a1e0957f1543fc84a028
+fix_commit: 9ad1efee086e0e913914fa2b2173efb830bad68c
+datetime: '2021-06-08T15:52:27+02:00'
+fix_commit_message: "media: dvd_usb: memory leak in cinergyt2_fe_attach\n\nWhen the\
+  \ driver fails to talk with the hardware with dvb_usb_generic_rw,\nit will return\
+  \ an error to dvb_usb_adapter_frontend_init. However, the\ndriver forgets to free\
+  \ the resource (e.g., struct cinergyt2_fe_state),\nwhich leads to a memory leak.\n\
+  \nFix this by freeing struct cinergyt2_fe_state when dvb_usb_generic_rw\nfails in\
+  \ cinergyt2_frontend_attach.\n\nbacktrace:\n  [<0000000056e17b1a>] kmalloc include/linux/slab.h:552\
+  \ [inline]\n  [<0000000056e17b1a>] kzalloc include/linux/slab.h:682 [inline]\n \
+  \ [<0000000056e17b1a>] cinergyt2_fe_attach+0x21/0x80 drivers/media/usb/dvb-usb/cinergyT2-fe.c:271\n\
+  \  [<00000000ae0b1711>] cinergyt2_frontend_attach+0x21/0x70 drivers/media/usb/dvb-usb/cinergyT2-core.c:74\n\
+  \  [<00000000d0254861>] dvb_usb_adapter_frontend_init+0x11b/0x1b0 drivers/media/usb/dvb-usb/dvb-usb-dvb.c:290\n\
+  \  [<0000000002e08ac6>] dvb_usb_adapter_init drivers/media/usb/dvb-usb/dvb-usb-init.c:84\
+  \ [inline]\n  [<0000000002e08ac6>] dvb_usb_init drivers/media/usb/dvb-usb/dvb-usb-init.c:173\
+  \ [inline]\n  [<0000000002e08ac6>] dvb_usb_device_init.cold+0x4d0/0x6ae drivers/media/usb/dvb-usb/dvb-usb-init.c:287\n\
+  \nReported-by: syzbot+e1de8986786b3722050e@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Dongliang Mu <mudongliangabcd@gmail.com>\nSigned-off-by: Sean Young <sean@mess.org>\n\
+  Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>\n"
+submodule:
+- drivers/media/usb/dvb-usb
+hunk_count: 1
+covered_count: 1

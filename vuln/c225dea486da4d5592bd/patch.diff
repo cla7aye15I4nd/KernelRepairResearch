@@ -1,0 +1,453 @@
+diff --git a/fs/hugetlbfs/inode.c b/fs/hugetlbfs/inode.c
+index 60fce26ff937..926d01c493fb 100644
+--- a/fs/hugetlbfs/inode.c
++++ b/fs/hugetlbfs/inode.c
+@@ -334,7 +334,7 @@ static ssize_t hugetlbfs_read_iter(struct kiocb *iocb, struct iov_iter *to)
+ 	ssize_t retval = 0;
+ 
+ 	while (iov_iter_count(to)) {
+-		struct page *page;
++		struct folio *folio;
+ 		size_t nr, copied, want;
+ 
+ 		/* nr is the maximum number of bytes to copy from this page */
+@@ -352,18 +352,18 @@ static ssize_t hugetlbfs_read_iter(struct kiocb *iocb, struct iov_iter *to)
+ 		}
+ 		nr = nr - offset;
+ 
+-		/* Find the page */
+-		page = find_lock_page(mapping, index);
+-		if (unlikely(page == NULL)) {
++		/* Find the folio */
++		folio = filemap_lock_hugetlb_folio(h, mapping, index);
++		if (IS_ERR(folio)) {
+ 			/*
+ 			 * We have a HOLE, zero out the user-buffer for the
+ 			 * length of the hole or request.
+ 			 */
+ 			copied = iov_iter_zero(nr, to);
+ 		} else {
+-			unlock_page(page);
++			folio_unlock(folio);
+ 
+-			if (!PageHWPoison(page))
++			if (!folio_test_has_hwpoisoned(folio))
+ 				want = nr;
+ 			else {
+ 				/*
+@@ -371,19 +371,19 @@ static ssize_t hugetlbfs_read_iter(struct kiocb *iocb, struct iov_iter *to)
+ 				 * touching the 1st raw HWPOISON subpage after
+ 				 * offset.
+ 				 */
+-				want = adjust_range_hwpoison(page, offset, nr);
++				want = adjust_range_hwpoison(&folio->page, offset, nr);
+ 				if (want == 0) {
+-					put_page(page);
++					folio_put(folio);
+ 					retval = -EIO;
+ 					break;
+ 				}
+ 			}
+ 
+ 			/*
+-			 * We have the page, copy it to user space buffer.
++			 * We have the folio, copy it to user space buffer.
+ 			 */
+-			copied = copy_page_to_iter(page, offset, want, to);
+-			put_page(page);
++			copied = copy_folio_to_iter(folio, offset, want, to);
++			folio_put(folio);
+ 		}
+ 		offset += copied;
+ 		retval += copied;
+@@ -661,21 +661,20 @@ static void remove_inode_hugepages(struct inode *inode, loff_t lstart,
+ {
+ 	struct hstate *h = hstate_inode(inode);
+ 	struct address_space *mapping = &inode->i_data;
+-	const pgoff_t start = lstart >> huge_page_shift(h);
+-	const pgoff_t end = lend >> huge_page_shift(h);
++	const pgoff_t end = lend >> PAGE_SHIFT;
+ 	struct folio_batch fbatch;
+ 	pgoff_t next, index;
+ 	int i, freed = 0;
+ 	bool truncate_op = (lend == LLONG_MAX);
+ 
+ 	folio_batch_init(&fbatch);
+-	next = start;
++	next = lstart >> PAGE_SHIFT;
+ 	while (filemap_get_folios(mapping, &next, end - 1, &fbatch)) {
+ 		for (i = 0; i < folio_batch_count(&fbatch); ++i) {
+ 			struct folio *folio = fbatch.folios[i];
+ 			u32 hash = 0;
+ 
+-			index = folio->index;
++			index = folio->index >> huge_page_order(h);
+ 			hash = hugetlb_fault_mutex_hash(mapping, index);
+ 			mutex_lock(&hugetlb_fault_mutex_table[hash]);
+ 
+@@ -693,7 +692,9 @@ static void remove_inode_hugepages(struct inode *inode, loff_t lstart,
+ 	}
+ 
+ 	if (truncate_op)
+-		(void)hugetlb_unreserve_pages(inode, start, LONG_MAX, freed);
++		(void)hugetlb_unreserve_pages(inode,
++				lstart >> huge_page_shift(h),
++				LONG_MAX, freed);
+ }
+ 
+ static void hugetlbfs_evict_inode(struct inode *inode)
+@@ -741,7 +742,7 @@ static void hugetlbfs_zero_partial_page(struct hstate *h,
+ 	pgoff_t idx = start >> huge_page_shift(h);
+ 	struct folio *folio;
+ 
+-	folio = filemap_lock_folio(mapping, idx);
++	folio = filemap_lock_hugetlb_folio(h, mapping, idx);
+ 	if (IS_ERR(folio))
+ 		return;
+ 
+@@ -886,7 +887,7 @@ static long hugetlbfs_fallocate(struct file *file, int mode, loff_t offset,
+ 		mutex_lock(&hugetlb_fault_mutex_table[hash]);
+ 
+ 		/* See if already present in mapping to avoid alloc/free */
+-		folio = filemap_get_folio(mapping, index);
++		folio = filemap_get_folio(mapping, index << huge_page_order(h));
+ 		if (!IS_ERR(folio)) {
+ 			folio_put(folio);
+ 			mutex_unlock(&hugetlb_fault_mutex_table[hash]);
+diff --git a/include/linux/hugetlb.h b/include/linux/hugetlb.h
+index a30686e649f7..d935b0584f1d 100644
+--- a/include/linux/hugetlb.h
++++ b/include/linux/hugetlb.h
+@@ -812,6 +812,12 @@ static inline unsigned int blocks_per_huge_page(struct hstate *h)
+ 	return huge_page_size(h) / 512;
+ }
+ 
++static inline struct folio *filemap_lock_hugetlb_folio(struct hstate *h,
++				struct address_space *mapping, pgoff_t idx)
++{
++	return filemap_lock_folio(mapping, idx << huge_page_order(h));
++}
++
+ #include <asm/hugetlb.h>
+ 
+ #ifndef is_hugepage_only_range
+@@ -1008,6 +1014,12 @@ static inline struct hugepage_subpool *hugetlb_folio_subpool(struct folio *folio
+ 	return NULL;
+ }
+ 
++static inline struct folio *filemap_lock_hugetlb_folio(struct hstate *h,
++				struct address_space *mapping, pgoff_t idx)
++{
++	return NULL;
++}
++
+ static inline int isolate_or_dissolve_huge_page(struct page *page,
+ 						struct list_head *list)
+ {
+diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+index 351c3b7f93a1..759b29d9a69a 100644
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -789,9 +789,6 @@ static inline pgoff_t folio_next_index(struct folio *folio)
+  */
+ static inline struct page *folio_file_page(struct folio *folio, pgoff_t index)
+ {
+-	/* HugeTLBfs indexes the page cache in units of hpage_size */
+-	if (folio_test_hugetlb(folio))
+-		return &folio->page;
+ 	return folio_page(folio, index & (folio_nr_pages(folio) - 1));
+ }
+ 
+@@ -807,9 +804,6 @@ static inline struct page *folio_file_page(struct folio *folio, pgoff_t index)
+  */
+ static inline bool folio_contains(struct folio *folio, pgoff_t index)
+ {
+-	/* HugeTLBfs indexes the page cache in units of hpage_size */
+-	if (folio_test_hugetlb(folio))
+-		return folio->index == index;
+ 	return index - folio_index(folio) < folio_nr_pages(folio);
+ }
+ 
+@@ -867,10 +861,9 @@ static inline struct folio *read_mapping_folio(struct address_space *mapping,
+ }
+ 
+ /*
+- * Get index of the page within radix-tree (but not for hugetlb pages).
+- * (TODO: remove once hugetlb pages will have ->index in PAGE_SIZE)
++ * Get the offset in PAGE_SIZE (even for hugetlb pages).
+  */
+-static inline pgoff_t page_to_index(struct page *page)
++static inline pgoff_t page_to_pgoff(struct page *page)
+ {
+ 	struct page *head;
+ 
+@@ -885,19 +878,6 @@ static inline pgoff_t page_to_index(struct page *page)
+ 	return head->index + page - head;
+ }
+ 
+-extern pgoff_t hugetlb_basepage_index(struct page *page);
+-
+-/*
+- * Get the offset in PAGE_SIZE (even for hugetlb pages).
+- * (TODO: hugetlb pages should have ->index in PAGE_SIZE)
+- */
+-static inline pgoff_t page_to_pgoff(struct page *page)
+-{
+-	if (unlikely(PageHuge(page)))
+-		return hugetlb_basepage_index(page);
+-	return page_to_index(page);
+-}
+-
+ /*
+  * Return byte-offset into filesystem object for page.
+  */
+@@ -934,24 +914,16 @@ static inline loff_t folio_file_pos(struct folio *folio)
+ 
+ /*
+  * Get the offset in PAGE_SIZE (even for hugetlb folios).
+- * (TODO: hugetlb folios should have ->index in PAGE_SIZE)
+  */
+ static inline pgoff_t folio_pgoff(struct folio *folio)
+ {
+-	if (unlikely(folio_test_hugetlb(folio)))
+-		return hugetlb_basepage_index(&folio->page);
+ 	return folio->index;
+ }
+ 
+-extern pgoff_t linear_hugepage_index(struct vm_area_struct *vma,
+-				     unsigned long address);
+-
+ static inline pgoff_t linear_page_index(struct vm_area_struct *vma,
+ 					unsigned long address)
+ {
+ 	pgoff_t pgoff;
+-	if (unlikely(is_vm_hugetlb_page(vma)))
+-		return linear_hugepage_index(vma, address);
+ 	pgoff = (address - vma->vm_start) >> PAGE_SHIFT;
+ 	pgoff += vma->vm_pgoff;
+ 	return pgoff;
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 9481ffaf24e6..340c693112a9 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -131,11 +131,8 @@ static void page_cache_delete(struct address_space *mapping,
+ 
+ 	mapping_set_update(&xas, mapping);
+ 
+-	/* hugetlb pages are represented by a single entry in the xarray */
+-	if (!folio_test_hugetlb(folio)) {
+-		xas_set_order(&xas, folio->index, folio_order(folio));
+-		nr = folio_nr_pages(folio);
+-	}
++	xas_set_order(&xas, folio->index, folio_order(folio));
++	nr = folio_nr_pages(folio);
+ 
+ 	VM_BUG_ON_FOLIO(!folio_test_locked(folio), folio);
+ 
+@@ -234,7 +231,7 @@ void filemap_free_folio(struct address_space *mapping, struct folio *folio)
+ 	if (free_folio)
+ 		free_folio(folio);
+ 
+-	if (folio_test_large(folio) && !folio_test_hugetlb(folio))
++	if (folio_test_large(folio))
+ 		refs = folio_nr_pages(folio);
+ 	folio_put_refs(folio, refs);
+ }
+@@ -855,14 +852,15 @@ noinline int __filemap_add_folio(struct address_space *mapping,
+ 
+ 	if (!huge) {
+ 		int error = mem_cgroup_charge(folio, NULL, gfp);
+-		VM_BUG_ON_FOLIO(index & (folio_nr_pages(folio) - 1), folio);
+ 		if (error)
+ 			return error;
+ 		charged = true;
+-		xas_set_order(&xas, index, folio_order(folio));
+-		nr = folio_nr_pages(folio);
+ 	}
+ 
++	VM_BUG_ON_FOLIO(index & (folio_nr_pages(folio) - 1), folio);
++	xas_set_order(&xas, index, folio_order(folio));
++	nr = folio_nr_pages(folio);
++
+ 	gfp &= GFP_RECLAIM_MASK;
+ 	folio_ref_add(folio, nr);
+ 	folio->mapping = mapping;
+@@ -2040,7 +2038,7 @@ unsigned find_get_entries(struct address_space *mapping, pgoff_t *start,
+ 		int idx = folio_batch_count(fbatch) - 1;
+ 
+ 		folio = fbatch->folios[idx];
+-		if (!xa_is_value(folio) && !folio_test_hugetlb(folio))
++		if (!xa_is_value(folio))
+ 			nr = folio_nr_pages(folio);
+ 		*start = indices[idx] + nr;
+ 	}
+@@ -2104,7 +2102,7 @@ unsigned find_lock_entries(struct address_space *mapping, pgoff_t *start,
+ 		int idx = folio_batch_count(fbatch) - 1;
+ 
+ 		folio = fbatch->folios[idx];
+-		if (!xa_is_value(folio) && !folio_test_hugetlb(folio))
++		if (!xa_is_value(folio))
+ 			nr = folio_nr_pages(folio);
+ 		*start = indices[idx] + nr;
+ 	}
+@@ -2145,9 +2143,6 @@ unsigned filemap_get_folios(struct address_space *mapping, pgoff_t *start,
+ 			continue;
+ 		if (!folio_batch_add(fbatch, folio)) {
+ 			unsigned long nr = folio_nr_pages(folio);
+-
+-			if (folio_test_hugetlb(folio))
+-				nr = 1;
+ 			*start = folio->index + nr;
+ 			goto out;
+ 		}
+@@ -2213,9 +2208,6 @@ unsigned filemap_get_folios_contig(struct address_space *mapping,
+ 
+ 		if (!folio_batch_add(fbatch, folio)) {
+ 			nr = folio_nr_pages(folio);
+-
+-			if (folio_test_hugetlb(folio))
+-				nr = 1;
+ 			*start = folio->index + nr;
+ 			goto out;
+ 		}
+@@ -2232,10 +2224,7 @@ unsigned filemap_get_folios_contig(struct address_space *mapping,
+ 
+ 	if (nr) {
+ 		folio = fbatch->folios[nr - 1];
+-		if (folio_test_hugetlb(folio))
+-			*start = folio->index + 1;
+-		else
+-			*start = folio_next_index(folio);
++		*start = folio->index + folio_nr_pages(folio);
+ 	}
+ out:
+ 	rcu_read_unlock();
+@@ -2273,9 +2262,6 @@ unsigned filemap_get_folios_tag(struct address_space *mapping, pgoff_t *start,
+ 			continue;
+ 		if (!folio_batch_add(fbatch, folio)) {
+ 			unsigned long nr = folio_nr_pages(folio);
+-
+-			if (folio_test_hugetlb(folio))
+-				nr = 1;
+ 			*start = folio->index + nr;
+ 			goto out;
+ 		}
+diff --git a/mm/hugetlb.c b/mm/hugetlb.c
+index de220e3ff8be..0aaf28ce32e5 100644
+--- a/mm/hugetlb.c
++++ b/mm/hugetlb.c
+@@ -952,7 +952,7 @@ static long region_count(struct resv_map *resv, long f, long t)
+ 
+ /*
+  * Convert the address within this vma to the page offset within
+- * the mapping, in pagecache page units; huge pages here.
++ * the mapping, huge page units here.
+  */
+ static pgoff_t vma_hugecache_offset(struct hstate *h,
+ 			struct vm_area_struct *vma, unsigned long address)
+@@ -961,13 +961,6 @@ static pgoff_t vma_hugecache_offset(struct hstate *h,
+ 			(vma->vm_pgoff >> huge_page_order(h));
+ }
+ 
+-pgoff_t linear_hugepage_index(struct vm_area_struct *vma,
+-				     unsigned long address)
+-{
+-	return vma_hugecache_offset(hstate_vma(vma), vma, address);
+-}
+-EXPORT_SYMBOL_GPL(linear_hugepage_index);
+-
+ /**
+  * vma_kernel_pagesize - Page size granularity for this VMA.
+  * @vma: The user mapping.
+@@ -2074,20 +2067,6 @@ struct address_space *hugetlb_page_mapping_lock_write(struct page *hpage)
+ 	return NULL;
+ }
+ 
+-pgoff_t hugetlb_basepage_index(struct page *page)
+-{
+-	struct page *page_head = compound_head(page);
+-	pgoff_t index = page_index(page_head);
+-	unsigned long compound_idx;
+-
+-	if (compound_order(page_head) > MAX_ORDER)
+-		compound_idx = page_to_pfn(page) - page_to_pfn(page_head);
+-	else
+-		compound_idx = page - page_head;
+-
+-	return (index << compound_order(page_head)) + compound_idx;
+-}
+-
+ static struct folio *alloc_buddy_hugetlb_folio(struct hstate *h,
+ 		gfp_t gfp_mask, int nid, nodemask_t *nmask,
+ 		nodemask_t *node_alloc_noretry)
+@@ -5772,7 +5751,7 @@ static bool hugetlbfs_pagecache_present(struct hstate *h,
+ 			struct vm_area_struct *vma, unsigned long address)
+ {
+ 	struct address_space *mapping = vma->vm_file->f_mapping;
+-	pgoff_t idx = vma_hugecache_offset(h, vma, address);
++	pgoff_t idx = linear_page_index(vma, address);
+ 	struct folio *folio;
+ 
+ 	folio = filemap_get_folio(mapping, idx);
+@@ -5789,6 +5768,7 @@ int hugetlb_add_to_page_cache(struct folio *folio, struct address_space *mapping
+ 	struct hstate *h = hstate_inode(inode);
+ 	int err;
+ 
++	idx <<= huge_page_order(h);
+ 	__folio_set_locked(folio);
+ 	err = __filemap_add_folio(mapping, folio, idx, GFP_KERNEL, NULL);
+ 
+@@ -5896,7 +5876,7 @@ static vm_fault_t hugetlb_no_page(struct mm_struct *mm,
+ 	 * before we get page_table_lock.
+ 	 */
+ 	new_folio = false;
+-	folio = filemap_lock_folio(mapping, idx);
++	folio = filemap_lock_hugetlb_folio(h, mapping, idx);
+ 	if (IS_ERR(folio)) {
+ 		size = i_size_read(mapping->host) >> huge_page_shift(h);
+ 		if (idx >= size)
+@@ -6205,7 +6185,7 @@ vm_fault_t hugetlb_fault(struct mm_struct *mm, struct vm_area_struct *vma,
+ 		/* Just decrements count, does not deallocate */
+ 		vma_end_reservation(h, vma, haddr);
+ 
+-		pagecache_folio = filemap_lock_folio(mapping, idx);
++		pagecache_folio = filemap_lock_hugetlb_folio(h, mapping, idx);
+ 		if (IS_ERR(pagecache_folio))
+ 			pagecache_folio = NULL;
+ 	}
+@@ -6338,7 +6318,7 @@ int hugetlb_mfill_atomic_pte(pte_t *dst_pte,
+ 
+ 	if (is_continue) {
+ 		ret = -EFAULT;
+-		folio = filemap_lock_folio(mapping, idx);
++		folio = filemap_lock_hugetlb_folio(h, mapping, idx);
+ 		if (IS_ERR(folio))
+ 			goto out;
+ 		folio_in_pagecache = true;
+diff --git a/mm/migrate.c b/mm/migrate.c
+index 7d1804c4a5d9..942f8c9cd068 100644
+--- a/mm/migrate.c
++++ b/mm/migrate.c
+@@ -524,7 +524,7 @@ int migrate_huge_page_move_mapping(struct address_space *mapping,
+ 	int expected_count;
+ 
+ 	xas_lock_irq(&xas);
+-	expected_count = 2 + folio_has_private(src);
++	expected_count = folio_expected_refs(mapping, src);
+ 	if (!folio_ref_freeze(src, expected_count)) {
+ 		xas_unlock_irq(&xas);
+ 		return -EAGAIN;
+@@ -533,11 +533,11 @@ int migrate_huge_page_move_mapping(struct address_space *mapping,
+ 	dst->index = src->index;
+ 	dst->mapping = src->mapping;
+ 
+-	folio_get(dst);
++	folio_ref_add(dst, folio_nr_pages(dst));
+ 
+ 	xas_store(&xas, dst);
+ 
+-	folio_ref_unfreeze(src, expected_count - 1);
++	folio_ref_unfreeze(src, expected_count - folio_nr_pages(src));
+ 
+ 	xas_unlock_irq(&xas);
+ 

@@ -1,0 +1,173 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.6.0-rc4-syzkaller-g19af4a4ed414 #0 Not tainted
+------------------------------------------------------
+syz-executor254/6025 is trying to acquire lock:
+ffff0000db54a0e0 (&type->s_umount_key#25){++++}-{3:3}, at: __super_lock fs/super.c:58 [inline]
+ffff0000db54a0e0 (&type->s_umount_key#25){++++}-{3:3}, at: super_lock+0x160/0x328 fs/super.c:117
+
+but task is already holding lock:
+ffff0000c1540c88 (&bdev->bd_holder_lock){+.+.}-{3:3}, at: blkdev_flushbuf block/ioctl.c:370 [inline]
+ffff0000c1540c88 (&bdev->bd_holder_lock){+.+.}-{3:3}, at: blkdev_common_ioctl+0x7fc/0x2884 block/ioctl.c:502
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #3 (&bdev->bd_holder_lock){+.+.}-{3:3}:
+       __mutex_lock_common+0x190/0x21a0 kernel/locking/mutex.c:603
+       __mutex_lock kernel/locking/mutex.c:747 [inline]
+       mutex_lock_nested+0x2c/0x38 kernel/locking/mutex.c:799
+       bd_finish_claiming+0x218/0x3dc block/bdev.c:566
+       blkdev_get_by_dev+0x3f4/0x55c block/bdev.c:799
+       setup_bdev_super+0x68/0x51c fs/super.c:1484
+       mount_bdev+0x1a0/0x2b4 fs/super.c:1626
+       get_super_block+0x44/0x58 fs/reiserfs/super.c:2601
+       legacy_get_tree+0xd4/0x16c fs/fs_context.c:638
+       vfs_get_tree+0x90/0x288 fs/super.c:1750
+       do_new_mount+0x25c/0x8c8 fs/namespace.c:3335
+       path_mount+0x590/0xe04 fs/namespace.c:3662
+       init_mount+0xe4/0x144 fs/init.c:25
+       do_mount_root+0x104/0x3e4 init/do_mounts.c:166
+       mount_root_generic+0x1f0/0x594 init/do_mounts.c:205
+       mount_block_root+0x6c/0x7c init/do_mounts.c:378
+       mount_root+0xb4/0xe4 init/do_mounts.c:405
+       prepare_namespace+0xdc/0x11c init/do_mounts.c:489
+       kernel_init_freeable+0x35c/0x474 init/main.c:1560
+       kernel_init+0x24/0x29c init/main.c:1437
+       ret_from_fork+0x10/0x20 arch/arm64/kernel/entry.S:857
+
+-> #2 (bdev_lock
+){+.+.}-{3:3}:
+       __mutex_lock_common+0x190/0x21a0 kernel/locking/mutex.c:603
+       __mutex_lock kernel/locking/mutex.c:747 [inline]
+       mutex_lock_nested+0x2c/0x38 kernel/locking/mutex.c:799
+       bd_finish_claiming+0x84/0x3dc block/bdev.c:557
+       blkdev_get_by_dev+0x3f4/0x55c block/bdev.c:799
+       setup_bdev_super+0x68/0x51c fs/super.c:1484
+       mount_bdev+0x1a0/0x2b4 fs/super.c:1626
+       get_super_block+0x44/0x58 fs/reiserfs/super.c:2601
+       legacy_get_tree+0xd4/0x16c fs/fs_context.c:638
+       vfs_get_tree+0x90/0x288 fs/super.c:1750
+       do_new_mount+0x25c/0x8c8 fs/namespace.c:3335
+       path_mount+0x590/0xe04 fs/namespace.c:3662
+       init_mount+0xe4/0x144 fs/init.c:25
+       do_mount_root+0x104/0x3e4 init/do_mounts.c:166
+       mount_root_generic+0x1f0/0x594 init/do_mounts.c:205
+       mount_block_root+0x6c/0x7c init/do_mounts.c:378
+       mount_root+0xb4/0xe4 init/do_mounts.c:405
+       prepare_namespace+0xdc/0x11c init/do_mounts.c:489
+       kernel_init_freeable+0x35c/0x474 init/main.c:1560
+       kernel_init+0x24/0x29c init/main.c:1437
+       ret_from_fork+0x10/0x20 arch/arm64/kernel/entry.S:857
+
+-> #1 (&disk->open_mutex){+.+.}-{3:3}:
+       __mutex_lock_common+0x190/0x21a0 kernel/locking/mutex.c:603
+       __mutex_lock kernel/locking/mutex.c:747 [inline]
+       mutex_lock_nested+0x2c/0x38 kernel/locking/mutex.c:799
+       blkdev_get_by_dev+0x114/0x55c block/bdev.c:786
+       journal_init_dev fs/reiserfs/journal.c:2626 [inline]
+       journal_init+0xa60/0x1e44 fs/reiserfs/journal.c:2786
+       reiserfs_fill_super+0xd50/0x2028 fs/reiserfs/super.c:2022
+       mount_bdev+0x1e8/0x2b4 fs/super.c:1629
+       get_super_block+0x44/0x58 fs/reiserfs/super.c:2601
+       legacy_get_tree+0xd4/0x16c fs/fs_context.c:638
+       vfs_get_tree+0x90/0x288 fs/super.c:1750
+       do_new_mount+0x25c/0x8c8 fs/namespace.c:3335
+       path_mount+0x590/0xe04 fs/namespace.c:3662
+       do_mount fs/namespace.c:3675 [inline]
+       __do_sys_mount fs/namespace.c:3884 [inline]
+       __se_sys_mount fs/namespace.c:3861 [inline]
+       __arm64_sys_mount+0x45c/0x594 fs/namespace.c:3861
+       __invoke_syscall arch/arm64/kernel/syscall.c:37 [inline]
+       invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:51
+       el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:136
+       do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:155
+       el0_svc+0x58/0x16c arch/arm64/kernel/entry-common.c:678
+       el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:696
+       el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:595
+
+-> #0 (&type->s_umount_key#25){++++}-{3:3}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain kernel/locking/lockdep.c:3868 [inline]
+       __lock_acquire+0x3370/0x75e8 kernel/locking/lockdep.c:5136
+       lock_acquire+0x23c/0x71c kernel/locking/lockdep.c:5753
+       down_read+0x58/0x2fc kernel/locking/rwsem.c:1520
+       __super_lock fs/super.c:58 [inline]
+       super_lock+0x160/0x328 fs/super.c:117
+       super_lock_shared fs/super.c:146 [inline]
+       super_lock_shared_active fs/super.c:1431 [inline]
+       fs_bdev_sync+0xa4/0x168 fs/super.c:1466
+       blkdev_flushbuf block/ioctl.c:372 [inline]
+       blkdev_common_ioctl+0x848/0x2884 block/ioctl.c:502
+       blkdev_ioctl+0x35c/0xae4 block/ioctl.c:624
+       vfs_ioctl fs/ioctl.c:51 [inline]
+       __do_sys_ioctl fs/ioctl.c:871 [inline]
+       __se_sys_ioctl fs/ioctl.c:857 [inline]
+       __arm64_sys_ioctl+0x14c/0x1c8 fs/ioctl.c:857
+       __invoke_syscall arch/arm64/kernel/syscall.c:37 [inline]
+       invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:51
+       el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:136
+       do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:155
+       el0_svc+0x58/0x16c arch/arm64/kernel/entry-common.c:678
+       el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:696
+       el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:595
+
+other info that might help us debug this:
+
+Chain exists of:
+  &type->s_umount_key#25 --> bdev_lock --> &bdev->bd_holder_lock
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&bdev->bd_holder_lock);
+                               lock(bdev_lock);
+                               lock(&bdev->bd_holder_lock);
+  rlock(&type->s_umount_key#25);
+
+ *** DEADLOCK ***
+
+1 lock held by syz-executor254/6025:
+ #0: ffff0000c1540c88 (&bdev->bd_holder_lock){+.+.}-{3:3}, at: blkdev_flushbuf block/ioctl.c:370 [inline]
+ #0: ffff0000c1540c88 (&bdev->bd_holder_lock){+.+.}-{3:3}, at: blkdev_common_ioctl+0x7fc/0x2884 block/ioctl.c:502
+
+stack backtrace:
+CPU: 0 PID: 6025 Comm: syz-executor254 Not tainted 6.6.0-rc4-syzkaller-g19af4a4ed414 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/06/2023
+Call trace:
+ dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:233
+ show_stack+0x2c/0x44 arch/arm64/kernel/stacktrace.c:240
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106
+ dump_stack+0x1c/0x28 lib/dump_stack.c:113
+ print_circular_bug+0x150/0x1b8 kernel/locking/lockdep.c:2060
+ check_noncircular+0x310/0x404 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain kernel/locking/lockdep.c:3868 [inline]
+ __lock_acquire+0x3370/0x75e8 kernel/locking/lockdep.c:5136
+ lock_acquire+0x23c/0x71c kernel/locking/lockdep.c:5753
+ down_read+0x58/0x2fc kernel/locking/rwsem.c:1520
+ __super_lock fs/super.c:58 [inline]
+ super_lock+0x160/0x328 fs/super.c:117
+ super_lock_shared fs/super.c:146 [inline]
+ super_lock_shared_active fs/super.c:1431 [inline]
+ fs_bdev_sync+0xa4/0x168 fs/super.c:1466
+ blkdev_flushbuf block/ioctl.c:372 [inline]
+ blkdev_common_ioctl+0x848/0x2884 block/ioctl.c:502
+ blkdev_ioctl+0x35c/0xae4 block/ioctl.c:624
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:871 [inline]
+ __se_sys_ioctl fs/ioctl.c:857 [inline]
+ __arm64_sys_ioctl+0x14c/0x1c8 fs/ioctl.c:857
+ __invoke_syscall arch/arm64/kernel/syscall.c:37 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:51
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:136
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:155
+ el0_svc+0x58/0x16c arch/arm64/kernel/entry-common.c:678
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:696
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:595

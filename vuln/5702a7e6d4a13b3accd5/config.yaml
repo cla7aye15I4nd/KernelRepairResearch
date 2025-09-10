@@ -1,0 +1,25 @@
+id: 5702a7e6d4a13b3accd5
+bug_link: https://syzkaller.appspot.com/bug?extid=5702a7e6d4a13b3accd5
+title: 'KASAN: slab-out-of-bounds Write in process_preds'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ce397d215ccd07b8ae3f71db689aedb85d56ab40
+fix_commit: 70303420b5721c38998cf987e6b7d30cc62d4ff1
+datetime: '2018-06-21T15:12:42-04:00'
+fix_commit_message: "tracing: Check for no filter when processing event filters\n\n\
+  The syzkaller detected a out-of-bounds issue with the events filter code,\nspecifically\
+  \ here:\n\n\tprog[N].pred = NULL;\t\t\t\t\t/* #13 */\n\tprog[N].target = 1;\t\t\
+  /* TRUE */\n\tprog[N+1].pred = NULL;\n\tprog[N+1].target = 0;\t\t/* FALSE */\n->\t\
+  prog[N-1].target = N;\n\tprog[N-1].when_to_branch = false;\n\nAs that's the first\
+  \ reference to a \"N-1\" index, it appears that the code got\nhere with N = 0, which\
+  \ means the filter parser found no filter to parse\n(which shouldn't ever happen,\
+  \ but apparently it did).\n\nAdd a new error to the parsing code that will check\
+  \ to make sure that N is\nnot zero before going into this part of the code. If N\
+  \ = 0, then -EINVAL is\nreturned, and a error message is added to the filter.\n\n\
+  Cc: stable@vger.kernel.org\nFixes: 80765597bc587 (\"tracing: Rewrite filter logic\
+  \ to be simpler and faster\")\nReported-by: air icy <icytxw@gmail.com>\nbugzilla\
+  \ url: https://bugzilla.kernel.org/show_bug.cgi?id=200019\nSigned-off-by: Steven\
+  \ Rostedt (VMware) <rostedt@goodmis.org>\n"
+submodule:
+- kernel/trace
+hunk_count: 2
+covered_count: 2

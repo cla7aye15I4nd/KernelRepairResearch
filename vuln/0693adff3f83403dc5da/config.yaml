@@ -1,0 +1,43 @@
+id: 0693adff3f83403dc5da
+bug_link: https://syzkaller.appspot.com/bug?extid=0693adff3f83403dc5da
+title: general protection fault in fib6_add (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7d11f77f84b27cef452cee332f4e469503084737
+fix_commit: 7bbfe00e025240505db3e04c3b296d7c023b2a26
+datetime: '2018-01-04T14:29:20-05:00'
+fix_commit_message: "ipv6: fix general protection fault in fib6_add()\n\nIn fib6_add(),\
+  \ pn could be NULL if fib6_add_1() failed to return a fib6\nnode. Checking pn !=\
+  \ fn before accessing pn->leaf makes sure pn is not\nNULL.\nThis fixes the following\
+  \ GPF reported by syzkaller:\ngeneral protection fault: 0000 [#1] SMP KASAN\nDumping\
+  \ ftrace buffer:\n   (ftrace buffer empty)\nModules linked in:\nCPU: 0 PID: 3201\
+  \ Comm: syzkaller001778 Not tainted 4.15.0-rc5+ #151\nHardware name: Google Google\
+  \ Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\nRIP: 0010:fib6_add+0x736/0x15a0\
+  \ net/ipv6/ip6_fib.c:1244\nRSP: 0018:ffff8801c7626a70 EFLAGS: 00010202\nRAX: dffffc0000000000\
+  \ RBX: 0000000000000020 RCX: ffffffff84794465\nRDX: 0000000000000004 RSI: ffff8801d38935f0\
+  \ RDI: 0000000000000282\nRBP: ffff8801c7626da0 R08: 1ffff10038ec4c35 R09: 0000000000000000\n\
+  R10: ffff8801c7626c68 R11: 0000000000000000 R12: 00000000fffffffe\nR13: 0000000000000000\
+  \ R14: 0000000000000000 R15: 0000000000000009\nFS:  0000000000000000(0000) GS:ffff8801db200000(0063)\
+  \ knlGS:0000000009b70840\nCS:  0010 DS: 002b ES: 002b CR0: 0000000080050033\nCR2:\
+  \ 0000000020be1000 CR3: 00000001d585a006 CR4: 00000000001606f0\nDR0: 0000000000000000\
+  \ DR1: 0000000000000000 DR2: 0000000000000000\nDR3: 0000000000000000 DR6: 00000000fffe0ff0\
+  \ DR7: 0000000000000400\nCall Trace:\n __ip6_ins_rt+0x6c/0x90 net/ipv6/route.c:1006\n\
+  \ ip6_route_multipath_add+0xd14/0x16c0 net/ipv6/route.c:3833\n inet6_rtm_newroute+0xdc/0x160\
+  \ net/ipv6/route.c:3957\n rtnetlink_rcv_msg+0x733/0x1020 net/core/rtnetlink.c:4411\n\
+  \ netlink_rcv_skb+0x21e/0x460 net/netlink/af_netlink.c:2408\n rtnetlink_rcv+0x1c/0x20\
+  \ net/core/rtnetlink.c:4423\n netlink_unicast_kernel net/netlink/af_netlink.c:1275\
+  \ [inline]\n netlink_unicast+0x4e8/0x6f0 net/netlink/af_netlink.c:1301\n netlink_sendmsg+0xa4a/0xe60\
+  \ net/netlink/af_netlink.c:1864\n sock_sendmsg_nosec net/socket.c:636 [inline]\n\
+  \ sock_sendmsg+0xca/0x110 net/socket.c:646\n sock_write_iter+0x31a/0x5d0 net/socket.c:915\n\
+  \ call_write_iter include/linux/fs.h:1772 [inline]\n do_iter_readv_writev+0x525/0x7f0\
+  \ fs/read_write.c:653\n do_iter_write+0x154/0x540 fs/read_write.c:932\n compat_writev+0x225/0x420\
+  \ fs/read_write.c:1246\n do_compat_writev+0x115/0x220 fs/read_write.c:1267\n C_SYSC_writev\
+  \ fs/read_write.c:1278 [inline]\n compat_SyS_writev+0x26/0x30 fs/read_write.c:1274\n\
+  \ do_syscall_32_irqs_on arch/x86/entry/common.c:327 [inline]\n do_fast_syscall_32+0x3ee/0xf9d\
+  \ arch/x86/entry/common.c:389\n entry_SYSENTER_compat+0x54/0x63 arch/x86/entry/entry_64_compat.S:125\n\
+  \nReported-by: syzbot <syzkaller@googlegroups.com>\nFixes: 66f5d6ce53e6 (\"ipv6:\
+  \ replace rwlock with rcu and spinlock in fib6_table\")\nSigned-off-by: Wei Wang\
+  \ <weiwan@google.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv6
+hunk_count: 1
+covered_count: 1

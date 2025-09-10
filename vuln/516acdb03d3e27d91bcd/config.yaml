@@ -1,0 +1,27 @@
+id: 516acdb03d3e27d91bcd
+bug_link: https://syzkaller.appspot.com/bug?extid=516acdb03d3e27d91bcd
+title: 'KCSAN: data-race in __bpf_lru_list_rotate / bpf_lru_push_free (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bd2d4e6c6e9f0186967252e8c7ab29a23c3db9cf
+fix_commit: 6df8fb83301d68ea0a0c0e1cbcc790fcc333ed12
+datetime: '2021-02-10T15:54:26-08:00'
+fix_commit_message: "bpf_lru_list: Read double-checked variable once without lock\n\
+  \nFor double-checked locking in bpf_common_lru_push_free(), node->type is\nread\
+  \ outside the critical section and then re-checked under the lock.\nHowever, concurrent\
+  \ writes to node->type result in data races.\n\nFor example, the following concurrent\
+  \ access was observed by KCSAN:\n\n  write to 0xffff88801521bc22 of 1 bytes by task\
+  \ 10038 on cpu 1:\n   __bpf_lru_node_move_in        kernel/bpf/bpf_lru_list.c:91\n\
+  \   __local_list_flush            kernel/bpf/bpf_lru_list.c:298\n   ...\n  read\
+  \ to 0xffff88801521bc22 of 1 bytes by task 10043 on cpu 0:\n   bpf_common_lru_push_free\
+  \      kernel/bpf/bpf_lru_list.c:507\n   bpf_lru_push_free             kernel/bpf/bpf_lru_list.c:555\n\
+  \   ...\n\nFix the data races where node->type is read outside the critical section\n\
+  (for double-checked locking) by marking the access with READ_ONCE() as\nwell as\
+  \ ensuring the variable is only accessed once.\n\nFixes: 3a08c2fd7634 (\"bpf: LRU\
+  \ List\")\nReported-by: syzbot+3536db46dfa58c573458@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+516acdb03d3e27d91bcd@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Marco Elver <elver@google.com>\nSigned-off-by: Andrii Nakryiko <andrii@kernel.org>\n\
+  Acked-by: Martin KaFai Lau <kafai@fb.com>\nLink: https://lore.kernel.org/bpf/20210209112701.3341724-1-elver@google.com\n"
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 1

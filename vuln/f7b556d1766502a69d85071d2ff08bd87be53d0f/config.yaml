@@ -1,0 +1,23 @@
+id: f7b556d1766502a69d85071d2ff08bd87be53d0f
+bug_link: https://syzkaller.appspot.com/bug?extid=f7b556d1766502a69d85071d2ff08bd87be53d0f
+title: WARNING in ata_qc_issue
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 058f58e235cbe03e923b30ea7c49995a46a8725f
+fix_commit: 9173e5e80729c8434b8d27531527c5245f4a5594
+datetime: '2018-02-12T09:20:34-08:00'
+fix_commit_message: "libata: remove WARN() for DMA or PIO command without data\n\n\
+  syzkaller hit a WARN() in ata_qc_issue() when writing to /dev/sg0.  This\nhappened\
+  \ because it issued a READ_6 command with no data buffer.\n\nJust remove the WARN(),\
+  \ as it doesn't appear indicate a kernel bug.  The\nexpected behavior is to fail\
+  \ the command, which the code does.\n\nHere's a reproducer that works in QEMU when\
+  \ /dev/sg0 refers to a disk of\nthe default type (\"82371SB PIIX3 IDE\"):\n\n  \
+  \  #include <fcntl.h>\n    #include <unistd.h>\n\n    int main()\n    {\n      \
+  \      char buf[42] = { [36] = 0x8 /* READ_6 */ };\n\n            write(open(\"\
+  /dev/sg0\", O_RDWR), buf, sizeof(buf));\n    }\n\nFixes: f92a26365a72 (\"libata:\
+  \ change ATA_QCFLAG_DMAMAP semantics\")\nReported-by: syzbot+f7b556d1766502a69d85071d2ff08bd87be53d0f@syzkaller.appspotmail.com\n\
+  Cc: <stable@vger.kernel.org> # v2.6.25+\nSigned-off-by: Eric Biggers <ebiggers@google.com>\n\
+  Signed-off-by: Tejun Heo <tj@kernel.org>\n"
+submodule:
+- drivers/ata
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,54 @@
+=============================
+[ BUG: Invalid wait context ]
+6.13.0-rc4-syzkaller-00012-g9b2ffa6148b1 #0 Not tainted
+-----------------------------
+kworker/u8:6/1325 is trying to lock:
+ffff88802f6ec020 (&ctx->wqh){....}-{3:3}, at: eventfd_signal_mask+0x7a/0x1f0 fs/eventfd.c:71
+other info that might help us debug this:
+context-{5:5}
+6 locks held by kworker/u8:6/1325:
+ #0: ffff88801e30b148 ((wq_completion)iou_exit){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3204 [inline]
+ #0: ffff88801e30b148 ((wq_completion)iou_exit){+.+.}-{0:0}, at: process_scheduled_works+0x93b/0x1840 kernel/workqueue.c:3310
+ #1: ffffc900048ffd00 ((work_completion)(&ctx->exit_work)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3205 [inline]
+ #1: ffffc900048ffd00 ((work_completion)(&ctx->exit_work)){+.+.}-{0:0}, at: process_scheduled_works+0x976/0x1840 kernel/workqueue.c:3310
+ #2: ffff88807ed703d8 (&ctx->completion_lock){+.+.}-{3:3}, at: spin_lock include/linux/spinlock.h:351 [inline]
+ #2: ffff88807ed703d8 (&ctx->completion_lock){+.+.}-{3:3}, at: io_kill_timeouts+0x3c/0x230 io_uring/timeout.c:670
+ #3: ffff88807ed70358 (&ctx->timeout_lock){....}-{2:2}, at: io_kill_timeouts+0x4b/0x230 io_uring/timeout.c:671
+ #4: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:337 [inline]
+ #4: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:849 [inline]
+ #4: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: class_rcu_constructor include/linux/rcupdate.h:1161 [inline]
+ #4: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: io_req_local_work_add+0xb5/0x5c0 io_uring/io_uring.c:1161
+ #5: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:337 [inline]
+ #5: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:849 [inline]
+ #5: ffffffff8e937ae0 (rcu_read_lock){....}-{1:3}, at: io_eventfd_grab+0xc2/0x6a0 io_uring/eventfd.c:97
+stack backtrace:
+CPU: 1 UID: 0 PID: 1325 Comm: kworker/u8:6 Not tainted 6.13.0-rc4-syzkaller-00012-g9b2ffa6148b1 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Workqueue: iou_exit io_ring_exit_work
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_lock_invalid_wait_context kernel/locking/lockdep.c:4826 [inline]
+ check_wait_context kernel/locking/lockdep.c:4898 [inline]
+ __lock_acquire+0x15a8/0x2100 kernel/locking/lockdep.c:5176
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5849
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+ _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+ eventfd_signal_mask+0x7a/0x1f0 fs/eventfd.c:71
+ __io_eventfd_signal io_uring/eventfd.c:65 [inline]
+ io_eventfd_signal+0x96/0x1d0 io_uring/eventfd.c:123
+ io_req_local_work_add+0x408/0x5c0 io_uring/io_uring.c:1202
+ io_req_task_work_add io_uring/io_uring.h:149 [inline]
+ io_req_queue_tw_complete io_uring/io_uring.h:451 [inline]
+ io_kill_timeout+0x27b/0x310 io_uring/timeout.c:101
+ io_kill_timeouts+0x1b7/0x230 io_uring/timeout.c:676
+ io_uring_try_cancel_requests+0x480/0x560 io_uring/io_uring.c:3117
+ io_ring_exit_work+0x231/0x8a0 io_uring/io_uring.c:2901
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa66/0x1840 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

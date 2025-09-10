@@ -1,0 +1,54 @@
+id: 0d5b462a6f07447991b3
+bug_link: https://syzkaller.appspot.com/bug?extid=0d5b462a6f07447991b3
+title: WARNING in __set_page_dirty
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: de19433423c7bedabbd4f9a25f7dbc62c5e78921
+fix_commit: e897be17a441fa637cd166fc3de1445131e57692
+datetime: '2022-04-01T11:46:09-07:00'
+fix_commit_message: "nilfs2: fix lockdep warnings in page operations for btree nodes\n\
+  \nPatch series \"nilfs2 lockdep warning fixes\".\n\nThe first two are to resolve\
+  \ the lockdep warning issue, and the last one\nis the accompanying cleanup and low\
+  \ priority.\n\nBased on your comment, this series solves the issue by separating\
+  \ inode\nobject as needed.  Since I was worried about the impact of the object\n\
+  composition changes, I tested the series carefully not to cause\nregressions especially\
+  \ for delicate functions such like disk space\nreclamation and snapshots.\n\nThis\
+  \ patch (of 3):\n\nIf CONFIG_LOCKDEP is enabled, nilfs2 hits lockdep warnings at\n\
+  inode_to_wb() during page/folio operations for btree nodes:\n\n  WARNING: CPU: 0\
+  \ PID: 6575 at include/linux/backing-dev.h:269 inode_to_wb include/linux/backing-dev.h:269\
+  \ [inline]\n  WARNING: CPU: 0 PID: 6575 at include/linux/backing-dev.h:269 folio_account_dirtied\
+  \ mm/page-writeback.c:2460 [inline]\n  WARNING: CPU: 0 PID: 6575 at include/linux/backing-dev.h:269\
+  \ __folio_mark_dirty+0xa7c/0xe30 mm/page-writeback.c:2509\n  Modules linked in:\n\
+  \  ...\n  RIP: 0010:inode_to_wb include/linux/backing-dev.h:269 [inline]\n  RIP:\
+  \ 0010:folio_account_dirtied mm/page-writeback.c:2460 [inline]\n  RIP: 0010:__folio_mark_dirty+0xa7c/0xe30\
+  \ mm/page-writeback.c:2509\n  ...\n  Call Trace:\n    __set_page_dirty include/linux/pagemap.h:834\
+  \ [inline]\n    mark_buffer_dirty+0x4e6/0x650 fs/buffer.c:1145\n    nilfs_btree_propagate_p\
+  \ fs/nilfs2/btree.c:1889 [inline]\n    nilfs_btree_propagate+0x4ae/0xea0 fs/nilfs2/btree.c:2085\n\
+  \    nilfs_bmap_propagate+0x73/0x170 fs/nilfs2/bmap.c:337\n    nilfs_collect_dat_data+0x45/0xd0\
+  \ fs/nilfs2/segment.c:625\n    nilfs_segctor_apply_buffers+0x14a/0x470 fs/nilfs2/segment.c:1009\n\
+  \    nilfs_segctor_scan_file+0x47a/0x700 fs/nilfs2/segment.c:1048\n    nilfs_segctor_collect_blocks\
+  \ fs/nilfs2/segment.c:1224 [inline]\n    nilfs_segctor_collect fs/nilfs2/segment.c:1494\
+  \ [inline]\n    nilfs_segctor_do_construct+0x14f3/0x6c60 fs/nilfs2/segment.c:2036\n\
+  \    nilfs_segctor_construct+0x7a7/0xb30 fs/nilfs2/segment.c:2372\n    nilfs_segctor_thread_construct\
+  \ fs/nilfs2/segment.c:2480 [inline]\n    nilfs_segctor_thread+0x3c3/0xf90 fs/nilfs2/segment.c:2563\n\
+  \    kthread+0x405/0x4f0 kernel/kthread.c:327\n    ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:295\n\
+  \nThis is because nilfs2 uses two page caches for each inode and\ninode->i_mapping\
+  \ never points to one of them, the btree node cache.\n\nThis causes inode_to_wb(inode)\
+  \ to refer to a different page cache than\nthe caller page/folio operations such\
+  \ like __folio_start_writeback(),\n__folio_end_writeback(), or __folio_mark_dirty()\
+  \ acquired the lock.\n\nThis patch resolves the issue by allocating and using an\
+  \ additional\ninode to hold the page cache of btree nodes.  The inode is attached\n\
+  one-to-one to the traditional nilfs2 inode if it requires a block\nmapping with\
+  \ b-tree.  This setup change is in memory only and does not\naffect the disk format.\n\
+  \nLink: https://lkml.kernel.org/r/1647867427-30498-1-git-send-email-konishi.ryusuke@gmail.com\n\
+  Link: https://lkml.kernel.org/r/1647867427-30498-2-git-send-email-konishi.ryusuke@gmail.com\n\
+  Link: https://lore.kernel.org/r/YXrYvIo8YRnAOJCj@casper.infradead.org\nLink: https://lore.kernel.org/r/9a20b33d-b38f-b4a2-4742-c1eb5b8e4d6c@redhat.com\n\
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>\nReported-by: syzbot+0d5b462a6f07447991b3@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+34ef28bb2aeb28724aa0@syzkaller.appspotmail.com\nReported-by:\
+  \ Hao Sun <sunhao.th@gmail.com>\nReported-by: David Hildenbrand <david@redhat.com>\n\
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>\nCc: Matthew Wilcox <willy@infradead.org>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds\
+  \ <torvalds@linux-foundation.org>\n"
+submodule:
+- fs/nilfs2
+hunk_count: 38
+covered_count: 5

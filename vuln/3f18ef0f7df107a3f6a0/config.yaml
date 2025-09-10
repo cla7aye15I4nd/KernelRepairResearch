@@ -1,0 +1,43 @@
+id: 3f18ef0f7df107a3f6a0
+bug_link: https://syzkaller.appspot.com/bug?extid=3f18ef0f7df107a3f6a0
+title: 'WARNING: bad unlock balance in __rtnl_unlock'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e0c836820f2f275bc04d28ef417dd9e8711635a9
+fix_commit: f130a0cc1b4ff1ef28a307428d40436032e2b66e
+datetime: '2025-03-05T19:16:56-08:00'
+fix_commit_message: "inet: fix lwtunnel_valid_encap_type() lock imbalance\n\nAfter\
+  \ blamed commit rtm_to_fib_config() now calls\nlwtunnel_valid_encap_type{_attr}()\
+  \ without RTNL held,\ntriggering an unlock balance in __rtnl_unlock,\nas reported\
+  \ by syzbot [1]\n\nIPv6 and rtm_to_nh_config() are not yet converted.\n\nAdd a temporary\
+  \ @rtnl_is_held parameter to lwtunnel_valid_encap_type()\nand lwtunnel_valid_encap_type_attr().\n\
+  \nWhile we are at it replace the two rcu_dereference()\nin lwtunnel_valid_encap_type()\
+  \ with more appropriate\nrcu_access_pointer().\n\n[1]\nsyz-executor245/5836 is trying\
+  \ to release lock (rtnl_mutex) at:\n [<ffffffff89d0e38c>] __rtnl_unlock+0x6c/0xf0\
+  \ net/core/rtnetlink.c:142\nbut there are no more locks to release!\n\nother info\
+  \ that might help us debug this:\nno locks held by syz-executor245/5836.\n\nstack\
+  \ backtrace:\nCPU: 0 UID: 0 PID: 5836 Comm: syz-executor245 Not tainted 6.14.0-rc4-syzkaller-00873-g3424291dd242\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 02/12/2025\nCall Trace:\n <TASK>\n  __dump_stack lib/dump_stack.c:94 [inline]\n\
+  \  dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120\n  print_unlock_imbalance_bug+0x25b/0x2d0\
+  \ kernel/locking/lockdep.c:5289\n  __lock_release kernel/locking/lockdep.c:5518\
+  \ [inline]\n  lock_release+0x47e/0xa30 kernel/locking/lockdep.c:5872\n  __mutex_unlock_slowpath+0xec/0x800\
+  \ kernel/locking/mutex.c:891\n  __rtnl_unlock+0x6c/0xf0 net/core/rtnetlink.c:142\n\
+  \  lwtunnel_valid_encap_type+0x38a/0x5f0 net/core/lwtunnel.c:169\n  lwtunnel_valid_encap_type_attr+0x113/0x270\
+  \ net/core/lwtunnel.c:209\n  rtm_to_fib_config+0x949/0x14e0 net/ipv4/fib_frontend.c:808\n\
+  \  inet_rtm_newroute+0xf6/0x2a0 net/ipv4/fib_frontend.c:917\n  rtnetlink_rcv_msg+0x791/0xcf0\
+  \ net/core/rtnetlink.c:6919\n  netlink_rcv_skb+0x206/0x480 net/netlink/af_netlink.c:2534\n\
+  \  netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]\n  netlink_unicast+0x7f6/0x990\
+  \ net/netlink/af_netlink.c:1339\n  netlink_sendmsg+0x8de/0xcb0 net/netlink/af_netlink.c:1883\n\
+  \  sock_sendmsg_nosec net/socket.c:709 [inline]\n\nFixes: 1dd2af7963e9 (\"ipv4:\
+  \ fib: Convert RTM_NEWROUTE and RTM_DELROUTE to per-netns RTNL.\")\nReported-by:\
+  \ syzbot+3f18ef0f7df107a3f6a0@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/netdev/67c6f87a.050a0220.38b91b.0147.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nReviewed-by: Kuniyuki Iwashima\
+  \ <kuniyu@amazon.com>\nLink: https://patch.msgid.link/20250304125918.2763514-1-edumazet@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- include/net
+- net/core
+- net/ipv4
+- net/ipv6
+hunk_count: 11
+covered_count: 6

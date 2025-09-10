@@ -1,0 +1,60 @@
+------------[ cut here ]------------
+kernel BUG at fs/buffer.c:2768!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 PID: 5077 Comm: syz-executor119 Not tainted 6.9.0-syzkaller-01768-ga5131c3fdf26 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+RIP: 0010:submit_bh_wbc+0x546/0x560 fs/buffer.c:2768
+Code: 74 7b ff be 00 10 00 00 48 c7 c7 00 c3 47 8e 4c 89 fa e8 dd 87 c5 02 e9 95 fe ff ff e8 e3 73 7b ff 90 0f 0b e8 db 73 7b ff 90 <0f> 0b e8 d3 73 7b ff 90 0f 0b e8 cb 73 7b ff 90 0f 0b e8 c3 73 7b
+RSP: 0018:ffffc90003e37878 EFLAGS: 00010293
+RAX: ffffffff821acf05 RBX: 0000000000000000 RCX: ffff88807fd35a00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff821aca63 R09: 1ffff1100fe3783a
+R10: dffffc0000000000 R11: ffffed100fe3783b R12: 0000000000000000
+R13: ffff88807f1bc1d0 R14: 0000000000000000 R15: 1ffff1100fe3783a
+FS:  000055558f228380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055717debdb78 CR3: 000000004fdce000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ submit_bh fs/buffer.c:2809 [inline]
+ __bh_read fs/buffer.c:3074 [inline]
+ bh_read_nowait include/linux/buffer_head.h:417 [inline]
+ __block_write_begin_int+0x12d0/0x1a70 fs/buffer.c:2134
+ __block_write_begin fs/buffer.c:2154 [inline]
+ block_write_begin+0x9b/0x1e0 fs/buffer.c:2213
+ udf_write_begin+0x10d/0x1a0 fs/udf/inode.c:261
+ generic_perform_write+0x322/0x640 mm/filemap.c:3974
+ udf_file_write_iter+0x2fd/0x660 fs/udf/file.c:111
+ call_write_iter include/linux/fs.h:2120 [inline]
+ new_sync_write fs/read_write.c:497 [inline]
+ vfs_write+0xa2d/0xc50 fs/read_write.c:590
+ ksys_write+0x1a0/0x2c0 fs/read_write.c:643
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fb713220839
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc803fb7a8 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 00007ffc803fb978 RCX: 00007fb713220839
+RDX: 0000000000000001 RSI: 0000000020000700 RDI: 0000000000000004
+RBP: 00007fb713293610 R08: 00007ffc803fb978 R09: 00007ffc803fb978
+R10: 0000000000000004 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffc803fb968 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:submit_bh_wbc+0x546/0x560 fs/buffer.c:2768
+Code: 74 7b ff be 00 10 00 00 48 c7 c7 00 c3 47 8e 4c 89 fa e8 dd 87 c5 02 e9 95 fe ff ff e8 e3 73 7b ff 90 0f 0b e8 db 73 7b ff 90 <0f> 0b e8 d3 73 7b ff 90 0f 0b e8 cb 73 7b ff 90 0f 0b e8 c3 73 7b
+RSP: 0018:ffffc90003e37878 EFLAGS: 00010293
+RAX: ffffffff821acf05 RBX: 0000000000000000 RCX: ffff88807fd35a00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff821aca63 R09: 1ffff1100fe3783a
+R10: dffffc0000000000 R11: ffffed100fe3783b R12: 0000000000000000
+R13: ffff88807f1bc1d0 R14: 0000000000000000 R15: 1ffff1100fe3783a
+FS:  000055558f228380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055717debdb78 CR3: 000000004fdce000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

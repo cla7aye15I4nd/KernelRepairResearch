@@ -1,0 +1,30 @@
+id: de271708674e2093097b
+bug_link: https://syzkaller.appspot.com/bug?extid=de271708674e2093097b
+title: 'KASAN: use-after-free Read in firmware_fallback_sysfs'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0d6434e10b5377a006f6dd995c8fc5e2d82acddc
+fix_commit: 75d95e2e39b27f733f21e6668af1c9893a97de5e
+datetime: '2021-07-29T17:22:15+02:00'
+fix_commit_message: "firmware_loader: fix use-after-free in firmware_fallback_sysfs\n\
+  \nThis use-after-free happens when a fw_priv object has been freed but\nhasn't been\
+  \ removed from the pending list (pending_fw_head). The next\ntime fw_load_sysfs_fallback\
+  \ tries to insert into the list, it ends up\naccessing the pending_list member of\
+  \ the previously freed fw_priv.\n\nThe root cause here is that all code paths that\
+  \ abort the fw load\ndon't delete it from the pending list. For example:\n\n   \
+  \     _request_firmware()\n          -> fw_abort_batch_reqs()\n              ->\
+  \ fw_state_aborted()\n\nTo fix this, delete the fw_priv from the list in __fw_set_state()\
+  \ if\nthe new state is DONE or ABORTED. This way, all aborts will remove\nthe fw_priv\
+  \ from the list. Accordingly, remove calls to list_del_init\nthat were being made\
+  \ before calling fw_state_(aborted|done).\n\nAlso, in fw_load_sysfs_fallback, don't\
+  \ add the fw_priv to the pending\nlist if it is already aborted. Instead, just jump\
+  \ out and return early.\n\nFixes: bcfbd3523f3c (\"firmware: fix a double abort case\
+  \ with fw_load_sysfs_fallback\")\nCc: stable <stable@vger.kernel.org>\nReported-by:\
+  \ syzbot+de271708674e2093097b@syzkaller.appspotmail.com\nTested-by: syzbot+de271708674e2093097b@syzkaller.appspotmail.com\n\
+  Reviewed-by: Shuah Khan <skhan@linuxfoundation.org>\nAcked-by: Luis Chamberlain\
+  \ <mcgrof@kernel.org>\nSigned-off-by: Anirudh Rayabharam <mail@anirudhrb.com>\n\
+  Link: https://lore.kernel.org/r/20210728085107.4141-3-mail@anirudhrb.com\nSigned-off-by:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/base/firmware_loader
+hunk_count: 6
+covered_count: 4

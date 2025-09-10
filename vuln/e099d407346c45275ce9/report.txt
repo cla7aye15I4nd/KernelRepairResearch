@@ -1,0 +1,87 @@
+==================================================================
+BUG: KCSAN: data-race in mem_cgroup_iter / mem_cgroup_iter
+
+read-write to 0xffff888108704668 of 4 bytes by task 4329 on cpu 0:
+ mem_cgroup_iter+0x28e/0x380 mm/memcontrol.c:1080
+ shrink_node_memcgs mm/vmscan.c:5904 [inline]
+ shrink_node+0x74a/0x1d40 mm/vmscan.c:5928
+ shrink_zones mm/vmscan.c:6172 [inline]
+ do_try_to_free_pages+0x3c6/0xc50 mm/vmscan.c:6234
+ try_to_free_mem_cgroup_pages+0x1f3/0x4f0 mm/vmscan.c:6566
+ try_charge_memcg+0x2bc/0x810 mm/memcontrol.c:2210
+ obj_cgroup_charge_pages+0xbd/0x1a0 mm/memcontrol.c:2660
+ __memcg_kmem_charge_page+0x9d/0x170 mm/memcontrol.c:2687
+ __alloc_pages_noprof+0x1bc/0x360 mm/page_alloc.c:4719
+ alloc_pages_mpol_noprof+0xb1/0x1e0 mm/mempolicy.c:2263
+ alloc_pages_noprof+0xe1/0x100 mm/mempolicy.c:2343
+ vm_area_alloc_pages mm/vmalloc.c:3587 [inline]
+ __vmalloc_area_node mm/vmalloc.c:3656 [inline]
+ __vmalloc_node_range_noprof+0x736/0xec0 mm/vmalloc.c:3837
+ __kvmalloc_node_noprof+0x121/0x170 mm/util.c:675
+ ip_set_alloc+0x1f/0x30 net/netfilter/ipset/ip_set_core.c:256
+ hash_netiface_create+0x273/0x730 net/netfilter/ipset/ip_set_hash_gen.h:1568
+ ip_set_create+0x359/0x8a0 net/netfilter/ipset/ip_set_core.c:1104
+ nfnetlink_rcv_msg+0x4a9/0x570 net/netfilter/nfnetlink.c:302
+ netlink_rcv_skb+0x12c/0x230 net/netlink/af_netlink.c:2550
+ nfnetlink_rcv+0x16c/0x15c0 net/netfilter/nfnetlink.c:667
+ netlink_unicast_kernel net/netlink/af_netlink.c:1331 [inline]
+ netlink_unicast+0x599/0x670 net/netlink/af_netlink.c:1357
+ netlink_sendmsg+0x5cc/0x6e0 net/netlink/af_netlink.c:1901
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg+0x140/0x180 net/socket.c:745
+ ____sys_sendmsg+0x312/0x410 net/socket.c:2603
+ ___sys_sendmsg net/socket.c:2657 [inline]
+ __sys_sendmsg+0x1dd/0x270 net/socket.c:2686
+ __do_sys_sendmsg net/socket.c:2695 [inline]
+ __se_sys_sendmsg net/socket.c:2693 [inline]
+ __x64_sys_sendmsg+0x46/0x50 net/socket.c:2693
+ x64_sys_call+0x2689/0x2d60 arch/x86/include/generated/asm/syscalls_64.h:47
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff888108704668 of 4 bytes by task 4316 on cpu 1:
+ mem_cgroup_iter+0xba/0x380 mm/memcontrol.c:1018
+ shrink_node_memcgs mm/vmscan.c:5849 [inline]
+ shrink_node+0x458/0x1d40 mm/vmscan.c:5928
+ shrink_zones mm/vmscan.c:6172 [inline]
+ do_try_to_free_pages+0x3c6/0xc50 mm/vmscan.c:6234
+ try_to_free_mem_cgroup_pages+0x1f3/0x4f0 mm/vmscan.c:6566
+ try_charge_memcg+0x2bc/0x810 mm/memcontrol.c:2210
+ try_charge mm/memcontrol-v1.h:20 [inline]
+ charge_memcg mm/memcontrol.c:4438 [inline]
+ __mem_cgroup_charge+0x63/0x100 mm/memcontrol.c:4453
+ mem_cgroup_charge include/linux/memcontrol.h:672 [inline]
+ filemap_add_folio+0x53/0x1b0 mm/filemap.c:967
+ page_cache_ra_unbounded+0x175/0x310 mm/readahead.c:268
+ do_page_cache_ra mm/readahead.c:320 [inline]
+ page_cache_ra_order mm/readahead.c:520 [inline]
+ page_cache_async_ra+0x40c/0x420 mm/readahead.c:670
+ do_async_mmap_readahead mm/filemap.c:3214 [inline]
+ filemap_fault+0x2ca/0xa60 mm/filemap.c:3311
+ __do_fault+0xb6/0x200 mm/memory.c:4670
+ do_read_fault mm/memory.c:5076 [inline]
+ do_fault mm/memory.c:5206 [inline]
+ do_pte_missing mm/memory.c:3962 [inline]
+ handle_pte_fault mm/memory.c:5536 [inline]
+ __handle_mm_fault mm/memory.c:5679 [inline]
+ handle_mm_fault+0xe7f/0x2a40 mm/memory.c:5847
+ faultin_page mm/gup.c:1207 [inline]
+ __get_user_pages+0x499/0x10d0 mm/gup.c:1506
+ populate_vma_page_range mm/gup.c:1945 [inline]
+ __mm_populate+0x25b/0x3b0 mm/gup.c:2048
+ mm_populate include/linux/mm.h:3437 [inline]
+ __do_sys_mlockall mm/mlock.c:766 [inline]
+ __se_sys_mlockall+0x2c5/0x370 mm/mlock.c:742
+ __x64_sys_mlockall+0x1f/0x30 mm/mlock.c:742
+ x64_sys_call+0x1e3a/0x2d60 arch/x86/include/generated/asm/syscalls_64.h:152
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x000001c6 -> 0x000001c8
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 UID: 0 PID: 4316 Comm: syz.3.411 Not tainted 6.11.0-syzkaller-07462-g1868f9d0260e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+==================================================================

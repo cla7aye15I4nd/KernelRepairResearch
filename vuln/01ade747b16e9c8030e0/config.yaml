@@ -1,0 +1,33 @@
+id: 01ade747b16e9c8030e0
+bug_link: https://syzkaller.appspot.com/bug?extid=01ade747b16e9c8030e0
+title: 'KMSAN: uninit-value in hfsplus_listxattr (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aabfe57ebaa75841db47ea59091ec3c5a06d2f52
+fix_commit: 0570730c16307a72f8241df12363f76600baf57d
+datetime: '2024-07-06T09:19:31+02:00'
+fix_commit_message: "hfsplus: fix uninit-value in copy_name\n\n[syzbot reported]\n\
+  BUG: KMSAN: uninit-value in sized_strscpy+0xc4/0x160\n sized_strscpy+0xc4/0x160\n\
+  \ copy_name+0x2af/0x320 fs/hfsplus/xattr.c:411\n hfsplus_listxattr+0x11e9/0x1a50\
+  \ fs/hfsplus/xattr.c:750\n vfs_listxattr fs/xattr.c:493 [inline]\n listxattr+0x1f3/0x6b0\
+  \ fs/xattr.c:840\n path_listxattr fs/xattr.c:864 [inline]\n __do_sys_listxattr fs/xattr.c:876\
+  \ [inline]\n __se_sys_listxattr fs/xattr.c:873 [inline]\n __x64_sys_listxattr+0x16b/0x2f0\
+  \ fs/xattr.c:873\n x64_sys_call+0x2ba0/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:195\n\
+  \ do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n do_syscall_64+0xcf/0x1e0\
+  \ arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\nUninit\
+  \ was created at:\n slab_post_alloc_hook mm/slub.c:3877 [inline]\n slab_alloc_node\
+  \ mm/slub.c:3918 [inline]\n kmalloc_trace+0x57b/0xbe0 mm/slub.c:4065\n kmalloc include/linux/slab.h:628\
+  \ [inline]\n hfsplus_listxattr+0x4cc/0x1a50 fs/hfsplus/xattr.c:699\n vfs_listxattr\
+  \ fs/xattr.c:493 [inline]\n listxattr+0x1f3/0x6b0 fs/xattr.c:840\n path_listxattr\
+  \ fs/xattr.c:864 [inline]\n __do_sys_listxattr fs/xattr.c:876 [inline]\n __se_sys_listxattr\
+  \ fs/xattr.c:873 [inline]\n __x64_sys_listxattr+0x16b/0x2f0 fs/xattr.c:873\n x64_sys_call+0x2ba0/0x3b50\
+  \ arch/x86/include/generated/asm/syscalls_64.h:195\n do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  [Fix]\nWhen allocating memory to strbuf, initialize memory to 0.\n\nReported-and-tested-by:\
+  \ syzbot+efde959319469ff8d4d7@syzkaller.appspotmail.com\nSigned-off-by: Edward Adam\
+  \ Davis <eadavis@qq.com>\nLink: https://lore.kernel.org/r/tencent_8BBB6433BC9E1C1B7B4BDF1BF52574BA8808@qq.com\n\
+  Reported-and-tested-by: syzbot+01ade747b16e9c8030e0@syzkaller.appspotmail.com\n\
+  Signed-off-by: Christian Brauner <brauner@kernel.org>\n"
+submodule:
+- fs/hfsplus
+hunk_count: 1
+covered_count: 1

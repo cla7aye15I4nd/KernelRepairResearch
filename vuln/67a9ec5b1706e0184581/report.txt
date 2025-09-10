@@ -1,0 +1,65 @@
+Unable to handle kernel paging request at virtual address efff800000000137
+KASAN: probably user-memory-access in range [0x0000000000001370-0x000000000000137f]
+Mem abort info:
+  ESR = 0x0000000096000005
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x05: level 1 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000005, ISS2 = 0x00000000
+  CM = 0, WnR = 0, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+swapper pgtable: 4k pages, 52-bit VAs, pgdp=0000000044a53000
+[efff800000000137] pgd=1000000049992003, p4d=1000000049993003, pud=0000000000000000
+Internal error: Oops: 0000000096000005 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 0 UID: 0 PID: 6560 Comm: syz.2.929 Not tainted 6.12.0-rc7-syzkaller-g5db899a34f75 #0
+Hardware name: linux,dummy-virt (DT)
+pstate: 80402009 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : __hwasan_check_x0_67043363+0x4/0x30
+lr : vgic_get_irq+0x7c/0x3d4 arch/arm64/kvm/vgic/vgic.c:93
+sp : ffff80008c597650
+x29: ffff80008c597660 x28: 00000000000000e0 x27: 0000000000000004
+x26: 0000000000000002 x25: ffff800083a7fe20 x24: 16f0000014accd90
+x23: 16f0000014acb9a0 x22: 0000000000000000 x21: a9ff80008c583000
+x20: 0000000000000001 x19: efff800000000000 x18: 0000000000000005
+x17: 0000000000000000 x16: 0000000000000137 x15: 0000000000000000
+x14: 0000000000000002 x13: 0000000000000003 x12: 70f000000a33ba80
+x11: 0000000000080000 x10: 0000000000001378 x9 : efff800000000000
+x8 : 0000000000000001 x7 : 0000000000000001 x6 : 0000000000000001
+x5 : ffff80008c597858 x4 : ffff8000800f2b38 x3 : ffff8000800f7a00
+x2 : 0000000000000001 x1 : 0000000000000001 x0 : 0000000000001378
+Call trace:
+ __hwasan_check_x0_67043363+0x4/0x30
+ vgic_mmio_write_invlpi+0xb0/0x174 arch/arm64/kvm/vgic/vgic-mmio-v3.c:546
+ dispatch_mmio_write+0x2a4/0x308
+ kvm_iodevice_write include/kvm/iodev.h:54 [inline]
+ __kvm_io_bus_write+0x290/0x340 virt/kvm/kvm_main.c:5852
+ kvm_io_bus_write+0x100/0x1bc virt/kvm/kvm_main.c:5877
+ io_mem_abort+0x4b8/0x7a0 arch/arm64/kvm/mmio.c:204
+ kvm_handle_guest_abort+0xb4c/0x1c64 arch/arm64/kvm/mmu.c:1880
+ handle_trap_exceptions arch/arm64/kvm/handle_exit.c:351 [inline]
+ handle_exit+0x1a0/0x274 arch/arm64/kvm/handle_exit.c:381
+ kvm_arch_vcpu_ioctl_run+0xbc0/0x15b0 arch/arm64/kvm/arm.c:1279
+ kvm_vcpu_ioctl+0x660/0xf78 virt/kvm/kvm_main.c:4475
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl fs/ioctl.c:893 [inline]
+ __arm64_sys_ioctl+0x108/0x184 fs/ioctl.c:893
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x78/0x1b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0xe8/0x1b0 arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x40/0x50 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x54/0x14c arch/arm64/kernel/entry-common.c:712
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:730
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:598
+Code: a90efbfd d2800441 143a3ed3 9344dc10 (38706930) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	a90efbfd 	stp	x29, x30, [sp, #232]
+   4:	d2800441 	mov	x1, #0x22                  	// #34
+   8:	143a3ed3 	b	0xe8fb54
+   c:	9344dc10 	sbfx	x16, x0, #4, #52
+* 10:	38706930 	ldrb	w16, [x9, x16] <-- trapping instruction

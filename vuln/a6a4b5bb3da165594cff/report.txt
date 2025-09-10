@@ -1,0 +1,54 @@
+watchdog: BUG: soft lockup - CPU#0 stuck for 22s! [syz-executor389:11960]
+Modules linked in:
+irq event stamp: 4931
+hardirqs last  enabled at (4930): [<ffff80008ad68de8>] __exit_to_kernel_mode arch/arm64/kernel/entry-common.c:85 [inline]
+hardirqs last  enabled at (4930): [<ffff80008ad68de8>] exit_to_kernel_mode+0xdc/0x10c arch/arm64/kernel/entry-common.c:95
+hardirqs last disabled at (4931): [<ffff80008ad66a78>] __el1_irq arch/arm64/kernel/entry-common.c:533 [inline]
+hardirqs last disabled at (4931): [<ffff80008ad66a78>] el1_interrupt+0x24/0x68 arch/arm64/kernel/entry-common.c:551
+softirqs last  enabled at (728): [<ffff800088e9a56c>] spin_unlock_bh include/linux/spinlock.h:396 [inline]
+softirqs last  enabled at (728): [<ffff800088e9a56c>] release_sock+0x154/0x1b8 net/core/sock.c:3547
+softirqs last disabled at (734): [<ffff800088eaf8bc>] spin_lock_bh include/linux/spinlock.h:356 [inline]
+softirqs last disabled at (734): [<ffff800088eaf8bc>] lock_sock_nested+0x74/0x11c net/core/sock.c:3526
+CPU: 0 PID: 11960 Comm: syz-executor389 Not tainted 6.8.0-rc7-syzkaller-g707081b61156 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+pstate: 00400005 (nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : queued_spin_lock_slowpath+0x15c/0xcf8 kernel/locking/qspinlock.c:383
+lr : queued_spin_lock_slowpath+0x168/0xcf8 kernel/locking/qspinlock.c:383
+sp : ffff8000999776c0
+x29: ffff800099977760 x28: 1fffe0001a159d93 x27: 1ffff0001332eee4
+x26: dfff800000000000 x25: 1fffe0001a159d95 x24: ffff8000999776e0
+x23: ffff800099977720 x22: ffff70001332eedc x21: 0000000000000001
+x20: 0000000000000001 x19: ffff0000d0acec98 x18: 0000000000000000
+x17: 0000000000000000 x16: ffff8000809fd934 x15: 0000000000000001
+x14: 1fffe0001a159d93 x13: 0000000000000000 x12: 0000000000000000
+x11: ffff60001a159d94 x10: 1fffe0001a159d93 x9 : 0000000000000000
+x8 : 0000000000000001 x7 : ffff800088eaf8bc x6 : 0000000000000000
+x5 : 0000000000000000 x4 : 0000000000000001 x3 : ffff80008ae5db50
+x2 : 0000000000000000 x1 : 0000000000000001 x0 : 0000000000000001
+Call trace:
+ __cmpwait_case_8 arch/arm64/include/asm/cmpxchg.h:229 [inline]
+ __cmpwait arch/arm64/include/asm/cmpxchg.h:257 [inline]
+ queued_spin_lock_slowpath+0x15c/0xcf8 kernel/locking/qspinlock.c:383
+ queued_spin_lock include/asm-generic/qspinlock.h:114 [inline]
+ do_raw_spin_lock+0x320/0x348 kernel/locking/spinlock_debug.c:116
+ __raw_spin_lock_bh include/linux/spinlock_api_smp.h:127 [inline]
+ _raw_spin_lock_bh+0x50/0x60 kernel/locking/spinlock.c:178
+ spin_lock_bh include/linux/spinlock.h:356 [inline]
+ lock_sock_nested+0x74/0x11c net/core/sock.c:3526
+ lock_sock include/net/sock.h:1691 [inline]
+ tipc_sendstream+0x50/0x84 net/tipc/socket.c:1550
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg net/socket.c:745 [inline]
+ ____sys_sendmsg+0x56c/0x840 net/socket.c:2584
+ ___sys_sendmsg net/socket.c:2638 [inline]
+ __sys_sendmsg+0x26c/0x33c net/socket.c:2667
+ __do_sys_sendmsg net/socket.c:2676 [inline]
+ __se_sys_sendmsg net/socket.c:2674 [inline]
+ __arm64_sys_sendmsg+0x80/0x94 net/socket.c:2674
+ __invoke_syscall arch/arm64/kernel/syscall.c:34 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:48
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:133
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:152
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:712
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:730
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:598

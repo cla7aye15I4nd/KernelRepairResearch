@@ -1,0 +1,53 @@
+id: 6fe95b826644f7f12b0b
+bug_link: https://syzkaller.appspot.com/bug?extid=6fe95b826644f7f12b0b
+title: 'KASAN: slab-out-of-bounds Read in ld_usb_read (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ec83e4c9affbc8ee0632766dbb0bfef2938f7e54
+fix_commit: 7a6f22d7479b7a0b68eadd308a997dd64dda7dae
+datetime: '2019-10-18T11:56:22-07:00'
+fix_commit_message: 'USB: ldusb: fix read info leaks
+
+
+  Fix broken read implementation, which could be used to trigger slab info
+
+  leaks.
+
+
+  The driver failed to check if the custom ring buffer was still empty
+
+  when waking up after having waited for more data. This would happen on
+
+  every interrupt-in completion, even if no data had been added to the
+
+  ring buffer (e.g. on disconnect events).
+
+
+  Due to missing sanity checks and uninitialised (kmalloced) ring-buffer
+
+  entries, this meant that huge slab info leaks could easily be triggered.
+
+
+  Note that the empty-buffer check after wakeup is enough to fix the info
+
+  leak on disconnect, but let''s clear the buffer on allocation and add a
+
+  sanity check to read() to prevent further leaks.
+
+
+  Fixes: 2824bd250f0b ("[PATCH] USB: add ldusb driver")
+
+  Cc: stable <stable@vger.kernel.org>     # 2.6.13
+
+  Reported-by: syzbot+6fe95b826644f7f12b0b@syzkaller.appspotmail.com
+
+  Signed-off-by: Johan Hovold <johan@kernel.org>
+
+  Link: https://lore.kernel.org/r/20191018151955.25135-2-johan@kernel.org
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/misc
+hunk_count: 3
+covered_count: 2

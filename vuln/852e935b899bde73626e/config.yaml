@@ -1,0 +1,50 @@
+id: 852e935b899bde73626e
+bug_link: https://syzkaller.appspot.com/bug?extid=852e935b899bde73626e
+title: WARNING in posixtimer_send_sigqueue
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 228ad72e7660e99821fd430a04ac31d7f8fe9fc4
+fix_commit: cdc905d16b07981363e53a21853ba1cf6cd8e92a
+datetime: '2024-11-18T18:03:59+01:00'
+fix_commit_message: "posix-timers: Fix spurious warning on double enqueue versus do_exit()\n\
+  \nA timer sigqueue may find itself already pending when it is tried to\nbe enqueued.\
+  \ This situation can happen if the timer sigqueue is enqueued\nbut then the timer\
+  \ is reset afterwards and fires before the pending\nsignal managed to be delivered.\n\
+  \nHowever when such a double enqueue occurs while the corresponding signal\nis ignored,\
+  \ the sigqueue is expected to be found either on the dedicated\nignored list if\
+  \ the timer was periodic or dropped if the timer was\none-shot. In any case it is\
+  \ not supposed to be queued on the real signal\nqueue.\n\nAn assertion verifies\
+  \ the latter expectation on top of the return value\nof prepare_signal(), assuming\
+  \ \"false\" means that the signal is being\nignored. But prepare_signal() may also\
+  \ fail if the target is exiting as\nthe last task of its group. In this case the\
+  \ double enqueue observes the\nsigqueue queued, as in such a situation:\n\n    TASK\
+  \ A (same group as B)                   TASK B (same group as A)\n    ------------------------\
+  \                   ------------------------\n\n    // timer event\n    // queue\
+  \ signal to TASK B\n    posix_timer_queue_signal()\n    // reset timer through syscall\n\
+  \    do_timer_settime()\n    // exit, leaving task B alone\n    do_exit()\n    \
+  \                                           do_exit()\n                        \
+  \                          synchronize_group_exit()\n                          \
+  \                            signal->flags = SIGNAL_GROUP_EXIT\n               \
+  \                                   // ========> <IRQ> timer event\n           \
+  \                                       posix_timer_queue_signal()\n           \
+  \                                       // return false due to SIGNAL_GROUP_EXIT\n\
+  \                                                  if (!prepare_signal())\n    \
+  \                                                 WARN_ON_ONCE(!list_empty(&q->list))\n\
+  \nAnd this spuriously triggers this warning:\n\n    WARNING: CPU: 0 PID: 5854 at\
+  \ kernel/signal.c:2008 posixtimer_send_sigqueue\n    CPU: 0 UID: 0 PID: 5854 Comm:\
+  \ syz-executor139 Not tainted 6.12.0-rc6-next-20241108-syzkaller #0\n    RIP: 0010:posixtimer_send_sigqueue+0x9da/0xbc0\
+  \ kernel/signal.c:2008\n    Call Trace:\n     <IRQ>\n     alarm_handle_timer\n \
+  \    alarmtimer_fired\n     __run_hrtimer\n     __hrtimer_run_queues\n     hrtimer_interrupt\n\
+  \     local_apic_timer_interrupt\n     __sysvec_apic_timer_interrupt\n     instr_sysvec_apic_timer_interrupt\n\
+  \     sysvec_apic_timer_interrupt\n     </IRQ>\n\nFortunately the recovery code\
+  \ in that case already does the right thing:\njust exit from posixtimer_send_sigqueue()\
+  \ and wait for __exit_signal()\nto flush the pending signal. Just make sure to warn\
+  \ only the case when\nthe sigqueue is queued and the signal is really ignored.\n\
+  \nFixes: df7a996b4dab (\"signal: Queue ignored posixtimers on ignore list\")\nReported-by:\
+  \ syzbot+852e935b899bde73626e@syzkaller.appspotmail.com\nSigned-off-by: Frederic\
+  \ Weisbecker <frederic@kernel.org>\nSigned-off-by: Thomas Gleixner <tglx@linutronix.de>\n\
+  Tested-by: syzbot+852e935b899bde73626e@syzkaller.appspotmail.com\nLink: https://lore.kernel.org/all/20241116234823.28497-1-frederic@kernel.org\n\
+  Closes: https://lore.kernel.org/all/673549c6.050a0220.1324f8.008c.GAE@google.com\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 1

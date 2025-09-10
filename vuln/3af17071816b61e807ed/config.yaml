@@ -1,0 +1,53 @@
+id: 3af17071816b61e807ed
+bug_link: https://syzkaller.appspot.com/bug?extid=3af17071816b61e807ed
+title: 'BUG: bad usercopy in con_font_op'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b6a7bac184472b5b79286a71a61c2f16ea4e86ad
+fix_commit: 18365ebf23f3e713e5dd8e295c9a639295250f3c
+datetime: '2023-03-09T17:56:56+01:00'
+fix_commit_message: 'tty: vt: protect KD_FONT_OP_GET_TALL from unbound access
+
+
+  In ioctl(KD_FONT_OP_GET_TALL), userland tells through op->height which
+
+  vpitch should be used to copy over the font. In con_font_get, we were
+
+  not checking that it is within the maximum height value, and thus
+
+  userland could make the vc->vc_sw->con_font_get(vc, &font, vpitch);
+
+  call possibly overflow the allocated max_font_size bytes, and the
+
+  copy_to_user(op->data, font.data, c) call possibly read out of that
+
+  allocated buffer.
+
+
+  By checking vpitch against max_font_height, the max_font_size buffer
+
+  will always be large enough for the vc->vc_sw->con_font_get(vc, &font,
+
+  vpitch) call (since we already prevent loading a font larger than that),
+
+  and c = (font.width+7)/8 * vpitch * font.charcount will always remain
+
+  below max_font_size.
+
+
+  Fixes: 24d69384bcd3 ("VT: Add KD_FONT_OP_SET/GET_TALL operations")
+
+  Reported-by: syzbot+3af17071816b61e807ed@syzkaller.appspotmail.com
+
+  Signed-off-by: Samuel Thibault <samuel.thibault@ens-lyon.org>
+
+  Reviewed-by: Jiri Slaby <jirislaby@kernel.org>
+
+  Link: https://lore.kernel.org/r/20230306094921.tik5ewne4ft6mfpo@begin
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/tty/vt
+hunk_count: 1
+covered_count: 1

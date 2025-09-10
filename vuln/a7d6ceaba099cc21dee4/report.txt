@@ -1,0 +1,40 @@
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 12 at block/bio.c:513 bio_alloc_bioset+0xd45/0x1110 block/bio.c:513
+Modules linked in:
+CPU: 0 UID: 0 PID: 12 Comm: kworker/u8:0 Not tainted 6.16.0-rc1-syzkaller-00005-g488ef3560196 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Workqueue: writeback wb_workfn (flush-bcachefs-1)
+RIP: 0010:bio_alloc_bioset+0xd45/0x1110 block/bio.c:513
+Code: db f6 ff 81 ce 00 20 09 00 e8 87 2c 7f fd 48 85 c0 0f 84 8b 00 00 00 49 89 c7 e8 c6 d2 28 fd e9 65 f8 ff ff e8 bc d2 28 fd 90 <0f> 0b 90 e9 41 fb ff ff e8 ae d2 28 fd 90 0f 0b 90 e9 04 fb ff ff
+RSP: 0018:ffffc90000116ee0 EFLAGS: 00010293
+RAX: ffffffff84977b34 RBX: 0000000000000000 RCX: ffff88801d285a00
+RDX: 0000000000000000 RSI: 0000000000000100 RDI: 0000000000000000
+RBP: dffffc0000000000 R08: ffff8880762c8948 R09: 1ffffd40003abf80
+R10: dffffc0000000000 R11: fffff940003abf81 R12: 0000000000000001
+R13: ffff8880762c8948 R14: ffff8880762c8a60 R15: 0000000000000100
+FS:  0000000000000000(0000) GS:ffff888125c86000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fd6cc922138 CR3: 0000000076ba8000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_writepage_io_alloc fs/bcachefs/fs-io-buffered.c:502 [inline]
+ __bch2_writepage+0x1581/0x2790 fs/bcachefs/fs-io-buffered.c:636
+ write_cache_pages+0x64/0x100 mm/page-writeback.c:2614
+ bch2_writepages+0xf9/0x2d0 fs/bcachefs/fs-io-buffered.c:666
+ do_writepages+0x32b/0x550 mm/page-writeback.c:2636
+ __writeback_single_inode+0x145/0xff0 fs/fs-writeback.c:1680
+ writeback_sb_inodes+0x6b5/0x1000 fs/fs-writeback.c:1976
+ __writeback_inodes_wb+0x111/0x240 fs/fs-writeback.c:2047
+ wb_writeback+0x44f/0xaf0 fs/fs-writeback.c:2158
+ wb_check_old_data_flush fs/fs-writeback.c:2262 [inline]
+ wb_do_writeback fs/fs-writeback.c:2315 [inline]
+ wb_workfn+0xaef/0xef0 fs/fs-writeback.c:2343
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xade/0x17b0 kernel/workqueue.c:3321
+ worker_thread+0x8a0/0xda0 kernel/workqueue.c:3402
+ kthread+0x70e/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>

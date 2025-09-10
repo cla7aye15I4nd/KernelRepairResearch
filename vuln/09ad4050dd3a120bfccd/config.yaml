@@ -1,0 +1,37 @@
+id: 09ad4050dd3a120bfccd
+bug_link: https://syzkaller.appspot.com/bug?extid=09ad4050dd3a120bfccd
+title: 'KASAN: use-after-free Read in tty_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e2c0cb7c0cc72939b61a7efee376206725796625
+fix_commit: d89a4fac0fbc6fe5fc24d1c9a889440dcf410368
+datetime: '2022-03-23T06:26:05-06:00'
+fix_commit_message: "io_uring: fix assuming triggered poll waitqueue is the single\
+  \ poll\n\nsyzbot reports a recent regression:\n\nBUG: KASAN: use-after-free in __wake_up_common+0x637/0x650\
+  \ kernel/sched/wait.c:101\nRead of size 8 at addr ffff888011e8a130 by task syz-executor413/3618\n\
+  \nCPU: 0 PID: 3618 Comm: syz-executor413 Tainted: G        W         5.17.0-syzkaller-01402-g8565d64430f8\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/01/2011\nCall Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:88 [inline]\n\
+  \ dump_stack_lvl+0xcd/0x134 lib/dump_stack.c:106\n print_address_description.constprop.0.cold+0x8d/0x303\
+  \ mm/kasan/report.c:255\n __kasan_report mm/kasan/report.c:442 [inline]\n kasan_report.cold+0x83/0xdf\
+  \ mm/kasan/report.c:459\n __wake_up_common+0x637/0x650 kernel/sched/wait.c:101\n\
+  \ __wake_up_common_lock+0xd0/0x130 kernel/sched/wait.c:138\n tty_release+0x657/0x1200\
+  \ drivers/tty/tty_io.c:1781\n __fput+0x286/0x9f0 fs/file_table.c:317\n task_work_run+0xdd/0x1a0\
+  \ kernel/task_work.c:164\n exit_task_work include/linux/task_work.h:32 [inline]\n\
+  \ do_exit+0xaff/0x29d0 kernel/exit.c:806\n do_group_exit+0xd2/0x2f0 kernel/exit.c:936\n\
+  \ __do_sys_exit_group kernel/exit.c:947 [inline]\n __se_sys_exit_group kernel/exit.c:945\
+  \ [inline]\n __x64_sys_exit_group+0x3a/0x50 kernel/exit.c:945\n do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  RIP: 0033:0x7f439a1fac69\n\nwhich is due to leaving the request on the waitqueue\
+  \ mistakenly. The\nreproducer is using a tty device, which means we end up arming\
+  \ the same\npoll queue twice (it uses the same poll waitqueue for both), but in\n\
+  io_poll_wake() we always just clear REQ_F_SINGLE_POLL regardless of which\nentry\
+  \ triggered. This leaves one waitqueue potentially armed after we're\ndone, which\
+  \ then blows up in tty when the waitqueue is attempted removed.\n\nWe have no room\
+  \ to store this information, so simply encode it in the\nwait_queue_entry->private\
+  \ where we store the io_kiocb request pointer.\n\nFixes: 91eac1c69c20 (\"io_uring:\
+  \ cache poll/double-poll state with a request flag\")\nReported-by: syzbot+09ad4050dd3a120bfccd@syzkaller.appspotmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 6
+covered_count: 1

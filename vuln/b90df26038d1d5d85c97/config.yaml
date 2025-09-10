@@ -1,0 +1,45 @@
+id: b90df26038d1d5d85c97
+bug_link: https://syzkaller.appspot.com/bug?extid=b90df26038d1d5d85c97
+title: 'KASAN: use-after-free Read in do_madvise'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 13e45417cedbfc44b1926124b1846f5ee8c6ba4a
+fix_commit: 7867fd7cc44e63c6673cd0f8fea155456d34d0de
+datetime: '2020-09-05T12:14:29-07:00'
+fix_commit_message: "mm: madvise: fix vma user-after-free\n\nThe syzbot reported the\
+  \ below use-after-free:\n\n  BUG: KASAN: use-after-free in madvise_willneed mm/madvise.c:293\
+  \ [inline]\n  BUG: KASAN: use-after-free in madvise_vma mm/madvise.c:942 [inline]\n\
+  \  BUG: KASAN: use-after-free in do_madvise.part.0+0x1c8b/0x1cf0 mm/madvise.c:1145\n\
+  \  Read of size 8 at addr ffff8880a6163eb0 by task syz-executor.0/9996\n\n  CPU:\
+  \ 0 PID: 9996 Comm: syz-executor.0 Not tainted 5.9.0-rc1-syzkaller #0\n  Hardware\
+  \ name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n\
+  \  Call Trace:\n    __dump_stack lib/dump_stack.c:77 [inline]\n    dump_stack+0x18f/0x20d\
+  \ lib/dump_stack.c:118\n    print_address_description.constprop.0.cold+0xae/0x497\
+  \ mm/kasan/report.c:383\n    __kasan_report mm/kasan/report.c:513 [inline]\n   \
+  \ kasan_report.cold+0x1f/0x37 mm/kasan/report.c:530\n    madvise_willneed mm/madvise.c:293\
+  \ [inline]\n    madvise_vma mm/madvise.c:942 [inline]\n    do_madvise.part.0+0x1c8b/0x1cf0\
+  \ mm/madvise.c:1145\n    do_madvise mm/madvise.c:1169 [inline]\n    __do_sys_madvise\
+  \ mm/madvise.c:1171 [inline]\n    __se_sys_madvise mm/madvise.c:1169 [inline]\n\
+  \    __x64_sys_madvise+0xd9/0x110 mm/madvise.c:1169\n    do_syscall_64+0x2d/0x70\
+  \ arch/x86/entry/common.c:46\n    entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\n \
+  \ Allocated by task 9992:\n    kmem_cache_alloc+0x138/0x3a0 mm/slab.c:3482\n   \
+  \ vm_area_alloc+0x1c/0x110 kernel/fork.c:347\n    mmap_region+0x8e5/0x1780 mm/mmap.c:1743\n\
+  \    do_mmap+0xcf9/0x11d0 mm/mmap.c:1545\n    vm_mmap_pgoff+0x195/0x200 mm/util.c:506\n\
+  \    ksys_mmap_pgoff+0x43a/0x560 mm/mmap.c:1596\n    do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n\
+  \    entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\n  Freed by task 9992:\n    kmem_cache_free.part.0+0x67/0x1f0\
+  \ mm/slab.c:3693\n    remove_vma+0x132/0x170 mm/mmap.c:184\n    remove_vma_list\
+  \ mm/mmap.c:2613 [inline]\n    __do_munmap+0x743/0x1170 mm/mmap.c:2869\n    do_munmap\
+  \ mm/mmap.c:2877 [inline]\n    mmap_region+0x257/0x1780 mm/mmap.c:1716\n    do_mmap+0xcf9/0x11d0\
+  \ mm/mmap.c:1545\n    vm_mmap_pgoff+0x195/0x200 mm/util.c:506\n    ksys_mmap_pgoff+0x43a/0x560\
+  \ mm/mmap.c:1596\n    do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n    entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \nIt is because vma is accessed after releasing mmap_lock, but someone\nelse acquired\
+  \ the mmap_lock and the vma is gone.\n\nReleasing mmap_lock after accessing vma\
+  \ should fix the problem.\n\nFixes: 692fe62433d4c (\"mm: Handle MADV_WILLNEED through\
+  \ vfs_fadvise()\")\nReported-by: syzbot+b90df26038d1d5d85c97@syzkaller.appspotmail.com\n\
+  Signed-off-by: Yang Shi <shy828301@gmail.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Reviewed-by: Andrew Morton <akpm@linux-foundation.org>\nReviewed-by: Jan Kara <jack@suse.cz>\n\
+  Cc: <stable@vger.kernel.org>\t[5.4+]\nLink: https://lkml.kernel.org/r/20200816141204.162624-1-shy828301@gmail.com\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

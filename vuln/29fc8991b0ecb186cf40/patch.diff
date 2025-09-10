@@ -1,0 +1,16 @@
+diff --git a/drivers/net/ppp/ppp_synctty.c b/drivers/net/ppp/ppp_synctty.c
+index 644e99fc3623..9c4932198931 100644
+--- a/drivers/net/ppp/ppp_synctty.c
++++ b/drivers/net/ppp/ppp_synctty.c
+@@ -506,6 +506,11 @@ ppp_sync_txmunge(struct syncppp *ap, struct sk_buff *skb)
+ 	unsigned char *data;
+ 	int islcp;
+ 
++	/* Ensure we can safely access protocol field and LCP code */
++	if (!pskb_may_pull(skb, 3)) {
++		kfree_skb(skb);
++		return NULL;
++	}
+ 	data  = skb->data;
+ 	proto = get_unaligned_be16(data);
+ 

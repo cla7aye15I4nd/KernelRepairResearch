@@ -1,0 +1,66 @@
+loop0: detected capacity change from 0 to 32768
+bcachefs (loop0): starting version 1.7: mi_btree_bitmap opts=errors=continue,compression=lz4,str_hash=crc64,erasure_code,no_splitbrain_check,nojournal_transaction_names,reconstruct_alloc
+============================================
+WARNING: possible recursive locking detected
+6.12.0-rc3-syzkaller-00007-g6485cf5ea253 #0 Not tainted
+--------------------------------------------
+syz-executor310/5219 is trying to acquire lock:
+ffff888071c00908 (&c->sb_lock){+.+.}-{3:3}, at: bch2_replicas_entry_validate+0x2a/0x80 fs/bcachefs/replicas.c:101
+
+but task is already holding lock:
+ffff888071c00908 (&c->sb_lock){+.+.}-{3:3}, at: bch2_read_superblock_clean+0x36/0x520 fs/bcachefs/sb-clean.c:149
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&c->sb_lock);
+  lock(&c->sb_lock);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+2 locks held by syz-executor310/5219:
+ #0: ffff888071c00278 (&c->state_lock){+.+.}-{3:3}, at: bch2_fs_start+0x45/0x5b0 fs/bcachefs/super.c:1007
+ #1: ffff888071c00908 (&c->sb_lock){+.+.}-{3:3}, at: bch2_read_superblock_clean+0x36/0x520 fs/bcachefs/sb-clean.c:149
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 5219 Comm: syz-executor310 Not tainted 6.12.0-rc3-syzkaller-00007-g6485cf5ea253 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_deadlock_bug+0x483/0x620 kernel/locking/lockdep.c:3037
+ check_deadlock kernel/locking/lockdep.c:3089 [inline]
+ validate_chain+0x15e2/0x5920 kernel/locking/lockdep.c:3891
+ __lock_acquire+0x1384/0x2050 kernel/locking/lockdep.c:5202
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5825
+ __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+ __mutex_lock+0x136/0xd70 kernel/locking/mutex.c:752
+ bch2_replicas_entry_validate+0x2a/0x80 fs/bcachefs/replicas.c:101
+ journal_entry_data_usage_validate+0x2b6/0x690 fs/bcachefs/journal_io.c:608
+ bch2_sb_clean_validate_late fs/bcachefs/sb-clean.c:40 [inline]
+ bch2_read_superblock_clean+0x207/0x520 fs/bcachefs/sb-clean.c:168
+ bch2_fs_recovery+0x1f4/0x39c0 fs/bcachefs/recovery.c:639
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1037
+ bch2_fs_get_tree+0xd68/0x1710 fs/bcachefs/fs.c:2078
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1800
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4055 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4032
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f4ee9a7a8fa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd21001bd8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffd21001bf0 RCX: 00007f4ee9a7a8fa
+RDX: 0000000020005d80 RSI: 0000000020005dc0 RDI: 00007ffd21001bf0
+RBP: 0000000000000004 R08: 00007ffd21001c30 R09: 0000000000005d93
+R10: 0000000000000000 R11: 0000000000000282 R12: 0000000000000000
+R13: 00007ffd21001c30 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>

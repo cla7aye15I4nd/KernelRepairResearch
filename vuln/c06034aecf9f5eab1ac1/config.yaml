@@ -1,0 +1,117 @@
+id: c06034aecf9f5eab1ac1
+bug_link: https://syzkaller.appspot.com/bug?extid=c06034aecf9f5eab1ac1
+title: possible deadlock in btrfs_search_slot
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bdcdd86ca94b5e9faa18d6f4d3dda660ac5c887e
+fix_commit: b740d806166979488e798e41743aaec051f2443f
+datetime: '2022-11-15T15:01:05+01:00'
+fix_commit_message: "btrfs: free btrfs_path before copying root refs to userspace\n\
+  \nSyzbot reported the following lockdep splat\n\n======================================================\n\
+  WARNING: possible circular locking dependency detected\n6.0.0-rc7-syzkaller-18095-gbbed346d5a96\
+  \ #0 Not tainted\n------------------------------------------------------\nsyz-executor307/3029\
+  \ is trying to acquire lock:\nffff0000c02525d8 (&mm->mmap_lock){++++}-{3:3}, at:\
+  \ __might_fault+0x54/0xb4 mm/memory.c:5576\n\nbut task is already holding lock:\n\
+  ffff0000c958a608 (btrfs-root-00){++++}-{3:3}, at: __btrfs_tree_read_lock fs/btrfs/locking.c:134\
+  \ [inline]\nffff0000c958a608 (btrfs-root-00){++++}-{3:3}, at: btrfs_tree_read_lock\
+  \ fs/btrfs/locking.c:140 [inline]\nffff0000c958a608 (btrfs-root-00){++++}-{3:3},\
+  \ at: btrfs_read_lock_root_node+0x13c/0x1c0 fs/btrfs/locking.c:279\n\nwhich lock\
+  \ already depends on the new lock.\n\nthe existing dependency chain (in reverse\
+  \ order) is:\n\n-> #3 (btrfs-root-00){++++}-{3:3}:\n       down_read_nested+0x64/0x84\
+  \ kernel/locking/rwsem.c:1624\n       __btrfs_tree_read_lock fs/btrfs/locking.c:134\
+  \ [inline]\n       btrfs_tree_read_lock fs/btrfs/locking.c:140 [inline]\n      \
+  \ btrfs_read_lock_root_node+0x13c/0x1c0 fs/btrfs/locking.c:279\n       btrfs_search_slot_get_root+0x74/0x338\
+  \ fs/btrfs/ctree.c:1637\n       btrfs_search_slot+0x1b0/0xfd8 fs/btrfs/ctree.c:1944\n\
+  \       btrfs_update_root+0x6c/0x5a0 fs/btrfs/root-tree.c:132\n       commit_fs_roots+0x1f0/0x33c\
+  \ fs/btrfs/transaction.c:1459\n       btrfs_commit_transaction+0x89c/0x12d8 fs/btrfs/transaction.c:2343\n\
+  \       flush_space+0x66c/0x738 fs/btrfs/space-info.c:786\n       btrfs_async_reclaim_metadata_space+0x43c/0x4e0\
+  \ fs/btrfs/space-info.c:1059\n       process_one_work+0x2d8/0x504 kernel/workqueue.c:2289\n\
+  \       worker_thread+0x340/0x610 kernel/workqueue.c:2436\n       kthread+0x12c/0x158\
+  \ kernel/kthread.c:376\n       ret_from_fork+0x10/0x20 arch/arm64/kernel/entry.S:860\n\
+  \n-> #2 (&fs_info->reloc_mutex){+.+.}-{3:3}:\n       __mutex_lock_common+0xd4/0xca8\
+  \ kernel/locking/mutex.c:603\n       __mutex_lock kernel/locking/mutex.c:747 [inline]\n\
+  \       mutex_lock_nested+0x38/0x44 kernel/locking/mutex.c:799\n       btrfs_record_root_in_trans\
+  \ fs/btrfs/transaction.c:516 [inline]\n       start_transaction+0x248/0x944 fs/btrfs/transaction.c:752\n\
+  \       btrfs_start_transaction+0x34/0x44 fs/btrfs/transaction.c:781\n       btrfs_create_common+0xf0/0x1b4\
+  \ fs/btrfs/inode.c:6651\n       btrfs_create+0x8c/0xb0 fs/btrfs/inode.c:6697\n \
+  \      lookup_open fs/namei.c:3413 [inline]\n       open_last_lookups fs/namei.c:3481\
+  \ [inline]\n       path_openat+0x804/0x11c4 fs/namei.c:3688\n       do_filp_open+0xdc/0x1b8\
+  \ fs/namei.c:3718\n       do_sys_openat2+0xb8/0x22c fs/open.c:1313\n       do_sys_open\
+  \ fs/open.c:1329 [inline]\n       __do_sys_openat fs/open.c:1345 [inline]\n    \
+  \   __se_sys_openat fs/open.c:1340 [inline]\n       __arm64_sys_openat+0xb0/0xe0\
+  \ fs/open.c:1340\n       __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]\n\
+  \       invoke_syscall arch/arm64/kernel/syscall.c:52 [inline]\n       el0_svc_common+0x138/0x220\
+  \ arch/arm64/kernel/syscall.c:142\n       do_el0_svc+0x48/0x164 arch/arm64/kernel/syscall.c:206\n\
+  \       el0_svc+0x58/0x150 arch/arm64/kernel/entry-common.c:636\n       el0t_64_sync_handler+0x84/0xf0\
+  \ arch/arm64/kernel/entry-common.c:654\n       el0t_64_sync+0x18c/0x190 arch/arm64/kernel/entry.S:581\n\
+  \n-> #1 (sb_internal#2){.+.+}-{0:0}:\n       percpu_down_read include/linux/percpu-rwsem.h:51\
+  \ [inline]\n       __sb_start_write include/linux/fs.h:1826 [inline]\n       sb_start_intwrite\
+  \ include/linux/fs.h:1948 [inline]\n       start_transaction+0x360/0x944 fs/btrfs/transaction.c:683\n\
+  \       btrfs_join_transaction+0x30/0x40 fs/btrfs/transaction.c:795\n       btrfs_dirty_inode+0x50/0x140\
+  \ fs/btrfs/inode.c:6103\n       btrfs_update_time+0x1c0/0x1e8 fs/btrfs/inode.c:6145\n\
+  \       inode_update_time fs/inode.c:1872 [inline]\n       touch_atime+0x1f0/0x4a8\
+  \ fs/inode.c:1945\n       file_accessed include/linux/fs.h:2516 [inline]\n     \
+  \  btrfs_file_mmap+0x50/0x88 fs/btrfs/file.c:2407\n       call_mmap include/linux/fs.h:2192\
+  \ [inline]\n       mmap_region+0x7fc/0xc14 mm/mmap.c:1752\n       do_mmap+0x644/0x97c\
+  \ mm/mmap.c:1540\n       vm_mmap_pgoff+0xe8/0x1d0 mm/util.c:552\n       ksys_mmap_pgoff+0x1cc/0x278\
+  \ mm/mmap.c:1586\n       __do_sys_mmap arch/arm64/kernel/sys.c:28 [inline]\n   \
+  \    __se_sys_mmap arch/arm64/kernel/sys.c:21 [inline]\n       __arm64_sys_mmap+0x58/0x6c\
+  \ arch/arm64/kernel/sys.c:21\n       __invoke_syscall arch/arm64/kernel/syscall.c:38\
+  \ [inline]\n       invoke_syscall arch/arm64/kernel/syscall.c:52 [inline]\n    \
+  \   el0_svc_common+0x138/0x220 arch/arm64/kernel/syscall.c:142\n       do_el0_svc+0x48/0x164\
+  \ arch/arm64/kernel/syscall.c:206\n       el0_svc+0x58/0x150 arch/arm64/kernel/entry-common.c:636\n\
+  \       el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:654\n  \
+  \     el0t_64_sync+0x18c/0x190 arch/arm64/kernel/entry.S:581\n\n-> #0 (&mm->mmap_lock){++++}-{3:3}:\n\
+  \       check_prev_add kernel/locking/lockdep.c:3095 [inline]\n       check_prevs_add\
+  \ kernel/locking/lockdep.c:3214 [inline]\n       validate_chain kernel/locking/lockdep.c:3829\
+  \ [inline]\n       __lock_acquire+0x1530/0x30a4 kernel/locking/lockdep.c:5053\n\
+  \       lock_acquire+0x100/0x1f8 kernel/locking/lockdep.c:5666\n       __might_fault+0x7c/0xb4\
+  \ mm/memory.c:5577\n       _copy_to_user include/linux/uaccess.h:134 [inline]\n\
+  \       copy_to_user include/linux/uaccess.h:160 [inline]\n       btrfs_ioctl_get_subvol_rootref+0x3a8/0x4bc\
+  \ fs/btrfs/ioctl.c:3203\n       btrfs_ioctl+0xa08/0xa64 fs/btrfs/ioctl.c:5556\n\
+  \       vfs_ioctl fs/ioctl.c:51 [inline]\n       __do_sys_ioctl fs/ioctl.c:870 [inline]\n\
+  \       __se_sys_ioctl fs/ioctl.c:856 [inline]\n       __arm64_sys_ioctl+0xd0/0x140\
+  \ fs/ioctl.c:856\n       __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]\n\
+  \       invoke_syscall arch/arm64/kernel/syscall.c:52 [inline]\n       el0_svc_common+0x138/0x220\
+  \ arch/arm64/kernel/syscall.c:142\n       do_el0_svc+0x48/0x164 arch/arm64/kernel/syscall.c:206\n\
+  \       el0_svc+0x58/0x150 arch/arm64/kernel/entry-common.c:636\n       el0t_64_sync_handler+0x84/0xf0\
+  \ arch/arm64/kernel/entry-common.c:654\n       el0t_64_sync+0x18c/0x190 arch/arm64/kernel/entry.S:581\n\
+  \nother info that might help us debug this:\n\nChain exists of:\n  &mm->mmap_lock\
+  \ --> &fs_info->reloc_mutex --> btrfs-root-00\n\n Possible unsafe locking scenario:\n\
+  \n       CPU0                    CPU1\n       ----                    ----\n  lock(btrfs-root-00);\n\
+  \                               lock(&fs_info->reloc_mutex);\n                 \
+  \              lock(btrfs-root-00);\n  lock(&mm->mmap_lock);\n\n *** DEADLOCK ***\n\
+  \n1 lock held by syz-executor307/3029:\n #0: ffff0000c958a608 (btrfs-root-00){++++}-{3:3},\
+  \ at: __btrfs_tree_read_lock fs/btrfs/locking.c:134 [inline]\n #0: ffff0000c958a608\
+  \ (btrfs-root-00){++++}-{3:3}, at: btrfs_tree_read_lock fs/btrfs/locking.c:140 [inline]\n\
+  \ #0: ffff0000c958a608 (btrfs-root-00){++++}-{3:3}, at: btrfs_read_lock_root_node+0x13c/0x1c0\
+  \ fs/btrfs/locking.c:279\n\nstack backtrace:\nCPU: 0 PID: 3029 Comm: syz-executor307\
+  \ Not tainted 6.0.0-rc7-syzkaller-18095-gbbed346d5a96 #0\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS Google 09/30/2022\nCall trace:\n\
+  \ dump_backtrace+0x1c4/0x1f0 arch/arm64/kernel/stacktrace.c:156\n show_stack+0x2c/0x54\
+  \ arch/arm64/kernel/stacktrace.c:163\n __dump_stack lib/dump_stack.c:88 [inline]\n\
+  \ dump_stack_lvl+0x104/0x16c lib/dump_stack.c:106\n dump_stack+0x1c/0x58 lib/dump_stack.c:113\n\
+  \ print_circular_bug+0x2c4/0x2c8 kernel/locking/lockdep.c:2053\n check_noncircular+0x14c/0x154\
+  \ kernel/locking/lockdep.c:2175\n check_prev_add kernel/locking/lockdep.c:3095 [inline]\n\
+  \ check_prevs_add kernel/locking/lockdep.c:3214 [inline]\n validate_chain kernel/locking/lockdep.c:3829\
+  \ [inline]\n __lock_acquire+0x1530/0x30a4 kernel/locking/lockdep.c:5053\n lock_acquire+0x100/0x1f8\
+  \ kernel/locking/lockdep.c:5666\n __might_fault+0x7c/0xb4 mm/memory.c:5577\n _copy_to_user\
+  \ include/linux/uaccess.h:134 [inline]\n copy_to_user include/linux/uaccess.h:160\
+  \ [inline]\n btrfs_ioctl_get_subvol_rootref+0x3a8/0x4bc fs/btrfs/ioctl.c:3203\n\
+  \ btrfs_ioctl+0xa08/0xa64 fs/btrfs/ioctl.c:5556\n vfs_ioctl fs/ioctl.c:51 [inline]\n\
+  \ __do_sys_ioctl fs/ioctl.c:870 [inline]\n __se_sys_ioctl fs/ioctl.c:856 [inline]\n\
+  \ __arm64_sys_ioctl+0xd0/0x140 fs/ioctl.c:856\n __invoke_syscall arch/arm64/kernel/syscall.c:38\
+  \ [inline]\n invoke_syscall arch/arm64/kernel/syscall.c:52 [inline]\n el0_svc_common+0x138/0x220\
+  \ arch/arm64/kernel/syscall.c:142\n do_el0_svc+0x48/0x164 arch/arm64/kernel/syscall.c:206\n\
+  \ el0_svc+0x58/0x150 arch/arm64/kernel/entry-common.c:636\n el0t_64_sync_handler+0x84/0xf0\
+  \ arch/arm64/kernel/entry-common.c:654\n el0t_64_sync+0x18c/0x190 arch/arm64/kernel/entry.S:581\n\
+  \nWe do generally the right thing here, copying the references into a\ntemporary\
+  \ buffer, however we are still holding the path when we do\ncopy_to_user from the\
+  \ temporary buffer.  Fix this by freeing the path\nbefore we copy to user space.\n\
+  \nReported-by: syzbot+4ef9e52e464c6ff47d9d@syzkaller.appspotmail.com\nCC: stable@vger.kernel.org\
+  \ # 4.19+\nReviewed-by: Anand Jain <anand.jain@oracle.com>\nSigned-off-by: Josef\
+  \ Bacik <josef@toxicpanda.com>\nReviewed-by: David Sterba <dsterba@suse.com>\nSigned-off-by:\
+  \ David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 2
+covered_count: 2

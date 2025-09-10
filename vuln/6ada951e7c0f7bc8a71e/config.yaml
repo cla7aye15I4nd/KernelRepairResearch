@@ -1,0 +1,44 @@
+id: 6ada951e7c0f7bc8a71e
+bug_link: https://syzkaller.appspot.com/bug?extid=6ada951e7c0f7bc8a71e
+title: general protection fault in hugetlb_vma_lock_write
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b197d16669831d3e3240e2b6a3e4f9cf0331d58e
+fix_commit: 187da0f8250aa94bd96266096aef6f694e0b4cd2
+datetime: '2023-12-06T16:12:43-08:00'
+fix_commit_message: "hugetlb: fix null-ptr-deref in hugetlb_vma_lock_write\n\nThe\
+  \ routine __vma_private_lock tests for the existence of a reserve map\nassociated\
+  \ with a private hugetlb mapping.  A pointer to the reserve map\nis in vma->vm_private_data.\
+  \  __vma_private_lock was checking the pointer\nfor NULL.  However, it is possible\
+  \ that the low bits of the pointer could\nbe used as flags.  In such instances,\
+  \ vm_private_data is not NULL and not\na valid pointer.  This results in the null-ptr-deref\
+  \ reported by syzbot:\n\ngeneral protection fault, probably for non-canonical address\
+  \ 0xdffffc000000001d:\n 0000 [#1] PREEMPT SMP KASAN\nKASAN: null-ptr-deref in range\
+  \ [0x00000000000000e8-0x00000000000000ef]\nCPU: 0 PID: 5048 Comm: syz-executor139\
+  \ Not tainted 6.6.0-rc7-syzkaller-00142-g88\n8cf78c29e2 #0\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS Google 1\n0/09/2023\nRIP: 0010:__lock_acquire+0x109/0x5de0\
+  \ kernel/locking/lockdep.c:5004\n...\nCall Trace:\n <TASK>\n lock_acquire kernel/locking/lockdep.c:5753\
+  \ [inline]\n lock_acquire+0x1ae/0x510 kernel/locking/lockdep.c:5718\n down_write+0x93/0x200\
+  \ kernel/locking/rwsem.c:1573\n hugetlb_vma_lock_write mm/hugetlb.c:300 [inline]\n\
+  \ hugetlb_vma_lock_write+0xae/0x100 mm/hugetlb.c:291\n __hugetlb_zap_begin+0x1e9/0x2b0\
+  \ mm/hugetlb.c:5447\n hugetlb_zap_begin include/linux/hugetlb.h:258 [inline]\n unmap_vmas+0x2f4/0x470\
+  \ mm/memory.c:1733\n exit_mmap+0x1ad/0xa60 mm/mmap.c:3230\n __mmput+0x12a/0x4d0\
+  \ kernel/fork.c:1349\n mmput+0x62/0x70 kernel/fork.c:1371\n exit_mm kernel/exit.c:567\
+  \ [inline]\n do_exit+0x9ad/0x2a20 kernel/exit.c:861\n __do_sys_exit kernel/exit.c:991\
+  \ [inline]\n __se_sys_exit kernel/exit.c:989 [inline]\n __x64_sys_exit+0x42/0x50\
+  \ kernel/exit.c:989\n do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x38/0xb0\
+  \ arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nMask\
+  \ off low bit flags before checking for NULL pointer.  In addition, the\nreserve\
+  \ map only 'belongs' to the OWNER (parent in parent/child\nrelationships) so also\
+  \ check for the OWNER flag.\n\nLink: https://lkml.kernel.org/r/20231114012033.259600-1-mike.kravetz@oracle.com\n\
+  Reported-by: syzbot+6ada951e7c0f7bc8a71e@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/linux-mm/00000000000078d1e00608d7878b@google.com/\n\
+  Fixes: bf4916922c60 (\"hugetlbfs: extend hugetlb_vma_lock to private VMAs\")\nSigned-off-by:\
+  \ Mike Kravetz <mike.kravetz@oracle.com>\nReviewed-by: Rik van Riel <riel@surriel.com>\n\
+  Cc: Edward Adam Davis <eadavis@qq.com>\nCc: Muchun Song <muchun.song@linux.dev>\n\
+  Cc: Nathan Chancellor <nathan@kernel.org>\nCc: Nick Desaulniers <ndesaulniers@google.com>\n\
+  Cc: Tom Rix <trix@redhat.com>\nCc: <stable@vger.kernel.org>\nSigned-off-by: Andrew\
+  \ Morton <akpm@linux-foundation.org>\n"
+submodule:
+- include/linux
+- mm
+hunk_count: 2
+covered_count: 0

@@ -1,0 +1,47 @@
+diff --git a/arch/x86/include/asm/pgtable.h b/arch/x86/include/asm/pgtable.h
+index d6ad98ca1288..e02b179ec659 100644
+--- a/arch/x86/include/asm/pgtable.h
++++ b/arch/x86/include/asm/pgtable.h
+@@ -955,6 +955,14 @@ static inline int pte_same(pte_t a, pte_t b)
+ 	return a.pte == b.pte;
+ }
+ 
++static inline pte_t pte_next_pfn(pte_t pte)
++{
++	if (__pte_needs_invert(pte_val(pte)))
++		return __pte(pte_val(pte) - (1UL << PFN_PTE_SHIFT));
++	return __pte(pte_val(pte) + (1UL << PFN_PTE_SHIFT));
++}
++#define pte_next_pfn	pte_next_pfn
++
+ static inline int pte_present(pte_t a)
+ {
+ 	return pte_flags(a) & (_PAGE_PRESENT | _PAGE_PROTNONE);
+diff --git a/include/linux/pgtable.h b/include/linux/pgtable.h
+index 1fba072b3dac..af7639c3b0a3 100644
+--- a/include/linux/pgtable.h
++++ b/include/linux/pgtable.h
+@@ -206,6 +206,14 @@ static inline int pmd_young(pmd_t pmd)
+ #endif
+ 
+ #ifndef set_ptes
++
++#ifndef pte_next_pfn
++static inline pte_t pte_next_pfn(pte_t pte)
++{
++	return __pte(pte_val(pte) + (1UL << PFN_PTE_SHIFT));
++}
++#endif
++
+ /**
+  * set_ptes - Map consecutive pages to a contiguous range of addresses.
+  * @mm: Address space to map the pages into.
+@@ -231,7 +239,7 @@ static inline void set_ptes(struct mm_struct *mm, unsigned long addr,
+ 		if (--nr == 0)
+ 			break;
+ 		ptep++;
+-		pte = __pte(pte_val(pte) + (1UL << PFN_PTE_SHIFT));
++		pte = pte_next_pfn(pte);
+ 	}
+ 	arch_leave_lazy_mmu_mode();
+ }

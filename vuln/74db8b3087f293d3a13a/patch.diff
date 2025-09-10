@@ -1,0 +1,60 @@
+diff --git a/fs/nilfs2/inode.c b/fs/nilfs2/inode.c
+index a8ce522ac747..35bc79305318 100644
+--- a/fs/nilfs2/inode.c
++++ b/fs/nilfs2/inode.c
+@@ -1101,9 +1101,17 @@ int nilfs_set_file_dirty(struct inode *inode, unsigned int nr_dirty)
+ 
+ int __nilfs_mark_inode_dirty(struct inode *inode, int flags)
+ {
++	struct the_nilfs *nilfs = inode->i_sb->s_fs_info;
+ 	struct buffer_head *ibh;
+ 	int err;
+ 
++	/*
++	 * Do not dirty inodes after the log writer has been detached
++	 * and its nilfs_root struct has been freed.
++	 */
++	if (unlikely(nilfs_purging(nilfs)))
++		return 0;
++
+ 	err = nilfs_load_inode_block(inode, &ibh);
+ 	if (unlikely(err)) {
+ 		nilfs_warn(inode->i_sb,
+diff --git a/fs/nilfs2/segment.c b/fs/nilfs2/segment.c
+index c2553024bd25..581691e4be49 100644
+--- a/fs/nilfs2/segment.c
++++ b/fs/nilfs2/segment.c
+@@ -2845,6 +2845,7 @@ void nilfs_detach_log_writer(struct super_block *sb)
+ 		nilfs_segctor_destroy(nilfs->ns_writer);
+ 		nilfs->ns_writer = NULL;
+ 	}
++	set_nilfs_purging(nilfs);
+ 
+ 	/* Force to free the list of dirty files */
+ 	spin_lock(&nilfs->ns_inode_lock);
+@@ -2857,4 +2858,5 @@ void nilfs_detach_log_writer(struct super_block *sb)
+ 	up_write(&nilfs->ns_segctor_sem);
+ 
+ 	nilfs_dispose_list(nilfs, &garbage_list, 1);
++	clear_nilfs_purging(nilfs);
+ }
+diff --git a/fs/nilfs2/the_nilfs.h b/fs/nilfs2/the_nilfs.h
+index 47c7dfbb7ea5..cd4ae1b8ae16 100644
+--- a/fs/nilfs2/the_nilfs.h
++++ b/fs/nilfs2/the_nilfs.h
+@@ -29,6 +29,7 @@ enum {
+ 	THE_NILFS_DISCONTINUED,	/* 'next' pointer chain has broken */
+ 	THE_NILFS_GC_RUNNING,	/* gc process is running */
+ 	THE_NILFS_SB_DIRTY,	/* super block is dirty */
++	THE_NILFS_PURGING,	/* disposing dirty files for cleanup */
+ };
+ 
+ /**
+@@ -208,6 +209,7 @@ THE_NILFS_FNS(INIT, init)
+ THE_NILFS_FNS(DISCONTINUED, discontinued)
+ THE_NILFS_FNS(GC_RUNNING, gc_running)
+ THE_NILFS_FNS(SB_DIRTY, sb_dirty)
++THE_NILFS_FNS(PURGING, purging)
+ 
+ /*
+  * Mount option operations

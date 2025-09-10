@@ -1,0 +1,29 @@
+id: 909a5177749d7990ffa4
+bug_link: https://syzkaller.appspot.com/bug?extid=909a5177749d7990ffa4
+title: general protection fault in open_fs_devices
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 399f7f4c42e8a58c8456264d5112287aefe44cf4
+fix_commit: 81ffd56b5745355b70d54ca4e1bdd0d64a66ff9f
+datetime: '2018-08-06T13:12:48+02:00'
+fix_commit_message: "btrfs: fix mount and ioctl device scan ioctl race\n\nTechnically\
+  \ this extends the critical section covered by uuid_mutex to:\n\n- parse early mount\
+  \ options -- here we can call device scan on paths\n  that can be passed as 'device=/dev/...'\n\
+  \n- scan the device passed to mount\n\n- open the devices related to the fs_devices\
+  \ -- this increases\n  fs_devices::opened\n\nThe race can happen when mount calls\
+  \ one of the scans and there's\nanother one called eg. by mkfs or 'btrfs dev scan':\n\
+  \nMount                                  Scan\n-----                           \
+  \       ----\nscan_one_device (dev1, fsid1)\n                                  \
+  \     scan_one_device (dev2, fsid1)\n\t\t\t\t           add the device\n\t\t\t\t\
+  \t   free stale devices\n\t\t\t\t\t       fsid1 fs_devices::opened == 0\n\t\t\t\t\
+  \t           find fsid1:dev1\n\t\t\t\t\t           free fsid1:dev1\n\t\t\t\t\t \
+  \          if it's the last one,\n\t\t\t\t\t            free fs_devices of fsid1\n\
+  \t\t\t\t\t\t    too\n\nopen_devices (dev1, fsid1)\n   dev1 not found\n\nWhen fixed,\
+  \ the uuid mutex will make sure that mount will increase\nfs_devices::opened and\
+  \ this will not be touched by the racing scan\nioctl.\n\nReported-and-tested-by:\
+  \ syzbot+909a5177749d7990ffa4@syzkaller.appspotmail.com\nReported-and-tested-by:\
+  \ syzbot+ceb2606025ec1cc3479c@syzkaller.appspotmail.com\nReviewed-by: Anand Jain\
+  \ <anand.jain@oracle.com>\nSigned-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 1

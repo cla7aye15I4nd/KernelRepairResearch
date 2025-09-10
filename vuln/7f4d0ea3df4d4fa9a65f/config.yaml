@@ -1,0 +1,52 @@
+id: 7f4d0ea3df4d4fa9a65f
+bug_link: https://syzkaller.appspot.com/bug?extid=7f4d0ea3df4d4fa9a65f
+title: 'KMSAN: uninit-value in validate_xmit_skb'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e18405d0be8001fa4c5f9e61471f6ffd59c7a1b3
+fix_commit: 9181d6f8a2bb32d158de66a84164fac05e3ddd18
+datetime: '2024-01-13T18:06:23+00:00'
+fix_commit_message: "net: add more sanity check in virtio_net_hdr_to_skb()\n\nsyzbot/KMSAN\
+  \ reports access to uninitialized data from gso_features_check() [1]\n\nThe repro\
+  \ use af_packet, injecting a gso packet and hdrlen == 0.\n\nWe could fix the issue\
+  \ making gso_features_check() more careful\nwhile dealing with NETIF_F_TSO_MANGLEID\
+  \ in fast path.\n\nOr we can make sure virtio_net_hdr_to_skb() pulls minimal network\
+  \ and\ntransport headers as intended.\n\nNote that for GSO packets coming from untrusted\
+  \ sources, SKB_GSO_DODGY\nbit forces a proper header validation (and pull) before\
+  \ the packet can\nhit any device ndo_start_xmit(), thus we do not need a precise\
+  \ disection\nat virtio_net_hdr_to_skb() stage.\n\n[1]\nBUG: KMSAN: uninit-value\
+  \ in skb_gso_segment include/net/gso.h:83 [inline]\nBUG: KMSAN: uninit-value in\
+  \ validate_xmit_skb+0x10f2/0x1930 net/core/dev.c:3629\n skb_gso_segment include/net/gso.h:83\
+  \ [inline]\n validate_xmit_skb+0x10f2/0x1930 net/core/dev.c:3629\n __dev_queue_xmit+0x1eac/0x5130\
+  \ net/core/dev.c:4341\n dev_queue_xmit include/linux/netdevice.h:3134 [inline]\n\
+  \ packet_xmit+0x9c/0x6b0 net/packet/af_packet.c:276\n packet_snd net/packet/af_packet.c:3087\
+  \ [inline]\n packet_sendmsg+0x8b1d/0x9f30 net/packet/af_packet.c:3119\n sock_sendmsg_nosec\
+  \ net/socket.c:730 [inline]\n __sock_sendmsg net/socket.c:745 [inline]\n ____sys_sendmsg+0x9c2/0xd60\
+  \ net/socket.c:2584\n ___sys_sendmsg+0x28d/0x3c0 net/socket.c:2638\n __sys_sendmsg\
+  \ net/socket.c:2667 [inline]\n __do_sys_sendmsg net/socket.c:2676 [inline]\n __se_sys_sendmsg\
+  \ net/socket.c:2674 [inline]\n __x64_sys_sendmsg+0x307/0x490 net/socket.c:2674\n\
+  \ do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n do_syscall_64+0x44/0x110\
+  \ arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x63/0x6b\n\nUninit\
+  \ was created at:\n slab_post_alloc_hook+0x129/0xa70 mm/slab.h:768\n slab_alloc_node\
+  \ mm/slub.c:3478 [inline]\n kmem_cache_alloc_node+0x5e9/0xb10 mm/slub.c:3523\n kmalloc_reserve+0x13d/0x4a0\
+  \ net/core/skbuff.c:560\n __alloc_skb+0x318/0x740 net/core/skbuff.c:651\n alloc_skb\
+  \ include/linux/skbuff.h:1286 [inline]\n alloc_skb_with_frags+0xc8/0xbd0 net/core/skbuff.c:6334\n\
+  \ sock_alloc_send_pskb+0xa80/0xbf0 net/core/sock.c:2780\n packet_alloc_skb net/packet/af_packet.c:2936\
+  \ [inline]\n packet_snd net/packet/af_packet.c:3030 [inline]\n packet_sendmsg+0x70e8/0x9f30\
+  \ net/packet/af_packet.c:3119\n sock_sendmsg_nosec net/socket.c:730 [inline]\n __sock_sendmsg\
+  \ net/socket.c:745 [inline]\n ____sys_sendmsg+0x9c2/0xd60 net/socket.c:2584\n ___sys_sendmsg+0x28d/0x3c0\
+  \ net/socket.c:2638\n __sys_sendmsg net/socket.c:2667 [inline]\n __do_sys_sendmsg\
+  \ net/socket.c:2676 [inline]\n __se_sys_sendmsg net/socket.c:2674 [inline]\n __x64_sys_sendmsg+0x307/0x490\
+  \ net/socket.c:2674\n do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n do_syscall_64+0x44/0x110\
+  \ arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x63/0x6b\n\nCPU:\
+  \ 0 PID: 5025 Comm: syz-executor279 Not tainted 6.7.0-rc7-syzkaller-00003-gfbafc3e621c3\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 11/17/2023\n\nReported-by: syzbot+7f4d0ea3df4d4fa9a65f@syzkaller.appspotmail.com\n\
+  Link: https://lore.kernel.org/netdev/0000000000005abd7b060eb160cd@google.com/\n\
+  Fixes: 9274124f023b (\"net: stricter validation of untrusted gso packets\")\nSigned-off-by:\
+  \ Eric Dumazet <edumazet@google.com>\nCc: Willem de Bruijn <willemb@google.com>\n\
+  Reviewed-by: Willem de Bruijn <willemb@google.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- include/linux
+hunk_count: 5
+covered_count: 0

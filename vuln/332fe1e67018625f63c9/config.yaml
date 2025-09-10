@@ -1,0 +1,24 @@
+id: 332fe1e67018625f63c9
+bug_link: https://syzkaller.appspot.com/bug?extid=332fe1e67018625f63c9
+title: WARNING in l2tp_exit_net
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9bb88c659673003453fd42e0ddf95c9628409094
+fix_commit: 5d066766c5f1252f98ff859265bcd1a5b52ac46c
+datetime: '2024-11-26T09:27:07+01:00'
+fix_commit_message: "net/l2tp: fix warning in l2tp_exit_net found by syzbot\n\nIn\
+  \ l2tp's net exit handler, we check that an IDR is empty before\ndestroying it:\n\
+  \n\tWARN_ON_ONCE(!idr_is_empty(&pn->l2tp_tunnel_idr));\n\tidr_destroy(&pn->l2tp_tunnel_idr);\n\
+  \nBy forcing memory allocation failures in idr_alloc_32, syzbot is able\nto provoke\
+  \ a condition where idr_is_empty returns false despite there\nbeing no items in\
+  \ the IDR. This turns out to be because the radix tree\nof the IDR contains only\
+  \ internal radix-tree nodes and it is this that\ncauses idr_is_empty to return false.\
+  \ The internal nodes are cleaned by\nidr_destroy.\n\nUse idr_for_each to check that\
+  \ the IDR is empty instead of\nidr_is_empty to avoid the problem.\n\nReported-by:\
+  \ syzbot+332fe1e67018625f63c9@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=332fe1e67018625f63c9\n\
+  Fixes: 73d33bd063c4 (\"l2tp: avoid using drain_workqueue in l2tp_pre_exit_net\"\
+  )\nSigned-off-by: James Chapman <jchapman@katalix.com>\nLink: https://patch.msgid.link/20241118140411.1582555-1-jchapman@katalix.com\n\
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>\n\n"
+submodule:
+- net/l2tp
+hunk_count: 1
+covered_count: 1

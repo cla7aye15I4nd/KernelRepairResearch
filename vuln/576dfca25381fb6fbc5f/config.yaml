@@ -1,0 +1,43 @@
+id: 576dfca25381fb6fbc5f
+bug_link: https://syzkaller.appspot.com/bug?extid=576dfca25381fb6fbc5f
+title: 'INFO: trying to register non-static key in hci_uart_flush (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: deee93d13d385103205879a8a0915036ecd83261
+fix_commit: 3124d320c22f3f4388d9ac5c8f37eaad0cefd6b1
+datetime: '2022-09-19T10:33:39-07:00'
+fix_commit_message: 'Bluetooth: hci_{ldisc,serdev}: check percpu_init_rwsem() failure
+
+
+  syzbot is reporting NULL pointer dereference at hci_uart_tty_close() [1],
+
+  for rcu_sync_enter() is called without rcu_sync_init() due to
+
+  hci_uart_tty_open() ignoring percpu_init_rwsem() failure.
+
+
+  While we are at it, fix that hci_uart_register_device() ignores
+
+  percpu_init_rwsem() failure and hci_uart_unregister_device() does not
+
+  call percpu_free_rwsem().
+
+
+  Link: https://syzkaller.appspot.com/bug?extid=576dfca25381fb6fbc5f [1]
+
+  Reported-by: syzbot <syzbot+576dfca25381fb6fbc5f@syzkaller.appspotmail.com>
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Fixes: 67d2f8781b9f00d1 ("Bluetooth: hci_ldisc: Allow sleeping while proto locks
+  are held.")
+
+  Fixes: d73e172816652772 ("Bluetooth: hci_serdev: Init hci_uart proto_lock to avoid
+  oops")
+
+  Signed-off-by: Luiz Augusto von Dentz <luiz.von.dentz@intel.com>
+
+  '
+submodule:
+- drivers/bluetooth
+hunk_count: 5
+covered_count: 2

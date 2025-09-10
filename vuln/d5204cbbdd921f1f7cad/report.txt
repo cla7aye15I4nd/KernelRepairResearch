@@ -1,0 +1,68 @@
+usb 5-1: New USB device found, idVendor=056a, idProduct=00f8, bcdDevice= 0.00
+usb 5-1: New USB device strings: Mfr=0, Product=0, SerialNumber=0
+usb 5-1: config 0 descriptor??
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in ./include/linux/log2.h:57:13
+shift exponent 64 is too large for 64-bit type 'long unsigned int'
+CPU: 0 UID: 0 PID: 835 Comm: kworker/0:2 Not tainted 6.14.0-syzkaller-03565-gf6e0150b2003 #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: usb_hub_wq hub_event
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x16c/0x1f0 lib/dump_stack.c:120
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x27f/0x420 lib/ubsan.c:492
+ __roundup_pow_of_two include/linux/log2.h:57 [inline]
+ __kfifo_alloc.cold+0x18/0x1d lib/kfifo.c:32
+ wacom_devm_kfifo_alloc drivers/hid/wacom_sys.c:1308 [inline]
+ wacom_parse_and_register+0x28e/0x5d10 drivers/hid/wacom_sys.c:2368
+ wacom_probe+0xa1c/0xe10 drivers/hid/wacom_sys.c:2867
+ __hid_device_probe drivers/hid/hid-core.c:2717 [inline]
+ hid_device_probe+0x354/0x710 drivers/hid/hid-core.c:2754
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x23e/0xa90 drivers/base/dd.c:658
+ __driver_probe_device+0x1de/0x440 drivers/base/dd.c:800
+ driver_probe_device+0x4c/0x1b0 drivers/base/dd.c:830
+ __device_attach_driver+0x1df/0x310 drivers/base/dd.c:958
+ bus_for_each_drv+0x156/0x1e0 drivers/base/bus.c:462
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1030
+ bus_probe_device+0x17f/0x1c0 drivers/base/bus.c:537
+ device_add+0x1148/0x1a70 drivers/base/core.c:3666
+ hid_add_device+0x373/0xa60 drivers/hid/hid-core.c:2900
+ usbhid_probe+0xd38/0x13f0 drivers/hid/usbhid/hid-core.c:1432
+ usb_probe_interface+0x300/0x9c0 drivers/usb/core/driver.c:396
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x23e/0xa90 drivers/base/dd.c:658
+ __driver_probe_device+0x1de/0x440 drivers/base/dd.c:800
+ driver_probe_device+0x4c/0x1b0 drivers/base/dd.c:830
+ __device_attach_driver+0x1df/0x310 drivers/base/dd.c:958
+ bus_for_each_drv+0x156/0x1e0 drivers/base/bus.c:462
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1030
+ bus_probe_device+0x17f/0x1c0 drivers/base/bus.c:537
+ device_add+0x1148/0x1a70 drivers/base/core.c:3666
+ usb_set_configuration+0x1187/0x1e20 drivers/usb/core/message.c:2210
+ usb_generic_driver_probe+0xb1/0x110 drivers/usb/core/generic.c:250
+ usb_probe_device+0xec/0x3e0 drivers/usb/core/driver.c:291
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x23e/0xa90 drivers/base/dd.c:658
+ __driver_probe_device+0x1de/0x440 drivers/base/dd.c:800
+ driver_probe_device+0x4c/0x1b0 drivers/base/dd.c:830
+ __device_attach_driver+0x1df/0x310 drivers/base/dd.c:958
+ bus_for_each_drv+0x156/0x1e0 drivers/base/bus.c:462
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1030
+ bus_probe_device+0x17f/0x1c0 drivers/base/bus.c:537
+ device_add+0x1148/0x1a70 drivers/base/core.c:3666
+ usb_new_device+0xd07/0x1a20 drivers/usb/core/hub.c:2663
+ hub_port_connect drivers/usb/core/hub.c:5533 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5673 [inline]
+ port_event drivers/usb/core/hub.c:5833 [inline]
+ hub_event+0x2eb7/0x4fa0 drivers/usb/core/hub.c:5915
+ process_one_work+0x9cc/0x1b70 kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3319 [inline]
+ worker_thread+0x6c1/0xef0 kernel/workqueue.c:3400
+ kthread+0x3a4/0x760 kernel/kthread.c:464
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+---[ end trace ]---

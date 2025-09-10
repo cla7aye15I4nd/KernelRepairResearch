@@ -1,0 +1,83 @@
+infiniband syz0: set active
+Unable to handle kernel NULL pointer dereference at virtual address 0000000000000010
+Mem abort info:
+  ESR = 0x0000000097810006
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x06: level 2 translation fault
+Data abort info:
+  Access size = 4 byte(s)
+  SSE = 0, SRT = 1
+  SF = 0, AR = 0
+  CM = 0, WnR = 0, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+user pgtable: 4k pages, 48-bit VAs, pgdp=000000006f316000
+[0000000000000010] pgd=080000006f27f003, p4d=080000006f27f003, pud=080000006f31a003, pmd=0000000000000000
+Internal error: Oops: 0000000097810006 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 1 PID: 3665 Comm: syz-executor.0 Not tainted 6.8.0-rc3-syzkaller-00279-g4a7bbe7519b6 #0
+Hardware name: linux,dummy-virt (DT)
+pstate: 61400009 (nZCv daif +PAN -UAO -TCO +DIT -SSBS BTYPE=--)
+pc : __seqprop_raw_spinlock_sequence include/linux/seqlock.h:226 [inline]
+pc : hrtimer_active+0x4/0x60 kernel/time/hrtimer.c:1614
+lr : hrtimer_try_to_cancel+0x1c/0xf8 kernel/time/hrtimer.c:1331
+sp : ffff800082c63300
+x29: ffff800082c63300 x28: 0000000000000000 x27: 0000000000000000
+x26: 0000000000000340 x25: 0000000000000000 x24: f3ff00001ab7e9e0
+x23: 0000000000000000 x22: 000061100fc019e9 x21: 0000000000000009
+x20: 0000000000000000 x19: fbff00001abf9920 x18: 0000000000000000
+x17: 0000000000000000 x16: 0000000000000000 x15: ffff80008144d28c
+x14: ffff80008144d20c x13: ffff80008144d28c x12: ffff80008144d20c
+x11: ffff800080011558 x10: ffff800081907d14 x9 : ffff8000819078a4
+x8 : ffff800082c63408 x7 : 0000000000000000 x6 : ffff800080026d20
+x5 : f2ff000033f2c800 x4 : 000061100fc019e9 x3 : 0000000000000340
+x2 : 0000000000000000 x1 : 000000000000000d x0 : fbff00001abf9920
+Call trace:
+ hrtimer_active+0x4/0x60 kernel/time/hrtimer.c:1613
+ hrtimer_cancel+0x1c/0x38 kernel/time/hrtimer.c:1446
+ napi_disable+0x5c/0x11c net/core/dev.c:6502
+ veth_napi_del_range+0x64/0x1d8 drivers/net/veth.c:1109
+ veth_napi_del drivers/net/veth.c:1129 [inline]
+ veth_set_features+0x68/0x98 drivers/net/veth.c:1580
+ __netdev_update_features+0x200/0x6ec net/core/dev.c:9872
+ netdev_update_features+0x28/0x6c net/core/dev.c:9946
+ veth_xdp_set drivers/net/veth.c:1681 [inline]
+ veth_xdp+0x108/0x224 drivers/net/veth.c:1694
+ dev_xdp_install+0x64/0xf8 net/core/dev.c:9243
+ dev_xdp_attach+0x250/0x52c net/core/dev.c:9395
+ dev_change_xdp_fd+0x16c/0x218 net/core/dev.c:9643
+ do_setlink+0xdd0/0xf14 net/core/rtnetlink.c:3132
+ rtnl_group_changelink net/core/rtnetlink.c:3452 [inline]
+ __rtnl_newlink+0x460/0x898 net/core/rtnetlink.c:3711
+ rtnl_newlink+0x50/0x7c net/core/rtnetlink.c:3748
+ rtnetlink_rcv_msg+0x12c/0x380 net/core/rtnetlink.c:6615
+ netlink_rcv_skb+0x5c/0x128 net/netlink/af_netlink.c:2543
+ rtnetlink_rcv+0x18/0x24 net/core/rtnetlink.c:6633
+ netlink_unicast_kernel net/netlink/af_netlink.c:1341 [inline]
+ netlink_unicast+0x2f4/0x360 net/netlink/af_netlink.c:1367
+ netlink_sendmsg+0x1a4/0x3e8 net/netlink/af_netlink.c:1908
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg+0x54/0x60 net/socket.c:745
+ ____sys_sendmsg+0x274/0x2ac net/socket.c:2584
+ ___sys_sendmsg+0xac/0x100 net/socket.c:2638
+ __sys_sendmsg+0x84/0xe0 net/socket.c:2667
+ __do_sys_sendmsg net/socket.c:2676 [inline]
+ __se_sys_sendmsg net/socket.c:2674 [inline]
+ __arm64_sys_sendmsg+0x24/0x30 net/socket.c:2674
+ __invoke_syscall arch/arm64/kernel/syscall.c:37 [inline]
+ invoke_syscall+0x48/0x114 arch/arm64/kernel/syscall.c:51
+ el0_svc_common.constprop.0+0x40/0xe0 arch/arm64/kernel/syscall.c:136
+ do_el0_svc+0x1c/0x28 arch/arm64/kernel/syscall.c:155
+ el0_svc+0x34/0xd8 arch/arm64/kernel/entry-common.c:678
+ el0t_64_sync_handler+0x100/0x12c arch/arm64/kernel/entry-common.c:696
+ el0t_64_sync+0x19c/0x1a0 arch/arm64/kernel/entry.S:598
+Code: 54fffe8b 91000400 17ffffe6 f9401802 (b9401041) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	54fffe8b 	b.lt	0xffffffffffffffd0  // b.tstop
+   4:	91000400 	add	x0, x0, #0x1
+   8:	17ffffe6 	b	0xffffffffffffffa0
+   c:	f9401802 	ldr	x2, [x0, #48]
+* 10:	b9401041 	ldr	w1, [x2, #16] <-- trapping instruction

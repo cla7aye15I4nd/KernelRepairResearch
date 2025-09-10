@@ -1,0 +1,32 @@
+syz-executor342 uses obsolete (PF_INET,SOCK_PACKET)
+=====================================================
+BUG: KMSAN: uninit-value in __llc_lookup_established+0xe9d/0xf90
+ __llc_lookup_established+0xe9d/0xf90
+ __llc_lookup net/llc/llc_conn.c:611 [inline]
+ llc_conn_handler+0x4bd/0x1360 net/llc/llc_conn.c:791
+ llc_rcv+0xfec/0x1550 net/llc/llc_input.c:212
+ __netif_receive_skb_one_core net/core/dev.c:5529 [inline]
+ __netif_receive_skb+0x1a6/0x5a0 net/core/dev.c:5643
+ netif_receive_skb_internal net/core/dev.c:5729 [inline]
+ netif_receive_skb+0x58/0x660 net/core/dev.c:5788
+ tun_rx_batched+0x3ee/0x980 drivers/net/tun.c:1555
+ tun_get_user+0x53af/0x66d0 drivers/net/tun.c:2002
+ tun_chr_write_iter+0x3af/0x5d0 drivers/net/tun.c:2048
+ call_write_iter include/linux/fs.h:2020 [inline]
+ new_sync_write fs/read_write.c:491 [inline]
+ vfs_write+0x8ef/0x1490 fs/read_write.c:584
+ ksys_write+0x20f/0x4c0 fs/read_write.c:637
+ __do_sys_write fs/read_write.c:649 [inline]
+ __se_sys_write fs/read_write.c:646 [inline]
+ __x64_sys_write+0x93/0xd0 fs/read_write.c:646
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Local variable daddr created at:
+ llc_conn_handler+0x53/0x1360 net/llc/llc_conn.c:783
+ llc_rcv+0xfec/0x1550 net/llc/llc_input.c:212
+
+CPU: 1 PID: 5006 Comm: syz-executor342 Not tainted 6.7.0-rc6-syzkaller-00010-g2cf4f94d8e86 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+=====================================================

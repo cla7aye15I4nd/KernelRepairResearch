@@ -1,0 +1,24 @@
+id: 9b33c9b118d77ff59b6f
+bug_link: https://syzkaller.appspot.com/bug?extid=9b33c9b118d77ff59b6f
+title: general protection fault in open_xa_dir
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 44ac6b829c4e173fdf6df18e6dd86aecf9a3dc99
+fix_commit: c2bb80b8bdd04dfe32364b78b61b6a47f717af52
+datetime: '2020-10-01T11:15:31+02:00'
+fix_commit_message: "reiserfs: Fix oops during mount\n\nWith suitably crafted reiserfs\
+  \ image and mount command reiserfs will\ncrash when trying to verify that XATTR_ROOT\
+  \ directory can be looked up\nin / as that recurses back to xattr code like:\n\n\
+  \ xattr_lookup+0x24/0x280 fs/reiserfs/xattr.c:395\n reiserfs_xattr_get+0x89/0x540\
+  \ fs/reiserfs/xattr.c:677\n reiserfs_get_acl+0x63/0x690 fs/reiserfs/xattr_acl.c:209\n\
+  \ get_acl+0x152/0x2e0 fs/posix_acl.c:141\n check_acl fs/namei.c:277 [inline]\n acl_permission_check\
+  \ fs/namei.c:309 [inline]\n generic_permission+0x2ba/0x550 fs/namei.c:353\n do_inode_permission\
+  \ fs/namei.c:398 [inline]\n inode_permission+0x234/0x4a0 fs/namei.c:463\n lookup_one_len+0xa6/0x200\
+  \ fs/namei.c:2557\n reiserfs_lookup_privroot+0x85/0x1e0 fs/reiserfs/xattr.c:972\n\
+  \ reiserfs_fill_super+0x2b51/0x3240 fs/reiserfs/super.c:2176\n mount_bdev+0x24f/0x360\
+  \ fs/super.c:1417\n\nFix the problem by bailing from reiserfs_xattr_get() when xattrs\
+  \ are not\nyet initialized.\n\nCC: stable@vger.kernel.org\nReported-by: syzbot+9b33c9b118d77ff59b6f@syzkaller.appspotmail.com\n\
+  Signed-off-by: Jan Kara <jack@suse.cz>\n"
+submodule:
+- fs/reiserfs
+hunk_count: 1
+covered_count: 1

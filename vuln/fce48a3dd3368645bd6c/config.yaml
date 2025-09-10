@@ -1,0 +1,33 @@
+id: fce48a3dd3368645bd6c
+bug_link: https://syzkaller.appspot.com/bug?extid=fce48a3dd3368645bd6c
+title: 'linux-next boot error: WARNING: refcount bug in dvb_register_device'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bc0cd1080a035ea64fd141f7f8138ca5373fb47b
+fix_commit: 3a664569b71b0a52be5ffb9fb87cc4f83d29bd71
+datetime: '2022-12-06T07:17:00+00:00'
+fix_commit_message: "media: dvbdev: fix refcnt bug\n\nPrevious commit initialize the\
+  \ dvbdev->ref before the template copy,\nwhich will overwrite the reference and\
+  \ cause refcnt bug.\n\nrefcount_t: addition on 0; use-after-free.\nWARNING: CPU:\
+  \ 0 PID: 1 at lib/refcount.c:25 refcount_warn_saturate+0x17c/0x1f0 lib/refcount.c:25\n\
+  Modules linked in:\nCPU: 0 PID: 1 Comm: swapper/0 Not tainted 6.1.0-rc6-next-20221128-syzkaller\
+  \ #0\n...\nRIP: 0010:refcount_warn_saturate+0x17c/0x1f0 lib/refcount.c:25\nRSP:\
+  \ 0000:ffffc900000678d0 EFLAGS: 00010282\nRAX: 0000000000000000 RBX: 0000000000000000\
+  \ RCX: 0000000000000000\nRDX: ffff88813ff58000 RSI: ffffffff81660e7c RDI: fffff5200000cf0c\n\
+  RBP: ffff888022a45010 R08: 0000000000000005 R09: 0000000000000000\nR10: 0000000080000000\
+  \ R11: 0000000000000000 R12: 0000000000000001\nR13: 0000000000000000 R14: 0000000000000000\
+  \ R15: 0000000000000001\nFS:  0000000000000000(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000\n\
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: ffff88823ffff000 CR3: 000000000c48e000\
+  \ CR4: 00000000003506f0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \ <TASK>\n __refcount_add include/linux/refcount.h:199 [inline]\n __refcount_inc\
+  \ include/linux/refcount.h:250 [inline]\n refcount_inc include/linux/refcount.h:267\
+  \ [inline]\n kref_get include/linux/kref.h:45 [inline]\n dvb_device_get drivers/media/dvb-core/dvbdev.c:585\
+  \ [inline]\n dvb_register_device+0xe83/0x16e0 drivers/media/dvb-core/dvbdev.c:517\n\
+  ...\n\nJust place the kref_init at correct position.\n\nReported-by: syzbot+fce48a3dd3368645bd6c@syzkaller.appspotmail.com\n\
+  Fixes: 0fc044b2b5e2 (\"media: dvbdev: adopts refcnt to avoid UAF\")\nSigned-off-by:\
+  \ Lin Ma <linma@zju.edu.cn>\nSigned-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>\n\
+  Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>\n"
+submodule:
+- drivers/media/dvb-core
+hunk_count: 1
+covered_count: 1

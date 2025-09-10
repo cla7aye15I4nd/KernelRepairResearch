@@ -1,0 +1,29 @@
+id: 78bab6958a614b0c80b9
+bug_link: https://syzkaller.appspot.com/bug?extid=78bab6958a614b0c80b9
+title: WARNING in isotp_tx_timer_handler
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a4fbe70c5cb746441d56b28cf88161d9e0e25378
+fix_commit: 9acf636215a6ce9362fe618e7da4913b8bfe84c8
+datetime: '2021-10-17T14:17:55+02:00'
+fix_commit_message: "can: isotp: isotp_sendmsg(): add result check for wait_event_interruptible()\n\
+  \nUsing wait_event_interruptible() to wait for complete transmission,\nbut do not\
+  \ check the result of wait_event_interruptible() which can be\ninterrupted. It will\
+  \ result in TX buffer has multiple accessors and\nthe later process interferes with\
+  \ the previous process.\n\nFollowing is one of the problems reported by syzbot.\n\
+  \n=============================================================\nWARNING: CPU: 0\
+  \ PID: 0 at net/can/isotp.c:840 isotp_tx_timer_handler+0x2e0/0x4c0\nCPU: 0 PID:\
+  \ 0 Comm: swapper/0 Not tainted 5.13.0-rc7+ #68\nHardware name: QEMU Standard PC\
+  \ (i440FX + PIIX, 1996), BIOS 1.13.0-1ubuntu1 04/01/2014\nRIP: 0010:isotp_tx_timer_handler+0x2e0/0x4c0\n\
+  Call Trace:\n <IRQ>\n ? isotp_setsockopt+0x390/0x390\n __hrtimer_run_queues+0xb8/0x610\n\
+  \ hrtimer_run_softirq+0x91/0xd0\n ? rcu_read_lock_sched_held+0x4d/0x80\n __do_softirq+0xe8/0x553\n\
+  \ irq_exit_rcu+0xf8/0x100\n sysvec_apic_timer_interrupt+0x9e/0xc0\n </IRQ>\n asm_sysvec_apic_timer_interrupt+0x12/0x20\n\
+  \nAdd result check for wait_event_interruptible() in isotp_sendmsg()\nto avoid multiple\
+  \ accessers for tx buffer.\n\nFixes: e057dd3fc20f (\"can: add ISO 15765-2:2016 transport\
+  \ protocol\")\nLink: https://lore.kernel.org/all/10ca695732c9dd267c76a3c30f37aefe1ff7e32f.1633764159.git.william.xuanziyang@huawei.com\n\
+  Cc: stable@vger.kernel.org\nReported-by: syzbot+78bab6958a614b0c80b9@syzkaller.appspotmail.com\n\
+  Signed-off-by: Ziyang Xuan <william.xuanziyang@huawei.com>\nAcked-by: Oliver Hartkopp\
+  \ <socketcan@hartkopp.net>\nSigned-off-by: Marc Kleine-Budde <mkl@pengutronix.de>\n"
+submodule:
+- net/can
+hunk_count: 1
+covered_count: 1

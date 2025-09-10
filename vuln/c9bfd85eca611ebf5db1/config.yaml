@@ -1,0 +1,44 @@
+id: c9bfd85eca611ebf5db1
+bug_link: https://syzkaller.appspot.com/bug?extid=c9bfd85eca611ebf5db1
+title: 'KMSAN: uninit-value in vfs_write'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d1366b283d94ac4537a4b3a1e8668da4df7ce7e9
+fix_commit: 2b4c99f7d9a57ecd644eda9b1fb0a1072414959f
+datetime: '2023-03-27T14:40:45+02:00'
+fix_commit_message: "can: bcm: bcm_tx_setup(): fix KMSAN uninit-value in vfs_write\n\
+  \nSyzkaller reported the following issue:\n\n=====================================================\n\
+  BUG: KMSAN: uninit-value in aio_rw_done fs/aio.c:1520 [inline]\nBUG: KMSAN: uninit-value\
+  \ in aio_write+0x899/0x950 fs/aio.c:1600\n aio_rw_done fs/aio.c:1520 [inline]\n\
+  \ aio_write+0x899/0x950 fs/aio.c:1600\n io_submit_one+0x1d1c/0x3bf0 fs/aio.c:2019\n\
+  \ __do_sys_io_submit fs/aio.c:2078 [inline]\n __se_sys_io_submit+0x293/0x770 fs/aio.c:2048\n\
+  \ __x64_sys_io_submit+0x92/0xd0 fs/aio.c:2048\n do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n do_syscall_64+0x3d/0xb0 arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\
+  \nUninit was created at:\n slab_post_alloc_hook mm/slab.h:766 [inline]\n slab_alloc_node\
+  \ mm/slub.c:3452 [inline]\n __kmem_cache_alloc_node+0x71f/0xce0 mm/slub.c:3491\n\
+  \ __do_kmalloc_node mm/slab_common.c:967 [inline]\n __kmalloc+0x11d/0x3b0 mm/slab_common.c:981\n\
+  \ kmalloc_array include/linux/slab.h:636 [inline]\n bcm_tx_setup+0x80e/0x29d0 net/can/bcm.c:930\n\
+  \ bcm_sendmsg+0x3a2/0xce0 net/can/bcm.c:1351\n sock_sendmsg_nosec net/socket.c:714\
+  \ [inline]\n sock_sendmsg net/socket.c:734 [inline]\n sock_write_iter+0x495/0x5e0\
+  \ net/socket.c:1108\n call_write_iter include/linux/fs.h:2189 [inline]\n aio_write+0x63a/0x950\
+  \ fs/aio.c:1600\n io_submit_one+0x1d1c/0x3bf0 fs/aio.c:2019\n __do_sys_io_submit\
+  \ fs/aio.c:2078 [inline]\n __se_sys_io_submit+0x293/0x770 fs/aio.c:2048\n __x64_sys_io_submit+0x92/0xd0\
+  \ fs/aio.c:2048\n do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x3d/0xb0\
+  \ arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nCPU:\
+  \ 1 PID: 5034 Comm: syz-executor350 Not tainted 6.2.0-rc6-syzkaller-80422-geda666ff2276\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/12/2023\n=====================================================\n\nWe can follow\
+  \ the call chain and find that 'bcm_tx_setup' function\ncalls 'memcpy_from_msg'\
+  \ to copy some content to the newly allocated\nframe of 'op->frames'. After that\
+  \ the 'len' field of copied structure\nbeing compared with some constant value (64\
+  \ or 8). However, if\n'memcpy_from_msg' returns an error, we will compare some uninitialized\n\
+  memory. This triggers 'uninit-value' issue.\n\nThis patch will add 'memcpy_from_msg'\
+  \ possible errors processing to\navoid uninit-value issue.\n\nTested via syzkaller\n\
+  \nReported-by: syzbot+c9bfd85eca611ebf5db1@syzkaller.appspotmail.com\nLink: https://syzkaller.appspot.com/bug?id=47f897f8ad958bbde5790ebf389b5e7e0a345089\n\
+  Signed-off-by: Ivan Orlov <ivan.orlov0322@gmail.com>\nFixes: 6f3b911d5f29b (\"can:\
+  \ bcm: add support for CAN FD frames\")\nAcked-by: Oliver Hartkopp <socketcan@hartkopp.net>\n\
+  Link: https://lore.kernel.org/all/20230314120445.12407-1-ivan.orlov0322@gmail.com\n\
+  Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>\n"
+submodule:
+- net/can
+hunk_count: 3
+covered_count: 2

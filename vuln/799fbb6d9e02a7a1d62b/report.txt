@@ -1,0 +1,75 @@
+=====================================================
+BUG: KMSAN: uninit-value in receive_mergeable drivers/net/virtio_net.c:2261 [inline]
+BUG: KMSAN: uninit-value in receive_buf+0xba1/0x25d0 drivers/net/virtio_net.c:2394
+ receive_mergeable drivers/net/virtio_net.c:2261 [inline]
+ receive_buf+0xba1/0x25d0 drivers/net/virtio_net.c:2394
+ virtnet_receive_packets drivers/net/virtio_net.c:2699 [inline]
+ virtnet_receive drivers/net/virtio_net.c:2723 [inline]
+ virtnet_poll+0x529c/0x6a20 drivers/net/virtio_net.c:2818
+ __napi_poll+0xe7/0x980 net/core/dev.c:6771
+ napi_poll net/core/dev.c:6840 [inline]
+ net_rx_action+0xa5a/0x19b0 net/core/dev.c:6962
+ handle_softirqs+0x1ce/0x800 kernel/softirq.c:554
+ __do_softirq kernel/softirq.c:588 [inline]
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu+0x68/0x120 kernel/softirq.c:637
+ irq_exit_rcu+0x12/0x20 kernel/softirq.c:649
+ common_interrupt+0x94/0xa0 arch/x86/kernel/irq.c:278
+ asm_common_interrupt+0x2b/0x40 arch/x86/include/asm/idtentry.h:693
+ unwind_get_return_address+0x12b/0x140 arch/x86/kernel/unwind_frame.c:20
+ arch_stack_walk+0x168/0x2d0 arch/x86/kernel/stacktrace.c:26
+ stack_trace_save+0xaa/0xe0 kernel/stacktrace.c:122
+ kmsan_save_stack_with_flags+0x2f/0x60 mm/kmsan/core.c:74
+ kmsan_alloc_page+0x182/0x220 mm/kmsan/shadow.c:197
+ __alloc_pages_noprof+0x9d6/0xe70 mm/page_alloc.c:4706
+ alloc_pages_mpol_noprof+0x299/0x990 mm/mempolicy.c:2265
+ alloc_pages_noprof+0x1bf/0x1e0 mm/mempolicy.c:2336
+ skb_page_frag_refill+0x2bf/0x7c0 net/core/sock.c:2941
+ virtnet_rq_alloc+0x43/0xbb0 drivers/net/virtio_net.c:921
+ add_recvbuf_mergeable drivers/net/virtio_net.c:2524 [inline]
+ try_fill_recv+0x89c/0x3bc0 drivers/net/virtio_net.c:2573
+ virtnet_open+0x1d8/0xd00 drivers/net/virtio_net.c:2898
+ __dev_open+0x546/0x6f0 net/core/dev.c:1474
+ __dev_change_flags+0x309/0x9a0 net/core/dev.c:8837
+ dev_change_flags+0x8e/0x1d0 net/core/dev.c:8909
+ devinet_ioctl+0x13ec/0x22c0 net/ipv4/devinet.c:1177
+ inet_ioctl+0x4bd/0x6d0 net/ipv4/af_inet.c:1003
+ sock_do_ioctl+0xb7/0x540 net/socket.c:1222
+ sock_ioctl+0x727/0xd70 net/socket.c:1341
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl+0x261/0x450 fs/ioctl.c:893
+ __x64_sys_ioctl+0x96/0xe0 fs/ioctl.c:893
+ x64_sys_call+0x1a06/0x3c10 arch/x86/include/generated/asm/syscalls_64.h:17
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ __alloc_pages_noprof+0x9d6/0xe70 mm/page_alloc.c:4706
+ alloc_pages_mpol_noprof+0x299/0x990 mm/mempolicy.c:2265
+ alloc_pages_noprof+0x1bf/0x1e0 mm/mempolicy.c:2336
+ skb_page_frag_refill+0x2bf/0x7c0 net/core/sock.c:2941
+ virtnet_rq_alloc+0x43/0xbb0 drivers/net/virtio_net.c:921
+ add_recvbuf_mergeable drivers/net/virtio_net.c:2524 [inline]
+ try_fill_recv+0x89c/0x3bc0 drivers/net/virtio_net.c:2573
+ virtnet_open+0x1d8/0xd00 drivers/net/virtio_net.c:2898
+ __dev_open+0x546/0x6f0 net/core/dev.c:1474
+ __dev_change_flags+0x309/0x9a0 net/core/dev.c:8837
+ dev_change_flags+0x8e/0x1d0 net/core/dev.c:8909
+ devinet_ioctl+0x13ec/0x22c0 net/ipv4/devinet.c:1177
+ inet_ioctl+0x4bd/0x6d0 net/ipv4/af_inet.c:1003
+ sock_do_ioctl+0xb7/0x540 net/socket.c:1222
+ sock_ioctl+0x727/0xd70 net/socket.c:1341
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl+0x261/0x450 fs/ioctl.c:893
+ __x64_sys_ioctl+0x96/0xe0 fs/ioctl.c:893
+ x64_sys_call+0x1a06/0x3c10 arch/x86/include/generated/asm/syscalls_64.h:17
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 0 PID: 4702 Comm: dhcpcd Not tainted 6.10.0-syzkaller-09061-g4305ca0087dd #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/27/2024
+=====================================================

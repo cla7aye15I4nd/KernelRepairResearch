@@ -1,0 +1,33 @@
+==================================================================
+BUG: KCSAN: data-race in bprm_execve / copy_fs
+
+write to 0xffff8881044f8250 of 4 bytes by task 13692 on cpu 0:
+ bprm_execve+0x748/0x9c0 fs/exec.c:1884
+ do_execveat_common+0x769/0x7e0 fs/exec.c:1966
+ do_execveat fs/exec.c:2051 [inline]
+ __do_sys_execveat fs/exec.c:2125 [inline]
+ __se_sys_execveat fs/exec.c:2119 [inline]
+ __x64_sys_execveat+0x75/0x90 fs/exec.c:2119
+ x64_sys_call+0x291e/0x2dc0 arch/x86/include/generated/asm/syscalls_64.h:323
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff8881044f8250 of 4 bytes by task 13686 on cpu 1:
+ copy_fs+0x95/0xf0 kernel/fork.c:1770
+ copy_process+0xc91/0x1f50 kernel/fork.c:2394
+ kernel_clone+0x167/0x5e0 kernel/fork.c:2815
+ __do_sys_clone3 kernel/fork.c:3119 [inline]
+ __se_sys_clone3+0x1c1/0x200 kernel/fork.c:3098
+ __x64_sys_clone3+0x31/0x40 kernel/fork.c:3098
+ x64_sys_call+0x2d56/0x2dc0 arch/x86/include/generated/asm/syscalls_64.h:436
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x00000001 -> 0x00000000
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 UID: 0 PID: 13686 Comm: syz.1.3826 Not tainted 6.14.0-rc7-syzkaller-00074-ga7f2e10ecd8f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+==================================================================

@@ -1,0 +1,52 @@
+id: 4762dd74e32532cda5ff
+bug_link: https://syzkaller.appspot.com/bug?extid=4762dd74e32532cda5ff
+title: possible deadlock in __kernfs_remove
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 86fee2877f3427df5876159a182aa70d10964cdf
+fix_commit: 15fffc6a5624b13b428bb1c6e9088e32a55eb82c
+datetime: '2024-07-31T14:41:44+02:00'
+fix_commit_message: "driver core: Fix uevent_show() vs driver detach race\n\nuevent_show()\
+  \ wants to de-reference dev->driver->name. There is no clean\nway for a device attribute\
+  \ to de-reference dev->driver unless that\nattribute is defined via (struct device_driver).dev_groups.\
+  \ Instead, the\nanti-pattern of taking the device_lock() in the attribute handler\
+  \ risks\ndeadlocks with code paths that remove device attributes while holding\n\
+  the lock.\n\nThis deadlock is typically invisible to lockdep given the device_lock()\n\
+  is marked lockdep_set_novalidate_class(), but some subsystems allocate a\nlocal\
+  \ lockdep key for @dev->mutex to reveal reports of the form:\n\n ======================================================\n\
+  \ WARNING: possible circular locking dependency detected\n 6.10.0-rc7+ #275 Tainted:\
+  \ G           OE    N\n ------------------------------------------------------\n\
+  \ modprobe/2374 is trying to acquire lock:\n ffff8c2270070de0 (kn->active#6){++++}-{0:0},\
+  \ at: __kernfs_remove+0xde/0x220\n\n but task is already holding lock:\n ffff8c22016e88f8\
+  \ (&cxl_root_key){+.+.}-{3:3}, at: device_release_driver_internal+0x39/0x210\n\n\
+  \ which lock already depends on the new lock.\n\n the existing dependency chain\
+  \ (in reverse order) is:\n\n -> #1 (&cxl_root_key){+.+.}-{3:3}:\n        __mutex_lock+0x99/0xc30\n\
+  \        uevent_show+0xac/0x130\n        dev_attr_show+0x18/0x40\n        sysfs_kf_seq_show+0xac/0xf0\n\
+  \        seq_read_iter+0x110/0x450\n        vfs_read+0x25b/0x340\n        ksys_read+0x67/0xf0\n\
+  \        do_syscall_64+0x75/0x190\n        entry_SYSCALL_64_after_hwframe+0x76/0x7e\n\
+  \n -> #0 (kn->active#6){++++}-{0:0}:\n        __lock_acquire+0x121a/0x1fa0\n   \
+  \     lock_acquire+0xd6/0x2e0\n        kernfs_drain+0x1e9/0x200\n        __kernfs_remove+0xde/0x220\n\
+  \        kernfs_remove_by_name_ns+0x5e/0xa0\n        device_del+0x168/0x410\n  \
+  \      device_unregister+0x13/0x60\n        devres_release_all+0xb8/0x110\n    \
+  \    device_unbind_cleanup+0xe/0x70\n        device_release_driver_internal+0x1c7/0x210\n\
+  \        driver_detach+0x47/0x90\n        bus_remove_driver+0x6c/0xf0\n        cxl_acpi_exit+0xc/0x11\
+  \ [cxl_acpi]\n        __do_sys_delete_module.isra.0+0x181/0x260\n        do_syscall_64+0x75/0x190\n\
+  \        entry_SYSCALL_64_after_hwframe+0x76/0x7e\n\nThe observation though is that\
+  \ driver objects are typically much longer\nlived than device objects. It is reasonable\
+  \ to perform lockless\nde-reference of a @driver pointer even if it is racing detach\
+  \ from a\ndevice. Given the infrequency of driver unregistration, use\nsynchronize_rcu()\
+  \ in module_remove_driver() to close any potential\nraces.  It is potentially overkill\
+  \ to suffer synchronize_rcu() just to\nhandle the rare module removal racing uevent_show()\
+  \ event.\n\nThanks to Tetsuo Handa for the debug analysis of the syzbot report [1].\n\
+  \nFixes: c0a40097f0bc (\"drivers: core: synchronize really_probe() and dev_uevent()\"\
+  )\nReported-by: syzbot+4762dd74e32532cda5ff@syzkaller.appspotmail.com\nReported-by:\
+  \ Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nCloses: http://lore.kernel.org/5aa5558f-90a4-4864-b1b1-5d6784c5607d@I-love.SAKURA.ne.jp\
+  \ [1]\nLink: http://lore.kernel.org/669073b8ea479_5fffa294c1@dwillia2-xfh.jf.intel.com.notmuch\n\
+  Cc: stable@vger.kernel.org\nCc: Ashish Sangwan <a.sangwan@samsung.com>\nCc: Namjae\
+  \ Jeon <namjae.jeon@samsung.com>\nCc: Dirk Behme <dirk.behme@de.bosch.com>\nCc:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\nCc: Rafael J. Wysocki <rafael@kernel.org>\n\
+  Signed-off-by: Dan Williams <dan.j.williams@intel.com>\nLink: https://lore.kernel.org/r/172081332794.577428.9738802016494057132.stgit@dwillia2-xfh.jf.intel.com\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/base
+hunk_count: 6
+covered_count: 2

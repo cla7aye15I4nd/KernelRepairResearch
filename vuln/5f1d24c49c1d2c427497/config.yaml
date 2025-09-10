@@ -1,0 +1,26 @@
+id: 5f1d24c49c1d2c427497
+bug_link: https://syzkaller.appspot.com/bug?extid=5f1d24c49c1d2c427497
+title: WARNING in snd_usbmidi_submit_urb/usb_submit_urb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 68359a1ad8447c99732ebeab8c169bfed543667a
+fix_commit: 9b7e5208a941e2e491a83eb5fa83d889e888fa2f
+datetime: '2020-07-10T18:07:25+02:00'
+fix_commit_message: "ALSA: usb-audio: Fix race against the error recovery URB submission\n\
+  \nUSB MIDI driver has an error recovery mechanism to resubmit the URB in\nthe delayed\
+  \ timer handler, and this may race with the standard start /\nstop operations. \
+  \ Although both start and stop operations themselves\ndon't race with each other\
+  \ due to the umidi->mutex protection, but\nthis isn't applied to the timer handler.\n\
+  \nFor fixing this potential race, the following changes are applied:\n\n- Since\
+  \ the timer handler can't use the mutex, we apply the\n  umidi->disc_lock protection\
+  \ at each input stream URB submission;\n  this also needs to change the GFP flag\
+  \ to GFP_ATOMIC\n- Add a check of the URB refcount and skip if already submitted\n\
+  - Move the timer cancel call at disconnection to the beginning of the\n  procedure;\
+  \ this assures the in-flight timer handler is gone properly\n  before killing all\
+  \ pending URBs\n\nReported-by: syzbot+0f4ecfe6a2c322c81728@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+5f1d24c49c1d2c427497@syzkaller.appspotmail.com\nCc: <stable@vger.kernel.org>\n\
+  Link: https://lore.kernel.org/r/20200710160656.16819-1-tiwai@suse.de\nSigned-off-by:\
+  \ Takashi Iwai <tiwai@suse.de>\n"
+submodule:
+- sound/usb
+hunk_count: 4
+covered_count: 2

@@ -1,0 +1,31 @@
+id: ed318e8b790ca72c5ad0
+bug_link: https://syzkaller.appspot.com/bug?extid=ed318e8b790ca72c5ad0
+title: general protection fault in khugepaged
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: dbda8feadfa46b3d8dd7a2304f84ccbc036effe9
+fix_commit: 594cced14ad3903166c8b091ff96adac7552f0b3
+datetime: '2020-07-24T12:42:41-07:00'
+fix_commit_message: "khugepaged: fix null-pointer dereference due to race\n\nkhugepaged\
+  \ has to drop mmap lock several times while collapsing a page.\nThe situation can\
+  \ change while the lock is dropped and we need to\nre-validate that the VMA is still\
+  \ in place and the PMD is still subject\nfor collapse.\n\nBut we miss one corner\
+  \ case: while collapsing an anonymous pages the VMA\ncould be replaced with file\
+  \ VMA.  If the file VMA doesn't have any\nprivate pages we get NULL pointer dereference:\n\
+  \n\tgeneral protection fault, probably for non-canonical address 0xdffffc0000000000:\
+  \ 0000 [#1] PREEMPT SMP KASAN\n\tKASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]\n\
+  \tanon_vma_lock_write include/linux/rmap.h:120 [inline]\n\tcollapse_huge_page mm/khugepaged.c:1110\
+  \ [inline]\n\tkhugepaged_scan_pmd mm/khugepaged.c:1349 [inline]\n\tkhugepaged_scan_mm_slot\
+  \ mm/khugepaged.c:2110 [inline]\n\tkhugepaged_do_scan mm/khugepaged.c:2193 [inline]\n\
+  \tkhugepaged+0x3bba/0x5a10 mm/khugepaged.c:2238\n\nThe fix is to make sure that\
+  \ the VMA is anonymous in\nhugepage_vma_revalidate().  The helper is only used for\
+  \ collapsing\nanonymous pages.\n\nFixes: 99cb0dbd47a1 (\"mm,thp: add read-only THP\
+  \ support for (non-shmem) FS\")\nReported-by: syzbot+ed318e8b790ca72c5ad0@syzkaller.appspotmail.com\n\
+  Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\nReviewed-by: David Hildenbrand <david@redhat.com>\n\
+  Acked-by: Yang Shi <yang.shi@linux.alibaba.com>\nCc: <stable@vger.kernel.org>\n\
+  Link: http://lkml.kernel.org/r/20200722121439.44328-1-kirill.shutemov@linux.intel.com\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 0

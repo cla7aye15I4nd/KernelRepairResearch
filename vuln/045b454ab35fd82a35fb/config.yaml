@@ -1,0 +1,41 @@
+id: 045b454ab35fd82a35fb
+bug_link: https://syzkaller.appspot.com/bug?extid=045b454ab35fd82a35fb
+title: general protection fault in __ep_remove
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f462ae0edd3703edd6f22fe41d336369c38b884b
+fix_commit: 4efaa5acf0a1d2b5947f98abb3acf8bfd966422b
+datetime: '2024-05-05T14:00:48-07:00'
+fix_commit_message: 'epoll: be better about file lifetimes
+
+
+  epoll can call out to vfs_poll() with a file pointer that may race with
+
+  the last ''fput()''. That would make f_count go down to zero, and while
+
+  the ep->mtx locking means that the resulting file pointer tear-down will
+
+  be blocked until the poll returns, it means that f_count is already
+
+  dead, and any use of it won''t actually get a reference to the file any
+
+  more: it''s dead regardless.
+
+
+  Make sure we have a valid ref on the file pointer before we call down to
+
+  vfs_poll() from the epoll routines.
+
+
+  Link: https://lore.kernel.org/lkml/0000000000002d631f0615918f1e@google.com/
+
+  Reported-by: syzbot+045b454ab35fd82a35fb@syzkaller.appspotmail.com
+
+  Reviewed-by: Jens Axboe <axboe@kernel.dk>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- fs
+hunk_count: 2
+covered_count: 0

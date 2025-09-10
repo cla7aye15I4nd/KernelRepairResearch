@@ -1,0 +1,59 @@
+id: 28748250ab47a8f04100
+bug_link: https://syzkaller.appspot.com/bug?extid=28748250ab47a8f04100
+title: divide error in isd200_ata_command
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3c4a311c2c15ef0fa07c225ee02197a316e10e00
+fix_commit: 014bcf41d946b36a8f0b8e9b5d9529efbb822f49
+datetime: '2024-03-02T20:32:03+01:00'
+fix_commit_message: 'USB: usb-storage: Prevent divide-by-0 error in isd200_ata_command
+
+
+  The isd200 sub-driver in usb-storage uses the HEADS and SECTORS values
+
+  in the ATA ID information to calculate cylinder and head values when
+
+  creating a CDB for READ or WRITE commands.  The calculation involves
+
+  division and modulus operations, which will cause a crash if either of
+
+  these values is 0.  While this never happens with a genuine device, it
+
+  could happen with a flawed or subversive emulation, as reported by the
+
+  syzbot fuzzer.
+
+
+  Protect against this possibility by refusing to bind to the device if
+
+  either the ATA_ID_HEADS or ATA_ID_SECTORS value in the device''s ID
+
+  information is 0.  This requires isd200_Initialization() to return a
+
+  negative error code when initialization fails; currently it always
+
+  returns 0 (even when there is an error).
+
+
+  Signed-off-by: Alan Stern <stern@rowland.harvard.edu>
+
+  Reported-and-tested-by: syzbot+28748250ab47a8f04100@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/linux-usb/0000000000003eb868061245ba7f@google.com/
+
+  Fixes: 1da177e4c3f4 ("Linux-2.6.12-rc2")
+
+  Cc: stable@vger.kernel.org
+
+  Reviewed-by: PrasannaKumar Muralidharan <prasannatsmkumar@gmail.com>
+
+  Reviewed-by: Martin K. Petersen <martin.petersen@oracle.com>
+
+  Link: https://lore.kernel.org/r/b1e605ea-333f-4ac0-9511-da04f411763e@rowland.harvard.edu
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/storage
+hunk_count: 4
+covered_count: 1

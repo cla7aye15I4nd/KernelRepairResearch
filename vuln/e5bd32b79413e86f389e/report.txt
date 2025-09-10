@@ -1,0 +1,42 @@
+==================================================================
+BUG: KCSAN: data-race in pcpu_balance_workfn / pcpu_nr_pages
+
+read-write to 0xffffffff88e84988 of 8 bytes by task 3391 on cpu 1:
+ pcpu_chunk_depopulated mm/percpu.c:1540 [inline]
+ pcpu_reclaim_populated mm/percpu.c:2152 [inline]
+ pcpu_balance_workfn+0x2eb/0xc00 mm/percpu.c:2204
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0x4ce/0x9d0 kernel/workqueue.c:3321
+ worker_thread+0x582/0x770 kernel/workqueue.c:3402
+ kthread+0x486/0x510 kernel/kthread.c:464
+ ret_from_fork+0xda/0x150 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+read to 0xffffffff88e84988 of 8 bytes by task 12195 on cpu 0:
+ pcpu_nr_pages+0x16/0x40 mm/percpu.c:3358
+ meminfo_proc_show+0x94b/0xa30 fs/proc/meminfo.c:132
+ traverse+0x144/0x3a0 fs/seq_file.c:111
+ seq_read_iter+0x853/0x940 fs/seq_file.c:195
+ proc_reg_read_iter+0xe3/0x180 fs/proc/inode.c:295
+ io_iter_do_read io_uring/rw.c:828 [inline]
+ __io_read+0x438/0xc20 io_uring/rw.c:941
+ io_read+0x1c/0x60 io_uring/rw.c:1020
+ __io_issue_sqe+0xfe/0x2e0 io_uring/io_uring.c:1738
+ io_issue_sqe+0x53/0x970 io_uring/io_uring.c:1761
+ io_queue_sqe io_uring/io_uring.c:1968 [inline]
+ io_submit_sqe io_uring/io_uring.c:2224 [inline]
+ io_submit_sqes+0x667/0xfd0 io_uring/io_uring.c:2337
+ __do_sys_io_uring_enter io_uring/io_uring.c:3404 [inline]
+ __se_sys_io_uring_enter+0x1c1/0x1b70 io_uring/io_uring.c:3338
+ __x64_sys_io_uring_enter+0x78/0x90 io_uring/io_uring.c:3338
+ x64_sys_call+0x28c8/0x2fb0 arch/x86/include/generated/asm/syscalls_64.h:427
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xd2/0x200 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x0000000000000295 -> 0x000000000000028e
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 12195 Comm: syz.5.3624 Not tainted 6.16.0-rc3-syzkaller-00190-g67a993863163 #0 PREEMPT(voluntary) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+==================================================================

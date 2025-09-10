@@ -1,0 +1,34 @@
+id: 5cfc132a76d844973259
+bug_link: https://syzkaller.appspot.com/bug?extid=5cfc132a76d844973259
+title: WARNING in xfrm_policy_insert
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3ffb93ba326f40b47b17a4e8b3399c0fa2e8cee6
+fix_commit: ed17b8d377eaf6b4a01d46942b4c647378a79bdd
+datetime: '2020-05-25T16:04:12+02:00'
+fix_commit_message: "xfrm: fix a warning in xfrm_policy_insert_list\n\nThis waring\
+  \ can be triggered simply by:\n\n  # ip xfrm policy update src 192.168.1.1/24 dst\
+  \ 192.168.1.2/24 dir in \\\n    priority 1 mark 0 mask 0x10  #[1]\n  # ip xfrm policy\
+  \ update src 192.168.1.1/24 dst 192.168.1.2/24 dir in \\\n    priority 2 mark 0\
+  \ mask 0x1   #[2]\n  # ip xfrm policy update src 192.168.1.1/24 dst 192.168.1.2/24\
+  \ dir in \\\n    priority 2 mark 0 mask 0x10  #[3]\n\nThen dmesg shows:\n\n  [ ]\
+  \ WARNING: CPU: 1 PID: 7265 at net/xfrm/xfrm_policy.c:1548\n  [ ] RIP: 0010:xfrm_policy_insert_list+0x2f2/0x1030\n\
+  \  [ ] Call Trace:\n  [ ]  xfrm_policy_inexact_insert+0x85/0xe50\n  [ ]  xfrm_policy_insert+0x4ba/0x680\n\
+  \  [ ]  xfrm_add_policy+0x246/0x4d0\n  [ ]  xfrm_user_rcv_msg+0x331/0x5c0\n  [ ]\
+  \  netlink_rcv_skb+0x121/0x350\n  [ ]  xfrm_netlink_rcv+0x66/0x80\n  [ ]  netlink_unicast+0x439/0x630\n\
+  \  [ ]  netlink_sendmsg+0x714/0xbf0\n  [ ]  sock_sendmsg+0xe2/0x110\n\nThe issue\
+  \ was introduced by Commit 7cb8a93968e3 (\"xfrm: Allow inserting\npolicies with\
+  \ matching mark and different priorities\"). After that, the\npolicies [1] and [2]\
+  \ would be able to be added with different priorities.\n\nHowever, policy [3] will\
+  \ actually match both [1] and [2]. Policy [1]\nwas matched due to the 1st 'return\
+  \ true' in xfrm_policy_mark_match(),\nand policy [2] was matched due to the 2nd\
+  \ 'return true' in there. It\ncaused WARN_ON() in xfrm_policy_insert_list().\n\n\
+  This patch is to fix it by only (the same value and priority) as the\nsame policy\
+  \ in xfrm_policy_mark_match().\n\nThanks to Yuehaibing, we could make this fix better.\n\
+  \nv1->v2:\n  - check policy->mark.v == pol->mark.v only without mask.\n\nFixes:\
+  \ 7cb8a93968e3 (\"xfrm: Allow inserting policies with matching mark and different\
+  \ priorities\")\nReported-by: Xiumei Mu <xmu@redhat.com>\nSigned-off-by: Xin Long\
+  \ <lucien.xin@gmail.com>\nSigned-off-by: Steffen Klassert <steffen.klassert@secunet.com>\n"
+submodule:
+- net/xfrm
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,24 @@
+id: 31a641689d43387f05d3
+bug_link: https://syzkaller.appspot.com/bug?extid=31a641689d43387f05d3
+title: 'KMSAN: kernel-infoleak in vcs_read (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ceefa81e6e69b020997205e5c30a42d43aa5ae63
+fix_commit: af77c56aa35325daa2bc2bed5c2ebf169be61b86
+datetime: '2022-07-19T14:18:27+02:00'
+fix_commit_message: "tty: vt: initialize unicode screen buffer\n\nsyzbot reports kernel\
+  \ infoleak at vcs_read() [1], for buffer can be read\nimmediately after resize operation.\
+  \ Initialize buffer using kzalloc().\n\n  ----------\n  #include <fcntl.h>\n  #include\
+  \ <unistd.h>\n  #include <sys/ioctl.h>\n  #include <linux/fb.h>\n\n  int main(int\
+  \ argc, char *argv[])\n  {\n    struct fb_var_screeninfo var = { };\n    const int\
+  \ fb_fd = open(\"/dev/fb0\", 3);\n    ioctl(fb_fd, FBIOGET_VSCREENINFO, &var);\n\
+  \    var.yres = 0x21;\n    ioctl(fb_fd, FBIOPUT_VSCREENINFO, &var);\n    return\
+  \ read(open(\"/dev/vcsu\", O_RDONLY), &var, sizeof(var)) == -1;\n  }\n  ----------\n\
+  \nLink: https://syzkaller.appspot.com/bug?extid=31a641689d43387f05d3 [1]\nCc: stable\
+  \ <stable@vger.kernel.org>\nReported-by: syzbot <syzbot+31a641689d43387f05d3@syzkaller.appspotmail.com>\n\
+  Reviewed-by: Jiri Slaby <jirislaby@kernel.org>\nSigned-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\n\
+  Link: https://lore.kernel.org/r/4ef053cf-e796-fb5e-58b7-3ae58242a4ad@I-love.SAKURA.ne.jp\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty/vt
+hunk_count: 1
+covered_count: 1

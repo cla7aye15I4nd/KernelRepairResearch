@@ -1,0 +1,17 @@
+diff --git a/fs/eventpoll.c b/fs/eventpoll.c
+index e0decff22ae2..8107e06d7f6f 100644
+--- a/fs/eventpoll.c
++++ b/fs/eventpoll.c
+@@ -1995,9 +1995,9 @@ static int ep_loop_check_proc(void *priv, void *cookie, int call_nests)
+ 			 * during ep_insert().
+ 			 */
+ 			if (list_empty(&epi->ffd.file->f_tfile_llink)) {
+-				get_file(epi->ffd.file);
+-				list_add(&epi->ffd.file->f_tfile_llink,
+-					 &tfile_check_list);
++				if (get_file_rcu(epi->ffd.file))
++					list_add(&epi->ffd.file->f_tfile_llink,
++						 &tfile_check_list);
+ 			}
+ 		}
+ 	}

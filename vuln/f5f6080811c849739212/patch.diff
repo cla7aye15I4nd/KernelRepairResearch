@@ -1,0 +1,14 @@
+diff --git a/drivers/net/ppp/pppoe.c b/drivers/net/ppp/pppoe.c
+index ce61231e96ea..62dc564b251d 100644
+--- a/drivers/net/ppp/pppoe.c
++++ b/drivers/net/ppp/pppoe.c
+@@ -429,6 +429,9 @@ static int pppoe_rcv(struct sk_buff *skb, struct net_device *dev,
+ 	if (!skb)
+ 		goto out;
+ 
++	if (skb_mac_header_len(skb) < ETH_HLEN)
++		goto drop;
++
+ 	if (!pskb_may_pull(skb, sizeof(struct pppoe_hdr)))
+ 		goto drop;
+ 

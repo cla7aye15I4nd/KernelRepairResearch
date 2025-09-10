@@ -1,0 +1,38 @@
+id: cd66e43794b178bb5cd6
+bug_link: https://syzkaller.appspot.com/bug?extid=cd66e43794b178bb5cd6
+title: general protection fault in syscall_return_slowpath
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 551e553f0d4ab623e2a6f424ab5834f9c7b5229c
+fix_commit: 033724d6864245a11f8e04c066002e6ad22b3fd0
+datetime: '2020-07-23T16:22:25+02:00'
+fix_commit_message: "fbdev: Detect integer underflow at \"struct fbcon_ops\"->clear_margins.\n\
+  \nsyzbot is reporting general protection fault in bitfill_aligned() [1]\ncaused\
+  \ by integer underflow in bit_clear_margins(). The cause of this\nproblem is when\
+  \ and how do_vc_resize() updates vc->vc_{cols,rows}.\n\nIf vc_do_resize() fails\
+  \ (e.g. kzalloc() fails) when var.xres or var.yres\nis going to shrink, vc->vc_{cols,rows}\
+  \ will not be updated. This allows\nbit_clear_margins() to see info->var.xres <\
+  \ (vc->vc_cols * cw) or\ninfo->var.yres < (vc->vc_rows * ch). Unexpectedly large\
+  \ rw or bh will\ntry to overrun the __iomem region and causes general protection\
+  \ fault.\n\nAlso, vc_resize(vc, 0, 0) does not set vc->vc_{cols,rows} = 0 due to\n\
+  \n  new_cols = (cols ? cols : vc->vc_cols);\n  new_rows = (lines ? lines : vc->vc_rows);\n\
+  \nexception. Since cols and lines are calculated as\n\n  cols = FBCON_SWAP(ops->rotate,\
+  \ info->var.xres, info->var.yres);\n  rows = FBCON_SWAP(ops->rotate, info->var.yres,\
+  \ info->var.xres);\n  cols /= vc->vc_font.width;\n  rows /= vc->vc_font.height;\n\
+  \  vc_resize(vc, cols, rows);\n\nin fbcon_modechanged(), var.xres < vc->vc_font.width\
+  \ makes cols = 0\nand var.yres < vc->vc_font.height makes rows = 0. This means that\n\
+  \n  const int fd = open(\"/dev/fb0\", O_ACCMODE);\n  struct fb_var_screeninfo var\
+  \ = { };\n  ioctl(fd, FBIOGET_VSCREENINFO, &var);\n  var.xres = var.yres = 1;\n\
+  \  ioctl(fd, FBIOPUT_VSCREENINFO, &var);\n\neasily reproduces integer underflow\
+  \ bug explained above.\n\nOf course, callers of vc_resize() are not handling vc_do_resize()\
+  \ failure\nis bad. But we can't avoid vc_resize(vc, 0, 0) which returns 0. Therefore,\n\
+  as a band-aid workaround, this patch checks integer underflow in\n\"struct fbcon_ops\"\
+  ->clear_margins call, assuming that\nvc->vc_cols * vc->vc_font.width and vc->vc_rows\
+  \ * vc->vc_font.heigh do not\ncause integer overflow.\n\n[1] https://syzkaller.appspot.com/bug?id=a565882df74fa76f10d3a6fec4be31098dbb37c6\n\
+  \nReported-and-tested-by: syzbot <syzbot+e5fd3e65515b48c02a30@syzkaller.appspotmail.com>\n\
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nAcked-by: Daniel\
+  \ Vetter <daniel.vetter@ffwll.ch>\nCc: stable <stable@vger.kernel.org>\nLink: https://lore.kernel.org/r/20200715015102.3814-1-penguin-kernel@I-love.SAKURA.ne.jp\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/video/fbdev/core
+hunk_count: 8
+covered_count: 0

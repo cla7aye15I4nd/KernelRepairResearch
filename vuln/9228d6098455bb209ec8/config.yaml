@@ -1,0 +1,25 @@
+id: 9228d6098455bb209ec8
+bug_link: https://syzkaller.appspot.com/bug?extid=9228d6098455bb209ec8
+title: 'KASAN: use-after-free Read in task_work_run (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 030a976efae83f7b6593afb11a8254d42f9290fe
+fix_commit: 517e6a301f34613bff24a8e35b5455884f2d83d8
+datetime: '2022-11-29T17:42:49+01:00'
+fix_commit_message: "perf: Fix perf_pending_task() UaF\n\nPer syzbot it is possible\
+  \ for perf_pending_task() to run after the\nevent is free()'d. There are two related\
+  \ but distinct cases:\n\n - the task_work was already queued before destroying the\
+  \ event;\n - destroying the event itself queues the task_work.\n\nThe first cannot\
+  \ be solved using task_work_cancel() since\nperf_release() itself might be called\
+  \ from a task_work (____fput),\nwhich means the current->task_works list is already\
+  \ empty and\ntask_work_cancel() won't be able to find the perf_pending_task()\n\
+  entry.\n\nThe simplest alternative is extending the perf_event lifetime to cover\n\
+  the task_work.\n\nThe second is just silly, queueing a task_work while you know\
+  \ the\nevent is going away makes no sense and is easily avoided by\nre-arranging\
+  \ how the event is marked STATE_DEAD and ensuring it goes\nthrough STATE_OFF on\
+  \ the way down.\n\nReported-by: syzbot+9228d6098455bb209ec8@syzkaller.appspotmail.com\n\
+  Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>\nTested-by: Marco Elver\
+  \ <elver@google.com>\n"
+submodule:
+- kernel/events
+hunk_count: 6
+covered_count: 5

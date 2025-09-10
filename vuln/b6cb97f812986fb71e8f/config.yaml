@@ -1,0 +1,46 @@
+id: b6cb97f812986fb71e8f
+bug_link: https://syzkaller.appspot.com/bug?extid=b6cb97f812986fb71e8f
+title: 'KASAN: use-after-free Read in sixpack_close'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 66f4beaa6c1d28161f534471484b2daa2de1dce0
+fix_commit: 81b1d548d00bcd028303c4f3150fa753b9b8aa71
+datetime: '2021-11-12T19:56:47-08:00'
+fix_commit_message: 'hamradio: remove needs_free_netdev to avoid UAF
+
+
+  The former patch "defer 6pack kfree after unregister_netdev" reorders
+
+  the kfree of two buffer after the unregister_netdev to prevent the race
+
+  condition. It also adds free_netdev() function in sixpack_close(), which
+
+  is a direct copy from the similar code in mkiss_close().
+
+
+  However, in sixpack driver, the flag needs_free_netdev is set to true in
+
+  sp_setup(), hence the unregister_netdev() will free the netdev
+
+  automatically. Therefore, as the sp is netdev_priv, use-after-free
+
+  occurs.
+
+
+  This patch removes the needs_free_netdev = true and just let the
+
+  free_netdev to finish this deallocation task.
+
+
+  Fixes: 0b9111922b1f ("hamradio: defer 6pack kfree after unregister_netdev")
+
+  Signed-off-by: Lin Ma <linma@zju.edu.cn>
+
+  Link: https://lore.kernel.org/r/20211111141402.7551-1-linma@zju.edu.cn
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- drivers/net/hamradio
+hunk_count: 1
+covered_count: 0

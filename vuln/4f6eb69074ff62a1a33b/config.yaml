@@ -1,0 +1,62 @@
+id: 4f6eb69074ff62a1a33b
+bug_link: https://syzkaller.appspot.com/bug?extid=4f6eb69074ff62a1a33b
+title: 'BUG: unable to handle kernel paging request in kvm_arch_hardware_enable'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 568035b01cfb107af8d2e4bd2fb9aea22cf5b868
+fix_commit: 4ba4f41942745f1906c06868a4acc6c926463f53
+datetime: '2022-08-19T04:02:30-04:00'
+fix_commit_message: 'KVM: Properly unwind VM creation if creating debugfs fails
+
+
+  Properly unwind VM creation if kvm_create_vm_debugfs() fails.  A recent
+
+  change to invoke kvm_create_vm_debug() in kvm_create_vm() was led astray
+
+  by buggy try_get_module() handling adding by commit 5f6de5cbebee ("KVM:
+
+  Prevent module exit until all VMs are freed").  The debugfs error path
+
+  effectively inherits the bad error path of try_module_get(), e.g. KVM
+
+  leaves the to-be-free VM on vm_list even though KVM appears to do the
+
+  right thing by calling module_put() and falling through.
+
+
+  Opportunistically hoist kvm_create_vm_debugfs() above the call to
+
+  kvm_arch_post_init_vm() so that the "post-init" arch hook is actually
+
+  invoked after the VM is initialized (ignoring kvm_coalesced_mmio_init()
+
+  for the moment).  x86 is the only non-nop implementation of the post-init
+
+  hook, and it doesn''t allocate/initialize any objects that are reachable
+
+  via debugfs code (spawns a kthread worker for the NX huge page mitigation).
+
+
+  Leave the buggy try_get_module() alone for now, it will be fixed in a
+
+  separate commit.
+
+
+  Fixes: b74ed7a68ec1 ("KVM: Actually create debugfs in kvm_create_vm()")
+
+  Reported-by: syzbot+744e173caec2e1627ee0@syzkaller.appspotmail.com
+
+  Cc: Oliver Upton <oliver.upton@linux.dev>
+
+  Signed-off-by: Sean Christopherson <seanjc@google.com>
+
+  Reviewed-by: Oliver Upton <oliver.upton@linux.dev>
+
+  Message-Id: <20220816053937.2477106-2-seanjc@google.com>
+
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  '
+submodule:
+- virt/kvm
+hunk_count: 2
+covered_count: 0

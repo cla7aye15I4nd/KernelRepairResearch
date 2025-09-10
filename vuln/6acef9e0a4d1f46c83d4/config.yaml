@@ -1,0 +1,84 @@
+id: 6acef9e0a4d1f46c83d4
+bug_link: https://syzkaller.appspot.com/bug?extid=6acef9e0a4d1f46c83d4
+title: 'BUG: unable to handle kernel paging request in net_generic'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 85ba108a529d99c82e814eaf782a9443acf5eaed
+fix_commit: 86a41ea9fd79ddb6145cb8ebf5aeafceabca6f7d
+datetime: '2024-08-08T08:28:24-07:00'
+fix_commit_message: "l2tp: fix lockdep splat\n\nWhen l2tp tunnels use a socket provided\
+  \ by userspace, we can hit\nlockdep splats like the below when data is transmitted\
+  \ through another\n(unrelated) userspace socket which then gets routed over l2tp.\n\
+  \nThis issue was previously discussed here:\nhttps://lore.kernel.org/netdev/87sfialu2n.fsf@cloudflare.com/\n\
+  \nThe solution is to have lockdep treat socket locks of l2tp tunnel\nsockets separately\
+  \ than those of standard INET sockets. To do so, use\na different lockdep subclass\
+  \ where lock nesting is possible.\n\n  ============================================\n\
+  \  WARNING: possible recursive locking detected\n  6.10.0+ #34 Not tainted\n  --------------------------------------------\n\
+  \  iperf3/771 is trying to acquire lock:\n  ffff8881027601d8 (slock-AF_INET/1){+.-.}-{2:2},\
+  \ at: l2tp_xmit_skb+0x243/0x9d0\n\n  but task is already holding lock:\n  ffff888102650d98\
+  \ (slock-AF_INET/1){+.-.}-{2:2}, at: tcp_v4_rcv+0x1848/0x1e10\n\n  other info that\
+  \ might help us debug this:\n   Possible unsafe locking scenario:\n\n         CPU0\n\
+  \         ----\n    lock(slock-AF_INET/1);\n    lock(slock-AF_INET/1);\n\n   ***\
+  \ DEADLOCK ***\n\n   May be due to missing lock nesting notation\n\n  10 locks held\
+  \ by iperf3/771:\n   #0: ffff888102650258 (sk_lock-AF_INET){+.+.}-{0:0}, at: tcp_sendmsg+0x1a/0x40\n\
+  \   #1: ffffffff822ac220 (rcu_read_lock){....}-{1:2}, at: __ip_queue_xmit+0x4b/0xbc0\n\
+  \   #2: ffffffff822ac220 (rcu_read_lock){....}-{1:2}, at: ip_finish_output2+0x17a/0x1130\n\
+  \   #3: ffffffff822ac220 (rcu_read_lock){....}-{1:2}, at: process_backlog+0x28b/0x9f0\n\
+  \   #4: ffffffff822ac220 (rcu_read_lock){....}-{1:2}, at: ip_local_deliver_finish+0xf9/0x260\n\
+  \   #5: ffff888102650d98 (slock-AF_INET/1){+.-.}-{2:2}, at: tcp_v4_rcv+0x1848/0x1e10\n\
+  \   #6: ffffffff822ac220 (rcu_read_lock){....}-{1:2}, at: __ip_queue_xmit+0x4b/0xbc0\n\
+  \   #7: ffffffff822ac220 (rcu_read_lock){....}-{1:2}, at: ip_finish_output2+0x17a/0x1130\n\
+  \   #8: ffffffff822ac1e0 (rcu_read_lock_bh){....}-{1:2}, at: __dev_queue_xmit+0xcc/0x1450\n\
+  \   #9: ffff888101f33258 (dev->qdisc_tx_busylock ?: &qdisc_tx_busylock#2){+...}-{2:2},\
+  \ at: __dev_queue_xmit+0x513/0x1450\n\n  stack backtrace:\n  CPU: 2 UID: 0 PID:\
+  \ 771 Comm: iperf3 Not tainted 6.10.0+ #34\n  Hardware name: QEMU Standard PC (i440FX\
+  \ + PIIX, 1996), BIOS 1.15.0-1 04/01/2014\n  Call Trace:\n   <IRQ>\n   dump_stack_lvl+0x69/0xa0\n\
+  \   dump_stack+0xc/0x20\n   __lock_acquire+0x135d/0x2600\n   ? srso_alias_return_thunk+0x5/0xfbef5\n\
+  \   lock_acquire+0xc4/0x2a0\n   ? l2tp_xmit_skb+0x243/0x9d0\n   ? __skb_checksum+0xa3/0x540\n\
+  \   _raw_spin_lock_nested+0x35/0x50\n   ? l2tp_xmit_skb+0x243/0x9d0\n   l2tp_xmit_skb+0x243/0x9d0\n\
+  \   l2tp_eth_dev_xmit+0x3c/0xc0\n   dev_hard_start_xmit+0x11e/0x420\n   sch_direct_xmit+0xc3/0x640\n\
+  \   __dev_queue_xmit+0x61c/0x1450\n   ? ip_finish_output2+0xf4c/0x1130\n   ip_finish_output2+0x6b6/0x1130\n\
+  \   ? srso_alias_return_thunk+0x5/0xfbef5\n   ? __ip_finish_output+0x217/0x380\n\
+  \   ? srso_alias_return_thunk+0x5/0xfbef5\n   __ip_finish_output+0x217/0x380\n \
+  \  ip_output+0x99/0x120\n   __ip_queue_xmit+0xae4/0xbc0\n   ? srso_alias_return_thunk+0x5/0xfbef5\n\
+  \   ? srso_alias_return_thunk+0x5/0xfbef5\n   ? tcp_options_write.constprop.0+0xcb/0x3e0\n\
+  \   ip_queue_xmit+0x34/0x40\n   __tcp_transmit_skb+0x1625/0x1890\n   __tcp_send_ack+0x1b8/0x340\n\
+  \   tcp_send_ack+0x23/0x30\n   __tcp_ack_snd_check+0xa8/0x530\n   ? srso_alias_return_thunk+0x5/0xfbef5\n\
+  \   tcp_rcv_established+0x412/0xd70\n   tcp_v4_do_rcv+0x299/0x420\n   tcp_v4_rcv+0x1991/0x1e10\n\
+  \   ip_protocol_deliver_rcu+0x50/0x220\n   ip_local_deliver_finish+0x158/0x260\n\
+  \   ip_local_deliver+0xc8/0xe0\n   ip_rcv+0xe5/0x1d0\n   ? __pfx_ip_rcv+0x10/0x10\n\
+  \   __netif_receive_skb_one_core+0xce/0xe0\n   ? process_backlog+0x28b/0x9f0\n \
+  \  __netif_receive_skb+0x34/0xd0\n   ? process_backlog+0x28b/0x9f0\n   process_backlog+0x2cb/0x9f0\n\
+  \   __napi_poll.constprop.0+0x61/0x280\n   net_rx_action+0x332/0x670\n   ? srso_alias_return_thunk+0x5/0xfbef5\n\
+  \   ? find_held_lock+0x2b/0x80\n   ? srso_alias_return_thunk+0x5/0xfbef5\n   ? srso_alias_return_thunk+0x5/0xfbef5\n\
+  \   handle_softirqs+0xda/0x480\n   ? __dev_queue_xmit+0xa2c/0x1450\n   do_softirq+0xa1/0xd0\n\
+  \   </IRQ>\n   <TASK>\n   __local_bh_enable_ip+0xc8/0xe0\n   ? __dev_queue_xmit+0xa2c/0x1450\n\
+  \   __dev_queue_xmit+0xa48/0x1450\n   ? ip_finish_output2+0xf4c/0x1130\n   ip_finish_output2+0x6b6/0x1130\n\
+  \   ? srso_alias_return_thunk+0x5/0xfbef5\n   ? __ip_finish_output+0x217/0x380\n\
+  \   ? srso_alias_return_thunk+0x5/0xfbef5\n   __ip_finish_output+0x217/0x380\n \
+  \  ip_output+0x99/0x120\n   __ip_queue_xmit+0xae4/0xbc0\n   ? srso_alias_return_thunk+0x5/0xfbef5\n\
+  \   ? srso_alias_return_thunk+0x5/0xfbef5\n   ? tcp_options_write.constprop.0+0xcb/0x3e0\n\
+  \   ip_queue_xmit+0x34/0x40\n   __tcp_transmit_skb+0x1625/0x1890\n   tcp_write_xmit+0x766/0x2fb0\n\
+  \   ? __entry_text_end+0x102ba9/0x102bad\n   ? srso_alias_return_thunk+0x5/0xfbef5\n\
+  \   ? __might_fault+0x74/0xc0\n   ? srso_alias_return_thunk+0x5/0xfbef5\n   __tcp_push_pending_frames+0x56/0x190\n\
+  \   tcp_push+0x117/0x310\n   tcp_sendmsg_locked+0x14c1/0x1740\n   tcp_sendmsg+0x28/0x40\n\
+  \   inet_sendmsg+0x5d/0x90\n   sock_write_iter+0x242/0x2b0\n   vfs_write+0x68d/0x800\n\
+  \   ? __pfx_sock_write_iter+0x10/0x10\n   ksys_write+0xc8/0xf0\n   __x64_sys_write+0x3d/0x50\n\
+  \   x64_sys_call+0xfaf/0x1f50\n   do_syscall_64+0x6d/0x140\n   entry_SYSCALL_64_after_hwframe+0x76/0x7e\n\
+  \  RIP: 0033:0x7f4d143af992\n  Code: c3 8b 07 85 c0 75 24 49 89 fb 48 89 f0 48 89\
+  \ d7 48 89 ce 4c 89 c2 4d 89 ca 4c 8b 44 24 08 4c 8b 4c 24 10 4c 89 5c 24 08 0f\
+  \ 05 <c3> e9 01 cc ff ff 41 54 b8 02 00 00 0\n  RSP: 002b:00007ffd65032058 EFLAGS:\
+  \ 00000246 ORIG_RAX: 0000000000000001\n  RAX: ffffffffffffffda RBX: 0000000000000001\
+  \ RCX: 00007f4d143af992\n  RDX: 0000000000000025 RSI: 00007f4d143f3bcc RDI: 0000000000000005\n\
+  \  RBP: 00007f4d143f2b28 R08: 0000000000000000 R09: 0000000000000000\n  R10: 0000000000000000\
+  \ R11: 0000000000000246 R12: 00007f4d143f3bcc\n  R13: 0000000000000005 R14: 0000000000000000\
+  \ R15: 00007ffd650323f0\n   </TASK>\n\nFixes: 0b2c59720e65 (\"l2tp: close all race\
+  \ conditions in l2tp_tunnel_register()\")\nSuggested-by: Eric Dumazet <edumazet@google.com>\n\
+  Reported-by: syzbot+6acef9e0a4d1f46c83d4@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=6acef9e0a4d1f46c83d4\n\
+  CC: gnault@redhat.com\nCC: cong.wang@bytedance.com\nSigned-off-by: James Chapman\
+  \ <jchapman@katalix.com>\nSigned-off-by: Tom Parkin <tparkin@katalix.com>\nLink:\
+  \ https://patch.msgid.link/20240806160626.1248317-1-jchapman@katalix.com\nSigned-off-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/l2tp
+hunk_count: 3
+covered_count: 1

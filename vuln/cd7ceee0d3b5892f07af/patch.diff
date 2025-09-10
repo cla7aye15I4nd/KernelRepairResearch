@@ -1,0 +1,14 @@
+diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
+index 443c49081636..15c1e4e4012d 100644
+--- a/net/unix/af_unix.c
++++ b/net/unix/af_unix.c
+@@ -2847,7 +2847,8 @@ static int unix_shutdown(struct socket *sock, int mode)
+ 		int peer_mode = 0;
+ 		const struct proto *prot = READ_ONCE(other->sk_prot);
+ 
+-		prot->unhash(other);
++		if (prot->unhash)
++			prot->unhash(other);
+ 		if (mode&RCV_SHUTDOWN)
+ 			peer_mode |= SEND_SHUTDOWN;
+ 		if (mode&SEND_SHUTDOWN)

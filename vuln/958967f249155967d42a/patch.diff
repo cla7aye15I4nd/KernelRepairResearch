@@ -1,0 +1,40 @@
+diff --git a/kernel/bpf/btf.c b/kernel/bpf/btf.c
+index 947f0b83bfad..bd2cac057928 100644
+--- a/kernel/bpf/btf.c
++++ b/kernel/bpf/btf.c
+@@ -492,25 +492,26 @@ static bool btf_type_is_fwd(const struct btf_type *t)
+ 	return BTF_INFO_KIND(t->info) == BTF_KIND_FWD;
+ }
+ 
+-static bool btf_type_nosize(const struct btf_type *t)
++static bool btf_type_is_datasec(const struct btf_type *t)
+ {
+-	return btf_type_is_void(t) || btf_type_is_fwd(t) ||
+-	       btf_type_is_func(t) || btf_type_is_func_proto(t);
++	return BTF_INFO_KIND(t->info) == BTF_KIND_DATASEC;
+ }
+ 
+-static bool btf_type_nosize_or_null(const struct btf_type *t)
++static bool btf_type_is_decl_tag(const struct btf_type *t)
+ {
+-	return !t || btf_type_nosize(t);
++	return BTF_INFO_KIND(t->info) == BTF_KIND_DECL_TAG;
+ }
+ 
+-static bool btf_type_is_datasec(const struct btf_type *t)
++static bool btf_type_nosize(const struct btf_type *t)
+ {
+-	return BTF_INFO_KIND(t->info) == BTF_KIND_DATASEC;
++	return btf_type_is_void(t) || btf_type_is_fwd(t) ||
++	       btf_type_is_func(t) || btf_type_is_func_proto(t) ||
++	       btf_type_is_decl_tag(t);
+ }
+ 
+-static bool btf_type_is_decl_tag(const struct btf_type *t)
++static bool btf_type_nosize_or_null(const struct btf_type *t)
+ {
+-	return BTF_INFO_KIND(t->info) == BTF_KIND_DECL_TAG;
++	return !t || btf_type_nosize(t);
+ }
+ 
+ static bool btf_type_is_decl_tag_target(const struct btf_type *t)

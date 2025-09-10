@@ -1,0 +1,68 @@
+ non-paged memory
+list_del corruption, ffff888021297e00->prev is LIST_POISON2 (dead000000000122)
+------------[ cut here ]------------
+kernel BUG at lib/list_debug.c:61!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5896 Comm: syz-executor213 Not tainted 6.14.0-rc1-next-20250204-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+RIP: 0010:__list_del_entry_valid_or_report+0x12c/0x190 lib/list_debug.c:59
+Code: 8c 4c 89 fe 48 89 da e8 32 8c 37 fc 90 0f 0b 48 89 df e8 27 9f 14 fd 48 c7 c7 a0 c0 60 8c 4c 89 fe 48 89 da e8 15 8c 37 fc 90 <0f> 0b 4c 89 e7 e8 0a 9f 14 fd 42 80 3c 2b 00 74 08 4c 89 e7 e8 cb
+RSP: 0018:ffffc90003f6f998 EFLAGS: 00010246
+RAX: 000000000000004e RBX: dead000000000122 RCX: 01454d423f7fbf00
+RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
+RBP: dffffc0000000000 R08: ffffffff819f077c R09: 1ffff920007eded0
+R10: dffffc0000000000 R11: fffff520007eded1 R12: dead000000000122
+R13: dffffc0000000000 R14: ffff8880352248d8 R15: ffff888021297e00
+FS:  00007f7ace6686c0(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f7aceeeb1d0 CR3: 000000003527c000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __list_del_entry_valid include/linux/list.h:124 [inline]
+ __list_del_entry include/linux/list.h:215 [inline]
+ list_del_rcu include/linux/rculist.h:168 [inline]
+ hci_chan_del+0x70/0x1b0 net/bluetooth/hci_conn.c:2858
+ l2cap_conn_free net/bluetooth/l2cap_core.c:1816 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ l2cap_conn_put+0x70/0xe0 net/bluetooth/l2cap_core.c:1830
+ l2cap_sock_shutdown+0xa8a/0x1020 net/bluetooth/l2cap_sock.c:1377
+ l2cap_sock_release+0x79/0x1d0 net/bluetooth/l2cap_sock.c:1416
+ __sock_release net/socket.c:642 [inline]
+ sock_close+0xbc/0x240 net/socket.c:1393
+ __fput+0x3e9/0x9f0 fs/file_table.c:448
+ task_work_run+0x24f/0x310 kernel/task_work.c:227
+ ptrace_notify+0x2d2/0x380 kernel/signal.c:2522
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]
+ syscall_exit_work+0xc7/0x1d0 kernel/entry/common.c:173
+ syscall_exit_to_user_mode_prepare kernel/entry/common.c:200 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:205 [inline]
+ syscall_exit_to_user_mode+0x24a/0x340 kernel/entry/common.c:218
+ do_syscall_64+0x100/0x230 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f7aceeaf449
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 41 19 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f7ace668218 EFLAGS: 00000246 ORIG_RAX: 000000000000002a
+RAX: fffffffffffffffc RBX: 00007f7acef39328 RCX: 00007f7aceeaf449
+RDX: 000000000000000e RSI: 0000000020000100 RDI: 0000000000000004
+RBP: 00007f7acef39320 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000003
+R13: 0000000000000004 R14: 00007f7ace668670 R15: 000000000000000b
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__list_del_entry_valid_or_report+0x12c/0x190 lib/list_debug.c:59
+Code: 8c 4c 89 fe 48 89 da e8 32 8c 37 fc 90 0f 0b 48 89 df e8 27 9f 14 fd 48 c7 c7 a0 c0 60 8c 4c 89 fe 48 89 da e8 15 8c 37 fc 90 <0f> 0b 4c 89 e7 e8 0a 9f 14 fd 42 80 3c 2b 00 74 08 4c 89 e7 e8 cb
+RSP: 0018:ffffc90003f6f998 EFLAGS: 00010246
+RAX: 000000000000004e RBX: dead000000000122 RCX: 01454d423f7fbf00
+RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
+RBP: dffffc0000000000 R08: ffffffff819f077c R09: 1ffff920007eded0
+R10: dffffc0000000000 R11: fffff520007eded1 R12: dead000000000122
+R13: dffffc0000000000 R14: ffff8880352248d8 R15: ffff888021297e00
+FS:  00007f7ace6686c0(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f7acef05b08 CR3: 000000003527c000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

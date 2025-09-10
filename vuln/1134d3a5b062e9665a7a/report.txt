@@ -1,0 +1,62 @@
+VFS: Lookup of '.' in ocfs2 loop0 would have caused loop
+VFS: Lookup of '.' in ocfs2 loop0 would have caused loop
+ocfs2: Unmounting device (7,0) on (node local)
+VFS: Busy inodes after unmount of loop0 (ocfs2)
+------------[ cut here ]------------
+kernel BUG at fs/super.c:653!
+Oops: invalid opcode: 0000 [#1] SMP KASAN PTI
+CPU: 0 UID: 0 PID: 5825 Comm: syz-executor776 Not tainted 6.16.0-rc3-syzkaller-00057-g92ca6c498a5e #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:generic_shutdown_super+0x2bc/0x2c0 fs/super.c:651
+Code: 03 42 80 3c 28 00 74 08 4c 89 f7 e8 5e f2 ee ff 49 8b 16 48 81 c3 70 06 00 00 48 c7 c7 00 1c 99 8b 48 89 de e8 55 d8 f4 fe 90 <0f> 0b 66 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 66 0f
+RSP: 0018:ffffc9000432fb80 EFLAGS: 00010246
+RAX: 000000000000002f RBX: ffff88807ae48670 RCX: 783a4995bbf4b700
+RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
+RBP: 1ffff1100f5c90f1 R08: ffff8880b8624293 R09: 1ffff110170c4852
+R10: dffffc0000000000 R11: ffffed10170c4853 R12: 0000000000000000
+R13: dffffc0000000000 R14: ffffffff8e676cc0 R15: ffff88807ae48788
+FS:  0000000000000000(0000) GS:ffff888125c83000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055556eb58738 CR3: 00000000353da000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ kill_block_super+0x44/0x90 fs/super.c:1755
+ deactivate_locked_super+0xbc/0x130 fs/super.c:474
+ cleanup_mnt+0x425/0x4c0 fs/namespace.c:1417
+ task_work_run+0x1d1/0x260 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0x6b5/0x22e0 kernel/exit.c:964
+ do_group_exit+0x21c/0x2d0 kernel/exit.c:1105
+ __do_sys_exit_group kernel/exit.c:1116 [inline]
+ __se_sys_exit_group kernel/exit.c:1114 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1114
+ x64_sys_call+0x21ba/0x21c0 arch/x86/include/generated/asm/syscalls_64.h:232
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f5362e527c9
+Code: Unable to access opcode bytes at 0x7f5362e5279f.
+RSP: 002b:00007ffe3001b448 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007f5362e527c9
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000001
+RBP: 00007f5362ed3390 R08: ffffffffffffffb8 R09: 0000000000000000
+R10: 0000000000000100 R11: 0000000000000246 R12: 00007f5362ed3390
+R13: 0000000000000000 R14: 00007f5362ed4100 R15: 00007f5362e20780
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:generic_shutdown_super+0x2bc/0x2c0 fs/super.c:651
+Code: 03 42 80 3c 28 00 74 08 4c 89 f7 e8 5e f2 ee ff 49 8b 16 48 81 c3 70 06 00 00 48 c7 c7 00 1c 99 8b 48 89 de e8 55 d8 f4 fe 90 <0f> 0b 66 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 66 0f
+RSP: 0018:ffffc9000432fb80 EFLAGS: 00010246
+RAX: 000000000000002f RBX: ffff88807ae48670 RCX: 783a4995bbf4b700
+RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
+RBP: 1ffff1100f5c90f1 R08: ffff8880b8624293 R09: 1ffff110170c4852
+R10: dffffc0000000000 R11: ffffed10170c4853 R12: 0000000000000000
+R13: dffffc0000000000 R14: ffffffff8e676cc0 R15: ffff88807ae48788
+FS:  0000000000000000(0000) GS:ffff888125c83000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055556eb58738 CR3: 0000000027ace000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

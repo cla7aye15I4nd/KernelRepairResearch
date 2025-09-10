@@ -1,0 +1,35 @@
+id: 3da2442641f0c6a705a2
+bug_link: https://syzkaller.appspot.com/bug?extid=3da2442641f0c6a705a2
+title: general protection fault in ethnl_default_dumpit
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0a5c8b2c8ccbd5987f5d05c6ad6740cdb2e467e8
+fix_commit: f36a9285828c92ff9dffd4873b8365ca8406f071
+datetime: '2025-03-07T19:10:39-08:00'
+fix_commit_message: "net: ethtool: use correct device pointer in ethnl_default_dump_one()\n\
+  \nethnl_default_dump_one() operates on the device provided in its @dev\nparameter,\
+  \ not from ctx->req_info->dev.\n\nsyzbot reported:\n\nOops: general protection fault,\
+  \ probably for non-canonical address 0xdffffc0000000197: 0000 [#1] PREEMPT SMP KASAN\
+  \ PTI\nKASAN: null-ptr-deref in range [0x0000000000000cb8-0x0000000000000cbf]\n\
+  \ RIP: 0010:netdev_need_ops_lock include/linux/netdevice.h:2792 [inline]\n RIP:\
+  \ 0010:netdev_lock_ops include/linux/netdevice.h:2803 [inline]\n RIP: 0010:ethnl_default_dump_one\
+  \ net/ethtool/netlink.c:557 [inline]\n RIP: 0010:ethnl_default_dumpit+0x447/0xd40\
+  \ net/ethtool/netlink.c:593\nCall Trace:\n <TASK>\n  genl_dumpit+0x10d/0x1b0 net/netlink/genetlink.c:1027\n\
+  \  netlink_dump+0x64d/0xe10 net/netlink/af_netlink.c:2309\n  __netlink_dump_start+0x5a2/0x790\
+  \ net/netlink/af_netlink.c:2424\n  genl_family_rcv_msg_dumpit net/netlink/genetlink.c:1076\
+  \ [inline]\n  genl_family_rcv_msg net/netlink/genetlink.c:1192 [inline]\n  genl_rcv_msg+0x894/0xec0\
+  \ net/netlink/genetlink.c:1210\n  netlink_rcv_skb+0x206/0x480 net/netlink/af_netlink.c:2534\n\
+  \  genl_rcv+0x28/0x40 net/netlink/genetlink.c:1219\n  netlink_unicast_kernel net/netlink/af_netlink.c:1313\
+  \ [inline]\n  netlink_unicast+0x7f6/0x990 net/netlink/af_netlink.c:1339\n  netlink_sendmsg+0x8de/0xcb0\
+  \ net/netlink/af_netlink.c:1883\n  sock_sendmsg_nosec net/socket.c:709 [inline]\n\
+  \  __sock_sendmsg+0x221/0x270 net/socket.c:724\n  ____sys_sendmsg+0x53a/0x860 net/socket.c:2564\n\
+  \  ___sys_sendmsg net/socket.c:2618 [inline]\n  __sys_sendmsg+0x269/0x350 net/socket.c:2650\n\
+  \nFixes: 2bcf4772e45a (\"net: ethtool: try to protect all callback with netdev instance\
+  \ lock\")\nReported-by: syzbot+3da2442641f0c6a705a2@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/lkml/67caaf5e.050a0220.15b4b9.007a.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nAcked-by: Stanislav Fomichev\
+  \ <sdf@fomichev.me>\nLink: https://patch.msgid.link/20250307083544.1659135-1-edumazet@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/ethtool
+hunk_count: 1
+covered_count: 1

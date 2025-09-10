@@ -1,0 +1,45 @@
+id: 43120c2af6ca2938cc38
+bug_link: https://syzkaller.appspot.com/bug?extid=43120c2af6ca2938cc38
+title: 'INFO: rcu detected stall in snd_timer_user_release (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d731b1ed15052580b7b2f40559021012d280f1d9
+fix_commit: 4a63bd179fa8d3fcc44a0d9d71d941ddd62f0c4e
+datetime: '2024-05-16T16:00:08+02:00'
+fix_commit_message: 'ALSA: timer: Set lower bound of start tick time
+
+
+  Currently ALSA timer doesn''t have the lower limit of the start tick
+
+  time, and it allows a very small size, e.g. 1 tick with 1ns resolution
+
+  for hrtimer.  Such a situation may lead to an unexpected RCU stall,
+
+  where  the callback repeatedly queuing the expire update, as reported
+
+  by fuzzer.
+
+
+  This patch introduces a sanity check of the timer start tick time, so
+
+  that the system returns an error when a too small start size is set.
+
+  As of this patch, the lower limit is hard-coded to 100us, which is
+
+  small enough but can still work somehow.
+
+
+  Reported-by: syzbot+43120c2af6ca2938cc38@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/r/000000000000fa00a1061740ab6d@google.com
+
+  Cc: <stable@vger.kernel.org>
+
+  Link: https://lore.kernel.org/r/20240514182745.4015-1-tiwai@suse.de
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/core
+hunk_count: 1
+covered_count: 0

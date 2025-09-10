@@ -1,0 +1,92 @@
+id: 8b0959fc16551d55896b
+bug_link: https://syzkaller.appspot.com/bug?extid=8b0959fc16551d55896b
+title: 'KMSAN: uninit-value in netdev_pick_tx'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f1cd565ce57760923d5e0fbd9e9914b415c0620a
+fix_commit: 0a4cc4accf00b49b4728bb7639cb90a6a5b674e2
+datetime: '2024-11-30T13:00:52-08:00'
+fix_commit_message: "tcp: populate XPS related fields of timewait sockets\n\nsyzbot\
+  \ reported that netdev_core_pick_tx() was reading an uninitialized\nfield [1].\n\
+  \nThis is indeed hapening for timewait sockets after recent commits.\n\nWe can copy\
+  \ the original established socket sk_tx_queue_mapping\nand sk_rx_queue_mapping fields,\
+  \ instead of adding more checks\nin fast paths.\n\nAs a bonus, packets will use\
+  \ the same transmit queue than\nprior ones, this potentially can avoid reordering.\n\
+  \n[1]\nBUG: KMSAN: uninit-value in netdev_pick_tx+0x5c7/0x1550\n netdev_pick_tx+0x5c7/0x1550\n\
+  \  netdev_core_pick_tx+0x1d2/0x4a0 net/core/dev.c:4312\n  __dev_queue_xmit+0x128a/0x57d0\
+  \ net/core/dev.c:4394\n  dev_queue_xmit include/linux/netdevice.h:3168 [inline]\n\
+  \  neigh_hh_output include/net/neighbour.h:523 [inline]\n  neigh_output include/net/neighbour.h:537\
+  \ [inline]\n  ip_finish_output2+0x187c/0x1b70 net/ipv4/ip_output.c:236\n __ip_finish_output+0x287/0x810\n\
+  \  ip_finish_output+0x4b/0x600 net/ipv4/ip_output.c:324\n  NF_HOOK_COND include/linux/netfilter.h:303\
+  \ [inline]\n  ip_output+0x15f/0x3f0 net/ipv4/ip_output.c:434\n  dst_output include/net/dst.h:450\
+  \ [inline]\n  ip_local_out net/ipv4/ip_output.c:130 [inline]\n  ip_send_skb net/ipv4/ip_output.c:1505\
+  \ [inline]\n  ip_push_pending_frames+0x444/0x570 net/ipv4/ip_output.c:1525\n  ip_send_unicast_reply+0x18c1/0x1b30\
+  \ net/ipv4/ip_output.c:1672\n  tcp_v4_send_reset+0x238d/0x2a40 net/ipv4/tcp_ipv4.c:910\n\
+  \  tcp_v4_rcv+0x48f8/0x5750 net/ipv4/tcp_ipv4.c:2431\n  ip_protocol_deliver_rcu+0x2a3/0x13d0\
+  \ net/ipv4/ip_input.c:205\n  ip_local_deliver_finish+0x336/0x500 net/ipv4/ip_input.c:233\n\
+  \  NF_HOOK include/linux/netfilter.h:314 [inline]\n  ip_local_deliver+0x21f/0x490\
+  \ net/ipv4/ip_input.c:254\n  dst_input include/net/dst.h:460 [inline]\n  ip_sublist_rcv_finish\
+  \ net/ipv4/ip_input.c:578 [inline]\n  ip_list_rcv_finish net/ipv4/ip_input.c:628\
+  \ [inline]\n  ip_sublist_rcv+0x15f3/0x17f0 net/ipv4/ip_input.c:636\n  ip_list_rcv+0x9ef/0xa40\
+  \ net/ipv4/ip_input.c:670\n  __netif_receive_skb_list_ptype net/core/dev.c:5715\
+  \ [inline]\n  __netif_receive_skb_list_core+0x15c5/0x1670 net/core/dev.c:5762\n\
+  \  __netif_receive_skb_list net/core/dev.c:5814 [inline]\n  netif_receive_skb_list_internal+0x1085/0x1700\
+  \ net/core/dev.c:5905\n  gro_normal_list include/net/gro.h:515 [inline]\n  napi_complete_done+0x3d4/0x810\
+  \ net/core/dev.c:6256\n  virtqueue_napi_complete drivers/net/virtio_net.c:758 [inline]\n\
+  \  virtnet_poll+0x5d80/0x6bf0 drivers/net/virtio_net.c:3013\n  __napi_poll+0xe7/0x980\
+  \ net/core/dev.c:6877\n  napi_poll net/core/dev.c:6946 [inline]\n  net_rx_action+0xa5a/0x19b0\
+  \ net/core/dev.c:7068\n  handle_softirqs+0x1a0/0x7c0 kernel/softirq.c:554\n  __do_softirq\
+  \ kernel/softirq.c:588 [inline]\n  invoke_softirq kernel/softirq.c:428 [inline]\n\
+  \  __irq_exit_rcu+0x68/0x180 kernel/softirq.c:655\n  irq_exit_rcu+0x12/0x20 kernel/softirq.c:671\n\
+  \  common_interrupt+0x97/0xb0 arch/x86/kernel/irq.c:278\n  asm_common_interrupt+0x2b/0x40\
+  \ arch/x86/include/asm/idtentry.h:693\n  __preempt_count_sub arch/x86/include/asm/preempt.h:84\
+  \ [inline]\n  kmsan_virt_addr_valid arch/x86/include/asm/kmsan.h:95 [inline]\n \
+  \ virt_to_page_or_null+0xfb/0x150 mm/kmsan/shadow.c:75\n  kmsan_get_metadata+0x13e/0x1c0\
+  \ mm/kmsan/shadow.c:141\n  kmsan_get_shadow_origin_ptr+0x4d/0xb0 mm/kmsan/shadow.c:102\n\
+  \  get_shadow_origin_ptr mm/kmsan/instrumentation.c:38 [inline]\n  __msan_metadata_ptr_for_store_4+0x27/0x40\
+  \ mm/kmsan/instrumentation.c:93\n  rcu_preempt_read_enter kernel/rcu/tree_plugin.h:390\
+  \ [inline]\n  __rcu_read_lock+0x46/0x70 kernel/rcu/tree_plugin.h:413\n  rcu_read_lock\
+  \ include/linux/rcupdate.h:847 [inline]\n  batadv_nc_purge_orig_hash net/batman-adv/network-coding.c:408\
+  \ [inline]\n  batadv_nc_worker+0x114/0x19e0 net/batman-adv/network-coding.c:719\n\
+  \  process_one_work kernel/workqueue.c:3229 [inline]\n  process_scheduled_works+0xae0/0x1c40\
+  \ kernel/workqueue.c:3310\n  worker_thread+0xea7/0x14f0 kernel/workqueue.c:3391\n\
+  \  kthread+0x3e2/0x540 kernel/kthread.c:389\n  ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147\n\
+  \  ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244\n\nUninit was created\
+  \ at:\n  __alloc_pages_noprof+0x9a7/0xe00 mm/page_alloc.c:4774\n  alloc_pages_mpol_noprof+0x299/0x990\
+  \ mm/mempolicy.c:2265\n  alloc_pages_noprof+0x1bf/0x1e0 mm/mempolicy.c:2344\n  alloc_slab_page\
+  \ mm/slub.c:2412 [inline]\n  allocate_slab+0x320/0x12e0 mm/slub.c:2578\n  new_slab\
+  \ mm/slub.c:2631 [inline]\n  ___slab_alloc+0x12ef/0x35e0 mm/slub.c:3818\n  __slab_alloc\
+  \ mm/slub.c:3908 [inline]\n  __slab_alloc_node mm/slub.c:3961 [inline]\n  slab_alloc_node\
+  \ mm/slub.c:4122 [inline]\n  kmem_cache_alloc_noprof+0x57a/0xb20 mm/slub.c:4141\n\
+  \  inet_twsk_alloc+0x11f/0x9d0 net/ipv4/inet_timewait_sock.c:188\n  tcp_time_wait+0x83/0xf50\
+  \ net/ipv4/tcp_minisocks.c:309\n tcp_rcv_state_process+0x145a/0x49d0\n  tcp_v4_do_rcv+0xbf9/0x11a0\
+  \ net/ipv4/tcp_ipv4.c:1939\n  tcp_v4_rcv+0x51df/0x5750 net/ipv4/tcp_ipv4.c:2351\n\
+  \  ip_protocol_deliver_rcu+0x2a3/0x13d0 net/ipv4/ip_input.c:205\n  ip_local_deliver_finish+0x336/0x500\
+  \ net/ipv4/ip_input.c:233\n  NF_HOOK include/linux/netfilter.h:314 [inline]\n  ip_local_deliver+0x21f/0x490\
+  \ net/ipv4/ip_input.c:254\n  dst_input include/net/dst.h:460 [inline]\n  ip_sublist_rcv_finish\
+  \ net/ipv4/ip_input.c:578 [inline]\n  ip_list_rcv_finish net/ipv4/ip_input.c:628\
+  \ [inline]\n  ip_sublist_rcv+0x15f3/0x17f0 net/ipv4/ip_input.c:636\n  ip_list_rcv+0x9ef/0xa40\
+  \ net/ipv4/ip_input.c:670\n  __netif_receive_skb_list_ptype net/core/dev.c:5715\
+  \ [inline]\n  __netif_receive_skb_list_core+0x15c5/0x1670 net/core/dev.c:5762\n\
+  \  __netif_receive_skb_list net/core/dev.c:5814 [inline]\n  netif_receive_skb_list_internal+0x1085/0x1700\
+  \ net/core/dev.c:5905\n  gro_normal_list include/net/gro.h:515 [inline]\n  napi_complete_done+0x3d4/0x810\
+  \ net/core/dev.c:6256\n  virtqueue_napi_complete drivers/net/virtio_net.c:758 [inline]\n\
+  \  virtnet_poll+0x5d80/0x6bf0 drivers/net/virtio_net.c:3013\n  __napi_poll+0xe7/0x980\
+  \ net/core/dev.c:6877\n  napi_poll net/core/dev.c:6946 [inline]\n  net_rx_action+0xa5a/0x19b0\
+  \ net/core/dev.c:7068\n  handle_softirqs+0x1a0/0x7c0 kernel/softirq.c:554\n  __do_softirq\
+  \ kernel/softirq.c:588 [inline]\n  invoke_softirq kernel/softirq.c:428 [inline]\n\
+  \  __irq_exit_rcu+0x68/0x180 kernel/softirq.c:655\n  irq_exit_rcu+0x12/0x20 kernel/softirq.c:671\n\
+  \  common_interrupt+0x97/0xb0 arch/x86/kernel/irq.c:278\n  asm_common_interrupt+0x2b/0x40\
+  \ arch/x86/include/asm/idtentry.h:693\n\nCPU: 0 UID: 0 PID: 3962 Comm: kworker/u8:18\
+  \ Not tainted 6.12.0-syzkaller-09073-g9f16d5e6f220 #0\nHardware name: Google Google\
+  \ Compute Engine/Google Compute Engine, BIOS Google 09/13/2024\nWorkqueue: bat_events\
+  \ batadv_nc_worker\n\nFixes: 79636038d37e (\"ipv4: tcp: give socket pointer to control\
+  \ skbs\")\nFixes: 507a96737d99 (\"ipv6: tcp: give socket pointer to control skbs\"\
+  )\nReported-by: syzbot+8b0959fc16551d55896b@syzkaller.appspotmail.com\nLink: https://lore.kernel.org/netdev/674442bd.050a0220.1cc393.0072.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nReviewed-by: Kuniyuki Iwashima\
+  \ <kuniyu@amazon.com>\nReviewed-by: Brian Vazquez <brianvv@google.com>\nLink: https://patch.msgid.link/20241125093039.3095790-1-edumazet@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- include/net
+- net/ipv4
+hunk_count: 2
+covered_count: 1

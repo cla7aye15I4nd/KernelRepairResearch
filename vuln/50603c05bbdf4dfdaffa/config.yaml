@@ -1,0 +1,71 @@
+id: 50603c05bbdf4dfdaffa
+bug_link: https://syzkaller.appspot.com/bug?extid=50603c05bbdf4dfdaffa
+title: possible deadlock in smc_diag_dump_proto
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b4ada0618eed0fbd1b1630f73deb048c592b06a1
+fix_commit: 5d6b58c932ec451a5c41482790eb5b1ecf165a94
+datetime: '2025-09-03T16:08:24-07:00'
+fix_commit_message: 'net: lockless sock_i_ino()
+
+
+  Followup of commit c51da3f7a161 ("net: remove sock_i_uid()")
+
+
+  A recent syzbot report was the trigger for this change.
+
+
+  Over the years, we had many problems caused by the
+
+  read_lock[_bh](&sk->sk_callback_lock) in sock_i_uid().
+
+
+  We could fix smc_diag_dump_proto() or make a more radical move:
+
+
+  Instead of waiting for new syzbot reports, cache the socket
+
+  inode number in sk->sk_ino, so that we no longer
+
+  need to acquire sk->sk_callback_lock in sock_i_ino().
+
+
+  This makes socket dumps faster (one less cache line miss,
+
+  and two atomic ops avoided).
+
+
+  Prior art:
+
+
+  commit 25a9c8a4431c ("netlink: Add __sock_i_ino() for __netlink_diag_dump().")
+
+  commit 4f9bf2a2f5aa ("tcp: Don''t acquire inet_listen_hashbucket::lock with disabled
+  BH.")
+
+  commit efc3dbc37412 ("rds: Make rds_sock_lock BH rather than IRQ safe.")
+
+
+  Fixes: d2d6422f8bd1 ("x86: Allow to enable PREEMPT_RT.")
+
+  Reported-by: syzbot+50603c05bbdf4dfdaffa@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/netdev/68b73804.050a0220.3db4df.01d8.GAE@google.com/T/#u
+
+  Signed-off-by: Eric Dumazet <edumazet@google.com>
+
+  Reviewed-by: Kuniyuki Iwashima <kuniyu@google.com>
+
+  Reviewed-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+
+  Link: https://patch.msgid.link/20250902183603.740428-1-edumazet@google.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- include/net
+- net/core
+- net/mptcp
+- net/netlink
+hunk_count: 8
+covered_count: 1

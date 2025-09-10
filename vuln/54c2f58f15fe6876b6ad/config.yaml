@@ -1,0 +1,61 @@
+id: 54c2f58f15fe6876b6ad
+bug_link: https://syzkaller.appspot.com/bug?extid=54c2f58f15fe6876b6ad
+title: 'INFO: trying to register non-static key in vmk80xx_detach'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 131ac62253dba79daf4a6d83ab12293d2b9863d3
+fix_commit: 08b7c2f9208f0e2a32159e4e7a4831b7adb10a3e
+datetime: '2019-04-16T13:05:33+02:00'
+fix_commit_message: "staging: comedi: vmk80xx: Fix use of uninitialized semaphore\n\
+  \nIf `vmk80xx_auto_attach()` returns an error, the core comedi module code\nwill\
+  \ call `vmk80xx_detach()` to clean up.  If `vmk80xx_auto_attach()`\nsuccessfully\
+  \ allocated the comedi device private data,\n`vmk80xx_detach()` assumes that a `struct\
+  \ semaphore limit_sem` contained\nin the private data has been initialized and uses\
+  \ it.  Unfortunately,\nthere are a couple of places where `vmk80xx_auto_attach()`\
+  \ can return an\nerror after allocating the device private data but before initializing\n\
+  the semaphore, so this assumption is invalid.  Fix it by initializing\nthe semaphore\
+  \ just after allocating the private data in\n`vmk80xx_auto_attach()` before any\
+  \ other errors can be returned.\n\nI believe this was the cause of the following\
+  \ syzbot crash report\n<https://syzkaller.appspot.com/bug?extid=54c2f58f15fe6876b6ad>:\n\
+  \nusb 1-1: config 0 has no interface number 0\nusb 1-1: New USB device found, idVendor=10cf,\
+  \ idProduct=8068, bcdDevice=e6.8d\nusb 1-1: New USB device strings: Mfr=0, Product=0,\
+  \ SerialNumber=0\nusb 1-1: config 0 descriptor??\nvmk80xx 1-1:0.117: driver 'vmk80xx'\
+  \ failed to auto-configure device.\nINFO: trying to register non-static key.\nthe\
+  \ code is fine but needs lockdep annotation.\nturning off the locking correctness\
+  \ validator.\nCPU: 0 PID: 12 Comm: kworker/0:1 Not tainted 5.1.0-rc4-319354-g9a33b36\
+  \ #3\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/01/2011\nWorkqueue: usb_hub_wq hub_event\nCall Trace:\n __dump_stack lib/dump_stack.c:77\
+  \ [inline]\n dump_stack+0xe8/0x16e lib/dump_stack.c:113\n assign_lock_key kernel/locking/lockdep.c:786\
+  \ [inline]\n register_lock_class+0x11b8/0x1250 kernel/locking/lockdep.c:1095\n __lock_acquire+0xfb/0x37c0\
+  \ kernel/locking/lockdep.c:3582\n lock_acquire+0x10d/0x2f0 kernel/locking/lockdep.c:4211\n\
+  \ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]\n _raw_spin_lock_irqsave+0x44/0x60\
+  \ kernel/locking/spinlock.c:152\n down+0x12/0x80 kernel/locking/semaphore.c:58\n\
+  \ vmk80xx_detach+0x59/0x100 drivers/staging/comedi/drivers/vmk80xx.c:829\n comedi_device_detach+0xed/0x800\
+  \ drivers/staging/comedi/drivers.c:204\n comedi_device_cleanup.part.0+0x68/0x140\
+  \ drivers/staging/comedi/comedi_fops.c:156\n comedi_device_cleanup drivers/staging/comedi/comedi_fops.c:187\
+  \ [inline]\n comedi_free_board_dev.part.0+0x16/0x90 drivers/staging/comedi/comedi_fops.c:190\n\
+  \ comedi_free_board_dev drivers/staging/comedi/comedi_fops.c:189 [inline]\n comedi_release_hardware_device+0x111/0x140\
+  \ drivers/staging/comedi/comedi_fops.c:2880\n comedi_auto_config.cold+0x124/0x1b0\
+  \ drivers/staging/comedi/drivers.c:1068\n usb_probe_interface+0x31d/0x820 drivers/usb/core/driver.c:361\n\
+  \ really_probe+0x2da/0xb10 drivers/base/dd.c:509\n driver_probe_device+0x21d/0x350\
+  \ drivers/base/dd.c:671\n __device_attach_driver+0x1d8/0x290 drivers/base/dd.c:778\n\
+  \ bus_for_each_drv+0x163/0x1e0 drivers/base/bus.c:454\n __device_attach+0x223/0x3a0\
+  \ drivers/base/dd.c:844\n bus_probe_device+0x1f1/0x2a0 drivers/base/bus.c:514\n\
+  \ device_add+0xad2/0x16e0 drivers/base/core.c:2106\n usb_set_configuration+0xdf7/0x1740\
+  \ drivers/usb/core/message.c:2021\n generic_probe+0xa2/0xda drivers/usb/core/generic.c:210\n\
+  \ usb_probe_device+0xc0/0x150 drivers/usb/core/driver.c:266\n really_probe+0x2da/0xb10\
+  \ drivers/base/dd.c:509\n driver_probe_device+0x21d/0x350 drivers/base/dd.c:671\n\
+  \ __device_attach_driver+0x1d8/0x290 drivers/base/dd.c:778\n bus_for_each_drv+0x163/0x1e0\
+  \ drivers/base/bus.c:454\n __device_attach+0x223/0x3a0 drivers/base/dd.c:844\n bus_probe_device+0x1f1/0x2a0\
+  \ drivers/base/bus.c:514\n device_add+0xad2/0x16e0 drivers/base/core.c:2106\n usb_new_device.cold+0x537/0xccf\
+  \ drivers/usb/core/hub.c:2534\n hub_port_connect drivers/usb/core/hub.c:5089 [inline]\n\
+  \ hub_port_connect_change drivers/usb/core/hub.c:5204 [inline]\n port_event drivers/usb/core/hub.c:5350\
+  \ [inline]\n hub_event+0x138e/0x3b00 drivers/usb/core/hub.c:5432\n process_one_work+0x90f/0x1580\
+  \ kernel/workqueue.c:2269\n worker_thread+0x9b/0xe20 kernel/workqueue.c:2415\n kthread+0x313/0x420\
+  \ kernel/kthread.c:253\n ret_from_fork+0x3a/0x50 arch/x86/entry/entry_64.S:352\n\
+  \nReported-by: syzbot+54c2f58f15fe6876b6ad@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Ian Abbott <abbotti@mev.co.uk>\nCc: stable <stable@vger.kernel.org>\nSigned-off-by:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/staging/comedi/drivers
+hunk_count: 2
+covered_count: 2

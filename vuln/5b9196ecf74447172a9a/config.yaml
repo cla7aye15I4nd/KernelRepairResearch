@@ -1,0 +1,28 @@
+id: 5b9196ecf74447172a9a
+bug_link: https://syzkaller.appspot.com/bug?extid=5b9196ecf74447172a9a
+title: possible deadlock in ieee80211_remove_interfaces
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0f5697f1a3f99bc2b674b8aa3c5da822c5673c11
+fix_commit: e759e1e4a4bd2926d082afe56046a90224433a31
+datetime: '2025-01-30T08:57:18-08:00'
+fix_commit_message: "net: revert RTNL changes in unregister_netdevice_many_notify()\n\
+  \nThis patch reverts following changes:\n\n83419b61d187 net: reduce RTNL hold duration\
+  \ in unregister_netdevice_many_notify() (part 2)\nae646f1a0bb9 net: reduce RTNL\
+  \ hold duration in unregister_netdevice_many_notify() (part 1)\ncfa579f66656 net:\
+  \ no longer hold RTNL while calling flush_all_backlogs()\n\nThis caused issues in\
+  \ layers holding a private mutex:\n\ncleanup_net()\n  rtnl_lock();\n\tmutex_lock(subsystem_mutex);\n\
+  \n\tunregister_netdevice();\n\n\t   rtnl_unlock();\t\t// LOCKDEP violation\n\t \
+  \  rtnl_lock();\n\nI will revisit this in next cycle, opt-in for the new behavior\n\
+  from safe contexts only.\n\nFixes: cfa579f66656 (\"net: no longer hold RTNL while\
+  \ calling flush_all_backlogs()\")\nFixes: ae646f1a0bb9 (\"net: reduce RTNL hold\
+  \ duration in unregister_netdevice_many_notify() (part 1)\")\nFixes: 83419b61d187\
+  \ (\"net: reduce RTNL hold duration in unregister_netdevice_many_notify() (part\
+  \ 2)\")\nReported-by: syzbot+5b9196ecf74447172a9a@syzkaller.appspotmail.com\nCloses:\
+  \ https://lore.kernel.org/netdev/6789d55f.050a0220.20d369.004e.GAE@google.com/\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nReviewed-by: Kuniyuki Iwashima\
+  \ <kuniyu@amazon.com>\nLink: https://patch.msgid.link/20250129142726.747726-1-edumazet@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/core
+hunk_count: 4
+covered_count: 3

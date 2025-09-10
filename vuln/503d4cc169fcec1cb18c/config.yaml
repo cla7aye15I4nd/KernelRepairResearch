@@ -1,0 +1,49 @@
+id: 503d4cc169fcec1cb18c
+bug_link: https://syzkaller.appspot.com/bug?extid=503d4cc169fcec1cb18c
+title: 'KASAN: use-after-free Read in unix_dgram_poll'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 00c42373d3970b354948ba3b24a34501b1a2505f
+fix_commit: 84c4e1f89fefe70554da0ab33be72c9be7994379
+datetime: '2019-03-04T10:32:48-08:00'
+fix_commit_message: "aio: simplify - and fix - fget/fput for io_submit()\n\nAl Viro\
+  \ root-caused a race where the IOCB_CMD_POLL handling of\nfget/fput() could cause\
+  \ us to access the file pointer after it had\nalready been freed:\n\n \"In more\
+  \ details - normally IOCB_CMD_POLL handling looks so:\n\n   1) io_submit(2) allocates\
+  \ aio_kiocb instance and passes it to\n      aio_poll()\n\n   2) aio_poll() resolves\
+  \ the descriptor to struct file by req->file =\n      fget(iocb->aio_fildes)\n\n\
+  \   3) aio_poll() sets ->woken to false and raises ->ki_refcnt of that\n      aio_kiocb\
+  \ to 2 (bumps by 1, that is).\n\n   4) aio_poll() calls vfs_poll(). After sanity\
+  \ checks (basically,\n      \"poll_wait() had been called and only once\") it locks\
+  \ the queue.\n      That's what the extra reference to iocb had been for - we know\
+  \ we\n      can safely access it.\n\n   5) With queue locked, we check if ->woken\
+  \ has already been set to\n      true (by aio_poll_wake()) and, if it had been,\
+  \ we unlock the\n      queue, drop a reference to aio_kiocb and bugger off - at\
+  \ that\n      point it's a responsibility to aio_poll_wake() and the stuff\n   \
+  \   called/scheduled by it. That code will drop the reference to file\n      in\
+  \ req->file, along with the other reference to our aio_kiocb.\n\n   6) otherwise,\
+  \ we see whether we need to wait. If we do, we unlock the\n      queue, drop one\
+  \ reference to aio_kiocb and go away - eventual\n      wakeup (or cancel) will deal\
+  \ with the reference to file and with\n      the other reference to aio_kiocb\n\n\
+  \   7) otherwise we remove ourselves from waitqueue (still under the\n      queue\
+  \ lock), so that wakeup won't get us. No async activity will\n      be happening,\
+  \ so we can safely drop req->file and iocb ourselves.\n\n  If wakeup happens while\
+  \ we are in vfs_poll(), we are fine - aio_kiocb\n  won't get freed under us, so\
+  \ we can do all the checks and locking\n  safely. And we don't touch ->file if we\
+  \ detect that case.\n\n  However, vfs_poll() most certainly *does* touch the file\
+  \ it had been\n  given. So wakeup coming while we are still in ->poll() might end\
+  \ up\n  doing fput() on that file. That case is not too rare, and usually we\n \
+  \ are saved by the still present reference from descriptor table - that\n  fput()\
+  \ is not the final one.\n\n  But if another thread closes that descriptor right\
+  \ after our fget()\n  and wakeup does happen before ->poll() returns, we are in\
+  \ trouble -\n  final fput() done while we are in the middle of a method:\n\nAl also\
+  \ wrote a patch to take an extra reference to the file descriptor\nto fix this,\
+  \ but I instead suggested we just streamline the whole file\npointer handling by\
+  \ submit_io() so that the generic aio submission code\nsimply keeps the file pointer\
+  \ around until the aio has completed.\n\nFixes: bfe4037e722e (\"aio: implement IOCB_CMD_POLL\"\
+  )\nAcked-by: Al Viro <viro@zeniv.linux.org.uk>\nReported-by: syzbot+503d4cc169fcec1cb18c@syzkaller.appspotmail.com\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs
+- include/linux
+hunk_count: 17
+covered_count: 5

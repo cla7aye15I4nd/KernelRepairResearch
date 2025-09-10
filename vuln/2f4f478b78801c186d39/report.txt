@@ -1,0 +1,65 @@
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 5059 at kernel/softirq.c:362 __local_bh_enable_ip+0x1be/0x200 kernel/softirq.c:362
+Modules linked in:
+CPU: 0 PID: 5059 Comm: strace-static-x Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+RIP: 0010:__local_bh_enable_ip+0x1be/0x200 kernel/softirq.c:362
+Code: 3b 44 24 60 75 52 48 8d 65 d8 5b 41 5c 41 5d 41 5e 41 5f 5d c3 cc cc cc cc 90 0f 0b 90 e9 ca fe ff ff e8 55 00 00 00 eb 9c 90 <0f> 0b 90 e9 fa fe ff ff 48 c7 c1 0c 41 86 8f 80 e1 07 80 c1 03 38
+RSP: 0018:ffffc90003a2f220 EFLAGS: 00010046
+RAX: 0000000000000000 RBX: 1ffff92000745e48 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: 0000000000000201 RDI: ffffffff895b48fa
+RBP: ffffc90003a2f2e0 R08: ffff8880779259eb R09: 1ffff1100ef24b3d
+R10: dffffc0000000000 R11: ffffed100ef24b3e R12: dffffc0000000000
+R13: ffff88802d20e780 R14: ffffc90003a2f260 R15: 0000000000000201
+FS:  00000000309173c0(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f9365072130 CR3: 00000000781be000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ spin_unlock_bh include/linux/spinlock.h:396 [inline]
+ __sock_map_delete net/core/sock_map.c:424 [inline]
+ sock_map_delete_elem+0xca/0x140 net/core/sock_map.c:446
+ bpf_prog_2c29ac5cdc6b1842+0x42/0x46
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run4+0x25a/0x490 kernel/trace/bpf_trace.c:2422
+ __traceiter_mm_page_alloc+0x3a/0x60 include/trace/events/kmem.h:177
+ trace_mm_page_alloc include/trace/events/kmem.h:177 [inline]
+ __alloc_pages+0x657/0x680 mm/page_alloc.c:4591
+ __alloc_pages_node include/linux/gfp.h:238 [inline]
+ alloc_pages_node include/linux/gfp.h:261 [inline]
+ alloc_slab_page+0x5f/0x160 mm/slub.c:2175
+ allocate_slab mm/slub.c:2338 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2391
+ ___slab_alloc+0xc73/0x1260 mm/slub.c:3525
+ __slab_alloc mm/slub.c:3610 [inline]
+ __slab_alloc_node mm/slub.c:3663 [inline]
+ slab_alloc_node mm/slub.c:3835 [inline]
+ kmem_cache_alloc+0x252/0x340 mm/slub.c:3852
+ __sigqueue_alloc+0x42e/0x540 kernel/signal.c:428
+ __send_signal_locked+0x22f/0xdc0 kernel/signal.c:1119
+ do_notify_parent+0xd96/0x10a0 kernel/signal.c:2143
+ wait_task_zombie kernel/exit.c:1183 [inline]
+ wait_consider_task+0x19c1/0x2e50 kernel/exit.c:1416
+ ptrace_do_wait kernel/exit.c:1493 [inline]
+ __do_wait+0x200/0x850 kernel/exit.c:1601
+ do_wait+0x1d9/0x540 kernel/exit.c:1631
+ kernel_wait4+0x2a7/0x3e0 kernel/exit.c:1790
+ __do_sys_wait4 kernel/exit.c:1818 [inline]
+ __se_sys_wait4 kernel/exit.c:1814 [inline]
+ __x64_sys_wait4+0x134/0x1e0 kernel/exit.c:1814
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x4d6ad6
+Code: 00 00 00 90 31 c9 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 49 89 ca 64 8b 04 25 18 00 00 00 85 c0 75 11 b8 3d 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 5a c3 90 48 83 ec 28 89 54 24 14 48 89 74 24
+RSP: 002b:00007fffb232a0b8 EFLAGS: 00000246 ORIG_RAX: 000000000000003d
+RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00000000004d6ad6
+RDX: 0000000040000001 RSI: 00007fffb232a0dc RDI: 00000000ffffffff
+RBP: 00000000000013ea R08: 0000000000000000 R09: 00000000000003ea
+R10: 0000000000000000 R11: 0000000000000246 R12: 000000003091e800
+R13: 00007fffb232a0dc R14: 0000000030919f40 R15: 000000000063f160
+ </TASK>

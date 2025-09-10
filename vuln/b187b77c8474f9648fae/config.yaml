@@ -1,0 +1,30 @@
+id: b187b77c8474f9648fae
+bug_link: https://syzkaller.appspot.com/bug?extid=b187b77c8474f9648fae
+title: 'KASAN: use-after-free Read in __crypto_xor'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 83bff109616433d4cfd999e14f1ffc4759c3c1e0
+fix_commit: 68b6dea802cea0dbdd8bd7ccc60716b5a32a5d8a
+datetime: '2021-10-29T21:04:04+08:00'
+fix_commit_message: "crypto: pcrypt - Delay write to padata->info\n\nThese three events\
+  \ can race when pcrypt is used multiple times in a\ntemplate (\"pcrypt(pcrypt(...))\"\
+  ):\n\n  1.  [taskA] The caller makes the crypto request via crypto_aead_encrypt()\n\
+  \  2.  [kworkerB] padata serializes the inner pcrypt request\n  3.  [kworkerC] padata\
+  \ serializes the outer pcrypt request\n\n3 might finish before the call to crypto_aead_encrypt()\
+  \ returns in 1,\nresulting in two possible issues.\n\nFirst, a use-after-free of\
+  \ the crypto request's memory when, for\nexample, taskA writes to the outer pcrypt\
+  \ request's padata->info in\npcrypt_aead_enc() after kworkerC completes the request.\n\
+  \nSecond, the outer pcrypt request overwrites the inner pcrypt request's\nreturn\
+  \ code with -EINPROGRESS, making a successful request appear to\nfail.  For instance,\
+  \ kworkerB writes the outer pcrypt request's\npadata->info in pcrypt_aead_done()\
+  \ and then taskA overwrites it\nin pcrypt_aead_enc().\n\nAvoid both situations by\
+  \ delaying the write of padata->info until after\nthe inner crypto request's return\
+  \ code is checked.  This prevents the\nuse-after-free by not touching the crypto\
+  \ request's memory after the\nnext-inner crypto request is made, and stops padata->info\
+  \ from being\noverwritten.\n\nFixes: 5068c7a883d16 (\"crypto: pcrypt - Add pcrypt\
+  \ crypto parallelization wrapper\")\nReported-by: syzbot+b187b77c8474f9648fae@syzkaller.appspotmail.com\n\
+  Signed-off-by: Daniel Jordan <daniel.m.jordan@oracle.com>\nSigned-off-by: Herbert\
+  \ Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- crypto
+hunk_count: 2
+covered_count: 2

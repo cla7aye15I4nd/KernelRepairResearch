@@ -1,0 +1,23 @@
+id: f57d864a5d6eff90da3b
+bug_link: https://syzkaller.appspot.com/bug?extid=f57d864a5d6eff90da3b
+title: kernel BUG in bch2_stripe_validate
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 417f01e726036b564e2e14c39b2be58e93bf7971
+fix_commit: 71f8e806a5e4edada72456ee3b2e2d7eab6fadee
+datetime: '2025-04-20T19:41:38-04:00'
+fix_commit_message: "bcachefs: Stricter checks on \"key allowed in this btree\"\n\n\
+  Syzbot managed to come up with a filesystem where check/repair got\nrather confused\
+  \ at finding a reflink pointer in the inodes btree.\n\nCurrently, the \"key allowed\
+  \ in this btree\" checks only apply at commit\ntime, not read time - for forwards\
+  \ compatibility. It seems this is too\nloose.\n\nNow, strict key type allowed checks\
+  \ apply:\n - at commit time (no forward compatibility issues)\n - for btree node\
+  \ pointers\n - if it's a known btree, known key type, and the key type has the\n\
+  \   \"BKEY_TYPE_strict_btree_checks\" flag.\n\nThis means we still have the option\
+  \ of using generic key types - e.g.\nKEY_TYPE_error, KEY_TYPE_set - on more existing\
+  \ btrees in the future,\nwhile most key types that are intended for only a specific\
+  \ btree get\nstricter checks.\n\nReported-by: syzbot+baee8591f336cab0958b@syzkaller.appspotmail.com\n\
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>\n"
+submodule:
+- fs/bcachefs
+hunk_count: 6
+covered_count: 0

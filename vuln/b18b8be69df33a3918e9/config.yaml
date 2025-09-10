@@ -1,0 +1,49 @@
+id: b18b8be69df33a3918e9
+bug_link: https://syzkaller.appspot.com/bug?extid=b18b8be69df33a3918e9
+title: possible deadlock in io_worker_cancel_cb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 71a85387546e50b1a37b0fa45dadcae3bfb35cf6
+fix_commit: d800c65c2d4eccebb27ffb7808e842d5b533823c
+datetime: '2021-12-13T09:04:01-07:00'
+fix_commit_message: "io-wq: drop wqe lock before creating new worker\n\nWe have two\
+  \ io-wq creation paths:\n\n- On queue enqueue\n- When a worker goes to sleep\n\n\
+  The latter invokes worker creation with the wqe->lock held, but that can\nrun into\
+  \ problems if we end up exiting and need to cancel the queued work.\nsyzbot caught\
+  \ this:\n\n============================================\nWARNING: possible recursive\
+  \ locking detected\n5.16.0-rc4-syzkaller #0 Not tainted\n--------------------------------------------\n\
+  iou-wrk-6468/6471 is trying to acquire lock:\nffff88801aa98018 (&wqe->lock){+.+.}-{2:2},\
+  \ at: io_worker_cancel_cb+0xb7/0x210 fs/io-wq.c:187\n\nbut task is already holding\
+  \ lock:\nffff88801aa98018 (&wqe->lock){+.+.}-{2:2}, at: io_wq_worker_sleeping+0xb6/0x140\
+  \ fs/io-wq.c:700\n\nother info that might help us debug this:\n Possible unsafe\
+  \ locking scenario:\n\n       CPU0\n       ----\n  lock(&wqe->lock);\n  lock(&wqe->lock);\n\
+  \n *** DEADLOCK ***\n\n May be due to missing lock nesting notation\n\n1 lock held\
+  \ by iou-wrk-6468/6471:\n #0: ffff88801aa98018 (&wqe->lock){+.+.}-{2:2}, at: io_wq_worker_sleeping+0xb6/0x140\
+  \ fs/io-wq.c:700\n\nstack backtrace:\nCPU: 1 PID: 6471 Comm: iou-wrk-6468 Not tainted\
+  \ 5.16.0-rc4-syzkaller #0\nHardware name: Google Google Compute Engine/Google Compute\
+  \ Engine, BIOS Google 01/01/2011\nCall Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:88\
+  \ [inline]\n dump_stack_lvl+0x1dc/0x2d8 lib/dump_stack.c:106\n print_deadlock_bug\
+  \ kernel/locking/lockdep.c:2956 [inline]\n check_deadlock kernel/locking/lockdep.c:2999\
+  \ [inline]\n validate_chain+0x5984/0x8240 kernel/locking/lockdep.c:3788\n __lock_acquire+0x1382/0x2b00\
+  \ kernel/locking/lockdep.c:5027\n lock_acquire+0x19f/0x4d0 kernel/locking/lockdep.c:5637\n\
+  \ __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]\n _raw_spin_lock+0x2a/0x40\
+  \ kernel/locking/spinlock.c:154\n io_worker_cancel_cb+0xb7/0x210 fs/io-wq.c:187\n\
+  \ io_wq_cancel_tw_create fs/io-wq.c:1220 [inline]\n io_queue_worker_create+0x3cf/0x4c0\
+  \ fs/io-wq.c:372\n io_wq_worker_sleeping+0xbe/0x140 fs/io-wq.c:701\n sched_submit_work\
+  \ kernel/sched/core.c:6295 [inline]\n schedule+0x67/0x1f0 kernel/sched/core.c:6323\n\
+  \ schedule_timeout+0xac/0x300 kernel/time/timer.c:1857\n wait_woken+0xca/0x1b0 kernel/sched/wait.c:460\n\
+  \ unix_msg_wait_data net/unix/unix_bpf.c:32 [inline]\n unix_bpf_recvmsg+0x7f9/0xe20\
+  \ net/unix/unix_bpf.c:77\n unix_stream_recvmsg+0x214/0x2c0 net/unix/af_unix.c:2832\n\
+  \ sock_recvmsg_nosec net/socket.c:944 [inline]\n sock_recvmsg net/socket.c:962 [inline]\n\
+  \ sock_read_iter+0x3a7/0x4d0 net/socket.c:1035\n call_read_iter include/linux/fs.h:2156\
+  \ [inline]\n io_iter_do_read fs/io_uring.c:3501 [inline]\n io_read fs/io_uring.c:3558\
+  \ [inline]\n io_issue_sqe+0x144c/0x9590 fs/io_uring.c:6671\n io_wq_submit_work+0x2d8/0x790\
+  \ fs/io_uring.c:6836\n io_worker_handle_work+0x808/0xdd0 fs/io-wq.c:574\n io_wqe_worker+0x395/0x870\
+  \ fs/io-wq.c:630\n ret_from_fork+0x1f/0x30\n\nWe can safely drop the lock before\
+  \ doing work creation, making the two\ncontexts the same in that regard.\n\nReported-by:\
+  \ syzbot+b18b8be69df33a3918e9@syzkaller.appspotmail.com\nFixes: 71a85387546e (\"\
+  io-wq: check for wq exit after adding new worker task_work\")\nSigned-off-by: Jens\
+  \ Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

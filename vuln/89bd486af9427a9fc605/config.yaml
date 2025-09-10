@@ -1,0 +1,39 @@
+id: 89bd486af9427a9fc605
+bug_link: https://syzkaller.appspot.com/bug?extid=89bd486af9427a9fc605
+title: 'KASAN: use-after-free Read in ath9k_hif_usb_rx_cb'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5a6bd84f815485800699f55c78f690b2ed35f0c5
+fix_commit: 03fb92a432ea5abe5909bca1455b7e44a9380480
+datetime: '2020-09-21T16:05:43+03:00'
+fix_commit_message: 'ath9k: hif_usb: fix race condition between usb_get_urb() and
+  usb_kill_anchored_urbs()
+
+
+  Calls to usb_kill_anchored_urbs() after usb_kill_urb() on multiprocessor
+
+  systems create a race condition in which usb_kill_anchored_urbs() deallocates
+
+  the URB before the completer callback is called in usb_kill_urb(), resulting
+
+  in a use-after-free.
+
+  To fix this, add proper lock protection to usb_kill_urb() calls that can
+
+  possibly run concurrently with usb_kill_anchored_urbs().
+
+
+  Reported-by: syzbot+89bd486af9427a9fc605@syzkaller.appspotmail.com
+
+  Link: https://syzkaller.appspot.com/bug?id=cabffad18eb74197f84871802fd2c5117b61febf
+
+  Signed-off-by: Brooke Basile <brookebasile@gmail.com>
+
+  Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+
+  Link: https://lore.kernel.org/r/20200911071427.32354-1-brookebasile@gmail.com
+
+  '
+submodule:
+- drivers/net/wireless/ath/ath9k
+hunk_count: 2
+covered_count: 0

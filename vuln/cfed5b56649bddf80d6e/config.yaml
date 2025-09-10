@@ -1,0 +1,96 @@
+id: cfed5b56649bddf80d6e
+bug_link: https://syzkaller.appspot.com/bug?extid=cfed5b56649bddf80d6e
+title: kernel BUG at fs/buffer.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 41e296f69fb142d8acb2136082521df702422609
+fix_commit: f2f26b4a84a0ef41791bd2d70861c8eac748f4ba
+datetime: '2024-03-14T09:17:29-07:00'
+fix_commit_message: 'nilfs2: fix failure to detect DAT corruption in btree and direct
+  mappings
+
+
+  Patch series "nilfs2: fix kernel bug at submit_bh_wbc()".
+
+
+  This resolves a kernel BUG reported by syzbot.  Since there are two
+
+  flaws involved, I''ve made each one a separate patch.
+
+
+  The first patch alone resolves the syzbot-reported bug, but I think
+
+  both fixes should be sent to stable, so I''ve tagged them as such.
+
+
+
+  This patch (of 2):
+
+
+  Syzbot has reported a kernel bug in submit_bh_wbc() when writing file data
+
+  to a nilfs2 file system whose metadata is corrupted.
+
+
+  There are two flaws involved in this issue.
+
+
+  The first flaw is that when nilfs_get_block() locates a data block using
+
+  btree or direct mapping, if the disk address translation routine
+
+  nilfs_dat_translate() fails with internal code -ENOENT due to DAT metadata
+
+  corruption, it can be passed back to nilfs_get_block().  This causes
+
+  nilfs_get_block() to misidentify an existing block as non-existent,
+
+  causing both data block lookup and insertion to fail inconsistently.
+
+
+  The second flaw is that nilfs_get_block() returns a successful status in
+
+  this inconsistent state.  This causes the caller __block_write_begin_int()
+
+  or others to request a read even though the buffer is not mapped,
+
+  resulting in a BUG_ON check for the BH_Mapped flag in submit_bh_wbc()
+
+  failing.
+
+
+  This fixes the first issue by changing the return value to code -EINVAL
+
+  when a conversion using DAT fails with code -ENOENT, avoiding the
+
+  conflicting condition that leads to the kernel bug described above.  Here,
+
+  code -EINVAL indicates that metadata corruption was detected during the
+
+  block lookup, which will be properly handled as a file system error and
+
+  converted to -EIO when passing through the nilfs2 bmap layer.
+
+
+  Link: https://lkml.kernel.org/r/20240313105827.5296-1-konishi.ryusuke@gmail.com
+
+  Link: https://lkml.kernel.org/r/20240313105827.5296-2-konishi.ryusuke@gmail.com
+
+  Fixes: c3a7abf06ce7 ("nilfs2: support contiguous lookup of blocks")
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+cfed5b56649bddf80d6e@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=cfed5b56649bddf80d6e
+
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 6
+covered_count: 0

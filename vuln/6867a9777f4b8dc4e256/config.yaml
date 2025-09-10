@@ -1,0 +1,58 @@
+id: 6867a9777f4b8dc4e256
+bug_link: https://syzkaller.appspot.com/bug?extid=6867a9777f4b8dc4e256
+title: 'linux-next boot error: KASAN: slab-out-of-bounds Write in vhci_setup'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d0d27ef87e1ca974ed93ed4f7d3c123cbd392ba6
+fix_commit: 17d6b82d2d6d467149874b883cdba844844b996d
+datetime: '2023-10-16T19:58:49+02:00'
+fix_commit_message: 'usb/usbip: fix wrong data added to platform device
+
+
+  .data of platform_device_info will be copied into .platform_data of
+
+  struct device via platform_device_add_data.
+
+
+  However, vhcis[i] contains a spinlock, is dynamically allocated and
+
+  used by other code, so it is not meant to be copied. The workaround
+
+  was to use void *vhci as an agent, but it was removed in the commit
+
+  suggested below.
+
+
+  This patch adds back the workaround and changes the way of using
+
+  platform_data accordingly.
+
+
+  Reported-by: syzbot+e0dbc33630a092ccf033@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/r/00000000000029242706077f3145@google.com/
+
+  Reported-by: syzbot+6867a9777f4b8dc4e256@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/r/0000000000007634c1060793197c@google.com/
+
+  Fixes: b8aaf639b403 ("usbip: Use platform_device_register_full()")
+
+  Tested-by: syzbot+6867a9777f4b8dc4e256@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/0000000000007ac87d0607979b6b@google.com/
+
+  Signed-off-by: Hongren Zheng <i@zenithal.me>
+
+  Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+
+  Acked-by: Shuah Khan <skhan@linuxfoundation.org>
+
+  Link: https://lore.kernel.org/r/ZSpHPCaQ5DDA9Ysl@Sun
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/usbip
+hunk_count: 7
+covered_count: 4

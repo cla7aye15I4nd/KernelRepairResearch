@@ -1,0 +1,34 @@
+id: 21b498fc12cf2041655f8e1eeae0733807d794b3
+bug_link: https://syzkaller.appspot.com/bug?extid=21b498fc12cf2041655f8e1eeae0733807d794b3
+title: 'INFO: task hung in bpf_exit_net'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cc35c3d1edf7a8373a1a5daa80a912dec96a9cd5
+fix_commit: b6c5734db07079c9410147b32407f2366d584e6c
+datetime: '2018-01-08T14:19:13-05:00'
+fix_commit_message: "sctp: fix the handling of ICMP Frag Needed for too small MTUs\n\
+  \nsyzbot reported a hang involving SCTP, on which it kept flooding dmesg\nwith the\
+  \ message:\n[  246.742374] sctp: sctp_transport_update_pmtu: Reported pmtu 508 too\n\
+  low, using default minimum of 512\n\nThat happened because whenever SCTP hits an\
+  \ ICMP Frag Needed, it tries\nto adjust to the new MTU and triggers an immediate\
+  \ retransmission. But\nit didn't consider the fact that MTUs smaller than the SCTP\
+  \ minimum MTU\nallowed (512) would not cause the PMTU to change, and issued the\n\
+  retransmission anyway (thus leading to another ICMP Frag Needed, and so\non).\n\n\
+  As IPv4 (ip_rt_min_pmtu=556) and IPv6 (IPV6_MIN_MTU=1280) minimum MTU\nare higher\
+  \ than that, sctp_transport_update_pmtu() is changed to\nre-fetch the PMTU that\
+  \ got set after our request, and with that, detect\nif there was an actual change\
+  \ or not.\n\nThe fix, thus, skips the immediate retransmission if the received ICMP\n\
+  resulted in no change, in the hope that SCTP will select another path.\n\nNote:\
+  \ The value being used for the minimum MTU (512,\nSCTP_DEFAULT_MINSEGMENT) is not\
+  \ right and instead it should be (576,\nSCTP_MIN_PMTU), but such change belongs\
+  \ to another patch.\n\nChanges from v1:\n- do not disable PMTU discovery, in the\
+  \ light of commit\n06ad391919b2 (\"[SCTP] Don't disable PMTU discovery when mtu\
+  \ is small\")\nand as suggested by Xin Long.\n- changed the way to break the rtx\
+  \ loop by detecting if the icmp\n  resulted in a change or not\nChanges from v2:\n\
+  none\n\nSee-also: https://lkml.org/lkml/2017/12/22/811\nReported-by: syzbot <syzkaller@googlegroups.com>\n\
+  Signed-off-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>\nSigned-off-by:\
+  \ David S. Miller <davem@davemloft.net>\n"
+submodule:
+- include/net/sctp
+- net/sctp
+hunk_count: 3
+covered_count: 0

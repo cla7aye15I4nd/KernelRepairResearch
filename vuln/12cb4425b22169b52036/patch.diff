@@ -1,0 +1,80 @@
+diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
+index 2a6a6b1a0895..c7cb2177b252 100644
+--- a/fs/f2fs/f2fs.h
++++ b/fs/f2fs/f2fs.h
+@@ -3457,7 +3457,6 @@ static inline bool __is_valid_data_blkaddr(block_t blkaddr)
+  * file.c
+  */
+ int f2fs_sync_file(struct file *file, loff_t start, loff_t end, int datasync);
+-void f2fs_truncate_data_blocks(struct dnode_of_data *dn);
+ int f2fs_do_truncate_blocks(struct inode *inode, u64 from, bool lock);
+ int f2fs_truncate_blocks(struct inode *inode, u64 from, bool lock);
+ int f2fs_truncate(struct inode *inode);
+diff --git a/fs/f2fs/file.c b/fs/f2fs/file.c
+index 0f54c1ff02f7..861d7aaa4711 100644
+--- a/fs/f2fs/file.c
++++ b/fs/f2fs/file.c
+@@ -626,11 +626,6 @@ void f2fs_truncate_data_blocks_range(struct dnode_of_data *dn, int count)
+ 					 dn->ofs_in_node, nr_free);
+ }
+ 
+-void f2fs_truncate_data_blocks(struct dnode_of_data *dn)
+-{
+-	f2fs_truncate_data_blocks_range(dn, ADDRS_PER_BLOCK(dn->inode));
+-}
+-
+ static int truncate_partial_data_page(struct inode *inode, u64 from,
+ 								bool cache_only)
+ {
+diff --git a/fs/f2fs/node.c b/fs/f2fs/node.c
+index 3e1fa564db8f..ee2e1dd64f25 100644
+--- a/fs/f2fs/node.c
++++ b/fs/f2fs/node.c
+@@ -925,6 +925,7 @@ static int truncate_node(struct dnode_of_data *dn)
+ 
+ static int truncate_dnode(struct dnode_of_data *dn)
+ {
++	struct f2fs_sb_info *sbi = F2FS_I_SB(dn->inode);
+ 	struct page *page;
+ 	int err;
+ 
+@@ -932,16 +933,25 @@ static int truncate_dnode(struct dnode_of_data *dn)
+ 		return 1;
+ 
+ 	/* get direct node */
+-	page = f2fs_get_node_page(F2FS_I_SB(dn->inode), dn->nid);
++	page = f2fs_get_node_page(sbi, dn->nid);
+ 	if (PTR_ERR(page) == -ENOENT)
+ 		return 1;
+ 	else if (IS_ERR(page))
+ 		return PTR_ERR(page);
+ 
++	if (IS_INODE(page) || ino_of_node(page) != dn->inode->i_ino) {
++		f2fs_err(sbi, "incorrect node reference, ino: %lu, nid: %u, ino_of_node: %u",
++				dn->inode->i_ino, dn->nid, ino_of_node(page));
++		set_sbi_flag(sbi, SBI_NEED_FSCK);
++		f2fs_handle_error(sbi, ERROR_INVALID_NODE_REFERENCE);
++		f2fs_put_page(page, 1);
++		return -EFSCORRUPTED;
++	}
++
+ 	/* Make dnode_of_data for parameter */
+ 	dn->node_page = page;
+ 	dn->ofs_in_node = 0;
+-	f2fs_truncate_data_blocks(dn);
++	f2fs_truncate_data_blocks_range(dn, ADDRS_PER_BLOCK(dn->inode));
+ 	err = truncate_node(dn);
+ 	if (err) {
+ 		f2fs_put_page(page, 1);
+diff --git a/include/linux/f2fs_fs.h b/include/linux/f2fs_fs.h
+index 1d6402529d10..a82a4bb6ce68 100644
+--- a/include/linux/f2fs_fs.h
++++ b/include/linux/f2fs_fs.h
+@@ -103,6 +103,7 @@ enum f2fs_error {
+ 	ERROR_INCONSISTENT_SIT,
+ 	ERROR_CORRUPTED_VERITY_XATTR,
+ 	ERROR_CORRUPTED_XATTR,
++	ERROR_INVALID_NODE_REFERENCE,
+ 	ERROR_MAX,
+ };
+ 

@@ -1,0 +1,48 @@
+id: 81670362c283f3dd889c
+bug_link: https://syzkaller.appspot.com/bug?extid=81670362c283f3dd889c
+title: memory leak in clear_state_bit
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ecb54277cb63c273e8d74272e5b9bfd80c2185d9
+fix_commit: c346c629765ab982967017e2ae859156d0e235cf
+datetime: '2024-09-02T20:18:08+02:00'
+fix_commit_message: 'btrfs: qgroup: don''t use extent changeset when not needed
+
+
+  The local extent changeset is passed to clear_record_extent_bits() where
+
+  it may have some additional memory dynamically allocated for ulist. When
+
+  qgroup is disabled, the memory is leaked because in this case the
+
+  changeset is not released upon __btrfs_qgroup_release_data() return.
+
+
+  Since the recorded contents of the changeset are not used thereafter, just
+
+  don''t pass it.
+
+
+  Found by Linux Verification Center (linuxtesting.org) with Syzkaller.
+
+
+  Reported-by: syzbot+81670362c283f3dd889c@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/lkml/000000000000aa8c0c060ade165e@google.com
+
+  Fixes: af0e2aab3b70 ("btrfs: qgroup: flush reservations during quota disable")
+
+  CC: stable@vger.kernel.org # 6.10+
+
+  Reviewed-by: Boris Burkov <boris@bur.io>
+
+  Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+  Signed-off-by: Fedor Pchelkin <pchelkin@ispras.ru>
+
+  Signed-off-by: David Sterba <dsterba@suse.com>
+
+  '
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 0

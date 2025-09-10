@@ -1,0 +1,28 @@
+diff --git a/net/8021q/vlan.c b/net/8021q/vlan.c
+index 55275ef9a31a..a3a0a5e994f5 100644
+--- a/net/8021q/vlan.c
++++ b/net/8021q/vlan.c
+@@ -123,9 +123,6 @@ void unregister_vlan_dev(struct net_device *dev, struct list_head *head)
+ 	}
+ 
+ 	vlan_vid_del(real_dev, vlan->vlan_proto, vlan_id);
+-
+-	/* Get rid of the vlan's reference to real_dev */
+-	dev_put(real_dev);
+ }
+ 
+ int vlan_check_real_dev(struct net_device *real_dev,
+diff --git a/net/8021q/vlan_dev.c b/net/8021q/vlan_dev.c
+index 90330b893134..ab6dee28536d 100644
+--- a/net/8021q/vlan_dev.c
++++ b/net/8021q/vlan_dev.c
+@@ -843,6 +843,9 @@ static void vlan_dev_free(struct net_device *dev)
+ 
+ 	free_percpu(vlan->vlan_pcpu_stats);
+ 	vlan->vlan_pcpu_stats = NULL;
++
++	/* Get rid of the vlan's reference to real_dev */
++	dev_put(vlan->real_dev);
+ }
+ 
+ void vlan_setup(struct net_device *dev)

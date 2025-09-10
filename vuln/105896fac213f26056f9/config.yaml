@@ -1,0 +1,27 @@
+id: 105896fac213f26056f9
+bug_link: https://syzkaller.appspot.com/bug?extid=105896fac213f26056f9
+title: WARNING in init_timer_key
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 34fb4db5abc1fe6708522cbf13f637e0eefb1a50
+fix_commit: a64b6a25dd9f984ed05fade603a00e2eae787d2f
+datetime: '2021-05-31T21:27:15+02:00'
+fix_commit_message: "cfg80211: call cfg80211_leave_ocb when switching away from OCB\n\
+  \nIf the userland switches back-and-forth between NL80211_IFTYPE_OCB and\nNL80211_IFTYPE_ADHOC\
+  \ via send_msg(NL80211_CMD_SET_INTERFACE), there is a\nchance where the cleanup\
+  \ cfg80211_leave_ocb() is not called. This leads\nto initialization of in-use memory\
+  \ (e.g. init u.ibss while in-use by\nu.ocb) due to a shared struct/union within\
+  \ ieee80211_sub_if_data:\n\nstruct ieee80211_sub_if_data {\n    ...\n    union {\n\
+  \        struct ieee80211_if_ap ap;\n        struct ieee80211_if_vlan vlan;\n  \
+  \      struct ieee80211_if_managed mgd;\n        struct ieee80211_if_ibss ibss;\
+  \ // <- shares address\n        struct ieee80211_if_mesh mesh;\n        struct ieee80211_if_ocb\
+  \ ocb; // <- shares address\n        struct ieee80211_if_mntr mntr;\n        struct\
+  \ ieee80211_if_nan nan;\n    } u;\n    ...\n}\n\nTherefore add handling of otype\
+  \ == NL80211_IFTYPE_OCB, during\ncfg80211_change_iface() to perform cleanup when\
+  \ leaving OCB mode.\n\nlink to syzkaller bug:\nhttps://syzkaller.appspot.com/bug?id=0612dbfa595bf4b9b680ff7b4948257b8e3732d5\n\
+  \nReported-by: syzbot+105896fac213f26056f9@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Du Cheng <ducheng2@gmail.com>\nLink: https://lore.kernel.org/r/20210428063941.105161-1-ducheng2@gmail.com\n\
+  Signed-off-by: Johannes Berg <johannes.berg@intel.com>\n"
+submodule:
+- net/wireless
+hunk_count: 1
+covered_count: 1

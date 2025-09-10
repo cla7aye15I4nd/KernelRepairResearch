@@ -1,0 +1,24 @@
+id: 97388eb9d31b997fe1d0
+bug_link: https://syzkaller.appspot.com/bug?extid=97388eb9d31b997fe1d0
+title: memory leak in h4_recv_buf
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 74d2fb7e708433b7397d9647ea7ec1cbcb0ae379
+fix_commit: bb2853a6a421a052268eee00fd5d3f6b3504b2b1
+datetime: '2021-08-26T14:51:38+02:00'
+fix_commit_message: "tty: Fix data race between tiocsti() and flush_to_ldisc()\n\n\
+  The ops->receive_buf() may be accessed concurrently from these two\nfunctions. \
+  \ If the driver flushes data to the line discipline\nreceive_buf() method while\
+  \ tiocsti() is waiting for the\nops->receive_buf() to finish its work, the data\
+  \ race will happen.\n\nFor example:\ntty_ioctl\t\t\t|tty_ldisc_receive_buf\n ->tioctsi\t\
+  \t\t| ->tty_port_default_receive_buf\n\t\t\t\t|  ->tty_ldisc_receive_buf\n   ->hci_uart_tty_receive\t\
+  |   ->hci_uart_tty_receive\n    ->h4_recv                   |    ->h4_recv\n\nIn\
+  \ this case, the h4 receive buffer will be overwritten by the\nlatecomer, and we\
+  \ will lost the data.\n\nHence, change tioctsi() function to use the exclusive lock\
+  \ interface\nfrom tty_buffer to avoid the data race.\n\nReported-by: syzbot+97388eb9d31b997fe1d0@syzkaller.appspotmail.com\n\
+  Reviewed-by: Jiri Slaby <jirislaby@kernel.org>\nSigned-off-by: Nguyen Dinh Phi <phind.uet@gmail.com>\n\
+  Link: https://lore.kernel.org/r/20210823000641.2082292-1-phind.uet@gmail.com\nCc:\
+  \ stable <stable@vger.kernel.org>\nSigned-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty
+hunk_count: 2
+covered_count: 0

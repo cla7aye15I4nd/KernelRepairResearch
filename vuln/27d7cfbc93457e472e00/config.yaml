@@ -1,0 +1,32 @@
+id: 27d7cfbc93457e472e00
+bug_link: https://syzkaller.appspot.com/bug?extid=27d7cfbc93457e472e00
+title: 'KASAN: null-ptr-deref Write in rcuref_put (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d942fe13f72bec92f6c689fbd74c5ec38228c16a
+fix_commit: ae633388cae349886f1a3cfb27aa092854b24c1b
+datetime: '2025-08-07T07:47:04-07:00'
+fix_commit_message: "pptp: fix pptp_xmit() error path\n\nI accidentally added a bug\
+  \ in pptp_xmit() that syzbot caught for us.\n\nOnly call ip_rt_put() if a route\
+  \ has been allocated.\n\nBUG: unable to handle page fault for address: ffffffffffffffdb\n\
+  PGD df3b067 P4D df3b067 PUD df3d067 PMD 0\nOops: Oops: 0002 [#1] SMP KASAN PTI\n\
+  CPU: 1 UID: 0 PID: 6346 Comm: syz.0.336 Not tainted 6.16.0-next-20250804-syzkaller\
+  \ #0 PREEMPT(full)\nHardware name: Google Google Compute Engine/Google Compute Engine,\
+  \ BIOS Google 07/12/2025\nRIP: 0010:arch_atomic_add_return arch/x86/include/asm/atomic.h:85\
+  \ [inline]\nRIP: 0010:raw_atomic_sub_return_release include/linux/atomic/atomic-arch-fallback.h:846\
+  \ [inline]\nRIP: 0010:atomic_sub_return_release include/linux/atomic/atomic-instrumented.h:327\
+  \ [inline]\nRIP: 0010:__rcuref_put include/linux/rcuref.h:109 [inline]\nRIP: 0010:rcuref_put+0x172/0x210\
+  \ include/linux/rcuref.h:173\nCall Trace:\n <TASK>\n dst_release+0x24/0x1b0 net/core/dst.c:167\n\
+  \ ip_rt_put include/net/route.h:285 [inline]\n pptp_xmit+0x14b/0x1a90 drivers/net/ppp/pptp.c:267\n\
+  \ __ppp_channel_push+0xf2/0x1c0 drivers/net/ppp/ppp_generic.c:2166\n ppp_channel_push+0x123/0x660\
+  \ drivers/net/ppp/ppp_generic.c:2198\n ppp_write+0x2b0/0x400 drivers/net/ppp/ppp_generic.c:544\n\
+  \ vfs_write+0x27b/0xb30 fs/read_write.c:684\n ksys_write+0x145/0x250 fs/read_write.c:738\n\
+  \ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]\n do_syscall_64+0xfa/0x3b0\
+  \ arch/x86/entry/syscall_64.c:94\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\n\
+  Fixes: de9c4861fb42 (\"pptp: ensure minimal skb length in pptp_xmit()\")\nReported-by:\
+  \ syzbot+27d7cfbc93457e472e00@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/netdev/689095a5.050a0220.1fc43d.0009.GAE@google.com/\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nLink: https://patch.msgid.link/20250807142146.2877060-1-edumazet@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net/ppp
+hunk_count: 2
+covered_count: 1

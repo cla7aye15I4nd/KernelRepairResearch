@@ -1,0 +1,97 @@
+id: d17750670998d5d4f5ec
+bug_link: https://syzkaller.appspot.com/bug?extid=d17750670998d5d4f5ec
+title: 'BUG: sleeping function called from invalid context in blk_mq_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 863a66cdb4df25fd146d9851c3289072298566d5
+fix_commit: d578c770c85233af592e54537f93f3831bde7e9a
+datetime: '2022-03-22T19:52:23-06:00'
+fix_commit_message: 'block: avoid calling blkg_free() in atomic context
+
+
+  blkg_free() can currently be called in atomic context, either spin lock is
+
+  held, or run in rcu callback. Meantime either request queue''s release
+
+  handler or ->pd_free_fn can sleep.
+
+
+  Fix the issue by scheduling a work function for freeing blkcg_gq the
+
+  instance.
+
+
+  [  148.553894] BUG: sleeping function called from invalid context at block/blk-sysfs.c:767
+
+  [  148.557381] in_atomic(): 1, irqs_disabled(): 0, non_block: 0, pid: 0, name: swapper/13
+
+  [  148.560741] preempt_count: 101, expected: 0
+
+  [  148.562577] RCU nest depth: 0, expected: 0
+
+  [  148.564379] 1 lock held by swapper/13/0:
+
+  [  148.566127]  #0: ffffffff82615f80 (rcu_callback){....}-{0:0}, at: rcu_lock_acquire+0x0/0x1b
+
+  [  148.569640] Preemption disabled at:
+
+  [  148.569642] [<ffffffff8123f9c3>] ___slab_alloc+0x554/0x661
+
+  [  148.573559] CPU: 13 PID: 0 Comm: swapper/13 Kdump: loaded Not tainted 5.17.0_up+
+  #110
+
+  [  148.576834] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.14.0-1.fc33
+  04/01/2014
+
+  [  148.579768] Call Trace:
+
+  [  148.580567]  <IRQ>
+
+  [  148.581262]  dump_stack_lvl+0x56/0x7c
+
+  [  148.582367]  ? ___slab_alloc+0x554/0x661
+
+  [  148.583526]  __might_resched+0x1af/0x1c8
+
+  [  148.584678]  blk_release_queue+0x24/0x109
+
+  [  148.585861]  kobject_cleanup+0xc9/0xfe
+
+  [  148.586979]  blkg_free+0x46/0x63
+
+  [  148.587962]  rcu_do_batch+0x1c5/0x3db
+
+  [  148.589057]  rcu_core+0x14a/0x184
+
+  [  148.590065]  __do_softirq+0x14d/0x2c7
+
+  [  148.591167]  __irq_exit_rcu+0x7a/0xd4
+
+  [  148.592264]  sysvec_apic_timer_interrupt+0x82/0xa5
+
+  [  148.593649]  </IRQ>
+
+  [  148.594354]  <TASK>
+
+  [  148.595058]  asm_sysvec_apic_timer_interrupt+0x12/0x20
+
+
+  Cc: Tejun Heo <tj@kernel.org>
+
+  Fixes: 0a9a25ca7843 ("block: let blkcg_gq grab request queue''s refcnt")
+
+  Reported-by: Christoph Hellwig <hch@lst.de>
+
+  Link: https://lore.kernel.org/linux-block/20220322093322.GA27283@lst.de/
+
+  Signed-off-by: Ming Lei <ming.lei@redhat.com>
+
+  Link: https://lore.kernel.org/r/20220323011308.2010380-1-ming.lei@redhat.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- block
+- include/linux
+hunk_count: 3
+covered_count: 2

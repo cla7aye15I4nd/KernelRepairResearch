@@ -1,0 +1,32 @@
+id: 31c9594f6e43b9289b25
+bug_link: https://syzkaller.appspot.com/bug?extid=31c9594f6e43b9289b25
+title: WARNING in blk_mq_release
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cd83cd55878409299f4614c5138d24dffacc39bd
+fix_commit: aa0c680c3aa96a5f9f160d90dd95402ad578e2b0
+datetime: '2022-08-12T06:42:06-06:00'
+fix_commit_message: "block: Do not call blk_put_queue() if gendisk allocation fails\n\
+  \nCommit 6f8191fdf41d (\"block: simplify disk shutdown\") removed the call\nto blk_get_queue()\
+  \ during gendisk allocation but missed to remove the\ncorresponding cleanup code\
+  \ blk_put_queue() for it. Thus, if the gendisk\nallocation fails, the request_queue\
+  \ refcount gets decremented and\nreaches 0, causing blk_mq_release() to be called\
+  \ with a hctx still\nalive. That triggers a WARNING report, as found by syzkaller:\n\
+  \n------------[ cut here ]------------\nWARNING: CPU: 0 PID: 23016 at block/blk-mq.c:3881\n\
+  blk_mq_release+0xf8/0x3e0 block/blk-mq.c:3881\n[...] stripped\nRIP: 0010:blk_mq_release+0xf8/0x3e0\
+  \ block/blk-mq.c:3881\n[...] stripped\nCall Trace:\n <TASK>\n blk_release_queue+0x153/0x270\
+  \ block/blk-sysfs.c:780\n kobject_cleanup lib/kobject.c:673 [inline]\n kobject_release\
+  \ lib/kobject.c:704 [inline]\n kref_put include/linux/kref.h:65 [inline]\n kobject_put+0x1c8/0x540\
+  \ lib/kobject.c:721\n __alloc_disk_node+0x4f7/0x610 block/genhd.c:1388\n __blk_mq_alloc_disk+0x13b/0x1f0\
+  \ block/blk-mq.c:3961\n loop_add+0x3e2/0xaf0 drivers/block/loop.c:1978\n loop_control_ioctl+0x133/0x620\
+  \ drivers/block/loop.c:2150\n vfs_ioctl fs/ioctl.c:51 [inline]\n __do_sys_ioctl\
+  \ fs/ioctl.c:870 [inline]\n __se_sys_ioctl fs/ioctl.c:856 [inline]\n __x64_sys_ioctl+0x193/0x200\
+  \ fs/ioctl.c:856\n do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x35/0xb0\
+  \ arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\n[...] stripped\n\
+  \nFixes: 6f8191fdf41d (\"block: simplify disk shutdown\")\nReported-by: syzbot+31c9594f6e43b9289b25@syzkaller.appspotmail.com\n\
+  Suggested-by: Hillf Danton <hdanton@sina.com>\nSigned-off-by: Rafael Mendonca <rafaelmendsr@gmail.com>\n\
+  Reviewed-by: Christoph Hellwig <hch@lst.de>\nLink: https://lore.kernel.org/r/20220811232338.254673-1-rafaelmendsr@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- block
+hunk_count: 2
+covered_count: 2

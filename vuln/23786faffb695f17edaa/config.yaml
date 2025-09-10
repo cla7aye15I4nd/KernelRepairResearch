@@ -1,0 +1,39 @@
+id: 23786faffb695f17edaa
+bug_link: https://syzkaller.appspot.com/bug?extid=23786faffb695f17edaa
+title: general protection fault in is_page_fault_stale
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e03a7caa5335c41e39991cfa73bb037872d1e2cb
+fix_commit: 28cec7f08b8b41b9b082f1dcc6a94656f125063f
+datetime: '2024-08-22T11:25:32-07:00'
+fix_commit_message: "KVM: x86/mmu: Check that root is valid/loaded when pre-faulting\
+  \ SPTEs\n\nError out if kvm_mmu_reload() fails when pre-faulting memory, as trying\
+  \ to\nfault-in SPTEs will fail miserably due to root.hpa pointing at garbage.\n\n\
+  Note, kvm_mmu_reload() can return -EIO and thus trigger the WARN on -EIO\nin kvm_vcpu_pre_fault_memory(),\
+  \ but all such paths also WARN, i.e. the\nWARN isn't user-triggerable and won't\
+  \ run afoul of warn-on-panic because\nthe kernel would already be panicking.\n\n\
+  \  BUG: unable to handle page fault for address: 000029ffffffffe8\n  #PF: supervisor\
+  \ read access in kernel mode\n  #PF: error_code(0x0000) - not-present page\n  PGD\
+  \ 0 P4D 0\n  Oops: Oops: 0000 [#1] PREEMPT SMP\n  CPU: 22 PID: 1069 Comm: pre_fault_memor\
+  \ Not tainted 6.10.0-rc7-332d2c1d713e-next-vm #548\n  Hardware name: QEMU Standard\
+  \ PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015\n  RIP: 0010:is_page_fault_stale+0x3e/0xe0\
+  \ [kvm]\n  RSP: 0018:ffffc9000114bd48 EFLAGS: 00010206\n  RAX: 00003fffffffffc0\
+  \ RBX: ffff88810a07c080 RCX: ffffc9000114bd78\n  RDX: ffff88810a07c080 RSI: ffffea0000000000\
+  \ RDI: ffff88810a07c080\n  RBP: ffffc9000114bd78 R08: 00007fa3c8c00000 R09: 8000000000000225\n\
+  \  R10: ffffea00043d7d80 R11: 0000000000000000 R12: ffff88810a07c080\n  R13: 0000000100000000\
+  \ R14: ffffc9000114be58 R15: 0000000000000000\n  FS:  00007fa3c9da0740(0000) GS:ffff888277d80000(0000)\
+  \ knlGS:0000000000000000\n  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n\
+  \  CR2: 000029ffffffffe8 CR3: 000000011d698000 CR4: 0000000000352eb0\n  Call Trace:\n\
+  \   <TASK>\n   kvm_tdp_page_fault+0xcc/0x160 [kvm]\n   kvm_mmu_do_page_fault+0xfb/0x1f0\
+  \ [kvm]\n   kvm_arch_vcpu_pre_fault_memory+0xd0/0x1a0 [kvm]\n   kvm_vcpu_ioctl+0x761/0x8c0\
+  \ [kvm]\n   __x64_sys_ioctl+0x82/0xb0\n   do_syscall_64+0x5b/0x160\n   entry_SYSCALL_64_after_hwframe+0x4b/0x53\n\
+  \   </TASK>\n  Modules linked in: kvm_intel kvm\n  CR2: 000029ffffffffe8\n  ---[\
+  \ end trace 0000000000000000 ]---\n\nFixes: 6e01b7601dfe (\"KVM: x86: Implement\
+  \ kvm_arch_vcpu_pre_fault_memory()\")\nReported-by: syzbot+23786faffb695f17edaa@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/all/0000000000002b84dc061dd73544@google.com\nReviewed-by:\
+  \ Kai Huang <kai.huang@intel.com>\nTested-by: xingwei lee <xrivendell7@gmail.com>\n\
+  Tested-by: yuxin wang <wang1315768607@163.com>\nLink: https://lore.kernel.org/r/20240723000211.3352304-1-seanjc@google.com\n\
+  Signed-off-by: Sean Christopherson <seanjc@google.com>\n"
+submodule:
+- arch/x86/kvm/mmu
+hunk_count: 1
+covered_count: 1

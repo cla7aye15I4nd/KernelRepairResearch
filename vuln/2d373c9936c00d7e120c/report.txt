@@ -1,0 +1,45 @@
+==================================================================
+BUG: KCSAN: data-race in snd_seq_poll / snd_seq_pool_init
+
+write to 0xffff88811904e130 of 4 bytes by task 6486 on cpu 0:
+ snd_seq_pool_init+0x1c1/0x200 sound/core/seq/seq_memory.c:469
+ snd_seq_write+0x17f/0x500 sound/core/seq/seq_clientmgr.c:1036
+ vfs_write+0x27d/0x920 fs/read_write.c:677
+ ksys_write+0xe8/0x1b0 fs/read_write.c:731
+ __do_sys_write fs/read_write.c:742 [inline]
+ __se_sys_write fs/read_write.c:739 [inline]
+ __x64_sys_write+0x42/0x50 fs/read_write.c:739
+ x64_sys_call+0x287e/0x2dc0 arch/x86/include/generated/asm/syscalls_64.h:2
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff88811904e130 of 4 bytes by task 6483 on cpu 1:
+ snd_seq_total_cells sound/core/seq/seq_memory.h:83 [inline]
+ snd_seq_write_pool_allocated sound/core/seq/seq_clientmgr.c:95 [inline]
+ snd_seq_poll+0x103/0x170 sound/core/seq/seq_clientmgr.c:1153
+ vfs_poll include/linux/poll.h:82 [inline]
+ io_file_supports_nowait io_uring/rw.c:46 [inline]
+ io_write+0x1b3/0xc70 io_uring/rw.c:1083
+ io_issue_sqe+0x15f/0xb70 io_uring/io_uring.c:1737
+ io_queue_sqe io_uring/io_uring.c:1947 [inline]
+ io_req_task_submit+0x6a/0xc0 io_uring/io_uring.c:1373
+ io_handle_tw_list+0x1b9/0x200 io_uring/io_uring.c:1059
+ tctx_task_work_run+0x6e/0x1c0 io_uring/io_uring.c:1123
+ tctx_task_work+0x40/0x80 io_uring/io_uring.c:1141
+ task_work_run+0x13a/0x1a0 kernel/task_work.c:227
+ get_signal+0xe78/0x1000 kernel/signal.c:2809
+ arch_do_signal_or_restart+0x95/0x4b0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x62/0x120 kernel/entry/common.c:218
+ do_syscall_64+0xd6/0x1c0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x00000000 -> 0x000001f4
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 UID: 0 PID: 6483 Comm: syz.2.1232 Not tainted 6.14.0-rc7-syzkaller-00050-gfc444ada1310 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+==================================================================

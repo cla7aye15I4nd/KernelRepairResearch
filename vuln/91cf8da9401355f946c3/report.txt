@@ -1,0 +1,165 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in __mmap_complete mm/vma.c:2408 [inline]
+BUG: KASAN: slab-use-after-free in __mmap_region+0x1802/0x2cd0 mm/vma.c:2469
+Read of size 8 at addr ffff8880403a6118 by task syz-executor239/5461
+
+CPU: 0 UID: 0 PID: 5461 Comm: syz-executor239 Not tainted 6.13.0-rc1-syzkaller-00001-ge70140ba0d2b #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:489
+ kasan_report+0x143/0x180 mm/kasan/report.c:602
+ __mmap_complete mm/vma.c:2408 [inline]
+ __mmap_region+0x1802/0x2cd0 mm/vma.c:2469
+ mmap_region+0x226/0x2c0 mm/mmap.c:1347
+ do_mmap+0x8f0/0x1000 mm/mmap.c:496
+ vm_mmap_pgoff+0x1dd/0x3d0 mm/util.c:580
+ ksys_mmap_pgoff+0x4eb/0x720 mm/mmap.c:542
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f8522e6cb29
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 c1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc930f7e48 EFLAGS: 00000246 ORIG_RAX: 0000000000000009
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f8522e6cb29
+RDX: 0000000000000000 RSI: 0000000000001008 RDI: 0000000020ffc000
+RBP: 00000000000f4240 R08: 0000000000000003 R09: 0000000000000000
+R10: 0000000000000013 R11: 0000000000000246 R12: 000000000001294d
+R13: 00007ffc930f7e6c R14: 00007ffc930f7e80 R15: 00007ffc930f7e70
+ </TASK>
+
+Allocated by task 5461:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ unpoison_slab_object mm/kasan/common.c:319 [inline]
+ __kasan_slab_alloc+0x66/0x80 mm/kasan/common.c:345
+ kasan_slab_alloc include/linux/kasan.h:250 [inline]
+ slab_post_alloc_hook mm/slub.c:4104 [inline]
+ slab_alloc_node mm/slub.c:4153 [inline]
+ kmem_cache_alloc_noprof+0x1d9/0x380 mm/slub.c:4160
+ vm_area_alloc+0x24/0x1d0 kernel/fork.c:472
+ __mmap_new_vma mm/vma.c:2340 [inline]
+ __mmap_region+0x196e/0x2cd0 mm/vma.c:2456
+ mmap_region+0x226/0x2c0 mm/mmap.c:1347
+ do_mmap+0x8f0/0x1000 mm/mmap.c:496
+ vm_mmap_pgoff+0x1dd/0x3d0 mm/util.c:580
+ ksys_mmap_pgoff+0x4eb/0x720 mm/mmap.c:542
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 5295:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:582
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x59/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2338 [inline]
+ slab_free mm/slub.c:4598 [inline]
+ kmem_cache_free+0x195/0x410 mm/slub.c:4700
+ rcu_do_batch kernel/rcu/tree.c:2567 [inline]
+ rcu_core+0xaaa/0x17a0 kernel/rcu/tree.c:2823
+ handle_softirqs+0x2d4/0x9b0 kernel/softirq.c:554
+ do_softirq+0x11b/0x1e0 kernel/softirq.c:455
+ __local_bh_enable_ip+0x1bb/0x200 kernel/softirq.c:382
+ lock_sock include/net/sock.h:1617 [inline]
+ tcp_sendmsg+0x22/0x50 net/ipv4/tcp.c:1357
+ sock_sendmsg_nosec net/socket.c:711 [inline]
+ __sock_sendmsg+0x1a6/0x270 net/socket.c:726
+ sock_write_iter+0x2d7/0x3f0 net/socket.c:1147
+ new_sync_write fs/read_write.c:586 [inline]
+ vfs_write+0xaeb/0xd30 fs/read_write.c:679
+ ksys_write+0x18f/0x2b0 fs/read_write.c:731
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Last potentially related work creation:
+ kasan_save_stack+0x3f/0x60 mm/kasan/common.c:47
+ __kasan_record_aux_stack+0xac/0xc0 mm/kasan/generic.c:544
+ __call_rcu_common kernel/rcu/tree.c:3086 [inline]
+ call_rcu+0x167/0xa70 kernel/rcu/tree.c:3190
+ vma_complete+0x97f/0xb50 mm/vma.c:310
+ commit_merge+0x6f6/0x760 mm/vma.c:674
+ vma_merge_existing_range+0x13b8/0x16f0 mm/vma.c:897
+ __mmap_region+0x175b/0x2cd0 mm/vma.c:2466
+ mmap_region+0x226/0x2c0 mm/mmap.c:1347
+ do_mmap+0x8f0/0x1000 mm/mmap.c:496
+ vm_mmap_pgoff+0x1dd/0x3d0 mm/util.c:580
+ ksys_mmap_pgoff+0x4eb/0x720 mm/mmap.c:542
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff8880403a60f8
+ which belongs to the cache vm_area_struct of size 184
+The buggy address is located 32 bytes inside of
+ freed 184-byte region [ffff8880403a60f8, ffff8880403a61b0)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x403a6
+flags: 0x4fff00000000000(node=1|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 04fff00000000000 ffff88801be90b40 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000100010 00000001f5000000 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x52cc0(GFP_KERNEL|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 5461, tgid 5461 (syz-executor239), ts 76280088571, free_ts 76278589874
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1556
+ prep_new_page mm/page_alloc.c:1564 [inline]
+ get_page_from_freelist+0x365c/0x37a0 mm/page_alloc.c:3474
+ __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4751
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2265
+ alloc_slab_page+0x6a/0x140 mm/slub.c:2408
+ allocate_slab+0x5a/0x2f0 mm/slub.c:2574
+ new_slab mm/slub.c:2627 [inline]
+ ___slab_alloc+0xcd1/0x14b0 mm/slub.c:3815
+ __slab_alloc+0x58/0xa0 mm/slub.c:3905
+ __slab_alloc_node mm/slub.c:3980 [inline]
+ slab_alloc_node mm/slub.c:4141 [inline]
+ kmem_cache_alloc_noprof+0x268/0x380 mm/slub.c:4160
+ vm_area_dup+0x27/0x290 kernel/fork.c:487
+ __split_vma+0x1cb/0xc50 mm/vma.c:434
+ vms_gather_munmap_vmas+0x4c1/0x1600 mm/vma.c:1288
+ __mmap_prepare mm/vma.c:2241 [inline]
+ __mmap_region+0x7de/0x2cd0 mm/vma.c:2443
+ mmap_region+0x226/0x2c0 mm/mmap.c:1347
+ do_mmap+0x8f0/0x1000 mm/mmap.c:496
+ vm_mmap_pgoff+0x1dd/0x3d0 mm/util.c:580
+page last free pid 5457 tgid 5457 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_folios+0xf62/0x1a90 mm/page_alloc.c:2704
+ folios_put_refs+0x76c/0x860 mm/swap.c:962
+ free_pages_and_swap_cache+0x5c8/0x690 mm/swap_state.c:335
+ __tlb_batch_free_encoded_pages mm/mmu_gather.c:136 [inline]
+ tlb_batch_pages_flush mm/mmu_gather.c:149 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:366 [inline]
+ tlb_flush_mmu+0x3a3/0x680 mm/mmu_gather.c:373
+ tlb_finish_mmu+0xd4/0x200 mm/mmu_gather.c:465
+ exit_mmap+0x496/0xc20 mm/mmap.c:1680
+ __mmput+0x115/0x3c0 kernel/fork.c:1353
+ exit_mm+0x220/0x310 kernel/exit.c:570
+ do_exit+0x9b2/0x28e0 kernel/exit.c:925
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1087
+ __do_sys_exit_group kernel/exit.c:1098 [inline]
+ __se_sys_exit_group kernel/exit.c:1096 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1096
+ x64_sys_call+0x26a8/0x26b0 arch/x86/include/generated/asm/syscalls_64.h:232
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff8880403a6000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff8880403a6080: 00 00 00 00 00 00 00 fc fc fc fc fc fc fc fc fa
+>ffff8880403a6100: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                            ^
+ ffff8880403a6180: fb fb fb fb fb fb fc fc fc fc fc fc fc fc fa fb
+ ffff8880403a6200: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

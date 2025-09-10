@@ -1,0 +1,31 @@
+id: 9301f2f33873407d5b33
+bug_link: https://syzkaller.appspot.com/bug?extid=9301f2f33873407d5b33
+title: WARNING in wp_page_copy
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8a8683ad9ba48b4b52a57f013513d1635c1ca5c4
+fix_commit: c3e5ea6ee574ae5e845a40ac8198de1fb63bb3ab
+datetime: '2020-03-06T07:06:09-06:00'
+fix_commit_message: "mm: avoid data corruption on CoW fault into PFN-mapped VMA\n\n\
+  Jeff Moyer has reported that one of xfstests triggers a warning when run\non DAX-enabled\
+  \ filesystem:\n\n\tWARNING: CPU: 76 PID: 51024 at mm/memory.c:2317 wp_page_copy+0xc40/0xd50\n\
+  \t...\n\twp_page_copy+0x98c/0xd50 (unreliable)\n\tdo_wp_page+0xd8/0xad0\n\t__handle_mm_fault+0x748/0x1b90\n\
+  \thandle_mm_fault+0x120/0x1f0\n\t__do_page_fault+0x240/0xd70\n\tdo_page_fault+0x38/0xd0\n\
+  \thandle_page_fault+0x10/0x30\n\nThe warning happens on failed __copy_from_user_inatomic()\
+  \ which tries to\ncopy data into a CoW page.\n\nThis happens because of race between\
+  \ MADV_DONTNEED and CoW page fault:\n\n\tCPU0\t\t\t\t\tCPU1\n handle_mm_fault()\n\
+  \   do_wp_page()\n     wp_page_copy()\n       do_wp_page()\n\t\t\t\t\tmadvise(MADV_DONTNEED)\n\
+  \t\t\t\t\t  zap_page_range()\n\t\t\t\t\t    zap_pte_range()\n\t\t\t\t\t      ptep_get_and_clear_full()\n\
+  \t\t\t\t\t      <TLB flush>\n\t __copy_from_user_inatomic()\n\t sees empty PTE and\
+  \ fails\n\t WARN_ON_ONCE(1)\n\t clear_page()\n\nThe solution is to re-try __copy_from_user_inatomic()\
+  \ under PTL after\nchecking that PTE is matches the orig_pte.\n\nThe second copy\
+  \ attempt can still fail, like due to non-readable PTE, but\nthere's nothing reasonable\
+  \ we can do about, except clearing the CoW page.\n\nReported-by: Jeff Moyer <jmoyer@redhat.com>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Kirill\
+  \ A. Shutemov <kirill.shutemov@linux.intel.com>\nTested-by: Jeff Moyer <jmoyer@redhat.com>\n\
+  Cc: <stable@vger.kernel.org>\nCc: Justin He <Justin.He@arm.com>\nCc: Dan Williams\
+  \ <dan.j.williams@intel.com>\nLink: http://lkml.kernel.org/r/20200218154151.13349-1-kirill.shutemov@linux.intel.com\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 3
+covered_count: 1

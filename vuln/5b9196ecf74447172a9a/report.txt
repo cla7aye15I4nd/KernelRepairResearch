@@ -1,0 +1,119 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.13.0-syzkaller-09585-gb4b0881156fb #0 Not tainted
+------------------------------------------------------
+kworker/u4:10/1090 is trying to acquire lock:
+ffffffff8fcbef88 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_acquire_if_cleanup_net net/core/dev.c:10272 [inline]
+ffffffff8fcbef88 (rtnl_mutex){+.+.}-{4:4}, at: unregister_netdevice_many_notify+0xac2/0x2030 net/core/dev.c:11792
+
+but task is already holding lock:
+ffff888044098768 (&rdev->wiphy.mtx){+.+.}-{4:4}, at: class_wiphy_constructor include/net/cfg80211.h:6061 [inline]
+ffff888044098768 (&rdev->wiphy.mtx){+.+.}-{4:4}, at: ieee80211_remove_interfaces+0x129/0x700 net/mac80211/iface.c:2280
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&rdev->wiphy.mtx){+.+.}-{4:4}:
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5851
+       __mutex_lock_common kernel/locking/mutex.c:585 [inline]
+       __mutex_lock+0x19c/0x1010 kernel/locking/mutex.c:730
+       wiphy_lock include/net/cfg80211.h:6046 [inline]
+       wiphy_register+0x1a49/0x27b0 net/wireless/core.c:1003
+       ieee80211_register_hw+0x354e/0x4240 net/mac80211/main.c:1587
+       mac80211_hwsim_new_radio+0x2a9f/0x4aa0 drivers/net/wireless/virtual/mac80211_hwsim.c:5558
+       init_mac80211_hwsim+0x87a/0xb00 drivers/net/wireless/virtual/mac80211_hwsim.c:6910
+       do_one_initcall+0x248/0x870 init/main.c:1257
+       do_initcall_level+0x157/0x210 init/main.c:1319
+       do_initcalls+0x3f/0x80 init/main.c:1335
+       kernel_init_freeable+0x435/0x5d0 init/main.c:1568
+       kernel_init+0x1d/0x2b0 init/main.c:1457
+       ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:148
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+-> #0 (rtnl_mutex){+.+.}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3163 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3282 [inline]
+       validate_chain+0x18ef/0x5920 kernel/locking/lockdep.c:3906
+       __lock_acquire+0x1397/0x2100 kernel/locking/lockdep.c:5228
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5851
+       __mutex_lock_common kernel/locking/mutex.c:585 [inline]
+       __mutex_lock+0x19c/0x1010 kernel/locking/mutex.c:730
+       rtnl_acquire_if_cleanup_net net/core/dev.c:10272 [inline]
+       unregister_netdevice_many_notify+0xac2/0x2030 net/core/dev.c:11792
+       unregister_netdevice_many net/core/dev.c:11875 [inline]
+       unregister_netdevice_queue+0x303/0x370 net/core/dev.c:11741
+       unregister_netdevice include/linux/netdevice.h:3329 [inline]
+       _cfg80211_unregister_wdev+0x163/0x590 net/wireless/core.c:1248
+       ieee80211_remove_interfaces+0x4ef/0x700 net/mac80211/iface.c:2305
+       ieee80211_unregister_hw+0x5d/0x2c0 net/mac80211/main.c:1681
+       mac80211_hwsim_del_radio+0x2c4/0x4c0 drivers/net/wireless/virtual/mac80211_hwsim.c:5664
+       hwsim_exit_net+0x5c1/0x670 drivers/net/wireless/virtual/mac80211_hwsim.c:6544
+       ops_exit_list net/core/net_namespace.c:172 [inline]
+       cleanup_net+0x812/0xd60 net/core/net_namespace.c:652
+       process_one_work kernel/workqueue.c:3236 [inline]
+       process_scheduled_works+0xa66/0x1840 kernel/workqueue.c:3317
+       worker_thread+0x870/0xd30 kernel/workqueue.c:3398
+       kthread+0x7a9/0x920 kernel/kthread.c:464
+       ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:148
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&rdev->wiphy.mtx);
+                               lock(rtnl_mutex);
+                               lock(&rdev->wiphy.mtx);
+  lock(rtnl_mutex);
+
+ *** DEADLOCK ***
+
+4 locks held by kworker/u4:10/1090:
+ #0: ffff88801baef148 ((wq_completion)netns){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3211 [inline]
+ #0: ffff88801baef148 ((wq_completion)netns){+.+.}-{0:0}, at: process_scheduled_works+0x93b/0x1840 kernel/workqueue.c:3317
+ #1: ffffc9000255fc60 (net_cleanup_work){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3212 [inline]
+ #1: ffffc9000255fc60 (net_cleanup_work){+.+.}-{0:0}, at: process_scheduled_works+0x976/0x1840 kernel/workqueue.c:3317
+ #2: ffffffff8fcb29d0 (pernet_ops_rwsem){++++}-{4:4}, at: cleanup_net+0x17a/0xd60 net/core/net_namespace.c:606
+ #3: ffff888044098768 (&rdev->wiphy.mtx){+.+.}-{4:4}, at: class_wiphy_constructor include/net/cfg80211.h:6061 [inline]
+ #3: ffff888044098768 (&rdev->wiphy.mtx){+.+.}-{4:4}, at: ieee80211_remove_interfaces+0x129/0x700 net/mac80211/iface.c:2280
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 1090 Comm: kworker/u4:10 Not tainted 6.13.0-syzkaller-09585-gb4b0881156fb #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: netns cleanup_net
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_circular_bug+0x13a/0x1b0 kernel/locking/lockdep.c:2076
+ check_noncircular+0x36a/0x4a0 kernel/locking/lockdep.c:2208
+ check_prev_add kernel/locking/lockdep.c:3163 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3282 [inline]
+ validate_chain+0x18ef/0x5920 kernel/locking/lockdep.c:3906
+ __lock_acquire+0x1397/0x2100 kernel/locking/lockdep.c:5228
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5851
+ __mutex_lock_common kernel/locking/mutex.c:585 [inline]
+ __mutex_lock+0x19c/0x1010 kernel/locking/mutex.c:730
+ rtnl_acquire_if_cleanup_net net/core/dev.c:10272 [inline]
+ unregister_netdevice_many_notify+0xac2/0x2030 net/core/dev.c:11792
+ unregister_netdevice_many net/core/dev.c:11875 [inline]
+ unregister_netdevice_queue+0x303/0x370 net/core/dev.c:11741
+ unregister_netdevice include/linux/netdevice.h:3329 [inline]
+ _cfg80211_unregister_wdev+0x163/0x590 net/wireless/core.c:1248
+ ieee80211_remove_interfaces+0x4ef/0x700 net/mac80211/iface.c:2305
+ ieee80211_unregister_hw+0x5d/0x2c0 net/mac80211/main.c:1681
+ mac80211_hwsim_del_radio+0x2c4/0x4c0 drivers/net/wireless/virtual/mac80211_hwsim.c:5664
+ hwsim_exit_net+0x5c1/0x670 drivers/net/wireless/virtual/mac80211_hwsim.c:6544
+ ops_exit_list net/core/net_namespace.c:172 [inline]
+ cleanup_net+0x812/0xd60 net/core/net_namespace.c:652
+ process_one_work kernel/workqueue.c:3236 [inline]
+ process_scheduled_works+0xa66/0x1840 kernel/workqueue.c:3317
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3398
+ kthread+0x7a9/0x920 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

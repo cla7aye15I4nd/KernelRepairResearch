@@ -1,0 +1,52 @@
+id: 3924327f9ad5f4d2b343
+bug_link: https://syzkaller.appspot.com/bug?extid=3924327f9ad5f4d2b343
+title: 'BUG: corrupted list in hsr_add_node'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4c2d5e33dcd3a6333a7895be3b542ff3d373177c
+fix_commit: 92a35678ec075100ce666a2fb6969151affb0e5d
+datetime: '2019-12-25T16:35:35-08:00'
+fix_commit_message: "hsr: fix a race condition in node list insertion and deletion\n\
+  \nhsr nodes are protected by RCU and there is no write side lock.\nBut node insertions\
+  \ and deletions could be being operated concurrently.\nSo write side locking is\
+  \ needed.\n\nTest commands:\n    ip netns add nst\n    ip link add veth0 type veth\
+  \ peer name veth1\n    ip link add veth2 type veth peer name veth3\n    ip link\
+  \ set veth1 netns nst\n    ip link set veth3 netns nst\n    ip link set veth0 up\n\
+  \    ip link set veth2 up\n    ip link add hsr0 type hsr slave1 veth0 slave2 veth2\n\
+  \    ip a a 192.168.100.1/24 dev hsr0\n    ip link set hsr0 up\n    ip netns exec\
+  \ nst ip link set veth1 up\n    ip netns exec nst ip link set veth3 up\n    ip netns\
+  \ exec nst ip link add hsr1 type hsr slave1 veth1 slave2 veth3\n    ip netns exec\
+  \ nst ip a a 192.168.100.2/24 dev hsr1\n    ip netns exec nst ip link set hsr1 up\n\
+  \n    for i in {0..9}\n    do\n        for j in {0..9}\n\tdo\n\t    for k in {0..9}\n\
+  \t    do\n\t        for l in {0..9}\n\t\tdo\n\t        arping 192.168.100.2 -I hsr0\
+  \ -s 00:01:3$i:4$j:5$k:6$l -c1 &\n\t\tdone\n\t    done\n\tdone\n    done\n\nSplat\
+  \ looks like:\n[  236.066091][ T3286] list_add corruption. next->prev should be\
+  \ prev (ffff8880a5940300), but was ffff8880a5940d0.\n[  236.069617][ T3286] ------------[\
+  \ cut here ]------------\n[  236.070545][ T3286] kernel BUG at lib/list_debug.c:25!\n\
+  [  236.071391][ T3286] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC KASAN PTI\n\
+  [  236.072343][ T3286] CPU: 0 PID: 3286 Comm: arping Tainted: G        W       \
+  \  5.5.0-rc1+ #209\n[  236.073463][ T3286] Hardware name: innotek GmbH VirtualBox/VirtualBox,\
+  \ BIOS VirtualBox 12/01/2006\n[  236.074695][ T3286] RIP: 0010:__list_add_valid+0x74/0xd0\n\
+  [  236.075499][ T3286] Code: 48 39 da 75 27 48 39 f5 74 36 48 39 dd 74 31 48 83\
+  \ c4 08 b8 01 00 00 00 5b 5d c3 48 b\n[  236.078277][ T3286] RSP: 0018:ffff8880aaa97648\
+  \ EFLAGS: 00010286\n[  236.086991][ T3286] RAX: 0000000000000075 RBX: ffff8880d4624c20\
+  \ RCX: 0000000000000000\n[  236.088000][ T3286] RDX: 0000000000000075 RSI: 0000000000000008\
+  \ RDI: ffffed1015552ebf\n[  236.098897][ T3286] RBP: ffff88809b53d200 R08: ffffed101b3c04f9\
+  \ R09: ffffed101b3c04f9\n[  236.099960][ T3286] R10: 00000000308769a1 R11: ffffed101b3c04f8\
+  \ R12: ffff8880d4624c28\n[  236.100974][ T3286] R13: ffff8880d4624c20 R14: 0000000040310100\
+  \ R15: ffff8880ce17ee02\n[  236.138967][ T3286] FS:  00007f23479fa680(0000) GS:ffff8880d9c00000(0000)\
+  \ knlGS:0000000000000000\n[  236.144852][ T3286] CS:  0010 DS: 0000 ES: 0000 CR0:\
+  \ 0000000080050033\n[  236.145720][ T3286] CR2: 00007f4a14bab210 CR3: 00000000a61c6001\
+  \ CR4: 00000000000606f0\n[  236.146776][ T3286] Call Trace:\n[  236.147222][ T3286]\
+  \  hsr_add_node+0x314/0x490 [hsr]\n[  236.153633][ T3286]  hsr_forward_skb+0x2b6/0x1bc0\
+  \ [hsr]\n[  236.154362][ T3286]  ? rcu_read_lock_sched_held+0x90/0xc0\n[  236.155091][\
+  \ T3286]  ? rcu_read_lock_bh_held+0xa0/0xa0\n[  236.156607][ T3286]  hsr_dev_xmit+0x70/0xd0\
+  \ [hsr]\n[  236.157254][ T3286]  dev_hard_start_xmit+0x160/0x740\n[  236.157941][\
+  \ T3286]  __dev_queue_xmit+0x1961/0x2e10\n[  236.158565][ T3286]  ? netdev_core_pick_tx+0x2e0/0x2e0\n\
+  [ ... ]\n\nReported-by: syzbot+3924327f9ad5f4d2b343@syzkaller.appspotmail.com\n\
+  Fixes: f421436a591d (\"net/hsr: Add support for the High-availability Seamless Redundancy\
+  \ protocol (HSRv0)\")\nSigned-off-by: Taehee Yoo <ap420073@gmail.com>\nSigned-off-by:\
+  \ David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/hsr
+hunk_count: 17
+covered_count: 6

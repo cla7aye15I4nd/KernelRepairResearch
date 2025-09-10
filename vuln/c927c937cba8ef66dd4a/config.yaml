@@ -1,0 +1,27 @@
+id: c927c937cba8ef66dd4a
+bug_link: https://syzkaller.appspot.com/bug?extid=c927c937cba8ef66dd4a
+title: 'INFO: task can''t die in io_sq_thread_finish'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e941894eae31b52f0fd9bdb3ce20620afa152f45
+fix_commit: eb85890b29e4d7ae1accdcfba35ed8b16ba9fb97
+datetime: '2021-02-25T10:19:01-07:00'
+fix_commit_message: "io_uring: ensure SQPOLL startup is triggered before error shutdown\n\
+  \nsyzbot reports the following hang:\n\nINFO: task syz-executor.0:12538 can't die\
+  \ for more than 143 seconds.\ntask:syz-executor.0  state:D stack:28352 pid:12538\
+  \ ppid:  8423 flags:0x00004004\nCall Trace:\n context_switch kernel/sched/core.c:4324\
+  \ [inline]\n __schedule+0x90c/0x21a0 kernel/sched/core.c:5075\n schedule+0xcf/0x270\
+  \ kernel/sched/core.c:5154\n schedule_timeout+0x1db/0x250 kernel/time/timer.c:1868\n\
+  \ do_wait_for_common kernel/sched/completion.c:85 [inline]\n __wait_for_common kernel/sched/completion.c:106\
+  \ [inline]\n wait_for_common kernel/sched/completion.c:117 [inline]\n wait_for_completion+0x168/0x270\
+  \ kernel/sched/completion.c:138\n io_sq_thread_finish+0x96/0x580 fs/io_uring.c:7152\n\
+  \ io_sq_offload_create fs/io_uring.c:7929 [inline]\n io_uring_create fs/io_uring.c:9465\
+  \ [inline]\n io_uring_setup+0x1fb2/0x2c20 fs/io_uring.c:9550\n do_syscall_64+0x2d/0x70\
+  \ arch/x86/entry/common.c:46\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\nwhich\
+  \ is due to exiting after the SQPOLL thread has been created, but\nhasn't been started\
+  \ yet. Ensure that we always complete the startup\nside when waiting for it to exit.\n\
+  \nReported-by: syzbot+c927c937cba8ef66dd4a@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,26 @@
+id: 1065a199625a388fce60
+bug_link: https://syzkaller.appspot.com/bug?extid=1065a199625a388fce60
+title: 'upstream test error: KMSAN: use-after-free in mctp_dump_addrinfo'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 45375814eb3f4245956c0c85092a4eee4441d167
+fix_commit: f11cf946c0a92c560a890d68e4775723353599e1
+datetime: '2025-05-09T15:03:53-07:00'
+fix_commit_message: "net: mctp: Don't access ifa_index when missing\n\nIn mctp_dump_addrinfo,\
+  \ ifa_index can be used to filter interfaces, but\nonly when the struct ifaddrmsg\
+  \ is provided. Otherwise it will be\ncomparing to uninitialised memory - reproducible\
+  \ in the syzkaller case from\ndhcpd, or busybox \"ip addr show\".\n\nThe kernel\
+  \ MCTP implementation has always filtered by ifa_index, so\nexisting userspace programs\
+  \ expecting to dump MCTP addresses must\nalready be passing a valid ifa_index value\
+  \ (either 0 or a real index).\n\nBUG: KMSAN: uninit-value in mctp_dump_addrinfo+0x208/0xac0\
+  \ net/mctp/device.c:128\n mctp_dump_addrinfo+0x208/0xac0 net/mctp/device.c:128\n\
+  \ rtnl_dump_all+0x3ec/0x5b0 net/core/rtnetlink.c:4380\n rtnl_dumpit+0xd5/0x2f0 net/core/rtnetlink.c:6824\n\
+  \ netlink_dump+0x97b/0x1690 net/netlink/af_netlink.c:2309\n\nFixes: 583be982d934\
+  \ (\"mctp: Add device handling and netlink interface\")\nReported-by: syzbot+e76d52dadc089b9d197f@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/all/68135815.050a0220.3a872c.000e.GAE@google.com/\n\
+  Reported-by: syzbot+1065a199625a388fce60@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/all/681357d6.050a0220.14dd7d.000d.GAE@google.com/\n\
+  Signed-off-by: Matt Johnston <matt@codeconstruct.com.au>\nLink: https://patch.msgid.link/20250508-mctp-addr-dump-v2-1-c8a53fd2dd66@codeconstruct.com.au\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/mctp
+hunk_count: 1
+covered_count: 1

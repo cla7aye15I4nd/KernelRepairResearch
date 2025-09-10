@@ -1,0 +1,27 @@
+diff --git a/block/genhd.c b/block/genhd.c
+index 73faec438e49..419548e92d82 100644
+--- a/block/genhd.c
++++ b/block/genhd.c
+@@ -246,15 +246,18 @@ struct block_device *disk_part_iter_next(struct disk_part_iter *piter)
+ 		part = rcu_dereference(ptbl->part[piter->idx]);
+ 		if (!part)
+ 			continue;
++		piter->part = bdgrab(part);
++		if (!piter->part)
++			continue;
+ 		if (!bdev_nr_sectors(part) &&
+ 		    !(piter->flags & DISK_PITER_INCL_EMPTY) &&
+ 		    !(piter->flags & DISK_PITER_INCL_EMPTY_PART0 &&
+-		      piter->idx == 0))
++		      piter->idx == 0)) {
++			bdput(piter->part);
++			piter->part = NULL;
+ 			continue;
++		}
+ 
+-		piter->part = bdgrab(part);
+-		if (!piter->part)
+-			continue;
+ 		piter->idx += inc;
+ 		break;
+ 	}

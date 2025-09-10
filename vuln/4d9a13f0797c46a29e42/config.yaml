@@ -1,0 +1,51 @@
+id: 4d9a13f0797c46a29e42
+bug_link: https://syzkaller.appspot.com/bug?extid=4d9a13f0797c46a29e42
+title: WARNING in move_page_tables
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ba1dd7ac735d604249f1e614d997dc66b30844ab
+fix_commit: 772e5b4a5e8360743645b9a466842d16092c4f94
+datetime: '2025-08-19T16:35:57-07:00'
+fix_commit_message: "mm/mremap: fix WARN with uffd that has remap events disabled\n\
+  \nRegistering userfaultd on a VMA that spans at least one PMD and then\nmremap()'ing\
+  \ that VMA can trigger a WARN when recovering from a failed\npage table move due\
+  \ to a page table allocation error.\n\nThe code ends up doing the right thing (recurse,\
+  \ avoiding moving actual\npage tables), but triggering that WARN is unpleasant:\n\
+  \nWARNING: CPU: 2 PID: 6133 at mm/mremap.c:357 move_normal_pmd mm/mremap.c:357 [inline]\n\
+  WARNING: CPU: 2 PID: 6133 at mm/mremap.c:357 move_pgt_entry mm/mremap.c:595 [inline]\n\
+  WARNING: CPU: 2 PID: 6133 at mm/mremap.c:357 move_page_tables+0x3832/0x44a0 mm/mremap.c:852\n\
+  Modules linked in:\nCPU: 2 UID: 0 PID: 6133 Comm: syz.0.19 Not tainted 6.17.0-rc1-syzkaller-00004-g53e760d89498\
+  \ #0 PREEMPT(full)\nHardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1\
+  \ 04/01/2014\nRIP: 0010:move_normal_pmd mm/mremap.c:357 [inline]\nRIP: 0010:move_pgt_entry\
+  \ mm/mremap.c:595 [inline]\nRIP: 0010:move_page_tables+0x3832/0x44a0 mm/mremap.c:852\n\
+  Code: ...\nRSP: 0018:ffffc900037a76d8 EFLAGS: 00010293\nRAX: 0000000000000000 RBX:\
+  \ 0000000032930007 RCX: ffffffff820c6645\nRDX: ffff88802e56a440 RSI: ffffffff820c7201\
+  \ RDI: 0000000000000007\nRBP: ffff888037728fc0 R08: 0000000000000007 R09: 0000000000000000\n\
+  R10: 0000000032930007 R11: 0000000000000000 R12: 0000000000000000\nR13: ffffc900037a79a8\
+  \ R14: 0000000000000001 R15: dffffc0000000000\nFS:  000055556316a500(0000) GS:ffff8880d68bc000(0000)\
+  \ knlGS:0000000000000000\nCS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2:\
+  \ 0000001b30863fff CR3: 0000000050171000 CR4: 0000000000352ef0\nCall Trace:\n <TASK>\n\
+  \ copy_vma_and_data+0x468/0x790 mm/mremap.c:1215\n move_vma+0x548/0x1780 mm/mremap.c:1282\n\
+  \ mremap_to+0x1b7/0x450 mm/mremap.c:1406\n do_mremap+0xfad/0x1f80 mm/mremap.c:1921\n\
+  \ __do_sys_mremap+0x119/0x170 mm/mremap.c:1977\n do_syscall_x64 arch/x86/entry/syscall_64.c:63\
+  \ [inline]\n do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  RIP: 0033:0x7f00d0b8ebe9\nCode: ...\nRSP: 002b:00007ffe5ea5ee98 EFLAGS: 00000246\
+  \ ORIG_RAX: 0000000000000019\nRAX: ffffffffffffffda RBX: 00007f00d0db5fa0 RCX: 00007f00d0b8ebe9\n\
+  RDX: 0000000000400000 RSI: 0000000000c00000 RDI: 0000200000000000\nRBP: 00007ffe5ea5eef0\
+  \ R08: 0000200000c00000 R09: 0000000000000000\nR10: 0000000000000003 R11: 0000000000000246\
+  \ R12: 0000000000000002\nR13: 00007f00d0db5fa0 R14: 00007f00d0db5fa0 R15: 0000000000000005\n\
+  \ </TASK>\n\nThe underlying issue is that we recurse during the original page table\n\
+  move, but not during the recovery move.\n\nFix it by checking for both VMAs and\
+  \ performing the check before the\npmd_none() sanity check.\n\nAdd a new helper\
+  \ where we perform+document that check for the PMD and PUD\nlevel.\n\nThanks to\
+  \ Harry for bisecting.\n\nLink: https://lkml.kernel.org/r/20250818175358.1184757-1-david@redhat.com\n\
+  Fixes: 0cef0bb836e3 (\"mm: clear uffd-wp PTE/PMD state on mremap()\")\nSigned-off-by:\
+  \ David Hildenbrand <david@redhat.com>\nReported-by: syzbot+4d9a13f0797c46a29e42@syzkaller.appspotmail.com\n\
+  Closes: https://lkml.kernel.org/r/689bb893.050a0220.7f033.013a.GAE@google.com\n\
+  Tested-by: Harry Yoo <harry.yoo@oracle.com>\nCc: \"Liam R. Howlett\" <Liam.Howlett@oracle.com>\n\
+  Cc: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>\nCc: Vlastimil Babka <vbabka@suse.cz>\n\
+  Cc: Jann Horn <jannh@google.com>\nCc: Pedro Falcato <pfalcato@suse.de>\nCc: <stable@vger.kernel.org>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 5
+covered_count: 3

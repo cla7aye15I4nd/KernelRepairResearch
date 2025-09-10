@@ -1,0 +1,52 @@
+id: 985ada84bf055a575c07
+bug_link: https://syzkaller.appspot.com/bug?extid=985ada84bf055a575c07
+title: kernel BUG in submit_bh_wbc (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f92f0a1b05698340836229d791b3ffecc71b265a
+fix_commit: 6ed469df0bfbef3e4b44fca954a781919db9f7ab
+datetime: '2024-10-16T15:05:32+02:00'
+fix_commit_message: 'nilfs2: fix kernel bug due to missing clearing of buffer delay
+  flag
+
+
+  Syzbot reported that after nilfs2 reads a corrupted file system image
+
+  and degrades to read-only, the BUG_ON check for the buffer delay flag
+
+  in submit_bh_wbc() may fail, causing a kernel bug.
+
+
+  This is because the buffer delay flag is not cleared when clearing the
+
+  buffer state flags to discard a page/folio or a buffer head. So, fix
+
+  this.
+
+
+  This became necessary when the use of nilfs2''s own page clear routine
+
+  was expanded.  This state inconsistency does not occur if the buffer
+
+  is written normally by log writing.
+
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Link: https://lore.kernel.org/r/20241015213300.7114-1-konishi.ryusuke@gmail.com
+
+  Fixes: 8c26c4e2694a ("nilfs2: fix issue with flush kernel thread after remount in
+  RO mode because of driver''s internal error or metadata corruption")
+
+  Reported-by: syzbot+985ada84bf055a575c07@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=985ada84bf055a575c07
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 2
+covered_count: 0

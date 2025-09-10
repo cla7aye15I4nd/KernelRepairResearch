@@ -1,0 +1,77 @@
+loop0: detected capacity change from 0 to 32768
+bcachefs (loop0): starting version 1.7: mi_btree_bitmap opts=metadata_checksum=crc64,data_checksum=none,compression=lz4,journal_flush_disabled,fsck,recovery_pass_last=set_may_go_rw,reconstruct_alloc,no_data_io
+  allowing incompatible features above 0.0: (unknown version)
+  features: lz4,new_siphash,inline_data,new_extent_overwrite,btree_ptr_v2,new_varint,journal_no_flush,alloc_v2,extents_across_btree_nodes
+bcachefs (loop0): Using encoding defined by superblock: utf8-12.1.0
+bcachefs (loop0): recovering from clean shutdown, journal seq 10
+bcachefs (loop0): Version upgrade required:
+Version upgrade from 0.24: unwritten_extents to 1.7: mi_btree_bitmap incomplete
+Doing incompatible version upgrade from 0.24: unwritten_extents to 1.28: inode_has_case_insensitive
+  running recovery passes: check_allocations,check_alloc_info,check_lrus,check_btree_backpointers,check_backpointers_to_extents,check_extents_to_backpointers,check_alloc_to_lru_refs,bucket_gens_init,check_snapshot_trees,check_snapshots,check_subvols,check_subvol_children,delete_dead_snapshots,check_inodes,check_extents,check_indirect_extents,check_dirents,check_xattrs,check_root,check_unreachable_inodes,check_subvolume_structure,check_directory_structure,check_nlinks,check_rebalance_work,set_fs_needs_rebalance
+bcachefs (loop0): dropping and reconstructing all alloc info
+bcachefs (loop0): accounting_read... done
+bcachefs (loop0): alloc_read... done
+bcachefs (loop0): snapshots_read... done
+bcachefs (loop0): check_allocations... done
+bcachefs (loop0): going read-write
+bcachefs (loop0): done starting filesystem
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/btree_journal_iter.c:139!
+Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5329 Comm: syz.0.0 Not tainted 6.16.0-rc3-syzkaller-00044-g7595b66ae9de #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:bch2_journal_keys_peek_prev_min+0x15e4/0x15f0 fs/bcachefs/btree_journal_iter.c:139
+Code: b9 00 00 00 00 00 fc ff df 80 3c 08 00 74 08 48 89 df e8 ff 87 fe fd 48 8b 1b e9 b6 fe ff ff e8 a2 5f 41 07 e8 1d 05 9b fd 90 <0f> 0b 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90
+RSP: 0018:ffffc9000d38f1a0 EFLAGS: 00010283
+RAX: ffffffff84254803 RBX: ffffffffffffffff RCX: 0000000000100000
+RDX: ffffc9000df5a000 RSI: 00000000000337b5 RDI: 00000000000337b6
+RBP: ffffc9000d38f380 R08: 00090018ffffffff R09: 2000000000000000
+R10: 0000000000000000 R11: 00090018ffffffff R12: ffffc9000d38f9b0
+R13: dffffc0000000000 R14: 000000000000003b R15: ffff888052f00000
+FS:  00007fe8791aa6c0(0000) GS:ffff88808d251000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f1f90184000 CR3: 0000000043c47000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_btree_journal_peek_prev fs/bcachefs/btree_iter.c:2172 [inline]
+ btree_trans_peek_prev_journal+0x259/0x3b0 fs/bcachefs/btree_iter.c:2186
+ __bch2_btree_iter_peek_prev fs/bcachefs/btree_iter.c:2560 [inline]
+ bch2_btree_iter_peek_prev_min+0x1439/0x5400 fs/bcachefs/btree_iter.c:2635
+ __bch2_resume_logged_op_finsert+0x7fc/0x2240 fs/bcachefs/io_misc.c:432
+ bch2_fcollapse_finsert+0x19b/0x250 fs/bcachefs/io_misc.c:536
+ bchfs_fcollapse_finsert+0x378/0x470 fs/bcachefs/fs-io.c:621
+ bch2_fallocate_dispatch+0x2a4/0x410 fs/bcachefs/fs-io.c:-1
+ vfs_fallocate+0x6a0/0x830 fs/open.c:341
+ ksys_fallocate fs/open.c:365 [inline]
+ __do_sys_fallocate fs/open.c:370 [inline]
+ __se_sys_fallocate fs/open.c:368 [inline]
+ __x64_sys_fallocate+0xc0/0x110 fs/open.c:368
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fe87838e929
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fe8791aa038 EFLAGS: 00000246 ORIG_RAX: 000000000000011d
+RAX: ffffffffffffffda RBX: 00007fe8785b5fa0 RCX: 00007fe87838e929
+RDX: 0000000000000000 RSI: 0000000000000020 RDI: 000000000000000a
+RBP: 00007fe878410b39 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000007000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007fe8785b5fa0 R15: 00007ffc77682dc8
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_journal_keys_peek_prev_min+0x15e4/0x15f0 fs/bcachefs/btree_journal_iter.c:139
+Code: b9 00 00 00 00 00 fc ff df 80 3c 08 00 74 08 48 89 df e8 ff 87 fe fd 48 8b 1b e9 b6 fe ff ff e8 a2 5f 41 07 e8 1d 05 9b fd 90 <0f> 0b 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90
+RSP: 0018:ffffc9000d38f1a0 EFLAGS: 00010283
+RAX: ffffffff84254803 RBX: ffffffffffffffff RCX: 0000000000100000
+RDX: ffffc9000df5a000 RSI: 00000000000337b5 RDI: 00000000000337b6
+RBP: ffffc9000d38f380 R08: 00090018ffffffff R09: 2000000000000000
+R10: 0000000000000000 R11: 00090018ffffffff R12: ffffc9000d38f9b0
+R13: dffffc0000000000 R14: 000000000000003b R15: ffff888052f00000
+FS:  00007fe8791aa6c0(0000) GS:ffff88808d251000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fe8783ec970 CR3: 0000000043c47000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

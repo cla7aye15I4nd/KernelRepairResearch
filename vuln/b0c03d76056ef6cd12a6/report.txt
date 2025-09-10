@@ -1,0 +1,75 @@
+batman_adv: batadv0: Interface deactivated: batadv_slave_0
+batman_adv: batadv0: Removing interface: batadv_slave_0
+batman_adv: batadv0: Interface deactivated: batadv_slave_1
+batman_adv: batadv0: Removing interface: batadv_slave_1
+============================================
+WARNING: possible recursive locking detected
+6.15.0-rc2-syzkaller-00087-gcfb2e2c57aef #0 Not tainted
+--------------------------------------------
+kworker/u8:2/36 is trying to acquire lock:
+ffff8880595a2d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2751 [inline]
+ffff8880595a2d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ffff8880595a2d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: dev_set_allmulti+0x11c/0x270 net/core/dev_api.c:288
+
+but task is already holding lock:
+ffff8880595a2d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2751 [inline]
+ffff8880595a2d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ffff8880595a2d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: unregister_netdevice_many_notify+0x5a1/0x2510 net/core/dev.c:11938
+and the lock comparison function returns 0:
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&dev_instance_lock_key#3);
+  lock(&dev_instance_lock_key#3);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+5 locks held by kworker/u8:2/36:
+ #0: ffff88801bef6148 ((wq_completion)netns){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3213 [inline]
+ #0: ffff88801bef6148 ((wq_completion)netns){+.+.}-{0:0}, at: process_scheduled_works+0x990/0x18e0 kernel/workqueue.c:3319
+ #1: ffffc90000ad7c60 (net_cleanup_work){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3214 [inline]
+ #1: ffffc90000ad7c60 (net_cleanup_work){+.+.}-{0:0}, at: process_scheduled_works+0x9cb/0x18e0 kernel/workqueue.c:3319
+ #2: ffffffff900f0a90 (pernet_ops_rwsem){++++}-{4:4}, at: cleanup_net+0x17c/0xd60 net/core/net_namespace.c:608
+ #3: ffffffff900fd5c8 (rtnl_mutex){+.+.}-{4:4}, at: default_device_exit_batch+0xde/0x880 net/core/dev.c:12513
+ #4: ffff8880595a2d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2751 [inline]
+ #4: ffff8880595a2d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ #4: ffff8880595a2d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: unregister_netdevice_many_notify+0x5a1/0x2510 net/core/dev.c:11938
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 36 Comm: kworker/u8:2 Not tainted 6.15.0-rc2-syzkaller-00087-gcfb2e2c57aef #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Workqueue: netns cleanup_net
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_deadlock_bug+0x2be/0x2d0 kernel/locking/lockdep.c:3042
+ check_deadlock kernel/locking/lockdep.c:3094 [inline]
+ validate_chain+0x928/0x24e0 kernel/locking/lockdep.c:3896
+ __lock_acquire+0xad5/0xd80 kernel/locking/lockdep.c:5235
+ lock_acquire+0x116/0x2f0 kernel/locking/lockdep.c:5866
+ __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+ __mutex_lock+0x1a5/0x10c0 kernel/locking/mutex.c:746
+ netdev_lock include/linux/netdevice.h:2751 [inline]
+ netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ dev_set_allmulti+0x11c/0x270 net/core/dev_api.c:288
+ macvlan_stop+0x20f/0x420 drivers/net/macvlan.c:704
+ __dev_close_many+0x3d9/0x760 net/core/dev.c:1700
+ dev_close_many+0x250/0x4c0 net/core/dev.c:1725
+ unregister_netdevice_many_notify+0x628/0x2510 net/core/dev.c:11940
+ unregister_netdevice_many net/core/dev.c:12035 [inline]
+ default_device_exit_batch+0x7ff/0x880 net/core/dev.c:12527
+ ops_exit_list net/core/net_namespace.c:177 [inline]
+ cleanup_net+0x8b1/0xd60 net/core/net_namespace.c:654
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xac5/0x18e0 kernel/workqueue.c:3319
+ worker_thread+0x870/0xd50 kernel/workqueue.c:3400
+ kthread+0x7b9/0x940 kernel/kthread.c:464
+ ret_from_fork+0x4d/0x80 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>

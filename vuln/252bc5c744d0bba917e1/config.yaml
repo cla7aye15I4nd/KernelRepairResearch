@@ -1,0 +1,23 @@
+id: 252bc5c744d0bba917e1
+bug_link: https://syzkaller.appspot.com/bug?extid=252bc5c744d0bba917e1
+title: possible deadlock in queue_stack_map_push_elem
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 92b90f780d056a28f3c751c2dfbcd9540c7ae28a
+fix_commit: 2f41503d647629cfafea42cf6f827e4139536703
+datetime: '2025-04-10T12:51:10-07:00'
+fix_commit_message: "bpf: Convert queue_stack map to rqspinlock\n\nReplace all usage\
+  \ of raw_spinlock_t in queue_stack_maps.c with\nrqspinlock. This is a map type with\
+  \ a set of open syzbot reports\nreproducing possible deadlocks. Prior attempt to\
+  \ fix the issues\nwas at [0], but was dropped in favor of this approach.\n\nMake\
+  \ sure we return the -EBUSY error in case of possible deadlocks or\ntimeouts, just\
+  \ to make sure user space or BPF programs relying on the\nerror code to detect problems\
+  \ do not break.\n\nWith these changes, the map should be safe to access in any context,\n\
+  including NMIs.\n\n  [0]: https://lore.kernel.org/all/20240429165658.1305969-1-sidchintamaneni@gmail.com\n\
+  \nReported-by: syzbot+8bdfc2c53fb2b63e1871@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/all/0000000000004c3fc90615f37756@google.com\n\
+  Reported-by: syzbot+252bc5c744d0bba917e1@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/all/000000000000c80abd0616517df9@google.com\n\
+  Signed-off-by: Kumar Kartikeya Dwivedi <memxor@gmail.com>\nLink: https://lore.kernel.org/r/20250410153142.2064340-1-memxor@gmail.com\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 8
+covered_count: 4

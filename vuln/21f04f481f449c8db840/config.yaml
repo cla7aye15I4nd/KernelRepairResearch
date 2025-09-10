@@ -1,0 +1,34 @@
+id: 21f04f481f449c8db840
+bug_link: https://syzkaller.appspot.com/bug?extid=21f04f481f449c8db840
+title: memory leak in genl_rcv_msg
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ef1c75593e770aff8749e902aa0deb6855a3f485
+fix_commit: c36f05559104b66bcd7f617e931e38c680227b74
+datetime: '2020-06-04T15:33:45-07:00'
+fix_commit_message: "genetlink: fix memory leaks in genl_family_rcv_msg_dumpit()\n\
+  \nThere are two kinds of memory leaks in genl_family_rcv_msg_dumpit():\n\n1. Before\
+  \ we call ops->start(), whenever an error happens, we forget\n   to free the memory\
+  \ allocated in genl_family_rcv_msg_dumpit().\n\n2. When ops->start() fails, the\
+  \ 'info' has been already installed on\n   the per socket control block, so we should\
+  \ not free it here. More\n   importantly, nlk->cb_running is still false at this\
+  \ point, so\n   netlink_sock_destruct() cannot free it either.\n\nThe first kind\
+  \ of memory leaks is easier to resolve, but the second\none requires some deeper\
+  \ thoughts.\n\nAfter reviewing how netfilter handles this, the most elegant solution\n\
+  I find is just to use a similar way to allocate the memory, that is,\nmoving memory\
+  \ allocations from caller into ops->start(). With this,\nwe can solve both kinds\
+  \ of memory leaks: for 1), no memory allocation\nhappens before ops->start(); for\
+  \ 2), ops->start() handles its own\nfailures and 'info' is installed to the socket\
+  \ control block only\nwhen success. The only ugliness here is we have to pass all\
+  \ local\nvariables on stack via a struct, but this is not hard to understand.\n\n\
+  Alternatively, we can introduce a ops->free() to solve this too,\nbut it is overkill\
+  \ as only genetlink has this problem so far.\n\nFixes: 1927f41a22a0 (\"net: genetlink:\
+  \ introduce dump info struct to be available during dumpit op\")\nReported-by: syzbot+21f04f481f449c8db840@syzkaller.appspotmail.com\n\
+  Cc: \"Jason A. Donenfeld\" <Jason@zx2c4.com>\nCc: Florian Westphal <fw@strlen.de>\n\
+  Cc: Pablo Neira Ayuso <pablo@netfilter.org>\nCc: Jiri Pirko <jiri@mellanox.com>\n\
+  Cc: YueHaibing <yuehaibing@huawei.com>\nCc: Shaochun Chen <cscnull@gmail.com>\n\
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/netlink
+hunk_count: 4
+covered_count: 4

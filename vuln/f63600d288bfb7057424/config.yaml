@@ -1,0 +1,67 @@
+id: f63600d288bfb7057424
+bug_link: https://syzkaller.appspot.com/bug?extid=f63600d288bfb7057424
+title: 'UBSAN: array-index-out-of-bounds in cake_enqueue (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2d2d4f60ed266a8f340a721102d035252606980b
+fix_commit: 737d4d91d35b5f7fa5bb442651472277318b0bfd
+datetime: '2025-01-09T08:18:41-08:00'
+fix_commit_message: 'sched: sch_cake: add bounds checks to host bulk flow fairness
+  counts
+
+
+  Even though we fixed a logic error in the commit cited below, syzbot
+
+  still managed to trigger an underflow of the per-host bulk flow
+
+  counters, leading to an out of bounds memory access.
+
+
+  To avoid any such logic errors causing out of bounds memory accesses,
+
+  this commit factors out all accesses to the per-host bulk flow counters
+
+  to a series of helpers that perform bounds-checking before any
+
+  increments and decrements. This also has the benefit of improving
+
+  readability by moving the conditional checks for the flow mode into
+
+  these helpers, instead of having them spread out throughout the
+
+  code (which was the cause of the original logic error).
+
+
+  As part of this change, the flow quantum calculation is consolidated
+
+  into a helper function, which means that the dithering applied to the
+
+  ost load scaling is now applied both in the DRR rotation and when a
+
+  sparse flow''s quantum is first initiated. The only user-visible effect
+
+  of this is that the maximum packet size that can be sent while a flow
+
+  stays sparse will now vary with +/- one byte in some cases. This should
+
+  not make a noticeable difference in practice, and thus it''s not worth
+
+  complicating the code to preserve the old behaviour.
+
+
+  Fixes: 546ea84d07e3 ("sched: sch_cake: fix bulk flow accounting logic for host fairness")
+
+  Reported-by: syzbot+f63600d288bfb7057424@syzkaller.appspotmail.com
+
+  Signed-off-by: Toke Høiland-Jørgensen <toke@redhat.com>
+
+  Acked-by: Dave Taht <dave.taht@gmail.com>
+
+  Link: https://patch.msgid.link/20250107120105.70685-1-toke@redhat.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/sched
+hunk_count: 13
+covered_count: 3

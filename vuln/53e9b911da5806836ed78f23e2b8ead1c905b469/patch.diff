@@ -1,0 +1,52 @@
+diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
+index cc5fe7a50dde..391dda8d43b7 100644
+--- a/arch/x86/kvm/lapic.c
++++ b/arch/x86/kvm/lapic.c
+@@ -2002,14 +2002,13 @@ void kvm_lapic_set_base(struct kvm_vcpu *vcpu, u64 value)
+ 
+ void kvm_lapic_reset(struct kvm_vcpu *vcpu, bool init_event)
+ {
+-	struct kvm_lapic *apic;
++	struct kvm_lapic *apic = vcpu->arch.apic;
+ 	int i;
+ 
+-	apic_debug("%s\n", __func__);
++	if (!apic)
++		return;
+ 
+-	ASSERT(vcpu);
+-	apic = vcpu->arch.apic;
+-	ASSERT(apic != NULL);
++	apic_debug("%s\n", __func__);
+ 
+ 	/* Stop the timer in case it's a reset to an active apic */
+ 	hrtimer_cancel(&apic->lapic_timer.timer);
+@@ -2568,7 +2567,6 @@ void kvm_apic_accept_events(struct kvm_vcpu *vcpu)
+ 
+ 	pe = xchg(&apic->pending_events, 0);
+ 	if (test_bit(KVM_APIC_INIT, &pe)) {
+-		kvm_lapic_reset(vcpu, true);
+ 		kvm_vcpu_reset(vcpu, true);
+ 		if (kvm_vcpu_is_bsp(apic->vcpu))
+ 			vcpu->arch.mp_state = KVM_MP_STATE_RUNNABLE;
+diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
+index 11649d290b93..18b5ca7a3197 100644
+--- a/arch/x86/kvm/x86.c
++++ b/arch/x86/kvm/x86.c
+@@ -8060,7 +8060,6 @@ int kvm_arch_vcpu_setup(struct kvm_vcpu *vcpu)
+ 	kvm_vcpu_mtrr_init(vcpu);
+ 	vcpu_load(vcpu);
+ 	kvm_vcpu_reset(vcpu, false);
+-	kvm_lapic_reset(vcpu, false);
+ 	kvm_mmu_setup(vcpu);
+ 	vcpu_put(vcpu);
+ 	return 0;
+@@ -8103,6 +8102,8 @@ void kvm_arch_vcpu_destroy(struct kvm_vcpu *vcpu)
+ 
+ void kvm_vcpu_reset(struct kvm_vcpu *vcpu, bool init_event)
+ {
++	kvm_lapic_reset(vcpu, init_event);
++
+ 	vcpu->arch.hflags = 0;
+ 
+ 	vcpu->arch.smi_pending = 0;

@@ -1,0 +1,39 @@
+id: fdc00003f4efff43bc5b
+bug_link: https://syzkaller.appspot.com/bug?extid=fdc00003f4efff43bc5b
+title: 'KASAN: use-after-free Read in kobject_put'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 017a01ccfbc5a35aed83acbf2ee2735f8c3efe8a
+fix_commit: e20a2e9c42c9e4002d9e338d74e7819e88d77162
+datetime: '2019-02-04T15:43:46+01:00'
+fix_commit_message: 'Bluetooth: Fix decrementing reference count twice in releasing
+  socket
+
+
+  When releasing socket, it is possible to enter hci_sock_release() and
+
+  hci_sock_dev_event(HCI_DEV_UNREG) at the same time in different thread.
+
+  The reference count of hdev should be decremented only once from one of
+
+  them but if storing hdev to local variable in hci_sock_release() before
+
+  detached from socket and setting to NULL in hci_sock_dev_event(),
+
+  hci_dev_put(hdev) is unexpectedly called twice. This is resolved by
+
+  referencing hdev from socket after bt_sock_unlink() in
+
+  hci_sock_release().
+
+
+  Reported-by: syzbot+fdc00003f4efff43bc5b@syzkaller.appspotmail.com
+
+  Signed-off-by: Myungho Jung <mhjungk@gmail.com>
+
+  Signed-off-by: Marcel Holtmann <marcel@holtmann.org>
+
+  '
+submodule:
+- net/bluetooth
+hunk_count: 2
+covered_count: 0

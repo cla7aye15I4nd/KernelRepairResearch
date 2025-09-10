@@ -1,0 +1,126 @@
+diff --git a/arch/x86/include/asm/kvm-x86-ops.h b/arch/x86/include/asm/kvm-x86-ops.h
+index f658bb4dbb74..65c3f1857d6e 100644
+--- a/arch/x86/include/asm/kvm-x86-ops.h
++++ b/arch/x86/include/asm/kvm-x86-ops.h
+@@ -55,6 +55,7 @@ KVM_X86_OP_NULL(tlb_remote_flush)
+ KVM_X86_OP_NULL(tlb_remote_flush_with_range)
+ KVM_X86_OP(tlb_flush_gva)
+ KVM_X86_OP(tlb_flush_guest)
++KVM_X86_OP(vcpu_pre_run)
+ KVM_X86_OP(run)
+ KVM_X86_OP_NULL(handle_exit)
+ KVM_X86_OP_NULL(skip_emulated_instruction)
+diff --git a/arch/x86/include/asm/kvm_host.h b/arch/x86/include/asm/kvm_host.h
+index 89d1fdb39c46..6a8fa26ef98c 100644
+--- a/arch/x86/include/asm/kvm_host.h
++++ b/arch/x86/include/asm/kvm_host.h
+@@ -1380,6 +1380,7 @@ struct kvm_x86_ops {
+ 	 */
+ 	void (*tlb_flush_guest)(struct kvm_vcpu *vcpu);
+ 
++	int (*vcpu_pre_run)(struct kvm_vcpu *vcpu);
+ 	enum exit_fastpath_completion (*run)(struct kvm_vcpu *vcpu);
+ 	int (*handle_exit)(struct kvm_vcpu *vcpu,
+ 		enum exit_fastpath_completion exit_fastpath);
+diff --git a/arch/x86/kvm/svm/svm.c b/arch/x86/kvm/svm/svm.c
+index d8cac84fb2dc..bf0c3a67d836 100644
+--- a/arch/x86/kvm/svm/svm.c
++++ b/arch/x86/kvm/svm/svm.c
+@@ -3829,6 +3829,11 @@ static void svm_cancel_injection(struct kvm_vcpu *vcpu)
+ 	svm_complete_interrupts(vcpu);
+ }
+ 
++static int svm_vcpu_pre_run(struct kvm_vcpu *vcpu)
++{
++	return 1;
++}
++
+ static fastpath_t svm_exit_handlers_fastpath(struct kvm_vcpu *vcpu)
+ {
+ 	if (to_svm(vcpu)->vmcb->control.exit_code == SVM_EXIT_MSR &&
+@@ -4658,6 +4663,7 @@ static struct kvm_x86_ops svm_x86_ops __initdata = {
+ 	.tlb_flush_gva = svm_flush_tlb_gva,
+ 	.tlb_flush_guest = svm_flush_tlb,
+ 
++	.vcpu_pre_run = svm_vcpu_pre_run,
+ 	.run = svm_vcpu_run,
+ 	.handle_exit = handle_exit,
+ 	.skip_emulated_instruction = skip_emulated_instruction,
+diff --git a/arch/x86/kvm/vmx/vmx.c b/arch/x86/kvm/vmx/vmx.c
+index 15e30602782b..41aaa37d9eb8 100644
+--- a/arch/x86/kvm/vmx/vmx.c
++++ b/arch/x86/kvm/vmx/vmx.c
+@@ -5426,6 +5426,14 @@ static int handle_nmi_window(struct kvm_vcpu *vcpu)
+ 	return 1;
+ }
+ 
++static bool vmx_emulation_required_with_pending_exception(struct kvm_vcpu *vcpu)
++{
++	struct vcpu_vmx *vmx = to_vmx(vcpu);
++
++	return vmx->emulation_required && !vmx->rmode.vm86_active &&
++	       vcpu->arch.exception.pending;
++}
++
+ static int handle_invalid_guest_state(struct kvm_vcpu *vcpu)
+ {
+ 	struct vcpu_vmx *vmx = to_vmx(vcpu);
+@@ -5445,8 +5453,7 @@ static int handle_invalid_guest_state(struct kvm_vcpu *vcpu)
+ 		if (!kvm_emulate_instruction(vcpu, 0))
+ 			return 0;
+ 
+-		if (vmx->emulation_required && !vmx->rmode.vm86_active &&
+-		    vcpu->arch.exception.pending) {
++		if (vmx_emulation_required_with_pending_exception(vcpu)) {
+ 			kvm_prepare_emulation_failure_exit(vcpu);
+ 			return 0;
+ 		}
+@@ -5468,6 +5475,16 @@ static int handle_invalid_guest_state(struct kvm_vcpu *vcpu)
+ 	return 1;
+ }
+ 
++static int vmx_vcpu_pre_run(struct kvm_vcpu *vcpu)
++{
++	if (vmx_emulation_required_with_pending_exception(vcpu)) {
++		kvm_prepare_emulation_failure_exit(vcpu);
++		return 0;
++	}
++
++	return 1;
++}
++
+ static void grow_ple_window(struct kvm_vcpu *vcpu)
+ {
+ 	struct vcpu_vmx *vmx = to_vmx(vcpu);
+@@ -7708,6 +7725,7 @@ static struct kvm_x86_ops vmx_x86_ops __initdata = {
+ 	.tlb_flush_gva = vmx_flush_tlb_gva,
+ 	.tlb_flush_guest = vmx_flush_tlb_guest,
+ 
++	.vcpu_pre_run = vmx_vcpu_pre_run,
+ 	.run = vmx_vcpu_run,
+ 	.handle_exit = vmx_handle_exit,
+ 	.skip_emulated_instruction = vmx_skip_emulated_instruction,
+diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
+index 52df8e6eaa57..49ff85e966d7 100644
+--- a/arch/x86/kvm/x86.c
++++ b/arch/x86/kvm/x86.c
+@@ -10393,10 +10393,16 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu)
+ 	} else
+ 		WARN_ON(vcpu->arch.pio.count || vcpu->mmio_needed);
+ 
+-	if (kvm_run->immediate_exit)
++	if (kvm_run->immediate_exit) {
+ 		r = -EINTR;
+-	else
+-		r = vcpu_run(vcpu);
++		goto out;
++	}
++
++	r = static_call(kvm_x86_vcpu_pre_run)(vcpu);
++	if (r <= 0)
++		goto out;
++
++	r = vcpu_run(vcpu);
+ 
+ out:
+ 	kvm_put_guest_fpu(vcpu);

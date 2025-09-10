@@ -1,0 +1,34 @@
+id: 264bca3a6e8d645550d3
+bug_link: https://syzkaller.appspot.com/bug?extid=264bca3a6e8d645550d3
+title: 'KASAN: slab-out-of-bounds Write in vmac_final'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 73bf20ef3df262026c3470241ae4ac8196943ffa
+fix_commit: bb29648102335586e9a66289a1d98a0cb392b6e5
+datetime: '2018-07-01T21:00:42+08:00'
+fix_commit_message: "crypto: vmac - separate tfm and request context\n\nsyzbot reported\
+  \ a crash in vmac_final() when multiple threads\nconcurrently use the same \"vmac(aes)\"\
+  \ transform through AF_ALG.  The bug\nis pretty fundamental: the VMAC template doesn't\
+  \ separate per-request\nstate from per-tfm (per-key) state like the other hash algorithms\
+  \ do,\nbut rather stores it all in the tfm context.  That's wrong.\n\nAlso, vmac_final()\
+  \ incorrectly zeroes most of the state including the\nderived keys and cached pseudorandom\
+  \ pad.  Therefore, only the first\nVMAC invocation with a given key calculates the\
+  \ correct digest.\n\nFix these bugs by splitting the per-tfm state from the per-request\
+  \ state\nand using the proper init/update/final sequencing for requests.\n\nReproducer\
+  \ for the crash:\n\n    #include <linux/if_alg.h>\n    #include <sys/socket.h>\n\
+  \    #include <unistd.h>\n\n    int main()\n    {\n            int fd;\n       \
+  \     struct sockaddr_alg addr = {\n                    .salg_type = \"hash\",\n\
+  \                    .salg_name = \"vmac(aes)\",\n            };\n            char\
+  \ buf[256] = { 0 };\n\n            fd = socket(AF_ALG, SOCK_SEQPACKET, 0);\n   \
+  \         bind(fd, (void *)&addr, sizeof(addr));\n            setsockopt(fd, SOL_ALG,\
+  \ ALG_SET_KEY, buf, 16);\n            fork();\n            fd = accept(fd, NULL,\
+  \ NULL);\n            for (;;)\n                    write(fd, buf, 256);\n    }\n\
+  \nThe immediate cause of the crash is that vmac_ctx_t.partial_size exceeds\nVMAC_NHBYTES,\
+  \ causing vmac_final() to memset() a negative length.\n\nReported-by: syzbot+264bca3a6e8d645550d3@syzkaller.appspotmail.com\n\
+  Fixes: f1939f7c5645 (\"crypto: vmac - New hash algorithm for intel_txt support\"\
+  )\nCc: <stable@vger.kernel.org> # v2.6.32+\nSigned-off-by: Eric Biggers <ebiggers@google.com>\n\
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- crypto
+- include/crypto
+hunk_count: 7
+covered_count: 4

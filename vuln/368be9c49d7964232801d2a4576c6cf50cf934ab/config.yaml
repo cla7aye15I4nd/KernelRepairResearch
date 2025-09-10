@@ -1,0 +1,25 @@
+id: 368be9c49d7964232801d2a4576c6cf50cf934ab
+bug_link: https://syzkaller.appspot.com/bug?extid=368be9c49d7964232801d2a4576c6cf50cf934ab
+title: WARNING in fpu__copy
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d73235d17ba63b53dc0e1051dbc10a1f1be91b71
+fix_commit: 5663d8f9bbe4bf15488f7351efb61ea20fa6de06
+datetime: '2017-12-14T09:24:35+01:00'
+fix_commit_message: "kvm: x86: fix WARN due to uninitialized guest FPU state\n\n------------[\
+  \ cut here ]------------\n Bad FPU state detected at kvm_put_guest_fpu+0xd8/0x2d0\
+  \ [kvm], reinitializing FPU registers.\n WARNING: CPU: 1 PID: 4594 at arch/x86/mm/extable.c:103\
+  \ ex_handler_fprestore+0x88/0x90\n CPU: 1 PID: 4594 Comm: qemu-system-x86 Tainted:\
+  \ G    B      OE    4.15.0-rc2+ #10\n RIP: 0010:ex_handler_fprestore+0x88/0x90\n\
+  \ Call Trace:\n  fixup_exception+0x4e/0x60\n  do_general_protection+0xff/0x270\n\
+  \  general_protection+0x22/0x30\n RIP: 0010:kvm_put_guest_fpu+0xd8/0x2d0 [kvm]\n\
+  \ RSP: 0018:ffff8803d5627810 EFLAGS: 00010246\n  kvm_vcpu_reset+0x3b4/0x3c0 [kvm]\n\
+  \  kvm_apic_accept_events+0x1c0/0x240 [kvm]\n  kvm_arch_vcpu_ioctl_run+0x1658/0x2fb0\
+  \ [kvm]\n  kvm_vcpu_ioctl+0x479/0x880 [kvm]\n  do_vfs_ioctl+0x142/0x9a0\n  SyS_ioctl+0x74/0x80\n\
+  \  do_syscall_64+0x15f/0x600\n\nwhere kvm_put_guest_fpu is called without a prior\
+  \ kvm_load_guest_fpu.\nTo fix it, move kvm_load_guest_fpu to the very beginning\
+  \ of\nkvm_arch_vcpu_ioctl_run.\n\nCc: stable@vger.kernel.org\nFixes: f775b13eedee2f7f3c6fdd4e90fb79090ce5d339\n\
+  Signed-off-by: Peter Xu <peterx@redhat.com>\nSigned-off-by: Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 3
+covered_count: 0

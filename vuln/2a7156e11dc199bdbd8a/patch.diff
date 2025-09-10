@@ -1,0 +1,267 @@
+diff --git a/arch/x86/kvm/vmx/nested.c b/arch/x86/kvm/vmx/nested.c
+index 9c74a732b08d..bcb50724be38 100644
+--- a/arch/x86/kvm/vmx/nested.c
++++ b/arch/x86/kvm/vmx/nested.c
+@@ -4624,19 +4624,24 @@ void nested_vmx_pmu_entry_exit_ctls_update(struct kvm_vcpu *vcpu)
+ 	}
+ }
+ 
+-static int nested_vmx_get_vmptr(struct kvm_vcpu *vcpu, gpa_t *vmpointer)
++static int nested_vmx_get_vmptr(struct kvm_vcpu *vcpu, gpa_t *vmpointer,
++				int *ret)
+ {
+ 	gva_t gva;
+ 	struct x86_exception e;
++	int r;
+ 
+ 	if (get_vmx_mem_address(vcpu, vmx_get_exit_qual(vcpu),
+ 				vmcs_read32(VMX_INSTRUCTION_INFO), false,
+-				sizeof(*vmpointer), &gva))
+-		return 1;
++				sizeof(*vmpointer), &gva)) {
++		*ret = 1;
++		return -EINVAL;
++	}
+ 
+-	if (kvm_read_guest_virt(vcpu, gva, vmpointer, sizeof(*vmpointer), &e)) {
+-		kvm_inject_emulated_page_fault(vcpu, &e);
+-		return 1;
++	r = kvm_read_guest_virt(vcpu, gva, vmpointer, sizeof(*vmpointer), &e);
++	if (r != X86EMUL_CONTINUE) {
++		*ret = vmx_handle_memory_failure(vcpu, r, &e);
++		return -EINVAL;
+ 	}
+ 
+ 	return 0;
+@@ -4764,8 +4769,8 @@ static int handle_vmon(struct kvm_vcpu *vcpu)
+ 		return 1;
+ 	}
+ 
+-	if (nested_vmx_get_vmptr(vcpu, &vmptr))
+-		return 1;
++	if (nested_vmx_get_vmptr(vcpu, &vmptr, &ret))
++		return ret;
+ 
+ 	/*
+ 	 * SDM 3: 24.11.5
+@@ -4838,12 +4843,13 @@ static int handle_vmclear(struct kvm_vcpu *vcpu)
+ 	u32 zero = 0;
+ 	gpa_t vmptr;
+ 	u64 evmcs_gpa;
++	int r;
+ 
+ 	if (!nested_vmx_check_permission(vcpu))
+ 		return 1;
+ 
+-	if (nested_vmx_get_vmptr(vcpu, &vmptr))
+-		return 1;
++	if (nested_vmx_get_vmptr(vcpu, &vmptr, &r))
++		return r;
+ 
+ 	if (!page_address_valid(vcpu, vmptr))
+ 		return nested_vmx_failValid(vcpu,
+@@ -4902,7 +4908,7 @@ static int handle_vmread(struct kvm_vcpu *vcpu)
+ 	u64 value;
+ 	gva_t gva = 0;
+ 	short offset;
+-	int len;
++	int len, r;
+ 
+ 	if (!nested_vmx_check_permission(vcpu))
+ 		return 1;
+@@ -4943,10 +4949,9 @@ static int handle_vmread(struct kvm_vcpu *vcpu)
+ 					instr_info, true, len, &gva))
+ 			return 1;
+ 		/* _system ok, nested_vmx_check_permission has verified cpl=0 */
+-		if (kvm_write_guest_virt_system(vcpu, gva, &value, len, &e)) {
+-			kvm_inject_emulated_page_fault(vcpu, &e);
+-			return 1;
+-		}
++		r = kvm_write_guest_virt_system(vcpu, gva, &value, len, &e);
++		if (r != X86EMUL_CONTINUE)
++			return vmx_handle_memory_failure(vcpu, r, &e);
+ 	}
+ 
+ 	return nested_vmx_succeed(vcpu);
+@@ -4987,7 +4992,7 @@ static int handle_vmwrite(struct kvm_vcpu *vcpu)
+ 	unsigned long field;
+ 	short offset;
+ 	gva_t gva;
+-	int len;
++	int len, r;
+ 
+ 	/*
+ 	 * The value to write might be 32 or 64 bits, depending on L1's long
+@@ -5017,10 +5022,9 @@ static int handle_vmwrite(struct kvm_vcpu *vcpu)
+ 		if (get_vmx_mem_address(vcpu, exit_qualification,
+ 					instr_info, false, len, &gva))
+ 			return 1;
+-		if (kvm_read_guest_virt(vcpu, gva, &value, len, &e)) {
+-			kvm_inject_emulated_page_fault(vcpu, &e);
+-			return 1;
+-		}
++		r = kvm_read_guest_virt(vcpu, gva, &value, len, &e);
++		if (r != X86EMUL_CONTINUE)
++			return vmx_handle_memory_failure(vcpu, r, &e);
+ 	}
+ 
+ 	field = kvm_register_readl(vcpu, (((instr_info) >> 28) & 0xf));
+@@ -5103,12 +5107,13 @@ static int handle_vmptrld(struct kvm_vcpu *vcpu)
+ {
+ 	struct vcpu_vmx *vmx = to_vmx(vcpu);
+ 	gpa_t vmptr;
++	int r;
+ 
+ 	if (!nested_vmx_check_permission(vcpu))
+ 		return 1;
+ 
+-	if (nested_vmx_get_vmptr(vcpu, &vmptr))
+-		return 1;
++	if (nested_vmx_get_vmptr(vcpu, &vmptr, &r))
++		return r;
+ 
+ 	if (!page_address_valid(vcpu, vmptr))
+ 		return nested_vmx_failValid(vcpu,
+@@ -5170,6 +5175,7 @@ static int handle_vmptrst(struct kvm_vcpu *vcpu)
+ 	gpa_t current_vmptr = to_vmx(vcpu)->nested.current_vmptr;
+ 	struct x86_exception e;
+ 	gva_t gva;
++	int r;
+ 
+ 	if (!nested_vmx_check_permission(vcpu))
+ 		return 1;
+@@ -5181,11 +5187,11 @@ static int handle_vmptrst(struct kvm_vcpu *vcpu)
+ 				true, sizeof(gpa_t), &gva))
+ 		return 1;
+ 	/* *_system ok, nested_vmx_check_permission has verified cpl=0 */
+-	if (kvm_write_guest_virt_system(vcpu, gva, (void *)&current_vmptr,
+-					sizeof(gpa_t), &e)) {
+-		kvm_inject_emulated_page_fault(vcpu, &e);
+-		return 1;
+-	}
++	r = kvm_write_guest_virt_system(vcpu, gva, (void *)&current_vmptr,
++					sizeof(gpa_t), &e);
++	if (r != X86EMUL_CONTINUE)
++		return vmx_handle_memory_failure(vcpu, r, &e);
++
+ 	return nested_vmx_succeed(vcpu);
+ }
+ 
+@@ -5209,7 +5215,7 @@ static int handle_invept(struct kvm_vcpu *vcpu)
+ 	struct {
+ 		u64 eptp, gpa;
+ 	} operand;
+-	int i;
++	int i, r;
+ 
+ 	if (!(vmx->nested.msrs.secondary_ctls_high &
+ 	      SECONDARY_EXEC_ENABLE_EPT) ||
+@@ -5236,10 +5242,9 @@ static int handle_invept(struct kvm_vcpu *vcpu)
+ 	if (get_vmx_mem_address(vcpu, vmx_get_exit_qual(vcpu),
+ 			vmx_instruction_info, false, sizeof(operand), &gva))
+ 		return 1;
+-	if (kvm_read_guest_virt(vcpu, gva, &operand, sizeof(operand), &e)) {
+-		kvm_inject_emulated_page_fault(vcpu, &e);
+-		return 1;
+-	}
++	r = kvm_read_guest_virt(vcpu, gva, &operand, sizeof(operand), &e);
++	if (r != X86EMUL_CONTINUE)
++		return vmx_handle_memory_failure(vcpu, r, &e);
+ 
+ 	/*
+ 	 * Nested EPT roots are always held through guest_mmu,
+@@ -5291,6 +5296,7 @@ static int handle_invvpid(struct kvm_vcpu *vcpu)
+ 		u64 gla;
+ 	} operand;
+ 	u16 vpid02;
++	int r;
+ 
+ 	if (!(vmx->nested.msrs.secondary_ctls_high &
+ 	      SECONDARY_EXEC_ENABLE_VPID) ||
+@@ -5318,10 +5324,10 @@ static int handle_invvpid(struct kvm_vcpu *vcpu)
+ 	if (get_vmx_mem_address(vcpu, vmx_get_exit_qual(vcpu),
+ 			vmx_instruction_info, false, sizeof(operand), &gva))
+ 		return 1;
+-	if (kvm_read_guest_virt(vcpu, gva, &operand, sizeof(operand), &e)) {
+-		kvm_inject_emulated_page_fault(vcpu, &e);
+-		return 1;
+-	}
++	r = kvm_read_guest_virt(vcpu, gva, &operand, sizeof(operand), &e);
++	if (r != X86EMUL_CONTINUE)
++		return vmx_handle_memory_failure(vcpu, r, &e);
++
+ 	if (operand.vpid >> 16)
+ 		return nested_vmx_failValid(vcpu,
+ 			VMXERR_INVALID_OPERAND_TO_INVEPT_INVVPID);
+diff --git a/arch/x86/kvm/vmx/vmx.c b/arch/x86/kvm/vmx/vmx.c
+index 0e4f7ff54e6a..08e26a9518c2 100644
+--- a/arch/x86/kvm/vmx/vmx.c
++++ b/arch/x86/kvm/vmx/vmx.c
+@@ -1600,6 +1600,32 @@ static int skip_emulated_instruction(struct kvm_vcpu *vcpu)
+ 	return 1;
+ }
+ 
++/*
++ * Handles kvm_read/write_guest_virt*() result and either injects #PF or returns
++ * KVM_EXIT_INTERNAL_ERROR for cases not currently handled by KVM. Return value
++ * indicates whether exit to userspace is needed.
++ */
++int vmx_handle_memory_failure(struct kvm_vcpu *vcpu, int r,
++			      struct x86_exception *e)
++{
++	if (r == X86EMUL_PROPAGATE_FAULT) {
++		kvm_inject_emulated_page_fault(vcpu, e);
++		return 1;
++	}
++
++	/*
++	 * In case kvm_read/write_guest_virt*() failed with X86EMUL_IO_NEEDED
++	 * while handling a VMX instruction KVM could've handled the request
++	 * correctly by exiting to userspace and performing I/O but there
++	 * doesn't seem to be a real use-case behind such requests, just return
++	 * KVM_EXIT_INTERNAL_ERROR for now.
++	 */
++	vcpu->run->exit_reason = KVM_EXIT_INTERNAL_ERROR;
++	vcpu->run->internal.suberror = KVM_INTERNAL_ERROR_EMULATION;
++	vcpu->run->internal.ndata = 0;
++
++	return 0;
++}
+ 
+ /*
+  * Recognizes a pending MTF VM-exit and records the nested state for later
+@@ -5486,6 +5512,7 @@ static int handle_invpcid(struct kvm_vcpu *vcpu)
+ 		u64 pcid;
+ 		u64 gla;
+ 	} operand;
++	int r;
+ 
+ 	if (!guest_cpuid_has(vcpu, X86_FEATURE_INVPCID)) {
+ 		kvm_queue_exception(vcpu, UD_VECTOR);
+@@ -5508,10 +5535,9 @@ static int handle_invpcid(struct kvm_vcpu *vcpu)
+ 				sizeof(operand), &gva))
+ 		return 1;
+ 
+-	if (kvm_read_guest_virt(vcpu, gva, &operand, sizeof(operand), &e)) {
+-		kvm_inject_emulated_page_fault(vcpu, &e);
+-		return 1;
+-	}
++	r = kvm_read_guest_virt(vcpu, gva, &operand, sizeof(operand), &e);
++	if (r != X86EMUL_CONTINUE)
++		return vmx_handle_memory_failure(vcpu, r, &e);
+ 
+ 	if (operand.pcid >> 12 != 0) {
+ 		kvm_inject_gp(vcpu, 0);
+diff --git a/arch/x86/kvm/vmx/vmx.h b/arch/x86/kvm/vmx/vmx.h
+index 672c28f17e49..8a83b5edc820 100644
+--- a/arch/x86/kvm/vmx/vmx.h
++++ b/arch/x86/kvm/vmx/vmx.h
+@@ -355,6 +355,8 @@ struct shared_msr_entry *find_msr_entry(struct vcpu_vmx *vmx, u32 msr);
+ void pt_update_intercept_for_msr(struct vcpu_vmx *vmx);
+ void vmx_update_host_rsp(struct vcpu_vmx *vmx, unsigned long host_rsp);
+ int vmx_find_msr_index(struct vmx_msrs *m, u32 msr);
++int vmx_handle_memory_failure(struct kvm_vcpu *vcpu, int r,
++			      struct x86_exception *e);
+ 
+ #define POSTED_INTR_ON  0
+ #define POSTED_INTR_SN  1

@@ -1,0 +1,55 @@
+id: 4caeae4c7103813598ae
+bug_link: https://syzkaller.appspot.com/bug?extid=4caeae4c7103813598ae
+title: general protection fault in em_cmp_match
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 89529367293c975c3580f49f38568f44848d5683
+fix_commit: 9cd3fd2054c3b3055163accbf2f31a4426f10317
+datetime: '2022-12-19T09:43:18+00:00'
+fix_commit_message: 'net_sched: reject TCF_EM_SIMPLE case for complex ematch module
+
+
+  When TCF_EM_SIMPLE was introduced, it is supposed to be convenient
+
+  for ematch implementation:
+
+
+  https://lore.kernel.org/all/20050105110048.GO26856@postel.suug.ch/
+
+
+  "You don''t have to, providing a 32bit data chunk without TCF_EM_SIMPLE
+
+  set will simply result in allocating & copy. It''s an optimization,
+
+  nothing more."
+
+
+  So if an ematch module provides ops->datalen that means it wants a
+
+  complex data structure (saved in its em->data) instead of a simple u32
+
+  value. We should simply reject such a combination, otherwise this u32
+
+  could be misinterpreted as a pointer.
+
+
+  Fixes: 1da177e4c3f4 ("Linux-2.6.12-rc2")
+
+  Reported-and-tested-by: syzbot+4caeae4c7103813598ae@syzkaller.appspotmail.com
+
+  Reported-by: Jun Nie <jun.nie@linaro.org>
+
+  Cc: Jamal Hadi Salim <jhs@mojatatu.com>
+
+  Cc: Paolo Abeni <pabeni@redhat.com>
+
+  Signed-off-by: Cong Wang <cong.wang@bytedance.com>
+
+  Acked-by: Paolo Abeni <pabeni@redhat.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/sched
+hunk_count: 1
+covered_count: 0

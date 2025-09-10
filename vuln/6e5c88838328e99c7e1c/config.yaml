@@ -1,0 +1,80 @@
+id: 6e5c88838328e99c7e1c
+bug_link: https://syzkaller.appspot.com/bug?extid=6e5c88838328e99c7e1c
+title: possible deadlock in __snd_pcm_lib_xfer
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 21b5954d61fd467d0c4e25583845ba0621dfb4fb
+fix_commit: bc55cfd5718c7c23e5524582e9fa70b4d10f2433
+datetime: '2022-03-30T14:29:49+02:00'
+fix_commit_message: 'ALSA: pcm: Fix potential AB/BA lock with buffer_mutex and mmap_lock
+
+
+  syzbot caught a potential deadlock between the PCM
+
+  runtime->buffer_mutex and the mm->mmap_lock.  It was brought by the
+
+  recent fix to cover the racy read/write and other ioctls, and in that
+
+  commit, I overlooked a (hopefully only) corner case that may take the
+
+  revert lock, namely, the OSS mmap.  The OSS mmap operation
+
+  exceptionally allows to re-configure the parameters inside the OSS
+
+  mmap syscall, where mm->mmap_mutex is already held.  Meanwhile, the
+
+  copy_from/to_user calls at read/write operations also take the
+
+  mm->mmap_lock internally, hence it may lead to a AB/BA deadlock.
+
+
+  A similar problem was already seen in the past and we fixed it with a
+
+  refcount (in commit b248371628aa).  The former fix covered only the
+
+  call paths with OSS read/write and OSS ioctls, while we need to cover
+
+  the concurrent access via both ALSA and OSS APIs now.
+
+
+  This patch addresses the problem above by replacing the buffer_mutex
+
+  lock in the read/write operations with a refcount similar as we''ve
+
+  used for OSS.  The new field, runtime->buffer_accessing, keeps the
+
+  number of concurrent read/write operations.  Unlike the former
+
+  buffer_mutex protection, this protects only around the
+
+  copy_from/to_user() calls; the other codes are basically protected by
+
+  the PCM stream lock.  The refcount can be a negative, meaning blocked
+
+  by the ioctls.  If a negative value is seen, the read/write aborts
+
+  with -EBUSY.  In the ioctl side, OTOH, they check this refcount, too,
+
+  and set to a negative value for blocking unless it''s already being
+
+  accessed.
+
+
+  Reported-by: syzbot+6e5c88838328e99c7e1c@syzkaller.appspotmail.com
+
+  Fixes: dca947d4d26d ("ALSA: pcm: Fix races among concurrent read/write and buffer
+  changes")
+
+  Cc: <stable@vger.kernel.org>
+
+  Link: https://lore.kernel.org/r/000000000000381a0d05db622a81@google.com
+
+  Link: https://lore.kernel.org/r/20220330120903.4738-1-tiwai@suse.de
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- include/sound
+- sound/core
+hunk_count: 13
+covered_count: 7

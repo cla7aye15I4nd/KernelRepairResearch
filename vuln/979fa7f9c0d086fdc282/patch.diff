@@ -1,0 +1,64 @@
+diff --git a/fs/nilfs2/super.c b/fs/nilfs2/super.c
+index 1422b8ba24ed..77f1e5778d1c 100644
+--- a/fs/nilfs2/super.c
++++ b/fs/nilfs2/super.c
+@@ -482,6 +482,7 @@ static void nilfs_put_super(struct super_block *sb)
+ 		up_write(&nilfs->ns_sem);
+ 	}
+ 
++	nilfs_sysfs_delete_device_group(nilfs);
+ 	iput(nilfs->ns_sufile);
+ 	iput(nilfs->ns_cpfile);
+ 	iput(nilfs->ns_dat);
+@@ -1105,6 +1106,7 @@ nilfs_fill_super(struct super_block *sb, void *data, int silent)
+ 	nilfs_put_root(fsroot);
+ 
+  failed_unload:
++	nilfs_sysfs_delete_device_group(nilfs);
+ 	iput(nilfs->ns_sufile);
+ 	iput(nilfs->ns_cpfile);
+ 	iput(nilfs->ns_dat);
+diff --git a/fs/nilfs2/the_nilfs.c b/fs/nilfs2/the_nilfs.c
+index 3a4c9c150cbf..2894152a6b25 100644
+--- a/fs/nilfs2/the_nilfs.c
++++ b/fs/nilfs2/the_nilfs.c
+@@ -87,7 +87,6 @@ void destroy_nilfs(struct the_nilfs *nilfs)
+ {
+ 	might_sleep();
+ 	if (nilfs_init(nilfs)) {
+-		nilfs_sysfs_delete_device_group(nilfs);
+ 		brelse(nilfs->ns_sbh[0]);
+ 		brelse(nilfs->ns_sbh[1]);
+ 	}
+@@ -305,6 +304,10 @@ int load_nilfs(struct the_nilfs *nilfs, struct super_block *sb)
+ 		goto failed;
+ 	}
+ 
++	err = nilfs_sysfs_create_device_group(sb);
++	if (unlikely(err))
++		goto sysfs_error;
++
+ 	if (valid_fs)
+ 		goto skip_recovery;
+ 
+@@ -366,6 +369,9 @@ int load_nilfs(struct the_nilfs *nilfs, struct super_block *sb)
+ 	goto failed;
+ 
+  failed_unload:
++	nilfs_sysfs_delete_device_group(nilfs);
++
++ sysfs_error:
+ 	iput(nilfs->ns_cpfile);
+ 	iput(nilfs->ns_sufile);
+ 	iput(nilfs->ns_dat);
+@@ -697,10 +703,6 @@ int init_nilfs(struct the_nilfs *nilfs, struct super_block *sb, char *data)
+ 	if (err)
+ 		goto failed_sbh;
+ 
+-	err = nilfs_sysfs_create_device_group(sb);
+-	if (err)
+-		goto failed_sbh;
+-
+ 	set_nilfs_init(nilfs);
+ 	err = 0;
+  out:

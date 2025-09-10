@@ -1,0 +1,48 @@
+diff --git a/net/bluetooth/hci_core.c b/net/bluetooth/hci_core.c
+index d6976db02c06..b2f8f9c5b610 100644
+--- a/net/bluetooth/hci_core.c
++++ b/net/bluetooth/hci_core.c
+@@ -3782,6 +3782,8 @@ static void hci_acldata_packet(struct hci_dev *hdev, struct sk_buff *skb)
+ 
+ 	hci_dev_lock(hdev);
+ 	conn = hci_conn_hash_lookup_handle(hdev, handle);
++	if (conn && hci_dev_test_flag(hdev, HCI_MGMT))
++		mgmt_device_connected(hdev, conn, NULL, 0);
+ 	hci_dev_unlock(hdev);
+ 
+ 	if (conn) {
+diff --git a/net/bluetooth/hci_event.c b/net/bluetooth/hci_event.c
+index 1c82dcdf6e8f..b87c0f1dab9e 100644
+--- a/net/bluetooth/hci_event.c
++++ b/net/bluetooth/hci_event.c
+@@ -3706,7 +3706,7 @@ static void hci_remote_features_evt(struct hci_dev *hdev, void *data,
+ 		goto unlock;
+ 	}
+ 
+-	if (!ev->status && !test_bit(HCI_CONN_MGMT_CONNECTED, &conn->flags)) {
++	if (!ev->status) {
+ 		struct hci_cp_remote_name_req cp;
+ 		memset(&cp, 0, sizeof(cp));
+ 		bacpy(&cp.bdaddr, &conn->dst);
+diff --git a/net/bluetooth/l2cap_core.c b/net/bluetooth/l2cap_core.c
+index 9988ba382b68..6544c1ed7143 100644
+--- a/net/bluetooth/l2cap_core.c
++++ b/net/bluetooth/l2cap_core.c
+@@ -4066,17 +4066,9 @@ static void l2cap_connect(struct l2cap_conn *conn, struct l2cap_cmd_hdr *cmd,
+ static int l2cap_connect_req(struct l2cap_conn *conn,
+ 			     struct l2cap_cmd_hdr *cmd, u16 cmd_len, u8 *data)
+ {
+-	struct hci_dev *hdev = conn->hcon->hdev;
+-	struct hci_conn *hcon = conn->hcon;
+-
+ 	if (cmd_len < sizeof(struct l2cap_conn_req))
+ 		return -EPROTO;
+ 
+-	hci_dev_lock(hdev);
+-	if (hci_dev_test_flag(hdev, HCI_MGMT))
+-		mgmt_device_connected(hdev, hcon, NULL, 0);
+-	hci_dev_unlock(hdev);
+-
+ 	l2cap_connect(conn, cmd, data, L2CAP_CONN_RSP);
+ 	return 0;
+ }

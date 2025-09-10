@@ -1,0 +1,225 @@
+team_slave_0: entered allmulticast mode
+team_slave_1: entered allmulticast mode
+vlan2: entered allmulticast mode
+======================================================
+WARNING: possible circular locking dependency detected
+6.16.0-rc1-syzkaller-00005-g488ef3560196 #0 Not tainted
+------------------------------------------------------
+syz.1.880/9004 is trying to acquire lock:
+ffff888058130d30 (&dev_instance_lock_key#20){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2756 [inline]
+ffff888058130d30 (&dev_instance_lock_key#20){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ffff888058130d30 (&dev_instance_lock_key#20){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:39 [inline]
+ffff888058130d30 (&dev_instance_lock_key#20){+.+.}-{4:4}, at: dev_set_allmulti+0xa2/0x260 net/core/dev_api.c:312
+
+but task is already holding lock:
+ffff88805a2b4e00 (team->team_lock_key#5){+.+.}-{4:4}, at: team_change_rx_flags+0x39/0x220 drivers/net/team/team_core.c:1781
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (team->team_lock_key#5){+.+.}-{4:4}:
+       __mutex_lock_common kernel/locking/mutex.c:602 [inline]
+       __mutex_lock+0x199/0xb90 kernel/locking/mutex.c:747
+       team_port_change_check drivers/net/team/team_core.c:2966 [inline]
+       team_device_event+0x11d/0x770 drivers/net/team/team_core.c:2992
+       notifier_call_chain+0xbc/0x410 kernel/notifier.c:85
+       call_netdevice_notifiers_info+0xbe/0x140 net/core/dev.c:2230
+       call_netdevice_notifiers_extack net/core/dev.c:2268 [inline]
+       call_netdevice_notifiers net/core/dev.c:2282 [inline]
+       dev_close_many+0x319/0x630 net/core/dev.c:1785
+       vlan_device_event+0x1555/0x2290 net/8021q/vlan.c:449
+       notifier_call_chain+0xbc/0x410 kernel/notifier.c:85
+       call_netdevice_notifiers_info+0xbe/0x140 net/core/dev.c:2230
+       call_netdevice_notifiers_extack net/core/dev.c:2268 [inline]
+       call_netdevice_notifiers net/core/dev.c:2282 [inline]
+       __dev_notify_flags+0x1f7/0x2e0 net/core/dev.c:9499
+       netif_change_flags+0x108/0x160 net/core/dev.c:9526
+       do_setlink.constprop.0+0xb53/0x4380 net/core/rtnetlink.c:3141
+       rtnl_group_changelink net/core/rtnetlink.c:3773 [inline]
+       __rtnl_newlink net/core/rtnetlink.c:3927 [inline]
+       rtnl_newlink+0x18e0/0x2000 net/core/rtnetlink.c:4055
+       rtnetlink_rcv_msg+0x95b/0xe90 net/core/rtnetlink.c:6944
+       netlink_rcv_skb+0x155/0x420 net/netlink/af_netlink.c:2534
+       netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+       netlink_unicast+0x53d/0x7f0 net/netlink/af_netlink.c:1339
+       netlink_sendmsg+0x8d1/0xdd0 net/netlink/af_netlink.c:1883
+       sock_sendmsg_nosec net/socket.c:712 [inline]
+       __sock_sendmsg net/socket.c:727 [inline]
+       ____sys_sendmsg+0xa98/0xc70 net/socket.c:2566
+       ___sys_sendmsg+0x134/0x1d0 net/socket.c:2620
+       __sys_sendmsg+0x16d/0x220 net/socket.c:2652
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&dev_instance_lock_key#20){+.+.}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3168 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3287 [inline]
+       validate_chain kernel/locking/lockdep.c:3911 [inline]
+       __lock_acquire+0x126f/0x1c90 kernel/locking/lockdep.c:5240
+       lock_acquire kernel/locking/lockdep.c:5871 [inline]
+       lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5828
+       __mutex_lock_common kernel/locking/mutex.c:602 [inline]
+       __mutex_lock+0x199/0xb90 kernel/locking/mutex.c:747
+       netdev_lock include/linux/netdevice.h:2756 [inline]
+       netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+       netdev_lock_ops include/net/netdev_lock.h:39 [inline]
+       dev_set_allmulti+0xa2/0x260 net/core/dev_api.c:312
+       vlan_dev_change_rx_flags+0xb6/0x150 net/8021q/vlan_dev.c:472
+       dev_change_rx_flags net/core/dev.c:9241 [inline]
+       netif_set_allmulti+0x206/0x3d0 net/core/dev.c:9339
+       dev_set_allmulti+0xb7/0x260 net/core/dev_api.c:313
+       team_change_rx_flags+0x188/0x220 drivers/net/team/team_core.c:1789
+       dev_change_rx_flags net/core/dev.c:9241 [inline]
+       netif_set_allmulti+0x206/0x3d0 net/core/dev.c:9339
+       __dev_change_flags+0x3d0/0x720 net/core/dev.c:9480
+       netif_change_flags+0x8d/0x160 net/core/dev.c:9521
+       do_setlink.constprop.0+0xb53/0x4380 net/core/rtnetlink.c:3141
+       rtnl_group_changelink net/core/rtnetlink.c:3773 [inline]
+       __rtnl_newlink net/core/rtnetlink.c:3927 [inline]
+       rtnl_newlink+0x18e0/0x2000 net/core/rtnetlink.c:4055
+       rtnetlink_rcv_msg+0x95b/0xe90 net/core/rtnetlink.c:6944
+       netlink_rcv_skb+0x155/0x420 net/netlink/af_netlink.c:2534
+       netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+       netlink_unicast+0x53d/0x7f0 net/netlink/af_netlink.c:1339
+       netlink_sendmsg+0x8d1/0xdd0 net/netlink/af_netlink.c:1883
+       sock_sendmsg_nosec net/socket.c:712 [inline]
+       __sock_sendmsg net/socket.c:727 [inline]
+       ____sys_sendmsg+0xa98/0xc70 net/socket.c:2566
+       ___sys_sendmsg+0x134/0x1d0 net/socket.c:2620
+       __sys_sendmsg+0x16d/0x220 net/socket.c:2652
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(team->team_lock_key#5);
+                               lock(&dev_instance_lock_key#20);
+                               lock(team->team_lock_key#5);
+  lock(&dev_instance_lock_key#20);
+
+ *** DEADLOCK ***
+
+2 locks held by syz.1.880/9004:
+ #0: ffffffff9034cbe8 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_lock net/core/rtnetlink.c:80 [inline]
+ #0: ffffffff9034cbe8 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_nets_lock net/core/rtnetlink.c:341 [inline]
+ #0: ffffffff9034cbe8 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_newlink+0x600/0x2000 net/core/rtnetlink.c:4054
+ #1: ffff88805a2b4e00 (team->team_lock_key#5){+.+.}-{4:4}, at: team_change_rx_flags+0x39/0x220 drivers/net/team/team_core.c:1781
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 9004 Comm: syz.1.880 Not tainted 6.16.0-rc1-syzkaller-00005-g488ef3560196 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_circular_bug+0x275/0x350 kernel/locking/lockdep.c:2046
+ check_noncircular+0x14c/0x170 kernel/locking/lockdep.c:2178
+ check_prev_add kernel/locking/lockdep.c:3168 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3287 [inline]
+ validate_chain kernel/locking/lockdep.c:3911 [inline]
+ __lock_acquire+0x126f/0x1c90 kernel/locking/lockdep.c:5240
+ lock_acquire kernel/locking/lockdep.c:5871 [inline]
+ lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5828
+ __mutex_lock_common kernel/locking/mutex.c:602 [inline]
+ __mutex_lock+0x199/0xb90 kernel/locking/mutex.c:747
+ netdev_lock include/linux/netdevice.h:2756 [inline]
+ netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ netdev_lock_ops include/net/netdev_lock.h:39 [inline]
+ dev_set_allmulti+0xa2/0x260 net/core/dev_api.c:312
+ vlan_dev_change_rx_flags+0xb6/0x150 net/8021q/vlan_dev.c:472
+ dev_change_rx_flags net/core/dev.c:9241 [inline]
+ netif_set_allmulti+0x206/0x3d0 net/core/dev.c:9339
+ dev_set_allmulti+0xb7/0x260 net/core/dev_api.c:313
+ team_change_rx_flags+0x188/0x220 drivers/net/team/team_core.c:1789
+ dev_change_rx_flags net/core/dev.c:9241 [inline]
+ netif_set_allmulti+0x206/0x3d0 net/core/dev.c:9339
+ __dev_change_flags+0x3d0/0x720 net/core/dev.c:9480
+ netif_change_flags+0x8d/0x160 net/core/dev.c:9521
+ do_setlink.constprop.0+0xb53/0x4380 net/core/rtnetlink.c:3141
+ rtnl_group_changelink net/core/rtnetlink.c:3773 [inline]
+ __rtnl_newlink net/core/rtnetlink.c:3927 [inline]
+ rtnl_newlink+0x18e0/0x2000 net/core/rtnetlink.c:4055
+ rtnetlink_rcv_msg+0x95b/0xe90 net/core/rtnetlink.c:6944
+ netlink_rcv_skb+0x155/0x420 net/netlink/af_netlink.c:2534
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x53d/0x7f0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x8d1/0xdd0 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg net/socket.c:727 [inline]
+ ____sys_sendmsg+0xa98/0xc70 net/socket.c:2566
+ ___sys_sendmsg+0x134/0x1d0 net/socket.c:2620
+ __sys_sendmsg+0x16d/0x220 net/socket.c:2652
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f32b0f8e929
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f32b1d85038 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 00007f32b11b5fa0 RCX: 00007f32b0f8e929
+RDX: 0000000000000000 RSI: 0000200000000140 RDI: 0000000000000005
+RBP: 00007f32b1010b39 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007f32b11b5fa0 R15: 00007ffcfc6d21c8
+ </TASK>
+netdevsim netdevsim1 netdevsim0: entered allmulticast mode
+dummy0: entered allmulticast mode
+nlmon0: entered allmulticast mode
+caif0: entered allmulticast mode
+vxcan0: entered allmulticast mode
+vxcan1: entered allmulticast mode
+veth0: entered allmulticast mode
+veth1: entered allmulticast mode
+wg0: entered allmulticast mode
+wg1: entered allmulticast mode
+wg2: entered allmulticast mode
+veth0_to_bridge: entered allmulticast mode
+veth1_to_bridge: entered allmulticast mode
+veth0_to_bond: entered allmulticast mode
+veth1_to_bond: entered allmulticast mode
+veth0_to_team: entered allmulticast mode
+veth1_to_team: entered allmulticast mode
+veth0_to_batadv: entered allmulticast mode
+batadv_slave_0: entered allmulticast mode
+veth1_to_batadv: entered allmulticast mode
+batadv_slave_1: entered allmulticast mode
+xfrm0: entered allmulticast mode
+veth0_to_hsr: entered allmulticast mode
+hsr_slave_0: entered allmulticast mode
+veth1_to_hsr: entered allmulticast mode
+hsr_slave_1: entered allmulticast mode
+hsr0: entered allmulticast mode
+veth1_virt_wifi: entered allmulticast mode
+veth0_virt_wifi: entered allmulticast mode
+net veth1_virt_wifi virt_wifi0: entered allmulticast mode
+veth1_vlan: entered allmulticast mode
+veth0_vlan: entered allmulticast mode
+vlan0: entered allmulticast mode
+vlan1: entered allmulticast mode
+macvlan0: entered allmulticast mode
+macvlan1: entered allmulticast mode
+ipvlan0: entered allmulticast mode
+ipvlan1: entered allmulticast mode
+veth1_macvtap: entered allmulticast mode
+veth0_macvtap: entered allmulticast mode
+macvtap0: entered allmulticast mode
+macsec0: entered allmulticast mode
+geneve0: entered allmulticast mode
+geneve1: entered allmulticast mode
+netdevsim netdevsim1 netdevsim1: entered allmulticast mode
+netdevsim netdevsim1 netdevsim2: entered allmulticast mode
+netdevsim netdevsim1 netdevsim3: entered allmulticast mode
+mac80211_hwsim hwsim6 wlan0: entered allmulticast mode
+mac80211_hwsim hwsim7 wlan1: entered allmulticast mode
+syztnl1: entered allmulticast mode
+vxlan0: entered allmulticast mode
+bond3: entered allmulticast mode
+bridge1: entered allmulticast mode
+macsec1: entered allmulticast mode

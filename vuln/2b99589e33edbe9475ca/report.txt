@@ -1,0 +1,38 @@
+ madvise_vma_behavior mm/madvise.c:1333 [inline]
+ madvise_walk_vmas mm/madvise.c:1539 [inline]
+ madvise_do_behavior+0xd66/0x3750 mm/madvise.c:1731
+ do_madvise+0x174/0x220 mm/madvise.c:1824
+ __do_sys_madvise mm/madvise.c:1833 [inline]
+ __se_sys_madvise mm/madvise.c:1831 [inline]
+ __x64_sys_madvise+0xa7/0xc0 mm/madvise.c:1831
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 38 at ./include/linux/mm.h:1111 folio_large_mapcount+0xd0/0x110 include/linux/mm.h:1111
+Modules linked in:
+CPU: 0 UID: 0 PID: 38 Comm: khugepaged Not tainted 6.15.0-syzkaller-10820-gcd2e103d57e5 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:folio_large_mapcount+0xd0/0x110 include/linux/mm.h:1111
+Code: 04 38 84 c0 75 29 8b 03 ff c0 5b 41 5e 41 5f e9 81 01 e6 fe cc e8 50 fb 95 ff 48 89 df 48 c7 c6 40 17 98 8b e8 71 9e dd ff 90 <0f> 0b 90 eb b6 89 d9 80 e1 07 80 c1 03 38 c1 7c cb 48 89 df e8 b7
+RSP: 0018:ffffc90000ae7740 EFLAGS: 00010246
+RAX: 74c8365846fc7a00 RBX: ffffea000136c000 RCX: 74c8365846fc7a00
+RDX: 0000000000000001 RSI: ffffffff8db5d737 RDI: ffff888140aada00
+RBP: ffffc90000ae7ab0 R08: ffffc90000ae70e7 R09: 1ffff9200015ce1c
+R10: dffffc0000000000 R11: fffff5200015ce1d R12: 1ffffd400026d800
+R13: dffffc0000000000 R14: 0000000000000000 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff888125c5f000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fe0423e2f98 CR3: 000000002ee5e000 CR4: 0000000000350ef0
+Call Trace:
+ <TASK>
+ folio_mapcount include/linux/mm.h:1145 [inline]
+ is_refcount_suitable+0x350/0x430 mm/khugepaged.c:553
+ hpage_collapse_scan_file+0x6cf/0x4340 mm/khugepaged.c:2321
+ khugepaged_scan_mm_slot mm/khugepaged.c:2437 [inline]
+ khugepaged_do_scan mm/khugepaged.c:2538 [inline]
+ khugepaged+0xa2a/0x1690 mm/khugepaged.c:2594
+ kthread+0x711/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>

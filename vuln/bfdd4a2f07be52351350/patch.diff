@@ -1,0 +1,26 @@
+diff --git a/security/smack/smackfs.c b/security/smack/smackfs.c
+index e3e05c04dbd1..c21b656b3263 100644
+--- a/security/smack/smackfs.c
++++ b/security/smack/smackfs.c
+@@ -878,11 +878,21 @@ static ssize_t smk_set_cipso(struct file *file, const char __user *buf,
+ 	else
+ 		rule += strlen(skp->smk_known) + 1;
+ 
++	if (rule > data + count) {
++		rc = -EOVERFLOW;
++		goto out;
++	}
++
+ 	ret = sscanf(rule, "%d", &maplevel);
+ 	if (ret != 1 || maplevel > SMACK_CIPSO_MAXLEVEL)
+ 		goto out;
+ 
+ 	rule += SMK_DIGITLEN;
++	if (rule > data + count) {
++		rc = -EOVERFLOW;
++		goto out;
++	}
++
+ 	ret = sscanf(rule, "%d", &catlen);
+ 	if (ret != 1 || catlen > SMACK_CIPSO_MAXCATNUM)
+ 		goto out;

@@ -1,0 +1,121 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in mgmt_remove_adv_monitor_complete+0xe5/0x540 net/bluetooth/mgmt.c:5407
+Read of size 8 at addr ffff88804c336818 by task kworker/u5:5/5358
+
+CPU: 0 UID: 0 PID: 5358 Comm: kworker/u5:5 Not tainted 6.15.0-syzkaller-12426-ge271ed52b344 #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: hci0 hci_cmd_sync_work
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0xd2/0x2b0 mm/kasan/report.c:521
+ kasan_report+0x118/0x150 mm/kasan/report.c:634
+ mgmt_remove_adv_monitor_complete+0xe5/0x540 net/bluetooth/mgmt.c:5407
+ hci_cmd_sync_work+0x261/0x3a0 net/bluetooth/hci_sync.c:334
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xae1/0x17b0 kernel/workqueue.c:3321
+ worker_thread+0x8a0/0xda0 kernel/workqueue.c:3402
+ kthread+0x70e/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3f9/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+
+Allocated by task 9602:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3e/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0x93/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __kmalloc_cache_noprof+0x230/0x3d0 mm/slub.c:4359
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ mgmt_pending_new+0x65/0x240 net/bluetooth/mgmt_util.c:252
+ mgmt_pending_add+0x34/0x120 net/bluetooth/mgmt_util.c:279
+ remove_adv_monitor+0x103/0x1b0 net/bluetooth/mgmt.c:5455
+ hci_mgmt_cmd+0x9c9/0xef0 net/bluetooth/hci_sock.c:1719
+ hci_sock_sendmsg+0x6ca/0xef0 net/bluetooth/hci_sock.c:1839
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg+0x219/0x270 net/socket.c:727
+ sock_write_iter+0x258/0x330 net/socket.c:1131
+ new_sync_write fs/read_write.c:593 [inline]
+ vfs_write+0x54b/0xa90 fs/read_write.c:686
+ ksys_write+0x145/0x250 fs/read_write.c:738
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 9609:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3e/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x46/0x50 mm/kasan/generic.c:576
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x62/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2381 [inline]
+ slab_free mm/slub.c:4643 [inline]
+ kfree+0x18e/0x440 mm/slub.c:4842
+ mgmt_pending_foreach+0xc9/0x120 net/bluetooth/mgmt_util.c:242
+ mgmt_index_removed+0x10d/0x2f0 net/bluetooth/mgmt.c:9367
+ hci_sock_bind+0xbe9/0x1000 net/bluetooth/hci_sock.c:1314
+ __sys_bind_socket net/socket.c:1810 [inline]
+ __sys_bind+0x2c6/0x3e0 net/socket.c:1841
+ __do_sys_bind net/socket.c:1846 [inline]
+ __se_sys_bind net/socket.c:1844 [inline]
+ __x64_sys_bind+0x7a/0x90 net/socket.c:1844
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88804c336800
+ which belongs to the cache kmalloc-96 of size 96
+The buggy address is located 24 bytes inside of
+ freed 96-byte region [ffff88804c336800, ffff88804c336860)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x4c336
+anon flags: 0x4fff00000000000(node=1|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 04fff00000000000 ffff88801a441280 0000000000000000 dead000000000001
+raw: 0000000000000000 0000000080200020 00000000f5000000 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x52820(GFP_ATOMIC|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 4756, tgid 4756 (kworker/0:3), ts 139942970900, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x240/0x2a0 mm/page_alloc.c:1704
+ prep_new_page mm/page_alloc.c:1712 [inline]
+ get_page_from_freelist+0x21e4/0x22c0 mm/page_alloc.c:3669
+ __alloc_frozen_pages_noprof+0x181/0x370 mm/page_alloc.c:4959
+ alloc_pages_mpol+0x232/0x4a0 mm/mempolicy.c:2419
+ alloc_slab_page mm/slub.c:2451 [inline]
+ allocate_slab+0x8a/0x3b0 mm/slub.c:2619
+ new_slab mm/slub.c:2673 [inline]
+ ___slab_alloc+0xbfc/0x1480 mm/slub.c:3859
+ __slab_alloc mm/slub.c:3949 [inline]
+ __slab_alloc_node mm/slub.c:4024 [inline]
+ slab_alloc_node mm/slub.c:4185 [inline]
+ __kmalloc_cache_noprof+0x296/0x3d0 mm/slub.c:4354
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ dst_cow_metrics_generic+0x56/0x1c0 net/core/dst.c:193
+ dst_metrics_write_ptr include/net/dst.h:133 [inline]
+ dst_metric_set include/net/dst.h:194 [inline]
+ icmp6_dst_alloc+0x264/0x420 net/ipv6/route.c:3337
+ mld_sendpack+0x678/0xd80 net/ipv6/mcast.c:1857
+ mld_send_cr net/ipv6/mcast.c:2169 [inline]
+ mld_ifc_work+0x835/0xde0 net/ipv6/mcast.c:2702
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xae1/0x17b0 kernel/workqueue.c:3321
+ worker_thread+0x8a0/0xda0 kernel/workqueue.c:3402
+ kthread+0x70e/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3f9/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff88804c336700: fa fb fb fb fb fb fb fb fb fb fb fb fc fc fc fc
+ ffff88804c336780: 00 00 00 00 00 00 00 00 00 fc fc fc fc fc fc fc
+>ffff88804c336800: fa fb fb fb fb fb fb fb fb fb fb fb fc fc fc fc
+                            ^
+ ffff88804c336880: 00 00 00 00 00 00 00 00 00 00 fc fc fc fc fc fc
+ ffff88804c336900: 00 00 00 00 00 00 00 00 00 00 fc fc fc fc fc fc
+==================================================================

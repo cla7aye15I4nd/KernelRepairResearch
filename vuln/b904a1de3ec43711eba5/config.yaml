@@ -1,0 +1,43 @@
+id: b904a1de3ec43711eba5
+bug_link: https://syzkaller.appspot.com/bug?extid=b904a1de3ec43711eba5
+title: 'WARNING: refcount bug in sys_memfd_secret'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b20078fd69a3da08d85c79b95101cf25c4afcc97
+fix_commit: 87066fdd2e30fe9dd531125d95257c118a74617e
+datetime: '2021-10-24T09:48:33-10:00'
+fix_commit_message: 'Revert "mm/secretmem: use refcount_t instead of atomic_t"
+
+
+  This reverts commit 110860541f443f950c1274f217a1a3e298670a33.
+
+
+  Converting the "secretmem_users" counter to a refcount is incorrect,
+
+  because a refcount is special in zero and can''t just be incremented (but
+
+  a count of users is not, and "no users" is actually perfectly valid and
+
+  not a sign of a free''d resource).
+
+
+  Reported-by: syzbot+75639e6a0331cd61d3e2@syzkaller.appspotmail.com
+
+  Cc: Jordy Zomer <jordy@pwning.systems>
+
+  Cc: Kees Cook <keescook@chromium.org>,
+
+  Cc: Jordy Zomer <jordy@jordyzomer.github.io>
+
+  Cc: James Bottomley <James.Bottomley@HansenPartnership.com>
+
+  Cc: Mike Rapoport <rppt@kernel.org>
+
+  Cc: Andrew Morton <akpm@linux-foundation.org>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 4
+covered_count: 3

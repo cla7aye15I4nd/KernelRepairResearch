@@ -1,0 +1,38 @@
+id: e3b35fe7918ff0ee474e
+bug_link: https://syzkaller.appspot.com/bug?extid=e3b35fe7918ff0ee474e
+title: 'KCSAN: data-race in sctp_assoc_migrate / sctp_hash_obj'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b6631c6031c746ed004c4221ec0616d7a520f441
+fix_commit: 312434617cb16be5166316cf9d08ba760b1042a1
+datetime: '2019-11-23T18:26:14-08:00'
+fix_commit_message: "sctp: cache netns in sctp_ep_common\n\nThis patch is to fix a\
+  \ data-race reported by syzbot:\n\n  BUG: KCSAN: data-race in sctp_assoc_migrate\
+  \ / sctp_hash_obj\n\n  write to 0xffff8880b67c0020 of 8 bytes by task 18908 on cpu\
+  \ 1:\n    sctp_assoc_migrate+0x1a6/0x290 net/sctp/associola.c:1091\n    sctp_sock_migrate+0x8aa/0x9b0\
+  \ net/sctp/socket.c:9465\n    sctp_accept+0x3c8/0x470 net/sctp/socket.c:4916\n \
+  \   inet_accept+0x7f/0x360 net/ipv4/af_inet.c:734\n    __sys_accept4+0x224/0x430\
+  \ net/socket.c:1754\n    __do_sys_accept net/socket.c:1795 [inline]\n    __se_sys_accept\
+  \ net/socket.c:1792 [inline]\n    __x64_sys_accept+0x4e/0x60 net/socket.c:1792\n\
+  \    do_syscall_64+0xcc/0x370 arch/x86/entry/common.c:290\n    entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \n  read to 0xffff8880b67c0020 of 8 bytes by task 12003 on cpu 0:\n    sctp_hash_obj+0x4f/0x2d0\
+  \ net/sctp/input.c:894\n    rht_key_get_hash include/linux/rhashtable.h:133 [inline]\n\
+  \    rht_key_hashfn include/linux/rhashtable.h:159 [inline]\n    rht_head_hashfn\
+  \ include/linux/rhashtable.h:174 [inline]\n    head_hashfn lib/rhashtable.c:41 [inline]\n\
+  \    rhashtable_rehash_one lib/rhashtable.c:245 [inline]\n    rhashtable_rehash_chain\
+  \ lib/rhashtable.c:276 [inline]\n    rhashtable_rehash_table lib/rhashtable.c:316\
+  \ [inline]\n    rht_deferred_worker+0x468/0xab0 lib/rhashtable.c:420\n    process_one_work+0x3d4/0x890\
+  \ kernel/workqueue.c:2269\n    worker_thread+0xa0/0x800 kernel/workqueue.c:2415\n\
+  \    kthread+0x1d4/0x200 drivers/block/aoe/aoecmd.c:1253\n    ret_from_fork+0x1f/0x30\
+  \ arch/x86/entry/entry_64.S:352\n\nIt was caused by rhashtable access asoc->base.sk\
+  \ when sctp_assoc_migrate\nis changing its value. However, what rhashtable wants\
+  \ is netns from asoc\nbase.sk, and for an asoc, its netns won't change once set.\
+  \ So we can\nsimply fix it by caching netns since created.\n\nFixes: d6c0256a60e6\
+  \ (\"sctp: add the rhashtable apis for sctp global transport hashtable\")\nReported-by:\
+  \ syzbot+e3b35fe7918ff0ee474e@syzkaller.appspotmail.com\nSigned-off-by: Xin Long\
+  \ <lucien.xin@gmail.com>\nAcked-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>\n\
+  Signed-off-by: Jakub Kicinski <jakub.kicinski@netronome.com>\n"
+submodule:
+- include/net/sctp
+- net/sctp
+hunk_count: 5
+covered_count: 3

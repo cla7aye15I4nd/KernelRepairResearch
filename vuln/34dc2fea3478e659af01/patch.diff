@@ -1,0 +1,74 @@
+diff --git a/drivers/infiniband/sw/rdmavt/vt.c b/drivers/infiniband/sw/rdmavt/vt.c
+index 52218684ad4a..670a9623b46e 100644
+--- a/drivers/infiniband/sw/rdmavt/vt.c
++++ b/drivers/infiniband/sw/rdmavt/vt.c
+@@ -524,6 +524,7 @@ static noinline int check_support(struct rvt_dev_info *rdi, int verb)
+ int rvt_register_device(struct rvt_dev_info *rdi)
+ {
+ 	int ret = 0, i;
++	u64 dma_mask;
+ 
+ 	if (!rdi)
+ 		return -EINVAL;
+@@ -580,8 +581,10 @@ int rvt_register_device(struct rvt_dev_info *rdi)
+ 
+ 	/* DMA Operations */
+ 	rdi->ibdev.dev.dma_parms = rdi->ibdev.dev.parent->dma_parms;
+-	dma_set_coherent_mask(&rdi->ibdev.dev,
+-			      rdi->ibdev.dev.parent->coherent_dma_mask);
++	dma_mask = IS_ENABLED(CONFIG_64BIT) ? DMA_BIT_MASK(64) : DMA_BIT_MASK(32);
++	ret = dma_coerce_mask_and_coherent(&rdi->ibdev.dev, dma_mask);
++	if (ret)
++		goto bail_wss;
+ 
+ 	/* Protection Domain */
+ 	spin_lock_init(&rdi->n_pds_lock);
+diff --git a/drivers/infiniband/sw/rxe/rxe_verbs.c b/drivers/infiniband/sw/rxe/rxe_verbs.c
+index 1fc022362fbe..f9c832e82552 100644
+--- a/drivers/infiniband/sw/rxe/rxe_verbs.c
++++ b/drivers/infiniband/sw/rxe/rxe_verbs.c
+@@ -1118,6 +1118,7 @@ int rxe_register_device(struct rxe_dev *rxe, const char *ibdev_name)
+ 	int err;
+ 	struct ib_device *dev = &rxe->ib_dev;
+ 	struct crypto_shash *tfm;
++	u64 dma_mask;
+ 
+ 	strlcpy(dev->node_desc, "rxe", sizeof(dev->node_desc));
+ 
+@@ -1130,7 +1131,10 @@ int rxe_register_device(struct rxe_dev *rxe, const char *ibdev_name)
+ 			    rxe->ndev->dev_addr);
+ 	dev->dev.dma_parms = &rxe->dma_parms;
+ 	dma_set_max_seg_size(&dev->dev, UINT_MAX);
+-	dma_set_coherent_mask(&dev->dev, dma_get_required_mask(&dev->dev));
++	dma_mask = IS_ENABLED(CONFIG_64BIT) ? DMA_BIT_MASK(64) : DMA_BIT_MASK(32);
++	err = dma_coerce_mask_and_coherent(&dev->dev, dma_mask);
++	if (err)
++		return err;
+ 
+ 	dev->uverbs_cmd_mask = BIT_ULL(IB_USER_VERBS_CMD_GET_CONTEXT)
+ 	    | BIT_ULL(IB_USER_VERBS_CMD_CREATE_COMP_CHANNEL)
+diff --git a/drivers/infiniband/sw/siw/siw_main.c b/drivers/infiniband/sw/siw/siw_main.c
+index ca8bc7296867..181e06c1c43d 100644
+--- a/drivers/infiniband/sw/siw/siw_main.c
++++ b/drivers/infiniband/sw/siw/siw_main.c
+@@ -306,6 +306,7 @@ static struct siw_device *siw_device_create(struct net_device *netdev)
+ 	struct siw_device *sdev = NULL;
+ 	struct ib_device *base_dev;
+ 	struct device *parent = netdev->dev.parent;
++	u64 dma_mask;
+ 	int rv;
+ 
+ 	if (!parent) {
+@@ -384,8 +385,10 @@ static struct siw_device *siw_device_create(struct net_device *netdev)
+ 	base_dev->dev.parent = parent;
+ 	base_dev->dev.dma_parms = &sdev->dma_parms;
+ 	dma_set_max_seg_size(&base_dev->dev, UINT_MAX);
+-	dma_set_coherent_mask(&base_dev->dev,
+-			      dma_get_required_mask(&base_dev->dev));
++	dma_mask = IS_ENABLED(CONFIG_64BIT) ? DMA_BIT_MASK(64) : DMA_BIT_MASK(32);
++	if (dma_coerce_mask_and_coherent(&base_dev->dev, dma_mask))
++		goto error;
++
+ 	base_dev->num_comp_vectors = num_possible_cpus();
+ 
+ 	xa_init_flags(&sdev->qp_xa, XA_FLAGS_ALLOC1);

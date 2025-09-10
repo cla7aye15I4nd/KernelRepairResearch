@@ -1,0 +1,23 @@
+id: 6c5d567447bfa30f78e2
+bug_link: https://syzkaller.appspot.com/bug?extid=6c5d567447bfa30f78e2
+title: 'BUG: unable to handle kernel paging request in slhc_free'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ce944935eef2a56f7efe5c765794e77380651b58
+fix_commit: baf76f0c58aec435a3a864075b8f6d8ee5d1f17e
+datetime: '2019-04-26T18:19:09-07:00'
+fix_commit_message: "slip: make slhc_free() silently accept an error pointer\n\nThis\
+  \ way, slhc_free() accepts what slhc_init() returns, whether that is\nan error or\
+  \ not.\n\nIn particular, the pattern in sl_alloc_bufs() is\n\n        slcomp = slhc_init(16,\
+  \ 16);\n        ...\n        slhc_free(slcomp);\n\nfor the error handling path,\
+  \ and rather than complicate that code, just\nmake it ok to always free what was\
+  \ returned by the init function.\n\nThat's what the code used to do before commit\
+  \ 4ab42d78e37a (\"ppp, slip:\nValidate VJ compression slot parameters completely\"\
+  ) when slhc_init()\njust returned NULL for the error case, with no actual indication\
+  \ of the\ndetails of the error.\n\nReported-by: syzbot+45474c076a4927533d2e@syzkaller.appspotmail.com\n\
+  Fixes: 4ab42d78e37a (\"ppp, slip: Validate VJ compression slot parameters completely\"\
+  )\nAcked-by: Ben Hutchings <ben@decadent.org.uk>\nCc: David Miller <davem@davemloft.net>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- drivers/net/slip
+hunk_count: 1
+covered_count: 1

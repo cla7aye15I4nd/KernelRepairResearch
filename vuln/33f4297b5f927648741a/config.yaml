@@ -1,0 +1,53 @@
+id: 33f4297b5f927648741a
+bug_link: https://syzkaller.appspot.com/bug?extid=33f4297b5f927648741a
+title: 'UBSAN: array-index-out-of-bounds in check_stack_range_initialized'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a8d89feba7e54e691ca7c4efc2a6264fa83f3687
+fix_commit: ecc6a2101840177e57c925c102d2d29f260d37c8
+datetime: '2024-03-27T09:56:36-07:00'
+fix_commit_message: 'bpf: Protect against int overflow for stack access size
+
+
+  This patch re-introduces protection against the size of access to stack
+
+  memory being negative; the access size can appear negative as a result
+
+  of overflowing its signed int representation. This should not actually
+
+  happen, as there are other protections along the way, but we should
+
+  protect against it anyway. One code path was missing such protections
+
+  (fixed in the previous patch in the series), causing out-of-bounds array
+
+  accesses in check_stack_range_initialized(). This patch causes the
+
+  verification of a program with such a non-sensical access size to fail.
+
+
+  This check used to exist in a more indirect way, but was inadvertendly
+
+  removed in a833a17aeac7.
+
+
+  Fixes: a833a17aeac7 ("bpf: Fix verification of indirect var-off stack access")
+
+  Reported-by: syzbot+33f4297b5f927648741a@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+aafd0513053a1cbf52ef@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/bpf/CAADnVQLORV5PT0iTAhRER+iLBTkByCYNBYyvBSgjN1T31K+gOw@mail.gmail.com/
+
+  Acked-by: Andrii Nakryiko <andrii@kernel.org>
+
+  Signed-off-by: Andrei Matei <andreimatei1@gmail.com>
+
+  Link: https://lore.kernel.org/r/20240327024245.318299-3-andreimatei1@gmail.com
+
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>
+
+  '
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,46 @@
+UDPLite6: UDP-Lite is deprecated and scheduled to be removed in 2025, please contact the netdev mailing list
+=============================
+WARNING: suspicious RCU usage
+6.13.0-rc2-syzkaller-00424-gbc6a5efe3dcd #0 Not tainted
+-----------------------------
+net/ethtool/common.c:873 suspicious rcu_dereference_protected() usage!
+
+other info that might help us debug this:
+
+
+rcu_scheduler_active = 2, debug_locks = 1
+1 lock held by syz-executor201/5836:
+ #0: ffff8880322b8258 (sk_lock-AF_INET6){+.+.}-{0:0}, at: lock_sock include/net/sock.h:1617 [inline]
+ #0: ffff8880322b8258 (sk_lock-AF_INET6){+.+.}-{0:0}, at: sockopt_lock_sock net/core/sock.c:1126 [inline]
+ #0: ffff8880322b8258 (sk_lock-AF_INET6){+.+.}-{0:0}, at: sk_setsockopt+0xf0f/0x33b0 net/core/sock.c:1285
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 5836 Comm: syz-executor201 Not tainted 6.13.0-rc2-syzkaller-00424-gbc6a5efe3dcd #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/25/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ lockdep_rcu_suspicious+0x226/0x340 kernel/locking/lockdep.c:6845
+ __ethtool_get_ts_info+0x97/0x410 net/ethtool/common.c:873
+ ethtool_get_phc_vclocks+0xa1/0x160 net/ethtool/common.c:922
+ sock_timestamping_bind_phc net/core/sock.c:873 [inline]
+ sock_set_timestamping+0x3e2/0xab0 net/core/sock.c:927
+ sk_setsockopt+0x2150/0x33b0 net/core/sock.c:1418
+ udp_lib_setsockopt+0x11d/0xc10 net/ipv4/udp.c:2862
+ udpv6_setsockopt+0x73/0xb0 net/ipv6/udp.c:1796
+ do_sock_setsockopt+0x3af/0x720 net/socket.c:2313
+ __sys_setsockopt net/socket.c:2338 [inline]
+ __do_sys_setsockopt net/socket.c:2344 [inline]
+ __se_sys_setsockopt net/socket.c:2341 [inline]
+ __x64_sys_setsockopt+0x1ee/0x280 net/socket.c:2341
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa040a35469
+Code: 48 83 c4 28 c3 e8 c7 1b 00 00 0f 1f 80 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc3978e4f8 EFLAGS: 00000246 ORIG_RAX: 0000000000000036
+RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007fa040a35469
+RDX: 0000000000000041 RSI: 0000000000000001 RDI: 0000000000000005
+RBP: 00007fa040aab300 R08: 0000000000000004 R09: 00007ffc3978e530
+R10: 0000000020000040 R11: 0000000000000246 R12: 

@@ -1,0 +1,42 @@
+diff --git a/drivers/net/wireless/mac80211_hwsim.c b/drivers/net/wireless/mac80211_hwsim.c
+index ccd573e53c92..f6d4a50f1bdb 100644
+--- a/drivers/net/wireless/mac80211_hwsim.c
++++ b/drivers/net/wireless/mac80211_hwsim.c
+@@ -3121,6 +3121,11 @@ static int hwsim_new_radio_nl(struct sk_buff *msg, struct genl_info *info)
+ 	if (info->attrs[HWSIM_ATTR_CHANNELS])
+ 		param.channels = nla_get_u32(info->attrs[HWSIM_ATTR_CHANNELS]);
+ 
++	if (param.channels > CFG80211_MAX_NUM_DIFFERENT_CHANNELS) {
++		GENL_SET_ERR_MSG(info, "too many channels specified");
++		return -EINVAL;
++	}
++
+ 	if (info->attrs[HWSIM_ATTR_NO_VIF])
+ 		param.no_vif = true;
+ 
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index cb4d92b79cd9..fb94a8bd8ab5 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -815,6 +815,8 @@ struct cfg80211_csa_settings {
+ 	u8 count;
+ };
+ 
++#define CFG80211_MAX_NUM_DIFFERENT_CHANNELS 10
++
+ /**
+  * struct iface_combination_params - input parameters for interface combinations
+  *
+diff --git a/net/wireless/core.h b/net/wireless/core.h
+index d2f7e8b8a097..eaff636169c2 100644
+--- a/net/wireless/core.h
++++ b/net/wireless/core.h
+@@ -507,8 +507,6 @@ void cfg80211_stop_p2p_device(struct cfg80211_registered_device *rdev,
+ void cfg80211_stop_nan(struct cfg80211_registered_device *rdev,
+ 		       struct wireless_dev *wdev);
+ 
+-#define CFG80211_MAX_NUM_DIFFERENT_CHANNELS 10
+-
+ #ifdef CONFIG_CFG80211_DEVELOPER_WARNINGS
+ #define CFG80211_DEV_WARN_ON(cond)	WARN_ON(cond)
+ #else

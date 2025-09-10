@@ -1,0 +1,16 @@
+diff --git a/fs/io_uring.c b/fs/io_uring.c
+index a4a944da95a0..088a9d3c420a 100644
+--- a/fs/io_uring.c
++++ b/fs/io_uring.c
+@@ -8603,9 +8603,9 @@ static bool io_kill_timeouts(struct io_ring_ctx *ctx, struct task_struct *tsk,
+ 			canceled++;
+ 		}
+ 	}
+-	io_commit_cqring(ctx);
++	if (canceled != 0)
++		io_commit_cqring(ctx);
+ 	spin_unlock_irq(&ctx->completion_lock);
+-
+ 	if (canceled != 0)
+ 		io_cqring_ev_posted(ctx);
+ 	return canceled != 0;

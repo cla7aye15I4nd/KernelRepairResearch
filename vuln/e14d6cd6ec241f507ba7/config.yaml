@@ -1,0 +1,46 @@
+id: e14d6cd6ec241f507ba7
+bug_link: https://syzkaller.appspot.com/bug?extid=e14d6cd6ec241f507ba7
+title: WARNING in __folio_mark_dirty (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ff22e5da42c0adfacfa85f315b90af3706d955bd
+fix_commit: ae9f3bd8259a0a8f67be2420e66bb05fbb95af48
+datetime: '2025-04-21T18:20:36+02:00'
+fix_commit_message: 'gfs2: replace sd_aspace with sd_inode
+
+
+  Currently, sdp->sd_aspace and the per-inode metadata address spaces use
+
+  sb->s_bdev->bd_mapping->host as their ->host; folios in those address
+
+  spaces will thus appear to be on bdev rather than on gfs2 filesystems.
+
+  This is a problem because gfs2 doesn''t support cgroup writeback
+
+  (SB_I_CGROUPWB), but bdev does.
+
+
+  Fix that by using a "dummy" gfs2 inode as ->host in those address
+
+  spaces.  When coming from a folio, folio->mapping->host->i_sb will then
+
+  be a gfs2 super block and the SB_I_CGROUPWB flag will not be set in
+
+  sb->s_iflags.
+
+
+  Based on a previous version from Bob Peterson from several years ago.
+
+  Thanks to Tetsuo Handa, Jan Kara, and Rafael Aquini for helping figure
+
+  this out.
+
+
+  Fixes: aaa2cacf8184 ("writeback: add lockdep annotation to inode_to_wb()")
+
+  Signed-off-by: Andreas Gruenbacher <agruenba@redhat.com>
+
+  '
+submodule:
+- fs/gfs2
+hunk_count: 16
+covered_count: 1

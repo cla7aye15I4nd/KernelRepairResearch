@@ -1,0 +1,30 @@
+diff --git a/drivers/media/usb/au0828/au0828-core.c b/drivers/media/usb/au0828/au0828-core.c
+index 925a80437822..e306d5d5bebb 100644
+--- a/drivers/media/usb/au0828/au0828-core.c
++++ b/drivers/media/usb/au0828/au0828-core.c
+@@ -729,6 +729,12 @@ static int au0828_usb_probe(struct usb_interface *interface,
+ 	/* Setup */
+ 	au0828_card_setup(dev);
+ 
++	/*
++	 * Store the pointer to the au0828_dev so it can be accessed in
++	 * au0828_usb_disconnect
++	 */
++	usb_set_intfdata(interface, dev);
++
+ 	/* Analog TV */
+ 	retval = au0828_analog_register(dev, interface);
+ 	if (retval) {
+@@ -747,12 +753,6 @@ static int au0828_usb_probe(struct usb_interface *interface,
+ 	/* Remote controller */
+ 	au0828_rc_register(dev);
+ 
+-	/*
+-	 * Store the pointer to the au0828_dev so it can be accessed in
+-	 * au0828_usb_disconnect
+-	 */
+-	usb_set_intfdata(interface, dev);
+-
+ 	pr_info("Registered device AU0828 [%s]\n",
+ 		dev->board.name == NULL ? "Unset" : dev->board.name);
+ 

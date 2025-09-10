@@ -1,0 +1,106 @@
+==================================================================
+BUG: KASAN: slab-out-of-bounds in read_descriptors+0x27e/0x290 drivers/usb/core/sysfs.c:883
+Read of size 8 at addr ffff888022cc59e0 by task udevd/5030
+
+CPU: 1 PID: 5030 Comm: udevd Not tainted 6.5.0-rc1-syzkaller-00276-g20edcec23f92 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/03/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ read_descriptors+0x27e/0x290 drivers/usb/core/sysfs.c:883
+ sysfs_kf_bin_read+0x1a0/0x270 fs/sysfs/file.c:97
+ kernfs_file_read_iter fs/kernfs/file.c:251 [inline]
+ kernfs_fop_read_iter+0x37c/0x680 fs/kernfs/file.c:280
+ call_read_iter include/linux/fs.h:1865 [inline]
+ new_sync_read fs/read_write.c:389 [inline]
+ vfs_read+0x4e0/0x930 fs/read_write.c:470
+ ksys_read+0x12f/0x250 fs/read_write.c:613
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0570b99b6a
+Code: 00 3d 00 00 41 00 75 0d 50 48 8d 3d 2d 08 0a 00 e8 ea 7d 01 00 31 c0 e9 07 ff ff ff 64 8b 04 25 18 00 00 00 85 c0 75 1b 0f 05 <48> 3d 00 f0 ff ff 76 6c 48 8b 15 8f a2 0d 00 f7 d8 64 89 02 48 83
+RSP: 002b:00007ffff72ef498 EFLAGS: 00000246 ORIG_RAX: 0000000000000000
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f0570b99b6a
+RDX: 0000000000010011 RSI: 00007ffff72ef4c7 RDI: 0000000000000008
+RBP: 0000000000000008 R08: 0000000000000003 R09: b4d8a3e856476f50
+R10: 0000000000000000 R11: 0000000000000246 R12: 000055f8f5d42550
+R13: 00007ffff72ffba8 R14: 00007ffff73001f8 R15: 00007ffff72ef4c7
+ </TASK>
+
+Allocated by task 9:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0xa2/0xb0 mm/kasan/common.c:383
+ kasan_kmalloc include/linux/kasan.h:196 [inline]
+ __do_kmalloc_node mm/slab_common.c:985 [inline]
+ __kmalloc+0x5d/0x100 mm/slab_common.c:998
+ kmalloc include/linux/slab.h:586 [inline]
+ kzalloc include/linux/slab.h:703 [inline]
+ usb_get_configuration+0x191/0x5640 drivers/usb/core/config.c:887
+ usb_enumerate_device drivers/usb/core/hub.c:2422 [inline]
+ usb_new_device+0x1115/0x1960 drivers/usb/core/hub.c:2560
+ hub_port_connect drivers/usb/core/hub.c:5422 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5566 [inline]
+ port_event drivers/usb/core/hub.c:5726 [inline]
+ hub_event+0x307f/0x5230 drivers/usb/core/hub.c:5808
+ process_one_work+0xaa2/0x16f0 kernel/workqueue.c:2597
+ worker_thread+0x687/0x1110 kernel/workqueue.c:2748
+ kthread+0x33a/0x430 kernel/kthread.c:389
+ ret_from_fork+0x2c/0x70 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:296
+
+The buggy address belongs to the object at ffff888022cc59d8
+ which belongs to the cache kmalloc-8 of size 8
+The buggy address is located 0 bytes to the right of
+ allocated 8-byte region [ffff888022cc59d8, ffff888022cc59e0)
+
+The buggy address belongs to the physical page:
+page:ffffea00008b3140 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x22cc5
+anon flags: 0xfff00000000200(slab|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000200 ffff888012841280 0000000000000000 dead000000000001
+raw: 0000000000000000 0000000000660066 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x12c00(GFP_NOIO|__GFP_NOWARN|__GFP_NORETRY), pid 1, tgid 1 (swapper/0), ts 6838668391, free_ts 0
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_page_interleave+0x1e/0x250 mm/mempolicy.c:2112
+ alloc_pages+0x22a/0x270 mm/mempolicy.c:2274
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ __kmem_cache_alloc_node+0x137/0x350 mm/slub.c:3509
+ kmalloc_trace+0x25/0xe0 mm/slab_common.c:1076
+ kmalloc include/linux/slab.h:582 [inline]
+ usb_control_msg+0xbd/0x4a0 drivers/usb/core/message.c:143
+ set_port_feature drivers/usb/core/hub.c:443 [inline]
+ hub_suspend+0x8a0/0xa80 drivers/usb/core/hub.c:3906
+ usb_suspend_interface drivers/usb/core/driver.c:1308 [inline]
+ usb_suspend_both+0x295/0x9b0 drivers/usb/core/driver.c:1413
+ usb_runtime_suspend+0x49/0x170 drivers/usb/core/driver.c:1952
+ __rpm_callback+0xc5/0x4c0 drivers/base/power/runtime.c:392
+ rpm_callback+0x1da/0x220 drivers/base/power/runtime.c:446
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff888022cc5880: fc fc fc 06 fc fc fc fc 06 fc fc fc fc 06 fc fc
+ ffff888022cc5900: fc fc fa fc fc fc fc 00 fc fc fc fc 00 fc fc fc
+>ffff888022cc5980: fc 00 fc fc fc fc 00 fc fc fc fc 00 fc fc fc fc
+                                                       ^
+ ffff888022cc5a00: 00 fc fc fc fc fa fc fc fc fc fa fc fc fc fc 04
+ ffff888022cc5a80: fc fc fc fc 04 fc fc fc fc 06 fc fc fc fc 04 fc
+==================================================================

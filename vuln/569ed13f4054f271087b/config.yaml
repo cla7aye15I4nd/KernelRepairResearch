@@ -1,0 +1,53 @@
+id: 569ed13f4054f271087b
+bug_link: https://syzkaller.appspot.com/bug?extid=569ed13f4054f271087b
+title: general protection fault in dequeue_hugetlb_folio_nodemask (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b79d715c43354010775862cfcd2d01cb04d0de47
+fix_commit: 09a5336228420af4803c7bbdf91f8f24fc0942bf
+datetime: '2024-07-03T19:30:10-07:00'
+fix_commit_message: 'mm/hugetlb: guard dequeue_hugetlb_folio_nodemask against NUMA_NO_NODE
+  uses
+
+
+  dequeue_hugetlb_folio_nodemask() expects a preferred node where to get the
+
+  hugetlb page from.  It does not expect, though, users to pass
+
+  NUMA_NO_NODE, otherwise we will get trash when trying to get the zonelist
+
+  from that node.  All current users are careful enough to not pass
+
+  NUMA_NO_NODE, but it opens the door for new users to get this wrong since
+
+  it is not documented [0].
+
+
+  Guard against this by getting the local nid if NUMA_NO_NODE was passed.
+
+
+  [0] https://lore.kernel.org/linux-mm/0000000000004f12bb061a9acf07@google.com/
+
+
+  Closes: https://lore.kernel.org/linux-mm/0000000000004f12bb061a9acf07@google.com/
+
+  Link: https://lkml.kernel.org/r/20240612082936.10867-1-osalvador@suse.de
+
+  Signed-off-by: Oscar Salvador <osalvador@suse.de>
+
+  Reported-by: syzbot+569ed13f4054f271087b@syzkaller.appspotmail.com
+
+  Tested-by: syzbot+569ed13f4054f271087b@syzkaller.appspotmail.com
+
+  Reviewed-by: Muchun Song <muchun.song@linux.dev>
+
+  Acked-by: Vivek Kasireddy <vivek.kasireddy@intel.com>
+
+  Cc: Oscar Salvador <osalvador@suse.de>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

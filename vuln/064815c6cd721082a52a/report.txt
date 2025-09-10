@@ -1,0 +1,72 @@
+Oops: divide error: 0000 [#1] SMP KASAN PTI
+CPU: 0 UID: 0 PID: 1148 Comm: kworker/u8:6 Not tainted 6.15.0-rc1-syzkaller #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Workqueue: events_unbound cfg80211_wiphy_work
+RIP: 0010:mac80211_hwsim_set_tsf+0x139/0x170 drivers/net/wireless/virtual/mac80211_hwsim.c:1239
+Code: 48 89 9d 30 3f 00 00 4c 89 b5 28 3f 00 00 5b 5d 41 5c 41 5d 41 5e 41 5f c3 cc cc cc cc e8 9f cf c4 fa 45 89 ff 4c 89 e8 31 d2 <49> f7 f7 4d 29 ee 48 89 d3 48 f7 db eb a5 e8 54 40 29 fb e9 e7 fe
+RSP: 0018:ffffc90003ff7ad8 EFLAGS: 00010246
+RAX: 00063249cd8022f2 RBX: 00063249cd8022f3 RCX: ffffffff86f66d11
+RDX: 0000000000000000 RSI: ffffffff86f66d71 RDI: 0000000000000006
+RBP: ffff8880236830a0 R08: 0000000000000006 R09: 0000000000000001
+R10: 00063249cd8022f3 R11: 0000000000000000 R12: 0000000000000001
+R13: 00063249cd8022f2 R14: 0000000000000000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff8881249b9000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f7019ad56c0 CR3: 00000000336ea000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ drv_set_tsf+0x223/0x590 net/mac80211/driver-ops.c:277
+ ieee80211_if_parse_tsf+0x2c8/0x560 net/mac80211/debugfs_netdev.c:701
+ wiphy_locked_debugfs_write_work+0xe3/0x1c0 net/wireless/debugfs.c:215
+ cfg80211_wiphy_work+0x3dc/0x550 net/wireless/core.c:435
+ process_one_work+0x9cc/0x1b70 kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3319 [inline]
+ worker_thread+0x6c8/0xf10 kernel/workqueue.c:3400
+ kthread+0x3c2/0x780 kernel/kthread.c:464
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:mac80211_hwsim_set_tsf+0x139/0x170 drivers/net/wireless/virtual/mac80211_hwsim.c:1239
+Code: 48 89 9d 30 3f 00 00 4c 89 b5 28 3f 00 00 5b 5d 41 5c 41 5d 41 5e 41 5f c3 cc cc cc cc e8 9f cf c4 fa 45 89 ff 4c 89 e8 31 d2 <49> f7 f7 4d 29 ee 48 89 d3 48 f7 db eb a5 e8 54 40 29 fb e9 e7 fe
+RSP: 0018:ffffc90003ff7ad8 EFLAGS: 00010246
+RAX: 00063249cd8022f2 RBX: 00063249cd8022f3 RCX: ffffffff86f66d11
+RDX: 0000000000000000 RSI: ffffffff86f66d71 RDI: 0000000000000006
+RBP: ffff8880236830a0 R08: 0000000000000006 R09: 0000000000000001
+R10: 00063249cd8022f3 R11: 0000000000000000 R12: 0000000000000001
+R13: 00063249cd8022f2 R14: 0000000000000000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff8881249b9000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f7019ad56c0 CR3: 0000000034a5e000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	48 89 9d 30 3f 00 00 	mov    %rbx,0x3f30(%rbp)
+   7:	4c 89 b5 28 3f 00 00 	mov    %r14,0x3f28(%rbp)
+   e:	5b                   	pop    %rbx
+   f:	5d                   	pop    %rbp
+  10:	41 5c                	pop    %r12
+  12:	41 5d                	pop    %r13
+  14:	41 5e                	pop    %r14
+  16:	41 5f                	pop    %r15
+  18:	c3                   	ret
+  19:	cc                   	int3
+  1a:	cc                   	int3
+  1b:	cc                   	int3
+  1c:	cc                   	int3
+  1d:	e8 9f cf c4 fa       	call   0xfac4cfc1
+  22:	45 89 ff             	mov    %r15d,%r15d
+  25:	4c 89 e8             	mov    %r13,%rax
+  28:	31 d2                	xor    %edx,%edx
+* 2a:	49 f7 f7             	div    %r15 <-- trapping instruction
+  2d:	4d 29 ee             	sub    %r13,%r14
+  30:	48 89 d3             	mov    %rdx,%rbx
+  33:	48 f7 db             	neg    %rbx
+  36:	eb a5                	jmp    0xffffffdd
+  38:	e8 54 40 29 fb       	call   0xfb294091
+  3d:	e9                   	.byte 0xe9
+  3e:	e7 fe                	out    %eax,$0xfe

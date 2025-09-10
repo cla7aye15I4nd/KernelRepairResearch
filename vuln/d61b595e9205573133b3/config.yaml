@@ -1,0 +1,29 @@
+id: d61b595e9205573133b3
+bug_link: https://syzkaller.appspot.com/bug?extid=d61b595e9205573133b3
+title: 'KMSAN: uninit-value in ieee802154_subif_start_xmit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2369e52657d371c58da0b826f8b87f01611cfc59
+fix_commit: db2baf82b098aa10ac16f34e44732ec450fb11c7
+datetime: '2023-08-07T16:23:35-07:00'
+fix_commit_message: "bpf: Fix an incorrect verification success with movsx insn\n\n\
+  syzbot reports a verifier bug which triggers a runtime panic.\nThe test bpf program\
+  \ is:\n   0: (62) *(u32 *)(r10 -8) = 553656332\n   1: (bf) r1 = (s16)r10\n   2:\
+  \ (07) r1 += -8\n   3: (b7) r2 = 3\n   4: (bd) if r2 <= r1 goto pc+0\n   5: (85)\
+  \ call bpf_trace_printk#-138320\n   6: (b7) r0 = 0\n   7: (95) exit\n\nAt insn 1,\
+  \ the current implementation keeps 'r1' as a frame pointer,\nwhich caused later\
+  \ bpf_trace_printk helper call crash since frame\npointer address is not valid any\
+  \ more. Note that at insn 4,\nthe 'pointer vs. scalar' comparison is allowed for\
+  \ privileged\nprog run.\n\nTo fix the problem with above insn 1, the fix in the\
+  \ patch adopts\nsimilar pattern to existing 'R1 = (u32) R2' handling. For unprivileged\n\
+  prog run, verification will fail with 'R<num> sign-extension part of pointer'.\n\
+  For privileged prog run, the dst_reg 'r1' will be marked as\nan unknown scalar,\
+  \ so later 'bpf_trace_pointk' helper will complain\nsince it expected certain pointers.\n\
+  \nReported-by: syzbot+d61b595e9205573133b3@syzkaller.appspotmail.com\nFixes: 8100928c8814\
+  \ (\"bpf: Support new sign-extension mov insns\")\nSigned-off-by: Yonghong Song\
+  \ <yonghong.song@linux.dev>\nAcked-by: Eduard Zingerman <eddyz87@gmail.com>\nLink:\
+  \ https://lore.kernel.org/r/20230807175721.671696-1-yonghong.song@linux.dev\nSigned-off-by:\
+  \ Martin KaFai Lau <martin.lau@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 0

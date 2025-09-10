@@ -1,0 +1,160 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in __hci_acl_create_connection_sync+0x6e4/0x9c0 net/bluetooth/hci_sync.c:6518
+Write of size 2 at addr ffff88807acee036 by task kworker/u9:5/5087
+
+CPU: 0 PID: 5087 Comm: kworker/u9:5 Not tainted 6.8.0-rc4-next-20240214-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/25/2024
+Workqueue: hci4 hci_cmd_sync_work
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ __hci_acl_create_connection_sync+0x6e4/0x9c0 net/bluetooth/hci_sync.c:6518
+ hci_cmd_sync_work+0x22b/0x400 net/bluetooth/hci_sync.c:306
+ process_one_work kernel/workqueue.c:3146 [inline]
+ process_scheduled_works+0x9d7/0x1730 kernel/workqueue.c:3226
+ worker_thread+0x86d/0xd70 kernel/workqueue.c:3307
+ kthread+0x2f0/0x390 kernel/kthread.c:388
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:242
+ </TASK>
+
+Allocated by task 7078:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:370 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:387
+ kasan_kmalloc include/linux/kasan.h:211 [inline]
+ kmalloc_trace+0x1d9/0x360 mm/slub.c:4013
+ kmalloc include/linux/slab.h:590 [inline]
+ kzalloc include/linux/slab.h:711 [inline]
+ hci_conn_add+0xc7/0x13a0 net/bluetooth/hci_conn.c:914
+ hci_conn_add_unset net/bluetooth/hci_conn.c:1016 [inline]
+ hci_connect_acl+0x166/0x4b0 net/bluetooth/hci_conn.c:1632
+ l2cap_chan_connect+0x5b6/0xeb0 net/bluetooth/l2cap_core.c:7030
+ l2cap_sock_connect+0x5c9/0x800 net/bluetooth/l2cap_sock.c:256
+ __sys_connect_file net/socket.c:2048 [inline]
+ __sys_connect+0x2df/0x310 net/socket.c:2065
+ __do_sys_connect net/socket.c:2075 [inline]
+ __se_sys_connect net/socket.c:2072 [inline]
+ __x64_sys_connect+0x7a/0x90 net/socket.c:2072
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+Freed by task 5087:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:586
+ poison_slab_object+0xa6/0xe0 mm/kasan/common.c:240
+ __kasan_slab_free+0x37/0x60 mm/kasan/common.c:256
+ kasan_slab_free include/linux/kasan.h:184 [inline]
+ slab_free_hook mm/slub.c:2122 [inline]
+ slab_free mm/slub.c:4296 [inline]
+ kfree+0x14a/0x380 mm/slub.c:4406
+ device_release+0x99/0x1c0
+ kobject_cleanup lib/kobject.c:689 [inline]
+ kobject_release lib/kobject.c:720 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ kobject_put+0x22f/0x480 lib/kobject.c:737
+ hci_conn_cleanup net/bluetooth/hci_conn.c:176 [inline]
+ hci_conn_del+0x8f0/0xc70 net/bluetooth/hci_conn.c:1126
+ hci_abort_conn_sync+0x583/0xde0 net/bluetooth/hci_sync.c:5361
+ __hci_acl_create_connection_sync+0x622/0x9c0 net/bluetooth/hci_sync.c:6554
+ hci_cmd_sync_work+0x22b/0x400 net/bluetooth/hci_sync.c:306
+ process_one_work kernel/workqueue.c:3146 [inline]
+ process_scheduled_works+0x9d7/0x1730 kernel/workqueue.c:3226
+ worker_thread+0x86d/0xd70 kernel/workqueue.c:3307
+ kthread+0x2f0/0x390 kernel/kthread.c:388
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:242
+
+Last potentially related work creation:
+ kasan_save_stack+0x3f/0x60 mm/kasan/common.c:47
+ __kasan_record_aux_stack+0xac/0xc0 mm/kasan/generic.c:548
+ insert_work+0x3e/0x330 kernel/workqueue.c:2143
+ __queue_work+0xc14/0xec0 kernel/workqueue.c:2296
+ queue_delayed_work_on+0x15a/0x260 kernel/workqueue.c:2491
+ l2cap_chan_del+0x291/0x5d0 net/bluetooth/l2cap_core.c:647
+ l2cap_conn_del+0x388/0x680 net/bluetooth/l2cap_core.c:1758
+ l2cap_connect_cfm+0x11f/0x1220 net/bluetooth/l2cap_core.c:7224
+ hci_connect_cfm include/net/bluetooth/hci_core.h:1986 [inline]
+ hci_conn_failed+0x1f6/0x340 net/bluetooth/hci_conn.c:1227
+ hci_abort_conn_sync+0x583/0xde0 net/bluetooth/hci_sync.c:5361
+ __hci_acl_create_connection_sync+0x622/0x9c0 net/bluetooth/hci_sync.c:6554
+ hci_cmd_sync_work+0x22b/0x400 net/bluetooth/hci_sync.c:306
+ process_one_work kernel/workqueue.c:3146 [inline]
+ process_scheduled_works+0x9d7/0x1730 kernel/workqueue.c:3226
+ worker_thread+0x86d/0xd70 kernel/workqueue.c:3307
+ kthread+0x2f0/0x390 kernel/kthread.c:388
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:242
+
+The buggy address belongs to the object at ffff88807acee000
+ which belongs to the cache kmalloc-4k of size 4096
+The buggy address is located 54 bytes inside of
+ freed 4096-byte region [ffff88807acee000, ffff88807acef000)
+
+The buggy address belongs to the physical page:
+page:ffffea0001eb3a00 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x7ace8
+head:ffffea0001eb3a00 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+anon flags: 0xfff80000000840(slab|head|node=0|zone=1|lastcpupid=0xfff)
+page_type: 0xffffffff()
+raw: 00fff80000000840 ffff888014c42140 0000000000000000 dead000000000001
+raw: 0000000000000000 0000000080040004 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 4521, tgid 4521 (udevd), ts 31907168174, free_ts 24330462673
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x1ea/0x210 mm/page_alloc.c:1533
+ prep_new_page mm/page_alloc.c:1540 [inline]
+ get_page_from_freelist+0x33ea/0x3580 mm/page_alloc.c:3311
+ __alloc_pages+0x256/0x6a0 mm/page_alloc.c:4567
+ __alloc_pages_node include/linux/gfp.h:238 [inline]
+ alloc_pages_node include/linux/gfp.h:261 [inline]
+ alloc_slab_page+0x5f/0x160 mm/slub.c:2191
+ allocate_slab mm/slub.c:2354 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2407
+ ___slab_alloc+0xc73/0x1260 mm/slub.c:3541
+ __slab_alloc mm/slub.c:3626 [inline]
+ __slab_alloc_node mm/slub.c:3679 [inline]
+ slab_alloc_node mm/slub.c:3851 [inline]
+ kmalloc_trace+0x267/0x360 mm/slub.c:4008
+ kmalloc include/linux/slab.h:590 [inline]
+ kzalloc include/linux/slab.h:711 [inline]
+ uevent_show+0x160/0x310 drivers/base/core.c:2656
+ dev_attr_show+0x55/0xc0 drivers/base/core.c:2364
+ sysfs_kf_seq_show+0x331/0x4c0 fs/sysfs/file.c:59
+ seq_read_iter+0x445/0xd60 fs/seq_file.c:230
+ call_read_iter include/linux/fs.h:2111 [inline]
+ new_sync_read fs/read_write.c:395 [inline]
+ vfs_read+0x97b/0xb70 fs/read_write.c:476
+ ksys_read+0x1a0/0x2c0 fs/read_write.c:619
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+page last free pid 1 tgid 1 stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1140 [inline]
+ free_unref_page_prepare+0x968/0xa90 mm/page_alloc.c:2346
+ free_unref_page+0x37/0x3f0 mm/page_alloc.c:2486
+ free_contig_range+0x9e/0x160 mm/page_alloc.c:6532
+ destroy_args+0x8a/0x890 mm/debug_vm_pgtable.c:1028
+ debug_vm_pgtable+0x4be/0x550 mm/debug_vm_pgtable.c:1408
+ do_one_initcall+0x238/0x830 init/main.c:1233
+ do_initcall_level+0x157/0x210 init/main.c:1295
+ do_initcalls+0x3f/0x80 init/main.c:1311
+ kernel_init_freeable+0x435/0x5d0 init/main.c:1543
+ kernel_init+0x1d/0x2b0 init/main.c:1432
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:242
+
+Memory state around the buggy address:
+ ffff88807acedf00: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88807acedf80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+>ffff88807acee000: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                     ^
+ ffff88807acee080: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88807acee100: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

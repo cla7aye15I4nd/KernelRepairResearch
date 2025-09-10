@@ -1,0 +1,32 @@
+id: ca95b2b7aef9e7cbd6ab
+bug_link: https://syzkaller.appspot.com/bug?extid=ca95b2b7aef9e7cbd6ab
+title: 'BUG: unable to handle kernel NULL pointer dereference in __generic_file_write_iter'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f4f34e1b82eb4219d8eaa1c7e2e17ca219a6a2b5
+fix_commit: ac5ceccce5501e43d217c596e4ee859f2a3fef79
+datetime: '2019-03-06T23:03:26+01:00'
+fix_commit_message: "x86/unwind: Add hardcoded ORC entry for NULL\n\nWhen the ORC\
+  \ unwinder is invoked for an oops caused by IP==0,\nit currently has no idea what\
+  \ to do because there is no debug information\nfor the stack frame of NULL.\n\n\
+  But if RIP is NULL, it is very likely that the last successfully executed\ninstruction\
+  \ was an indirect CALL/JMP, and it is possible to unwind out in\nthe same way as\
+  \ for the first instruction of a normal function. Hardcode\na corresponding ORC\
+  \ entry.\n\nWith an artificially-added NULL call in prctl_set_seccomp(), before\
+  \ this\npatch, the trace is:\n\nCall Trace:\n ? __x64_sys_prctl+0x402/0x680\n ?\
+  \ __ia32_sys_prctl+0x6e0/0x6e0\n ? __do_page_fault+0x457/0x620\n ? do_syscall_64+0x6d/0x160\n\
+  \ ? entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nAfter this patch, the trace looks\
+  \ like this:\n\nCall Trace:\n __x64_sys_prctl+0x402/0x680\n ? __ia32_sys_prctl+0x6e0/0x6e0\n\
+  \ ? __do_page_fault+0x457/0x620\n do_syscall_64+0x6d/0x160\n entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \nprctl_set_seccomp() still doesn't show up in the trace because for some\nreason,\
+  \ tail call optimization is only disabled in builds that use the\nframe pointer\
+  \ unwinder.\n\nSigned-off-by: Jann Horn <jannh@google.com>\nSigned-off-by: Thomas\
+  \ Gleixner <tglx@linutronix.de>\nAcked-by: Josh Poimboeuf <jpoimboe@redhat.com>\n\
+  Cc: Borislav Petkov <bp@alien8.de>\nCc: Andrew Morton <akpm@linux-foundation.org>\n\
+  Cc: syzbot <syzbot+ca95b2b7aef9e7cbd6ab@syzkaller.appspotmail.com>\nCc: \"H. Peter\
+  \ Anvin\" <hpa@zytor.com>\nCc: Masahiro Yamada <yamada.masahiro@socionext.com>\n\
+  Cc: Michal Marek <michal.lkml@markovi.net>\nCc: linux-kbuild@vger.kernel.org\nLink:\
+  \ https://lkml.kernel.org/r/20190301031201.7416-2-jannh@google.com\n\n"
+submodule:
+- arch/x86/kernel
+hunk_count: 2
+covered_count: 0

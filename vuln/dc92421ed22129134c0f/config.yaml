@@ -1,0 +1,26 @@
+id: dc92421ed22129134c0f
+bug_link: https://syzkaller.appspot.com/bug?extid=dc92421ed22129134c0f
+title: linux-next build error (7)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cada0b6dbb8c07ab353d209437243bec8cc7c64a
+fix_commit: ac6119e7f25b842fc061e8aec88c4f32d3bc28ef
+datetime: '2020-01-25T10:14:37+01:00'
+fix_commit_message: "efi/x86: Disable instrumentation in the EFI runtime handling\
+  \ code\n\nWe already disable KASAN instrumentation specifically for the\nEFI routines\
+  \ that are known to dereference memory addresses that\nKASAN does not know about,\
+  \ avoiding false positive KASAN splats.\n\nHowever, as it turns out, having GCOV\
+  \ or KASAN instrumentation enabled\ninterferes with the compiler's ability to optimize\
+  \ away function calls\nthat are guarded by IS_ENABLED() checks that should have\
+  \ resulted in\nthose references to have been const-propagated out of existence.\
+  \ But\nwith instrumenation enabled, we may get build errors like:\n\n   ld: arch/x86/platform/efi/efi_64.o:\
+  \ in function `efi_thunk_set_virtual_address_map':\n   ld: arch/x86/platform/efi/efi_64.o:\
+  \ in function `efi_set_virtual_address_map':\n\nin builds where CONFIG_EFI=y but\
+  \ CONFIG_EFI_MIXED or CONFIG_X86_UV are not\ndefined, even though the invocations\
+  \ are conditional on IS_ENABLED() checks\nagainst the respective Kconfig symbols.\n\
+  \nSo let's disable instrumentation entirely for this subdirectory, which\nisn't\
+  \ that useful here to begin with.\n\nSigned-off-by: Ard Biesheuvel <ardb@kernel.org>\n\
+  Signed-off-by: Ingo Molnar <mingo@kernel.org>\nCc: linux-efi@vger.kernel.org\n"
+submodule:
+- arch/x86/platform/efi
+hunk_count: 1
+covered_count: 0

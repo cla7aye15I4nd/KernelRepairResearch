@@ -1,0 +1,106 @@
+==================================================================
+BUG: KASAN: slab-out-of-bounds in afs_split_string fs/afs/addr_prefs.c:51 [inline]
+BUG: KASAN: slab-out-of-bounds in afs_proc_addr_prefs_write+0x13a9/0x15f0 fs/afs/addr_prefs.c:415
+Read of size 1 at addr ffff8880216980a7 by task syz-executor640/5835
+
+CPU: 0 UID: 0 PID: 5835 Comm: syz-executor640 Not tainted 6.15.0-rc3-syzkaller-00076-ge72e9e693307 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0xc3/0x670 mm/kasan/report.c:521
+ kasan_report+0xe0/0x110 mm/kasan/report.c:634
+ afs_split_string fs/afs/addr_prefs.c:51 [inline]
+ afs_proc_addr_prefs_write+0x13a9/0x15f0 fs/afs/addr_prefs.c:415
+ proc_simple_write+0x114/0x1b0 fs/proc/generic.c:825
+ pde_write fs/proc/inode.c:330 [inline]
+ proc_reg_write+0x23d/0x330 fs/proc/inode.c:342
+ do_loop_readv_writev fs/read_write.c:848 [inline]
+ do_loop_readv_writev fs/read_write.c:833 [inline]
+ vfs_writev+0x6c4/0xdc0 fs/read_write.c:1057
+ do_writev+0x132/0x330 fs/read_write.c:1101
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa1d3455ab9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 c1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe99ae6f98 EFLAGS: 00000246 ORIG_RAX: 0000000000000014
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fa1d3455ab9
+RDX: 0000000000000003 RSI: 0000200000000080 RDI: 0000000000000004
+RBP: 00007fa1d34c85f0 R08: 0000000000008000 R09: 0000000000000006
+R10: 0000000000008000 R11: 0000000000000246 R12: 0000000000000001
+R13: 431bde82d7b634db R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+Allocated by task 5835:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __do_kmalloc_node mm/slub.c:4341 [inline]
+ __kmalloc_node_track_caller_noprof+0x221/0x510 mm/slub.c:4360
+ memdup_user_nul+0x2b/0x120 mm/util.c:302
+ proc_simple_write+0xc7/0x1b0 fs/proc/generic.c:822
+ pde_write fs/proc/inode.c:330 [inline]
+ proc_reg_write+0x23d/0x330 fs/proc/inode.c:342
+ do_loop_readv_writev fs/read_write.c:848 [inline]
+ do_loop_readv_writev fs/read_write.c:833 [inline]
+ vfs_writev+0x6c4/0xdc0 fs/read_write.c:1057
+ do_writev+0x132/0x330 fs/read_write.c:1101
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff8880216980a0
+ which belongs to the cache kmalloc-8 of size 8
+The buggy address is located 0 bytes to the right of
+ allocated 7-byte region [ffff8880216980a0, ffff8880216980a7)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x21698
+anon flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000000 ffff88801b441500 0000000000000000 dead000000000001
+raw: 0000000000000000 0000000080800080 00000000f5000000 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x52cc0(GFP_KERNEL|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 1, tgid 1 (swapper/0), ts 3815229033, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x181/0x1b0 mm/page_alloc.c:1718
+ prep_new_page mm/page_alloc.c:1726 [inline]
+ get_page_from_freelist+0x135c/0x3920 mm/page_alloc.c:3688
+ __alloc_frozen_pages_noprof+0x263/0x23a0 mm/page_alloc.c:4970
+ alloc_pages_mpol+0x1fb/0x550 mm/mempolicy.c:2301
+ alloc_slab_page mm/slub.c:2468 [inline]
+ allocate_slab mm/slub.c:2632 [inline]
+ new_slab+0x244/0x340 mm/slub.c:2686
+ ___slab_alloc+0xd9c/0x1940 mm/slub.c:3872
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3962
+ __slab_alloc_node mm/slub.c:4037 [inline]
+ slab_alloc_node mm/slub.c:4198 [inline]
+ __do_kmalloc_node mm/slub.c:4340 [inline]
+ __kmalloc_noprof+0x2f2/0x510 mm/slub.c:4353
+ kmalloc_noprof include/linux/slab.h:909 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ acpi_ns_internalize_name+0x144/0x220 drivers/acpi/acpica/nsutils.c:331
+ acpi_ns_get_node_unlocked+0x163/0x310 drivers/acpi/acpica/nsutils.c:666
+ acpi_ns_get_node+0x4c/0x70 drivers/acpi/acpica/nsutils.c:726
+ acpi_ns_evaluate+0x6ef/0xca0 drivers/acpi/acpica/nseval.c:62
+ acpi_ut_evaluate_object+0xda/0x4a0 drivers/acpi/acpica/uteval.c:60
+ acpi_rs_get_method_data+0x84/0xf0 drivers/acpi/acpica/rsutils.c:650
+ acpi_walk_resources+0x15b/0x1e0 drivers/acpi/acpica/rsxface.c:616
+ try_get_root_bridge_busnr drivers/acpi/pci_root.c:109 [inline]
+ acpi_pci_root_add+0x1e5/0xa80 drivers/acpi/pci_root.c:666
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff888021697f80: 00 00 00 00 00 00 fc fc fc fc fc fc fc fc fc fc
+ ffff888021698000: fa fc fc fc fa fc fc fc fa fc fc fc 00 fc fc fc
+>ffff888021698080: fa fc fc fc 07 fc fc fc fa fc fc fc fa fc fc fc
+                               ^
+ ffff888021698100: fa fc fc fc fa fc fc fc fa fc fc fc fa fc fc fc
+ ffff888021698180: fa fc fc fc fa fc fc fc fa fc fc fc fa fc fc fc
+==================================================================

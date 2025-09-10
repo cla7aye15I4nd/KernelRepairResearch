@@ -1,0 +1,39 @@
+id: 72aa0161922eba61b50e
+bug_link: https://syzkaller.appspot.com/bug?extid=72aa0161922eba61b50e
+title: 'BUG: unable to handle kernel paging request in copy_from_kernel_nofault'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ee0e39a63b78849f8abbef268b13e4838569f646
+fix_commit: 32019c659ecfe1d92e3bf9fcdfbb11a7c70acd58
+datetime: '2024-02-15T19:21:39-08:00'
+fix_commit_message: "x86/mm: Disallow vsyscall page read for copy_from_kernel_nofault()\n\
+  \nWhen trying to use copy_from_kernel_nofault() to read vsyscall page\nthrough a\
+  \ bpf program, the following oops was reported:\n\n  BUG: unable to handle page\
+  \ fault for address: ffffffffff600000\n  #PF: supervisor read access in kernel mode\n\
+  \  #PF: error_code(0x0000) - not-present page\n  PGD 3231067 P4D 3231067 PUD 3233067\
+  \ PMD 3235067 PTE 0\n  Oops: 0000 [#1] PREEMPT SMP PTI\n  CPU: 1 PID: 20390 Comm:\
+  \ test_progs ...... 6.7.0+ #58\n  Hardware name: QEMU Standard PC (i440FX + PIIX,\
+  \ 1996) ......\n  RIP: 0010:copy_from_kernel_nofault+0x6f/0x110\n  ......\n  Call\
+  \ Trace:\n   <TASK>\n   ? copy_from_kernel_nofault+0x6f/0x110\n   bpf_probe_read_kernel+0x1d/0x50\n\
+  \   bpf_prog_2061065e56845f08_do_probe_read+0x51/0x8d\n   trace_call_bpf+0xc5/0x1c0\n\
+  \   perf_call_bpf_enter.isra.0+0x69/0xb0\n   perf_syscall_enter+0x13e/0x200\n  \
+  \ syscall_trace_enter+0x188/0x1c0\n   do_syscall_64+0xb5/0xe0\n   entry_SYSCALL_64_after_hwframe+0x6e/0x76\n\
+  \   </TASK>\n  ......\n  ---[ end trace 0000000000000000 ]---\n\nThe oops is triggered\
+  \ when:\n\n1) A bpf program uses bpf_probe_read_kernel() to read from the vsyscall\n\
+  page and invokes copy_from_kernel_nofault() which in turn calls\n__get_user_asm().\n\
+  \n2) Because the vsyscall page address is not readable from kernel space,\na page\
+  \ fault exception is triggered accordingly.\n\n3) handle_page_fault() considers\
+  \ the vsyscall page address as a user\nspace address instead of a kernel space address.\
+  \ This results in the\nfix-up setup by bpf not being applied and a page_fault_oops()\
+  \ is invoked\ndue to SMAP.\n\nConsidering handle_page_fault() has already considered\
+  \ the vsyscall page\naddress as a userspace address, fix the problem by disallowing\
+  \ vsyscall\npage read for copy_from_kernel_nofault().\n\nOriginally-by: Thomas Gleixner\
+  \ <tglx@linutronix.de>\nReported-by: syzbot+72aa0161922eba61b50e@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/bpf/CAG48ez06TZft=ATH1qh2c5mpS5BT8UakwNkzi6nvK5_djC-4Nw@mail.gmail.com\n\
+  Reported-by: xingwei lee <xrivendell7@gmail.com>\nCloses: https://lore.kernel.org/bpf/CABOYnLynjBoFZOf3Z4BhaZkc5hx_kHfsjiW+UWLoB=w33LvScw@mail.gmail.com\n\
+  Signed-off-by: Hou Tao <houtao1@huawei.com>\nReviewed-by: Sohil Mehta <sohil.mehta@intel.com>\n\
+  Acked-by: Thomas Gleixner <tglx@linutronix.de>\nLink: https://lore.kernel.org/r/20240202103935.3154011-3-houtao@huaweicloud.com\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- arch/x86/mm
+hunk_count: 2
+covered_count: 0

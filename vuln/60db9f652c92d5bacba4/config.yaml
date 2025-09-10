@@ -1,0 +1,56 @@
+id: 60db9f652c92d5bacba4
+bug_link: https://syzkaller.appspot.com/bug?extid=60db9f652c92d5bacba4
+title: 'KASAN: slab-use-after-free Read in pwq_release_workfn'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: dd64c873ed11cdae340be06dcd2364870fd3e4fc
+fix_commit: 643445531829d89dc5ddbe0c5ee4ff8f84ce8687
+datetime: '2023-10-04T09:06:26-10:00'
+fix_commit_message: "workqueue: Fix UAF report by KASAN in pwq_release_workfn()\n\n\
+  Currently, for UNBOUND wq, if the apply_wqattrs_prepare() return error,\nthe apply_wqattr_cleanup()\
+  \ will be called and use the pwq_release_worker\nkthread to release resources asynchronously.\
+  \ however, the kfree(wq) is\ninvoked directly in failure path of alloc_workqueue(),\
+  \ if the kfree(wq)\nhas been executed and when the pwq_release_workfn() accesses\
+  \ wq, this\nleads to the following scenario:\n\nBUG: KASAN: slab-use-after-free\
+  \ in pwq_release_workfn+0x339/0x380 kernel/workqueue.c:4124\nRead of size 4 at addr\
+  \ ffff888027b831c0 by task pool_workqueue_/3\n\nCPU: 0 PID: 3 Comm: pool_workqueue_\
+  \ Not tainted 6.5.0-rc7-next-20230825-syzkaller #0\nHardware name: Google Compute\
+  \ Engine/Google Compute Engine, BIOS Google 07/26/2023\nCall Trace:\n <TASK>\n __dump_stack\
+  \ lib/dump_stack.c:88 [inline]\n dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106\n\
+  \ print_address_description mm/kasan/report.c:364 [inline]\n print_report+0xc4/0x620\
+  \ mm/kasan/report.c:475\n kasan_report+0xda/0x110 mm/kasan/report.c:588\n pwq_release_workfn+0x339/0x380\
+  \ kernel/workqueue.c:4124\n kthread_worker_fn+0x2fc/0xa80 kernel/kthread.c:823\n\
+  \ kthread+0x33a/0x430 kernel/kthread.c:388\n ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147\n\
+  \ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304\n </TASK>\n\nAllocated\
+  \ by task 5054:\n kasan_save_stack+0x33/0x50 mm/kasan/common.c:45\n kasan_set_track+0x25/0x30\
+  \ mm/kasan/common.c:52\n ____kasan_kmalloc mm/kasan/common.c:374 [inline]\n __kasan_kmalloc+0xa2/0xb0\
+  \ mm/kasan/common.c:383\n kmalloc include/linux/slab.h:599 [inline]\n kzalloc include/linux/slab.h:720\
+  \ [inline]\n alloc_workqueue+0x16f/0x1490 kernel/workqueue.c:4684\n kvm_mmu_init_tdp_mmu+0x23/0x100\
+  \ arch/x86/kvm/mmu/tdp_mmu.c:19\n kvm_mmu_init_vm+0x248/0x2e0 arch/x86/kvm/mmu/mmu.c:6180\n\
+  \ kvm_arch_init_vm+0x39/0x720 arch/x86/kvm/x86.c:12311\n kvm_create_vm arch/x86/kvm/../../../virt/kvm/kvm_main.c:1222\
+  \ [inline]\n kvm_dev_ioctl_create_vm arch/x86/kvm/../../../virt/kvm/kvm_main.c:5089\
+  \ [inline]\n kvm_dev_ioctl+0xa31/0x1c20 arch/x86/kvm/../../../virt/kvm/kvm_main.c:5131\n\
+  \ vfs_ioctl fs/ioctl.c:51 [inline]\n __do_sys_ioctl fs/ioctl.c:871 [inline]\n __se_sys_ioctl\
+  \ fs/ioctl.c:857 [inline]\n __x64_sys_ioctl+0x18f/0x210 fs/ioctl.c:857\n do_syscall_x64\
+  \ arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80\n\
+  \ entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nFreed by task 5054:\n kasan_save_stack+0x33/0x50\
+  \ mm/kasan/common.c:45\n kasan_set_track+0x25/0x30 mm/kasan/common.c:52\n kasan_save_free_info+0x2b/0x40\
+  \ mm/kasan/generic.c:522\n ____kasan_slab_free mm/kasan/common.c:236 [inline]\n\
+  \ ____kasan_slab_free+0x15b/0x1b0 mm/kasan/common.c:200\n kasan_slab_free include/linux/kasan.h:164\
+  \ [inline]\n slab_free_hook mm/slub.c:1800 [inline]\n slab_free_freelist_hook+0x114/0x1e0\
+  \ mm/slub.c:1826\n slab_free mm/slub.c:3809 [inline]\n __kmem_cache_free+0xb8/0x2f0\
+  \ mm/slub.c:3822\n alloc_workqueue+0xe76/0x1490 kernel/workqueue.c:4746\n kvm_mmu_init_tdp_mmu+0x23/0x100\
+  \ arch/x86/kvm/mmu/tdp_mmu.c:19\n kvm_mmu_init_vm+0x248/0x2e0 arch/x86/kvm/mmu/mmu.c:6180\n\
+  \ kvm_arch_init_vm+0x39/0x720 arch/x86/kvm/x86.c:12311\n kvm_create_vm arch/x86/kvm/../../../virt/kvm/kvm_main.c:1222\
+  \ [inline]\n kvm_dev_ioctl_create_vm arch/x86/kvm/../../../virt/kvm/kvm_main.c:5089\
+  \ [inline]\n kvm_dev_ioctl+0xa31/0x1c20 arch/x86/kvm/../../../virt/kvm/kvm_main.c:5131\n\
+  \ vfs_ioctl fs/ioctl.c:51 [inline]\n __do_sys_ioctl fs/ioctl.c:871 [inline]\n __se_sys_ioctl\
+  \ fs/ioctl.c:857 [inline]\n __x64_sys_ioctl+0x18f/0x210 fs/ioctl.c:857\n do_syscall_x64\
+  \ arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80\n\
+  \ entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nThis commit therefore flush pwq_release_worker\
+  \ in the alloc_and_link_pwqs()\nbefore invoke kfree(wq).\n\nReported-by: syzbot+60db9f652c92d5bacba4@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=60db9f652c92d5bacba4\nSigned-off-by:\
+  \ Zqiang <qiang.zhang1211@gmail.com>\nSigned-off-by: Tejun Heo <tj@kernel.org>\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 0

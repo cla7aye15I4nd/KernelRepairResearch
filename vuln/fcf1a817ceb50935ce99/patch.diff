@@ -1,0 +1,48 @@
+diff --git a/include/linux/page-flags.h b/include/linux/page-flags.h
+index 1c68d67b832f..92a2063a0a23 100644
+--- a/include/linux/page-flags.h
++++ b/include/linux/page-flags.h
+@@ -617,6 +617,12 @@ PAGEFLAG_FALSE(VmemmapSelfHosted, vmemmap_self_hosted)
+  * Please note that, confusingly, "page_mapping" refers to the inode
+  * address_space which maps the page from disk; whereas "page_mapped"
+  * refers to user virtual address space into which the page is mapped.
++ *
++ * For slab pages, since slab reuses the bits in struct page to store its
++ * internal states, the page->mapping does not exist as such, nor do these
++ * flags below.  So in order to avoid testing non-existent bits, please
++ * make sure that PageSlab(page) actually evaluates to false before calling
++ * the following functions (e.g., PageAnon).  See mm/slab.h.
+  */
+ #define PAGE_MAPPING_ANON	0x1
+ #define PAGE_MAPPING_MOVABLE	0x2
+diff --git a/mm/page_table_check.c b/mm/page_table_check.c
+index 25d8610c0042..f2baf97d5f38 100644
+--- a/mm/page_table_check.c
++++ b/mm/page_table_check.c
+@@ -71,6 +71,8 @@ static void page_table_check_clear(struct mm_struct *mm, unsigned long addr,
+ 
+ 	page = pfn_to_page(pfn);
+ 	page_ext = page_ext_get(page);
++
++	BUG_ON(PageSlab(page));
+ 	anon = PageAnon(page);
+ 
+ 	for (i = 0; i < pgcnt; i++) {
+@@ -107,6 +109,8 @@ static void page_table_check_set(struct mm_struct *mm, unsigned long addr,
+ 
+ 	page = pfn_to_page(pfn);
+ 	page_ext = page_ext_get(page);
++
++	BUG_ON(PageSlab(page));
+ 	anon = PageAnon(page);
+ 
+ 	for (i = 0; i < pgcnt; i++) {
+@@ -133,6 +137,8 @@ void __page_table_check_zero(struct page *page, unsigned int order)
+ 	struct page_ext *page_ext;
+ 	unsigned long i;
+ 
++	BUG_ON(PageSlab(page));
++
+ 	page_ext = page_ext_get(page);
+ 	BUG_ON(!page_ext);
+ 	for (i = 0; i < (1ul << order); i++) {

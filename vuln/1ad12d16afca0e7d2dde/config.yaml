@@ -1,0 +1,67 @@
+id: 1ad12d16afca0e7d2dde
+bug_link: https://syzkaller.appspot.com/bug?extid=1ad12d16afca0e7d2dde
+title: 'KASAN: slab-use-after-free Read in iopt_unmap_iova_range'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6995e2de6891c724bfeb2db33d7b87775f913ad1
+fix_commit: 804ca14d04df09bf7924bacc5ad22a4bed80c94f
+datetime: '2023-06-26T09:00:23-03:00'
+fix_commit_message: "iommufd: Do not access the area pointer after unlocking\n\nA\
+  \ concurrent unmap can trigger freeing of the area pointers while we are\ngenerating\
+  \ an unmapping notification for accesses.\n\nsyzkaller reports:\n\n  BUG: KASAN:\
+  \ slab-use-after-free in iopt_unmap_iova_range+0x5ba/0x5f0\n  Read of size 4 at\
+  \ addr ffff888075996184 by task syz-executor.2/31160\n\n  CPU: 1 PID: 31160 Comm:\
+  \ syz-executor.2 Not tainted 6.4.0-rc5-syzkaller-00313-g4c605260bc60 #0\n  Hardware\
+  \ name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/25/2023\n\
+  \  Call Trace:\n   <TASK>\n   dump_stack_lvl+0xd9/0x150\n   print_address_description.constprop.0+0x2c/0x3c0\n\
+  \   kasan_report+0x11c/0x130\n   iopt_unmap_iova_range+0x5ba/0x5f0\n   iopt_unmap_all+0x27/0x50\n\
+  \   iommufd_ioas_unmap+0x3d0/0x490\n   iommufd_fops_ioctl+0x317/0x4b0\n   __x64_sys_ioctl+0x197/0x210\n\
+  \   do_syscall_64+0x39/0xb0\n   entry_SYSCALL_64_after_hwframe+0x63/0xcd\n  RIP:\
+  \ 0033:0x7f0812c8c169\n  Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 19 00 00 90\
+  \ 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48>\
+  \ 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48\n  RSP: 002b:00007f0813914168\
+  \ EFLAGS: 00000246 ORIG_RAX: 0000000000000010\n  RAX: ffffffffffffffda RBX: 00007f0812dabf80\
+  \ RCX: 00007f0812c8c169\n  RDX: 0000000020000100 RSI: 0000000000003b86 RDI: 0000000000000005\n\
+  \  RBP: 00007f0812ce7ca1 R08: 0000000000000000 R09: 0000000000000000\n  R10: 0000000000000000\
+  \ R11: 0000000000000246 R12: 0000000000000000\n  R13: 00007f0812ecfb1f R14: 00007f0813914300\
+  \ R15: 0000000000022000\n   </TASK>\n\n  Allocated by task 31160:\n   kasan_save_stack+0x22/0x40\n\
+  \   kasan_set_track+0x25/0x30\n   __kasan_kmalloc+0xa2/0xb0\n   iopt_alloc_area_pages+0x94/0x560\n\
+  \   iopt_map_user_pages+0x205/0x4e0\n   iommufd_ioas_map+0x329/0x5f0\n   iommufd_fops_ioctl+0x317/0x4b0\n\
+  \   __x64_sys_ioctl+0x197/0x210\n   do_syscall_64+0x39/0xb0\n   entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\
+  \n  Freed by task 31161:\n   kasan_save_stack+0x22/0x40\n   kasan_set_track+0x25/0x30\n\
+  \   kasan_save_free_info+0x2e/0x40\n   ____kasan_slab_free+0x160/0x1c0\n   slab_free_freelist_hook+0x8b/0x1c0\n\
+  \   __kmem_cache_free+0xaf/0x2d0\n   iopt_unmap_iova_range+0x288/0x5f0\n   iopt_unmap_all+0x27/0x50\n\
+  \   iommufd_ioas_unmap+0x3d0/0x490\n   iommufd_fops_ioctl+0x317/0x4b0\n   __x64_sys_ioctl+0x197/0x210\n\
+  \   do_syscall_64+0x39/0xb0\n   entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\n  The\
+  \ buggy address belongs to the object at ffff888075996100\n   which belongs to the\
+  \ cache kmalloc-cg-192 of size 192\n  The buggy address is located 132 bytes inside\
+  \ of\n   freed 192-byte region [ffff888075996100, ffff8880759961c0)\n\n  The buggy\
+  \ address belongs to the physical page:\n  page:ffffea0001d66580 refcount:1 mapcount:0\
+  \ mapping:0000000000000000 index:0x0 pfn:0x75996\n  memcg:ffff88801f1c2701\n  flags:\
+  \ 0xfff00000000200(slab|node=0|zone=1|lastcpupid=0x7ff)\n  page_type: 0xffffffff()\n\
+  \  raw: 00fff00000000200 ffff88801244ddc0 dead000000000122 0000000000000000\n  raw:\
+  \ 0000000000000000 0000000080100010 00000001ffffffff ffff88801f1c2701\n  page dumped\
+  \ because: kasan: bad access detected\n  page_owner tracks the page as allocated\n\
+  \  page last allocated via order 0, migratetype Unmovable, gfp_mask 0x112cc0(GFP_USER|__GFP_NOWARN|__GFP_NORETRY),\
+  \ pid 31157, tgid 31154 (syz-executor.0), ts 1984547323469, free_ts 1983933451331\n\
+  \   post_alloc_hook+0x2db/0x350\n   get_page_from_freelist+0xf41/0x2c00\n   __alloc_pages+0x1cb/0x4a0\n\
+  \   alloc_pages+0x1aa/0x270\n   allocate_slab+0x25f/0x390\n   ___slab_alloc+0xa91/0x1400\n\
+  \   __slab_alloc.constprop.0+0x56/0xa0\n   __kmem_cache_alloc_node+0x136/0x320\n\
+  \   kmalloc_trace+0x26/0xe0\n   iommufd_test+0x1328/0x2c20\n   iommufd_fops_ioctl+0x317/0x4b0\n\
+  \   __x64_sys_ioctl+0x197/0x210\n   do_syscall_64+0x39/0xb0\n   entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\
+  \  page last free stack trace:\n   free_unref_page_prepare+0x62e/0xcb0\n   free_unref_page_list+0xe3/0xa70\n\
+  \   release_pages+0xcd8/0x1380\n   tlb_batch_pages_flush+0xa8/0x1a0\n   tlb_finish_mmu+0x14b/0x7e0\n\
+  \   exit_mmap+0x2b2/0x930\n   __mmput+0x128/0x4c0\n   mmput+0x60/0x70\n   do_exit+0x9b0/0x29b0\n\
+  \   do_group_exit+0xd4/0x2a0\n   get_signal+0x2318/0x25b0\n   arch_do_signal_or_restart+0x79/0x5c0\n\
+  \   exit_to_user_mode_prepare+0x11f/0x240\n   syscall_exit_to_user_mode+0x1d/0x50\n\
+  \   do_syscall_64+0x46/0xb0\n   entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nPrecompute\
+  \ what is needed to call the access function and do not check the\narea's num_accesses\
+  \ again as the pointer may not be valid anymore. Use a\ncounter instead.\n\nFixes:\
+  \ 51fe6141f0f6 (\"iommufd: Data structure to provide IOVA to PFN mapping\")\nLink:\
+  \ https://lore.kernel.org/r/1-v2-9a03761d445d+54-iommufd_syz2_jgg@nvidia.com\nReviewed-by:\
+  \ Kevin Tian <kevin.tian@intel.com>\nReported-by: syzbot+1ad12d16afca0e7d2dde@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/r/0000000000001d40fc05fe385332@google.com\nSigned-off-by:\
+  \ Jason Gunthorpe <jgg@nvidia.com>\n"
+submodule:
+- drivers/iommu/iommufd
+hunk_count: 2
+covered_count: 2

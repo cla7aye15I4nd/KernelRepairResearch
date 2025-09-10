@@ -1,0 +1,44 @@
+==================================================================
+BUG: KCSAN: assert: race in __block_task kernel/sched/sched.h:2773 [inline]
+BUG: KCSAN: assert: race in dequeue_entities+0x6df/0x760 kernel/sched/fair.c:7180
+
+race at unknown origin, with assert no writes to 0xffff8881001cb1e8 of 4 bytes by task 4926 on cpu 0:
+ __block_task kernel/sched/sched.h:2773 [inline]
+ dequeue_entities+0x6df/0x760 kernel/sched/fair.c:7180
+ pick_next_entity kernel/sched/fair.c:5627 [inline]
+ pick_task_fair kernel/sched/fair.c:8859 [inline]
+ pick_next_task_fair+0x7d/0x410 kernel/sched/fair.c:8879
+ __pick_next_task kernel/sched/core.c:5968 [inline]
+ pick_next_task kernel/sched/core.c:6490 [inline]
+ __schedule+0x284/0x940 kernel/sched/core.c:6644
+ __schedule_loop kernel/sched/core.c:6767 [inline]
+ schedule+0x55/0xc0 kernel/sched/core.c:6782
+ synchronize_rcu_expedited+0x611/0x7a0 kernel/rcu/tree_exp.h:991
+ synchronize_rcu+0x46/0x320 kernel/rcu/tree.c:4095
+ __nf_tables_abort net/netfilter/nf_tables_api.c:10911 [inline]
+ nf_tables_abort+0x38f5/0x4340 net/netfilter/nf_tables_api.c:10930
+ nfnetlink_rcv_batch net/netfilter/nfnetlink.c:593 [inline]
+ nfnetlink_rcv_skb_batch net/netfilter/nfnetlink.c:647 [inline]
+ nfnetlink_rcv+0x10ce/0x15c0 net/netfilter/nfnetlink.c:665
+ netlink_unicast_kernel net/netlink/af_netlink.c:1331 [inline]
+ netlink_unicast+0x599/0x670 net/netlink/af_netlink.c:1357
+ netlink_sendmsg+0x5cc/0x6e0 net/netlink/af_netlink.c:1901
+ sock_sendmsg_nosec net/socket.c:729 [inline]
+ __sock_sendmsg+0x140/0x180 net/socket.c:744
+ ____sys_sendmsg+0x312/0x410 net/socket.c:2607
+ ___sys_sendmsg net/socket.c:2661 [inline]
+ __sys_sendmsg+0x1d9/0x270 net/socket.c:2690
+ __do_sys_sendmsg net/socket.c:2699 [inline]
+ __se_sys_sendmsg net/socket.c:2697 [inline]
+ __x64_sys_sendmsg+0x46/0x50 net/socket.c:2697
+ x64_sys_call+0x2689/0x2d60 arch/x86/include/generated/asm/syscalls_64.h:47
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x00000000 -> 0x00000001
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 4926 Comm: syz.2.327 Not tainted 6.12.0-rc5-syzkaller-00299-g11066801dd4b #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+==================================================================

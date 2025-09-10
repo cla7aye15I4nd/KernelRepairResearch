@@ -1,0 +1,64 @@
+id: 3f29ca2efb056a761e38
+bug_link: https://syzkaller.appspot.com/bug?extid=3f29ca2efb056a761e38
+title: 'BUG: unable to handle kernel NULL pointer dereference in handle_external_interrupt_irqoff'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: edec6e015a02003c2af0ce82c54ea016b5a9e3f0
+fix_commit: 428b8f1d9f92f838b73997adc10046d3c6e05790
+datetime: '2020-03-23T15:40:51-04:00'
+fix_commit_message: 'KVM: VMX: don''t allow memory operands for inline asm that modifies
+  SP
+
+
+  THUNK_TARGET defines [thunk_target] as having "rm" input constraints
+
+  when CONFIG_RETPOLINE is not set, which isn''t constrained enough for
+
+  this specific case.
+
+
+  For inline assembly that modifies the stack pointer before using this
+
+  input, the underspecification of constraints is dangerous, and results
+
+  in an indirect call to a previously pushed flags register.
+
+
+  In this case `entry`''s stack slot is good enough to satisfy the "m"
+
+  constraint in "rm", but the inline assembly in
+
+  handle_external_interrupt_irqoff() modifies the stack pointer via
+
+  push+pushf before using this input, which in this case results in
+
+  calling what was the previous state of the flags register, rather than
+
+  `entry`.
+
+
+  Be more specific in the constraints by requiring `entry` be in a
+
+  register, and not a memory operand.
+
+
+  Reported-by: Dmitry Vyukov <dvyukov@google.com>
+
+  Reported-by: syzbot+3f29ca2efb056a761e38@syzkaller.appspotmail.com
+
+  Debugged-by: Alexander Potapenko <glider@google.com>
+
+  Debugged-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  Debugged-by: Sean Christopherson <sean.j.christopherson@intel.com>
+
+  Signed-off-by: Nick Desaulniers <ndesaulniers@google.com>
+
+  Message-Id: <20200323191243.30002-1-ndesaulniers@google.com>
+
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  '
+submodule:
+- arch/x86/kvm/vmx
+hunk_count: 1
+covered_count: 1

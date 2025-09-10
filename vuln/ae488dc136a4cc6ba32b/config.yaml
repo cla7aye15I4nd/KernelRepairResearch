@@ -1,0 +1,29 @@
+id: ae488dc136a4cc6ba32b
+bug_link: https://syzkaller.appspot.com/bug?extid=ae488dc136a4cc6ba32b
+title: 'UBSAN: shift-out-of-bounds in intel_pmu_refresh'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: eb79cd00ce25974c21f34f1eeb92a580ff572971
+fix_commit: e61ab2a320c3dfd6209efe18a575979e07470597
+datetime: '2021-01-25T18:52:06-05:00'
+fix_commit_message: "KVM: x86/pmu: Fix UBSAN shift-out-of-bounds warning in intel_pmu_refresh()\n\
+  \nSince we know vPMU will not work properly when (1) the guest bit_width(s)\nof\
+  \ the [gp|fixed] counters are greater than the host ones, or (2) guest\nrequested\
+  \ architectural events exceeds the range supported by the host, so\nwe can setup\
+  \ a smaller left shift value and refresh the guest cpuid entry,\nthus fixing the\
+  \ following UBSAN shift-out-of-bounds warning:\n\nshift exponent 197 is too large\
+  \ for 64-bit type 'long long unsigned int'\n\nCall Trace:\n __dump_stack lib/dump_stack.c:79\
+  \ [inline]\n dump_stack+0x107/0x163 lib/dump_stack.c:120\n ubsan_epilogue+0xb/0x5a\
+  \ lib/ubsan.c:148\n __ubsan_handle_shift_out_of_bounds.cold+0xb1/0x181 lib/ubsan.c:395\n\
+  \ intel_pmu_refresh.cold+0x75/0x99 arch/x86/kvm/vmx/pmu_intel.c:348\n kvm_vcpu_after_set_cpuid+0x65a/0xf80\
+  \ arch/x86/kvm/cpuid.c:177\n kvm_vcpu_ioctl_set_cpuid2+0x160/0x440 arch/x86/kvm/cpuid.c:308\n\
+  \ kvm_arch_vcpu_ioctl+0x11b6/0x2d70 arch/x86/kvm/x86.c:4709\n kvm_vcpu_ioctl+0x7b9/0xdb0\
+  \ arch/x86/kvm/../../../virt/kvm/kvm_main.c:3386\n vfs_ioctl fs/ioctl.c:48 [inline]\n\
+  \ __do_sys_ioctl fs/ioctl.c:753 [inline]\n __se_sys_ioctl fs/ioctl.c:739 [inline]\n\
+  \ __x64_sys_ioctl+0x193/0x200 fs/ioctl.c:739\n do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n\
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nReported-by: syzbot+ae488dc136a4cc6ba32b@syzkaller.appspotmail.com\n\
+  Signed-off-by: Like Xu <like.xu@linux.intel.com>\nMessage-Id: <20210118025800.34620-1-like.xu@linux.intel.com>\n\
+  Cc: stable@vger.kernel.org\nSigned-off-by: Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm/vmx
+hunk_count: 2
+covered_count: 2

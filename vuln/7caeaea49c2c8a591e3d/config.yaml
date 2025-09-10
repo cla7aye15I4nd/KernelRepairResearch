@@ -1,0 +1,46 @@
+id: 7caeaea49c2c8a591e3d
+bug_link: https://syzkaller.appspot.com/bug?extid=7caeaea49c2c8a591e3d
+title: 'KASAN: use-after-free Write in percpu_ref_switch_to_percpu'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: df069d80c8e38c19531c392322e9a16617475c44
+fix_commit: 2faf852d1be8a4960d328492298da6448cca0279
+datetime: '2020-02-04T20:04:18-07:00'
+fix_commit_message: 'io_uring: cleanup fixed file data table references
+
+
+  syzbot reports a use-after-free in io_ring_file_ref_switch() when it
+
+  tries to switch back to percpu mode. When we put the final reference to
+
+  the table by calling percpu_ref_kill_and_confirm(), we don''t want the
+
+  zero reference to queue async work for flushing the potentially queued
+
+  up items. We currently do a few flush_work(), but they merely paper
+
+  around the issue, since the work item may not have been queued yet
+
+  depending on the when the percpu-ref callback gets run.
+
+
+  Coming into the file unregister, we know we have the ring quiesced.
+
+  io_ring_file_ref_switch() can check for whether or not the ref is dying
+
+  or not, and not queue anything async at that point. Once the ref has
+
+  been confirmed killed, flush any potential items manually.
+
+
+  Reported-by: syzbot+7caeaea49c2c8a591e3d@syzkaller.appspotmail.com
+
+  Fixes: 05f3fb3c5397 ("io_uring: avoid ring quiesce for fixed file set unregister
+  and update")
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- fs
+hunk_count: 5
+covered_count: 4

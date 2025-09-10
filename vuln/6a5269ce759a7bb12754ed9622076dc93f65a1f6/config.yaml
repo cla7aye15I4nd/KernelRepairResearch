@@ -1,0 +1,34 @@
+id: 6a5269ce759a7bb12754ed9622076dc93f65a1f6
+bug_link: https://syzkaller.appspot.com/bug?extid=6a5269ce759a7bb12754ed9622076dc93f65a1f6
+title: 'KASAN: use-after-free Read in __do_page_fault'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 89db69d670a11274c323af48479841d3d765bd49
+fix_commit: cb0631fd3cf9e989cd48293fe631cbc402aec9a9
+datetime: '2017-11-01T08:09:58-07:00'
+fix_commit_message: "x86/mm: fix use-after-free of vma during userfaultfd fault\n\n\
+  Syzkaller with KASAN has reported a use-after-free of vma->vm_flags in\n__do_page_fault()\
+  \ with the following reproducer:\n\n  mmap(&(0x7f0000000000/0xfff000)=nil, 0xfff000,\
+  \ 0x3, 0x32, 0xffffffffffffffff, 0x0)\n  mmap(&(0x7f0000011000/0x3000)=nil, 0x3000,\
+  \ 0x1, 0x32, 0xffffffffffffffff, 0x0)\n  r0 = userfaultfd(0x0)\n  ioctl$UFFDIO_API(r0,\
+  \ 0xc018aa3f, &(0x7f0000002000-0x18)={0xaa, 0x0, 0x0})\n  ioctl$UFFDIO_REGISTER(r0,\
+  \ 0xc020aa00, &(0x7f0000019000)={{&(0x7f0000012000/0x2000)=nil, 0x2000}, 0x1, 0x0})\n\
+  \  r1 = gettid()\n  syz_open_dev$evdev(&(0x7f0000013000-0x12)=\"2f6465762f696e7075742f6576656e742300\"\
+  , 0x0, 0x0)\n  tkill(r1, 0x7)\n\nThe vma should be pinned by mmap_sem, but handle_userfault()\
+  \ might (in a\nreturn to userspace scenario) release it and then acquire again,\
+  \ so when\nwe return to __do_page_fault() (with other result than VM_FAULT_RETRY),\n\
+  the vma might be gone.\n\nSpecifically, per Andrea the scenario is\n \"A return\
+  \ to userland to repeat the page fault later with a\n  VM_FAULT_NOPAGE retval (potentially\
+  \ after handling any pending signal\n  during the return to userland). The return\
+  \ to userland is identified\n  whenever FAULT_FLAG_USER|FAULT_FLAG_KILLABLE are\
+  \ both set in\n  vmf->flags\"\n\nHowever, since commit a3c4fb7c9c2e (\"x86/mm: Fix\
+  \ fault error path using\nunsafe vma pointer\") there is a vma_pkey() read of vma->vm_flags\
+  \ after\nthat point, which can thus become use-after-free.  Fix this by moving\n\
+  the read before calling handle_mm_fault().\n\nReported-by: syzbot <bot+6a5269ce759a7bb12754ed9622076dc93f65a1f6@syzkaller.appspotmail.com>\n\
+  Reported-by: Dmitry Vyukov <dvyukov@google.com>\nSuggested-by: Kirill A. Shutemov\
+  \ <kirill@shutemov.name>\nFixes: 3c4fb7c9c2e (\"x86/mm: Fix fault error path using\
+  \ unsafe vma pointer\")\nReviewed-by: Andrea Arcangeli <aarcange@redhat.com>\nSigned-off-by:\
+  \ Vlastimil Babka <vbabka@suse.cz>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- arch/x86/mm
+hunk_count: 2
+covered_count: 1

@@ -1,0 +1,14 @@
+diff --git a/net/openvswitch/flow_netlink.c b/net/openvswitch/flow_netlink.c
+index 95e0dd14dc1a..518be23e48ea 100644
+--- a/net/openvswitch/flow_netlink.c
++++ b/net/openvswitch/flow_netlink.c
+@@ -2876,7 +2876,8 @@ static int validate_set(const struct nlattr *a,
+ 	size_t key_len;
+ 
+ 	/* There can be only one key in a action */
+-	if (nla_total_size(nla_len(ovs_key)) != nla_len(a))
++	if (!nla_ok(ovs_key, nla_len(a)) ||
++	    nla_total_size(nla_len(ovs_key)) != nla_len(a))
+ 		return -EINVAL;
+ 
+ 	key_len = nla_len(ovs_key);

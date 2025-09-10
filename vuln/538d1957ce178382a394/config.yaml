@@ -1,0 +1,33 @@
+id: 538d1957ce178382a394
+bug_link: https://syzkaller.appspot.com/bug?extid=538d1957ce178382a394
+title: 'INFO: task hung in io_queue_file_removal'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 18a542ff19ad149fac9e5a36a4012e3cac7b3b3b
+fix_commit: 4afdb733b1606c6cb86e7833f9335f4870cf7ddd
+datetime: '2020-03-23T09:21:06-06:00'
+fix_commit_message: "io-uring: drop completion when removing file\n\nA case of task\
+  \ hung was reported by syzbot,\n\nINFO: task syz-executor975:9880 blocked for more\
+  \ than 143 seconds.\n      Not tainted 5.6.0-rc6-syzkaller #0\n\"echo 0 > /proc/sys/kernel/hung_task_timeout_secs\"\
+  \ disables this message.\nsyz-executor975 D27576  9880   9878 0x80004000\nCall Trace:\n\
+  \ schedule+0xd0/0x2a0 kernel/sched/core.c:4154\n schedule_timeout+0x6db/0xba0 kernel/time/timer.c:1871\n\
+  \ do_wait_for_common kernel/sched/completion.c:83 [inline]\n __wait_for_common kernel/sched/completion.c:104\
+  \ [inline]\n wait_for_common kernel/sched/completion.c:115 [inline]\n wait_for_completion+0x26a/0x3c0\
+  \ kernel/sched/completion.c:136\n io_queue_file_removal+0x1af/0x1e0 fs/io_uring.c:5826\n\
+  \ __io_sqe_files_update.isra.0+0x3a1/0xb00 fs/io_uring.c:5867\n io_sqe_files_update\
+  \ fs/io_uring.c:5918 [inline]\n __io_uring_register+0x377/0x2c00 fs/io_uring.c:7131\n\
+  \ __do_sys_io_uring_register fs/io_uring.c:7202 [inline]\n __se_sys_io_uring_register\
+  \ fs/io_uring.c:7184 [inline]\n __x64_sys_io_uring_register+0x192/0x560 fs/io_uring.c:7184\n\
+  \ do_syscall_64+0xf6/0x7d0 arch/x86/entry/common.c:294\n entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nand bisect pointed to 05f3fb3c5397 (\"io_uring: avoid ring quiesce for\nfixed\
+  \ file set unregister and update\").\n\nIt is down to the order that we wait for\
+  \ work done before flushing it\nwhile nobody is likely going to wake us up.\n\n\
+  We can drop that completion on stack as flushing work itself is a sync\noperation\
+  \ we need and no more is left behind it.\n\nTo that end, io_file_put::done is re-used\
+  \ for indicating if it can be\nfreed in the workqueue worker context.\n\nReported-and-Inspired-by:\
+  \ syzbot <syzbot+538d1957ce178382a394@syzkaller.appspotmail.com>\nSigned-off-by:\
+  \ Hillf Danton <hdanton@sina.com>\n\nRename ->done to ->free_pfile\n\nSigned-off-by:\
+  \ Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 4
+covered_count: 0

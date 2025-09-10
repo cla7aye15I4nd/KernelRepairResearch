@@ -1,0 +1,17 @@
+diff --git a/fs/exfat/nls.c b/fs/exfat/nls.c
+index afdf13c34ff5..1ac011088ce7 100644
+--- a/fs/exfat/nls.c
++++ b/fs/exfat/nls.c
+@@ -779,8 +779,11 @@ int exfat_create_upcase_table(struct super_block *sb)
+ 				le32_to_cpu(ep->dentry.upcase.checksum));
+ 
+ 			brelse(bh);
+-			if (ret && ret != -EIO)
++			if (ret && ret != -EIO) {
++				/* free memory from exfat_load_upcase_table call */
++				exfat_free_upcase_table(sbi);
+ 				goto load_default;
++			}
+ 
+ 			/* load successfully */
+ 			return ret;

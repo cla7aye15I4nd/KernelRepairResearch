@@ -1,0 +1,33 @@
+id: 8b707430713eb46e1e45
+bug_link: https://syzkaller.appspot.com/bug?extid=8b707430713eb46e1e45
+title: 'KMSAN: uninit-value in tipc_nl_compat_bearer_enable (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d3de85a51a4b4eaeb62541dfdbf5159f3b210260
+fix_commit: 6f07e5f06c8712acc423485f657799fc8e11e56c
+datetime: '2019-03-31T16:45:57-07:00'
+fix_commit_message: "tipc: check bearer name with right length in tipc_nl_compat_bearer_enable\n\
+  \nSyzbot reported the following crash:\n\nBUG: KMSAN: uninit-value in memchr+0xce/0x110\
+  \ lib/string.c:961\n  memchr+0xce/0x110 lib/string.c:961\n  string_is_valid net/tipc/netlink_compat.c:176\
+  \ [inline]\n  tipc_nl_compat_bearer_enable+0x2c4/0x910 net/tipc/netlink_compat.c:401\n\
+  \  __tipc_nl_compat_doit net/tipc/netlink_compat.c:321 [inline]\n  tipc_nl_compat_doit+0x3aa/0xaf0\
+  \ net/tipc/netlink_compat.c:354\n  tipc_nl_compat_handle net/tipc/netlink_compat.c:1162\
+  \ [inline]\n  tipc_nl_compat_recv+0x1ae7/0x2750 net/tipc/netlink_compat.c:1265\n\
+  \  genl_family_rcv_msg net/netlink/genetlink.c:601 [inline]\n  genl_rcv_msg+0x185f/0x1a60\
+  \ net/netlink/genetlink.c:626\n  netlink_rcv_skb+0x431/0x620 net/netlink/af_netlink.c:2477\n\
+  \  genl_rcv+0x63/0x80 net/netlink/genetlink.c:637\n  netlink_unicast_kernel net/netlink/af_netlink.c:1310\
+  \ [inline]\n  netlink_unicast+0xf3e/0x1020 net/netlink/af_netlink.c:1336\n  netlink_sendmsg+0x127f/0x1300\
+  \ net/netlink/af_netlink.c:1917\n  sock_sendmsg_nosec net/socket.c:622 [inline]\n\
+  \  sock_sendmsg net/socket.c:632 [inline]\n\nUninit was created at:\n  __alloc_skb+0x309/0xa20\
+  \ net/core/skbuff.c:208\n  alloc_skb include/linux/skbuff.h:1012 [inline]\n  netlink_alloc_large_skb\
+  \ net/netlink/af_netlink.c:1182 [inline]\n  netlink_sendmsg+0xb82/0x1300 net/netlink/af_netlink.c:1892\n\
+  \  sock_sendmsg_nosec net/socket.c:622 [inline]\n  sock_sendmsg net/socket.c:632\
+  \ [inline]\n\nIt was triggered when the bearer name size < TIPC_MAX_BEARER_NAME,\n\
+  it would check with a wrong len/TLV_GET_DATA_LEN(msg->req), which\nalso includes\
+  \ priority and disc_domain length.\n\nThis patch is to fix it by checking it with\
+  \ a right length:\n'TLV_GET_DATA_LEN(msg->req) - offsetof(struct tipc_bearer_config,\
+  \ name)'.\n\nReported-by: syzbot+8b707430713eb46e1e45@syzkaller.appspotmail.com\n\
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 1
+covered_count: 1

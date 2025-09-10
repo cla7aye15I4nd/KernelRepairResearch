@@ -1,0 +1,64 @@
+id: 5338ef8374ed180ba281
+bug_link: https://syzkaller.appspot.com/bug?extid=5338ef8374ed180ba281
+title: kernel BUG in __clear_extent_bit
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: da2a071b6f142f47072ea7b37e03d3ef317b8a4e
+fix_commit: 5a75034e71ef5ec0fce983afcb6c9cb0147cd5b9
+datetime: '2022-12-05T18:00:41+01:00'
+fix_commit_message: 'btrfs: do not panic if we can''t allocate a prealloc extent state
+
+
+  We sometimes have to allocate new extent states when clearing or setting
+
+  new bits in an extent io tree.  Generally we preallocate this before
+
+  taking the tree spin lock, but we can use this preallocated extent state
+
+  sometimes and then need to try to do a GFP_ATOMIC allocation under the
+
+  lock.
+
+
+  Unfortunately sometimes this fails, and then we hit the BUG_ON() and
+
+  bring the box down.  This happens roughly 20 times a week in our fleet.
+
+
+  However the vast majority of callers use GFP_NOFS, which means that if
+
+  this GFP_ATOMIC allocation fails, we could simply drop the spin lock, go
+
+  back and allocate a new extent state with our given gfp mask, and begin
+
+  again from where we left off.
+
+
+  For the remaining callers that do not use GFP_NOFS, they are generally
+
+  using GFP_NOWAIT, which still allows for some reclaim.  So allow these
+
+  allocations to attempt to happen outside of the spin lock so we don''t
+
+  need to rely on GFP_ATOMIC allocations.
+
+
+  This in essence creates an infinite loop for anything that isn''t
+
+  GFP_NOFS.  To address this we may want to migrate to using mempools for
+
+  extent states so that we will always have emergency reserves in order to
+
+  make our allocations.
+
+
+  Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+
+  Reviewed-by: David Sterba <dsterba@suse.com>
+
+  Signed-off-by: David Sterba <dsterba@suse.com>
+
+  '
+submodule:
+- fs/btrfs
+hunk_count: 8
+covered_count: 2

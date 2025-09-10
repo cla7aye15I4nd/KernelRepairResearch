@@ -1,0 +1,62 @@
+id: 0a725420475916460f12
+bug_link: https://syzkaller.appspot.com/bug?extid=0a725420475916460f12
+title: 'KASAN: slab-out-of-bounds Read in build_segment_manager'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b2ca374f33bd33fd822eb871876e4888cf79dc97
+fix_commit: 8a29c1260e24e7c9c6ab138aa0017558d8b28208
+datetime: '2018-05-31T11:31:48-07:00'
+fix_commit_message: "f2fs: sanity check for total valid node blocks\n\nThis patch\
+  \ enhances sanity check for SIT entries.\n\nsyzbot hit the following crash on upstream\
+  \ commit\n83beed7b2b26f232d782127792dd0cd4362fdc41 (Fri Apr 20 17:56:32 2018 +0000)\n\
+  Merge branch 'fixes' of git://git.kernel.org/pub/scm/linux/kernel/git/evalenti/linux-soc-thermal\n\
+  syzbot dashboard link: https://syzkaller.appspot.com/bug?extid=bf9253040425feb155ad\n\
+  \nsyzkaller reproducer: https://syzkaller.appspot.com/x/repro.syz?id=5692130282438656\n\
+  Raw console output: https://syzkaller.appspot.com/x/log.txt?id=5095924598571008\n\
+  Kernel config: https://syzkaller.appspot.com/x/.config?id=1808800213120130118\n\
+  compiler: gcc (GCC) 8.0.1 20180413 (experimental)\n\nIMPORTANT: if you fix the bug,\
+  \ please add the following tag to the commit:\nReported-by: syzbot+bf9253040425feb155ad@syzkaller.appspotmail.com\n\
+  It will help syzbot understand when the bug is fixed. See footer for details.\n\
+  If you forward the report, please keep this part and the footer.\n\nF2FS-fs (loop0):\
+  \ invalid crc value\nF2FS-fs (loop0): Try to recover 1th superblock, ret: 0\nF2FS-fs\
+  \ (loop0): Mounted with checkpoint version = d\nF2FS-fs (loop0): Bitmap was wrongly\
+  \ cleared, blk:9740\n------------[ cut here ]------------\nkernel BUG at fs/f2fs/segment.c:1884!\n\
+  invalid opcode: 0000 [#1] SMP KASAN\nDumping ftrace buffer:\n   (ftrace buffer empty)\n\
+  Modules linked in:\nCPU: 1 PID: 4508 Comm: syz-executor0 Not tainted 4.17.0-rc1+\
+  \ #10\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 01/01/2011\nRIP: 0010:update_sit_entry+0x1215/0x1590 fs/f2fs/segment.c:1882\n\
+  RSP: 0018:ffff8801af526708 EFLAGS: 00010282\nRAX: ffffed0035ea4cc0 RBX: ffff8801ad454f90\
+  \ RCX: 0000000000000000\nRDX: 0000000000000000 RSI: ffffffff82eeb87e RDI: ffffed0035ea4cb6\n\
+  RBP: ffff8801af526760 R08: ffff8801ad4a2480 R09: ffffed003b5e4f90\nR10: ffffed003b5e4f90\
+  \ R11: ffff8801daf27c87 R12: ffff8801adb8d380\nR13: 0000000000000001 R14: 0000000000000008\
+  \ R15: 00000000ffffffff\nFS:  00000000014af940(0000) GS:ffff8801daf00000(0000) knlGS:0000000000000000\n\
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 00007f06bc223000 CR3: 00000001adb02000\
+  \ CR4: 00000000001406e0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \ allocate_data_block+0x66f/0x2050 fs/f2fs/segment.c:2663\n do_write_page+0x105/0x1b0\
+  \ fs/f2fs/segment.c:2727\n write_node_page+0x129/0x350 fs/f2fs/segment.c:2770\n\
+  \ __write_node_page+0x7da/0x1370 fs/f2fs/node.c:1398\n sync_node_pages+0x18cf/0x1eb0\
+  \ fs/f2fs/node.c:1652\n block_operations+0x429/0xa60 fs/f2fs/checkpoint.c:1088\n\
+  \ write_checkpoint+0x3ba/0x5380 fs/f2fs/checkpoint.c:1405\n f2fs_sync_fs+0x2fb/0x6a0\
+  \ fs/f2fs/super.c:1077\n __sync_filesystem fs/sync.c:39 [inline]\n sync_filesystem+0x265/0x310\
+  \ fs/sync.c:67\n generic_shutdown_super+0xd7/0x520 fs/super.c:429\n kill_block_super+0xa4/0x100\
+  \ fs/super.c:1191\n kill_f2fs_super+0x9f/0xd0 fs/f2fs/super.c:3030\n deactivate_locked_super+0x97/0x100\
+  \ fs/super.c:316\n deactivate_super+0x188/0x1b0 fs/super.c:347\n cleanup_mnt+0xbf/0x160\
+  \ fs/namespace.c:1174\n __cleanup_mnt+0x16/0x20 fs/namespace.c:1181\n task_work_run+0x1e4/0x290\
+  \ kernel/task_work.c:113\n tracehook_notify_resume include/linux/tracehook.h:191\
+  \ [inline]\n exit_to_usermode_loop+0x2bd/0x310 arch/x86/entry/common.c:166\n prepare_exit_to_usermode\
+  \ arch/x86/entry/common.c:196 [inline]\n syscall_return_slowpath arch/x86/entry/common.c:265\
+  \ [inline]\n do_syscall_64+0x6ac/0x800 arch/x86/entry/common.c:290\n entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  RIP: 0033:0x457d97\nRSP: 002b:00007ffd46f9c8e8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6\n\
+  RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000457d97\nRDX: 00000000014b09a3\
+  \ RSI: 0000000000000002 RDI: 00007ffd46f9da50\nRBP: 00007ffd46f9da50 R08: 0000000000000000\
+  \ R09: 0000000000000009\nR10: 0000000000000005 R11: 0000000000000246 R12: 00000000014b0940\n\
+  R13: 0000000000000000 R14: 0000000000000002 R15: 000000000000658e\nRIP: update_sit_entry+0x1215/0x1590\
+  \ fs/f2fs/segment.c:1882 RSP: ffff8801af526708\n---[ end trace f498328bb02610a2\
+  \ ]---\n\nReported-and-tested-by: syzbot+bf9253040425feb155ad@syzkaller.appspotmail.com\n\
+  Reported-and-tested-by: syzbot+7d6d31d3bc702f566ce3@syzkaller.appspotmail.com\n\
+  Reported-and-tested-by: syzbot+0a725420475916460f12@syzkaller.appspotmail.com\n\
+  Reviewed-by: Chao Yu <yuchao0@huawei.com>\nSigned-off-by: Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 4
+covered_count: 3

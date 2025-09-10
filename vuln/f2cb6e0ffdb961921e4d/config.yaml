@@ -1,0 +1,56 @@
+id: f2cb6e0ffdb961921e4d
+bug_link: https://syzkaller.appspot.com/bug?extid=f2cb6e0ffdb961921e4d
+title: 'KMSAN: uninit-value in ath9k_wmi_ctrl_rx'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3e56c80931c7615250fe4bf83f93b57881969266
+fix_commit: f24292e827088bba8de7158501ac25a59b064953
+datetime: '2023-04-28T19:52:35+03:00'
+fix_commit_message: 'wifi: ath9k: avoid referencing uninit memory in ath9k_wmi_ctrl_rx
+
+
+  For the reasons also described in commit b383e8abed41 ("wifi: ath9k: avoid
+
+  uninit memory read in ath9k_htc_rx_msg()"), ath9k_htc_rx_msg() should
+
+  validate pkt_len before accessing the SKB.
+
+
+  For example, the obtained SKB may have been badly constructed with
+
+  pkt_len = 8. In this case, the SKB can only contain a valid htc_frame_hdr
+
+  but after being processed in ath9k_htc_rx_msg() and passed to
+
+  ath9k_wmi_ctrl_rx() endpoint RX handler, it is expected to have a WMI
+
+  command header which should be located inside its data payload.
+
+
+  Implement sanity checking inside ath9k_wmi_ctrl_rx(). Otherwise, uninit
+
+  memory can be referenced.
+
+
+  Tested on Qualcomm Atheros Communications AR9271 802.11n .
+
+
+  Found by Linux Verification Center (linuxtesting.org) with Syzkaller.
+
+
+  Fixes: fb9987d0f748 ("ath9k_htc: Support for AR9271 chipset.")
+
+  Reported-and-tested-by: syzbot+f2cb6e0ffdb961921e4d@syzkaller.appspotmail.com
+
+  Signed-off-by: Fedor Pchelkin <pchelkin@ispras.ru>
+
+  Acked-by: Toke Høiland-Jørgensen <toke@toke.dk>
+
+  Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+
+  Link: https://lore.kernel.org/r/20230424183348.111355-1-pchelkin@ispras.ru
+
+  '
+submodule:
+- drivers/net/wireless/ath/ath9k
+hunk_count: 1
+covered_count: 1

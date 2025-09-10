@@ -1,0 +1,54 @@
+id: c679f13773f295d2da53
+bug_link: https://syzkaller.appspot.com/bug?extid=c679f13773f295d2da53
+title: possible deadlock in fsnotify_destroy_mark
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 35ceae44742e1101f9d20adadbbbd92c05d7d659
+fix_commit: cad3f4a22cfa4081cc2d465d1118cf31708fd82b
+datetime: '2024-10-02T15:14:29+02:00'
+fix_commit_message: "inotify: Fix possible deadlock in fsnotify_destroy_mark\n\n[Syzbot\
+  \ reported]\nWARNING: possible circular locking dependency detected\n6.11.0-rc4-syzkaller-00019-gb311c1b497e5\
+  \ #0 Not tainted\n------------------------------------------------------\nkswapd0/78\
+  \ is trying to acquire lock:\nffff88801b8d8930 (&group->mark_mutex){+.+.}-{3:3},\
+  \ at: fsnotify_group_lock include/linux/fsnotify_backend.h:270 [inline]\nffff88801b8d8930\
+  \ (&group->mark_mutex){+.+.}-{3:3}, at: fsnotify_destroy_mark+0x38/0x3c0 fs/notify/mark.c:578\n\
+  \nbut task is already holding lock:\nffffffff8ea2fd60 (fs_reclaim){+.+.}-{0:0},\
+  \ at: balance_pgdat mm/vmscan.c:6841 [inline]\nffffffff8ea2fd60 (fs_reclaim){+.+.}-{0:0},\
+  \ at: kswapd+0xbb4/0x35a0 mm/vmscan.c:7223\n\nwhich lock already depends on the\
+  \ new lock.\n\nthe existing dependency chain (in reverse order) is:\n\n-> #1 (fs_reclaim){+.+.}-{0:0}:\n\
+  \       ...\n       kmem_cache_alloc_noprof+0x3d/0x2a0 mm/slub.c:4044\n       inotify_new_watch\
+  \ fs/notify/inotify/inotify_user.c:599 [inline]\n       inotify_update_watch fs/notify/inotify/inotify_user.c:647\
+  \ [inline]\n       __do_sys_inotify_add_watch fs/notify/inotify/inotify_user.c:786\
+  \ [inline]\n       __se_sys_inotify_add_watch+0x72e/0x1070 fs/notify/inotify/inotify_user.c:729\n\
+  \       do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n       do_syscall_64+0xf3/0x230\
+  \ arch/x86/entry/common.c:83\n       entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\n\
+  -> #0 (&group->mark_mutex){+.+.}-{3:3}:\n       ...\n       __mutex_lock+0x136/0xd70\
+  \ kernel/locking/mutex.c:752\n       fsnotify_group_lock include/linux/fsnotify_backend.h:270\
+  \ [inline]\n       fsnotify_destroy_mark+0x38/0x3c0 fs/notify/mark.c:578\n     \
+  \  fsnotify_destroy_marks+0x14a/0x660 fs/notify/mark.c:934\n       fsnotify_inoderemove\
+  \ include/linux/fsnotify.h:264 [inline]\n       dentry_unlink_inode+0x2e0/0x430\
+  \ fs/dcache.c:403\n       __dentry_kill+0x20d/0x630 fs/dcache.c:610\n       shrink_kill+0xa9/0x2c0\
+  \ fs/dcache.c:1055\n       shrink_dentry_list+0x2c0/0x5b0 fs/dcache.c:1082\n   \
+  \    prune_dcache_sb+0x10f/0x180 fs/dcache.c:1163\n       super_cache_scan+0x34f/0x4b0\
+  \ fs/super.c:221\n       do_shrink_slab+0x701/0x1160 mm/shrinker.c:435\n       shrink_slab+0x1093/0x14d0\
+  \ mm/shrinker.c:662\n       shrink_one+0x43b/0x850 mm/vmscan.c:4815\n       shrink_many\
+  \ mm/vmscan.c:4876 [inline]\n       lru_gen_shrink_node mm/vmscan.c:4954 [inline]\n\
+  \       shrink_node+0x3799/0x3de0 mm/vmscan.c:5934\n       kswapd_shrink_node mm/vmscan.c:6762\
+  \ [inline]\n       balance_pgdat mm/vmscan.c:6954 [inline]\n       kswapd+0x1bcd/0x35a0\
+  \ mm/vmscan.c:7223\n\n[Analysis]\nThe problem is that inotify_new_watch() is using\
+  \ GFP_KERNEL to allocate\nnew watches under group->mark_mutex, however if dentry\
+  \ reclaim races\nwith unlinking of an inode, it can end up dropping the last dentry\
+  \ reference\nfor an unlinked inode resulting in removal of fsnotify mark from reclaim\n\
+  context which wants to acquire group->mark_mutex as well.\n\nThis scenario shows\
+  \ that all notification groups are in principle prone\nto this kind of a deadlock\
+  \ (previously, we considered only fanotify and\ndnotify to be problematic for other\
+  \ reasons) so make sure all\nallocations under group->mark_mutex happen with GFP_NOFS.\n\
+  \nReported-and-tested-by: syzbot+c679f13773f295d2da53@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=c679f13773f295d2da53\nSigned-off-by:\
+  \ Lizhi Xu <lizhi.xu@windriver.com>\nReviewed-by: Amir Goldstein <amir73il@gmail.com>\n\
+  Signed-off-by: Jan Kara <jack@suse.cz>\nLink: https://patch.msgid.link/20240927143642.2369508-1-lizhi.xu@windriver.com\n"
+submodule:
+- fs/nfsd
+- fs/notify
+- include/linux
+hunk_count: 7
+covered_count: 2

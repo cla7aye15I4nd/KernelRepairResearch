@@ -1,0 +1,85 @@
+BTRFS info (device loop0 state MCS): disabling free space tree
+BTRFS info (device loop0 state MCS): clearing compat-ro feature flag for FREE_SPACE_TREE (0x1)
+BTRFS info (device loop0 state MCS): clearing compat-ro feature flag for FREE_SPACE_TREE_VALID (0x2)
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000003: 0000 [#1] PREEMPT SMP KASAN NOPTI
+KASAN: null-ptr-deref in range [0x0000000000000018-0x000000000000001f]
+CPU: 0 UID: 0 PID: 5101 Comm: syz-executor285 Not tainted 6.11.0-rc6-syzkaller-00183-gb831f83e40a2 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:backup_super_roots fs/btrfs/disk-io.c:1691 [inline]
+RIP: 0010:write_all_supers+0x97a/0x40f0 fs/btrfs/disk-io.c:4041
+Code: 00 00 00 48 89 d8 48 c1 e8 03 42 0f b6 04 28 84 c0 0f 85 8a 34 00 00 44 88 33 48 8b 5c 24 10 48 83 c3 18 49 89 df 49 c1 ef 03 <43> 80 3c 2f 00 74 08 48 89 df e8 17 b6 4b fe 48 89 5c 24 10 48 8b
+RSP: 0018:ffffc90002d3f040 EFLAGS: 00010206
+RAX: 0000000000000000 RBX: 0000000000000018 RCX: 0000000000000000
+RDX: 0000000000000001 RSI: 0000000000000004 RDI: ffff888035eeaa80
+RBP: ffffc90002d3f3f0 R08: ffff88803d48806b R09: 1ffff11007a9100d
+R10: dffffc0000000000 R11: ffffed1007a9100e R12: dffffc0000000000
+R13: dffffc0000000000 R14: 0000000000000000 R15: 0000000000000003
+FS:  0000555594a77380(0000) GS:ffff88801fe00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000056349cf20668 CR3: 000000003f9f4000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ btrfs_commit_transaction+0x1eae/0x3740 fs/btrfs/transaction.c:2530
+ btrfs_delete_free_space_tree+0x383/0x730 fs/btrfs/free-space-tree.c:1312
+ btrfs_start_pre_rw_mount+0xf28/0x1300 fs/btrfs/disk-io.c:3012
+ btrfs_remount_rw fs/btrfs/super.c:1309 [inline]
+ btrfs_reconfigure+0xae6/0x2d40 fs/btrfs/super.c:1534
+ btrfs_reconfigure_for_mount fs/btrfs/super.c:2020 [inline]
+ btrfs_get_tree_subvol fs/btrfs/super.c:2079 [inline]
+ btrfs_get_tree+0x918/0x1920 fs/btrfs/super.c:2115
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1800
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3472
+ do_mount fs/namespace.c:3812 [inline]
+ __do_sys_mount fs/namespace.c:4020 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:3997
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fb7b8916e99
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe5c5484c8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 0030656c69662f2e RCX: 00007fb7b8916e99
+RDX: 0000000020000280 RSI: 0000000020000180 RDI: 0000000020000100
+RBP: 00007fb7b89905f0 R08: 0000000000000000 R09: 0000555594a784c0
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffe5c5484f0
+R13: 00007ffe5c548718 R14: 431bde82d7b634db R15: 00007fb7b896003b
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:backup_super_roots fs/btrfs/disk-io.c:1691 [inline]
+RIP: 0010:write_all_supers+0x97a/0x40f0 fs/btrfs/disk-io.c:4041
+Code: 00 00 00 48 89 d8 48 c1 e8 03 42 0f b6 04 28 84 c0 0f 85 8a 34 00 00 44 88 33 48 8b 5c 24 10 48 83 c3 18 49 89 df 49 c1 ef 03 <43> 80 3c 2f 00 74 08 48 89 df e8 17 b6 4b fe 48 89 5c 24 10 48 8b
+RSP: 0018:ffffc90002d3f040 EFLAGS: 00010206
+RAX: 0000000000000000 RBX: 0000000000000018 RCX: 0000000000000000
+RDX: 0000000000000001 RSI: 0000000000000004 RDI: ffff888035eeaa80
+RBP: ffffc90002d3f3f0 R08: ffff88803d48806b R09: 1ffff11007a9100d
+R10: dffffc0000000000 R11: ffffed1007a9100e R12: dffffc0000000000
+R13: dffffc0000000000 R14: 0000000000000000 R15: 0000000000000003
+FS:  0000555594a77380(0000) GS:ffff88801fe00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f731263196e CR3: 000000003f9f4000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	00 00                	add    %al,(%rax)
+   2:	00 48 89             	add    %cl,-0x77(%rax)
+   5:	d8 48 c1             	fmuls  -0x3f(%rax)
+   8:	e8 03 42 0f b6       	call   0xb60f4210
+   d:	04 28                	add    $0x28,%al
+   f:	84 c0                	test   %al,%al
+  11:	0f 85 8a 34 00 00    	jne    0x34a1
+  17:	44 88 33             	mov    %r14b,(%rbx)
+  1a:	48 8b 5c 24 10       	mov    0x10(%rsp),%rbx
+  1f:	48 83 c3 18          	add    $0x18,%rbx
+  23:	49 89 df             	mov    %rbx,%r15
+  26:	49 c1 ef 03          	shr    $0x3,%r15
+* 2a:	43 80 3c 2f 00       	cmpb   $0x0,(%r15,%r13,1) <-- trapping instruction
+  2f:	74 08                	je     0x39
+  31:	48 89 df             	mov    %rbx,%rdi
+  34:	e8 17 b6 4b fe       	call   0xfe4bb650
+  39:	48 89 5c 24 10       	mov    %rbx,0x10(%rsp)
+  3e:	48                   	rex.W
+  3f:	8b                   	.byte 0x8b

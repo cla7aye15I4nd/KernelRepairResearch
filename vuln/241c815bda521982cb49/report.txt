@@ -1,0 +1,45 @@
+------------[ cut here ]------------
+UBSAN: array-index-out-of-bounds in fs/jfs/jfs_imap.c:886:2
+index -134217728 is out of range for type 'struct mutex[128]'
+CPU: 1 PID: 114 Comm: jfsCommit Not tainted 6.10.0-rc6-syzkaller-00048-g73e931504f8e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_out_of_bounds+0x121/0x150 lib/ubsan.c:429
+ diFree+0x21c3/0x2fb0 fs/jfs/jfs_imap.c:886
+ jfs_evict_inode+0x32d/0x440 fs/jfs/inode.c:156
+ evict+0x2a8/0x630 fs/inode.c:667
+ txUpdateMap+0x829/0x9f0 fs/jfs/jfs_txnmgr.c:2367
+ txLazyCommit fs/jfs/jfs_txnmgr.c:2664 [inline]
+ jfs_lazycommit+0x49a/0xb80 fs/jfs/jfs_txnmgr.c:2733
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+---[ end trace ]---
+Kernel panic - not syncing: UBSAN: panic_on_warn set ...
+CPU: 1 PID: 114 Comm: jfsCommit Not tainted 6.10.0-rc6-syzkaller-00048-g73e931504f8e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ panic+0x349/0x860 kernel/panic.c:347
+ check_panic_on_warn+0x86/0xb0 kernel/panic.c:240
+ ubsan_epilogue lib/ubsan.c:236 [inline]
+ __ubsan_handle_out_of_bounds+0x141/0x150 lib/ubsan.c:429
+ diFree+0x21c3/0x2fb0 fs/jfs/jfs_imap.c:886
+ jfs_evict_inode+0x32d/0x440 fs/jfs/inode.c:156
+ evict+0x2a8/0x630 fs/inode.c:667
+ txUpdateMap+0x829/0x9f0 fs/jfs/jfs_txnmgr.c:2367
+ txLazyCommit fs/jfs/jfs_txnmgr.c:2664 [inline]
+ jfs_lazycommit+0x49a/0xb80 fs/jfs/jfs_txnmgr.c:2733
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Kernel Offset: disabled
+Rebooting in 86400 seconds..

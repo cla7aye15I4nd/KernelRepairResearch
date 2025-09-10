@@ -1,0 +1,37 @@
+id: 8258d5439c49d4c35f43
+bug_link: https://syzkaller.appspot.com/bug?extid=8258d5439c49d4c35f43
+title: 'KASAN: slab-out-of-bounds Read in mon_copy_to_buff'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4f15ee98304b96e164ff2340e1dfd6181c3f42aa
+fix_commit: 0d0777ccaa2d46609d05b66ba0096802a2746193
+datetime: '2025-07-13T09:53:27+02:00'
+fix_commit_message: "HID: core: ensure __hid_request reserves the report ID as the\
+  \ first byte\n\nThe low level transport driver expects the first byte to be the\
+  \ report\nID, even when the report ID is not use (in which case they just shift\n\
+  the buffer).\n\nHowever, __hid_request() whas not offsetting the buffer it used\
+  \ by one\nin this case, meaning that the raw_request() callback emitted by the\n\
+  transport driver would be stripped of the first byte.\n\nNote: this changes the\
+  \ API for uhid devices when a request is made\nthrough hid_hw_request. However,\
+  \ several considerations makes me think\nthis is fine:\n- every request to a HID\
+  \ device made through hid_hw_request() would see\n  that change, but every request\
+  \ made through hid_hw_raw_request()\n  already has the new behaviour. So that means\
+  \ that the users are\n  already facing situations where they might have or not the\
+  \ first byte\n  being the null report ID when it is 0. We are making things more\n\
+  \  straightforward in the end.\n- uhid is mainly used for BLE devices\n- uhid is\
+  \ also used for testing, but I don't see that change a big issue\n- for BLE devices,\
+  \ we can check which kernel module is calling\n  hid_hw_request()\n- and in those\
+  \ modules, we can check which are using a Bluetooth device\n- and then we can check\
+  \ if the command is used with a report ID or not.\n- surprise: none of the kernel\
+  \ module are using a report ID 0\n- and finally, bluez, in its function set_report()[0],\
+  \ does the same\n  shift if the report ID is 0 and the given buffer has a size >\
+  \ 0.\n\n[0] https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/profiles/input/hog-lib.c#n879\n\
+  \nReported-by: Alan Stern <stern@rowland.harvard.edu>\nCloses: https://lore.kernel.org/linux-input/c75433e0-9b47-4072-bbe8-b1d14ea97b13@rowland.harvard.edu/\n\
+  Reported-by: syzbot+8258d5439c49d4c35f43@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=8258d5439c49d4c35f43\n\
+  Tested-by: syzbot+8258d5439c49d4c35f43@syzkaller.appspotmail.com\nFixes: 4fa5a7f76cc7\
+  \ (\"HID: core: implement generic .request()\")\nCc: stable@vger.kernel.org\nLink:\
+  \ https://patch.msgid.link/20250710-report-size-null-v2-2-ccf922b7c4e5@kernel.org\n\
+  Signed-off-by: Benjamin Tissoires <bentiss@kernel.org>\n"
+submodule:
+- drivers/hid
+hunk_count: 2
+covered_count: 2

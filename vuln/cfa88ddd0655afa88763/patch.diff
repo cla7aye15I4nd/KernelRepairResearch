@@ -1,0 +1,28 @@
+diff --git a/net/xdp/xsk.c b/net/xdp/xsk.c
+index ac4a317038f1..c6532d77fde7 100644
+--- a/net/xdp/xsk.c
++++ b/net/xdp/xsk.c
+@@ -878,6 +878,10 @@ static int xsk_bind(struct socket *sock, struct sockaddr *addr, int addr_len)
+ 		}
+ 	}
+ 
++	/* FQ and CQ are now owned by the buffer pool and cleaned up with it. */
++	xs->fq_tmp = NULL;
++	xs->cq_tmp = NULL;
++
+ 	xs->dev = dev;
+ 	xs->zc = xs->umem->zc;
+ 	xs->queue_id = qid;
+diff --git a/net/xdp/xsk_buff_pool.c b/net/xdp/xsk_buff_pool.c
+index 67a4494d63b6..818b75060922 100644
+--- a/net/xdp/xsk_buff_pool.c
++++ b/net/xdp/xsk_buff_pool.c
+@@ -75,8 +75,6 @@ struct xsk_buff_pool *xp_create_and_assign_umem(struct xdp_sock *xs,
+ 
+ 	pool->fq = xs->fq_tmp;
+ 	pool->cq = xs->cq_tmp;
+-	xs->fq_tmp = NULL;
+-	xs->cq_tmp = NULL;
+ 
+ 	for (i = 0; i < pool->free_heads_cnt; i++) {
+ 		xskb = &pool->heads[i];

@@ -1,0 +1,22 @@
+id: cc39f136925517aed571
+bug_link: https://syzkaller.appspot.com/bug?extid=cc39f136925517aed571
+title: 'UBSAN: shift-out-of-bounds in xfrm_selector_match (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 645546a05b0370391c0eac0f14f5b9ddf8d00731
+fix_commit: 3f0ab59e6537c6a8f9e1b355b48f9c05a76e8563
+datetime: '2024-10-07T09:09:08+02:00'
+fix_commit_message: "xfrm: validate new SA's prefixlen using SA family when sel.family\
+  \ is unset\n\nThis expands the validation introduced in commit 07bf7908950a (\"\
+  xfrm:\nValidate address prefix lengths in the xfrm selector.\")\n\nsyzbot created\
+  \ an SA with\n    usersa.sel.family = AF_UNSPEC\n    usersa.sel.prefixlen_s = 128\n\
+  \    usersa.family = AF_INET\n\nBecause of the AF_UNSPEC selector, verify_newsa_info\
+  \ doesn't put\nlimits on prefixlen_{s,d}. But then copy_from_user_state sets\nx->sel.family\
+  \ to usersa.family (AF_INET). Do the same conversion in\nverify_newsa_info before\
+  \ validating prefixlen_{s,d}, since that's how\nprefixlen is going to be used later\
+  \ on.\n\nReported-by: syzbot+cc39f136925517aed571@syzkaller.appspotmail.com\nFixes:\
+  \ 1da177e4c3f4 (\"Linux-2.6.12-rc2\")\nSigned-off-by: Sabrina Dubroca <sd@queasysnail.net>\n\
+  Signed-off-by: Steffen Klassert <steffen.klassert@secunet.com>\n"
+submodule:
+- net/xfrm
+hunk_count: 2
+covered_count: 0

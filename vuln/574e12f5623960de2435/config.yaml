@@ -1,0 +1,43 @@
+id: 574e12f5623960de2435
+bug_link: https://syzkaller.appspot.com/bug?extid=574e12f5623960de2435
+title: 'BUG: bad usercopy in strncpy_from_user'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 203f45003a3d03eea8fa28d74cfc74c354416fdb
+fix_commit: d76c68109f37cb85b243a1cf0f40313afd2bae68
+datetime: '2017-12-22T19:02:47+11:00'
+fix_commit_message: 'crypto: pcrypt - fix freeing pcrypt instances
+
+
+  pcrypt is using the old way of freeing instances, where the ->free()
+
+  method specified in the ''struct crypto_template'' is passed a pointer to
+
+  the ''struct crypto_instance''.  But the crypto_instance is being
+
+  kfree()''d directly, which is incorrect because the memory was actually
+
+  allocated as an aead_instance, which contains the crypto_instance at a
+
+  nonzero offset.  Thus, the wrong pointer was being kfree()''d.
+
+
+  Fix it by switching to the new way to free aead_instance''s where the
+
+  ->free() method is specified in the aead_instance itself.
+
+
+  Reported-by: syzbot <syzkaller@googlegroups.com>
+
+  Fixes: 0496f56065e0 ("crypto: pcrypt - Add support for new AEAD interface")
+
+  Cc: <stable@vger.kernel.org> # v4.2+
+
+  Signed-off-by: Eric Biggers <ebiggers@google.com>
+
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  '
+submodule:
+- crypto
+hunk_count: 4
+covered_count: 0

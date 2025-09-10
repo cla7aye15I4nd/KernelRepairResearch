@@ -1,0 +1,48 @@
+id: 89cc4f2324ed37988b60
+bug_link: https://syzkaller.appspot.com/bug?extid=89cc4f2324ed37988b60
+title: kernel BUG in nilfs_btnode_create_block (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f556acc2facdd240de2c7416cd1da48a1dae70ec
+fix_commit: 4811f7af6090e8f5a398fbdd766f903ef6c0d787
+datetime: '2024-07-26T14:33:10-07:00'
+fix_commit_message: 'nilfs2: handle inconsistent state in nilfs_btnode_create_block()
+
+
+  Syzbot reported that a buffer state inconsistency was detected in
+
+  nilfs_btnode_create_block(), triggering a kernel bug.
+
+
+  It is not appropriate to treat this inconsistency as a bug; it can occur
+
+  if the argument block address (the buffer index of the newly created
+
+  block) is a virtual block number and has been reallocated due to
+
+  corruption of the bitmap used to manage its allocation state.
+
+
+  So, modify nilfs_btnode_create_block() and its callers to treat it as a
+
+  possible filesystem error, rather than triggering a kernel bug.
+
+
+  Link: https://lkml.kernel.org/r/20240725052007.4562-1-konishi.ryusuke@gmail.com
+
+  Fixes: a60be987d45d ("nilfs2: B-tree node cache")
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+89cc4f2324ed37988b60@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=89cc4f2324ed37988b60
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 4
+covered_count: 4

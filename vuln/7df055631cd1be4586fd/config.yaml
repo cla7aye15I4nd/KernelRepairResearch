@@ -1,0 +1,37 @@
+id: 7df055631cd1be4586fd
+bug_link: https://syzkaller.appspot.com/bug?extid=7df055631cd1be4586fd
+title: WARNING in io_sync_cancel
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 52ea806ad983490b3132a9e526e11a10dc2fd10c
+fix_commit: 23fffb2f09ce1145cbd751801d45ba74acaa6542
+datetime: '2022-12-21T13:31:40-07:00'
+fix_commit_message: 'io_uring/cancel: re-grab ctx mutex after finishing wait
+
+
+  If we have a signal pending during cancelations, it''ll cause the
+
+  task_work run to return an error. Since we didn''t run task_work, the
+
+  current task is left in TASK_INTERRUPTIBLE state when we need to
+
+  re-grab the ctx mutex, and the kernel will rightfully complain about
+
+  that.
+
+
+  Move the lock grabbing for the error cases outside the loop to avoid
+
+  that issue.
+
+
+  Reported-by: syzbot+7df055631cd1be4586fd@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/io-uring/0000000000003a14a905f05050b0@google.com/
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 1
+covered_count: 1

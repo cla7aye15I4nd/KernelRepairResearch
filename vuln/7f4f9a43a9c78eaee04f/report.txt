@@ -1,0 +1,67 @@
+=============================
+[ BUG: Invalid wait context ]
+6.13.0-rc7-syzkaller-00043-g619f0b6fad52 #0 Not tainted
+-----------------------------
+syz-execprog/5830 is trying to lock:
+ffff8880b873aab0 (batched_entropy_u8.lock){..-.}-{3:3}, at: local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+ffff8880b873aab0 (batched_entropy_u8.lock){..-.}-{3:3}, at: get_random_u8+0x1a0/0xaa0 drivers/char/random.c:551
+other info that might help us debug this:
+context-{2:2}
+1 lock held by syz-execprog/5830:
+ #0: ffff8880b873e8d8 (&rq->__lock){-.-.}-{2:2}, at: raw_spin_rq_lock_nested+0x2a/0x140 kernel/sched/core.c:598
+stack backtrace:
+CPU: 1 UID: 0 PID: 5830 Comm: syz-execprog Not tainted 6.13.0-rc7-syzkaller-00043-g619f0b6fad52 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_lock_invalid_wait_context kernel/locking/lockdep.c:4826 [inline]
+ check_wait_context kernel/locking/lockdep.c:4898 [inline]
+ __lock_acquire+0x15a8/0x2100 kernel/locking/lockdep.c:5176
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5849
+ local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+ get_random_u8+0x1bd/0xaa0 drivers/char/random.c:551
+ get_random_u32_below include/linux/random.h:78 [inline]
+ kfence_guarded_alloc+0x9c/0xcd0 mm/kfence/core.c:421
+ __kfence_alloc+0x344/0x370 mm/kfence/core.c:1136
+ kfence_alloc include/linux/kfence.h:129 [inline]
+ slab_alloc_node mm/slub.c:4152 [inline]
+ __kmalloc_cache_noprof+0x2dd/0x390 mm/slub.c:4324
+ kmalloc_noprof include/linux/slab.h:901 [inline]
+ add_stack_record_to_list mm/page_owner.c:172 [inline]
+ inc_stack_record_count mm/page_owner.c:214 [inline]
+ __set_page_owner+0x55f/0x800 mm/page_owner.c:329
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1558
+ prep_new_page mm/page_alloc.c:1566 [inline]
+ get_page_from_freelist+0x365c/0x37a0 mm/page_alloc.c:3476
+ __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4753
+ alloc_pages_mpol_noprof+0x3e1/0x780 mm/mempolicy.c:2269
+ stack_depot_save_flags+0x72d/0x940 lib/stackdepot.c:627
+ kasan_save_stack+0x4f/0x60 mm/kasan/common.c:48
+ __kasan_record_aux_stack+0xac/0xc0 mm/kasan/generic.c:544
+ task_work_add+0xd9/0x490 kernel/task_work.c:77
+ task_tick_numa kernel/sched/fair.c:3616 [inline]
+ task_tick_fair+0x58c/0x7b0 kernel/sched/fair.c:13101
+ sched_tick+0x21e/0x660 kernel/sched/core.c:5652
+ update_process_times+0x276/0x2f0 kernel/time/timer.c:2524
+ tick_sched_handle kernel/time/tick-sched.c:276 [inline]
+ tick_nohz_handler+0x37c/0x500 kernel/time/tick-sched.c:297
+ __run_hrtimer kernel/time/hrtimer.c:1739 [inline]
+ __hrtimer_run_queues+0x551/0xd30 kernel/time/hrtimer.c:1803
+ hrtimer_interrupt+0x403/0xa40 kernel/time/hrtimer.c:1865
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1038 [inline]
+ __sysvec_apic_timer_interrupt+0x110/0x420 arch/x86/kernel/apic/apic.c:1055
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1049 [inline]
+ sysvec_apic_timer_interrupt+0x52/0xc0 arch/x86/kernel/apic/apic.c:1049
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0033:0x57f72d
+Code: 45 39 e7 76 21 4d 39 e7 0f 86 48 04 00 00 48 8b 53 18 49 c1 e4 04 46 8b 24 22 0f 1f 00 41 39 cc 0f 84 d9 00 00 00 48 8b 53 28 <4d> 8d 67 01 4c 39 e2 0f 82 17 04 00 00 4c 89 63 20 66 90 4d 39 e7
+RSP: 002b:000000c00087b410 EFLAGS: 00000246
+RAX: 000000c0002f4000 RBX: 000000c0002f4040 RCX: 0000000000000008
+RDX: 0000000000000080 RSI: 000000c0006fe200 RDI: 000000000079cbbb
+RBP: 000000c00087b4a0 R08: 0000000000000004 R09: 0000000000000004
+R10: 000000c00087b5b0 R11: 000000c001a26800 R12: 0000000000000000
+R13: 0000000000000008 R14: 000000c000fd36c0 R15: 0000000000000000
+ </TASK>

@@ -1,0 +1,70 @@
+id: 3bd970a1887812621b4c
+bug_link: https://syzkaller.appspot.com/bug?extid=3bd970a1887812621b4c
+title: possible deadlock in j1939_sk_queue_drop_all
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 858b31133dbec88465bcc0a006f4dc43173662b8
+fix_commit: 6cdedc18ba7b9dacc36466e27e3267d201948c8d
+datetime: '2024-02-14T13:53:03+01:00'
+fix_commit_message: 'can: j1939: prevent deadlock by changing j1939_socks_lock to
+  rwlock
+
+
+  The following 3 locks would race against each other, causing the
+
+  deadlock situation in the Syzbot bug report:
+
+
+  - j1939_socks_lock
+
+  - active_session_list_lock
+
+  - sk_session_queue_lock
+
+
+  A reasonable fix is to change j1939_socks_lock to an rwlock, since in
+
+  the rare situations where a write lock is required for the linked list
+
+  that j1939_socks_lock is protecting, the code does not attempt to
+
+  acquire any more locks. This would break the circular lock dependency,
+
+  where, for example, the current thread already locks j1939_socks_lock
+
+  and attempts to acquire sk_session_queue_lock, and at the same time,
+
+  another thread attempts to acquire j1939_socks_lock while holding
+
+  sk_session_queue_lock.
+
+
+  NOTE: This patch along does not fix the unregister_netdevice bug
+
+  reported by Syzbot; instead, it solves a deadlock situation to prepare
+
+  for one or more further patches to actually fix the Syzbot bug, which
+
+  appears to be a reference counting problem within the j1939 codebase.
+
+
+  Reported-by: <syzbot+1591462f226d9cbf0564@syzkaller.appspotmail.com>
+
+  Signed-off-by: Ziqi Zhao <astrajoan@yahoo.com>
+
+  Reviewed-by: Oleksij Rempel <o.rempel@pengutronix.de>
+
+  Acked-by: Oleksij Rempel <o.rempel@pengutronix.de>
+
+  Link: https://lore.kernel.org/all/20230721162226.8639-1-astrajoan@yahoo.com
+
+  [mkl: remove unrelated newline change]
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+
+  '
+submodule:
+- net/can
+hunk_count: 8
+covered_count: 4

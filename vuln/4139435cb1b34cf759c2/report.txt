@@ -1,0 +1,96 @@
+==================================================================
+BUG: KASAN: slab-out-of-bounds in instrument_copy_from_user_before include/linux/instrumented.h:129 [inline]
+BUG: KASAN: slab-out-of-bounds in _copy_from_user+0x7b/0xe0 lib/usercopy.c:22
+Write of size 24 at addr ffff888028569608 by task syz-executor278/5097
+
+CPU: 1 PID: 5097 Comm: syz-executor278 Not tainted 6.9.0-rc2-next-20240403-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ kasan_check_range+0x282/0x290 mm/kasan/generic.c:189
+ instrument_copy_from_user_before include/linux/instrumented.h:129 [inline]
+ _copy_from_user+0x7b/0xe0 lib/usercopy.c:22
+ copy_from_user include/linux/uaccess.h:183 [inline]
+ handle_to_path fs/fhandle.c:203 [inline]
+ do_handle_open+0x204/0x660 fs/fhandle.c:226
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x72/0x7a
+RIP: 0033:0x7fc55f7ec2a9
+Code: 48 83 c4 28 c3 e8 37 17 00 00 0f 1f 80 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fffbed0af38 EFLAGS: 00000246 ORIG_RAX: 0000000000000130
+RAX: ffffffffffffffda RBX: 00007fffbed0b118 RCX: 00007fc55f7ec2a9
+RDX: 0000000000002000 RSI: 00000000200019c0 RDI: 00000000ffffffff
+RBP: 00007fc55f85f610 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000246 R12: 0000000000000001
+R13: 00007fffbed0b108 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+Allocated by task 5097:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:370 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:387
+ kasan_kmalloc include/linux/kasan.h:211 [inline]
+ __do_kmalloc_node mm/slub.c:4069 [inline]
+ __kmalloc_noprof+0x200/0x410 mm/slub.c:4082
+ kmalloc_noprof include/linux/slab.h:664 [inline]
+ handle_to_path fs/fhandle.c:195 [inline]
+ do_handle_open+0x162/0x660 fs/fhandle.c:226
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x72/0x7a
+
+The buggy address belongs to the object at ffff888028569600
+ which belongs to the cache kmalloc-32 of size 32
+The buggy address is located 8 bytes inside of
+ allocated 24-byte region [ffff888028569600, ffff888028569618)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x28569
+flags: 0xfff80000000000(node=0|zone=1|lastcpupid=0xfff)
+page_type: 0xffffefff(slab)
+raw: 00fff80000000000 ffff888015041500 dead000000000100 dead000000000122
+raw: 0000000000000000 0000000080400040 00000001ffffefff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x12cc0(GFP_KERNEL|__GFP_NOWARN|__GFP_NORETRY), pid 1, tgid -1535921372 (swapper/0), ts 1, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1490
+ prep_new_page mm/page_alloc.c:1498 [inline]
+ get_page_from_freelist+0x2e7e/0x2f40 mm/page_alloc.c:3454
+ __alloc_pages_noprof+0x256/0x6c0 mm/page_alloc.c:4712
+ __alloc_pages_node_noprof include/linux/gfp.h:244 [inline]
+ alloc_pages_node_noprof include/linux/gfp.h:271 [inline]
+ alloc_slab_page+0x5f/0x120 mm/slub.c:2249
+ allocate_slab+0x5a/0x2e0 mm/slub.c:2412
+ new_slab mm/slub.c:2465 [inline]
+ ___slab_alloc+0xcd1/0x14b0 mm/slub.c:3615
+ __slab_alloc+0x58/0xa0 mm/slub.c:3705
+ __slab_alloc_node mm/slub.c:3758 [inline]
+ slab_alloc_node mm/slub.c:3936 [inline]
+ __do_kmalloc_node mm/slub.c:4068 [inline]
+ __kmalloc_noprof+0x25e/0x410 mm/slub.c:4082
+ kmalloc_noprof include/linux/slab.h:664 [inline]
+ kzalloc_noprof include/linux/slab.h:775 [inline]
+ kobject_get_path+0xb8/0x230 lib/kobject.c:161
+ kobject_uevent_env+0x2a5/0x8e0 lib/kobject_uevent.c:530
+ kernel_add_sysfs_param+0x10a/0x130 kernel/params.c:821
+ param_sysfs_builtin+0x16e/0x1f0 kernel/params.c:856
+ param_sysfs_builtin_init+0x31/0x40 kernel/params.c:990
+ do_one_initcall+0x248/0x880 init/main.c:1258
+ do_initcall_level+0x157/0x210 init/main.c:1320
+ do_initcalls+0x3f/0x80 init/main.c:1336
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff888028569500: fa fb fb fb fc fc fc fc fa fb fb fb fc fc fc fc
+ ffff888028569580: fa fb fb fb fc fc fc fc fa fb fb fb fc fc fc fc
+>ffff888028569600: 00 00 00 fc fc fc fc fc fa fb fb fb fc fc fc fc
+                            ^
+ ffff888028569680: fa fb fb fb fc fc fc fc fa fb fb fb fc fc fc fc
+ ffff888028569700: fa fb fb fb fc fc fc fc fa fb fb fb fc fc fc fc
+==================================================================

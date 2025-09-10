@@ -1,0 +1,29 @@
+id: 6f50c99e8f6194bf363f
+bug_link: https://syzkaller.appspot.com/bug?extid=6f50c99e8f6194bf363f
+title: 'KMSAN: uninit-value in aesti_encrypt'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 57d0f00dfeb3775eae88af1c4aeda6bd35943f20
+fix_commit: 683916f6a84023407761d843048f1aea486b2612
+datetime: '2019-11-05T18:07:47-08:00'
+fix_commit_message: "net/tls: fix sk_msg trim on fallback to copy mode\n\nsk_msg_trim()\
+  \ tries to only update curr pointer if it falls into\nthe trimmed region. The logic,\
+  \ however, does not take into the\naccount pointer wrapping that sk_msg_iter_var_prev()\
+  \ does nor\n(as John points out) the fact that msg->sg is a ring buffer.\n\nThis\
+  \ means that when the message was trimmed completely, the new\ncurr pointer would\
+  \ have the value of MAX_MSG_FRAGS - 1, which is\nneither smaller than any other\
+  \ value, nor would it actually be\ncorrect.\n\nSpecial case the trimming to 0 length\
+  \ a little bit and rework\nthe comparison between curr and end to take into account\
+  \ wrapping.\n\nThis bug caused the TLS code to not copy all of the message, if\n\
+  zero copy filled in fewer sg entries than memcopy would need.\n\nBig thanks to Alexander\
+  \ Potapenko for the non-KMSAN reproducer.\n\nv2:\n - take into account that msg->sg\
+  \ is a ring buffer (John).\n\nLink: https://lore.kernel.org/netdev/20191030160542.30295-1-jakub.kicinski@netronome.com/\
+  \ (v1)\n\nFixes: d829e9c4112b (\"tls: convert to generic sk_msg interface\")\nReported-by:\
+  \ syzbot+f8495bff23a879a6d0bd@syzkaller.appspotmail.com\nReported-by: syzbot+6f50c99e8f6194bf363f@syzkaller.appspotmail.com\n\
+  Co-developed-by: John Fastabend <john.fastabend@gmail.com>\nSigned-off-by: Jakub\
+  \ Kicinski <jakub.kicinski@netronome.com>\nSigned-off-by: John Fastabend <john.fastabend@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- include/linux
+- net/core
+hunk_count: 3
+covered_count: 0

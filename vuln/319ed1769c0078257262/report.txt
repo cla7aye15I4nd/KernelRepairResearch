@@ -1,0 +1,51 @@
+==================================================================
+BUG: KCSAN: data-race in inode_doinit_with_dentry / selinux_file_open
+
+write to 0xffff888114a3392a of 1 bytes by task 5741 on cpu 0:
+ inode_doinit_with_dentry+0x29c/0x840 security/selinux/hooks.c:1443
+ __inode_security_revalidate security/selinux/hooks.c:295 [inline]
+ inode_security security/selinux/hooks.c:320 [inline]
+ selinux_file_open+0x101/0x3b0 security/selinux/hooks.c:3979
+ security_file_open+0x3a/0x70 security/security.c:2988
+ do_dentry_open+0x22e/0xa50 fs/open.c:946
+ vfs_open+0x3b/0x1f0 fs/open.c:1089
+ dentry_open+0x4a/0x90 fs/open.c:1112
+ pidfs_alloc_file+0xe6/0x150 fs/pidfs.c:404
+ __pidfd_prepare kernel/fork.c:2013 [inline]
+ pidfd_prepare+0xa0/0x120 kernel/fork.c:2074
+ pidfd_create kernel/pid.c:608 [inline]
+ __do_sys_pidfd_open kernel/pid.c:644 [inline]
+ __se_sys_pidfd_open+0x123/0x240 kernel/pid.c:629
+ __x64_sys_pidfd_open+0x31/0x40 kernel/pid.c:629
+ x64_sys_call+0x2873/0x2d60 arch/x86/include/generated/asm/syscalls_64.h:435
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff888114a3392a of 1 bytes by task 5740 on cpu 1:
+ __inode_security_revalidate security/selinux/hooks.c:286 [inline]
+ inode_security security/selinux/hooks.c:320 [inline]
+ selinux_file_open+0xce/0x3b0 security/selinux/hooks.c:3979
+ security_file_open+0x3a/0x70 security/security.c:2988
+ do_dentry_open+0x22e/0xa50 fs/open.c:946
+ vfs_open+0x3b/0x1f0 fs/open.c:1089
+ dentry_open+0x4a/0x90 fs/open.c:1112
+ pidfs_alloc_file+0xe6/0x150 fs/pidfs.c:404
+ __pidfd_prepare kernel/fork.c:2013 [inline]
+ pidfd_prepare+0xa0/0x120 kernel/fork.c:2074
+ pidfd_create kernel/pid.c:608 [inline]
+ __do_sys_pidfd_open kernel/pid.c:644 [inline]
+ __se_sys_pidfd_open+0x123/0x240 kernel/pid.c:629
+ __x64_sys_pidfd_open+0x31/0x40 kernel/pid.c:629
+ x64_sys_call+0x2873/0x2d60 arch/x86/include/generated/asm/syscalls_64.h:435
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x00 -> 0x01
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 UID: 0 PID: 5740 Comm: syz.0.725 Not tainted 6.11.0-rc4-syzkaller-00135-gaa0743a22936 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+==================================================================
+netlink: 16 bytes leftover after parsing attributes in process `syz.0.725'.

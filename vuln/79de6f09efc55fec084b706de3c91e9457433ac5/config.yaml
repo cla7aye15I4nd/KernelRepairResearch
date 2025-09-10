@@ -1,0 +1,32 @@
+id: 79de6f09efc55fec084b706de3c91e9457433ac5
+bug_link: https://syzkaller.appspot.com/bug?extid=79de6f09efc55fec084b706de3c91e9457433ac5
+title: suspicious RCU usage at ./include/net/inet_sock.h:LINE
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 94b6ddce71780575fbbf9d2c36afc8440e61a281
+fix_commit: 3f32d0be6c16b902b687453c962d17eea5b8ea19
+datetime: '2018-09-25T20:48:56-07:00'
+fix_commit_message: 'tipc: lock wakeup & inputq at tipc_link_reset()
+
+
+  In tipc_link_reset() we copy the wakeup queue to input queue using
+
+  skb_queue_splice_init(link->wakeupq, link->inputq).
+
+  This is performed without holding any locks. The lists might be
+
+  simultaneously be accessed by other cpu threads in tipc_sk_rcv(),
+
+  something leading to to random missing packets.
+
+
+  Signed-off-by: Parthasarathy Bhuvaragan <parthasarathy.bhuvaragan@ericsson.com>
+
+  Signed-off-by: Jon Maloy <jon.maloy@ericsson.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/tipc
+hunk_count: 1
+covered_count: 0

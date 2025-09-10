@@ -1,0 +1,47 @@
+id: 5d5d25f90f195a3cfcb4
+bug_link: https://syzkaller.appspot.com/bug?extid=5d5d25f90f195a3cfcb4
+title: WARNING in nilfs_dat_prepare_end
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1b381f6fe495fffbbdace1ee530afb74287c809d
+fix_commit: 5124a0a549857c4b87173280e192eea24dea72ad
+datetime: '2023-02-02T22:50:08-08:00'
+fix_commit_message: 'nilfs2: replace WARN_ONs for invalid DAT metadata block requests
+
+
+  If DAT metadata file block access fails due to corruption of the DAT file
+
+  or abnormal virtual block numbers held by b-trees or inodes, a kernel
+
+  warning is generated.
+
+
+  This replaces the WARN_ONs by error output, so that a kernel, booted with
+
+  panic_on_warn, does not panic.  This patch also replaces the detected
+
+  return code -ENOENT with another internal code -EINVAL to notify the bmap
+
+  layer of metadata corruption.  When the bmap layer sees -EINVAL, it
+
+  handles the abnormal situation with nilfs_bmap_convert_error() and finally
+
+  returns code -EIO as it should.
+
+
+  Link: https://lkml.kernel.org/r/0000000000005cc3d205ea23ddcf@google.com
+
+  Link: https://lkml.kernel.org/r/20230126164114.6911-1-konishi.ryusuke@gmail.com
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: <syzbot+5d5d25f90f195a3cfcb4@syzkaller.appspotmail.com>
+
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 3
+covered_count: 3

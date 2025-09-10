@@ -1,0 +1,41 @@
+id: 5093ba19745994288b53
+bug_link: https://syzkaller.appspot.com/bug?extid=5093ba19745994288b53
+title: WARNING in __mod_timer
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 09a9639e56c01c7a00d6c0ca63f4c7c41abe075d
+fix_commit: 63a759694eed61025713b3e14dd827c8548daadc
+datetime: '2023-04-15T23:13:36+02:00'
+fix_commit_message: "debugobject: Prevent init race with static objects\n\nStatically\
+  \ initialized objects are usually not initialized via the init()\nfunction of the\
+  \ subsystem. They are special cased and the subsystem\nprovides a function to validate\
+  \ whether an object which is not yet tracked\nby debugobjects is statically initialized.\
+  \ This means the object is started\nto be tracked on first use, e.g. activation.\n\
+  \nThis works perfectly fine, unless there are two concurrent operations on\nthat\
+  \ object. Schspa decoded the problem:\n\nT0 \t          \t    \t    T1\n\ndebug_object_assert_init(addr)\n\
+  \  lock_hash_bucket()\n  obj = lookup_object(addr);\n  if (!obj) {\n  \tunlock_hash_bucket();\n\
+  \t- > preemption\n\t\t\t            lock_subsytem_object(addr);\n\t\t\t\t      activate_object(addr)\n\
+  \t\t\t\t      lock_hash_bucket();\n\t\t\t\t      obj = lookup_object(addr);\n\t\t\
+  \t\t      if (!obj) {\n\t\t\t\t    \tunlock_hash_bucket();\n\t\t\t\t\tif (is_static_object(addr))\n\
+  \t\t\t\t\t   init_and_track(addr);\n\t\t\t\t      lock_hash_bucket();\n\t\t\t\t\
+  \      obj = lookup_object(addr);\n\t\t\t\t      obj->state = ACTIVATED;\n\t\t\t\
+  \t      unlock_hash_bucket();\n\n\t\t\t\t    subsys function modifies content of\
+  \ addr,\n\t\t\t\t    so static object detection does\n\t\t\t\t    not longer work.\n\
+  \n\t\t\t\t    unlock_subsytem_object(addr);\n\t\t\t\t    \n        if (is_static_object(addr))\
+  \ <- Fails\n\n\t  debugobject emits a warning and invokes the fixup function which\n\
+  \t  reinitializes the already active object in the worst case.\n\nThis race exists\
+  \ forever, but was never observed until mod_timer() got a\ndebug_object_assert_init()\
+  \ added which is outside of the timer base lock\nheld section right at the beginning\
+  \ of the function to cover the lockless\nearly exit points too.\n\nRework the code\
+  \ so that the lookup, the static object check and the\ntracking object association\
+  \ happens atomically under the hash bucket\nlock. This prevents the issue completely\
+  \ as all callers are serialized on\nthe hash bucket lock and therefore cannot observe\
+  \ inconsistent state.\n\nFixes: 3ac7fe5a4aab (\"infrastructure to debug (dynamic)\
+  \ objects\")\nReported-by: syzbot+5093ba19745994288b53@syzkaller.appspotmail.com\n\
+  Debugged-by: Schspa Shi <schspa@gmail.com>\nSigned-off-by: Thomas Gleixner <tglx@linutronix.de>\n\
+  Reviewed-by: Stephen Boyd <swboyd@chromium.org>\nLink: https://syzkaller.appspot.com/bug?id=22c8a5938eab640d1c6bcc0e3dc7be519d878462\n\
+  Link: https://lore.kernel.org/lkml/20230303161906.831686-1-schspa@gmail.com\nLink:\
+  \ https://lore.kernel.org/r/87zg7dzgao.ffs@tglx\n\n"
+submodule:
+- lib
+hunk_count: 9
+covered_count: 3

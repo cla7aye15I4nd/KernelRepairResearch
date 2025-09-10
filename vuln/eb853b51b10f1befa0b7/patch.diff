@@ -1,0 +1,16 @@
+diff --git a/drivers/net/ppp/ppp_generic.c b/drivers/net/ppp/ppp_generic.c
+index 0cb1c2d0a8bc..3bf8a8b42983 100644
+--- a/drivers/net/ppp/ppp_generic.c
++++ b/drivers/net/ppp/ppp_generic.c
+@@ -564,8 +564,9 @@ static struct bpf_prog *get_filter(struct sock_fprog *uprog)
+ 		return NULL;
+ 
+ 	/* uprog->len is unsigned short, so no overflow here */
+-	fprog.len = uprog->len * sizeof(struct sock_filter);
+-	fprog.filter = memdup_user(uprog->filter, fprog.len);
++	fprog.len = uprog->len;
++	fprog.filter = memdup_user(uprog->filter,
++				   uprog->len * sizeof(struct sock_filter));
+ 	if (IS_ERR(fprog.filter))
+ 		return ERR_CAST(fprog.filter);
+ 

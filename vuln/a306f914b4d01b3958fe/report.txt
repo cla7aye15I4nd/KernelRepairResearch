@@ -1,0 +1,98 @@
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 21 18 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffcc5e96ae8 EFLAGS: 00000246 ORIG_RAX: 0000000000000148
+RAX: ffffffffffffffda RBX: 00007ffcc5e96b20 RCX: 00007fbb1142c2e9
+RDX: 0000000000000001 RSI: 00000000200026c0 RDI: 0000000000000004
+RBP: 0000000000000002 R08: 0000000000000000 R09: 0000000000000010
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffcc5e96b1c
+R13: 0000000000000031 R14: 431bde82d7b634db R15: 00007ffcc5e96b60
+ </TASK>
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/extent-tree.c:3439!
+invalid opcode: 0000 [#1] PREEMPT SMP KASAN
+CPU: 0 PID: 5904 Comm: syz-executor333 Not tainted 6.7.0-rc4-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/10/2023
+RIP: 0010:btrfs_free_tree_block+0xd83/0xd90 fs/btrfs/extent-tree.c:3439
+Code: 89 f1 80 e1 07 38 c1 0f 8c 61 f8 ff ff be 08 00 00 00 4c 89 f7 e8 3d 2b 5b fe e9 4f f8 ff ff e8 b3 de 87 07 e8 6e 22 ff fd 90 <0f> 0b 66 2e 0f 1f 84 00 00 00 00 00 90 55 41 57 41 56 41 55 41 54
+RSP: 0018:ffffc9000b116600 EFLAGS: 00010293
+RAX: ffffffff838f57d2 RBX: 00000000fffffff4 RCX: ffff888016375940
+RDX: 0000000000000000 RSI: 00000000fffffff4 RDI: 0000000000000000
+RBP: ffffc9000b116770 R08: ffffffff838f4e0f R09: 1ffffffff21bae86
+R10: dffffc0000000000 R11: fffffbfff21bae87 R12: ffff000000000100
+R13: dffffc0000000000 R14: 0000000000000002 R15: ffffc9000b1166a0
+FS:  00005555562e7380(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fbb114a90f8 CR3: 00000000288e1000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ btrfs_force_cow_block+0xf37/0x1b70 fs/btrfs/ctree.c:618
+ btrfs_cow_block+0x35e/0xa20 fs/btrfs/ctree.c:741
+ btrfs_search_slot+0xbdd/0x30c0 fs/btrfs/ctree.c:2095
+ lookup_inline_extent_backref+0x409/0x1650 fs/btrfs/extent-tree.c:830
+ lookup_extent_backref fs/btrfs/extent-tree.c:1062 [inline]
+ __btrfs_free_extent+0x2fb/0x38e0 fs/btrfs/extent-tree.c:3114
+ run_delayed_tree_ref fs/btrfs/extent-tree.c:1759 [inline]
+ run_one_delayed_ref fs/btrfs/extent-tree.c:1784 [inline]
+ btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:2042 [inline]
+ __btrfs_run_delayed_refs+0x13c8/0x44d0 fs/btrfs/extent-tree.c:2112
+ btrfs_run_delayed_refs+0xe3/0x2c0 fs/btrfs/extent-tree.c:2224
+ btrfs_commit_transaction+0x4ba/0x3740 fs/btrfs/transaction.c:2237
+ btrfs_sync_file+0xf50/0x1330 fs/btrfs/file.c:2004
+ generic_write_sync include/linux/fs.h:2653 [inline]
+ btrfs_do_write_iter+0xbc5/0x1190 fs/btrfs/file.c:1694
+ do_iter_readv_writev+0x330/0x4a0
+ do_iter_write+0x1f6/0x8d0 fs/read_write.c:860
+ vfs_writev fs/read_write.c:933 [inline]
+ do_pwritev+0x21a/0x360 fs/read_write.c:1030
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x45/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7fbb1142c2e9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 21 18 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffcc5e96ae8 EFLAGS: 00000246 ORIG_RAX: 0000000000000148
+RAX: ffffffffffffffda RBX: 00007ffcc5e96b20 RCX: 00007fbb1142c2e9
+RDX: 0000000000000001 RSI: 00000000200026c0 RDI: 0000000000000004
+RBP: 0000000000000002 R08: 0000000000000000 R09: 0000000000000010
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffcc5e96b1c
+R13: 0000000000000031 R14: 431bde82d7b634db R15: 00007ffcc5e96b60
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:btrfs_free_tree_block+0xd83/0xd90 fs/btrfs/extent-tree.c:3439
+Code: 89 f1 80 e1 07 38 c1 0f 8c 61 f8 ff ff be 08 00 00 00 4c 89 f7 e8 3d 2b 5b fe e9 4f f8 ff ff e8 b3 de 87 07 e8 6e 22 ff fd 90 <0f> 0b 66 2e 0f 1f 84 00 00 00 00 00 90 55 41 57 41 56 41 55 41 54
+RSP: 0018:ffffc9000b116600 EFLAGS: 00010293
+RAX: ffffffff838f57d2 RBX: 00000000fffffff4 RCX: ffff888016375940
+RDX: 0000000000000000 RSI: 00000000fffffff4 RDI: 0000000000000000
+RBP: ffffc9000b116770 R08: ffffffff838f4e0f R09: 1ffffffff21bae86
+R10: dffffc0000000000 R11: fffffbfff21bae87 R12: ffff000000000100
+R13: dffffc0000000000 R14: 0000000000000002 R15: ffffc9000b1166a0
+FS:  00005555562e7380(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fbb114a90f8 CR3: 00000000288e1000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	28 00                	sub    %al,(%rax)
+   2:	00 00                	add    %al,(%rax)
+   4:	75 05                	jne    0xb
+   6:	48 83 c4 28          	add    $0x28,%rsp
+   a:	c3                   	ret
+   b:	e8 21 18 00 00       	call   0x1831
+  10:	90                   	nop
+  11:	48 89 f8             	mov    %rdi,%rax
+  14:	48 89 f7             	mov    %rsi,%rdi
+  17:	48 89 d6             	mov    %rdx,%rsi
+  1a:	48 89 ca             	mov    %rcx,%rdx
+  1d:	4d 89 c2             	mov    %r8,%r10
+  20:	4d 89 c8             	mov    %r9,%r8
+  23:	4c 8b 4c 24 08       	mov    0x8(%rsp),%r9
+  28:	0f 05                	syscall
+* 2a:	48 3d 01 f0 ff ff    	cmp    $0xfffffffffffff001,%rax <-- trapping instruction
+  30:	73 01                	jae    0x33
+  32:	c3                   	ret
+  33:	48 c7 c1 b8 ff ff ff 	mov    $0xffffffffffffffb8,%rcx
+  3a:	f7 d8                	neg    %eax
+  3c:	64 89 01             	mov    %eax,%fs:(%rcx)
+  3f:	48                   	rex.W

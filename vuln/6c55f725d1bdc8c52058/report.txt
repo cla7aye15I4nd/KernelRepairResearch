@@ -1,0 +1,32 @@
+ocfs2: Mounting device (7,0) on (node local, slot 0) with ordered data mode.
+=====================================================
+BUG: KMSAN: uninit-value in map_id_up_base kernel/user_namespace.c:355 [inline]
+BUG: KMSAN: uninit-value in map_id_up kernel/user_namespace.c:385 [inline]
+BUG: KMSAN: uninit-value in from_kuid+0x41e/0x990 kernel/user_namespace.c:433
+ map_id_up_base kernel/user_namespace.c:355 [inline]
+ map_id_up kernel/user_namespace.c:385 [inline]
+ from_kuid+0x41e/0x990 kernel/user_namespace.c:433
+ ocfs2_setattr+0x254/0x3140 fs/ocfs2/file.c:1133
+ notify_change+0x1a8e/0x1b80 fs/attr.c:503
+ do_truncate fs/open.c:65 [inline]
+ do_ftruncate+0x8c1/0xbf0 fs/open.c:181
+ do_sys_ftruncate fs/open.c:199 [inline]
+ __do_sys_ftruncate fs/open.c:207 [inline]
+ __se_sys_ftruncate fs/open.c:205 [inline]
+ __x64_sys_ftruncate+0x133/0x280 fs/open.c:205
+ x64_sys_call+0x9e4/0x3ba0 arch/x86/include/generated/asm/syscalls_64.h:78
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Local variable newattrs.i created at:
+ do_truncate fs/open.c:43 [inline]
+ do_ftruncate+0x600/0xbf0 fs/open.c:181
+ do_sys_ftruncate fs/open.c:199 [inline]
+ __do_sys_ftruncate fs/open.c:207 [inline]
+ __se_sys_ftruncate fs/open.c:205 [inline]
+ __x64_sys_ftruncate+0x133/0x280 fs/open.c:205
+
+CPU: 0 UID: 0 PID: 5176 Comm: syz-executor957 Not tainted 6.11.0-syzkaller-07337-g2004cef11ea0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+=====================================================

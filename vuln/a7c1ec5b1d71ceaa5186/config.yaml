@@ -1,0 +1,29 @@
+id: a7c1ec5b1d71ceaa5186
+bug_link: https://syzkaller.appspot.com/bug?extid=a7c1ec5b1d71ceaa5186
+title: 'KASAN: slab-use-after-free Read in mas_next_entry'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4737edbbdd4958ae29ca6a310a6a2fa4e0684b01
+fix_commit: f4e9e0e69468583c2c6d9d5c7bfc975e292bf188
+datetime: '2023-04-16T10:41:25-07:00'
+fix_commit_message: "mm/mempolicy: fix use-after-free of VMA iterator\n\nset_mempolicy_home_node()\
+  \ iterates over a list of VMAs and calls\nmbind_range() on each VMA, which also\
+  \ iterates over the singular list of\nthe VMA passed in and potentially splits the\
+  \ VMA.  Since the VMA iterator\nis not passed through, set_mempolicy_home_node()\
+  \ may now point to a stale\nnode in the VMA tree.  This can result in a UAF as reported\
+  \ by syzbot.\n\nAvoid the stale maple tree node by passing the VMA iterator through\
+  \ to the\nunderlying call to split_vma().\n\nmbind_range() is also overly complicated,\
+  \ since there are two calling\nfunctions and one already handles iterating over\
+  \ the VMAs.  Simplify\nmbind_range() to only handle merging and splitting of the\
+  \ VMAs.\n\nAlign the new loop in do_mbind() and existing loop in\nset_mempolicy_home_node()\
+  \ to use the reduced mbind_range() function.  This\nallows for a single location\
+  \ of the range calculation and avoids\nconstantly looking up the previous VMA (since\
+  \ this is a loop over the\nVMAs).\n\nLink: https://lore.kernel.org/linux-mm/000000000000c93feb05f87e24ad@google.com/\n\
+  Fixes: 66850be55e8e (\"mm/mempolicy: use vma iterator & maple state instead of vma\
+  \ linked list\")\nSigned-off-by: Liam R. Howlett <Liam.Howlett@oracle.com>\nReported-by:\
+  \ syzbot+a7c1ec5b1d71ceaa5186@syzkaller.appspotmail.com\n  Link: https://lkml.kernel.org/r/20230410152205.2294819-1-Liam.Howlett@oracle.com\n\
+  Tested-by: syzbot+a7c1ec5b1d71ceaa5186@syzkaller.appspotmail.com\nCc: <stable@vger.kernel.org>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 6
+covered_count: 4

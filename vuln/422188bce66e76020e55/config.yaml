@@ -1,0 +1,62 @@
+id: 422188bce66e76020e55
+bug_link: https://syzkaller.appspot.com/bug?extid=422188bce66e76020e55
+title: 'KASAN: slab-use-after-free Read in chaoskey_disconnect'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e0aa9614ab0fd35b404e4b16ebe879f9fc152591
+fix_commit: 422dc0a4d12d0b80dd3aab3fe5943f665ba8f041
+datetime: '2024-10-04T15:16:34+02:00'
+fix_commit_message: 'USB: chaoskey: fail open after removal
+
+
+  chaoskey_open() takes the lock only to increase the
+
+  counter of openings. That means that the mutual exclusion
+
+  with chaoskey_disconnect() cannot prevent an increase
+
+  of the counter and chaoskey_open() returning a success.
+
+
+  If that race is hit, chaoskey_disconnect() will happily
+
+  free all resources associated with the device after
+
+  it has dropped the lock, as it has read the counter
+
+  as zero.
+
+
+  To prevent this race chaoskey_open() has to check
+
+  the presence of the device under the lock.
+
+  However, the current per device lock cannot be used,
+
+  because it is a part of the data structure to be
+
+  freed. Hence an additional global mutex is needed.
+
+  The issue is as old as the driver.
+
+
+  Signed-off-by: Oliver Neukum <oneukum@suse.com>
+
+  Reported-by: syzbot+422188bce66e76020e55@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=422188bce66e76020e55
+
+  Fixes: 66e3e591891da ("usb: Add driver for Altus Metrum ChaosKey device (v2)")
+
+  Rule: add
+
+  Link: https://lore.kernel.org/stable/20241002132201.552578-1-oneukum%40suse.com
+
+  Link: https://lore.kernel.org/r/20241002132201.552578-1-oneukum@suse.com
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/misc
+hunk_count: 7
+covered_count: 7

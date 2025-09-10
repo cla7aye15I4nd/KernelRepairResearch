@@ -1,0 +1,28 @@
+id: 19340dff067c2d3835c0
+bug_link: https://syzkaller.appspot.com/bug?extid=19340dff067c2d3835c0
+title: 'KASAN: global-out-of-bounds Write in kbd_event'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2ae0b31e0faced43c011ce3221f2535721cb6a66
+fix_commit: b2b2dd71e0859436d4e05b2f61f86140250ed3f8
+datetime: '2019-11-23T18:31:07+01:00'
+fix_commit_message: "tty: vt: keyboard: reject invalid keycodes\n\nDo not try to handle\
+  \ keycodes that are too big, otherwise we risk doing\nout-of-bounds writes:\n\n\
+  BUG: KASAN: global-out-of-bounds in clear_bit include/asm-generic/bitops-instrumented.h:56\
+  \ [inline]\nBUG: KASAN: global-out-of-bounds in kbd_keycode drivers/tty/vt/keyboard.c:1411\
+  \ [inline]\nBUG: KASAN: global-out-of-bounds in kbd_event+0xe6b/0x3790 drivers/tty/vt/keyboard.c:1495\n\
+  Write of size 8 at addr ffffffff89a1b2d8 by task syz-executor108/1722\n...\n kbd_keycode\
+  \ drivers/tty/vt/keyboard.c:1411 [inline]\n kbd_event+0xe6b/0x3790 drivers/tty/vt/keyboard.c:1495\n\
+  \ input_to_handler+0x3b6/0x4c0 drivers/input/input.c:118\n input_pass_values.part.0+0x2e3/0x720\
+  \ drivers/input/input.c:145\n input_pass_values drivers/input/input.c:949 [inline]\n\
+  \ input_set_keycode+0x290/0x320 drivers/input/input.c:954\n evdev_handle_set_keycode_v2+0xc4/0x120\
+  \ drivers/input/evdev.c:882\n evdev_do_ioctl drivers/input/evdev.c:1150 [inline]\n\
+  \nIn this case we were dealing with a fuzzed HID device that declared over\n12K\
+  \ buttons, and while HID layer should not be reporting to us such big\nkeycodes,\
+  \ we should also be defensive and reject invalid data ourselves as\nwell.\n\nReported-by:\
+  \ syzbot+19340dff067c2d3835c0@syzkaller.appspotmail.com\nSigned-off-by: Dmitry Torokhov\
+  \ <dmitry.torokhov@gmail.com>\nCc: stable <stable@vger.kernel.org>\nLink: https://lore.kernel.org/r/20191122204220.GA129459@dtor-ws\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty/vt
+hunk_count: 1
+covered_count: 1

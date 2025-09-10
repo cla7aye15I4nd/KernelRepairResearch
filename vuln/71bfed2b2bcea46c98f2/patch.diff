@@ -1,0 +1,15 @@
+diff --git a/drivers/nfc/virtual_ncidev.c b/drivers/nfc/virtual_ncidev.c
+index 590b038e449e..6b89d596ba9a 100644
+--- a/drivers/nfc/virtual_ncidev.c
++++ b/drivers/nfc/virtual_ncidev.c
+@@ -125,6 +125,10 @@ static ssize_t virtual_ncidev_write(struct file *file,
+ 		kfree_skb(skb);
+ 		return -EFAULT;
+ 	}
++	if (strnlen(skb->data, count) != count) {
++		kfree_skb(skb);
++		return -EINVAL;
++	}
+ 
+ 	nci_recv_frame(vdev->ndev, skb);
+ 	return count;

@@ -1,0 +1,58 @@
+id: b17f10c8a8c693b40723d40d6553fbc54d197679
+bug_link: https://syzkaller.appspot.com/bug?extid=b17f10c8a8c693b40723d40d6553fbc54d197679
+title: 'INFO: task hung in cleanup_net'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: eda9873e19d83c68d0c477f6bc13718fee7a7b3c
+fix_commit: 21b5944350052d2583e82dd59b19a9ba94a007f0
+datetime: '2017-12-20T12:42:22-05:00'
+fix_commit_message: "net: Fix double free and memory corruption in get_net_ns_by_id()\n\
+  \n(I can trivially verify that that idr_remove in cleanup_net happens\n after the\
+  \ network namespace count has dropped to zero --EWB)\n\nFunction get_net_ns_by_id()\
+  \ does not check for net::count\nafter it has found a peer in netns_ids idr.\n\n\
+  It may dereference a peer, after its count has already been\nfinaly decremented.\
+  \ This leads to double free and memory\ncorruption:\n\nput_net(peer)           \
+  \                        rtnl_lock()\natomic_dec_and_test(&peer->count) [count=0]\
+  \     ...\n__put_net(peer)                                 get_net_ns_by_id(net,\
+  \ id)\n  spin_lock(&cleanup_list_lock)\n  list_add(&net->cleanup_list, &cleanup_list)\n\
+  \  spin_unlock(&cleanup_list_lock)\nqueue_work()                               \
+  \       peer = idr_find(&net->netns_ids, id)\n  |                              \
+  \                 get_net(peer) [count=1]\n  |                                 \
+  \              ...\n  |                                               (use after\
+  \ final put)\n  v                                               ...\n  cleanup_net()\
+  \                                   ...\n    spin_lock(&cleanup_list_lock)     \
+  \            ...\n    list_replace_init(&cleanup_list, ..)          ...\n    spin_unlock(&cleanup_list_lock)\
+  \               ...\n    ...                                           ...\n   \
+  \ ...                                           put_net(peer)\n    ...         \
+  \                                    atomic_dec_and_test(&peer->count) [count=0]\n\
+  \    ...                                               spin_lock(&cleanup_list_lock)\n\
+  \    ...                                               list_add(&net->cleanup_list,\
+  \ &cleanup_list)\n    ...                                               spin_unlock(&cleanup_list_lock)\n\
+  \    ...                                             queue_work()\n    ...     \
+  \                                      rtnl_unlock()\n    rtnl_lock()          \
+  \                         ...\n    for_each_net(tmp) {                         \
+  \  ...\n      id = __peernet2id(tmp, peer)                ...\n      spin_lock_irq(&tmp->nsid_lock)\
+  \              ...\n      idr_remove(&tmp->netns_ids, id)             ...\n    \
+  \  ...                                         ...\n      net_drop_ns()        \
+  \                       ...\n\tnet_free(peer)                            ...\n \
+  \   }                                             ...\n  |\n  v\n  cleanup_net()\n\
+  \    ...\n    (Second free of peer)\n\nAlso, put_net() on the right cpu may reorder\
+  \ with left's cpu\nlist_replace_init(&cleanup_list, ..), and then cleanup_list\n\
+  will be corrupted.\n\nSince cleanup_net() is executed in worker thread, while\n\
+  put_net(peer) can happen everywhere, there should be\nenough time for concurrent\
+  \ get_net_ns_by_id() to pick\nthe peer up, and the race does not seem to be unlikely.\n\
+  The patch fixes the problem in standard way.\n\n(Also, there is possible problem\
+  \ in peernet2id_alloc(), which requires\ncheck for net::count under nsid_lock and\
+  \ maybe_get_net(peer), but\nin current stable kernel it's used under rtnl_lock()\
+  \ and it has to be\nsafe. Openswitch begun to use peernet2id_alloc(), and possibly\
+  \ it should\nbe fixed too. While this is not in stable kernel yet, so I'll send\n\
+  a separate message to netdev@ later).\n\nCc: Nicolas Dichtel <nicolas.dichtel@6wind.com>\n\
+  Signed-off-by: Kirill Tkhai <ktkhai@virtuozzo.com>\nFixes: 0c7aecd4bde4 \"netns:\
+  \ add rtnl cmd to add and get peer netns ids\"\nReviewed-by: Andrey Ryabinin <aryabinin@virtuozzo.com>\n\
+  Reviewed-by: \"Eric W. Biederman\" <ebiederm@xmission.com>\nSigned-off-by: Eric\
+  \ W. Biederman <ebiederm@xmission.com>\nReviewed-by: Eric Dumazet <edumazet@google.com>\n\
+  Acked-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,30 @@
+id: 96cae094d90877641f32
+bug_link: https://syzkaller.appspot.com/bug?extid=96cae094d90877641f32
+title: WARNING in c_start (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 81ff855485a366a391dc3aed3942715e676ed132
+fix_commit: e7304080e0e50d979ce9eaf694ad8283e2e539ea
+datetime: '2023-03-12T08:52:03-07:00'
+fix_commit_message: "cpumask: relax sanity checking constraints\n\nThe cpumask_check()\
+  \ was unnecessarily tight, and causes problems for the\nusers of cpumask_next().\n\
+  \nWe have a number of users that take the previous return value of one of\nthe bit\
+  \ scanning functions and subtract one to keep it in \"range\".  But\nsince the scanning\
+  \ functions end up returning up to 'small_cpumask_bits'\ninstead of the tighter\
+  \ 'nr_cpumask_bits', the range really needs to be\nusing that widened form.\n\n\
+  [ This \"previous-1\" behavior is also the reason we have all those\n  comments\
+  \ about /* -1 is a legal arg here. */ and separate checks for\n  that being ok.\
+  \  So we could have just made \"small_cpumask_bits-1\"\n  be a similar special \"\
+  don't check this\" value.\n\n  Tetsuo Handa even suggested a patch that only does\
+  \ that for\n  cpumask_next(), since that seems to be the only actual case that\n\
+  \  triggers, but that all makes it even _more_ magical and special. So\n  just relax\
+  \ the check ]\n\nOne example of this kind of pattern being the 'c_start()' function\
+  \ in\narch/x86/kernel/cpu/proc.c, but also duplicated in various forms on\nother\
+  \ architectures.\n\nReported-by: syzbot+96cae094d90877641f32@syzkaller.appspotmail.com\n\
+  Link: https://syzkaller.appspot.com/bug?extid=96cae094d90877641f32\nReported-by:\
+  \ Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>\nLink: https://lore.kernel.org/lkml/c1f4cc16-feea-b83c-82cf-1a1f007b7eb9@I-love.SAKURA.ne.jp/\n\
+  Fixes: 596ff4a09b89 (\"cpumask: re-introduce constant-sized cpumask optimizations\"\
+  )\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- include/linux
+hunk_count: 1
+covered_count: 1

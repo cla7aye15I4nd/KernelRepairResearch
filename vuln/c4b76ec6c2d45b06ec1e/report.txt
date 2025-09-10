@@ -1,0 +1,61 @@
+bcachefs (loop0): will run btree node scan
+invalid bkey u64s 7 type xattr 536870912:3798421620223919902:U32_MAX len 0 ver 0: user.:
+  xattr name has invalid characters: delete?, fixing
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/btree_io.c:1743!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5837 Comm: syz-executor218 Not tainted 6.12.0-syzkaller-07834-g06afb0f36106 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:__bch2_btree_root_read fs/bcachefs/btree_io.c:1743 [inline]
+RIP: 0010:bch2_btree_root_read+0x78d/0x7a0 fs/bcachefs/btree_io.c:1771
+Code: ff 44 89 f1 80 e1 07 38 c1 0f 8c 98 fa ff ff 4c 89 f7 e8 46 11 f1 fd e9 8b fa ff ff e8 fc 7c 89 fd 90 0f 0b e8 f4 7c 89 fd 90 <0f> 0b e8 6c 87 b2 07 66 2e 0f 1f 84 00 00 00 00 00 66 90 90 90 90
+RSP: 0018:ffffc90003cff3a0 EFLAGS: 00010293
+RAX: ffffffff840bcfec RBX: 00000000ffffffef RCX: ffff888030103c00
+RDX: 0000000000000000 RSI: 00000000ffffffef RDI: 0000000000000000
+RBP: ffffc90003cff4e0 R08: ffffffff840bce31 R09: 1ffff9200079fe5c
+R10: dffffc0000000000 R11: fffff5200079fe5d R12: ffff8880267c3000
+R13: 0000000000023001 R14: ffff888075481a80 R15: 0000000000000000
+FS:  0000555558f27380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000561131630e88 CR3: 0000000077218000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ read_btree_roots+0x296/0x840 fs/bcachefs/recovery.c:523
+ bch2_fs_recovery+0x2585/0x39d0 fs/bcachefs/recovery.c:853
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1037
+ bch2_fs_get_tree+0xd68/0x1710 fs/bcachefs/fs.c:2170
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f61f4335dea
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc758a1a58 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffc758a1a70 RCX: 00007f61f4335dea
+RDX: 00000000200058c0 RSI: 0000000020000000 RDI: 00007ffc758a1a70
+RBP: 0000000000000004 R08: 00007ffc758a1ab0 R09: 000000000000596c
+R10: 0000000000210008 R11: 0000000000000282 R12: 0000000000210008
+R13: 00007ffc758a1ab0 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__bch2_btree_root_read fs/bcachefs/btree_io.c:1743 [inline]
+RIP: 0010:bch2_btree_root_read+0x78d/0x7a0 fs/bcachefs/btree_io.c:1771
+Code: ff 44 89 f1 80 e1 07 38 c1 0f 8c 98 fa ff ff 4c 89 f7 e8 46 11 f1 fd e9 8b fa ff ff e8 fc 7c 89 fd 90 0f 0b e8 f4 7c 89 fd 90 <0f> 0b e8 6c 87 b2 07 66 2e 0f 1f 84 00 00 00 00 00 66 90 90 90 90
+RSP: 0018:ffffc90003cff3a0 EFLAGS: 00010293
+RAX: ffffffff840bcfec RBX: 00000000ffffffef RCX: ffff888030103c00
+RDX: 0000000000000000 RSI: 00000000ffffffef RDI: 0000000000000000
+RBP: ffffc90003cff4e0 R08: ffffffff840bce31 R09: 1ffff9200079fe5c
+R10: dffffc0000000000 R11: fffff5200079fe5d R12: ffff8880267c3000
+R13: 0000000000023001 R14: ffff888075481a80 R15: 0000000000000000
+FS:  0000555558f27380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055caf244b0d8 CR3: 0000000077218000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

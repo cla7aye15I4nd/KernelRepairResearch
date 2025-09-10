@@ -1,0 +1,55 @@
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/alloc_foreground.c:493!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 67 Comm: kworker/u8:4 Not tainted 6.12.0-syzkaller-03657-g43fb83c17ba2 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/30/2024
+Workqueue: btree_node_rewrite async_btree_node_rewrite_work
+RIP: 0010:bch2_bucket_alloc_freelist fs/bcachefs/alloc_foreground.c:493 [inline]
+RIP: 0010:bch2_bucket_alloc_trans+0x39ec/0x3a50 fs/bcachefs/alloc_foreground.c:648
+Code: e8 f9 aa ef fd e9 f0 c7 ff ff 89 d9 80 e1 07 38 c1 0f 8c f3 fd ff ff 48 89 df e8 8f a9 ef fd e9 e6 fd ff ff e8 b5 b7 88 fd 90 <0f> 0b e8 ad b7 88 fd 90 0f 0b e8 85 60 b6 07 f3 0f 1e fa e8 9c b7
+RSP: 0018:ffffc900015e6140 EFLAGS: 00010293
+RAX: ffffffff840c40cb RBX: 0000000000000019 RCX: ffff88801cb75a00
+RDX: 0000000000000000 RSI: 0000000000000019 RDI: 0000000000000000
+RBP: ffffc900015e6868 R08: ffffffff840c1399 R09: 0000000000000000
+R10: ffffc900015e6728 R11: fffff520002bccea R12: dffffc0000000000
+R13: ffff888079048000 R14: 0000000000000000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00005611cfe163e0 CR3: 00000000331f4000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_bucket_alloc_set_trans+0x517/0xd30 fs/bcachefs/alloc_foreground.c:808
+ __open_bucket_add_buckets+0x13d0/0x1ec0 fs/bcachefs/alloc_foreground.c:1057
+ open_bucket_add_buckets+0x33a/0x410 fs/bcachefs/alloc_foreground.c:1101
+ bch2_alloc_sectors_start_trans+0xce9/0x2030
+ __bch2_btree_node_alloc fs/bcachefs/btree_update_interior.c:339 [inline]
+ bch2_btree_reserve_get+0x612/0x1890 fs/bcachefs/btree_update_interior.c:549
+ bch2_btree_update_start+0xe56/0x14e0 fs/bcachefs/btree_update_interior.c:1247
+ bch2_btree_node_rewrite+0x1c0/0x1280 fs/bcachefs/btree_update_interior.c:2148
+ async_btree_node_rewrite_trans fs/bcachefs/btree_update_interior.c:2236 [inline]
+ async_btree_node_rewrite_work+0x31e/0xda0 fs/bcachefs/btree_update_interior.c:2249
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa63/0x1850 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_bucket_alloc_freelist fs/bcachefs/alloc_foreground.c:493 [inline]
+RIP: 0010:bch2_bucket_alloc_trans+0x39ec/0x3a50 fs/bcachefs/alloc_foreground.c:648
+Code: e8 f9 aa ef fd e9 f0 c7 ff ff 89 d9 80 e1 07 38 c1 0f 8c f3 fd ff ff 48 89 df e8 8f a9 ef fd e9 e6 fd ff ff e8 b5 b7 88 fd 90 <0f> 0b e8 ad b7 88 fd 90 0f 0b e8 85 60 b6 07 f3 0f 1e fa e8 9c b7
+RSP: 0018:ffffc900015e6140 EFLAGS: 00010293
+RAX: ffffffff840c40cb RBX: 0000000000000019 RCX: ffff88801cb75a00
+RDX: 0000000000000000 RSI: 0000000000000019 RDI: 0000000000000000
+RBP: ffffc900015e6868 R08: ffffffff840c1399 R09: 0000000000000000
+R10: ffffc900015e6728 R11: fffff520002bccea R12: dffffc0000000000
+R13: ffff888079048000 R14: 0000000000000000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00005611cfe163e0 CR3: 00000000331f4000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

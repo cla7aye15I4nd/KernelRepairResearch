@@ -1,0 +1,26 @@
+id: 6c21aeb59d0e82eb2782
+bug_link: https://syzkaller.appspot.com/bug?extid=6c21aeb59d0e82eb2782
+title: 'KMSAN: uninit-value in vsock_assign_transport (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e9d22f7a6655941fc8b2b942ed354ec780936b3e
+fix_commit: 1e1fdcbdde3b7663e5d8faeb2245b9b151417d22
+datetime: '2024-07-04T11:00:31-04:00'
+fix_commit_message: "vhost/vsock: always initialize seqpacket_allow\n\nThere are two\
+  \ issues around seqpacket_allow:\n1. seqpacket_allow is not initialized when socket\
+  \ is\n   created. Thus if features are never set, it will be\n   read uninitialized.\n\
+  2. if VIRTIO_VSOCK_F_SEQPACKET is set and then cleared,\n   then seqpacket_allow\
+  \ will not be cleared appropriately\n   (existing apps I know about don't usually\
+  \ do this but\n    it's legal and there's no way to be sure no one relies\n    on\
+  \ this).\n\nTo fix:\n\t- initialize seqpacket_allow after allocation\n\t- set it\
+  \ unconditionally in set_features\n\nReported-by: syzbot+6c21aeb59d0e82eb2782@syzkaller.appspotmail.com\n\
+  Reported-by: Jeongjun Park <aha310510@gmail.com>\nFixes: ced7b713711f (\"vhost/vsock:\
+  \ support SEQPACKET for transport\").\nTested-by: Arseny Krasnov <arseny.krasnov@kaspersky.com>\n\
+  Cc: David S. Miller <davem@davemloft.net>\nCc: Stefan Hajnoczi <stefanha@redhat.com>\n\
+  Message-ID: <20240422100010-mutt-send-email-mst@kernel.org>\nSigned-off-by: Michael\
+  \ S. Tsirkin <mst@redhat.com>\nAcked-by: Jason Wang <jasowang@redhat.com>\nReviewed-by:\
+  \ Stefano Garzarella <sgarzare@redhat.com>\nReviewed-by: Eugenio Pérez <eperezma@redhat.com>\n\
+  Acked-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/vhost
+hunk_count: 2
+covered_count: 1

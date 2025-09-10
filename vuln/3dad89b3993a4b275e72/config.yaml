@@ -1,0 +1,143 @@
+id: 3dad89b3993a4b275e72
+bug_link: https://syzkaller.appspot.com/bug?extid=3dad89b3993a4b275e72
+title: possible deadlock in btrfs_commit_inode_delayed_inode
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a56c85fa2d59ab0780514741550edf87989a66e9
+fix_commit: 68a3ebd18bc8c4e766250d5c43d30ff75b8aec0b
+datetime: '2024-07-11T16:45:18+02:00'
+fix_commit_message: "btrfs: use delayed iput during extent map shrinking\n\nWhen putting\
+  \ an inode during extent map shrinking we're doing a standard\niput() but that may\
+  \ take a long time in case the inode is dirty and we are\ndoing the final iput that\
+  \ triggers eviction - the VFS will have to wait\nfor writeback before calling the\
+  \ btrfs evict callback (see\nfs/inode.c:evict()).\n\nThis slows down the task running\
+  \ the shrinker which may have been\ntriggered while updating some tree for example,\
+  \ meaning locks are held\nas well as an open transaction handle.\n\nAlso if the\
+  \ iput() ends up triggering eviction and the inode has no links\nanymore, then we\
+  \ trigger item truncation which requires flushing delayed\nitems, space reservation\
+  \ to start a transaction and that may trigger the\nspace reclaim task and wait for\
+  \ it, resulting in deadlocks in case the\nreclaim task needs for example to commit\
+  \ a transaction and the shrinker\nis being triggered from a path holding a transaction\
+  \ handle.\n\nSyzbot reported such a case with the following stack traces:\n\n  \
+  \ ======================================================\n   WARNING: possible circular\
+  \ locking dependency detected\n   6.10.0-rc2-syzkaller-00010-g2ab795141095 #0 Not\
+  \ tainted\n   ------------------------------------------------------\n   kswapd0/111\
+  \ is trying to acquire lock:\n   ffff88801eae4610 (sb_internal#3){.+.+}-{0:0}, at:\
+  \ btrfs_commit_inode_delayed_inode+0x110/0x330 fs/btrfs/delayed-inode.c:1275\n\n\
+  \   but task is already holding lock:\n   ffffffff8dd3a9a0 (fs_reclaim){+.+.}-{0:0},\
+  \ at: balance_pgdat+0xa88/0x1970 mm/vmscan.c:6924\n\n   which lock already depends\
+  \ on the new lock.\n\n   the existing dependency chain (in reverse order) is:\n\n\
+  \   -> #3 (fs_reclaim){+.+.}-{0:0}:\n          __fs_reclaim_acquire mm/page_alloc.c:3783\
+  \ [inline]\n          fs_reclaim_acquire+0x102/0x160 mm/page_alloc.c:3797\n    \
+  \      might_alloc include/linux/sched/mm.h:334 [inline]\n          slab_pre_alloc_hook\
+  \ mm/slub.c:3890 [inline]\n          slab_alloc_node mm/slub.c:3980 [inline]\n \
+  \         kmem_cache_alloc_lru_noprof+0x58/0x2f0 mm/slub.c:4019\n          btrfs_alloc_inode+0x118/0xb20\
+  \ fs/btrfs/inode.c:8411\n          alloc_inode+0x5d/0x230 fs/inode.c:261\n     \
+  \     iget5_locked fs/inode.c:1235 [inline]\n          iget5_locked+0x1c9/0x2c0\
+  \ fs/inode.c:1228\n          btrfs_iget_locked fs/btrfs/inode.c:5590 [inline]\n\
+  \          btrfs_iget_path fs/btrfs/inode.c:5607 [inline]\n          btrfs_iget+0xfb/0x230\
+  \ fs/btrfs/inode.c:5636\n          create_reloc_inode+0x403/0x820 fs/btrfs/relocation.c:3911\n\
+  \          btrfs_relocate_block_group+0x471/0xe60 fs/btrfs/relocation.c:4114\n \
+  \         btrfs_relocate_chunk+0x143/0x450 fs/btrfs/volumes.c:3373\n          __btrfs_balance\
+  \ fs/btrfs/volumes.c:4157 [inline]\n          btrfs_balance+0x211a/0x3f00 fs/btrfs/volumes.c:4534\n\
+  \          btrfs_ioctl_balance fs/btrfs/ioctl.c:3675 [inline]\n          btrfs_ioctl+0x12ed/0x8290\
+  \ fs/btrfs/ioctl.c:4742\n          __do_compat_sys_ioctl+0x2c3/0x330 fs/ioctl.c:1007\n\
+  \          do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]\n        \
+  \  __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386\n          do_fast_syscall_32+0x32/0x80\
+  \ arch/x86/entry/common.c:411\n          entry_SYSENTER_compat_after_hwframe+0x84/0x8e\n\
+  \n   -> #2 (btrfs_trans_num_extwriters){++++}-{0:0}:\n          join_transaction+0x164/0xf40\
+  \ fs/btrfs/transaction.c:315\n          start_transaction+0x427/0x1a70 fs/btrfs/transaction.c:700\n\
+  \          btrfs_rebuild_free_space_tree+0xaa/0x480 fs/btrfs/free-space-tree.c:1323\n\
+  \          btrfs_start_pre_rw_mount+0x218/0xf60 fs/btrfs/disk-io.c:2999\n      \
+  \    open_ctree+0x41ab/0x52e0 fs/btrfs/disk-io.c:3554\n          btrfs_fill_super\
+  \ fs/btrfs/super.c:946 [inline]\n          btrfs_get_tree_super fs/btrfs/super.c:1863\
+  \ [inline]\n          btrfs_get_tree+0x11e9/0x1b90 fs/btrfs/super.c:2089\n     \
+  \     vfs_get_tree+0x8f/0x380 fs/super.c:1780\n          fc_mount+0x16/0xc0 fs/namespace.c:1125\n\
+  \          btrfs_get_tree_subvol fs/btrfs/super.c:2052 [inline]\n          btrfs_get_tree+0xa53/0x1b90\
+  \ fs/btrfs/super.c:2090\n          vfs_get_tree+0x8f/0x380 fs/super.c:1780\n   \
+  \       do_new_mount fs/namespace.c:3352 [inline]\n          path_mount+0x6e1/0x1f10\
+  \ fs/namespace.c:3679\n          do_mount fs/namespace.c:3692 [inline]\n       \
+  \   __do_sys_mount fs/namespace.c:3898 [inline]\n          __se_sys_mount fs/namespace.c:3875\
+  \ [inline]\n          __ia32_sys_mount+0x295/0x320 fs/namespace.c:3875\n       \
+  \   do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]\n          __do_fast_syscall_32+0x73/0x120\
+  \ arch/x86/entry/common.c:386\n          do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411\n\
+  \          entry_SYSENTER_compat_after_hwframe+0x84/0x8e\n\n   -> #1 (btrfs_trans_num_writers){++++}-{0:0}:\n\
+  \          join_transaction+0x148/0xf40 fs/btrfs/transaction.c:314\n          start_transaction+0x427/0x1a70\
+  \ fs/btrfs/transaction.c:700\n          btrfs_rebuild_free_space_tree+0xaa/0x480\
+  \ fs/btrfs/free-space-tree.c:1323\n          btrfs_start_pre_rw_mount+0x218/0xf60\
+  \ fs/btrfs/disk-io.c:2999\n          open_ctree+0x41ab/0x52e0 fs/btrfs/disk-io.c:3554\n\
+  \          btrfs_fill_super fs/btrfs/super.c:946 [inline]\n          btrfs_get_tree_super\
+  \ fs/btrfs/super.c:1863 [inline]\n          btrfs_get_tree+0x11e9/0x1b90 fs/btrfs/super.c:2089\n\
+  \          vfs_get_tree+0x8f/0x380 fs/super.c:1780\n          fc_mount+0x16/0xc0\
+  \ fs/namespace.c:1125\n          btrfs_get_tree_subvol fs/btrfs/super.c:2052 [inline]\n\
+  \          btrfs_get_tree+0xa53/0x1b90 fs/btrfs/super.c:2090\n          vfs_get_tree+0x8f/0x380\
+  \ fs/super.c:1780\n          do_new_mount fs/namespace.c:3352 [inline]\n       \
+  \   path_mount+0x6e1/0x1f10 fs/namespace.c:3679\n          do_mount fs/namespace.c:3692\
+  \ [inline]\n          __do_sys_mount fs/namespace.c:3898 [inline]\n          __se_sys_mount\
+  \ fs/namespace.c:3875 [inline]\n          __ia32_sys_mount+0x295/0x320 fs/namespace.c:3875\n\
+  \          do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]\n        \
+  \  __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386\n          do_fast_syscall_32+0x32/0x80\
+  \ arch/x86/entry/common.c:411\n          entry_SYSENTER_compat_after_hwframe+0x84/0x8e\n\
+  \n   -> #0 (sb_internal#3){.+.+}-{0:0}:\n          check_prev_add kernel/locking/lockdep.c:3134\
+  \ [inline]\n          check_prevs_add kernel/locking/lockdep.c:3253 [inline]\n \
+  \         validate_chain kernel/locking/lockdep.c:3869 [inline]\n          __lock_acquire+0x2478/0x3b30\
+  \ kernel/locking/lockdep.c:5137\n          lock_acquire kernel/locking/lockdep.c:5754\
+  \ [inline]\n          lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719\n \
+  \         percpu_down_read include/linux/percpu-rwsem.h:51 [inline]\n          __sb_start_write\
+  \ include/linux/fs.h:1655 [inline]\n          sb_start_intwrite include/linux/fs.h:1838\
+  \ [inline]\n          start_transaction+0xbc1/0x1a70 fs/btrfs/transaction.c:694\n\
+  \          btrfs_commit_inode_delayed_inode+0x110/0x330 fs/btrfs/delayed-inode.c:1275\n\
+  \          btrfs_evict_inode+0x960/0xe80 fs/btrfs/inode.c:5291\n          evict+0x2ed/0x6c0\
+  \ fs/inode.c:667\n          iput_final fs/inode.c:1741 [inline]\n          iput.part.0+0x5a8/0x7f0\
+  \ fs/inode.c:1767\n          iput+0x5c/0x80 fs/inode.c:1757\n          btrfs_scan_root\
+  \ fs/btrfs/extent_map.c:1118 [inline]\n          btrfs_free_extent_maps+0xbd3/0x1320\
+  \ fs/btrfs/extent_map.c:1189\n          super_cache_scan+0x409/0x550 fs/super.c:227\n\
+  \          do_shrink_slab+0x44f/0x11c0 mm/shrinker.c:435\n          shrink_slab+0x18a/0x1310\
+  \ mm/shrinker.c:662\n          shrink_one+0x493/0x7c0 mm/vmscan.c:4790\n       \
+  \   shrink_many mm/vmscan.c:4851 [inline]\n          lru_gen_shrink_node+0x89f/0x1750\
+  \ mm/vmscan.c:4951\n          shrink_node mm/vmscan.c:5910 [inline]\n          kswapd_shrink_node\
+  \ mm/vmscan.c:6720 [inline]\n          balance_pgdat+0x1105/0x1970 mm/vmscan.c:6911\n\
+  \          kswapd+0x5ea/0xbf0 mm/vmscan.c:7180\n          kthread+0x2c1/0x3a0 kernel/kthread.c:389\n\
+  \          ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147\n          ret_from_fork_asm+0x1a/0x30\
+  \ arch/x86/entry/entry_64.S:244\n\n   other info that might help us debug this:\n\
+  \n   Chain exists of:\n     sb_internal#3 --> btrfs_trans_num_extwriters --> fs_reclaim\n\
+  \n    Possible unsafe locking scenario:\n\n          CPU0                    CPU1\n\
+  \          ----                    ----\n     lock(fs_reclaim);\n              \
+  \                    lock(btrfs_trans_num_extwriters);\n                       \
+  \           lock(fs_reclaim);\n     rlock(sb_internal#3);\n\n    *** DEADLOCK ***\n\
+  \n   2 locks held by kswapd0/111:\n    #0: ffffffff8dd3a9a0 (fs_reclaim){+.+.}-{0:0},\
+  \ at: balance_pgdat+0xa88/0x1970 mm/vmscan.c:6924\n    #1: ffff88801eae40e0 (&type->s_umount_key#62){++++}-{3:3},\
+  \ at: super_trylock_shared fs/super.c:562 [inline]\n    #1: ffff88801eae40e0 (&type->s_umount_key#62){++++}-{3:3},\
+  \ at: super_cache_scan+0x96/0x550 fs/super.c:196\n\n   stack backtrace:\n   CPU:\
+  \ 0 PID: 111 Comm: kswapd0 Not tainted 6.10.0-rc2-syzkaller-00010-g2ab795141095\
+  \ #0\n   Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1\
+  \ 04/01/2014\n   Call Trace:\n    <TASK>\n    __dump_stack lib/dump_stack.c:88 [inline]\n\
+  \    dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114\n    check_noncircular+0x31a/0x400\
+  \ kernel/locking/lockdep.c:2187\n    check_prev_add kernel/locking/lockdep.c:3134\
+  \ [inline]\n    check_prevs_add kernel/locking/lockdep.c:3253 [inline]\n    validate_chain\
+  \ kernel/locking/lockdep.c:3869 [inline]\n    __lock_acquire+0x2478/0x3b30 kernel/locking/lockdep.c:5137\n\
+  \    lock_acquire kernel/locking/lockdep.c:5754 [inline]\n    lock_acquire+0x1b1/0x560\
+  \ kernel/locking/lockdep.c:5719\n    percpu_down_read include/linux/percpu-rwsem.h:51\
+  \ [inline]\n    __sb_start_write include/linux/fs.h:1655 [inline]\n    sb_start_intwrite\
+  \ include/linux/fs.h:1838 [inline]\n    start_transaction+0xbc1/0x1a70 fs/btrfs/transaction.c:694\n\
+  \    btrfs_commit_inode_delayed_inode+0x110/0x330 fs/btrfs/delayed-inode.c:1275\n\
+  \    btrfs_evict_inode+0x960/0xe80 fs/btrfs/inode.c:5291\n    evict+0x2ed/0x6c0\
+  \ fs/inode.c:667\n    iput_final fs/inode.c:1741 [inline]\n    iput.part.0+0x5a8/0x7f0\
+  \ fs/inode.c:1767\n    iput+0x5c/0x80 fs/inode.c:1757\n    btrfs_scan_root fs/btrfs/extent_map.c:1118\
+  \ [inline]\n    btrfs_free_extent_maps+0xbd3/0x1320 fs/btrfs/extent_map.c:1189\n\
+  \    super_cache_scan+0x409/0x550 fs/super.c:227\n    do_shrink_slab+0x44f/0x11c0\
+  \ mm/shrinker.c:435\n    shrink_slab+0x18a/0x1310 mm/shrinker.c:662\n    shrink_one+0x493/0x7c0\
+  \ mm/vmscan.c:4790\n    shrink_many mm/vmscan.c:4851 [inline]\n    lru_gen_shrink_node+0x89f/0x1750\
+  \ mm/vmscan.c:4951\n    shrink_node mm/vmscan.c:5910 [inline]\n    kswapd_shrink_node\
+  \ mm/vmscan.c:6720 [inline]\n    balance_pgdat+0x1105/0x1970 mm/vmscan.c:6911\n\
+  \    kswapd+0x5ea/0xbf0 mm/vmscan.c:7180\n    kthread+0x2c1/0x3a0 kernel/kthread.c:389\n\
+  \    ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147\n    ret_from_fork_asm+0x1a/0x30\
+  \ arch/x86/entry/entry_64.S:244\n    </TASK>\n\nSo fix this by using btrfs_add_delayed_iput()\
+  \ so that the final iput is\ndelegated to the cleaner kthread.\n\nLink: https://lore.kernel.org/linux-btrfs/000000000000892280061a344581@google.com/\n\
+  Reported-by: syzbot+3dad89b3993a4b275e72@syzkaller.appspotmail.com\nFixes: 956a17d9d050\
+  \ (\"btrfs: add a shrinker for extent maps\")\nReviewed-by: Josef Bacik <josef@toxicpanda.com>\n\
+  Signed-off-by: Filipe Manana <fdmanana@suse.com>\nReviewed-by: David Sterba <dsterba@suse.com>\n\
+  Signed-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 0

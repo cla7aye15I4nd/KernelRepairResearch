@@ -1,0 +1,36 @@
+id: 8f747f62763bc6c32916
+bug_link: https://syzkaller.appspot.com/bug?extid=8f747f62763bc6c32916
+title: 'KASAN: use-after-free Read in nf_tables_trans_destroy_work'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 363a5328f4b0517e59572118ccfb7c626d81dca9
+fix_commit: d4bc8271db21ea9f1c86a1ca4d64999f184d4aae
+datetime: '2022-11-01T12:19:46+01:00'
+fix_commit_message: 'netfilter: nf_tables: netlink notifier might race to release
+  objects
+
+
+  commit release path is invoked via call_rcu and it runs lockless to
+
+  release the objects after rcu grace period. The netlink notifier handler
+
+  might win race to remove objects that the transaction context is still
+
+  referencing from the commit release path.
+
+
+  Call rcu_barrier() to ensure pending rcu callbacks run to completion
+
+  if the list of transactions to be destroyed is not empty.
+
+
+  Fixes: 6001a930ce03 ("netfilter: nftables: introduce table ownership")
+
+  Reported-by: syzbot+8f747f62763bc6c32916@syzkaller.appspotmail.com
+
+  Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+
+  '
+submodule:
+- net/netfilter
+hunk_count: 1
+covered_count: 1

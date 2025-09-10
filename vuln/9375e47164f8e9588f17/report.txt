@@ -1,0 +1,223 @@
+  node offset 16/40 bset u64s 30: checksum error, type chacha20_poly1305_128: got 29c49b2fdd8d9048e17ac38271cc7e07 should be d4669159f868458f2b4c55fc2a69f1aa, fixing
+==================================================================
+BUG: KASAN: use-after-free in poly1305_update_arch+0x2a0/0x3f0 arch/arm64/crypto/poly1305-glue.c:165
+Read of size 8 at addr ffff0000e225b070 by task syz-executor418/6487
+
+CPU: 0 UID: 0 PID: 6487 Comm: syz-executor418 Not tainted 6.15.0-rc5-syzkaller-gc32f8dc5aaf9 #0 PREEMPT 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call trace:
+ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:466 (C)
+ __dump_stack+0x30/0x40 lib/dump_stack.c:94
+ dump_stack_lvl+0xd8/0x12c lib/dump_stack.c:120
+ print_address_description+0xa8/0x254 mm/kasan/report.c:408
+ print_report+0x68/0x84 mm/kasan/report.c:521
+ kasan_report+0xb0/0x110 mm/kasan/report.c:634
+ check_region_inline mm/kasan/generic.c:-1 [inline]
+ kasan_check_range+0x264/0x2a4 mm/kasan/generic.c:189
+ __asan_memcpy+0x3c/0x84 mm/kasan/shadow.c:105
+ poly1305_update_arch+0x2a0/0x3f0 arch/arm64/crypto/poly1305-glue.c:165
+ poly1305_update include/crypto/poly1305.h:83 [inline]
+ bch2_checksum+0x1d4/0x4ac fs/bcachefs/checksum.c:157
+ bch2_btree_node_read_done+0xd20/0x4328 fs/bcachefs/btree_io.c:1132
+ btree_node_read_work+0x414/0xc64 fs/bcachefs/btree_io.c:1366
+ bch2_btree_node_read+0x1c88/0x228c fs/bcachefs/btree_io.c:-1
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1797 [inline]
+ bch2_btree_root_read+0x274/0x3b0 fs/bcachefs/btree_io.c:1819
+ read_btree_roots+0x220/0x6c0 fs/bcachefs/recovery.c:582
+ bch2_fs_recovery+0x1a60/0x2d30 fs/bcachefs/recovery.c:929
+ bch2_fs_start+0x5b0/0x908 fs/bcachefs/super.c:1091
+ bch2_fs_get_tree+0xa0c/0xf30 fs/bcachefs/fs.c:2570
+ vfs_get_tree+0x90/0x28c fs/super.c:1759
+ do_new_mount+0x228/0x814 fs/namespace.c:3884
+ path_mount+0x5b4/0xde0 fs/namespace.c:4211
+ do_mount fs/namespace.c:4224 [inline]
+ __do_sys_mount fs/namespace.c:4435 [inline]
+ __se_sys_mount fs/namespace.c:4412 [inline]
+ __arm64_sys_mount+0x3e8/0x468 fs/namespace.c:4412
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x58/0x17c arch/arm64/kernel/entry-common.c:767
+ el0t_64_sync_handler+0x78/0x108 arch/arm64/kernel/entry-common.c:786
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x12225b
+flags: 0x5ffc00000000000(node=0|zone=2|lastcpupid=0x7ff)
+raw: 05ffc00000000000 0000000000000000 fffffdffc38896c8 0000000000000000
+raw: 0000000000000000 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+
+Memory state around the buggy address:
+ ffff0000e225af00: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff0000e225af80: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+>ffff0000e225b000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+                                                             ^
+ ffff0000e225b080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff0000e225b100: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+==================================================================
+bcachefs (loop0): bcachefs (loop0): error validating btree node on loop0 at btree alloc level 0/0
+  u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 1818ce08861e3527 written 40 min_key POS_MIN durability: 1 ptr: 0:26:0 gen 0
+  node offset 24/40 bset u64s 61450: checksum error, type chacha20_poly1305_128: got cc4708a18a79d18b0e29d148f3f534b5 should be eca0b87f8a1bd5d855d98c80b1d5305e, fixing
+bcachefs (loop0): bcachefs (loop0): error validating btree node on loop0 at btree alloc level 0/0
+  u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 1818ce08861e3527 written 40 min_key POS_MIN durability: 1 ptr: 0:26:0 gen 0
+  node offset 24/40 bset u64s 61450: bset past end of btree node (offset 24 len 968 but written 40), fixing
+bcachefs (loop0): bcachefs (loop0): error validating btree node on loop0 at btree alloc level 0/0
+  u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 1818ce08861e3527 written 40 min_key POS_MIN durability: 1 ptr: 0:26:0 gen 0
+  node offset 24/40 bset u64s 0: empty bset, fixing
+bcachefs (loop0): invalid bkey in btree_node btree=alloc level=0: u64s 11 type alloc_v4 0:22:0 len 0 ver 0: 
+    gen 0 oldest_gen 0 data_type sb
+    journal_seq_nonempty 1
+    journal_seq_empty    0
+    need_discard         1
+    need_inc_gen         1
+    dirty_sectors        256
+    stripe_sectors       0
+    cached_sectors       0
+    stripe               0
+    stripe_redundancy    0
+    io_time[READ]        1
+    io_time[WRITE]       1
+    fragmentation     0
+    bp_start          8
+  
+  bad val size (14 > 6), deleting
+bcachefs (loop0): btree_node_read_work: rewriting btree node at due to error
+  btree=alloc level=0 u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 1818ce08861e3527 written 40 min_key POS_MIN durability: 1 ptr: 0:26:0 gen 0
+bcachefs (loop0): bcachefs (loop0): error validating btree node on loop0 at btree freespace level 0/0
+  u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq b6c44d07df4e9bb7 written 48 min_key POS_MIN durability: 1 ptr: 0:29:0 gen 0
+  node offset 8/48 bset u64s 35: checksum error, type chacha20_poly1305_128: got 9a0c7e4fba9774736fd5fe399afe0fd4 should be 696606121d98d113a1b1dc69c6e72339, fixing
+bcachefs (loop0): btree_node_read_work: rewriting btree node at due to error
+  btree=freespace level=0 u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq b6c44d07df4e9bb7 written 48 min_key POS_MIN durability: 1 ptr: 0:29:0 gen 0
+bcachefs (loop0): accounting_read... done
+bcachefs (loop0): alloc_read... done
+bcachefs (loop0): snapshots_read... done
+bcachefs (loop0): check_allocations...
+bcachefs (loop0): bucket 0:28 data type btree ptr gen 0 missing in alloc btree
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 93dda84068e88b3f written 16 min_key POS_MIN durability: 1 ptr: 0:28:0 gen 0, fixing
+bcachefs (loop0): bucket 0:36 data type btree ptr gen 0 missing in alloc btree
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 3b468546fb27822d written 24 min_key POS_MIN durability: 1 ptr: 0:36:0 gen 0, fixing
+bcachefs (loop0): bucket 0:40 data type btree ptr gen 0 missing in alloc btree
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 82036bda63714c10 written 8 min_key POS_MIN durability: 1 ptr: 0:40:0 gen 0, fixing
+bcachefs (loop0): bucket 0:22 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:22 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:28 gen 0 has wrong data_type: got free, should be btree, fixing
+bcachefs (loop0): bucket 0:28 gen 0 data type btree has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:36 gen 0 has wrong data_type: got free, should be btree, fixing
+bcachefs (loop0): bucket 0:36 gen 0 data type btree has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:40 gen 0 has wrong data_type: got free, should be btree, fixing
+bcachefs (loop0): bucket 0:40 gen 0 data type btree has wrong dirty_sectors: got 0, should be 256, fixing
+ done
+bcachefs (loop0): going read-write
+bcachefs (loop0): journal_replay... done
+bcachefs (loop0): check_extents_to_backpointers...
+bcachefs (loop0): scanning for missing backpointers in 2/128 buckets
+ done
+bcachefs (loop0): check_snapshots...
+bcachefs (loop0): snapshot points to missing/incorrect tree:
+  u64s 8 type snapshot 0:4294967295:0 len 0 ver 0: is_subvol 1 deleted 0 parent          0 children          0          0 subvol 1 tree 0, fixing
+ done
+bcachefs (loop0): check_subvols... done
+bcachefs (loop0): check_inodes...
+bcachefs (loop0): inode points to missing dirent
+  inum: 4099:4294967295 
+    mode=100755
+    flags=(15300000)
+    journal_seq=5
+    hash_seed=ab878b4c5ab7c89e
+    hash_type=siphash
+    bi_size=1050
+    bi_sectors=8
+    bi_version=0
+    bi_atime=1997793410
+    bi_ctime=1997793410
+    bi_mtime=1997793410
+    bi_otime=1997793410
+    bi_uid=0
+    bi_gid=0
+    bi_nlink=0
+    bi_generation=0
+    bi_dev=0
+    bi_data_checksum=0
+    bi_compression=0
+    bi_project=0
+    bi_background_compression=0
+    bi_data_replicas=0
+    bi_promote_target=0
+    bi_foreground_target=0
+    bi_background_target=0
+    bi_erasure_code=0
+    bi_fields_set=0
+    bi_dir=4098
+    bi_dir_offset=2566586984702133180
+    bi_subvol=0
+    bi_parent_subvol=0
+    bi_nocow=0
+    bi_depth=0
+    bi_inodes_32bit=0
+    bi_casefold=0, fixing
+bcachefs (loop0): inode journal seq in future (currently at 21)
+  inum: 1073741825:4294967295 
+    mode=100755
+    flags=(15300000)
+    journal_seq=10300415144517173253
+    hash_seed=259b6b0d0abf3ed4
+    hash_type=siphash
+    bi_size=9000
+    bi_sectors=24
+    bi_version=0
+    bi_atime=2007793514
+    bi_ctime=2007793514
+    bi_mtime=2007793514
+    bi_otime=2007793514
+    bi_uid=0
+    bi_gid=0
+    bi_nlink=1
+    bi_generation=0
+    bi_dev=0
+    bi_data_checksum=0
+    bi_compression=0
+    bi_project=0
+    bi_background_compression=0
+    bi_data_replicas=0
+    bi_promote_target=0
+    bi_foreground_target=0
+    bi_background_target=0
+    bi_erasure_code=0
+    bi_fields_set=0
+    bi_dir=4096
+    bi_dir_offset=3784119180373593407
+    bi_subvol=0
+    bi_parent_subvol=0
+    bi_nocow=0
+    bi_depth=0
+    bi_inodes_32bit=0
+    bi_casefold=0, fixing
+ done
+bcachefs (loop0): check_dirents...
+bcachefs (loop0): dirent points to missing inode:
+  u64s 8 type dirent 4096:1859603997870691834:U32_MAX len 0 ver 0: lost+found -> 4097 type dir, fixing
+bcachefs (loop0): key in missing snapshot dirents u64s 7 type dirent 4098:2566587684781802388:1895552767 len 0 ver 0: file0 -> 4099 type reg, deleting
+bcachefs (loop0): dirent points to missing inode:
+  u64s 7 type dirent 4098:4600437421902197670:U32_MAX len 0 ver 0: file1 -> 4100 type lnk, fixing
+ done
+bcachefs (loop0): resume_logged_ops... done
+bcachefs (loop0): delete_dead_inodes... done
+bcachefs (loop0): set_fs_needs_rebalance... done
+bcachefs (loop0): Fixed errors, running fsck a second time to verify fs is clean
+bcachefs (loop0): check_extents_to_backpointers... done
+bcachefs (loop0): check_snapshots... done
+bcachefs (loop0): check_subvols... done
+bcachefs (loop0): check_inodes... done
+bcachefs (loop0): check_dirents...
+bcachefs (loop0): key in missing snapshot dirents u64s 7 type dirent 4098:2566587684781802388:1895552767 len 0 ver 0: file0 -> 4099 type reg, deleting
+bcachefs (loop0): directory 4096:4294967295 with wrong i_nlink: got 2, should be 1, fixing
+ done
+bcachefs (loop0): resume_logged_ops... done
+bcachefs (loop0): delete_dead_inodes... done
+bcachefs (loop0): set_fs_needs_rebalance... done
+bcachefs (loop0): Second fsck run was not clean
+bcachefs (loop0): reading quotas
+bcachefs (loop0): quotas done
+bcachefs (loop0): done starting filesystem

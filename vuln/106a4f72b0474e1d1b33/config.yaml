@@ -1,0 +1,55 @@
+id: 106a4f72b0474e1d1b33
+bug_link: https://syzkaller.appspot.com/bug?extid=106a4f72b0474e1d1b33
+title: WARNING in __kvm_gpc_refresh
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 18f06e97692516d28c3cdc577fb5c501d690b303
+fix_commit: 5c9ca4ed890889a2b7c300c4f63f3baf3f63383f
+datetime: '2024-04-08T13:20:24-07:00'
+fix_commit_message: 'KVM: Check validity of offset+length of gfn_to_pfn_cache prior
+  to activation
+
+
+  When activating a gfn_to_pfn_cache, verify that the offset+length is sane
+
+  and usable before marking the cache active.  Letting __kvm_gpc_refresh()
+
+  detect the problem results in a cache being marked active without setting
+
+  the GPA (or any other fields), which in turn results in KVM trying to
+
+  refresh a cache with INVALID_GPA.
+
+
+  Attempting to refresh a cache with INVALID_GPA isn''t functionally
+
+  problematic, but it runs afoul of the sanity check that exactly one of
+
+  GPA or userspace HVA is valid, i.e. that a cache is either GPA-based or
+
+  HVA-based.
+
+
+  Reported-by: syzbot+106a4f72b0474e1d1b33@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/all/0000000000005fa5cc0613f1cebd@google.com
+
+  Fixes: 721f5b0dda78 ("KVM: pfncache: allow a cache to be activated with a fixed
+  (userspace) HVA")
+
+  Cc: David Woodhouse <dwmw2@infradead.org>
+
+  Cc: Paul Durrant <paul@xen.org>
+
+  Reviewed-by: Paul Durrant <paul@xen.org>
+
+  Reviewed-by: David Woodhouse <dwmw@amazon.co.uk>
+
+  Link: https://lore.kernel.org/r/20240320001542.3203871-3-seanjc@google.com
+
+  Signed-off-by: Sean Christopherson <seanjc@google.com>
+
+  '
+submodule:
+- virt/kvm
+hunk_count: 6
+covered_count: 6

@@ -1,0 +1,43 @@
+id: f922284c18ea23a8e457
+bug_link: https://syzkaller.appspot.com/bug?extid=f922284c18ea23a8e457
+title: 'KASAN: use-after-free Read in llc_conn_tmr_common_cb'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5411b6187adf62909e3b998ac782e722904c7487
+fix_commit: b905ef9ab90115d001c1658259af4b1c65088779
+datetime: '2018-04-22T14:55:03-04:00'
+fix_commit_message: 'llc: delete timers synchronously in llc_sk_free()
+
+
+  The connection timers of an llc sock could be still flying
+
+  after we delete them in llc_sk_free(), and even possibly
+
+  after we free the sock. We could just wait synchronously
+
+  here in case of troubles.
+
+
+  Note, I leave other call paths as they are, since they may
+
+  not have to wait, at least we can change them to synchronously
+
+  when needed.
+
+
+  Also, move the code to net/llc/llc_conn.c, which is apparently
+
+  a better place.
+
+
+  Reported-by: <syzbot+f922284c18ea23a8e457@syzkaller.appspotmail.com>
+
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- include/net
+- net/llc
+hunk_count: 4
+covered_count: 2

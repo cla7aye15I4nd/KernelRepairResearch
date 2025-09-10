@@ -1,0 +1,32 @@
+id: c8cd2d2c412b868263fb
+bug_link: https://syzkaller.appspot.com/bug?extid=c8cd2d2c412b868263fb
+title: 'KASAN: slab-out-of-bounds Write in tracing_splice_read_pipe'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b4432656b36e5cc1d50a1f2dc15357543add530e
+fix_commit: f5178c41bb43444a6008150fe6094497135d07cb
+datetime: '2025-05-01T15:24:15-04:00'
+fix_commit_message: "tracing: Fix oob write in trace_seq_to_buffer()\n\nsyzbot reported\
+  \ this bug:\n==================================================================\n\
+  BUG: KASAN: slab-out-of-bounds in trace_seq_to_buffer kernel/trace/trace.c:1830\
+  \ [inline]\nBUG: KASAN: slab-out-of-bounds in tracing_splice_read_pipe+0x6be/0xdd0\
+  \ kernel/trace/trace.c:6822\nWrite of size 4507 at addr ffff888032b6b000 by task\
+  \ syz.2.320/7260\n\nCPU: 1 UID: 0 PID: 7260 Comm: syz.2.320 Not tainted 6.15.0-rc1-syzkaller-00301-g3bde70a2c827\
+  \ #0 PREEMPT(full)\nHardware name: Google Google Compute Engine/Google Compute Engine,\
+  \ BIOS Google 02/12/2025\nCall Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:94\
+  \ [inline]\n dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120\n print_address_description\
+  \ mm/kasan/report.c:408 [inline]\n print_report+0xc3/0x670 mm/kasan/report.c:521\n\
+  \ kasan_report+0xe0/0x110 mm/kasan/report.c:634\n check_region_inline mm/kasan/generic.c:183\
+  \ [inline]\n kasan_check_range+0xef/0x1a0 mm/kasan/generic.c:189\n __asan_memcpy+0x3c/0x60\
+  \ mm/kasan/shadow.c:106\n trace_seq_to_buffer kernel/trace/trace.c:1830 [inline]\n\
+  \ tracing_splice_read_pipe+0x6be/0xdd0 kernel/trace/trace.c:6822\n ....\n==================================================================\n\
+  \nIt has been reported that trace_seq_to_buffer() tries to copy more data\nthan\
+  \ PAGE_SIZE to buf. Therefore, to prevent this, we should use the\nsmaller of trace_seq_used(&iter->seq)\
+  \ and PAGE_SIZE as an argument.\n\nLink: https://lore.kernel.org/20250422113026.13308-1-aha310510@gmail.com\n\
+  Reported-by: syzbot+c8cd2d2c412b868263fb@syzkaller.appspotmail.com\nFixes: 3c56819b14b0\
+  \ (\"tracing: splice support for tracing_pipe\")\nSuggested-by: Steven Rostedt <rostedt@goodmis.org>\n\
+  Signed-off-by: Jeongjun Park <aha310510@gmail.com>\nSigned-off-by: Steven Rostedt\
+  \ (Google) <rostedt@goodmis.org>\n"
+submodule:
+- kernel/trace
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,44 @@
+id: c15aa445274af8674f41
+bug_link: https://syzkaller.appspot.com/bug?extid=c15aa445274af8674f41
+title: WARNING in ip6_route_info_create
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bf17b36ccdd5b7b9dd482d7753bcb9aff2d21d39
+fix_commit: a3c205d0560f63ff02516b6d9fc3348dc34251c8
+datetime: '2023-12-08T17:16:35-08:00'
+fix_commit_message: 'ipv6: do not check fib6_has_expires() in fib6_info_release()
+
+
+  My prior patch went a bit too far, because apparently fib6_has_expires()
+
+  could be true while f6i->gc_link is not hashed yet.
+
+
+  fib6_set_expires_locked() can indeed set RTF_EXPIRES
+
+  while f6i->fib6_table is NULL.
+
+
+  Original syzbot reports were about corruptions caused
+
+  by dangling f6i->gc_link.
+
+
+  Fixes: 5a08d0065a91 ("ipv6: add debug checks in fib6_info_release()")
+
+  Reported-by: syzbot+c15aa445274af8674f41@syzkaller.appspotmail.com
+
+  Signed-off-by: Eric Dumazet <edumazet@google.com>
+
+  Cc: Kui-Feng Lee <thinker.li@gmail.com>
+
+  Reviewed-by: David Ahern <dsahern@kernel.org>
+
+  Link: https://lore.kernel.org/r/20231207201322.549000-1-edumazet@google.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- include/net
+hunk_count: 1
+covered_count: 1

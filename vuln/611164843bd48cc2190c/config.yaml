@@ -1,0 +1,28 @@
+id: 611164843bd48cc2190c
+bug_link: https://syzkaller.appspot.com/bug?extid=611164843bd48cc2190c
+title: general protection fault in rxrpc_error_report
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 82ad862115c25dcd6d3b1e25f99d24408ddf6851
+fix_commit: f0308fb0708078d6c1d8a4d533941a7a191af634
+datetime: '2019-10-11T21:20:23-07:00'
+fix_commit_message: "rxrpc: Fix possible NULL pointer access in ICMP handling\n\n\
+  If an ICMP packet comes in on the UDP socket backing an AF_RXRPC socket as\nthe\
+  \ UDP socket is being shut down, rxrpc_error_report() may get called to\ndeal with\
+  \ it after sk_user_data on the UDP socket has been cleared, leading\nto a NULL pointer\
+  \ access when this local endpoint record gets accessed.\n\nFix this by just returning\
+  \ immediately if sk_user_data was NULL.\n\nThe oops looks like the following:\n\n\
+  #PF: supervisor read access in kernel mode\n#PF: error_code(0x0000) - not-present\
+  \ page\n...\nRIP: 0010:rxrpc_error_report+0x1bd/0x6a9\n...\nCall Trace:\n ? sock_queue_err_skb+0xbd/0xde\n\
+  \ ? __udp4_lib_err+0x313/0x34d\n __udp4_lib_err+0x313/0x34d\n icmp_unreach+0x1ee/0x207\n\
+  \ icmp_rcv+0x25b/0x28f\n ip_protocol_deliver_rcu+0x95/0x10e\n ip_local_deliver+0xe9/0x148\n\
+  \ __netif_receive_skb_one_core+0x52/0x6e\n process_backlog+0xdc/0x177\n net_rx_action+0xf9/0x270\n\
+  \ __do_softirq+0x1b6/0x39a\n ? smpboot_register_percpu_thread+0xce/0xce\n run_ksoftirqd+0x1d/0x42\n\
+  \ smpboot_thread_fn+0x19e/0x1b3\n kthread+0xf1/0xf6\n ? kthread_delayed_work_timer_fn+0x83/0x83\n\
+  \ ret_from_fork+0x24/0x30\n\nFixes: 17926a79320a (\"[AF_RXRPC]: Provide secure RxRPC\
+  \ sockets for use by userspace and kernel both\")\nReported-by: syzbot+611164843bd48cc2190c@syzkaller.appspotmail.com\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/rxrpc
+hunk_count: 1
+covered_count: 1

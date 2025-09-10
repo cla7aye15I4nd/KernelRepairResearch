@@ -1,0 +1,40 @@
+id: 9596c1b9df18e0ae7261
+bug_link: https://syzkaller.appspot.com/bug?extid=9596c1b9df18e0ae7261
+title: WARNING in ipv6_addr_prefix
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a2f6476ed18a3e96e65d47a757d5755421ae8f91
+fix_commit: 586ceac9acb71c4caf84552bd29b36c799c102a0
+datetime: '2025-05-02T18:48:48-07:00'
+fix_commit_message: "ipv6: Restore fib6_config validation for SIOCADDRT.\n\nsyzkaller\
+  \ reported out-of-bounds read in ipv6_addr_prefix(),\nwhere the prefix length was\
+  \ over 128.\n\nThe cited commit accidentally removed some fib6_config\nvalidation\
+  \ from the ioctl path.\n\nLet's restore the validation.\n\n[0]:\nBUG: KASAN: slab-out-of-bounds\
+  \ in ip6_route_info_create (./include/net/ipv6.h:616 net/ipv6/route.c:3814)\nRead\
+  \ of size 1 at addr ff11000138020ad4 by task repro/261\n\nCPU: 3 UID: 0 PID: 261\
+  \ Comm: repro Not tainted 6.15.0-rc3-00614-g0d15a26b247d #87 PREEMPT(voluntary)\n\
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.0-0-gd239552ce722-prebuilt.qemu.org\
+  \ 04/01/2014\nCall Trace:\n <TASK>\n dump_stack_lvl (lib/dump_stack.c:123)\n print_report\
+  \ (mm/kasan/report.c:409 mm/kasan/report.c:521)\n kasan_report (mm/kasan/report.c:636)\n\
+  \ ip6_route_info_create (./include/net/ipv6.h:616 net/ipv6/route.c:3814)\n ip6_route_add\
+  \ (net/ipv6/route.c:3902)\n ipv6_route_ioctl (net/ipv6/route.c:4523)\n inet6_ioctl\
+  \ (net/ipv6/af_inet6.c:577)\n sock_do_ioctl (net/socket.c:1190)\n sock_ioctl (net/socket.c:1314)\n\
+  \ __x64_sys_ioctl (fs/ioctl.c:51 fs/ioctl.c:906 fs/ioctl.c:892 fs/ioctl.c:892)\n\
+  \ do_syscall_64 (arch/x86/entry/syscall_64.c:63 arch/x86/entry/syscall_64.c:94)\n\
+  \ entry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:130)\nRIP: 0033:0x7f518fb2de5d\n\
+  Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 90 f3 0f 1e fa 48 89 f8 48 89 f7 48 89\
+  \ d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3\
+  \ 48 8b 0d 73 9f 1b 00 f7 d8 64 89 01 48\nRSP: 002b:00007fff14f38d18 EFLAGS: 00000202\
+  \ ORIG_RAX: 0000000000000010\nRAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f518fb2de5d\n\
+  RDX: 00000000200015c0 RSI: 000000000000890b RDI: 0000000000000003\nRBP: 00007fff14f38d30\
+  \ R08: 0000000000000800 R09: 0000000000000800\nR10: 0000000000000000 R11: 0000000000000202\
+  \ R12: 00007fff14f38e48\nR13: 0000000000401136 R14: 0000000000403df0 R15: 00007f518fd3c000\n\
+  \ </TASK>\n\nFixes: fa76c1674f2e (\"ipv6: Move some validation from ip6_route_info_create()\
+  \ to rtm_to_fib6_config().\")\nReported-by: syzkaller <syzkaller@googlegroups.com>\n\
+  Reported-by: Yi Lai <yi1.lai@linux.intel.com>\nCloses: https://lore.kernel.org/netdev/aBAcKDEFoN%2FLntBF@ly-workstation/\n\
+  Signed-off-by: Kuniyuki Iwashima <kuniyu@amazon.com>\nReviewed-by: David Ahern <dsahern@kernel.org>\n\
+  Link: https://patch.msgid.link/20250501005335.53683-1-kuniyu@amazon.com\nSigned-off-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/ipv6
+hunk_count: 4
+covered_count: 2

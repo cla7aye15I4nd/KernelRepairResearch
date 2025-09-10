@@ -1,0 +1,34 @@
+==================================================================
+BUG: KCSAN: data-race in io_req_task_cancel / io_wq_free_work
+
+write to 0xffff888117207448 of 8 bytes by task 3861 on cpu 1:
+ req_set_fail io_uring/io_uring.h:-1 [inline]
+ io_req_defer_failed io_uring/io_uring.c:927 [inline]
+ io_req_task_cancel+0x7c/0x1a0 io_uring/io_uring.c:1360
+ io_handle_tw_list+0x194/0x1d0 io_uring/io_uring.c:1057
+ tctx_task_work_run+0x6e/0x1c0 io_uring/io_uring.c:1121
+ tctx_task_work+0x44/0x80 io_uring/io_uring.c:1139
+ task_work_run+0x13c/0x1b0 kernel/task_work.c:227
+ get_signal+0xee2/0x1080 kernel/signal.c:2809
+ arch_do_signal_or_restart+0x9a/0x4b0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x62/0x120 kernel/entry/common.c:218
+ do_syscall_64+0xd6/0x1c0 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff888117207448 of 8 bytes by task 3871 on cpu 0:
+ req_ref_put_and_test io_uring/refs.h:22 [inline]
+ io_wq_free_work+0x24/0x1b0 io_uring/io_uring.c:1799
+ io_worker_handle_work+0x4c9/0x9f0 io_uring/io-wq.c:618
+ io_wq_worker+0x277/0x850 io_uring/io-wq.c:669
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+value changed: 0x0000000000180051 -> 0x0000000000980111
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 3871 Comm: iou-wrk-3861 Not tainted 6.14.0-syzkaller-12508-g92b71befc349 #0 PREEMPT(voluntary) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+==================================================================

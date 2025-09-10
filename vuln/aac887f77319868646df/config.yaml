@@ -1,0 +1,57 @@
+id: aac887f77319868646df
+bug_link: https://syzkaller.appspot.com/bug?extid=aac887f77319868646df
+title: kernel BUG at lib/string.c:LINE! (4)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3e0f64b7dd3149f75e8652ff1df56cffeedc8fc1
+fix_commit: 52f96757905bbf0edef47f3ee6c7c784e7f8ff8a
+datetime: '2018-05-23T11:24:11+02:00'
+fix_commit_message: "ipvs: fix buffer overflow with sync daemon and service\n\nsyzkaller\
+  \ reports for buffer overflow for interface name\nwhen starting sync daemons [1]\n\
+  \nWhat we do is that we copy user structure into larger stack\nbuffer but later\
+  \ we search NUL past the stack buffer.\nThe same happens for sched_name when adding/editing\
+  \ virtual server.\n\nWe are restricted by IP_VS_SCHEDNAME_MAXLEN and IP_VS_IFNAME_MAXLEN\n\
+  being used as size in include/uapi/linux/ip_vs.h, so they\ninclude the space for\
+  \ NUL.\n\nAs using strlcpy is wrong for unsafe source, replace it with\nstrscpy\
+  \ and add checks to return EINVAL if source string is not\nNUL-terminated. The incomplete\
+  \ strlcpy fix comes from 2.6.13.\n\nFor the netlink interface reduce the len parameter\
+  \ for\nIPVS_DAEMON_ATTR_MCAST_IFN and IPVS_SVC_ATTR_SCHED_NAME,\nso that we get\
+  \ proper EINVAL.\n\n[1]\nkernel BUG at lib/string.c:1052!\ninvalid opcode: 0000\
+  \ [#1] SMP KASAN\nDumping ftrace buffer:\n    (ftrace buffer empty)\nModules linked\
+  \ in:\nCPU: 1 PID: 373 Comm: syz-executor936 Not tainted 4.17.0-rc4+ #45\nHardware\
+  \ name: Google Google Compute Engine/Google Compute Engine, BIOS\nGoogle 01/01/2011\n\
+  RIP: 0010:fortify_panic+0x13/0x20 lib/string.c:1051\nRSP: 0018:ffff8801c976f800\
+  \ EFLAGS: 00010282\nRAX: 0000000000000022 RBX: 0000000000000040 RCX: 0000000000000000\n\
+  RDX: 0000000000000022 RSI: ffffffff8160f6f1 RDI: ffffed00392edef6\nRBP: ffff8801c976f800\
+  \ R08: ffff8801cf4c62c0 R09: ffffed003b5e4fb0\nR10: ffffed003b5e4fb0 R11: ffff8801daf27d87\
+  \ R12: ffff8801c976fa20\nR13: ffff8801c976fae4 R14: ffff8801c976fae0 R15: 000000000000048b\n\
+  FS:  00007fd99f75e700(0000) GS:ffff8801daf00000(0000)\nknlGS:0000000000000000\n\
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 00000000200001c0 CR3: 00000001d6843000\
+  \ CR4: 00000000001406e0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \  strlen include/linux/string.h:270 [inline]\n  strlcpy include/linux/string.h:293\
+  \ [inline]\n  do_ip_vs_set_ctl+0x31c/0x1d00 net/netfilter/ipvs/ip_vs_ctl.c:2388\n\
+  \  nf_sockopt net/netfilter/nf_sockopt.c:106 [inline]\n  nf_setsockopt+0x7d/0xd0\
+  \ net/netfilter/nf_sockopt.c:115\n  ip_setsockopt+0xd8/0xf0 net/ipv4/ip_sockglue.c:1253\n\
+  \  udp_setsockopt+0x62/0xa0 net/ipv4/udp.c:2487\n  ipv6_setsockopt+0x149/0x170 net/ipv6/ipv6_sockglue.c:917\n\
+  \  tcp_setsockopt+0x93/0xe0 net/ipv4/tcp.c:3057\n  sock_common_setsockopt+0x9a/0xe0\
+  \ net/core/sock.c:3046\n  __sys_setsockopt+0x1bd/0x390 net/socket.c:1903\n  __do_sys_setsockopt\
+  \ net/socket.c:1914 [inline]\n  __se_sys_setsockopt net/socket.c:1911 [inline]\n\
+  \  __x64_sys_setsockopt+0xbe/0x150 net/socket.c:1911\n  do_syscall_64+0x1b1/0x800\
+  \ arch/x86/entry/common.c:287\n  entry_SYSCALL_64_after_hwframe+0x49/0xbe\nRIP:\
+  \ 0033:0x447369\nRSP: 002b:00007fd99f75dda8 EFLAGS: 00000246 ORIG_RAX: 0000000000000036\n\
+  RAX: ffffffffffffffda RBX: 00000000006e39e4 RCX: 0000000000447369\nRDX: 000000000000048b\
+  \ RSI: 0000000000000000 RDI: 0000000000000003\nRBP: 0000000000000000 R08: 0000000000000018\
+  \ R09: 0000000000000000\nR10: 00000000200001c0 R11: 0000000000000246 R12: 00000000006e39e0\n\
+  R13: 75a1ff93f0896195 R14: 6f745f3168746576 R15: 0000000000000001\nCode: 08 5b 41\
+  \ 5c 41 5d 41 5e 41 5f 5d c3 0f 0b 48 89 df e8 d2 8f 48 fa eb\nde 55 48 89 fe 48\
+  \ c7 c7 60 65 64 88 48 89 e5 e8 91 dd f3 f9 <0f> 0b 90 90\n90 90 90 90 90 90 90\
+  \ 90 90 55 48 89 e5 41 57 41 56\nRIP: fortify_panic+0x13/0x20 lib/string.c:1051\
+  \ RSP: ffff8801c976f800\n\nReported-and-tested-by: syzbot+aac887f77319868646df@syzkaller.appspotmail.com\n\
+  Fixes: e4ff67513096 (\"ipvs: add sync_maxlen parameter for the sync daemon\")\n\
+  Fixes: 4da62fc70d7c (\"[IPVS]: Fix for overflows\")\nSigned-off-by: Julian Anastasov\
+  \ <ja@ssi.bg>\nAcked-by: Simon Horman <horms+renesas@verge.net.au>\nSigned-off-by:\
+  \ Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 4
+covered_count: 2

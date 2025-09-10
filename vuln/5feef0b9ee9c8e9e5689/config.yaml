@@ -1,0 +1,50 @@
+id: 5feef0b9ee9c8e9e5689
+bug_link: https://syzkaller.appspot.com/bug?extid=5feef0b9ee9c8e9e5689
+title: WARNING in kvm_arch_vcpu_ioctl_run (5)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 880218361c10d6dd7f99423d621112b8770fc32f
+fix_commit: 26a0652cb453c72f6aab0974bc4939e9b14f886b
+datetime: '2023-07-29T11:05:31-04:00'
+fix_commit_message: 'KVM: x86: Disallow KVM_SET_SREGS{2} if incoming CR0 is invalid
+
+
+  Reject KVM_SET_SREGS{2} with -EINVAL if the incoming CR0 is invalid,
+
+  e.g. due to setting bits 63:32, illegal combinations, or to a value that
+
+  isn''t allowed in VMX (non-)root mode.  The VMX checks in particular are
+
+  "fun" as failure to disallow Real Mode for an L2 that is configured with
+
+  unrestricted guest disabled, when KVM itself has unrestricted guest
+
+  enabled, will result in KVM forcing VM86 mode to virtual Real Mode for
+
+  L2, but then fail to unwind the related metadata when synthesizing a
+
+  nested VM-Exit back to L1 (which has unrestricted guest enabled).
+
+
+  Opportunistically fix a benign typo in the prototype for is_valid_cr4().
+
+
+  Cc: stable@vger.kernel.org
+
+  Reported-by: syzbot+5feef0b9ee9c8e9e5689@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/all/000000000000f316b705fdf6e2b4@google.com
+
+  Signed-off-by: Sean Christopherson <seanjc@google.com>
+
+  Message-Id: <20230613203037.1968489-2-seanjc@google.com>
+
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  '
+submodule:
+- arch/x86/include/asm
+- arch/x86/kvm
+- arch/x86/kvm/svm
+- arch/x86/kvm/vmx
+hunk_count: 11
+covered_count: 0

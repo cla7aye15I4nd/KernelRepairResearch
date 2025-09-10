@@ -1,0 +1,35 @@
+id: 03ee87124ee05af991bd
+bug_link: https://syzkaller.appspot.com/bug?extid=03ee87124ee05af991bd
+title: 'KASAN: use-after-free Read in shmem_fault (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 89b15332af7c0312a41e50846819ca6613b58b4c
+fix_commit: 8897c1b1a1795cab23d5ac13e4e23bf0b5f4e0c6
+datetime: '2019-12-01T06:29:18-08:00'
+fix_commit_message: "shmem: pin the file in shmem_fault() if mmap_sem is dropped\n\
+  \nsyzbot found the following crash:\n\n  BUG: KASAN: use-after-free in perf_trace_lock_acquire+0x401/0x530\
+  \ include/trace/events/lock.h:13\n  Read of size 8 at addr ffff8880a5cf2c50 by task\
+  \ syz-executor.0/26173\n\n  CPU: 0 PID: 26173 Comm: syz-executor.0 Not tainted 5.3.0-rc6\
+  \ #146\n  Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS\
+  \ Google 01/01/2011\n  Call Trace:\n     perf_trace_lock_acquire+0x401/0x530 include/trace/events/lock.h:13\n\
+  \     trace_lock_acquire include/trace/events/lock.h:13 [inline]\n     lock_acquire+0x2de/0x410\
+  \ kernel/locking/lockdep.c:4411\n     __raw_spin_lock include/linux/spinlock_api_smp.h:142\
+  \ [inline]\n     _raw_spin_lock+0x2f/0x40 kernel/locking/spinlock.c:151\n     spin_lock\
+  \ include/linux/spinlock.h:338 [inline]\n     shmem_fault+0x5ec/0x7b0 mm/shmem.c:2034\n\
+  \     __do_fault+0x111/0x540 mm/memory.c:3083\n     do_shared_fault mm/memory.c:3535\
+  \ [inline]\n     do_fault mm/memory.c:3613 [inline]\n     handle_pte_fault mm/memory.c:3840\
+  \ [inline]\n     __handle_mm_fault+0x2adf/0x3f20 mm/memory.c:3964\n     handle_mm_fault+0x1b5/0x6b0\
+  \ mm/memory.c:4001\n     do_user_addr_fault arch/x86/mm/fault.c:1441 [inline]\n\
+  \     __do_page_fault+0x536/0xdd0 arch/x86/mm/fault.c:1506\n     do_page_fault+0x38/0x590\
+  \ arch/x86/mm/fault.c:1530\n     page_fault+0x39/0x40 arch/x86/entry/entry_64.S:1202\n\
+  \nIt happens if the VMA got unmapped under us while we dropped mmap_sem\nand inode\
+  \ got freed.\n\nPinning the file if we drop mmap_sem fixes the issue.\n\nLink: http://lkml.kernel.org/r/20190927083908.rhifa4mmaxefc24r@box\n\
+  Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>\nReported-by:\
+  \ syzbot+03ee87124ee05af991bd@syzkaller.appspotmail.com\nAcked-by: Johannes Weiner\
+  \ <hannes@cmpxchg.org>\nReviewed-by: Matthew Wilcox (Oracle) <willy@infradead.org>\n\
+  Cc: Hillf Danton <hdanton@sina.com>\nCc: Hugh Dickins <hughd@google.com>\nCc: Josef\
+  \ Bacik <josef@toxicpanda.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,22 @@
+id: 9d7405c7faa390e60b4e
+bug_link: https://syzkaller.appspot.com/bug?extid=9d7405c7faa390e60b4e
+title: 'KASAN: slab-out-of-bounds Read in batadv_interface_tx'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 955d3411a17f590364238bd0d3329b61f20c1cd2
+fix_commit: 9114daa825fc3f335f9bea3313ce667090187280
+datetime: '2018-12-31T22:47:50+01:00'
+fix_commit_message: "batman-adv: Force mac header to start of data on xmit\n\nThe\
+  \ caller of ndo_start_xmit may not already have called\nskb_reset_mac_header. The\
+  \ returned value of skb_mac_header/eth_hdr\ntherefore can be in the wrong position\
+  \ and even outside the current skbuff.\nThis for example happens when the user binds\
+  \ to the device using a\nPF_PACKET-SOCK_RAW with enabled qdisc-bypass:\n\n  int\
+  \ opt = 4;\n  setsockopt(sock, SOL_PACKET, PACKET_QDISC_BYPASS, &opt, sizeof(opt));\n\
+  \nSince eth_hdr is used all over the codebase, the batadv_interface_tx\nfunction\
+  \ must always take care of resetting it.\n\nFixes: c6c8fea29769 (\"net: Add batman-adv\
+  \ meshing protocol\")\nReported-by: syzbot+9d7405c7faa390e60b4e@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+7d20bc3f1ddddc0f9079@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Sven Eckelmann <sven@narfation.org>\nSigned-off-by: Simon Wunderlich <sw@simonwunderlich.de>\n"
+submodule:
+- net/batman-adv
+hunk_count: 1
+covered_count: 1

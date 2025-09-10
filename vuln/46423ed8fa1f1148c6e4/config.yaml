@@ -1,0 +1,103 @@
+id: 46423ed8fa1f1148c6e4
+bug_link: https://syzkaller.appspot.com/bug?extid=46423ed8fa1f1148c6e4
+title: WARNING in vma_merge_existing_range
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 67bab13307c83fb742c2556b06cdc39dbad27f07
+fix_commit: 47b16d0462a460000b8f05dfb1292377ac48f3ca
+datetime: '2025-03-05T21:36:14-08:00'
+fix_commit_message: "mm: abort vma_modify() on merge out of memory failure\n\nThe\
+  \ remainder of vma_modify() relies upon the vmg state remaining pristine\nafter\
+  \ a merge attempt.\n\nUsually this is the case, however in the one edge case scenario\
+  \ of a merge\nattempt failing not due to the specified range being unmergeable,\
+  \ but\nrather due to an out of memory error arising when attempting to commit the\n\
+  merge, this assumption becomes untrue.\n\nThis results in vmg->start, end being\
+  \ modified, and thus the proceeding\nattempts to split the VMA will be done with\
+  \ invalid start/end values.\n\nThankfully, it is likely practically impossible for\
+  \ us to hit this in\nreality, as it would require a maple tree node pre-allocation\
+  \ failure that\nwould likely never happen due to it being 'too small to fail', i.e.\
+  \  the\nkernel would simply keep retrying reclaim until it succeeded.\n\nHowever,\
+  \ this scenario remains theoretically possible, and what we are\ndoing here is wrong\
+  \ so we must correct it.\n\nThe safest option is, when this scenario occurs, to\
+  \ simply give up the\noperation.  If we cannot allocate memory to merge, then we\
+  \ cannot allocate\nmemory to split either (perhaps moreso!).\n\nAny scenario where\
+  \ this would be happening would be under very extreme\n(likely fatal) memory pressure,\
+  \ so it's best we give up early.\n\nSo there is no doubt it is appropriate to simply\
+  \ bail out in this\nscenario.\n\nHowever, in general we must if at all possible\
+  \ never assume VMG state is\nstable after a merge attempt, since merge operations\
+  \ update VMG fields. \nAs a result, additionally also make this clear by storing\
+  \ start, end in\nlocal variables.\n\nThe issue was reported originally by syzkaller,\
+  \ and by Brad Spengler (via\nan off-list discussion), and in both instances it manifested\
+  \ as a\ntriggering of the assert:\n\n\tVM_WARN_ON_VMG(start >= end, vmg);\n\nIn\
+  \ vma_merge_existing_range().\n\nIt seems at least one scenario in which this is\
+  \ occurring is one in which\nthe merge being attempted is due to an madvise() across\
+  \ multiple VMAs\nwhich looks like this:\n\n        start     end\n          |<------>|\n\
+  \     |----------|------|\n     |   vma    | next |\n     |----------|------|\n\n\
+  When madvise_walk_vmas() is invoked, we first find vma in the above\n(determining\
+  \ prev to be equal to vma as we are offset into vma), and then\nenter the loop.\n\
+  \nWe determine the end of vma that forms part of the range we are\nmadvise()'ing\
+  \ by setting 'tmp' to this value:\n\n\t\t/* Here vma->vm_start <= start < (end|vma->vm_end)\
+  \ */\n\t\ttmp = vma->vm_end;\n\nWe then invoke the madvise() operation via visit(),\
+  \ letting prev get\nupdated to point to vma as part of the operation:\n\n\t\t/*\
+  \ Here vma->vm_start <= start < tmp <= (end|vma->vm_end). */\n\t\terror = visit(vma,\
+  \ &prev, start, tmp, arg);\n\nWhere the visit() function pointer in this instance\
+  \ is\nmadvise_vma_behavior().\n\nAs observed in syzkaller reports, it is ultimately\
+  \ madvise_update_vma()\nthat is invoked, calling vma_modify_flags_name() and vma_modify()\
+  \ in turn.\n\nThen, in vma_modify(), we attempt the merge:\n\n\tmerged = vma_merge_existing_range(vmg);\n\
+  \tif (merged)\n\t\treturn merged;\n\nWe invoke this with vmg->start, end set to\
+  \ start, tmp as such:\n\n        start  tmp\n          |<--->|\n     |----------|------|\n\
+  \     |   vma    | next |\n     |----------|------|\n\nWe find ourselves in the\
+  \ merge right scenario, but the one in which we\ncannot remove the middle (we are\
+  \ offset into vma).\n\nHere we have a special case where vmg->start, end get set\
+  \ to perhaps\nunintuitive values - we intended to shrink the middle VMA and expand\
+  \ the\nnext.\n\nThis means vmg->start, end are set to...  vma->vm_start, start.\n\
+  \nNow the commit_merge() fails, and vmg->start, end are left like this. \nThis means\
+  \ we return to the rest of vma_modify() with vmg->start, end\n(here denoted as start',\
+  \ end') set as:\n\n  start' end'\n     |<-->|\n     |----------|------|\n     |\
+  \   vma    | next |\n     |----------|------|\n\nSo we now erroneously try to split\
+  \ accordingly.  This is where the\nunfortunate stuff begins.\n\nWe start with:\n\
+  \n\t/* Split any preceding portion of the VMA. */\n\tif (vma->vm_start < vmg->start)\
+  \ {\n\t\t...\n\t}\n\nThis doesn't trigger as we are no longer offset into vma at\
+  \ the start.\n\nBut then we invoke:\n\n\t/* Split any trailing portion of the VMA.\
+  \ */\n\tif (vma->vm_end > vmg->end) {\n\t\t...\n\t}\n\nWhich does get invoked. This\
+  \ leaves us with:\n\n  start' end'\n     |<-->|\n     |----|-----|------|\n    \
+  \ | vma| new | next |\n     |----|-----|------|\n\nWe then return ultimately to\
+  \ madvise_walk_vmas().  Here 'new' is unknown,\nand putting back the values known\
+  \ in this function we are faced with:\n\n        start tmp end\n          |    \
+  \ |  |\n     |----|-----|------|\n     | vma| new | next |\n     |----|-----|------|\n\
+  \      prev\n\nThen:\n\n\t\tstart = tmp;\n\nSo:\n\n             start end\n    \
+  \            |  |\n     |----|-----|------|\n     | vma| new | next |\n     |----|-----|------|\n\
+  \      prev\n\nThe following code does not cause anything to happen:\n\n\t\tif (prev\
+  \ && start < prev->vm_end)\n\t\t\tstart = prev->vm_end;\n\t\tif (start >= end)\n\
+  \t\t\tbreak;\n\nAnd then we invoke:\n\n\t\tif (prev)\n\t\t\tvma = find_vma(mm, prev->vm_end);\n\
+  \nWhich is where a problem occurs - we don't know about 'new' so we\nessentially\
+  \ look for the vma after prev, which is new, whereas we actually\nintended to discover\
+  \ next!\n\nSo we end up with:\n\n             start end\n                |  |\n\
+  \     |----|-----|------|\n     |prev| vma | next |\n     |----|-----|------|\n\n\
+  And we have successfully bypassed all of the checks madvise_walk_vmas()\nhas to\
+  \ ensure early exit should we end up moving out of range.\n\nWe loop around, and\
+  \ hit:\n\n\t\t/* Here vma->vm_start <= start < (end|vma->vm_end) */\n\t\ttmp = vma->vm_end;\n\
+  \nOh dear. Now we have:\n\n              tmp\n             start end\n         \
+  \       |  |\n     |----|-----|------|\n     |prev| vma | next |\n     |----|-----|------|\n\
+  \nWe then invoke:\n\n\t\t/* Here vma->vm_start <= start < tmp <= (end|vma->vm_end).\
+  \ */\n\t\terror = visit(vma, &prev, start, tmp, arg);\n\nWhere start == tmp. That\
+  \ is, a zero range. This is not good.\n\nWe invoke visit() which is madvise_vma_behavior()\
+  \ which does not check the\nrange (for good reason, it assumes all checks have been\
+  \ done before it was\ncalled), which in turn finally calls madvise_update_vma().\n\
+  \nThe madvise_update_vma() function calls vma_modify_flags_name() in turn,\nwhich\
+  \ ultimately invokes vma_modify() with...  start == end.\n\nvma_modify() calls vma_merge_existing_range()\
+  \ and finally we hit:\n\n\tVM_WARN_ON_VMG(start >= end, vmg);\n\nWhich triggers,\
+  \ as start == end.\n\nWhile it might be useful to add some CONFIG_DEBUG_VM asserts\
+  \ in these\ninstances to catch this kind of error, since we have just eliminated\
+  \ any\npossibility of that happening, we will add such asserts separately as to\n\
+  reduce churn and aid backporting.\n\nLink: https://lkml.kernel.org/r/20250222161952.41957-1-lorenzo.stoakes@oracle.com\n\
+  Fixes: 2f1c6611b0a8 (\"mm: introduce vma_merge_struct and abstract vma_merge(),vma_modify()\"\
+  )\nSigned-off-by: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>\nTested-by: Brad\
+  \ Spengler <brad.spengler@opensrcsec.com>\nReported-by: Brad Spengler <brad.spengler@opensrcsec.com>\n\
+  Reported-by: syzbot+46423ed8fa1f1148c6e4@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/linux-mm/6774c98f.050a0220.25abdd.0991.GAE@google.com/\n\
+  Cc: Jann Horn <jannh@google.com>\nCc: Liam Howlett <liam.howlett@oracle.com>\nCc:\
+  \ Vlastimil Babka <vbabka@suse.cz>\nCc: <stable@vger.kernel.org>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

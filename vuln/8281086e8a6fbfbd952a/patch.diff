@@ -1,0 +1,32 @@
+diff --git a/block/bdev.c b/block/bdev.c
+index cf2780cb44a7..485a258b0ab3 100644
+--- a/block/bdev.c
++++ b/block/bdev.c
+@@ -490,7 +490,6 @@ struct block_device *bdev_alloc(struct gendisk *disk, u8 partno)
+ 	bdev = I_BDEV(inode);
+ 	mutex_init(&bdev->bd_fsfreeze_mutex);
+ 	spin_lock_init(&bdev->bd_size_lock);
+-	bdev->bd_disk = disk;
+ 	bdev->bd_partno = partno;
+ 	bdev->bd_inode = inode;
+ 	bdev->bd_stats = alloc_percpu(struct disk_stats);
+@@ -498,6 +497,7 @@ struct block_device *bdev_alloc(struct gendisk *disk, u8 partno)
+ 		iput(inode);
+ 		return NULL;
+ 	}
++	bdev->bd_disk = disk;
+ 	return bdev;
+ }
+ 
+diff --git a/block/genhd.c b/block/genhd.c
+index 7b6e5e1cf956..496e8458c357 100644
+--- a/block/genhd.c
++++ b/block/genhd.c
+@@ -1268,6 +1268,7 @@ struct gendisk *__alloc_disk_node(struct request_queue *q, int node_id,
+ 
+ out_destroy_part_tbl:
+ 	xa_destroy(&disk->part_tbl);
++	disk->part0->bd_disk = NULL;
+ 	iput(disk->part0->bd_inode);
+ out_free_bdi:
+ 	bdi_put(disk->bdi);

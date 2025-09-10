@@ -1,0 +1,89 @@
+diff --git a/kernel/locking/lockdep.c b/kernel/locking/lockdep.c
+index c6d0c1dc6253..6b96a965bd44 100644
+--- a/kernel/locking/lockdep.c
++++ b/kernel/locking/lockdep.c
+@@ -1392,7 +1392,7 @@ static int add_lock_to_list(struct lock_class *this,
+ /*
+  * For good efficiency of modular, we use power of 2
+  */
+-#define MAX_CIRCULAR_QUEUE_SIZE		4096UL
++#define MAX_CIRCULAR_QUEUE_SIZE		(1UL << CONFIG_LOCKDEP_CIRCULAR_QUEUE_BITS)
+ #define CQ_MASK				(MAX_CIRCULAR_QUEUE_SIZE-1)
+ 
+ /*
+diff --git a/kernel/locking/lockdep_internals.h b/kernel/locking/lockdep_internals.h
+index de49f9e1c11b..ecb8662e7a4e 100644
+--- a/kernel/locking/lockdep_internals.h
++++ b/kernel/locking/lockdep_internals.h
+@@ -99,16 +99,16 @@ static const unsigned long LOCKF_USED_IN_IRQ_READ =
+ #define MAX_STACK_TRACE_ENTRIES	262144UL
+ #define STACK_TRACE_HASH_SIZE	8192
+ #else
+-#define MAX_LOCKDEP_ENTRIES	32768UL
++#define MAX_LOCKDEP_ENTRIES	(1UL << CONFIG_LOCKDEP_BITS)
+ 
+-#define MAX_LOCKDEP_CHAINS_BITS	16
++#define MAX_LOCKDEP_CHAINS_BITS	CONFIG_LOCKDEP_CHAINS_BITS
+ 
+ /*
+  * Stack-trace: tightly packed array of stack backtrace
+  * addresses. Protected by the hash_lock.
+  */
+-#define MAX_STACK_TRACE_ENTRIES	524288UL
+-#define STACK_TRACE_HASH_SIZE	16384
++#define MAX_STACK_TRACE_ENTRIES	(1UL << CONFIG_LOCKDEP_STACK_TRACE_BITS)
++#define STACK_TRACE_HASH_SIZE	(1 << CONFIG_LOCKDEP_STACK_TRACE_HASH_BITS)
+ #endif
+ 
+ /*
+diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
+index 2779c29d9981..f107000e7c28 100644
+--- a/lib/Kconfig.debug
++++ b/lib/Kconfig.debug
+@@ -1370,6 +1370,46 @@ config LOCKDEP
+ config LOCKDEP_SMALL
+ 	bool
+ 
++config LOCKDEP_BITS
++	int "Bitsize for MAX_LOCKDEP_ENTRIES"
++	depends on LOCKDEP && !LOCKDEP_SMALL
++	range 10 30
++	default 15
++	help
++	  Try increasing this value if you hit "BUG: MAX_LOCKDEP_ENTRIES too low!" message.
++
++config LOCKDEP_CHAINS_BITS
++	int "Bitsize for MAX_LOCKDEP_CHAINS"
++	depends on LOCKDEP && !LOCKDEP_SMALL
++	range 10 30
++	default 16
++	help
++	  Try increasing this value if you hit "BUG: MAX_LOCKDEP_CHAINS too low!" message.
++
++config LOCKDEP_STACK_TRACE_BITS
++	int "Bitsize for MAX_STACK_TRACE_ENTRIES"
++	depends on LOCKDEP && !LOCKDEP_SMALL
++	range 10 30
++	default 19
++	help
++	  Try increasing this value if you hit "BUG: MAX_STACK_TRACE_ENTRIES too low!" message.
++
++config LOCKDEP_STACK_TRACE_HASH_BITS
++	int "Bitsize for STACK_TRACE_HASH_SIZE"
++	depends on LOCKDEP && !LOCKDEP_SMALL
++	range 10 30
++	default 14
++	help
++	  Try increasing this value if you need large MAX_STACK_TRACE_ENTRIES.
++
++config LOCKDEP_CIRCULAR_QUEUE_BITS
++	int "Bitsize for elements in circular_queue struct"
++	depends on LOCKDEP
++	range 10 30
++	default 12
++	help
++	  Try increasing this value if you hit "lockdep bfs error:-1" warning due to __cq_enqueue() failure.
++
+ config DEBUG_LOCKDEP
+ 	bool "Lock dependency engine debugging"
+ 	depends on DEBUG_KERNEL && LOCKDEP

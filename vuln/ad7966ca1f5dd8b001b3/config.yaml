@@ -1,0 +1,54 @@
+id: ad7966ca1f5dd8b001b3
+bug_link: https://syzkaller.appspot.com/bug?extid=ad7966ca1f5dd8b001b3
+title: 'KASAN: slab-use-after-free Read in btrfs_cleanup_defrag_inodes'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b0b595e61d97de61c15b379b754b2caa90e83e5c
+fix_commit: 7f1b63f981b8284c6d8238cb49b5cb156d9a833e
+datetime: '2024-09-17T17:35:53+02:00'
+fix_commit_message: 'btrfs: fix use-after-free on rbtree that tracks inodes for auto
+  defrag
+
+
+  When cleaning up defrag inodes at btrfs_cleanup_defrag_inodes(), called
+
+  during remount and unmount, we are freeing every node from the rbtree
+
+  that tracks inodes for auto defrag using
+
+  rbtree_postorder_for_each_entry_safe(), which doesn''t modify the tree
+
+  itself. So once we unlock the lock that protects the rbtree, we have a
+
+  tree pointing to a root that was freed (and a root pointing to freed
+
+  nodes, and their children pointing to other freed nodes, and so on).
+
+  This makes further access to the tree result in a use-after-free with
+
+  unpredictable results.
+
+
+  Fix this by initializing the rbtree to an empty root after the call to
+
+  rbtree_postorder_for_each_entry_safe() and before unlocking.
+
+
+  Fixes: 276940915f23 ("btrfs: clear defragmented inodes using postorder in btrfs_cleanup_defrag_inodes()")
+
+  Reported-by: syzbot+ad7966ca1f5dd8b001b3@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/linux-btrfs/000000000000f9aad406223eabff@google.com/
+
+  Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+  Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+  Reviewed-by: David Sterba <dsterba@suse.com>
+
+  Signed-off-by: David Sterba <dsterba@suse.com>
+
+  '
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 1

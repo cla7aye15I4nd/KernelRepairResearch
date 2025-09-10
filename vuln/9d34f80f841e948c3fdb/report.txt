@@ -1,0 +1,37 @@
+=====================================================
+BUG: KMSAN: kernel-usb-infoleak in usb_submit_urb+0x597/0x2350 drivers/usb/core/urb.c:430
+ usb_submit_urb+0x597/0x2350 drivers/usb/core/urb.c:430
+ usbtmc_write+0xc32/0x1220 drivers/usb/class/usbtmc.c:1606
+ vfs_write+0x493/0x1550 fs/read_write.c:588
+ ksys_write+0x20f/0x4c0 fs/read_write.c:643
+ __do_sys_write fs/read_write.c:655 [inline]
+ __se_sys_write fs/read_write.c:652 [inline]
+ __x64_sys_write+0x93/0xe0 fs/read_write.c:652
+ x64_sys_call+0x306a/0x3ba0 arch/x86/include/generated/asm/syscalls_64.h:2
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ slab_post_alloc_hook mm/slub.c:3994 [inline]
+ slab_alloc_node mm/slub.c:4037 [inline]
+ __kmalloc_cache_noprof+0x4f0/0xb00 mm/slub.c:4184
+ kmalloc_noprof include/linux/slab.h:681 [inline]
+ usbtmc_create_urb drivers/usb/class/usbtmc.c:757 [inline]
+ usbtmc_write+0x3d3/0x1220 drivers/usb/class/usbtmc.c:1547
+ vfs_write+0x493/0x1550 fs/read_write.c:588
+ ksys_write+0x20f/0x4c0 fs/read_write.c:643
+ __do_sys_write fs/read_write.c:655 [inline]
+ __se_sys_write fs/read_write.c:652 [inline]
+ __x64_sys_write+0x93/0xe0 fs/read_write.c:652
+ x64_sys_call+0x306a/0x3ba0 arch/x86/include/generated/asm/syscalls_64.h:2
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Byte 15 of 16 is uninitialized
+Memory access of size 16 starts at ffff8881171ce000
+
+CPU: 1 UID: 0 PID: 5216 Comm: syz-executor240 Not tainted 6.11.0-rc6-syzkaller-00026-g88fac17500f4 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+=====================================================

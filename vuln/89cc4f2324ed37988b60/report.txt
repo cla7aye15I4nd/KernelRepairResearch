@@ -1,0 +1,42 @@
+------------[ cut here ]------------
+kernel BUG at fs/nilfs2/btnode.c:59!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 PID: 7600 Comm: segctord Not tainted 6.10.0-rc3-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+RIP: 0010:nilfs_btnode_create_block+0x3dc/0x400 fs/nilfs2/btnode.c:59
+Code: 8e 48 89 da e8 85 25 73 01 e9 a7 fd ff ff e8 cb d2 28 fe eb 0c e8 c4 d2 28 fe eb 05 e8 bd d2 28 fe 4c 89 ef e8 35 00 00 00 90 <0f> 0b e8 ad d2 28 fe 4c 89 f7 48 c7 c6 40 f2 06 8c e8 8e c0 6f fe
+RSP: 0000:ffffc90004f1f270 EFLAGS: 00010202
+RAX: ffffffff821b2801 RBX: 0000000000000010 RCX: ffffffff821b2819
+RDX: 0000000000000001 RSI: 0000000000000004 RDI: ffff88807746f5d0
+RBP: 0000000000001cc3 R08: ffff88807746f5d3 R09: 1ffff1100ee8deba
+R10: dffffc0000000000 R11: ffffed100ee8debb R12: dffffc0000000000
+R13: ffff88807746f570 R14: 1ffff1100ee8deae R15: ffff88805e399490
+FS:  0000000000000000(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fdd25186000 CR3: 000000007a728000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ nilfs_btnode_prepare_change_key+0x26d/0x300 fs/nilfs2/btnode.c:219
+ nilfs_btree_prepare_update_v+0x397/0x450 fs/nilfs2/btree.c:1942
+ nilfs_btree_prepare_propagate_v fs/nilfs2/btree.c:2001 [inline]
+ nilfs_btree_propagate_v fs/nilfs2/btree.c:2054 [inline]
+ nilfs_btree_propagate+0x3bf/0xdf0 fs/nilfs2/btree.c:2111
+ nilfs_bmap_propagate+0x75/0x120 fs/nilfs2/bmap.c:345
+ nilfs_segctor_apply_buffers+0x184/0x340 fs/nilfs2/segment.c:1006
+ nilfs_segctor_scan_file+0x810/0xa50 fs/nilfs2/segment.c:1066
+ nilfs_segctor_collect_blocks fs/nilfs2/segment.c:1164 [inline]
+ nilfs_segctor_collect fs/nilfs2/segment.c:1492 [inline]
+ nilfs_segctor_do_construct+0x1c43/0x6b50 fs/nilfs2/segment.c:2040
+ nilfs_segctor_construct+0x181/0x6b0 fs/nilfs2/segment.c:2408
+ nilfs_segctor_thread_construct fs/nilfs2/segment.c:2516 [inline]
+ nilfs_segctor_thread+0x55c/0x11b0 fs/nilfs2/segment.c:2601
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:nilfs_btnode_create_block+0x3dc/0x400 fs/nilfs2/btnode.c:59
+Code: 8e 48 89 da e8 85 25 73 01 e9

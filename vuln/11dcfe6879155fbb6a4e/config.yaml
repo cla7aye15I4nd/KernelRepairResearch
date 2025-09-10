@@ -1,0 +1,37 @@
+id: 11dcfe6879155fbb6a4e
+bug_link: https://syzkaller.appspot.com/bug?extid=11dcfe6879155fbb6a4e
+title: 'WARNING: suspicious RCU usage in bond_ipsec_add_sa (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: be5d1b61a2ad28c7e57fe8bfa277373e8ecffcdc
+fix_commit: b648eba4c69e5819880b4907e7fcb2bb576069ab
+datetime: '2021-07-06T10:36:59-07:00'
+fix_commit_message: "bonding: fix suspicious RCU usage in bond_ipsec_add_sa()\n\n\
+  To dereference bond->curr_active_slave, it uses rcu_dereference().\nBut it and the\
+  \ caller doesn't acquire RCU so a warning occurs.\nSo add rcu_read_lock().\n\nTest\
+  \ commands:\n    ip link add dummy0 type dummy\n    ip link add bond0 type bond\n\
+  \    ip link set dummy0 master bond0\n    ip link set dummy0 up\n    ip link set\
+  \ bond0 up\n    ip x s add proto esp dst 14.1.1.1 src 15.1.1.1 spi 0x07 \\\n\t \
+  \   mode transport \\\n\t    reqid 0x07 replay-window 32 aead 'rfc4106(gcm(aes))'\
+  \ \\\n\t    0x44434241343332312423222114131211f4f3f2f1 128 sel \\\n\t    src 14.0.0.52/24\
+  \ dst 14.0.0.70/24 proto tcp offload \\\n\t    dev bond0 dir in\n\nSplat looks like:\n\
+  =============================\nWARNING: suspicious RCU usage\n5.13.0-rc3+ #1168\
+  \ Not tainted\n-----------------------------\ndrivers/net/bonding/bond_main.c:411\
+  \ suspicious rcu_dereference_check() usage!\n\nother info that might help us debug\
+  \ this:\n\nrcu_scheduler_active = 2, debug_locks = 1\n1 lock held by ip/684:\n #0:\
+  \ ffffffff9a2757c0 (&net->xfrm.xfrm_cfg_mutex){+.+.}-{3:3},\nat: xfrm_netlink_rcv+0x59/0x80\
+  \ [xfrm_user]\n   55.191733][  T684] stack backtrace:\nCPU: 0 PID: 684 Comm: ip\
+  \ Not tainted 5.13.0-rc3+ #1168\nCall Trace:\n dump_stack+0xa4/0xe5\n bond_ipsec_add_sa+0x18c/0x1f0\
+  \ [bonding]\n xfrm_dev_state_add+0x2a9/0x770\n ? memcpy+0x38/0x60\n xfrm_add_sa+0x2278/0x3b10\
+  \ [xfrm_user]\n ? xfrm_get_policy+0xaa0/0xaa0 [xfrm_user]\n ? register_lock_class+0x1750/0x1750\n\
+  \ xfrm_user_rcv_msg+0x331/0x660 [xfrm_user]\n ? rcu_read_lock_sched_held+0x91/0xc0\n\
+  \ ? xfrm_user_state_lookup.constprop.39+0x320/0x320 [xfrm_user]\n ? find_held_lock+0x3a/0x1c0\n\
+  \ ? mutex_lock_io_nested+0x1210/0x1210\n ? sched_clock_cpu+0x18/0x170\n netlink_rcv_skb+0x121/0x350\n\
+  \ ? xfrm_user_state_lookup.constprop.39+0x320/0x320 [xfrm_user]\n ? netlink_ack+0x9d0/0x9d0\n\
+  \ ? netlink_deliver_tap+0x17c/0xa50\n xfrm_netlink_rcv+0x68/0x80 [xfrm_user]\n netlink_unicast+0x41c/0x610\n\
+  \ ? netlink_attachskb+0x710/0x710\n netlink_sendmsg+0x6b9/0xb70\n[ ... ]\n\nFixes:\
+  \ 18cb261afd7b (\"bonding: support hardware encryption offload to slaves\")\nSigned-off-by:\
+  \ Taehee Yoo <ap420073@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- drivers/net/bonding
+hunk_count: 2
+covered_count: 2

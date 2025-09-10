@@ -1,0 +1,47 @@
+id: eb276410a47365e399ee50d68e73650cac178e0f
+bug_link: https://syzkaller.appspot.com/bug?extid=eb276410a47365e399ee50d68e73650cac178e0f
+title: 'BUG: sleeping function called from invalid context at ./include/linux/uaccess.h:LINE'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5af4157388adad82c339e3742fb6b67840721347
+fix_commit: 4d772cb85f64c16eca00177089ecb3cd5d292120
+datetime: '2017-11-17T13:20:15+01:00'
+fix_commit_message: "KVM: x86: fix em_fxstor() sleeping while in atomic\n\nCommit\
+  \ 9d643f63128b (\"KVM: x86: avoid large stack allocations in\nem_fxrstor\") optimize\
+  \ the stack size, but introduced a guest memory access\nwhich might sleep while\
+  \ in atomic.\n\nFix it by introducing, again, a second fxregs_state. Try to avoid\n\
+  large stacks by using noinline. Add some helpful comments.\n\nReported by syzbot:\n\
+  \nin_atomic(): 1, irqs_disabled(): 0, pid: 2909, name: syzkaller879109\n2 locks\
+  \ held by syzkaller879109/2909:\n  #0:  (&vcpu->mutex){+.+.}, at: [<ffffffff8106222c>]\
+  \ vcpu_load+0x1c/0x70\narch/x86/kvm/../../../virt/kvm/kvm_main.c:154\n  #1:  (&kvm->srcu){....},\
+  \ at: [<ffffffff810dd162>] vcpu_enter_guest\narch/x86/kvm/x86.c:6983 [inline]\n\
+  \  #1:  (&kvm->srcu){....}, at: [<ffffffff810dd162>] vcpu_run\narch/x86/kvm/x86.c:7061\
+  \ [inline]\n  #1:  (&kvm->srcu){....}, at: [<ffffffff810dd162>]\nkvm_arch_vcpu_ioctl_run+0x1bc2/0x58b0\
+  \ arch/x86/kvm/x86.c:7222\nCPU: 1 PID: 2909 Comm: syzkaller879109 Not tainted 4.13.0-rc4-next-20170811\n\
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011\nCall\
+  \ Trace:\n  __dump_stack lib/dump_stack.c:16 [inline]\n  dump_stack+0x194/0x257\
+  \ lib/dump_stack.c:52\n  ___might_sleep+0x2b2/0x470 kernel/sched/core.c:6014\n \
+  \ __might_sleep+0x95/0x190 kernel/sched/core.c:5967\n  __might_fault+0xab/0x1d0\
+  \ mm/memory.c:4383\n  __copy_from_user include/linux/uaccess.h:71 [inline]\n  __kvm_read_guest_page+0x58/0xa0\n\
+  arch/x86/kvm/../../../virt/kvm/kvm_main.c:1771\n  kvm_vcpu_read_guest_page+0x44/0x60\n\
+  arch/x86/kvm/../../../virt/kvm/kvm_main.c:1791\n  kvm_read_guest_virt_helper+0x76/0x140\
+  \ arch/x86/kvm/x86.c:4407\n  kvm_read_guest_virt_system+0x3c/0x50 arch/x86/kvm/x86.c:4466\n\
+  \  segmented_read_std+0x10c/0x180 arch/x86/kvm/emulate.c:819\n  em_fxrstor+0x27b/0x410\
+  \ arch/x86/kvm/emulate.c:4022\n  x86_emulate_insn+0x55d/0x3c50 arch/x86/kvm/emulate.c:5471\n\
+  \  x86_emulate_instruction+0x411/0x1ca0 arch/x86/kvm/x86.c:5698\n  kvm_mmu_page_fault+0x18b/0x2c0\
+  \ arch/x86/kvm/mmu.c:4854\n  handle_ept_violation+0x1fc/0x5e0 arch/x86/kvm/vmx.c:6400\n\
+  \  vmx_handle_exit+0x281/0x1ab0 arch/x86/kvm/vmx.c:8718\n  vcpu_enter_guest arch/x86/kvm/x86.c:6999\
+  \ [inline]\n  vcpu_run arch/x86/kvm/x86.c:7061 [inline]\n  kvm_arch_vcpu_ioctl_run+0x1cee/0x58b0\
+  \ arch/x86/kvm/x86.c:7222\n  kvm_vcpu_ioctl+0x64c/0x1010 arch/x86/kvm/../../../virt/kvm/kvm_main.c:2591\n\
+  \  vfs_ioctl fs/ioctl.c:45 [inline]\n  do_vfs_ioctl+0x1b1/0x1520 fs/ioctl.c:685\n\
+  \  SYSC_ioctl fs/ioctl.c:700 [inline]\n  SyS_ioctl+0x8f/0xc0 fs/ioctl.c:691\n  entry_SYSCALL_64_fastpath+0x1f/0xbe\n\
+  RIP: 0033:0x437fc9\nRSP: 002b:00007ffc7b4d5ab8 EFLAGS: 00000206 ORIG_RAX: 0000000000000010\n\
+  RAX: ffffffffffffffda RBX: 00000000004002b0 RCX: 0000000000437fc9\nRDX: 0000000000000000\
+  \ RSI: 000000000000ae80 RDI: 0000000000000005\nRBP: 0000000000000086 R08: 0000000000000000\
+  \ R09: 0000000020ae8000\nR10: 0000000000009120 R11: 0000000000000206 R12: 0000000000000000\n\
+  R13: 0000000000000004 R14: 0000000000000004 R15: 0000000020077000\n\nFixes: 9d643f63128b\
+  \ (\"KVM: x86: avoid large stack allocations in em_fxrstor\")\nSigned-off-by: David\
+  \ Hildenbrand <david@redhat.com>\nSigned-off-by: Radim Krčmář <rkrcmar@redhat.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 2
+covered_count: 2

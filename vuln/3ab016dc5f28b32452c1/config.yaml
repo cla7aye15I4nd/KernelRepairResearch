@@ -1,0 +1,93 @@
+id: 3ab016dc5f28b32452c1
+bug_link: https://syzkaller.appspot.com/bug?extid=3ab016dc5f28b32452c1
+title: WARNING in ipv6_add_dev
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 54f5fafcced113c7d203f6848f4f14840e74e9d1
+fix_commit: 04efcee6ef8d0f01eef495db047e7216d6e6e38f
+datetime: '2025-04-07T11:13:39-07:00'
+fix_commit_message: 'net: hold instance lock during NETDEV_CHANGE
+
+
+  Cosmin reports an issue with ipv6_add_dev being called from
+
+  NETDEV_CHANGE notifier:
+
+
+  [ 3455.008776]  ? ipv6_add_dev+0x370/0x620
+
+  [ 3455.010097]  ipv6_find_idev+0x96/0xe0
+
+  [ 3455.010725]  addrconf_add_dev+0x1e/0xa0
+
+  [ 3455.011382]  addrconf_init_auto_addrs+0xb0/0x720
+
+  [ 3455.013537]  addrconf_notify+0x35f/0x8d0
+
+  [ 3455.014214]  notifier_call_chain+0x38/0xf0
+
+  [ 3455.014903]  netdev_state_change+0x65/0x90
+
+  [ 3455.015586]  linkwatch_do_dev+0x5a/0x70
+
+  [ 3455.016238]  rtnl_getlink+0x241/0x3e0
+
+  [ 3455.019046]  rtnetlink_rcv_msg+0x177/0x5e0
+
+
+  Similarly, linkwatch might get to ipv6_add_dev without ops lock:
+
+  [ 3456.656261]  ? ipv6_add_dev+0x370/0x620
+
+  [ 3456.660039]  ipv6_find_idev+0x96/0xe0
+
+  [ 3456.660445]  addrconf_add_dev+0x1e/0xa0
+
+  [ 3456.660861]  addrconf_init_auto_addrs+0xb0/0x720
+
+  [ 3456.661803]  addrconf_notify+0x35f/0x8d0
+
+  [ 3456.662236]  notifier_call_chain+0x38/0xf0
+
+  [ 3456.662676]  netdev_state_change+0x65/0x90
+
+  [ 3456.663112]  linkwatch_do_dev+0x5a/0x70
+
+  [ 3456.663529]  __linkwatch_run_queue+0xeb/0x200
+
+  [ 3456.663990]  linkwatch_event+0x21/0x30
+
+  [ 3456.664399]  process_one_work+0x211/0x610
+
+  [ 3456.664828]  worker_thread+0x1cc/0x380
+
+  [ 3456.665691]  kthread+0xf4/0x210
+
+
+  Reclassify NETDEV_CHANGE as a notifier that consistently runs under the
+
+  instance lock.
+
+
+  Link: https://lore.kernel.org/netdev/aac073de8beec3e531c86c101b274d434741c28e.camel@nvidia.com/
+
+  Reported-by: Cosmin Ratiu <cratiu@nvidia.com>
+
+  Tested-by: Cosmin Ratiu <cratiu@nvidia.com>
+
+  Fixes: ad7c7b2172c3 ("net: hold netdev instance lock during sysfs operations")
+
+  Signed-off-by: Stanislav Fomichev <sdf@fomichev.me>
+
+  Link: https://patch.msgid.link/20250404161122.3907628-1-sdf@fomichev.me
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- Documentation/networking
+- include/linux
+- net/core
+- net/ethtool
+- net/hsr
+hunk_count: 19
+covered_count: 2

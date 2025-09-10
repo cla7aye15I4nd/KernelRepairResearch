@@ -1,0 +1,38 @@
+id: e51e2a7401ab556ffde1
+bug_link: https://syzkaller.appspot.com/bug?extid=e51e2a7401ab556ffde1
+title: possible deadlock in smc_close_non_accepted
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cf55612a945039476abfd73e39064b2e721c3272
+fix_commit: 3d502067599f0db12e74e6646aee8728efe3e5be
+datetime: '2018-03-15T09:49:13-04:00'
+fix_commit_message: 'net/smc: simplify wait when closing listen socket
+
+
+  Closing of a listen socket wakes up kernel_accept() of
+
+  smc_tcp_listen_worker(), and then has to wait till smc_tcp_listen_worker()
+
+  gives up the internal clcsock. The wait logic introduced with
+
+  commit 127f49705823 ("net/smc: release clcsock from tcp_listen_worker")
+
+  might wait longer than necessary. This patch implements the idea to
+
+  implement the wait just with flush_work(), and gets rid of the extra
+
+  smc_close_wait_listen_clcsock() function.
+
+
+  Fixes: 127f49705823 ("net/smc: release clcsock from tcp_listen_worker")
+
+  Reported-by: Hans Wippel <hwippel@linux.vnet.ibm.com>
+
+  Signed-off-by: Ursula Braun <ubraun@linux.vnet.ibm.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/smc
+hunk_count: 3
+covered_count: 2

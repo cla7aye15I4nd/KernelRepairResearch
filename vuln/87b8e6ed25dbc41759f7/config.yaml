@@ -1,0 +1,47 @@
+id: 87b8e6ed25dbc41759f7
+bug_link: https://syzkaller.appspot.com/bug?extid=87b8e6ed25dbc41759f7
+title: 'KASAN: null-ptr-deref Read in fuse_copy_do'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7a4f541873734f41f9645ec147cfae72ef3ffd00
+fix_commit: 78f2560fc9fa5ccaaf23ac78edb732c08bad7a92
+datetime: '2024-12-13T16:43:36+01:00'
+fix_commit_message: 'fuse: Set *nbytesp=0 in fuse_get_user_pages on allocation failure
+
+
+  In fuse_get_user_pages(), set *nbytesp to 0 when struct page **pages
+
+  allocation fails. This prevents the caller (fuse_direct_io) from making
+
+  incorrect assumptions that could lead to NULL pointer dereferences
+
+  when processing the request reply.
+
+
+  Previously, *nbytesp was left unmodified on allocation failure, which
+
+  could cause issues if the caller assumed pages had been added to
+
+  ap->descs[] when they hadn''t.
+
+
+  Reported-by: syzbot+87b8e6ed25dbc41759f7@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=87b8e6ed25dbc41759f7
+
+  Fixes: 3b97c3652d91 ("fuse: convert direct io to use folios")
+
+  Signed-off-by: Bernd Schubert <bschubert@ddn.com>
+
+  Reviewed-by: Joanne Koong <joannelkoong@gmail.com>
+
+  Tested-by: Dmitry Antipov <dmantipov@yandex.ru>
+
+  Tested-by: David Howells <dhowells@redhat.com>
+
+  Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
+
+  '
+submodule:
+- fs/fuse
+hunk_count: 2
+covered_count: 0

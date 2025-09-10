@@ -1,0 +1,30 @@
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 5fcbc66d865e..1be7cb73a602 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -1520,6 +1520,8 @@ EXPORT_SYMBOL(netdev_features_change);
+ 
+ void netif_state_change(struct net_device *dev)
+ {
++	netdev_ops_assert_locked_or_invisible(dev);
++
+ 	if (dev->flags & IFF_UP) {
+ 		struct netdev_notifier_change_info change_info = {
+ 			.info.dev = dev,
+diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
+index 39a5b72e861f..c5a7f41982a5 100644
+--- a/net/core/rtnetlink.c
++++ b/net/core/rtnetlink.c
+@@ -3676,11 +3676,8 @@ struct net_device *rtnl_create_link(struct net *net, const char *ifname,
+ 				nla_len(tb[IFLA_BROADCAST]));
+ 	if (tb[IFLA_TXQLEN])
+ 		dev->tx_queue_len = nla_get_u32(tb[IFLA_TXQLEN]);
+-	if (tb[IFLA_OPERSTATE]) {
+-		netdev_lock_ops(dev);
++	if (tb[IFLA_OPERSTATE])
+ 		set_operstate(dev, nla_get_u8(tb[IFLA_OPERSTATE]));
+-		netdev_unlock_ops(dev);
+-	}
+ 	if (tb[IFLA_LINKMODE])
+ 		dev->link_mode = nla_get_u8(tb[IFLA_LINKMODE]);
+ 	if (tb[IFLA_GROUP])

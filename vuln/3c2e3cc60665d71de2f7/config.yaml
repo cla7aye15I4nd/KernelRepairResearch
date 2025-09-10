@@ -1,0 +1,50 @@
+id: 3c2e3cc60665d71de2f7
+bug_link: https://syzkaller.appspot.com/bug?extid=3c2e3cc60665d71de2f7
+title: WARNING in posixtimer_send_sigqueue (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5bc55a333a2f7316b58edc7573e8e893f7acb532
+fix_commit: 8c4840277b6daffe09dea0338f3fce1eb4319a43
+datetime: '2025-01-15T18:08:01+01:00'
+fix_commit_message: "signal/posixtimers: Handle ignore/blocked sequences correctly\n\
+  \nsyzbot triggered the warning in posixtimer_send_sigqueue(), which warns\nabout\
+  \ a non-ignored signal being already queued on the ignored list.\n\nThe warning\
+  \ is actually bogus, as the following sequence causes this:\n\n    signal($SIG,\
+  \ SIGIGN);\n    timer_settime(...);\t\t\t// arm periodic timer\n\n      timer fires,\
+  \ signal is ignored and queued on ignored list\n\n    sigprocmask(SIG_BLOCK, ...);\
+  \        // block the signal\n    timer_settime(...);\t\t\t// re-arm periodic timer\n\
+  \n      timer fires, signal is not ignored because it is blocked\n        ---> Warning\
+  \ triggers as signal is on the ignored list\n\nIdeally timer_settime() could remove\
+  \ the signal, but that's racy and\nincomplete vs. other scenarios and requires a\
+  \ full reevaluation of the\npending signal list.\n\nInstead of adding more complexity,\
+  \ handle it gracefully by removing the\nwarning and requeueing the signal to the\
+  \ pending list. That's correct\nversus:\n\n  1) sig[timed]wait() as that does not\
+  \ check for SIGIGN and only relies on\n     dequeue_signal() -> posixtimers_deliver_signal()\
+  \ to check whether the\n     pending signal is still valid.\n\n  2) Unblocking of\
+  \ the signal.\n\n     - If the unblocking happens before SIGIGN is replaced by a\
+  \ signal\n       handler, then the timer is rearmed in dequeue_signal(), but\n \
+  \      get_signal() will ignore it. The next timer expiry will move it back\n  \
+  \     to the ignored list.\n\n     - If SIGIGN was replaced before unblocking, then\
+  \ the signal will be\n       delivered and a subsequent expiry will queue a signal\
+  \ on the pending\n       list again.\n\nThere is a related scenario to trigger the\
+  \ complementary warning in the\nsignal ignored path, which does not expect the signal\
+  \ to be on the pending\nlist when it is ignored. That can be triggered even before\
+  \ the above change\nvia:\n\ntask1\t\t\ttask2\n\nsignal($SIG, SIGIGN);\n\t\t\tsigprocmask(SIG_BLOCK,\
+  \ ...);\n\ntimer_create();\t\t// Signal target is task2\ntimer_settime(...);\t//\
+  \ arm periodic timer\n\n   timer fires, signal is not ignored because it is blocked\n\
+  \   and queued on the pending list of task2\n\n       \t      \t     \tsyscall()\n\
+  \t\t\t   // Sets the pending flag\n\t\t\t   sigprocmask(SIG_UNBLOCK, ...);\n\n\t\
+  \t\t-> preemption, task2 cannot dequeue the signal\n\ntimer_settime(...);\t// re-arm\
+  \ periodic timer\n\n   timer fires, signal is ignored\n        ---> Warning triggers\
+  \ as signal is on task2's pending list\n\t     and the thread group is not exiting\n\
+  \nConsequently, remove that warning too and just keep the signal on the\npending\
+  \ list.\n\nThe following attempt to deliver the signal on return to user space of\n\
+  task2 will ignore the signal and a subsequent expiry will bring it back to\nthe\
+  \ ignored list, if it did not get blocked or un-ignored before that.\n\nFixes: df7a996b4dab\
+  \ (\"signal: Queue ignored posixtimers on ignore list\")\nReported-by: syzbot+3c2e3cc60665d71de2f7@syzkaller.appspotmail.com\n\
+  Signed-off-by: Thomas Gleixner <tglx@linutronix.de>\nReviewed-by: Frederic Weisbecker\
+  \ <frederic@kernel.org>\nLink: https://lore.kernel.org/all/87ikqhcnjn.ffs@tglx\n\
+  \n"
+submodule:
+- kernel
+hunk_count: 2
+covered_count: 2

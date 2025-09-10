@@ -1,0 +1,93 @@
+=====================================================
+BUG: KMSAN: uninit-value in ZSTD_count lib/zstd/compress/zstd_compress_internal.h:752 [inline]
+BUG: KMSAN: uninit-value in ZSTD_compressBlock_doubleFast_noDict_generic lib/zstd/compress/zstd_double_fast.c:143 [inline]
+BUG: KMSAN: uninit-value in ZSTD_compressBlock_doubleFast_noDict_4 lib/zstd/compress/zstd_double_fast.c:479 [inline]
+BUG: KMSAN: uninit-value in ZSTD_compressBlock_doubleFast+0xf04d/0x19160 lib/zstd/compress/zstd_double_fast.c:499
+ ZSTD_count lib/zstd/compress/zstd_compress_internal.h:752 [inline]
+ ZSTD_compressBlock_doubleFast_noDict_generic lib/zstd/compress/zstd_double_fast.c:143 [inline]
+ ZSTD_compressBlock_doubleFast_noDict_4 lib/zstd/compress/zstd_double_fast.c:479 [inline]
+ ZSTD_compressBlock_doubleFast+0xf04d/0x19160 lib/zstd/compress/zstd_double_fast.c:499
+ ZSTD_buildSeqStore+0xc68/0xe00 lib/zstd/compress/zstd_compress.c:2796
+ ZSTD_compressBlock_internal+0x5c/0x8c0 lib/zstd/compress/zstd_compress.c:3688
+ ZSTD_compress_frameChunk lib/zstd/compress/zstd_compress.c:3887 [inline]
+ ZSTD_compressContinue_internal+0x1ff3/0x5560 lib/zstd/compress/zstd_compress.c:4062
+ ZSTD_compressEnd+0x69/0x960 lib/zstd/compress/zstd_compress.c:4545
+ ZSTD_compressStream_generic lib/zstd/compress/zstd_compress.c:5294 [inline]
+ ZSTD_compressStream2+0x1380/0x2770 lib/zstd/compress/zstd_compress.c:5501
+ ZSTD_endStream+0x6e/0x270 lib/zstd/compress/zstd_compress.c:5970
+ zstd_end_stream+0x36/0x50 lib/zstd/zstd_compress_module.c:159
+ zstd_compress_pages+0x1381/0x1ef0 fs/btrfs/zstd.c:494
+ compression_compress_pages fs/btrfs/compression.c:105 [inline]
+ btrfs_compress_pages+0x34e/0x460 fs/btrfs/compression.c:1010
+ compress_file_range+0xf50/0x25d0 fs/btrfs/inode.c:948
+ btrfs_work_helper+0x52f/0x18d0 fs/btrfs/async-thread.c:314
+ process_one_work kernel/workqueue.c:3267 [inline]
+ process_scheduled_works+0xa81/0x1bd0 kernel/workqueue.c:3348
+ worker_thread+0xea5/0x1560 kernel/workqueue.c:3429
+ kthread+0x3e2/0x540 kernel/kthread.c:389
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Uninit was stored to memory at:
+ ZSTD_limitCopy lib/zstd/compress/../common/zstd_internal.h:251 [inline]
+ ZSTD_compressStream_generic lib/zstd/compress/zstd_compress.c:5261 [inline]
+ ZSTD_compressStream2+0xd3f/0x2770 lib/zstd/compress/zstd_compress.c:5501
+ ZSTD_compressStream+0x42/0x180 lib/zstd/compress/zstd_compress.c:5384
+ zstd_compress_stream+0x3e/0x50 lib/zstd/zstd_compress_module.c:147
+ zstd_compress_pages+0xed6/0x1ef0 fs/btrfs/zstd.c:428
+ compression_compress_pages fs/btrfs/compression.c:105 [inline]
+ btrfs_compress_pages+0x34e/0x460 fs/btrfs/compression.c:1010
+ compress_file_range+0xf50/0x25d0 fs/btrfs/inode.c:948
+ btrfs_work_helper+0x52f/0x18d0 fs/btrfs/async-thread.c:314
+ process_one_work kernel/workqueue.c:3267 [inline]
+ process_scheduled_works+0xa81/0x1bd0 kernel/workqueue.c:3348
+ worker_thread+0xea5/0x1560 kernel/workqueue.c:3429
+ kthread+0x3e2/0x540 kernel/kthread.c:389
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Uninit was stored to memory at:
+ memcpy_from_iter lib/iov_iter.c:73 [inline]
+ iterate_bvec include/linux/iov_iter.h:122 [inline]
+ iterate_and_advance2 include/linux/iov_iter.h:249 [inline]
+ iterate_and_advance include/linux/iov_iter.h:271 [inline]
+ __copy_from_iter lib/iov_iter.c:249 [inline]
+ copy_page_from_iter_atomic+0x12b7/0x2ae0 lib/iov_iter.c:481
+ btrfs_copy_from_user+0x176/0x4c0 fs/btrfs/file.c:59
+ btrfs_buffered_write+0x119a/0x2ab0 fs/btrfs/file.c:1339
+ btrfs_do_write_iter+0x395/0x2270 fs/btrfs/file.c:1688
+ btrfs_file_write_iter+0x38/0x50 fs/btrfs/file.c:1705
+ __kernel_write_iter+0x64d/0xc80 fs/read_write.c:523
+ dump_emit_page fs/coredump.c:895 [inline]
+ dump_user_range+0x8dc/0xee0 fs/coredump.c:956
+ elf_core_dump+0x57c7/0x5ae0 fs/binfmt_elf.c:2083
+ do_coredump+0x32d5/0x4920 fs/coredump.c:769
+ get_signal+0x267e/0x2d00 kernel/signal.c:2896
+ arch_do_signal_or_restart+0x53/0xcb0 arch/x86/kernel/signal.c:310
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x5d/0x160 kernel/entry/common.c:218
+ do_syscall_64+0xdc/0x1e0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ __alloc_pages+0x9d6/0xe70 mm/page_alloc.c:4598
+ alloc_pages_mpol+0x299/0x990 mm/mempolicy.c:2264
+ alloc_pages+0x1bf/0x1e0 mm/mempolicy.c:2335
+ dump_user_range+0x4a/0xee0 fs/coredump.c:940
+ elf_core_dump+0x57c7/0x5ae0 fs/binfmt_elf.c:2083
+ do_coredump+0x32d5/0x4920 fs/coredump.c:769
+ get_signal+0x267e/0x2d00 kernel/signal.c:2896
+ arch_do_signal_or_restart+0x53/0xcb0 arch/x86/kernel/signal.c:310
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x5d/0x160 kernel/entry/common.c:218
+ do_syscall_64+0xdc/0x1e0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 0 PID: 3475 Comm: kworker/u8:18 Not tainted 6.9.0-syzkaller-02707-g614da38e2f7a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Workqueue: btrfs-delalloc btrfs_work_helper
+=====================================================

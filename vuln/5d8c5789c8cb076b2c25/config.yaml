@@ -1,0 +1,71 @@
+id: 5d8c5789c8cb076b2c25
+bug_link: https://syzkaller.appspot.com/bug?extid=5d8c5789c8cb076b2c25
+title: 'KASAN: slab-use-after-free Read in nf_tables_trans_destroy_work (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: df08c94baafb001de6cf44bb7098bb557f36c335
+fix_commit: fb8286562ecfb585e26b033c5e32e6fb85efb0b3
+datetime: '2025-03-06T13:35:54+01:00'
+fix_commit_message: 'netfilter: nf_tables: make destruction work queue pernet
+
+
+  The call to flush_work before tearing down a table from the netlink
+
+  notifier was supposed to make sure that all earlier updates (e.g. rule
+
+  add) that might reference that table have been processed.
+
+
+  Unfortunately, flush_work() waits for the last queued instance.
+
+  This could be an instance that is different from the one that we must
+
+  wait for.
+
+
+  This is because transactions are protected with a pernet mutex, but the
+
+  work item is global, so holding the transaction mutex doesn''t prevent
+
+  another netns from queueing more work.
+
+
+  Make the work item pernet so that flush_work() will wait for all
+
+  transactions queued from this netns.
+
+
+  A welcome side effect is that we no longer need to wait for transaction
+
+  objects from foreign netns.
+
+
+  The gc work queue is still global.  This seems to be ok because nft_set
+
+  structures are reference counted and each container structure owns a
+
+  reference on the net namespace.
+
+
+  The destroy_list is still protected by a global spinlock rather than
+
+  pernet one but the hold time is very short anyway.
+
+
+  v2: call cancel_work_sync before reaping the remaining tables (Pablo).
+
+
+  Fixes: 9f6958ba2e90 ("netfilter: nf_tables: unconditionally flush pending work before
+  notifier")
+
+  Reported-by: syzbot+5d8c5789c8cb076b2c25@syzkaller.appspotmail.com
+
+  Signed-off-by: Florian Westphal <fw@strlen.de>
+
+  Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+
+  '
+submodule:
+- include/net/netfilter
+- net/netfilter
+hunk_count: 17
+covered_count: 9

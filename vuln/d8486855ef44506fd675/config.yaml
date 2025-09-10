@@ -1,0 +1,68 @@
+id: d8486855ef44506fd675
+bug_link: https://syzkaller.appspot.com/bug?extid=d8486855ef44506fd675
+title: 'KASAN: stack-out-of-bounds Read in skb_splice_from_iter'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c08afcdcf95288c627267bb20002e8baaf3394e1
+fix_commit: 5a6f6873606e03a0a95afe40ba5e84bb6e28a26f
+datetime: '2023-06-16T11:45:16-07:00'
+fix_commit_message: 'ip, ip6: Fix splice to raw and ping sockets
+
+
+  Splicing to SOCK_RAW sockets may set MSG_SPLICE_PAGES, but in such a case,
+
+  __ip_append_data() will call skb_splice_from_iter() to access the ''from''
+
+  data, assuming it to point to a msghdr struct with an iter, instead of
+
+  using the provided getfrag function to access it.
+
+
+  In the case of raw_sendmsg(), however, this is not the case and ''from'' will
+
+  point to a raw_frag_vec struct and raw_getfrag() will be the frag-getting
+
+  function.  A similar issue may occur with rawv6_sendmsg().
+
+
+  Fix this by ignoring MSG_SPLICE_PAGES if getfrag != ip_generic_getfrag as
+
+  ip_generic_getfrag() expects "from" to be a msghdr*, but the other getfrags
+
+  don''t.  Note that this will prevent MSG_SPLICE_PAGES from being effective
+
+  for udplite.
+
+
+  This likely affects ping sockets too.  udplite looks like it should be okay
+
+  as it expects "from" to be a msghdr.
+
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  Reported-by: syzbot+d8486855ef44506fd675@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/000000000000ae4cbf05fdeb8349@google.com/
+
+  Fixes: 2dc334f1a63a ("splice, net: Use sendmsg(MSG_SPLICE_PAGES) rather than ->sendpage()")
+
+  Tested-by: syzbot+d8486855ef44506fd675@syzkaller.appspotmail.com
+
+  cc: David Ahern <dsahern@kernel.org>
+
+  cc: Jens Axboe <axboe@kernel.dk>
+
+  cc: Matthew Wilcox <willy@infradead.org>
+
+  Reviewed-by: Willem de Bruijn <willemb@google.com>
+
+  Link: https://lore.kernel.org/r/1410156.1686729856@warthog.procyon.org.uk
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/ipv4
+- net/ipv6
+hunk_count: 2
+covered_count: 0

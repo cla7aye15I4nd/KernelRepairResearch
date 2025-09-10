@@ -1,0 +1,61 @@
+id: e8c028b62439eac42073
+bug_link: https://syzkaller.appspot.com/bug?extid=e8c028b62439eac42073
+title: 'KASAN: slab-out-of-bounds Read in fl6_update_dst'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5e9eeccc58f3e6bcc99b929670665d2ce047e9c9
+fix_commit: bb986a50421a11bf31a81afb15b9b8f45a4a3a11
+datetime: '2020-06-04T15:39:32-07:00'
+fix_commit_message: 'seg6: fix seg6_validate_srh() to avoid slab-out-of-bounds
+
+
+  The seg6_validate_srh() is used to validate SRH for three cases:
+
+
+  case1: SRH of data-plane SRv6 packets to be processed by the Linux kernel.
+
+  Case2: SRH of the netlink message received  from user-space (iproute2)
+
+  Case3: SRH injected into packets through setsockopt
+
+
+  In case1, the SRH can be encoded in the Reduced way (i.e., first SID is
+
+  carried in DA only and not represented as SID in the SRH) and the
+
+  seg6_validate_srh() now handles this case correctly.
+
+
+  In case2 and case3, the SRH shouldn’t be encoded in the Reduced way
+
+  otherwise we lose the first segment (i.e., the first hop).
+
+
+  The current implementation of the seg6_validate_srh() allow SRH of case2
+
+  and case3 to be encoded in the Reduced way. This leads a slab-out-of-bounds
+
+  problem.
+
+
+  This patch verifies SRH of case1, case2 and case3. Allowing case1 to be
+
+  reduced while preventing SRH of case2 and case3 from being reduced .
+
+
+  Reported-by: syzbot+e8c028b62439eac42073@syzkaller.appspotmail.com
+
+  Reported-by: YueHaibing <yuehaibing@huawei.com>
+
+  Fixes: 0cb7498f234e ("seg6: fix SRH processing to comply with RFC8754")
+
+  Signed-off-by: Ahmed Abdelsalam <ahabdels@gmail.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- include/net
+- net/core
+- net/ipv6
+hunk_count: 9
+covered_count: 0

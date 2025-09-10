@@ -1,0 +1,122 @@
+diff --git a/include/linux/migrate.h b/include/linux/migrate.h
+index aa875b83f7ba..0d2aeb9b0f66 100644
+--- a/include/linux/migrate.h
++++ b/include/linux/migrate.h
+@@ -58,6 +58,7 @@ extern int migrate_huge_page_move_mapping(struct address_space *mapping,
+ extern int migrate_page_move_mapping(struct address_space *mapping,
+ 		struct page *newpage, struct page *page, int extra_count);
+ void folio_migrate_flags(struct folio *newfolio, struct folio *folio);
++void folio_migrate_copy(struct folio *newfolio, struct folio *folio);
+ int folio_migrate_mapping(struct address_space *mapping,
+ 		struct folio *newfolio, struct folio *folio, int extra_count);
+ #else
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index c28cace6fe6b..93d5fbe2e4e3 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -912,7 +912,7 @@ void __put_page(struct page *page);
+ void put_pages_list(struct list_head *pages);
+ 
+ void split_page(struct page *page, unsigned int order);
+-void copy_huge_page(struct page *dst, struct page *src);
++void folio_copy(struct folio *dst, struct folio *src);
+ 
+ /*
+  * Compound pages have a destructor function.  Provide a
+diff --git a/mm/folio-compat.c b/mm/folio-compat.c
+index 3f00ad92d1ff..2ccd8f213fc4 100644
+--- a/mm/folio-compat.c
++++ b/mm/folio-compat.c
+@@ -64,4 +64,10 @@ void migrate_page_states(struct page *newpage, struct page *page)
+ 	folio_migrate_flags(page_folio(newpage), page_folio(page));
+ }
+ EXPORT_SYMBOL(migrate_page_states);
++
++void migrate_page_copy(struct page *newpage, struct page *page)
++{
++	folio_migrate_copy(page_folio(newpage), page_folio(page));
++}
++EXPORT_SYMBOL(migrate_page_copy);
+ #endif
+diff --git a/mm/hugetlb.c b/mm/hugetlb.c
+index 95dc7b83381f..6378c1066459 100644
+--- a/mm/hugetlb.c
++++ b/mm/hugetlb.c
+@@ -5302,7 +5302,7 @@ int hugetlb_mcopy_atomic_pte(struct mm_struct *dst_mm,
+ 			*pagep = NULL;
+ 			goto out;
+ 		}
+-		copy_huge_page(page, *pagep);
++		folio_copy(page_folio(page), page_folio(*pagep));
+ 		put_page(*pagep);
+ 		*pagep = NULL;
+ 	}
+diff --git a/mm/migrate.c b/mm/migrate.c
+index f6e0017ef0bf..433c453b47f9 100644
+--- a/mm/migrate.c
++++ b/mm/migrate.c
+@@ -614,16 +614,12 @@ void folio_migrate_flags(struct folio *newfolio, struct folio *folio)
+ }
+ EXPORT_SYMBOL(folio_migrate_flags);
+ 
+-void migrate_page_copy(struct page *newpage, struct page *page)
++void folio_migrate_copy(struct folio *newfolio, struct folio *folio)
+ {
+-	if (PageHuge(page) || PageTransHuge(page))
+-		copy_huge_page(newpage, page);
+-	else
+-		copy_highpage(newpage, page);
+-
+-	migrate_page_states(newpage, page);
++	folio_copy(newfolio, folio);
++	folio_migrate_flags(newfolio, folio);
+ }
+-EXPORT_SYMBOL(migrate_page_copy);
++EXPORT_SYMBOL(folio_migrate_copy);
+ 
+ /************************************************************
+  *                    Migration functions
+@@ -651,7 +647,7 @@ int migrate_page(struct address_space *mapping,
+ 		return rc;
+ 
+ 	if (mode != MIGRATE_SYNC_NO_COPY)
+-		migrate_page_copy(newpage, page);
++		folio_migrate_copy(newfolio, folio);
+ 	else
+ 		folio_migrate_flags(newfolio, folio);
+ 	return MIGRATEPAGE_SUCCESS;
+diff --git a/mm/util.c b/mm/util.c
+index bf860838282c..e58151a61255 100644
+--- a/mm/util.c
++++ b/mm/util.c
+@@ -747,13 +747,26 @@ int __page_mapcount(struct page *page)
+ }
+ EXPORT_SYMBOL_GPL(__page_mapcount);
+ 
+-void copy_huge_page(struct page *dst, struct page *src)
++/**
++ * folio_copy - Copy the contents of one folio to another.
++ * @dst: Folio to copy to.
++ * @src: Folio to copy from.
++ *
++ * The bytes in the folio represented by @src are copied to @dst.
++ * Assumes the caller has validated that @dst is at least as large as @src.
++ * Can be called in atomic context for order-0 folios, but if the folio is
++ * larger, it may sleep.
++ */
++void folio_copy(struct folio *dst, struct folio *src)
+ {
+-	unsigned i, nr = compound_nr(src);
++	long i = 0;
++	long nr = folio_nr_pages(src);
+ 
+-	for (i = 0; i < nr; i++) {
++	for (;;) {
++		copy_highpage(folio_page(dst, i), folio_page(src, i));
++		if (++i == nr)
++			break;
+ 		cond_resched();
+-		copy_highpage(nth_page(dst, i), nth_page(src, i));
+ 	}
+ }
+ 

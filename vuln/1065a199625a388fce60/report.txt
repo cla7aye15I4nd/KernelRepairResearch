@@ -1,0 +1,76 @@
+=====================================================
+BUG: KMSAN: use-after-free in mctp_dump_addrinfo+0x208/0xac0 net/mctp/device.c:128
+ mctp_dump_addrinfo+0x208/0xac0 net/mctp/device.c:128
+ rtnl_dump_all+0x3ec/0x5b0 net/core/rtnetlink.c:4380
+ rtnl_dumpit+0xd8/0x2f0 net/core/rtnetlink.c:6824
+ netlink_dump+0x97b/0x1690 net/netlink/af_netlink.c:2309
+ __netlink_dump_start+0x716/0xd60 net/netlink/af_netlink.c:2424
+ netlink_dump_start include/linux/netlink.h:340 [inline]
+ rtnetlink_dump_start net/core/rtnetlink.c:6853 [inline]
+ rtnetlink_rcv_msg+0x1262/0x14b0 net/core/rtnetlink.c:6920
+ netlink_rcv_skb+0x54a/0x680 net/netlink/af_netlink.c:2534
+ rtnetlink_rcv+0x35/0x40 net/core/rtnetlink.c:6982
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0xed5/0x1290 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x10b3/0x1250 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg+0x333/0x3d0 net/socket.c:727
+ __sys_sendto+0x590/0x710 net/socket.c:2180
+ __do_sys_sendto net/socket.c:2187 [inline]
+ __se_sys_sendto net/socket.c:2183 [inline]
+ __x64_sys_sendto+0x130/0x200 net/socket.c:2183
+ x64_sys_call+0x3c0b/0x3db0 arch/x86/include/generated/asm/syscalls_64.h:45
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xd9/0x1b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ slab_free_hook mm/slub.c:2306 [inline]
+ slab_free mm/slub.c:4642 [inline]
+ kmem_cache_free+0x286/0xf00 mm/slub.c:4744
+ skb_kfree_head net/core/skbuff.c:1056 [inline]
+ skb_free_head net/core/skbuff.c:1070 [inline]
+ skb_release_data+0xe56/0x1110 net/core/skbuff.c:1097
+ skb_release_all net/core/skbuff.c:1162 [inline]
+ __kfree_skb+0x6b/0x260 net/core/skbuff.c:1176
+ consume_skb+0x83/0x230 net/core/skbuff.c:1408
+ netlink_broadcast_filtered+0x21b6/0x2370 net/netlink/af_netlink.c:1524
+ nlmsg_multicast_filtered include/net/netlink.h:1129 [inline]
+ nlmsg_multicast include/net/netlink.h:1148 [inline]
+ nlmsg_notify+0x15b/0x2f0 net/netlink/af_netlink.c:2577
+ rtnl_notify+0xba/0x100 net/core/rtnetlink.c:958
+ inet6_rt_notify+0x27d/0x4a0 net/ipv6/route.c:6270
+ fib6_add_rt2node net/ipv6/ip6_fib.c:1259 [inline]
+ fib6_add+0x33c7/0x6c70 net/ipv6/ip6_fib.c:1488
+ __ip6_ins_rt net/ipv6/route.c:1351 [inline]
+ ip6_ins_rt+0xc0/0x170 net/ipv6/route.c:1361
+ __ipv6_ifa_notify+0x851/0x1990 net/ipv6/addrconf.c:6286
+ ipv6_ifa_notify net/ipv6/addrconf.c:6325 [inline]
+ add_addr+0x301/0x4c0 net/ipv6/addrconf.c:3206
+ init_loopback net/ipv6/addrconf.c:3286 [inline]
+ addrconf_init_auto_addrs+0xb81/0x1230 net/ipv6/addrconf.c:3567
+ addrconf_notify+0x1643/0x1d10 net/ipv6/addrconf.c:3744
+ notifier_call_chain kernel/notifier.c:85 [inline]
+ raw_notifier_call_chain+0xdd/0x410 kernel/notifier.c:453
+ call_netdevice_notifiers_info+0x1ac/0x2b0 net/core/dev.c:2176
+ call_netdevice_notifiers_extack net/core/dev.c:2214 [inline]
+ call_netdevice_notifiers net/core/dev.c:2228 [inline]
+ __dev_notify_flags+0x20d/0x3c0 net/core/dev.c:-1
+ netif_change_flags+0x162/0x1e0 net/core/dev.c:9422
+ dev_change_flags+0x18c/0x320 net/core/dev_api.c:68
+ devinet_ioctl+0x1186/0x2500 net/ipv4/devinet.c:1200
+ inet_ioctl+0x4c0/0x6f0 net/ipv4/af_inet.c:1001
+ sock_do_ioctl+0x9f/0x480 net/socket.c:1190
+ sock_ioctl+0x70b/0xd60 net/socket.c:1311
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl+0x23c/0x400 fs/ioctl.c:892
+ __x64_sys_ioctl+0x97/0xe0 fs/ioctl.c:892
+ x64_sys_call+0x1ebe/0x3db0 arch/x86/include/generated/asm/syscalls_64.h:17
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xd9/0x1b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 1 UID: 0 PID: 5442 Comm: dhcpcd Not tainted 6.15.0-rc6-syzkaller-00105-g088d13246a46 #0 PREEMPT(undef) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+=====================================================

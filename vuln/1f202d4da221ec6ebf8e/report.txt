@@ -1,0 +1,50 @@
+invalid bkey u64s 5 type set 18446462598867058688:34:0 len 3072 ver 0
+  size != 0: delete?, fixing
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/btree_cache.h:131!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5321 Comm: read_btree_node Not tainted 6.12.0-syzkaller-00971-g158f238aa69d #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:bch2_btree_id_root fs/bcachefs/btree_cache.h:131 [inline]
+RIP: 0010:bch2_btree_pos_to_text+0x1ee/0x1f0 fs/bcachefs/btree_cache.c:1403
+Code: 00 00 fc ff df e9 70 ff ff ff 89 d9 80 e1 07 38 c1 0f 8c 7a ff ff ff 48 89 df e8 fd 89 e9 fd e9 6d ff ff ff e8 c3 a1 7f fd 90 <0f> 0b 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 f3 0f 1e fa
+RSP: 0018:ffffc9000d14f448 EFLAGS: 00010293
+RAX: ffffffff8415501d RBX: 000000000000001e RCX: ffff888000c04880
+RDX: 0000000000000000 RSI: 000000000000001e RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff84154f0a R09: 0000000000000000
+R10: ffffc9000d14f5e0 R11: fffff52001a29ec1 R12: ffff888040420800
+R13: ffff888044700000 R14: ffff888044700000 R15: ffffc9000d14f5e0
+FS:  0000000000000000(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000562b097d2fd0 CR3: 0000000011e62000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ btree_node_read_work+0x486/0x1260 fs/bcachefs/btree_io.c:1308
+ bch2_btree_node_read+0x2433/0x2a10
+ bch2_btree_node_fill+0xc75/0x12f0 fs/bcachefs/btree_cache.c:991
+ bch2_btree_node_get_noiter+0x9d5/0xf70 fs/bcachefs/btree_cache.c:1260
+ found_btree_node_is_readable fs/bcachefs/btree_node_scan.c:85 [inline]
+ try_read_btree_node fs/bcachefs/btree_node_scan.c:193 [inline]
+ read_btree_nodes_worker+0x13c5/0x2220 fs/bcachefs/btree_node_scan.c:242
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_btree_id_root fs/bcachefs/btree_cache.h:131 [inline]
+RIP: 0010:bch2_btree_pos_to_text+0x1ee/0x1f0 fs/bcachefs/btree_cache.c:1403
+Code: 00 00 fc ff df e9 70 ff ff ff 89 d9 80 e1 07 38 c1 0f 8c 7a ff ff ff 48 89 df e8 fd 89 e9 fd e9 6d ff ff ff e8 c3 a1 7f fd 90 <0f> 0b 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 f3 0f 1e fa
+RSP: 0018:ffffc9000d14f448 EFLAGS: 00010293
+RAX: ffffffff8415501d RBX: 000000000000001e RCX: ffff888000c04880
+RDX: 0000000000000000 RSI: 000000000000001e RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff84154f0a R09: 0000000000000000
+R10: ffffc9000d14f5e0 R11: fffff52001a29ec1 R12: ffff888040420800
+R13: ffff888044700000 R14: ffff888044700000 R15: ffffc9000d14f5e0
+FS:  0000000000000000(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055b6646f3018 CR3: 0000000011e62000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

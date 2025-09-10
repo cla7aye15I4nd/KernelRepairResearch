@@ -1,0 +1,20 @@
+id: bf64ec93de836d7f4c2c
+bug_link: https://syzkaller.appspot.com/bug?extid=bf64ec93de836d7f4c2c
+title: possible deadlock in xsk_notifier
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 675716400da6f15b9d3db04ef74ee74ca9a00af3
+fix_commit: 5464c3a0e9a037b63d5229cdea08dddc01a98aac
+datetime: '2019-07-12T15:02:21+02:00'
+fix_commit_message: "xdp: fix potential deadlock on socket mutex\n\nThere are 2 call\
+  \ chains:\n\n  a) xsk_bind --> xdp_umem_assign_dev\n  b) unregister_netdevice_queue\
+  \ --> xsk_notifier\n\nwith the following locking order:\n\n  a) xs->mutex --> rtnl_lock\n\
+  \  b) rtnl_lock --> xdp.lock --> xs->mutex\n\nDifferent order of taking 'xs->mutex'\
+  \ and 'rtnl_lock' could produce a\ndeadlock here. Fix that by moving the 'rtnl_lock'\
+  \ before 'xs->lock' in\nthe bind call chain (a).\n\nReported-by: syzbot+bf64ec93de836d7f4c2c@syzkaller.appspotmail.com\n\
+  Fixes: 455302d1c9ae (\"xdp: fix hang while unregistering device bound to xdp socket\"\
+  )\nSigned-off-by: Ilya Maximets <i.maximets@samsung.com>\nAcked-by: Jonathan Lemon\
+  \ <jonathan.lemon@gmail.com>\nSigned-off-by: Daniel Borkmann <daniel@iogearbox.net>\n"
+submodule:
+- net/xdp
+hunk_count: 6
+covered_count: 5

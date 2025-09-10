@@ -1,0 +1,87 @@
+id: a5e45f768aab5892da5d
+bug_link: https://syzkaller.appspot.com/bug?extid=a5e45f768aab5892da5d
+title: 'KMSAN: kernel-infoleak in do_insn_ioctl'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 96cb948408b3adb69df7e451ba7da9d21f814d00
+fix_commit: 3cd212e895ca2d58963fdc6422502b10dd3966bb
+datetime: '2025-08-19T12:56:47+02:00'
+fix_commit_message: 'comedi: Fix use of uninitialized memory in do_insn_ioctl() and
+  do_insnlist_ioctl()
+
+
+  syzbot reports a KMSAN kernel-infoleak in `do_insn_ioctl()`.  A kernel
+
+  buffer is allocated to hold `insn->n` samples (each of which is an
+
+  `unsigned int`).  For some instruction types, `insn->n` samples are
+
+  copied back to user-space, unless an error code is being returned.  The
+
+  problem is that not all the instruction handlers that need to return
+
+  data to userspace fill in the whole `insn->n` samples, so that there is
+
+  an information leak.  There is a similar syzbot report for
+
+  `do_insnlist_ioctl()`, although it does not have a reproducer for it at
+
+  the time of writing.
+
+
+  One culprit is `insn_rw_emulate_bits()` which is used as the handler for
+
+  `INSN_READ` or `INSN_WRITE` instructions for subdevices that do not have
+
+  a specific handler for that instruction, but do have an `INSN_BITS`
+
+  handler.  For `INSN_READ` it only fills in at most 1 sample, so if
+
+  `insn->n` is greater than 1, the remaining `insn->n - 1` samples copied
+
+  to userspace will be uninitialized kernel data.
+
+
+  Another culprit is `vm80xx_ai_insn_read()` in the "vm80xx" driver.  It
+
+  never returns an error, even if it fails to fill the buffer.
+
+
+  Fix it in `do_insn_ioctl()` and `do_insnlist_ioctl()` by making sure
+
+  that uninitialized parts of the allocated buffer are zeroed before
+
+  handling each instruction.
+
+
+  Thanks to Arnaud Lecomte for their fix to `do_insn_ioctl()`.  That fix
+
+  replaced the call to `kmalloc_array()` with `kcalloc()`, but it is not
+
+  always necessary to clear the whole buffer.
+
+
+  Fixes: ed9eccbe8970 ("Staging: add comedi core")
+
+  Reported-by: syzbot+a5e45f768aab5892da5d@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=a5e45f768aab5892da5d
+
+  Reported-by: syzbot+fb4362a104d45ab09cf9@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=fb4362a104d45ab09cf9
+
+  Cc: stable <stable@kernel.org> # 5.13+
+
+  Cc: Arnaud Lecomte <contact@arnaud-lcm.com>
+
+  Signed-off-by: Ian Abbott <abbotti@mev.co.uk>
+
+  Link: https://lore.kernel.org/r/20250725125324.80276-1-abbotti@mev.co.uk
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/comedi
+hunk_count: 2
+covered_count: 2

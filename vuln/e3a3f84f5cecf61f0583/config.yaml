@@ -1,0 +1,29 @@
+id: e3a3f84f5cecf61f0583
+bug_link: https://syzkaller.appspot.com/bug?extid=e3a3f84f5cecf61f0583
+title: WARNING in io_sq_thread_park
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d81269fecb8ce16eb07efafc9ff5520b2a31c486
+fix_commit: a185f1db59f13de73aa470559030e90e50b34d93
+datetime: '2021-03-24T06:55:11-06:00'
+fix_commit_message: "io_uring: do ctx sqd ejection in a clear context\n\nWARNING:\
+  \ CPU: 1 PID: 27907 at fs/io_uring.c:7147 io_sq_thread_park+0xb5/0xd0 fs/io_uring.c:7147\n\
+  CPU: 1 PID: 27907 Comm: iou-sqp-27905 Not tainted 5.12.0-rc4-syzkaller #0\nRIP:\
+  \ 0010:io_sq_thread_park+0xb5/0xd0 fs/io_uring.c:7147\nCall Trace:\n io_ring_ctx_wait_and_kill+0x214/0x700\
+  \ fs/io_uring.c:8619\n io_uring_release+0x3e/0x50 fs/io_uring.c:8646\n __fput+0x288/0x920\
+  \ fs/file_table.c:280\n task_work_run+0xdd/0x1a0 kernel/task_work.c:140\n io_run_task_work\
+  \ fs/io_uring.c:2238 [inline]\n io_run_task_work fs/io_uring.c:2228 [inline]\n io_uring_try_cancel_requests+0x8ec/0xc60\
+  \ fs/io_uring.c:8770\n io_uring_cancel_sqpoll+0x1cf/0x290 fs/io_uring.c:8974\n io_sqpoll_cancel_cb+0x87/0xb0\
+  \ fs/io_uring.c:8907\n io_run_task_work_head+0x58/0xb0 fs/io_uring.c:1961\n io_sq_thread+0x3e2/0x18d0\
+  \ fs/io_uring.c:6763\n ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:294\n\n\
+  May happen that last ctx ref is killed in io_uring_cancel_sqpoll(), so\nfput callback\
+  \ (i.e. io_uring_release()) is enqueued through task_work,\nand run by same cancellation.\
+  \ As it's deeply nested we can't do parking\nor taking sqd->lock there, because\
+  \ its state is unclear. So avoid\nctx ejection from sqd list from io_ring_ctx_wait_and_kill()\
+  \ and do it\nin a clear context in io_ring_exit_work().\n\nFixes: f6d54255f423 (\"\
+  io_uring: halt SQO submission on ctx exit\")\nReported-by: syzbot+e3a3f84f5cecf61f0583@syzkaller.appspotmail.com\n\
+  Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>\nLink: https://lore.kernel.org/r/e90df88b8ff2cabb14a7534601d35d62ab4cb8c7.1616496707.git.asml.silence@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

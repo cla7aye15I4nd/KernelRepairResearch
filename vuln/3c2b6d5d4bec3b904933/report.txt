@@ -1,0 +1,112 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 1 UID: 0 PID: 14535 Comm: syz.4.2972 Not tainted 6.11.0-rc1-syzkaller-00063-g21b136cc63d2 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/27/2024
+RIP: 0010:bq_flush_to_queue+0x44/0x610 kernel/bpf/cpumap.c:675
+Code: df e8 30 d8 d6 ff 49 8d 5e 50 48 89 d8 48 c1 e8 03 42 80 3c 38 00 74 08 48 89 df e8 e6 eb 3a 00 48 8b 2b 48 89 e8 48 c1 e8 03 <42> 0f b6 04 38 84 c0 0f 85 1d 05 00 00 44 8b 65 00 4d 8d 6e 58 4c
+RSP: 0018:ffffc90000a18a80 EFLAGS: 00010246
+
+RAX: 0000000000000000 RBX: ffff888015475f10 RCX: ffff88801833bc00
+RDX: 0000000000000100 RSI: 0000000000000010 RDI: ffff888015475ec0
+RBP: 0000000000000000 R08: ffffffff8985913a R09: 1ffffffff1fecf15
+R10: dffffc0000000000 R11: fffffbfff1fecf16 R12: 0000000000000001
+R13: ffffc90004027820 R14: ffff888015475ec0 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff8880b9300000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000001b3151cff8 CR3: 000000002c3f6000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ __cpu_map_flush+0x5d/0xd0 kernel/bpf/cpumap.c:767
+ xdp_do_check_flushed+0x136/0x240 net/core/filter.c:4311
+ __napi_poll+0xe4/0x490 net/core/dev.c:6774
+ napi_poll net/core/dev.c:6840 [inline]
+ net_rx_action+0x89b/0x1240 net/core/dev.c:6962
+ handle_softirqs+0x2c4/0x970 kernel/softirq.c:554
+ __do_softirq kernel/softirq.c:588 [inline]
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu+0xf4/0x1c0 kernel/softirq.c:637
+ irq_exit_rcu+0x9/0x30 kernel/softirq.c:649
+ common_interrupt+0xaa/0xd0 arch/x86/kernel/irq.c:278
+ </IRQ>
+ <TASK>
+ asm_common_interrupt+0x26/0x40 arch/x86/include/asm/idtentry.h:693
+RIP: 0010:stack_trace_consume_entry+0x0/0x280 kernel/stacktrace.c:83
+Code: 6d 78 00 e9 6a ff ff ff e8 3d b8 2d 0a 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 <f3> 0f 1e fa 55 41 57 41 56 41 55 41 54 53 48 83 ec 18 48 89 fb 48
+RSP: 0018:ffffc90004027378 EFLAGS: 00000286
+RAX: 0000000000000000 RBX: ffffffff81ebc895 RCX: ffff88801833bc00
+RDX: 0000000000000000 RSI: ffffffff81ebc895 RDI: ffffc90004027460
+RBP: ffffc90004027410 R08: ffffffff81376b92 R09: ffffffff814120bf
+R10: 0000000000000003 R11: ffffffff817f0c20 R12: ffff88801833bc00
+R13: ffffffff817f0c20 R14: ffffc90004027460 R15: ffffc90004027380
+ arch_stack_walk+0x143/0x1b0 arch/x86/kernel/stacktrace.c:27
+ stack_trace_save+0x118/0x1d0 kernel/stacktrace.c:122
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:579
+ poison_slab_object+0xe0/0x150 mm/kasan/common.c:240
+ __kasan_slab_free+0x37/0x60 mm/kasan/common.c:256
+ kasan_slab_free include/linux/kasan.h:184 [inline]
+ slab_free_hook mm/slub.c:2252 [inline]
+ slab_free mm/slub.c:4473 [inline]
+ kmem_cache_free+0x145/0x350 mm/slub.c:4548
+ vma_lock_free kernel/fork.c:457 [inline]
+ __vm_area_free+0xe0/0x110 kernel/fork.c:513
+ remove_vma mm/mmap.c:187 [inline]
+ exit_mmap+0x645/0xc80 mm/mmap.c:3436
+ __mmput+0x115/0x380 kernel/fork.c:1345
+ exit_mm+0x220/0x310 kernel/exit.c:571
+ do_exit+0x9b2/0x27f0 kernel/exit.c:869
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1031
+ get_signal+0x1695/0x1730 kernel/signal.c:2917
+ arch_do_signal_or_restart+0x96/0x860 arch/x86/kernel/signal.c:310
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0xc9/0x370 kernel/entry/common.c:218
+ do_syscall_64+0x100/0x230 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f689b3773b9
+Code: Unable to access opcode bytes at 0x7f689b37738f.
+RSP: 002b:00007f689c1950f8 EFLAGS: 00000246 ORIG_RAX: 00000000000000ca
+RAX: fffffffffffffe00 RBX: 00007f689b505f88 RCX: 00007f689b3773b9
+RDX: 0000000000000000 RSI: 0000000000000080 RDI: 00007f689b505f88
+RBP: 00007f689b505f80 R08: 00007f689c1956c0 R09: 00007f689c1956c0
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f689b505f8c
+R13: 000000000000000b R14: 00007ffc571c8170 R15: 00007ffc571c8258
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bq_flush_to_queue+0x44/0x610 kernel/bpf/cpumap.c:675
+Code: df e8 30 d8 d6 ff 49 8d 5e 50 48 89 d8 48 c1 e8 03 42 80 3c 38 00 74 08 48 89 df e8 e6 eb 3a 00 48 8b 2b 48 89 e8 48 c1 e8 03 <42> 0f b6 04 38 84 c0 0f 85 1d 05 00 00 44 8b 65 00 4d 8d 6e 58 4c
+RSP: 0018:ffffc90000a18a80 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: ffff888015475f10 RCX: ffff88801833bc00
+RDX: 0000000000000100 RSI: 0000000000000010 RDI: ffff888015475ec0
+RBP: 0000000000000000 R08: ffffffff8985913a R09: 1ffffffff1fecf15
+R10: dffffc0000000000 R11: fffffbfff1fecf16 R12: 0000000000000001
+R13: ffffc90004027820 R14: ffff888015475ec0 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff8880b9300000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000001b3151cff8 CR3: 000000002c3f6000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess), 1 bytes skipped:
+   0:	e8 30 d8 d6 ff       	call   0xffd6d835
+   5:	49 8d 5e 50          	lea    0x50(%r14),%rbx
+   9:	48 89 d8             	mov    %rbx,%rax
+   c:	48 c1 e8 03          	shr    $0x3,%rax
+  10:	42 80 3c 38 00       	cmpb   $0x0,(%rax,%r15,1)
+  15:	74 08                	je     0x1f
+  17:	48 89 df             	mov    %rbx,%rdi
+  1a:	e8 e6 eb 3a 00       	call   0x3aec05
+  1f:	48 8b 2b             	mov    (%rbx),%rbp
+  22:	48 89 e8             	mov    %rbp,%rax
+  25:	48 c1 e8 03          	shr    $0x3,%rax
+* 29:	42 0f b6 04 38       	movzbl (%rax,%r15,1),%eax <-- trapping instruction
+  2e:	84 c0                	test   %al,%al
+  30:	0f 85 1d 05 00 00    	jne    0x553
+  36:	44 8b 65 00          	mov    0x0(%rbp),%r12d
+  3a:	4d 8d 6e 58          	lea    0x58(%r14),%r13
+  3e:	4c                   	rex.WR

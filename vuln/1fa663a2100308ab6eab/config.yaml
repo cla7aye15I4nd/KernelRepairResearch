@@ -1,0 +1,21 @@
+id: 1fa663a2100308ab6eab
+bug_link: https://syzkaller.appspot.com/bug?extid=1fa663a2100308ab6eab
+title: possible deadlock in kvfree_call_rcu
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 201874fc064ef14c26ea87a890b3f58296750d2d
+fix_commit: 59f2f841179aa6a0899cb9cf53659149a35749b7
+datetime: '2024-03-29T11:10:41-07:00'
+fix_commit_message: "bpf: Avoid kfree_rcu() under lock in bpf_lpm_trie.\n\nsyzbot\
+  \ reported the following lock sequence:\ncpu 2:\n  grabs timer_base lock\n    spins\
+  \ on bpf_lpm lock\n\ncpu 1:\n  grab rcu krcp lock\n    spins on timer_base lock\n\
+  \ncpu 0:\n  grab bpf_lpm lock\n    spins on rcu krcp lock\n\nbpf_lpm lock can be\
+  \ the same.\ntimer_base lock can also be the same due to timer migration.\nbut rcu\
+  \ krcp lock is always per-cpu, so it cannot be the same lock.\nHence it's a false\
+  \ positive.\nTo avoid lockdep complaining move kfree_rcu() after spin_unlock.\n\n\
+  Reported-by: syzbot+1fa663a2100308ab6eab@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Alexei Starovoitov <ast@kernel.org>\nSigned-off-by: Andrii Nakryiko <andrii@kernel.org>\n\
+  Link: https://lore.kernel.org/bpf/20240329171439.37813-1-alexei.starovoitov@gmail.com\n"
+submodule:
+- kernel/bpf
+hunk_count: 6
+covered_count: 2

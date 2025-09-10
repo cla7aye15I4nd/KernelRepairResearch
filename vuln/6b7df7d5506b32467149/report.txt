@@ -1,0 +1,117 @@
+EXT4-fs (loop0): 1 truncate cleaned up
+EXT4-fs (loop0): mounted filesystem 00000000-0000-0000-0000-000000000000 without journal. Quota mode: writeback.
+======================================================
+WARNING: possible circular locking dependency detected
+6.3.0-rc7-syzkaller-g14f8db1c0f9a #0 Not tainted
+------------------------------------------------------
+syz-executor258/5925 is trying to acquire lock:
+ffff0000dba3c460 (sb_writers#3){.+.+}-{0:0}, at: ext4_multi_mount_protect+0x2f8/0x8c8 fs/ext4/mmp.c:343
+
+but task is already holding lock:
+ffff0000dba3c0e0 (&type->s_umount_key#29){++++}-{3:3}, at: vfs_fsconfig_locked fs/fsopen.c:253 [inline]
+ffff0000dba3c0e0 (&type->s_umount_key#29){++++}-{3:3}, at: __do_sys_fsconfig fs/fsopen.c:439 [inline]
+ffff0000dba3c0e0 (&type->s_umount_key#29){++++}-{3:3}, at: __se_sys_fsconfig fs/fsopen.c:314 [inline]
+ffff0000dba3c0e0 (&type->s_umount_key#29){++++}-{3:3}, at: __arm64_sys_fsconfig+0xa14/0xd18 fs/fsopen.c:314
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&type->s_umount_key#29){++++}-{3:3}:
+       down_write+0x50/0xc0 kernel/locking/rwsem.c:1573
+       __do_sys_quotactl_fd fs/quota/quota.c:997 [inline]
+       __se_sys_quotactl_fd fs/quota/quota.c:972 [inline]
+       __arm64_sys_quotactl_fd+0x2fc/0x4a4 fs/quota/quota.c:972
+       __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+       invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+       el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+       do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+       el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+       el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+       el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+
+-> #0 (sb_writers#3){.+.+}-{0:0}:
+       check_prev_add kernel/locking/lockdep.c:3098 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3217 [inline]
+       validate_chain kernel/locking/lockdep.c:3832 [inline]
+       __lock_acquire+0x3338/0x764c kernel/locking/lockdep.c:5056
+       lock_acquire+0x238/0x718 kernel/locking/lockdep.c:5669
+       percpu_down_read include/linux/percpu-rwsem.h:51 [inline]
+       __sb_start_write include/linux/fs.h:1477 [inline]
+       sb_start_write include/linux/fs.h:1552 [inline]
+       write_mmp_block+0xe4/0xb70 fs/ext4/mmp.c:50
+       ext4_multi_mount_protect+0x2f8/0x8c8 fs/ext4/mmp.c:343
+       __ext4_remount fs/ext4/super.c:6543 [inline]
+       ext4_reconfigure+0x2180/0x2928 fs/ext4/super.c:6642
+       reconfigure_super+0x328/0x738 fs/super.c:956
+       vfs_fsconfig_locked fs/fsopen.c:254 [inline]
+       __do_sys_fsconfig fs/fsopen.c:439 [inline]
+       __se_sys_fsconfig fs/fsopen.c:314 [inline]
+       __arm64_sys_fsconfig+0xa1c/0xd18 fs/fsopen.c:314
+       __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+       invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+       el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+       do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+       el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+       el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+       el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&type->s_umount_key#29);
+                               lock(sb_writers#3);
+                               lock(&type->s_umount_key#29);
+  lock(sb_writers#3);
+
+ *** DEADLOCK ***
+
+2 locks held by syz-executor258/5925:
+ #0: ffff0000d5b8a470 (&fc->uapi_mutex){+.+.}-{3:3}, at: __do_sys_fsconfig fs/fsopen.c:437 [inline]
+ #0: ffff0000d5b8a470 (&fc->uapi_mutex){+.+.}-{3:3}, at: __se_sys_fsconfig fs/fsopen.c:314 [inline]
+ #0: ffff0000d5b8a470 (&fc->uapi_mutex){+.+.}-{3:3}, at: __arm64_sys_fsconfig+0x720/0xd18 fs/fsopen.c:314
+ #1: ffff0000dba3c0e0 (&type->s_umount_key#29){++++}-{3:3}, at: vfs_fsconfig_locked fs/fsopen.c:253 [inline]
+ #1: ffff0000dba3c0e0 (&type->s_umount_key#29){++++}-{3:3}, at: __do_sys_fsconfig fs/fsopen.c:439 [inline]
+ #1: ffff0000dba3c0e0 (&type->s_umount_key#29){++++}-{3:3}, at: __se_sys_fsconfig fs/fsopen.c:314 [inline]
+ #1: ffff0000dba3c0e0 (&type->s_umount_key#29){++++}-{3:3}, at: __arm64_sys_fsconfig+0xa14/0xd18 fs/fsopen.c:314
+
+stack backtrace:
+CPU: 0 PID: 5925 Comm: syz-executor258 Not tainted 6.3.0-rc7-syzkaller-g14f8db1c0f9a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/14/2023
+Call trace:
+ dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:233
+ show_stack+0x2c/0x44 arch/arm64/kernel/stacktrace.c:240
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106
+ dump_stack+0x1c/0x28 lib/dump_stack.c:113
+ print_circular_bug+0x150/0x1b8 kernel/locking/lockdep.c:2056
+ check_noncircular+0x2cc/0x378 kernel/locking/lockdep.c:2178
+ check_prev_add kernel/locking/lockdep.c:3098 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3217 [inline]
+ validate_chain kernel/locking/lockdep.c:3832 [inline]
+ __lock_acquire+0x3338/0x764c kernel/locking/lockdep.c:5056
+ lock_acquire+0x238/0x718 kernel/locking/lockdep.c:5669
+ percpu_down_read include/linux/percpu-rwsem.h:51 [inline]
+ __sb_start_write include/linux/fs.h:1477 [inline]
+ sb_start_write include/linux/fs.h:1552 [inline]
+ write_mmp_block+0xe4/0xb70 fs/ext4/mmp.c:50
+ ext4_multi_mount_protect+0x2f8/0x8c8 fs/ext4/mmp.c:343
+ __ext4_remount fs/ext4/super.c:6543 [inline]
+ ext4_reconfigure+0x2180/0x2928 fs/ext4/super.c:6642
+ reconfigure_super+0x328/0x738 fs/super.c:956
+ vfs_fsconfig_locked fs/fsopen.c:254 [inline]
+ __do_sys_fsconfig fs/fsopen.c:439 [inline]
+ __se_sys_fsconfig fs/fsopen.c:314 [inline]
+ __arm64_sys_fsconfig+0xa1c/0xd18 fs/fsopen.c:314
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+ el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+EXT4-fs warning (device loop0): ext4_enable_quotas:7001: Failed to enable quota tracking (type=2, err=-22, ino=15). Please run e2fsck to fix.

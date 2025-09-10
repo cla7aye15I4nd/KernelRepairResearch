@@ -1,0 +1,41 @@
+id: f83a1df1ed4f67e8d8ad
+bug_link: https://syzkaller.appspot.com/bug?extid=f83a1df1ed4f67e8d8ad
+title: 'KMSAN: kernel-usb-infoleak in hif_usb_send'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 51395cf204f27a466fd74c1d328fce1d3283166c
+fix_commit: d1e0df1c57bd30871dd1c855742a7c346dbca853
+datetime: '2022-01-28T14:32:19+02:00'
+fix_commit_message: "ath9k_htc: fix uninit value bugs\n\nSyzbot reported 2 KMSAN bugs\
+  \ in ath9k. All of them are caused by missing\nfield initialization.\n\nIn htc_connect_service()\
+  \ svc_meta_len and pad are not initialized. Based\non code it looks like in current\
+  \ skb there is no service data, so simply\ninitialize svc_meta_len to 0.\n\nhtc_issue_send()\
+  \ does not initialize htc_frame_hdr::control array. Based\non firmware code, it\
+  \ will initialize it by itself, so simply zero whole\narray to make KMSAN happy\n\
+  \nFail logs:\n\nBUG: KMSAN: kernel-usb-infoleak in usb_submit_urb+0x6c1/0x2aa0 drivers/usb/core/urb.c:430\n\
+  \ usb_submit_urb+0x6c1/0x2aa0 drivers/usb/core/urb.c:430\n hif_usb_send_regout drivers/net/wireless/ath/ath9k/hif_usb.c:127\
+  \ [inline]\n hif_usb_send+0x5f0/0x16f0 drivers/net/wireless/ath/ath9k/hif_usb.c:479\n\
+  \ htc_issue_send drivers/net/wireless/ath/ath9k/htc_hst.c:34 [inline]\n htc_connect_service+0x143e/0x1960\
+  \ drivers/net/wireless/ath/ath9k/htc_hst.c:275\n...\n\nUninit was created at:\n\
+  \ slab_post_alloc_hook mm/slab.h:524 [inline]\n slab_alloc_node mm/slub.c:3251 [inline]\n\
+  \ __kmalloc_node_track_caller+0xe0c/0x1510 mm/slub.c:4974\n kmalloc_reserve net/core/skbuff.c:354\
+  \ [inline]\n __alloc_skb+0x545/0xf90 net/core/skbuff.c:426\n alloc_skb include/linux/skbuff.h:1126\
+  \ [inline]\n htc_connect_service+0x1029/0x1960 drivers/net/wireless/ath/ath9k/htc_hst.c:258\n\
+  ...\n\nBytes 4-7 of 18 are uninitialized\nMemory access of size 18 starts at ffff888027377e00\n\
+  \nBUG: KMSAN: kernel-usb-infoleak in usb_submit_urb+0x6c1/0x2aa0 drivers/usb/core/urb.c:430\n\
+  \ usb_submit_urb+0x6c1/0x2aa0 drivers/usb/core/urb.c:430\n hif_usb_send_regout drivers/net/wireless/ath/ath9k/hif_usb.c:127\
+  \ [inline]\n hif_usb_send+0x5f0/0x16f0 drivers/net/wireless/ath/ath9k/hif_usb.c:479\n\
+  \ htc_issue_send drivers/net/wireless/ath/ath9k/htc_hst.c:34 [inline]\n htc_connect_service+0x143e/0x1960\
+  \ drivers/net/wireless/ath/ath9k/htc_hst.c:275\n...\n\nUninit was created at:\n\
+  \ slab_post_alloc_hook mm/slab.h:524 [inline]\n slab_alloc_node mm/slub.c:3251 [inline]\n\
+  \ __kmalloc_node_track_caller+0xe0c/0x1510 mm/slub.c:4974\n kmalloc_reserve net/core/skbuff.c:354\
+  \ [inline]\n __alloc_skb+0x545/0xf90 net/core/skbuff.c:426\n alloc_skb include/linux/skbuff.h:1126\
+  \ [inline]\n htc_connect_service+0x1029/0x1960 drivers/net/wireless/ath/ath9k/htc_hst.c:258\n\
+  ...\n\nBytes 16-17 of 18 are uninitialized\nMemory access of size 18 starts at ffff888027377e00\n\
+  \nFixes: fb9987d0f748 (\"ath9k_htc: Support for AR9271 chipset.\")\nReported-by:\
+  \ syzbot+f83a1df1ed4f67e8d8ad@syzkaller.appspotmail.com\nSigned-off-by: Pavel Skripkin\
+  \ <paskripkin@gmail.com>\nSigned-off-by: Kalle Valo <quic_kvalo@quicinc.com>\nLink:\
+  \ https://lore.kernel.org/r/20220115122733.11160-1-paskripkin@gmail.com\n"
+submodule:
+- drivers/net/wireless/ath/ath9k
+hunk_count: 2
+covered_count: 2

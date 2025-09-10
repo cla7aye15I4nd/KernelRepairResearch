@@ -1,0 +1,39 @@
+id: 89a8060879fa0bd2db4f
+bug_link: https://syzkaller.appspot.com/bug?extid=89a8060879fa0bd2db4f
+title: 'INFO: task hung in synchronize_rcu'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 31f4f5b495a62c9a8b15b1c3581acd5efeb9af8c
+fix_commit: 8a44119a98bee4381d28f3ed1e41dfacf5c3aa6d
+datetime: '2019-11-11T15:48:02+01:00'
+fix_commit_message: "KVM: Fix NULL-ptr deref after kvm_create_vm fails\n\nReported\
+  \ by syzkaller:\n\n    kasan: CONFIG_KASAN_INLINE enabled\n    kasan: GPF could\
+  \ be caused by NULL-ptr deref or user memory access\n    general protection fault:\
+  \ 0000 [#1] PREEMPT SMP KASAN\n    CPU: 0 PID: 14727 Comm: syz-executor.3 Not tainted\
+  \ 5.4.0-rc4+ #0\n    RIP: 0010:kvm_coalesced_mmio_init+0x5d/0x110 arch/x86/kvm/../../../virt/kvm/coalesced_mmio.c:121\n\
+  \    Call Trace:\n     kvm_dev_ioctl_create_vm arch/x86/kvm/../../../virt/kvm/kvm_main.c:3446\
+  \ [inline]\n     kvm_dev_ioctl+0x781/0x1490 arch/x86/kvm/../../../virt/kvm/kvm_main.c:3494\n\
+  \     vfs_ioctl fs/ioctl.c:46 [inline]\n     file_ioctl fs/ioctl.c:509 [inline]\n\
+  \     do_vfs_ioctl+0x196/0x1150 fs/ioctl.c:696\n     ksys_ioctl+0x62/0x90 fs/ioctl.c:713\n\
+  \     __do_sys_ioctl fs/ioctl.c:720 [inline]\n     __se_sys_ioctl fs/ioctl.c:718\
+  \ [inline]\n     __x64_sys_ioctl+0x6e/0xb0 fs/ioctl.c:718\n     do_syscall_64+0xca/0x5d0\
+  \ arch/x86/entry/common.c:290\n     entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\n\
+  Commit 9121923c457d (\"kvm: Allocate memslots and buses before calling kvm_arch_init_vm\"\
+  )\nmoves memslots and buses allocations around, however, if kvm->srcu/irq_srcu fails\n\
+  initialization, NULL will be returned instead of error code, NULL will not be intercepted\n\
+  in kvm_dev_ioctl_create_vm() and be dereferenced by kvm_coalesced_mmio_init(), this\
+  \ patch\nfixes it.\n\nMoving the initialization is required anyway to avoid an incorrect\
+  \ synchronize_srcu that\nwas also reported by syzkaller:\n\n wait_for_completion+0x29c/0x440\
+  \ kernel/sched/completion.c:136\n __synchronize_srcu+0x197/0x250 kernel/rcu/srcutree.c:921\n\
+  \ synchronize_srcu_expedited kernel/rcu/srcutree.c:946 [inline]\n synchronize_srcu+0x239/0x3e8\
+  \ kernel/rcu/srcutree.c:997\n kvm_page_track_unregister_notifier+0xe7/0x130 arch/x86/kvm/page_track.c:212\n\
+  \ kvm_mmu_uninit_vm+0x1e/0x30 arch/x86/kvm/mmu.c:5828\n kvm_arch_destroy_vm+0x4a2/0x5f0\
+  \ arch/x86/kvm/x86.c:9579\n kvm_create_vm arch/x86/kvm/../../../virt/kvm/kvm_main.c:702\
+  \ [inline]\n\nso do it.\n\nReported-by: syzbot+89a8060879fa0bd2db4f@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+e27e7027eb2b80e44225@syzkaller.appspotmail.com\nFixes: 9121923c457d\
+  \ (\"kvm: Allocate memslots and buses before calling kvm_arch_init_vm\")\nCc: Jim\
+  \ Mattson <jmattson@google.com>\nCc: Wanpeng Li <wanpengli@tencent.com>\nSigned-off-by:\
+  \ Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- virt/kvm
+hunk_count: 4
+covered_count: 3

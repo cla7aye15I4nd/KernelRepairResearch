@@ -1,0 +1,35 @@
+id: 731710996d79d0d58fbc
+bug_link: https://syzkaller.appspot.com/bug?extid=731710996d79d0d58fbc
+title: 'INFO: task hung in lock_sock_nested (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5c05a164d441a1792791175e4959ea9df12f7e2b
+fix_commit: 3f74957fcbeab703297ed0f135430414ed7e0dd0
+datetime: '2020-02-27T12:03:56-08:00'
+fix_commit_message: "vsock: fix potential deadlock in transport->release()\n\nSome\
+  \ transports (hyperv, virtio) acquire the sock lock during the\n.release() callback.\n\
+  \nIn the vsock_stream_connect() we call vsock_assign_transport(); if\nthe socket\
+  \ was previously assigned to another transport, the\nvsk->transport->release() is\
+  \ called, but the sock lock is already\nheld in the vsock_stream_connect(), causing\
+  \ a deadlock reported by\nsyzbot:\n\n    INFO: task syz-executor280:9768 blocked\
+  \ for more than 143 seconds.\n      Not tainted 5.6.0-rc1-syzkaller #0\n    \"echo\
+  \ 0 > /proc/sys/kernel/hung_task_timeout_secs\" disables this message.\n    syz-executor280\
+  \ D27912  9768   9766 0x00000000\n    Call Trace:\n     context_switch kernel/sched/core.c:3386\
+  \ [inline]\n     __schedule+0x934/0x1f90 kernel/sched/core.c:4082\n     schedule+0xdc/0x2b0\
+  \ kernel/sched/core.c:4156\n     __lock_sock+0x165/0x290 net/core/sock.c:2413\n\
+  \     lock_sock_nested+0xfe/0x120 net/core/sock.c:2938\n     virtio_transport_release+0xc4/0xd60\
+  \ net/vmw_vsock/virtio_transport_common.c:832\n     vsock_assign_transport+0xf3/0x3b0\
+  \ net/vmw_vsock/af_vsock.c:454\n     vsock_stream_connect+0x2b3/0xc70 net/vmw_vsock/af_vsock.c:1288\n\
+  \     __sys_connect_file+0x161/0x1c0 net/socket.c:1857\n     __sys_connect+0x174/0x1b0\
+  \ net/socket.c:1874\n     __do_sys_connect net/socket.c:1885 [inline]\n     __se_sys_connect\
+  \ net/socket.c:1882 [inline]\n     __x64_sys_connect+0x73/0xb0 net/socket.c:1882\n\
+  \     do_syscall_64+0xfa/0x790 arch/x86/entry/common.c:294\n     entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nTo avoid this issue, this patch remove the lock acquiring in the\n.release() callback\
+  \ of hyperv and virtio transports, and it holds\nthe lock when we call vsk->transport->release()\
+  \ in the vsock core.\n\nReported-by: syzbot+731710996d79d0d58fbc@syzkaller.appspotmail.com\n\
+  Fixes: 408624af4c89 (\"vsock: use local transport when it is loaded\")\nSigned-off-by:\
+  \ Stefano Garzarella <sgarzare@redhat.com>\nReviewed-by: Stefan Hajnoczi <stefanha@redhat.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/vmw_vsock
+hunk_count: 5
+covered_count: 3

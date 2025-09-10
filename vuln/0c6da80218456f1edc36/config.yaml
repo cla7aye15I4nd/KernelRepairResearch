@@ -1,0 +1,40 @@
+id: 0c6da80218456f1edc36
+bug_link: https://syzkaller.appspot.com/bug?extid=0c6da80218456f1edc36
+title: 'INFO: task hung in synchronize_rcu (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 012c722569f171d58169606908ebbb8713f1609e
+fix_commit: 2d08935682ac5f6bfb70f7e6844ec27d4a245fa4
+datetime: '2022-04-21T13:16:10-04:00'
+fix_commit_message: 'KVM: x86: Don''t re-acquire SRCU lock in complete_emulated_io()
+
+
+  Don''t re-acquire SRCU in complete_emulated_io() now that KVM acquires the
+
+  lock in kvm_arch_vcpu_ioctl_run().  More importantly, don''t overwrite
+
+  vcpu->srcu_idx.  If the index acquired by complete_emulated_io() differs
+
+  from the one acquired by kvm_arch_vcpu_ioctl_run(), KVM will effectively
+
+  leak a lock and hang if/when synchronize_srcu() is invoked for the
+
+  relevant grace period.
+
+
+  Fixes: 8d25b7beca7e ("KVM: x86: pull kvm->srcu read-side to kvm_arch_vcpu_ioctl_run")
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Sean Christopherson <seanjc@google.com>
+
+  Reviewed-by: Maxim Levitsky <mlevitsk@redhat.com>
+
+  Message-Id: <20220415004343.2203171-2-seanjc@google.com>
+
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  '
+submodule:
+- arch/x86/kvm
+hunk_count: 1
+covered_count: 0

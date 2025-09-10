@@ -1,0 +1,33 @@
+id: 0260338e3eff65854d1f
+bug_link: https://syzkaller.appspot.com/bug?extid=0260338e3eff65854d1f
+title: 'INFO: task hung in xfs_inodegc_flush'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3e0bc2855b573bcffa2a52955a878f537f5ac0cd
+fix_commit: c70e1779b73a39f7648b26bdc835304c60100ce3
+datetime: '2024-02-04T11:14:49-10:00'
+fix_commit_message: "workqueue: Fix pwq->nr_in_flight corruption in try_to_grab_pending()\n\
+  \ndd6c3c544126 (\"workqueue: Move pwq_dec_nr_in_flight() to the end of work\nitem\
+  \ handling\") relocated pwq_dec_nr_in_flight() after\nset_work_pool_and_keep_pending().\
+  \ However, the latter destroys information\ncontained in work->data that's needed\
+  \ by pwq_dec_nr_in_flight() including\nthe flush color. With flush color destroyed,\
+  \ flush_workqueue() can stall\neasily when mixed with cancel_work*() usages.\n\n\
+  This is easily triggered by running xfstests generic/001 test on xfs:\n\n     INFO:\
+  \ task umount:6305 blocked for more than 122 seconds.\n     ...\n     task:umount\
+  \          state:D stack:13008 pid:6305  tgid:6305  ppid:6301   flags:0x00004000\n\
+  \     Call Trace:\n      <TASK>\n      __schedule+0x2f6/0xa20\n      schedule+0x36/0xb0\n\
+  \      schedule_timeout+0x20b/0x280\n      wait_for_completion+0x8a/0x140\n    \
+  \  __flush_workqueue+0x11a/0x3b0\n      xfs_inodegc_flush+0x24/0xf0\n      xfs_unmountfs+0x14/0x180\n\
+  \      xfs_fs_put_super+0x3d/0x90\n      generic_shutdown_super+0x7c/0x160\n   \
+  \   kill_block_super+0x1b/0x40\n      xfs_kill_sb+0x12/0x30\n      deactivate_locked_super+0x35/0x90\n\
+  \      deactivate_super+0x42/0x50\n      cleanup_mnt+0x109/0x170\n      __cleanup_mnt+0x12/0x20\n\
+  \      task_work_run+0x60/0x90\n      syscall_exit_to_user_mode+0x146/0x150\n  \
+  \    do_syscall_64+0x5d/0x110\n      entry_SYSCALL_64_after_hwframe+0x6c/0x74\n\n\
+  Fix it by stashing work_data before calling set_work_pool_and_keep_pending()\nand\
+  \ using the stashed value for pwq_dec_nr_in_flight().\n\nSigned-off-by: Tejun Heo\
+  \ <tj@kernel.org>\nReported-by: Chandan Babu R <chandanbabu@kernel.org>\nLink: http://lkml.kernel.org/r/87o7cxeehy.fsf@debian-BULLSEYE-live-builder-AMD64\n\
+  Fixes: dd6c3c544126 (\"workqueue: Move pwq_dec_nr_in_flight() to the end of work\
+  \ item handling\")\n"
+submodule:
+- kernel
+hunk_count: 2
+covered_count: 0

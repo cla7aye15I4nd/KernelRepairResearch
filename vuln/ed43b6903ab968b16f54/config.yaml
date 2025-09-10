@@ -1,0 +1,34 @@
+id: ed43b6903ab968b16f54
+bug_link: https://syzkaller.appspot.com/bug?extid=ed43b6903ab968b16f54
+title: 'KASAN: use-after-free Read in pfifo_fast_enqueue'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7b7ef57c0dd2bb367ad41a77e5136c5579ae4026
+fix_commit: cce6294cc2eaa083482e1d85d8db5845c82a7e14
+datetime: '2018-03-17T17:03:45-04:00'
+fix_commit_message: "net: sched: fix uses after free\n\nsyzbot reported one use-after-free\
+  \ in pfifo_fast_enqueue() [1]\n\nIssue here is that we can not reuse skb after a\
+  \ successful skb_array_produce()\nsince another cpu might have consumed it already.\n\
+  \nI believe a similar problem exists in try_bulk_dequeue_skb_slow()\nin case we\
+  \ put an skb into qdisc_enqueue_skb_bad_txq() for lockless qdisc.\n\n[1]\nBUG: KASAN:\
+  \ use-after-free in qdisc_pkt_len include/net/sch_generic.h:610 [inline]\nBUG: KASAN:\
+  \ use-after-free in qdisc_qstats_cpu_backlog_inc include/net/sch_generic.h:712 [inline]\n\
+  BUG: KASAN: use-after-free in pfifo_fast_enqueue+0x4bc/0x5e0 net/sched/sch_generic.c:639\n\
+  Read of size 4 at addr ffff8801cede37e8 by task syzkaller717588/5543\n\nCPU: 1 PID:\
+  \ 5543 Comm: syzkaller717588 Not tainted 4.16.0-rc4+ #265\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\nCall Trace:\n\
+  \ __dump_stack lib/dump_stack.c:17 [inline]\n dump_stack+0x194/0x24d lib/dump_stack.c:53\n\
+  \ print_address_description+0x73/0x250 mm/kasan/report.c:256\n kasan_report_error\
+  \ mm/kasan/report.c:354 [inline]\n kasan_report+0x23c/0x360 mm/kasan/report.c:412\n\
+  \ __asan_report_load4_noabort+0x14/0x20 mm/kasan/report.c:432\n qdisc_pkt_len include/net/sch_generic.h:610\
+  \ [inline]\n qdisc_qstats_cpu_backlog_inc include/net/sch_generic.h:712 [inline]\n\
+  \ pfifo_fast_enqueue+0x4bc/0x5e0 net/sched/sch_generic.c:639\n __dev_xmit_skb net/core/dev.c:3216\
+  \ [inline]\n\nFixes: c5ad119fb6c0 (\"net: sched: pfifo_fast use skb_array\")\nSigned-off-by:\
+  \ Eric Dumazet <edumazet@google.com>\nReported-by: syzbot+ed43b6903ab968b16f54@syzkaller.appspotmail.com\n\
+  Cc: John Fastabend <john.fastabend@gmail.com>\nCc: Jamal Hadi Salim <jhs@mojatatu.com>\n\
+  Cc:\tCong Wang <xiyou.wangcong@gmail.com>\nCc:\tJiri Pirko <jiri@resnulli.us>\n\
+  Acked-by: John Fastabend <john.fastabend@gmail.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/sched
+hunk_count: 4
+covered_count: 3

@@ -1,0 +1,69 @@
+id: 0044b22d177870ee974f
+bug_link: https://syzkaller.appspot.com/bug?extid=0044b22d177870ee974f
+title: WARNING in alloc_charge_hpage
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f53af4285d775cd9a9a146fc438bd0a1bee1838a
+fix_commit: e031ff96b334a08704d40ef64cd9024d7d83af9b
+datetime: '2022-11-22T18:50:41-08:00'
+fix_commit_message: "mm: khugepaged: allow page allocation fallback to eligible nodes\n\
+  \nSyzbot reported the below splat:\n\nWARNING: CPU: 1 PID: 3646 at include/linux/gfp.h:221\
+  \ __alloc_pages_node include/linux/gfp.h:221 [inline]\nWARNING: CPU: 1 PID: 3646\
+  \ at include/linux/gfp.h:221 hpage_collapse_alloc_page mm/khugepaged.c:807 [inline]\n\
+  WARNING: CPU: 1 PID: 3646 at include/linux/gfp.h:221 alloc_charge_hpage+0x802/0xaa0\
+  \ mm/khugepaged.c:963\nModules linked in:\nCPU: 1 PID: 3646 Comm: syz-executor210\
+  \ Not tainted 6.1.0-rc1-syzkaller-00454-ga70385240892 #0\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS Google 10/11/2022\nRIP: 0010:__alloc_pages_node\
+  \ include/linux/gfp.h:221 [inline]\nRIP: 0010:hpage_collapse_alloc_page mm/khugepaged.c:807\
+  \ [inline]\nRIP: 0010:alloc_charge_hpage+0x802/0xaa0 mm/khugepaged.c:963\nCode:\
+  \ e5 01 4c 89 ee e8 6e f9 ae ff 4d 85 ed 0f 84 28 fc ff ff e8 70 fc ae ff 48 8d\
+  \ 6b ff 4c 8d 63 07 e9 16 fc ff ff e8 5e fc ae ff <0f> 0b e9 96 fa ff ff 41 bc 1a\
+  \ 00 00 00 e9 86 fd ff ff e8 47 fc ae\nRSP: 0018:ffffc90003fdf7d8 EFLAGS: 00010293\n\
+  RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000000000\nRDX: ffff888077f457c0\
+  \ RSI: ffffffff81cd8f42 RDI: 0000000000000001\nRBP: ffff888079388c0c R08: 0000000000000001\
+  \ R09: 0000000000000000\nR10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000\n\
+  R13: dffffc0000000000 R14: 0000000000000000 R15: 0000000000000000\nFS:  00007f6b48ccf700(0000)\
+  \ GS:ffff8880b9b00000(0000) knlGS:0000000000000000\nCS:  0010 DS: 0000 ES: 0000\
+  \ CR0: 0000000080050033\nCR2: 00007f6b48a819f0 CR3: 00000000171e7000 CR4: 00000000003506e0\n\
+  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\nDR3: 0000000000000000\
+  \ DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n <TASK>\n collapse_file+0x1ca/0x5780\
+  \ mm/khugepaged.c:1715\n hpage_collapse_scan_file+0xd6c/0x17a0 mm/khugepaged.c:2156\n\
+  \ madvise_collapse+0x53a/0xb40 mm/khugepaged.c:2611\n madvise_vma_behavior+0xd0a/0x1cc0\
+  \ mm/madvise.c:1066\n madvise_walk_vmas+0x1c7/0x2b0 mm/madvise.c:1240\n do_madvise.part.0+0x24a/0x340\
+  \ mm/madvise.c:1419\n do_madvise mm/madvise.c:1432 [inline]\n __do_sys_madvise mm/madvise.c:1432\
+  \ [inline]\n __se_sys_madvise mm/madvise.c:1430 [inline]\n __x64_sys_madvise+0x113/0x150\
+  \ mm/madvise.c:1430\n do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x35/0xb0\
+  \ arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\nRIP: 0033:0x7f6b48a4eef9\n\
+  Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 b1 15 00 00 90 48 89 f8 48 89 f7 48 89\
+  \ d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3\
+  \ 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48\nRSP: 002b:00007f6b48ccf318 EFLAGS: 00000246\
+  \ ORIG_RAX: 000000000000001c\nRAX: ffffffffffffffda RBX: 00007f6b48af0048 RCX: 00007f6b48a4eef9\n\
+  RDX: 0000000000000019 RSI: 0000000000600003 RDI: 0000000020000000\nRBP: 00007f6b48af0040\
+  \ R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000 R11: 0000000000000246\
+  \ R12: 00007f6b48aa53a4\nR13: 00007f6b48bffcbf R14: 00007f6b48ccf400 R15: 0000000000022000\n\
+  \ </TASK>\n\nThe khugepaged code would pick up the node with the most hit as the\
+  \ preferred\nnode, and also tries to do some balance if several nodes have the same\n\
+  hit record.  Basically it does conceptually:\n    * If the target_node <= last_target_node,\
+  \ then iterate from\nlast_target_node + 1 to MAX_NUMNODES (1024 on default config)\n\
+  \    * If the max_value == node_load[nid], then target_node = nid\n\nBut there is\
+  \ a corner case, paritucularly for MADV_COLLAPSE, that the\nnon-existing node may\
+  \ be returned as preferred node.\n\nAssuming the system has 2 nodes, the target_node\
+  \ is 0 and the\nlast_target_node is 1, if MADV_COLLAPSE path is hit, the max_value\
+  \ may\nbe 0, then it may return 2 for target_node, but it is actually not\nexisting\
+  \ (offline), so the warn is triggered.\n\nThe node balance was introduced by commit\
+  \ 9f1b868a13ac (\"mm: thp:\nkhugepaged: add policy for finding target node\") to\
+  \ satisfy\n\"numactl --interleave=all\".  But interleaving is a mere hint rather\
+  \ than\nsomething that has hard requirements.\n\nSo use nodemask to record the nodes\
+  \ which have the same hit record, the\nhugepage allocation could fallback to those\
+  \ nodes.  And remove\n__GFP_THISNODE since it does disallow fallback.  And if the\
+  \ nodemask\njust has one node set, it means there is one single node has the most\n\
+  hit record, the nodemask approach actually behaves like __GFP_THISNODE.\n\nLink:\
+  \ https://lkml.kernel.org/r/20221108184357.55614-2-shy828301@gmail.com\nFixes: 7d8faaf15545\
+  \ (\"mm/madvise: introduce MADV_COLLAPSE sync hugepage collapse\")\nSigned-off-by:\
+  \ Yang Shi <shy828301@gmail.com>\nSuggested-by: Zach O'Keefe <zokeefe@google.com>\n\
+  Suggested-by: Michal Hocko <mhocko@suse.com>\nReviewed-by: Zach O'Keefe <zokeefe@google.com>\n\
+  Acked-by: Michal Hocko <mhocko@suse.com>\nReported-by: <syzbot+0044b22d177870ee974f@syzkaller.appspotmail.com>\n\
+  \nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 9
+covered_count: 6

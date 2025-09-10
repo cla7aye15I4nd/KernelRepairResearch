@@ -1,0 +1,38 @@
+diff --git a/fs/bcachefs/error.c b/fs/bcachefs/error.c
+index 95afa7bf2020..3a16b535b6c3 100644
+--- a/fs/bcachefs/error.c
++++ b/fs/bcachefs/error.c
+@@ -239,7 +239,19 @@ int __bch2_fsck_err(struct bch_fs *c,
+ 	if (!c)
+ 		c = trans->c;
+ 
+-	WARN_ON(!trans && bch2_current_has_btree_trans(c));
++	/*
++	 * Ugly: if there's a transaction in the current task it has to be
++	 * passed in to unlock if we prompt for user input.
++	 *
++	 * But, plumbing a transaction and transaction restarts into
++	 * bkey_validate() is problematic.
++	 *
++	 * So:
++	 * - make all bkey errors AUTOFIX, they're simple anyways (we just
++	 *   delete the key)
++	 * - and we don't need to warn if we're not prompting
++	 */
++	WARN_ON(!(flags & FSCK_AUTOFIX) && !trans && bch2_current_has_btree_trans(c));
+ 
+ 	if ((flags & FSCK_CAN_FIX) &&
+ 	    test_bit(err, c->sb.errors_silent))
+diff --git a/fs/bcachefs/error.h b/fs/bcachefs/error.h
+index 2f1b86978f36..21ee7211b03e 100644
+--- a/fs/bcachefs/error.h
++++ b/fs/bcachefs/error.h
+@@ -184,7 +184,7 @@ do {									\
+ 		ret = -BCH_ERR_fsck_delete_bkey;			\
+ 		goto fsck_err;						\
+ 	}								\
+-	int _ret = __bch2_bkey_fsck_err(c, k, FSCK_CAN_FIX,		\
++	int _ret = __bch2_bkey_fsck_err(c, k, FSCK_CAN_FIX|FSCK_AUTOFIX,\
+ 				BCH_FSCK_ERR_##_err_type,		\
+ 				_err_msg, ##__VA_ARGS__);		\
+ 	if (_ret != -BCH_ERR_fsck_fix &&				\

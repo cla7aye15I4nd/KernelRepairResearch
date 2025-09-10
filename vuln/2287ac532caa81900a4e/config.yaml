@@ -1,0 +1,46 @@
+id: 2287ac532caa81900a4e
+bug_link: https://syzkaller.appspot.com/bug?extid=2287ac532caa81900a4e
+title: kernel BUG at lib/string.c:LINE! (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7688f2c3bbf55e52388e37ac5d63ca471a7712e1
+fix_commit: 0c81ffc60d5280991773d17e84bda605387148b1
+datetime: '2018-03-14T16:31:11-04:00'
+fix_commit_message: "RDMA/ucma: Don't allow join attempts for unsupported AF family\n\
+  \nUsers can provide garbage while calling to ucma_join_ip_multicast(),\nit will\
+  \ indirectly cause to rdma_addr_size() return 0, making the\ncall to ucma_process_join(),\
+  \ which had the right checks, but it is\nbetter to check the input as early as possible.\n\
+  \nThe following crash from syzkaller revealed it.\n\nkernel BUG at lib/string.c:1052!\n\
+  invalid opcode: 0000 [#1] SMP KASAN Dumping ftrace buffer:\n   (ftrace buffer empty)\n\
+  Modules linked in:\nCPU: 0 PID: 4113 Comm: syz-executor0 Not tainted 4.16.0-rc5+\
+  \ #261\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS\
+  \ Google 01/01/2011\nRIP: 0010:fortify_panic+0x13/0x20 lib/string.c:1051\nRSP: 0018:ffff8801ca81f8f0\
+  \ EFLAGS: 00010286\nRAX: 0000000000000022 RBX: 1ffff10039503f23 RCX: 0000000000000000\n\
+  RDX: 0000000000000022 RSI: 1ffff10039503ed3 RDI: ffffed0039503f12\nRBP: ffff8801ca81f8f0\
+  \ R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000006 R11: 0000000000000000\
+  \ R12: ffff8801ca81f998\nR13: ffff8801ca81f938 R14: ffff8801ca81fa58 R15: 000000000000fa00\n\
+  FS:  0000000000000000(0000) GS:ffff8801db200000(0063) knlGS:000000000a12a900\nCS:\
+  \  0010 DS: 002b ES: 002b CR0: 0000000080050033\nCR2: 0000000008138024 CR3: 00000001cbb58004\
+  \ CR4: 00000000001606f0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \ memcpy include/linux/string.h:344 [inline]\n ucma_join_ip_multicast+0x36b/0x3b0\
+  \ drivers/infiniband/core/ucma.c:1421\n ucma_write+0x2d6/0x3d0 drivers/infiniband/core/ucma.c:1633\n\
+  \ __vfs_write+0xef/0x970 fs/read_write.c:480\n vfs_write+0x189/0x510 fs/read_write.c:544\n\
+  \ SYSC_write fs/read_write.c:589 [inline]\n SyS_write+0xef/0x220 fs/read_write.c:581\n\
+  \ do_syscall_32_irqs_on arch/x86/entry/common.c:330 [inline]\n do_fast_syscall_32+0x3ec/0xf9f\
+  \ arch/x86/entry/common.c:392\n entry_SYSENTER_compat+0x70/0x7f arch/x86/entry/entry_64_compat.S:139\n\
+  RIP: 0023:0xf7f9ec99\nRSP: 002b:00000000ff8172cc EFLAGS: 00000282 ORIG_RAX: 0000000000000004\n\
+  RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 0000000020000100\nRDX: 0000000000000063\
+  \ RSI: 0000000000000000 RDI: 0000000000000000\nRBP: 0000000000000000 R08: 0000000000000000\
+  \ R09: 0000000000000000\nR10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000\n\
+  R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000\nCode: 08 5b 41\
+  \ 5c 41 5d 41 5e 41 5f 5d c3 0f 0b 48 89 df e8 42 2c e3 fb eb de\n55 48 89 fe 48\
+  \ c7 c7 80 75 98 86 48 89 e5 e8 85 95 94 fb <0f> 0b 90 90 90 90\n90 90 90 90 90\
+  \ 90 90 55 48 89 e5 41 57 41 56\nRIP: fortify_panic+0x13/0x20 lib/string.c:1051\
+  \ RSP: ffff8801ca81f8f0\n\nFixes: 5bc2b7b397b0 (\"RDMA/ucma: Allow user space to\
+  \ specify AF_IB when joining multicast\")\nReported-by: <syzbot+2287ac532caa81900a4e@syzkaller.appspotmail.com>\n\
+  Signed-off-by: Leon Romanovsky <leonro@mellanox.com>\nReviewed-by: Sean Hefty <sean.hefty@intel.com>\n\
+  Signed-off-by: Doug Ledford <dledford@redhat.com>\n"
+submodule:
+- drivers/infiniband/core
+hunk_count: 3
+covered_count: 2

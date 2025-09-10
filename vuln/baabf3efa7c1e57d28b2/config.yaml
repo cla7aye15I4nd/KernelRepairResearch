@@ -1,0 +1,144 @@
+id: baabf3efa7c1e57d28b2
+bug_link: https://syzkaller.appspot.com/bug?extid=baabf3efa7c1e57d28b2
+title: 'KASAN: null-ptr-deref Read in __fl_put'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 693aa2c0d9b6d5b1f2745d31b6e70d09dbbaf06e
+fix_commit: dfd2f0eb2347dbdf391fd5b8255fefc58a745472
+datetime: '2023-03-01T08:49:54+00:00'
+fix_commit_message: 'net/sched: flower: fix fl_change() error recovery path
+
+
+  The two "goto errout;" paths in fl_change() became wrong
+
+  after cited commit.
+
+
+  Indeed we only must not call __fl_put() until the net pointer
+
+  has been set in tcf_exts_init_ex()
+
+
+  This is a minimal fix. We might in the future validate TCA_FLOWER_FLAGS
+
+  before we allocate @fnew.
+
+
+  BUG: KASAN: null-ptr-deref in instrument_atomic_read include/linux/instrumented.h:72
+  [inline]
+
+  BUG: KASAN: null-ptr-deref in atomic_read include/linux/atomic/atomic-instrumented.h:27
+  [inline]
+
+  BUG: KASAN: null-ptr-deref in refcount_read include/linux/refcount.h:147 [inline]
+
+  BUG: KASAN: null-ptr-deref in __refcount_add_not_zero include/linux/refcount.h:152
+  [inline]
+
+  BUG: KASAN: null-ptr-deref in __refcount_inc_not_zero include/linux/refcount.h:227
+  [inline]
+
+  BUG: KASAN: null-ptr-deref in refcount_inc_not_zero include/linux/refcount.h:245
+  [inline]
+
+  BUG: KASAN: null-ptr-deref in maybe_get_net include/net/net_namespace.h:269 [inline]
+
+  BUG: KASAN: null-ptr-deref in tcf_exts_get_net include/net/pkt_cls.h:260 [inline]
+
+  BUG: KASAN: null-ptr-deref in __fl_put net/sched/cls_flower.c:513 [inline]
+
+  BUG: KASAN: null-ptr-deref in __fl_put+0x13e/0x3b0 net/sched/cls_flower.c:508
+
+  Read of size 4 at addr 000000000000014c by task syz-executor548/5082
+
+
+  CPU: 0 PID: 5082 Comm: syz-executor548 Not tainted 6.2.0-syzkaller-05251-g5b7c4cabbb65
+  #0
+
+  Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/21/2023
+
+  Call Trace:
+
+  <TASK>
+
+  __dump_stack lib/dump_stack.c:88 [inline]
+
+  dump_stack_lvl+0xd9/0x150 lib/dump_stack.c:106
+
+  print_report mm/kasan/report.c:420 [inline]
+
+  kasan_report+0xec/0x130 mm/kasan/report.c:517
+
+  check_region_inline mm/kasan/generic.c:183 [inline]
+
+  kasan_check_range+0x141/0x190 mm/kasan/generic.c:189
+
+  instrument_atomic_read include/linux/instrumented.h:72 [inline]
+
+  atomic_read include/linux/atomic/atomic-instrumented.h:27 [inline]
+
+  refcount_read include/linux/refcount.h:147 [inline]
+
+  __refcount_add_not_zero include/linux/refcount.h:152 [inline]
+
+  __refcount_inc_not_zero include/linux/refcount.h:227 [inline]
+
+  refcount_inc_not_zero include/linux/refcount.h:245 [inline]
+
+  maybe_get_net include/net/net_namespace.h:269 [inline]
+
+  tcf_exts_get_net include/net/pkt_cls.h:260 [inline]
+
+  __fl_put net/sched/cls_flower.c:513 [inline]
+
+  __fl_put+0x13e/0x3b0 net/sched/cls_flower.c:508
+
+  fl_change+0x101b/0x4ab0 net/sched/cls_flower.c:2341
+
+  tc_new_tfilter+0x97c/0x2290 net/sched/cls_api.c:2310
+
+  rtnetlink_rcv_msg+0x996/0xd50 net/core/rtnetlink.c:6165
+
+  netlink_rcv_skb+0x165/0x440 net/netlink/af_netlink.c:2574
+
+  netlink_unicast_kernel net/netlink/af_netlink.c:1339 [inline]
+
+  netlink_unicast+0x547/0x7f0 net/netlink/af_netlink.c:1365
+
+  netlink_sendmsg+0x925/0xe30 net/netlink/af_netlink.c:1942
+
+  sock_sendmsg_nosec net/socket.c:722 [inline]
+
+  sock_sendmsg+0xde/0x190 net/socket.c:745
+
+  ____sys_sendmsg+0x334/0x900 net/socket.c:2504
+
+  ___sys_sendmsg+0x110/0x1b0 net/socket.c:2558
+
+  __sys_sendmmsg+0x18f/0x460 net/socket.c:2644
+
+  __do_sys_sendmmsg net/socket.c:2673 [inline]
+
+  __se_sys_sendmmsg net/socket.c:2670 [inline]
+
+  __x64_sys_sendmmsg+0x9d/0x100 net/socket.c:2670
+
+
+  Fixes: 08a0063df3ae ("net/sched: flower: Move filter handle initialization earlier")
+
+  Reported-by: syzbot+baabf3efa7c1e57d28b2@syzkaller.appspotmail.com
+
+  Reported-by: syzbot <syzkaller@googlegroups.com>
+
+  Signed-off-by: Eric Dumazet <edumazet@google.com>
+
+  Cc: Paul Blakey <paulb@nvidia.com>
+
+  Reviewed-by: Simon Horman <simon.horman@corigine.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/sched
+hunk_count: 3
+covered_count: 1

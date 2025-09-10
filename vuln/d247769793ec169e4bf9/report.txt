@@ -1,0 +1,116 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.8.0-syzkaller-11752-gdba89d1b81df #0 Not tainted
+------------------------------------------------------
+kswapd0/110 is trying to acquire lock:
+ffff8880123588d8 (&xfs_nondir_ilock_class#3){++++}-{3:3}, at: xfs_ilock+0x2ef/0x420 fs/xfs/xfs_inode.c:206
+
+but task is already holding lock:
+ffffffff8db32460 (fs_reclaim){+.+.}-{0:0}, at: balance_pgdat+0x166/0x19a0 mm/vmscan.c:6782
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (fs_reclaim){+.+.}-{0:0}:
+       __fs_reclaim_acquire mm/page_alloc.c:3698 [inline]
+       fs_reclaim_acquire+0x102/0x160 mm/page_alloc.c:3712
+       might_alloc include/linux/sched/mm.h:312 [inline]
+       slab_pre_alloc_hook mm/slub.c:3746 [inline]
+       slab_alloc_node mm/slub.c:3827 [inline]
+       __do_kmalloc_node mm/slub.c:3965 [inline]
+       __kmalloc+0xb5/0x440 mm/slub.c:3979
+       kmalloc include/linux/slab.h:632 [inline]
+       xfs_attr_shortform_list fs/xfs/xfs_attr_list.c:115 [inline]
+       xfs_attr_list_ilocked+0x8b7/0x1740 fs/xfs/xfs_attr_list.c:527
+       xfs_attr_list+0x1f9/0x2b0 fs/xfs/xfs_attr_list.c:547
+       xfs_vn_listxattr+0x11f/0x1c0 fs/xfs/xfs_xattr.c:314
+       vfs_listxattr+0xb7/0x140 fs/xattr.c:493
+       listxattr+0x69/0x190 fs/xattr.c:840
+       path_listxattr+0xc3/0x160 fs/xattr.c:864
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xd2/0x260 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+-> #0 (&xfs_nondir_ilock_class#3){++++}-{3:3}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain kernel/locking/lockdep.c:3869 [inline]
+       __lock_acquire+0x2478/0x3b30 kernel/locking/lockdep.c:5137
+       lock_acquire kernel/locking/lockdep.c:5754 [inline]
+       lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+       down_write_nested+0x3d/0x50 kernel/locking/rwsem.c:1695
+       xfs_ilock+0x2ef/0x420 fs/xfs/xfs_inode.c:206
+       xfs_reclaim_inode fs/xfs/xfs_icache.c:945 [inline]
+       xfs_icwalk_process_inode fs/xfs/xfs_icache.c:1631 [inline]
+       xfs_icwalk_ag+0xca6/0x1780 fs/xfs/xfs_icache.c:1713
+       xfs_icwalk+0x57/0x100 fs/xfs/xfs_icache.c:1762
+       xfs_reclaim_inodes_nr+0x182/0x250 fs/xfs/xfs_icache.c:1011
+       super_cache_scan+0x409/0x550 fs/super.c:227
+       do_shrink_slab+0x44f/0x11c0 mm/shrinker.c:435
+       shrink_slab+0x18a/0x1310 mm/shrinker.c:662
+       shrink_one+0x493/0x7c0 mm/vmscan.c:4774
+       shrink_many mm/vmscan.c:4835 [inline]
+       lru_gen_shrink_node mm/vmscan.c:4935 [inline]
+       shrink_node+0x231f/0x3a80 mm/vmscan.c:5894
+       kswapd_shrink_node mm/vmscan.c:6704 [inline]
+       balance_pgdat+0x9a0/0x19a0 mm/vmscan.c:6895
+       kswapd+0x5ea/0xbf0 mm/vmscan.c:7164
+       kthread+0x2c1/0x3a0 kernel/kthread.c:388
+       ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(fs_reclaim);
+                               lock(&xfs_nondir_ilock_class#3);
+                               lock(fs_reclaim);
+  lock(&xfs_nondir_ilock_class#3);
+
+ *** DEADLOCK ***
+
+2 locks held by kswapd0/110:
+ #0: ffffffff8db32460 (fs_reclaim){+.+.}-{0:0}, at: balance_pgdat+0x166/0x19a0 mm/vmscan.c:6782
+ #1: ffff88801f8300e0 (&type->s_umount_key#92){++++}-{3:3}, at: super_trylock_shared fs/super.c:561 [inline]
+ #1: ffff88801f8300e0 (&type->s_umount_key#92){++++}-{3:3}, at: super_cache_scan+0x96/0x550 fs/super.c:196
+
+stack backtrace:
+CPU: 3 PID: 110 Comm: kswapd0 Not tainted 6.8.0-syzkaller-11752-gdba89d1b81df #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ check_noncircular+0x31a/0x400 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain kernel/locking/lockdep.c:3869 [inline]
+ __lock_acquire+0x2478/0x3b30 kernel/locking/lockdep.c:5137
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+ down_write_nested+0x3d/0x50 kernel/locking/rwsem.c:1695
+ xfs_ilock+0x2ef/0x420 fs/xfs/xfs_inode.c:206
+ xfs_reclaim_inode fs/xfs/xfs_icache.c:945 [inline]
+ xfs_icwalk_process_inode fs/xfs/xfs_icache.c:1631 [inline]
+ xfs_icwalk_ag+0xca6/0x1780 fs/xfs/xfs_icache.c:1713
+ xfs_icwalk+0x57/0x100 fs/xfs/xfs_icache.c:1762
+ xfs_reclaim_inodes_nr+0x182/0x250 fs/xfs/xfs_icache.c:1011
+ super_cache_scan+0x409/0x550 fs/super.c:227
+ do_shrink_slab+0x44f/0x11c0 mm/shrinker.c:435
+ shrink_slab+0x18a/0x1310 mm/shrinker.c:662
+ shrink_one+0x493/0x7c0 mm/vmscan.c:4774
+ shrink_many mm/vmscan.c:4835 [inline]
+ lru_gen_shrink_node mm/vmscan.c:4935 [inline]
+ shrink_node+0x231f/0x3a80 mm/vmscan.c:5894
+ kswapd_shrink_node mm/vmscan.c:6704 [inline]
+ balance_pgdat+0x9a0/0x19a0 mm/vmscan.c:6895
+ kswapd+0x5ea/0xbf0 mm/vmscan.c:7164
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+ </TASK>

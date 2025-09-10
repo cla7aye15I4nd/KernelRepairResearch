@@ -1,0 +1,78 @@
+==================================================================
+BUG: KASAN: stack-out-of-bounds in sg_mark_end include/linux/scatterlist.h:258 [inline]
+BUG: KASAN: stack-out-of-bounds in __bch2_encrypt_bio+0x84d/0xb10 fs/bcachefs/checksum.c:355
+Read of size 8 at addr ffffc900001176a0 by task kworker/u8:1/12
+
+CPU: 0 PID: 12 Comm: kworker/u8:1 Not tainted 6.9.0-rc7-next-20240510-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Workqueue: events_unbound __bch2_read_endio
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ sg_mark_end include/linux/scatterlist.h:258 [inline]
+ __bch2_encrypt_bio+0x84d/0xb10 fs/bcachefs/checksum.c:355
+ bch2_encrypt_bio fs/bcachefs/checksum.h:97 [inline]
+ __bch2_read_endio+0x8ab/0x23c0 fs/bcachefs/io_read.c:601
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3312
+ worker_thread+0x86d/0xd70 kernel/workqueue.c:3393
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+
+The buggy address belongs to stack of task kworker/u8:1/12
+ and is located at offset 1120 in frame:
+ __bch2_encrypt_bio+0x0/0xb10 fs/bcachefs/checksum.c:72
+
+This frame has 5 objects:
+ [32, 48) 'nonce.i115'
+ [64, 528) '__req_desc.i116'
+ [592, 608) 'nonce.i'
+ [624, 1088) '__req_desc.i'
+ [1152, 1664) 'sgl'
+
+The buggy address belongs to the virtual mapping at
+ [ffffc90000110000, ffffc90000119000) created by:
+ copy_process+0x5d1/0x3dc0 kernel/fork.c:2220
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x17297
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+raw: 00fff00000000000 0000000000000000 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000000000 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x2dc2(GFP_KERNEL|__GFP_HIGHMEM|__GFP_NOWARN|__GFP_ZERO), pid 2, tgid 2 (kthreadd), ts 2480284041, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1468
+ prep_new_page mm/page_alloc.c:1476 [inline]
+ get_page_from_freelist+0x2ce2/0x2d90 mm/page_alloc.c:3438
+ __alloc_pages_noprof+0x256/0x6c0 mm/page_alloc.c:4696
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2265
+ vm_area_alloc_pages mm/vmalloc.c:3567 [inline]
+ __vmalloc_area_node mm/vmalloc.c:3643 [inline]
+ __vmalloc_node_range_noprof+0x9a4/0x1490 mm/vmalloc.c:3824
+ alloc_thread_stack_node kernel/fork.c:309 [inline]
+ dup_task_struct+0x444/0x8c0 kernel/fork.c:1115
+ copy_process+0x5d1/0x3dc0 kernel/fork.c:2220
+ kernel_clone+0x226/0x8f0 kernel/fork.c:2797
+ kernel_thread+0x1bc/0x240 kernel/fork.c:2859
+ create_kthread kernel/kthread.c:412 [inline]
+ kthreadd+0x60d/0x810 kernel/kthread.c:765
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffffc90000117580: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffffc90000117600: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffffc90000117680: f2 f2 f2 f2 f2 f2 f2 f2 00 00 00 00 00 00 00 00
+                               ^
+ ffffc90000117700: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffffc90000117780: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+==================================================================

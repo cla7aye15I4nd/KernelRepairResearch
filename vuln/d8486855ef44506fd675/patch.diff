@@ -1,0 +1,28 @@
+diff --git a/net/ipv4/ip_output.c b/net/ipv4/ip_output.c
+index 457598dfa128..6e70839257f7 100644
+--- a/net/ipv4/ip_output.c
++++ b/net/ipv4/ip_output.c
+@@ -1041,7 +1041,8 @@ static int __ip_append_data(struct sock *sk,
+ 	} else if ((flags & MSG_SPLICE_PAGES) && length) {
+ 		if (inet->hdrincl)
+ 			return -EPERM;
+-		if (rt->dst.dev->features & NETIF_F_SG)
++		if (rt->dst.dev->features & NETIF_F_SG &&
++		    getfrag == ip_generic_getfrag)
+ 			/* We need an empty buffer to attach stuff to */
+ 			paged = true;
+ 		else
+diff --git a/net/ipv6/ip6_output.c b/net/ipv6/ip6_output.c
+index c06ff7519f19..1e8c90e97608 100644
+--- a/net/ipv6/ip6_output.c
++++ b/net/ipv6/ip6_output.c
+@@ -1593,7 +1593,8 @@ static int __ip6_append_data(struct sock *sk,
+ 	} else if ((flags & MSG_SPLICE_PAGES) && length) {
+ 		if (inet_sk(sk)->hdrincl)
+ 			return -EPERM;
+-		if (rt->dst.dev->features & NETIF_F_SG)
++		if (rt->dst.dev->features & NETIF_F_SG &&
++		    getfrag == ip_generic_getfrag)
+ 			/* We need an empty buffer to attach stuff to */
+ 			paged = true;
+ 		else

@@ -1,0 +1,21 @@
+id: c68e51bb5e699d3f8d91
+bug_link: https://syzkaller.appspot.com/bug?extid=c68e51bb5e699d3f8d91
+title: WARNING in __local_bh_enable_ip (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3008ba5faa7a63bac2227c56b533c08fa6d54a0b
+fix_commit: 53d0e83f9329aa51dcc205b514dbee05cb4df309
+datetime: '2018-03-17T17:18:54-04:00'
+fix_commit_message: "rds: tcp: must use spin_lock_irq* and not spin_lock_bh with rds_tcp_conn_lock\n\
+  \nrds_tcp_connection allocation/free management has the potential to be\ncalled\
+  \ from __rds_conn_create after IRQs have been disabled, so\nspin_[un]lock_bh cannot\
+  \ be used with rds_tcp_conn_lock.\n\nBottom-halves that need to synchronize for\
+  \ critical sections protected\nby rds_tcp_conn_lock should instead use rds_destroy_pending()\
+  \ correctly.\n\nReported-by: syzbot+c68e51bb5e699d3f8d91@syzkaller.appspotmail.com\n\
+  Fixes: ebeeb1ad9b8a (\"rds: tcp: use rds_destroy_pending() to synchronize\n    \
+  \   netns/module teardown and rds connection/workq management\")\nSigned-off-by:\
+  \ Sowmini Varadhan <sowmini.varadhan@oracle.com>\nAcked-by: Santosh Shilimkar <santosh.shilimkar@oracle.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/rds
+hunk_count: 6
+covered_count: 2

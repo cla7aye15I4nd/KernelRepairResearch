@@ -1,0 +1,63 @@
+BTRFS info (device loop0): scrub: started on devid 1
+Unable to handle kernel paging request at virtual address dfff800000000041
+KASAN: null-ptr-deref in range [0x0000000000000208-0x000000000000020f]
+Mem abort info:
+  ESR = 0x0000000096000005
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x05: level 1 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000005, ISS2 = 0x00000000
+  CM = 0, WnR = 0, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+[dfff800000000041] address between user and kernel address ranges
+Internal error: Oops: 0000000096000005 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 1 UID: 0 PID: 6417 Comm: syz-executor153 Not tainted 6.13.0-rc3-syzkaller-g573067a5a685 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : find_first_extent_item+0xac/0x674 fs/btrfs/scrub.c:1375
+lr : find_first_extent_item+0xa4/0x674 fs/btrfs/scrub.c:1374
+sp : ffff8000a5be6e60
+x29: ffff8000a5be6f80 x28: dfff800000000000 x27: 0000000000000000
+x26: 0000000000400000 x25: 0000000000400000 x24: 1fffe0001848ab0a
+x23: 0000000000000208 x22: ffff8000a5be6f20 x21: ffff0000c2455858
+x20: ffff8000a5be6ec0 x19: ffff0000db072010 x18: ffff0000db072010
+x17: 000000000000e32c x16: ffff80008b5fea08 x15: 0000000000000004
+x14: 1fffe0001b60c031 x13: 0000000000000000 x12: ffff700014b7cdd8
+x11: ffff80008257f234 x10: 0000000000ff0100 x9 : 0000000000000000
+x8 : 0000000000000041 x7 : 0000000000000000 x6 : 000000000000003f
+x5 : 0000000000000040 x4 : 0000000000000008 x3 : 0000000000400000
+x2 : 0000000000100000 x1 : ffff0000db072010 x0 : 0000000000000000
+Call trace:
+ find_first_extent_item+0xac/0x674 fs/btrfs/scrub.c:1375 (P)
+ scrub_find_fill_first_stripe+0x2c0/0xab8 fs/btrfs/scrub.c:1551
+ queue_scrub_stripe fs/btrfs/scrub.c:1921 [inline]
+ scrub_simple_mirror+0x440/0x7e4 fs/btrfs/scrub.c:2152
+ scrub_stripe+0x7e4/0x2174 fs/btrfs/scrub.c:2317
+ scrub_chunk+0x268/0x41c fs/btrfs/scrub.c:2443
+ scrub_enumerate_chunks+0xd38/0x1784 fs/btrfs/scrub.c:2707
+ btrfs_scrub_dev+0x5a8/0xb34 fs/btrfs/scrub.c:3029
+ btrfs_ioctl_scrub+0x1f4/0x3e8 fs/btrfs/ioctl.c:3248
+ btrfs_ioctl+0x6a8/0xb04 fs/btrfs/ioctl.c:5246
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl fs/ioctl.c:892 [inline]
+ __arm64_sys_ioctl+0x14c/0x1cc fs/ioctl.c:892
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+ el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+Code: b900118a 97847832 91082377 d343fee8 (387c6908) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	b900118a 	str	w10, [x12, #16]
+   4:	97847832 	bl	0xfffffffffe11e0cc
+   8:	91082377 	add	x23, x27, #0x208
+   c:	d343fee8 	lsr	x8, x23, #3
+* 10:	387c6908 	ldrb	w8, [x8, x28] <-- trapping instruction

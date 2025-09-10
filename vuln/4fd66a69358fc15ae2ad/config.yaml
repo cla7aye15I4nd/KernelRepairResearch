@@ -1,0 +1,30 @@
+id: 4fd66a69358fc15ae2ad
+bug_link: https://syzkaller.appspot.com/bug?extid=4fd66a69358fc15ae2ad
+title: 'KASAN: slab-use-after-free Read in nf_tables_trans_destroy_work'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8905a2c7d39b921b8a62bcf80da0f8c45ec0e764
+fix_commit: 9f6958ba2e902f9820c594869bd710ba74b7c4c0
+datetime: '2024-07-04T00:28:27+02:00'
+fix_commit_message: "netfilter: nf_tables: unconditionally flush pending work before\
+  \ notifier\n\nsyzbot reports:\n\nKASAN: slab-uaf in nft_ctx_update include/net/netfilter/nf_tables.h:1831\n\
+  KASAN: slab-uaf in nft_commit_release net/netfilter/nf_tables_api.c:9530\nKASAN:\
+  \ slab-uaf int nf_tables_trans_destroy_work+0x152b/0x1750 net/netfilter/nf_tables_api.c:9597\n\
+  Read of size 2 at addr ffff88802b0051c4 by task kworker/1:1/45\n[..]\nWorkqueue:\
+  \ events nf_tables_trans_destroy_work\nCall Trace:\n nft_ctx_update include/net/netfilter/nf_tables.h:1831\
+  \ [inline]\n nft_commit_release net/netfilter/nf_tables_api.c:9530 [inline]\n nf_tables_trans_destroy_work+0x152b/0x1750\
+  \ net/netfilter/nf_tables_api.c:9597\n\nProblem is that the notifier does a conditional\
+  \ flush, but its possible\nthat the table-to-be-removed is still referenced by transactions\
+  \ being\nprocessed by the worker, so we need to flush unconditionally.\n\nWe could\
+  \ make the flush_work depend on whether we found a table to delete\nin nf-next to\
+  \ avoid the flush for most cases.\n\nAFAICS this problem is only exposed in nf-next,\
+  \ with\ncommit e169285f8c56 (\"netfilter: nf_tables: do not store nft_ctx in transaction\
+  \ objects\"),\nwith this commit applied there is an unconditional fetch of\ntable->family\
+  \ which is whats triggering the above splat.\n\nFixes: 2c9f0293280e (\"netfilter:\
+  \ nf_tables: flush pending destroy work before netlink notifier\")\nReported-and-tested-by:\
+  \ syzbot+4fd66a69358fc15ae2ad@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=4fd66a69358fc15ae2ad\n\
+  Signed-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Pablo Neira Ayuso\
+  \ <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 1
+covered_count: 1

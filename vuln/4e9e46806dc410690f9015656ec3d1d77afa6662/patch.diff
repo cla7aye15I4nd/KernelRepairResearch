@@ -1,0 +1,28 @@
+diff --git a/drivers/net/tap.c b/drivers/net/tap.c
+index 1b10fcc6a58d..6c0c84c33e1f 100644
+--- a/drivers/net/tap.c
++++ b/drivers/net/tap.c
+@@ -1032,6 +1032,8 @@ static long tap_ioctl(struct file *file, unsigned int cmd,
+ 	case TUNSETSNDBUF:
+ 		if (get_user(s, sp))
+ 			return -EFAULT;
++		if (s <= 0)
++			return -EINVAL;
+ 
+ 		q->sk.sk_sndbuf = s;
+ 		return 0;
+diff --git a/drivers/net/tun.c b/drivers/net/tun.c
+index 5550f56cb895..42bb820a56c9 100644
+--- a/drivers/net/tun.c
++++ b/drivers/net/tun.c
+@@ -2429,6 +2429,10 @@ static long __tun_chr_ioctl(struct file *file, unsigned int cmd,
+ 			ret = -EFAULT;
+ 			break;
+ 		}
++		if (sndbuf <= 0) {
++			ret = -EINVAL;
++			break;
++		}
+ 
+ 		tun->sndbuf = sndbuf;
+ 		tun_set_sndbuf(tun);

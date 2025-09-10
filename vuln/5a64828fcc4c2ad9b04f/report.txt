@@ -1,0 +1,79 @@
+ocfs2: Mounting device (7,0) on (node local, slot 0) with ordered data mode.
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000001: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000008-0x000000000000000f]
+CPU: 0 UID: 0 PID: 5228 Comm: syz-executor314 Not tainted 6.12.0-rc2-syzkaller-00205-g1d227fcc7222 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:ocfs2_find_dir_space_id fs/ocfs2/dir.c:3407 [inline]
+RIP: 0010:ocfs2_prepare_dir_for_insert+0x3305/0x5c60 fs/ocfs2/dir.c:4271
+Code: 00 00 e8 6e 19 10 fe e9 ba 06 00 00 e8 64 19 10 fe e9 4f 01 00 00 e8 5a 19 10 fe 49 8d 7f 08 49 8d 5f 09 48 89 f8 48 c1 e8 03 <42> 0f b6 04 20 84 c0 0f 85 bd 23 00 00 48 89 d8 48 c1 e8 03 42 0f
+RSP: 0018:ffffc9000363eb00 EFLAGS: 00010202
+RAX: 0000000000000001 RBX: 0000000000000009 RCX: ffff88802e20da00
+RDX: 0000000000000000 RSI: 0000000000000400 RDI: 0000000000000008
+RBP: ffffc9000363f310 R08: ffffffff8384a0db R09: ffffffff8384f817
+R10: 0000000000000002 R11: ffff88802e20da00 R12: dffffc0000000000
+R13: ffff88807d3a8878 R14: 0000000000047c88 R15: 0000000000000000
+FS:  000055557975a380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffe80e43be8 CR3: 0000000028a78000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ ocfs2_mknod+0xcaf/0x2b40 fs/ocfs2/namei.c:292
+ ocfs2_create+0x1ab/0x480 fs/ocfs2/namei.c:672
+ lookup_open fs/namei.c:3595 [inline]
+ open_last_lookups fs/namei.c:3694 [inline]
+ path_openat+0x1c03/0x3590 fs/namei.c:3930
+ do_filp_open+0x235/0x490 fs/namei.c:3960
+ do_sys_openat2+0x13e/0x1d0 fs/open.c:1415
+ do_sys_open fs/open.c:1430 [inline]
+ __do_sys_openat fs/open.c:1446 [inline]
+ __se_sys_openat fs/open.c:1441 [inline]
+ __x64_sys_openat+0x247/0x2a0 fs/open.c:1441
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f53b2babd49
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff46a925b8 EFLAGS: 00000246 ORIG_RAX: 0000000000000101
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f53b2babd49
+RDX: 000000000000275a RSI: 0000000020000180 RDI: 00000000ffffff9c
+RBP: 000000000000146b R08: 0000000000004433 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007fff46a92600
+R13: 00007fff46a926e0 R14: 431bde82d7b634db R15: 00007f53b2bf401d
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:ocfs2_find_dir_space_id fs/ocfs2/dir.c:3407 [inline]
+RIP: 0010:ocfs2_prepare_dir_for_insert+0x3305/0x5c60 fs/ocfs2/dir.c:4271
+Code: 00 00 e8 6e 19 10 fe e9 ba 06 00 00 e8 64 19 10 fe e9 4f 01 00 00 e8 5a 19 10 fe 49 8d 7f 08 49 8d 5f 09 48 89 f8 48 c1 e8 03 <42> 0f b6 04 20 84 c0 0f 85 bd 23 00 00 48 89 d8 48 c1 e8 03 42 0f
+RSP: 0018:ffffc9000363eb00 EFLAGS: 00010202
+RAX: 0000000000000001 RBX: 0000000000000009 RCX: ffff88802e20da00
+RDX: 0000000000000000 RSI: 0000000000000400 RDI: 0000000000000008
+RBP: ffffc9000363f310 R08: ffffffff8384a0db R09: ffffffff8384f817
+R10: 0000000000000002 R11: ffff88802e20da00 R12: dffffc0000000000
+R13: ffff88807d3a8878 R14: 0000000000047c88 R15: 0000000000000000
+FS:  000055557975a380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffe80e43be8 CR3: 0000000028a78000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	00 00                	add    %al,(%rax)
+   2:	e8 6e 19 10 fe       	call   0xfe101975
+   7:	e9 ba 06 00 00       	jmp    0x6c6
+   c:	e8 64 19 10 fe       	call   0xfe101975
+  11:	e9 4f 01 00 00       	jmp    0x165
+  16:	e8 5a 19 10 fe       	call   0xfe101975
+  1b:	49 8d 7f 08          	lea    0x8(%r15),%rdi
+  1f:	49 8d 5f 09          	lea    0x9(%r15),%rbx
+  23:	48 89 f8             	mov    %rdi,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 0f b6 04 20       	movzbl (%rax,%r12,1),%eax <-- trapping instruction
+  2f:	84 c0                	test   %al,%al
+  31:	0f 85 bd 23 00 00    	jne    0x23f4
+  37:	48 89 d8             	mov    %rbx,%rax
+  3a:	48 c1 e8 03          	shr    $0x3,%rax
+  3e:	42                   	rex.X
+  3f:	0f                   	.byte 0xf

@@ -1,0 +1,61 @@
+id: adbc983a1588b7805de3
+bug_link: https://syzkaller.appspot.com/bug?extid=adbc983a1588b7805de3
+title: kernel BUG in sg_init_one
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c52eb6db7b7dd8b4b338b16c5c37df22a6b08fdf
+fix_commit: 9c500835f279e636722bbcafdfe62cc0153ec292
+datetime: '2024-03-26T11:07:21-07:00'
+fix_commit_message: "mm: zswap: fix kernel BUG in sg_init_one\n\nsg_init_one() relies\
+  \ on linearly mapped low memory for the safe\nutilization of virt_to_page().  Otherwise,\
+  \ we trigger a kernel BUG,\n\nkernel BUG at include/linux/scatterlist.h:187!\nInternal\
+  \ error: Oops - BUG: 0 [#1] PREEMPT SMP ARM\nModules linked in:\nCPU: 0 PID: 2997\
+  \ Comm: syz-executor198 Not tainted 6.8.0-syzkaller #0\nHardware name: ARM-Versatile\
+  \ Express\nPC is at sg_set_buf include/linux/scatterlist.h:187 [inline]\nPC is at\
+  \ sg_init_one+0x9c/0xa8 lib/scatterlist.c:143\nLR is at sg_init_table+0x2c/0x40\
+  \ lib/scatterlist.c:128\nBacktrace:\n[<807e16ac>] (sg_init_one) from [<804c1824>]\
+  \ (zswap_decompress+0xbc/0x208 mm/zswap.c:1089)\n r7:83471c80 r6:def6d08c r5:844847d0\
+  \ r4:ff7e7ef4\n[<804c1768>] (zswap_decompress) from [<804c4468>] (zswap_load+0x15c/0x198\
+  \ mm/zswap.c:1637)\n r9:8446eb80 r8:8446eb80 r7:8446eb84 r6:def6d08c r5:00000001\
+  \ r4:844847d0\n[<804c430c>] (zswap_load) from [<804b9644>] (swap_read_folio+0xa8/0x498\
+  \ mm/page_io.c:518)\n r9:844ac800 r8:835e6c00 r7:00000000 r6:df955d4c r5:00000001\
+  \ r4:def6d08c\n[<804b959c>] (swap_read_folio) from [<804bb064>] (swap_cluster_readahead+0x1c4/0x34c\
+  \ mm/swap_state.c:684)\n r10:00000000 r9:00000007 r8:df955d4b r7:00000000 r6:00000000\
+  \ r5:00100cca\n r4:00000001\n[<804baea0>] (swap_cluster_readahead) from [<804bb3b8>]\
+  \ (swapin_readahead+0x68/0x4a8 mm/swap_state.c:904)\n r10:df955eb8 r9:00000000 r8:00100cca\
+  \ r7:84476480 r6:00000001 r5:00000000\n r4:00000001\n[<804bb350>] (swapin_readahead)\
+  \ from [<8047cde0>] (do_swap_page+0x200/0xcc4 mm/memory.c:4046)\n r10:00000040 r9:00000000\
+  \ r8:844ac800 r7:84476480 r6:00000001 r5:00000000\n r4:df955eb8\n[<8047cbe0>] (do_swap_page)\
+  \ from [<8047e6c4>] (handle_pte_fault mm/memory.c:5301 [inline])\n[<8047cbe0>] (do_swap_page)\
+  \ from [<8047e6c4>] (__handle_mm_fault mm/memory.c:5439 [inline])\n[<8047cbe0>]\
+  \ (do_swap_page) from [<8047e6c4>] (handle_mm_fault+0x3d8/0x12b8 mm/memory.c:5604)\n\
+  \ r10:00000040 r9:842b3900 r8:7eb0d000 r7:84476480 r6:7eb0d000 r5:835e6c00\n r4:00000254\n\
+  [<8047e2ec>] (handle_mm_fault) from [<80215d28>] (do_page_fault+0x148/0x3a8 arch/arm/mm/fault.c:326)\n\
+  \ r10:00000007 r9:842b3900 r8:7eb0d000 r7:00000207 r6:00000254 r5:7eb0d9b4\n r4:df955fb0\n\
+  [<80215be0>] (do_page_fault) from [<80216170>] (do_DataAbort+0x38/0xa8 arch/arm/mm/fault.c:558)\n\
+  \ r10:7eb0da7c r9:00000000 r8:80215be0 r7:df955fb0 r6:7eb0d9b4 r5:00000207\n r4:8261d0e0\n\
+  [<80216138>] (do_DataAbort) from [<80200e3c>] (__dabt_usr+0x5c/0x60 arch/arm/kernel/entry-armv.S:427)\n\
+  Exception stack(0xdf955fb0 to 0xdf955ff8)\n5fa0:                               \
+  \      00000000 00000000 22d5f800 0008d158\n5fc0: 00000000 7eb0d9a4 00000000 00000109\
+  \ 00000000 00000000 7eb0da7c 7eb0da3c\n5fe0: 00000000 7eb0d9a0 00000001 00066bd4\
+  \ 00000010 ffffffff\n r8:824a9044 r7:835e6c00 r6:ffffffff r5:00000010 r4:00066bd4\n\
+  Code: 1a000004 e1822003 e8860094 e89da8f0 (e7f001f2)\n---[ end trace 0000000000000000\
+  \ ]---\n----------------\nCode disassembly (best guess):\n   0:\t1a000004 \tbne\t\
+  0x18\n   4:\te1822003 \torr\tr2, r2, r3\n   8:\te8860094 \tstm\tr6, {r2, r4, r7}\n\
+  \   c:\te89da8f0 \tldm\tsp, {r4, r5, r6, r7, fp, sp, pc}\n* 10:\te7f001f2 \tudf\t\
+  #18 <-- trapping instruction\n\nConsequently, we have two choices: either employ\
+  \ kmap_to_page() alongside\nsg_set_page(), or resort to copying high memory contents\
+  \ to a temporary\nbuffer residing in low memory.  However, considering the introduction\
+  \ of\nthe WARN_ON_ONCE in commit ef6e06b2ef870 (\"highmem: fix kmap_to_page() for\n\
+  kmap_local_page() addresses\"), which specifically addresses high memory\nconcerns,\
+  \ it appears that memcpy remains the sole viable option.\n\nLink: https://lkml.kernel.org/r/20240318234706.95347-1-21cnbao@gmail.com\n\
+  Fixes: 270700dd06ca (\"mm/zswap: remove the memcpy if acomp is not sleepable\")\n\
+  Signed-off-by: Barry Song <v-songbaohua@oppo.com>\nReported-by: syzbot+adbc983a1588b7805de3@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/all/000000000000bbb3d80613f243a6@google.com/\nTested-by:\
+  \ syzbot+adbc983a1588b7805de3@syzkaller.appspotmail.com\nAcked-by: Yosry Ahmed <yosryahmed@google.com>\n\
+  Reviewed-by: Nhat Pham <nphamcs@gmail.com>\nAcked-by: Johannes Weiner <hannes@cmpxchg.org>\n\
+  Cc: Chris Li <chrisl@kernel.org>\nCc: Ira Weiny <ira.weiny@intel.com>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,47 @@
+id: da4f9f61f96525c62cc7
+bug_link: https://syzkaller.appspot.com/bug?extid=da4f9f61f96525c62cc7
+title: possible deadlock in seq_read_iter (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 488e8f685207e0758398963d6834f81e5e61c162
+fix_commit: da40448ce4eb4de18eb7b0db61dddece32677939
+datetime: '2023-12-01T11:39:50+01:00'
+fix_commit_message: 'fs: move file_start_write() into direct_splice_actor()
+
+
+  The callers of do_splice_direct() hold file_start_write() on the output
+
+  file.
+
+
+  This may cause file permission hooks to be called indirectly on an
+
+  overlayfs lower layer, which is on the same filesystem of the output
+
+  file and could lead to deadlock with fanotify permission events.
+
+
+  To fix this potential deadlock, move file_start_write() from the callers
+
+  into the direct_splice_actor(), so file_start_write() will not be held
+
+  while splicing from the input file.
+
+
+  Suggested-by: Josef Bacik <josef@toxicpanda.com>
+
+  Link: https://lore.kernel.org/r/20231128214258.GA2398475@perftesting/
+
+  Reviewed-by: Jan Kara <jack@suse.cz>
+
+  Signed-off-by: Amir Goldstein <amir73il@gmail.com>
+
+  Link: https://lore.kernel.org/r/20231130141624.3338942-3-amir73il@gmail.com
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs
+- fs/overlayfs
+hunk_count: 5
+covered_count: 4

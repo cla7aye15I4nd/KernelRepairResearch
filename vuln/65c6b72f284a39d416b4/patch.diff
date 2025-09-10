@@ -1,0 +1,106 @@
+diff --git a/net/9p/client.c b/net/9p/client.c
+index 33717b1b84d8..20088aa06343 100644
+--- a/net/9p/client.c
++++ b/net/9p/client.c
+@@ -469,20 +469,11 @@ p9_parse_header(struct p9_fcall *pdu, int32_t *size, int8_t *type, int16_t *tag,
+ 	int err;
+ 
+ 	pdu->offset = 0;
+-	if (pdu->size == 0)
+-		pdu->size = 7;
+ 
+ 	err = p9pdu_readf(pdu, 0, "dbw", &r_size, &r_type, &r_tag);
+ 	if (err)
+ 		goto rewind_and_exit;
+ 
+-	pdu->size = r_size;
+-	pdu->id = r_type;
+-	pdu->tag = r_tag;
+-
+-	p9_debug(P9_DEBUG_9P, "<<< size=%d type: %d tag: %d\n",
+-		 pdu->size, pdu->id, pdu->tag);
+-
+ 	if (type)
+ 		*type = r_type;
+ 	if (tag)
+@@ -490,6 +481,16 @@ p9_parse_header(struct p9_fcall *pdu, int32_t *size, int8_t *type, int16_t *tag,
+ 	if (size)
+ 		*size = r_size;
+ 
++	if (pdu->size != r_size || r_size < 7) {
++		err = -EINVAL;
++		goto rewind_and_exit;
++	}
++
++	pdu->id = r_type;
++	pdu->tag = r_tag;
++
++	p9_debug(P9_DEBUG_9P, "<<< size=%d type: %d tag: %d\n",
++		 pdu->size, pdu->id, pdu->tag);
+ 
+ rewind_and_exit:
+ 	if (rewind)
+@@ -516,6 +517,12 @@ static int p9_check_errors(struct p9_client *c, struct p9_req_t *req)
+ 	int ecode;
+ 
+ 	err = p9_parse_header(req->rc, NULL, &type, NULL, 0);
++	if (req->rc->size >= c->msize) {
++		p9_debug(P9_DEBUG_ERROR,
++			 "requested packet size too big: %d\n",
++			 req->rc->size);
++		return -EIO;
++	}
+ 	/*
+ 	 * dump the response from server
+ 	 * This should be after check errors which poplulate pdu_fcall.
+diff --git a/net/9p/trans_fd.c b/net/9p/trans_fd.c
+index cce41b20a709..964260265b13 100644
+--- a/net/9p/trans_fd.c
++++ b/net/9p/trans_fd.c
+@@ -325,7 +325,9 @@ static void p9_read_work(struct work_struct *work)
+ 	if ((!m->req) && (m->rc.offset == m->rc.capacity)) {
+ 		p9_debug(P9_DEBUG_TRANS, "got new header\n");
+ 
+-		err = p9_parse_header(&m->rc, NULL, NULL, NULL, 0);
++		/* Header size */
++		m->rc.size = 7;
++		err = p9_parse_header(&m->rc, &m->rc.size, NULL, NULL, 0);
+ 		if (err) {
+ 			p9_debug(P9_DEBUG_ERROR,
+ 				 "error parsing header: %d\n", err);
+@@ -370,6 +372,7 @@ static void p9_read_work(struct work_struct *work)
+ 	 */
+ 	if ((m->req) && (m->rc.offset == m->rc.capacity)) {
+ 		p9_debug(P9_DEBUG_TRANS, "got new packet\n");
++		m->req->rc->size = m->rc.offset;
+ 		spin_lock(&m->client->lock);
+ 		if (m->req->status != REQ_STATUS_ERROR)
+ 			status = REQ_STATUS_RCVD;
+diff --git a/net/9p/trans_rdma.c b/net/9p/trans_rdma.c
+index 3d414acb7015..2649b2ebf961 100644
+--- a/net/9p/trans_rdma.c
++++ b/net/9p/trans_rdma.c
+@@ -320,6 +320,7 @@ recv_done(struct ib_cq *cq, struct ib_wc *wc)
+ 	if (wc->status != IB_WC_SUCCESS)
+ 		goto err_out;
+ 
++	c->rc->size = wc->byte_len;
+ 	err = p9_parse_header(c->rc, NULL, NULL, &tag, 1);
+ 	if (err)
+ 		goto err_out;
+diff --git a/net/9p/trans_virtio.c b/net/9p/trans_virtio.c
+index d422bfc81eca..06dcd3cc6a29 100644
+--- a/net/9p/trans_virtio.c
++++ b/net/9p/trans_virtio.c
+@@ -156,8 +156,10 @@ static void req_done(struct virtqueue *vq)
+ 			need_wakeup = true;
+ 		}
+ 
+-		if (len)
++		if (len) {
++			req->rc->size = len;
+ 			p9_client_cb(chan->client, req, REQ_STATUS_RCVD);
++		}
+ 	}
+ 	spin_unlock_irqrestore(&chan->lock, flags);
+ 	/* Wakeup if anyone waiting for VirtIO ring space. */

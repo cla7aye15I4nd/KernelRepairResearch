@@ -1,0 +1,35 @@
+diff --git a/arch/x86/include/asm/mem_encrypt.h b/arch/x86/include/asm/mem_encrypt.h
+index 98ce265f2e33..7f97a8a97e24 100644
+--- a/arch/x86/include/asm/mem_encrypt.h
++++ b/arch/x86/include/asm/mem_encrypt.h
+@@ -17,6 +17,12 @@
+ 
+ #include <asm/bootparam.h>
+ 
++#ifdef CONFIG_X86_MEM_ENCRYPT
++void __init mem_encrypt_init(void);
++#else
++static inline void mem_encrypt_init(void) { }
++#endif
++
+ #ifdef CONFIG_AMD_MEM_ENCRYPT
+ 
+ extern u64 sme_me_mask;
+@@ -51,8 +57,6 @@ void __init mem_encrypt_free_decrypted_mem(void);
+ 
+ void __init sev_es_init_vc_handling(void);
+ 
+-void __init mem_encrypt_init(void);
+-
+ #define __bss_decrypted __section(".bss..decrypted")
+ 
+ #else	/* !CONFIG_AMD_MEM_ENCRYPT */
+@@ -85,8 +89,6 @@ early_set_mem_enc_dec_hypercall(unsigned long vaddr, int npages, bool enc) {}
+ 
+ static inline void mem_encrypt_free_decrypted_mem(void) { }
+ 
+-static inline void mem_encrypt_init(void) { }
+-
+ #define __bss_decrypted
+ 
+ #endif	/* CONFIG_AMD_MEM_ENCRYPT */

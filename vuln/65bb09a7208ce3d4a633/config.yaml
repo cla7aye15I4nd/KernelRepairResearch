@@ -1,0 +1,35 @@
+id: 65bb09a7208ce3d4a633
+bug_link: https://syzkaller.appspot.com/bug?extid=65bb09a7208ce3d4a633
+title: kernel BUG in __nla_validate_parse
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 262a68aa46f88d9b42f1569f893d53f71ddf7e52
+fix_commit: d8a21070b6e168d3800c2962a574f16020dd2951
+datetime: '2024-03-11T20:35:20-07:00'
+fix_commit_message: "nexthop: Fix out-of-bounds access during attribute validation\n\
+  \nPassing a maximum attribute type to nlmsg_parse() that is larger than\nthe size\
+  \ of the passed policy will result in an out-of-bounds access [1]\nwhen the attribute\
+  \ type is used as an index into the policy array.\n\nFix by setting the maximum\
+  \ attribute type according to the policy size,\nas is already done for RTM_NEWNEXTHOP\
+  \ messages. Add a test case that\ntriggers the bug.\n\nNo regressions in fib nexthops\
+  \ tests:\n\n # ./fib_nexthops.sh\n [...]\n Tests passed: 236\n Tests failed:   0\n\
+  \n[1]\nBUG: KASAN: global-out-of-bounds in __nla_validate_parse+0x1e53/0x2940\n\
+  Read of size 1 at addr ffffffff99ab4d20 by task ip/610\n\nCPU: 3 PID: 610 Comm:\
+  \ ip Not tainted 6.8.0-rc7-custom-gd435d6e3e161 #9\nHardware name: QEMU Standard\
+  \ PC (i440FX + PIIX, 1996), BIOS 1.16.2-1.fc38 04/01/2014\nCall Trace:\n <TASK>\n\
+  \ dump_stack_lvl+0x8f/0xe0\n print_report+0xcf/0x670\n kasan_report+0xd8/0x110\n\
+  \ __nla_validate_parse+0x1e53/0x2940\n __nla_parse+0x40/0x50\n rtm_del_nexthop+0x1bd/0x400\n\
+  \ rtnetlink_rcv_msg+0x3cc/0xf20\n netlink_rcv_skb+0x170/0x440\n netlink_unicast+0x540/0x820\n\
+  \ netlink_sendmsg+0x8d3/0xdb0\n ____sys_sendmsg+0x31f/0xa60\n ___sys_sendmsg+0x13a/0x1e0\n\
+  \ __sys_sendmsg+0x11c/0x1f0\n do_syscall_64+0xc5/0x1d0\n entry_SYSCALL_64_after_hwframe+0x63/0x6b\n\
+  [...]\n\nThe buggy address belongs to the variable:\n rtm_nh_policy_del+0x20/0x40\n\
+  \nFixes: 2118f9390d83 (\"net: nexthop: Adjust netlink policy parsing for a new attribute\"\
+  )\nReported-by: Eric Dumazet <edumazet@google.com>\nCloses: https://lore.kernel.org/netdev/CANn89i+UNcG0PJMW5X7gOMunF38ryMh=L1aeZUKH3kL4UdUqag@mail.gmail.com/\n\
+  Reported-by: syzbot+65bb09a7208ce3d4a633@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/netdev/00000000000088981b06133bc07b@google.com/\n\
+  Signed-off-by: Ido Schimmel <idosch@nvidia.com>\nReviewed-by: David Ahern <dsahern@kernel.org>\n\
+  Link: https://lore.kernel.org/r/20240311162307.545385-4-idosch@nvidia.com\nSigned-off-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/ipv4
+- tools/testing/selftests/net
+hunk_count: 7
+covered_count: 3

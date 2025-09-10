@@ -1,0 +1,14 @@
+diff --git a/drivers/video/fbdev/core/fbcon.c b/drivers/video/fbdev/core/fbcon.c
+index c0143d38df83..14a7d404062c 100644
+--- a/drivers/video/fbdev/core/fbcon.c
++++ b/drivers/video/fbdev/core/fbcon.c
+@@ -2450,7 +2450,8 @@ static int fbcon_do_set_font(struct vc_data *vc, int w, int h, int charcount,
+ 
+ 	if (userfont) {
+ 		p->userfont = old_userfont;
+-		REFCOUNT(data)--;
++		if (--REFCOUNT(data) == 0)
++			kfree(data - FONT_EXTRA_WORDS * sizeof(int));
+ 	}
+ 
+ 	vc->vc_font.width = old_width;

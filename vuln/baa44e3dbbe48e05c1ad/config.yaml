@@ -1,0 +1,56 @@
+id: baa44e3dbbe48e05c1ad
+bug_link: https://syzkaller.appspot.com/bug?extid=baa44e3dbbe48e05c1ad
+title: WARNING in bpf_mprog_attach
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b80e31baa43614e086a9d29dc1151932b1bd7fc5
+fix_commit: f9b0e1088bbf35933e25c839b75094039059b3be
+datetime: '2023-09-29T15:49:57-07:00'
+fix_commit_message: 'bpf, mprog: Fix maximum program check on mprog attachment
+
+
+  After Paul''s recent improvement to syzkaller to improve coverage for
+
+  bpf_mprog and tcx, it hit a splat that the program limit was surpassed.
+
+  What happened is that the maximum number of progs got added, followed
+
+  by another prog add request which adds with BPF_F_BEFORE flag relative
+
+  to the last program in the array. The idx >= bpf_mprog_max() check in
+
+  bpf_mprog_attach() still passes because the index is below the maximum
+
+  but the maximum will be surpassed. We need to add a check upfront for
+
+  insertions to catch this situation.
+
+
+  Fixes: 053c8e1f235d ("bpf: Add generic attach/detach/query API for multi-progs")
+
+  Reported-by: syzbot+baa44e3dbbe48e05c1ad@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+b97d20ed568ce0951a06@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+2558ca3567a77b7af4e3@syzkaller.appspotmail.com
+
+  Co-developed-by: Nikolay Aleksandrov <razor@blackwall.org>
+
+  Signed-off-by: Nikolay Aleksandrov <razor@blackwall.org>
+
+  Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+
+  Signed-off-by: Andrii Nakryiko <andrii@kernel.org>
+
+  Tested-by: syzbot+baa44e3dbbe48e05c1ad@syzkaller.appspotmail.com
+
+  Tested-by: syzbot+b97d20ed568ce0951a06@syzkaller.appspotmail.com
+
+  Link: https://github.com/google/syzkaller/pull/4207
+
+  Link: https://lore.kernel.org/bpf/20230929204121.20305-1-daniel@iogearbox.net
+
+  '
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 1

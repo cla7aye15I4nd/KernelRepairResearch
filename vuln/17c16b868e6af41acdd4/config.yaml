@@ -1,0 +1,39 @@
+id: 17c16b868e6af41acdd4
+bug_link: https://syzkaller.appspot.com/bug?extid=17c16b868e6af41acdd4
+title: possible deadlock in snd_timer_interrupt
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9ff50bf2f2ff5fab01cac26d8eed21a89308e6ef
+fix_commit: f671a691e299f58835d4660d642582bf0e8f6fda
+datetime: '2021-08-21T16:20:27-04:00'
+fix_commit_message: "fcntl: fix potential deadlocks for &fown_struct.lock\n\nSyzbot\
+  \ reports a potential deadlock in do_fcntl:\n\n========================================================\n\
+  WARNING: possible irq lock inversion dependency detected\n5.12.0-syzkaller #0 Not\
+  \ tainted\n--------------------------------------------------------\nsyz-executor132/8391\
+  \ just changed the state of lock:\nffff888015967bf8 (&f->f_owner.lock){.+..}-{2:2},\
+  \ at: f_getown_ex fs/fcntl.c:211 [inline]\nffff888015967bf8 (&f->f_owner.lock){.+..}-{2:2},\
+  \ at: do_fcntl+0x8b4/0x1200 fs/fcntl.c:395\nbut this lock was taken by another,\
+  \ HARDIRQ-safe lock in the past:\n (&dev->event_lock){-...}-{2:2}\n\nand interrupts\
+  \ could create inverse lock ordering between them.\n\nother info that might help\
+  \ us debug this:\nChain exists of:\n  &dev->event_lock --> &new->fa_lock --> &f->f_owner.lock\n\
+  \n Possible interrupt unsafe locking scenario:\n\n       CPU0                  \
+  \  CPU1\n       ----                    ----\n  lock(&f->f_owner.lock);\n      \
+  \                         local_irq_disable();\n                               lock(&dev->event_lock);\n\
+  \                               lock(&new->fa_lock);\n  <Interrupt>\n    lock(&dev->event_lock);\n\
+  \n *** DEADLOCK ***\n\nThis happens because there is a lock hierarchy of\n&dev->event_lock\
+  \ --> &new->fa_lock --> &f->f_owner.lock\nfrom the following call chain:\n\n  input_inject_event():\n\
+  \    spin_lock_irqsave(&dev->event_lock,...);\n    input_handle_event():\n     \
+  \ input_pass_values():\n        input_to_handler():\n          evdev_events():\n\
+  \            evdev_pass_values():\n              spin_lock(&client->buffer_lock);\n\
+  \              __pass_event():\n                kill_fasync():\n               \
+  \   kill_fasync_rcu():\n                    read_lock(&fa->fa_lock);\n         \
+  \           send_sigio():\n                      read_lock_irqsave(&fown->lock,...);\n\
+  \nHowever, since &dev->event_lock is HARDIRQ-safe, interrupts have to be\ndisabled\
+  \ while grabbing &f->f_owner.lock, otherwise we invert the lock\nhierarchy.\n\n\
+  Hence, we replace calls to read_lock/read_unlock on &f->f_owner.lock,\nwith read_lock_irq/read_unlock_irq.\n\
+  \nReported-and-tested-by: syzbot+e6d5398a02c516ce5e70@syzkaller.appspotmail.com\n\
+  Signed-off-by: Desmond Cheong Zhi Xi <desmondcheongzx@gmail.com>\nSigned-off-by:\
+  \ Jeff Layton <jlayton@kernel.org>\n"
+submodule:
+- fs
+hunk_count: 5
+covered_count: 1

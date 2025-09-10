@@ -1,0 +1,39 @@
+id: 6ea37e2e6ffccf41a7e6
+bug_link: https://syzkaller.appspot.com/bug?extid=6ea37e2e6ffccf41a7e6
+title: 'WARNING: locking bug in kernfs_path_from_node'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 633488947ef66b194377411322dc9e12aab79b65
+fix_commit: 741c10b096bc4dd79cd9f215b6ef173bb953e75c
+datetime: '2025-02-15T17:46:32+01:00'
+fix_commit_message: "kernfs: Use RCU to access kernfs_node::name.\n\nUsing RCU lifetime\
+  \ rules to access kernfs_node::name can avoid the\ntrouble with kernfs_rename_lock\
+  \ in kernfs_name() and kernfs_path_from_node()\nif the fs was created with KERNFS_ROOT_INVARIANT_PARENT.\
+  \ This is usefull\nas it allows to implement kernfs_path_from_node() only with RCU\n\
+  protection and avoiding kernfs_rename_lock. The lock is only required if\nthe __parent\
+  \ node can be changed and the function requires an unchanged\nhierarchy while it\
+  \ iterates from the node to its parent.\nThe change is needed to allow the lookup\
+  \ of the node's path\n(kernfs_path_from_node()) from context which runs always with\
+  \ disabled\npreemption and or interrutps even on PREEMPT_RT. The problem is that\n\
+  kernfs_rename_lock becomes a sleeping lock on PREEMPT_RT.\n\nI went through all\
+  \ ::name users and added the required access for the lookup\nwith a few extensions:\n\
+  - rdtgroup_pseudo_lock_create() drops all locks and then uses the name\n  later\
+  \ on. resctrl supports rename with different parents. Here I made\n  a temporal\
+  \ copy of the name while it is used outside of the lock.\n\n- kernfs_rename_ns()\
+  \ accepts NULL as new_parent. This simplifies\n  sysfs_move_dir_ns() where it can\
+  \ set NULL in order to reuse the current\n  name.\n\n- kernfs_rename_ns() is only\
+  \ using kernfs_rename_lock if the parents are\n  different. All users use either\
+  \ kernfs_rwsem (for stable path view) or\n  just RCU for the lookup. The ::name\
+  \ uses always RCU free.\n\nUse RCU lifetime guarantees to access kernfs_node::name.\n\
+  \nSuggested-by: Tejun Heo <tj@kernel.org>\nAcked-by: Tejun Heo <tj@kernel.org>\n\
+  Reported-by: syzbot+6ea37e2e6ffccf41a7e6@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/lkml/67251dc6.050a0220.529b6.015e.GAE@google.com/\n\
+  Reported-by: Hillf Danton <hdanton@sina.com>\nCloses: https://lore.kernel.org/20241102001224.2789-1-hdanton@sina.com\n\
+  Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>\nLink: https://lore.kernel.org/r/20250213145023.2820193-7-bigeasy@linutronix.de\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- arch/x86/kernel/cpu/resctrl
+- fs/kernfs
+- fs/sysfs
+- include/linux
+- security/selinux
+hunk_count: 40
+covered_count: 3

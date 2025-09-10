@@ -1,0 +1,79 @@
+8<--- cut here ---
+Unable to handle kernel NULL pointer dereference at virtual address 0000000e when read
+[0000000e] *pgd=80000080004003, *pmd=00000000
+Internal error: Oops: 207 [#1] PREEMPT SMP ARM
+Modules linked in:
+CPU: 0 PID: 23321 Comm: kworker/u5:1 Not tainted 6.6.0-rc4-syzkaller #0
+Hardware name: ARM-Versatile Express
+Workqueue: events_unbound io_ring_exit_work
+PC is at __io_remove_buffers io_uring/kbuf.c:219 [inline]
+PC is at __io_remove_buffers+0x38/0x184 io_uring/kbuf.c:209
+LR is at io_destroy_buffers+0x48/0x138 io_uring/kbuf.c:264
+pc : [<807c970c>]    lr : [<807c9cc8>]    psr: 20000013
+sp : eca7de48  ip : eca7de78  fp : eca7de74
+r10: 827e4712  r9 : 89d5f800  r8 : ffffffff
+r7 : 89d5fb4c  r6 : 00000001  r5 : 89d5c800  r4 : 00000000
+r3 : 00000000  r2 : 00000000  r1 : 89d5c800  r0 : 89d5f800
+Flags: nzCv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment user
+Control: 30c5387d  Table: 8aa48840  DAC: fffffffd
+Register r0 information: slab kmalloc-2k start 89d5f800 pointer offset 0 size 2048
+Register r1 information: slab kmalloc-2k start 89d5c800 pointer offset 0 size 2048
+Register r2 information: NULL pointer
+Register r3 information: NULL pointer
+Register r4 information: NULL pointer
+Register r5 information: slab kmalloc-2k start 89d5c800 pointer offset 0 size 2048
+Register r6 information: non-paged memory
+Register r7 information: slab kmalloc-2k start 89d5f800 pointer offset 844 size 2048
+Register r8 information: non-paged memory
+Register r9 information: slab kmalloc-2k start 89d5f800 pointer offset 0 size 2048
+Register r10 information: non-slab/vmalloc memory
+Register r11 information: 2-page vmalloc region starting at 0xeca7c000 allocated at kernel_clone+0xac/0x424 kernel/fork.c:2909
+Register r12 information: 2-page vmalloc region starting at 0xeca7c000 allocated at kernel_clone+0xac/0x424 kernel/fork.c:2909
+Process kworker/u5:1 (pid: 23321, stack limit = 0xeca7c000)
+Stack: (0xeca7de48 to 0xeca7e000)
+de40:                   8467c680 00000014 89d5f800 89d5f840 89d5fb4c 82604d40
+de60: 89d5fbcc 827e4712 eca7de9c eca7de78 807c9cc8 807c96e0 00000000 b8805018
+de80: 89d5fbbc 89d5f800 89d5f840 89d5fb4c eca7df04 eca7dea0 81827188 807c9c8c
+dea0: eca7debc 89d5fbcc 0004f970 89d5f800 00000000 00000000 00000000 81825cb8
+dec0: 00000000 00030003 eca7dec8 eca7dec8 89d5f800 b8805018 eca7df48 89524780
+dee0: 89d5fbbc 82c21400 82c0f000 00000140 8467c680 82c21405 eca7df44 eca7df08
+df00: 80265fd4 81826dec eca7df2c eca7df18 eca7df44 eca7df20 8026196c 89524780
+df20: 895247ac 82c0f000 82604d40 82c0f020 8467c680 61c88647 eca7df84 eca7df48
+df40: 80266520 80265e44 eca7df64 eca7df58 81848868 80278e68 eca7df84 83acbf80
+df60: 8467c680 802662e0 89524780 83acb4c0 dfc0de98 00000000 eca7dfac eca7df88
+df80: 8026d8e0 802662ec 83acbf80 8026d7dc 00000000 00000000 00000000 00000000
+dfa0: 00000000 eca7dfb0 80200104 8026d7e8 00000000 00000000 00000000 00000000
+dfc0: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+dfe0: 00000000 00000000 00000000 00000000 00000013 00000000 00000000 00000000
+Backtrace: 
+[<807c96d4>] (__io_remove_buffers) from [<807c9cc8>] (io_destroy_buffers+0x48/0x138 io_uring/kbuf.c:264)
+ r10:827e4712 r9:89d5fbcc r8:82604d40 r7:89d5fb4c r6:89d5f840 r5:89d5f800
+ r4:00000014 r3:8467c680
+[<807c9c80>] (io_destroy_buffers) from [<81827188>] (io_ring_ctx_free io_uring/io_uring.c:2895 [inline])
+[<807c9c80>] (io_destroy_buffers) from [<81827188>] (io_ring_exit_work+0x3a8/0x5ec io_uring/io_uring.c:3151)
+ r7:89d5fb4c r6:89d5f840 r5:89d5f800 r4:89d5fbbc
+[<81826de0>] (io_ring_exit_work) from [<80265fd4>] (process_one_work+0x19c/0x4a8 kernel/workqueue.c:2630)
+ r10:82c21405 r9:8467c680 r8:00000140 r7:82c0f000 r6:82c21400 r5:89d5fbbc
+ r4:89524780
+[<80265e38>] (process_one_work) from [<80266520>] (process_scheduled_works kernel/workqueue.c:2703 [inline])
+[<80265e38>] (process_one_work) from [<80266520>] (worker_thread+0x240/0x48c kernel/workqueue.c:2784)
+ r10:61c88647 r9:8467c680 r8:82c0f020 r7:82604d40 r6:82c0f000 r5:895247ac
+ r4:89524780
+[<802662e0>] (worker_thread) from [<8026d8e0>] (kthread+0x104/0x134 kernel/kthread.c:388)
+ r10:00000000 r9:dfc0de98 r8:83acb4c0 r7:89524780 r6:802662e0 r5:8467c680
+ r4:83acbf80
+[<8026d7dc>] (kthread) from [<80200104>] (ret_from_fork+0x14/0x30 arch/arm/kernel/entry-common.S:134)
+Exception stack(0xeca7dfb0 to 0xeca7dff8)
+dfa0:                                     00000000 00000000 00000000 00000000
+dfc0: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+dfe0: 00000000 00000000 00000000 00000000 00000013 00000000
+ r9:00000000 r8:00000000 r7:00000000 r6:00000000 r5:8026d7dc r4:83acbf80
+Code: 0a000022 e5913004 e1d120be e5d14013 (e1d380be) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	0a000022 	beq	0x90
+   4:	e5913004 	ldr	r3, [r1, #4]
+   8:	e1d120be 	ldrh	r2, [r1, #14]
+   c:	e5d14013 	ldrb	r4, [r1, #19]
+* 10:	e1d380be 	ldrh	r8, [r3, #14] <-- trapping instruction

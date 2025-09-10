@@ -1,0 +1,100 @@
+loop0: detected capacity change from 0 to 32768
+=======================================================
+WARNING: The mand mount option has been deprecated and
+         and is ignored by this kernel. Remove the mand
+         option from the mount to silence this warning.
+=======================================================
+(unnamed net_device) (uninitialized): (slave bond_slave_1): Device is not our slave
+(unnamed net_device) (uninitialized): option active_slave: invalid value (bond_slave_1)
+ALSA: seq fatal error: cannot create timer (-16)
+loop0: detected capacity change from 0 to 32768
+JBD2: Ignoring recovery information on journal
+ocfs2: Mounting device (7,0) on (node local, slot 0) with ordered data mode.
+(syz.0.0,5310,0):ocfs2_extend_trans:438 ERROR: status = -30
+(syz.0.0,5310,0):ocfs2_truncate_rec:5445 ERROR: status = -30
+(syz.0.0,5310,0):ocfs2_remove_extent:5592 ERROR: status = -30
+(syz.0.0,5310,0):__ocfs2_remove_xattr_range:782 ERROR: status = -30
+(syz.0.0,5310,0):ocfs2_xattr_shrink_size:836 ERROR: status = -30
+(syz.0.0,5310,0):__ocfs2_journal_access:705 ERROR: Error -30 getting 1 access to buffer!
+(syz.0.0,5310,0):ocfs2_xa_prepare_entry:2151 ERROR: status = -30
+(syz.0.0,5310,0):ocfs2_xa_set:2254 ERROR: status = -30
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] SMP KASAN NOPTI
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 0 UID: 0 PID: 5310 Comm: syz.0.0 Not tainted 6.15.0-rc4-syzkaller-00052-g4f79eaa2ceac #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:jbd2_journal_dirty_metadata+0x234/0xcd0 fs/jbd2/transaction.c:1531
+Code: 74 08 4c 89 ff e8 3c a6 9c ff 4d 39 37 0f 84 49 01 00 00 e8 2e b1 3a ff 31 c0 e9 5e 05 00 00 4c 8b 34 24 4c 89 f0 48 c1 e8 03 <80> 3c 18 00 74 08 4c 89 f7 e8 0e a6 9c ff 49 8b 06 48 89 44 24 38
+RSP: 0018:ffffc9000d4aec18 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: dffffc0000000000 RCX: 0000000000000002
+RDX: ffff88801f3e0000 RSI: 0000000000000000 RDI: 0000000000000001
+RBP: ffff88801c1977e8 R08: ffff88804394bd9f R09: 1ffff110087297b3
+R10: dffffc0000000000 R11: ffffed10087297b4 R12: 1ffff110024a7175
+R13: 1ffff11003832efd R14: 0000000000000000 R15: 1ffff110024a7172
+FS:  00007f4af46346c0(0000) GS:ffff88808d6cc000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000200000027000 CR3: 000000001fa72000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ ocfs2_journal_dirty+0x149/0x740 fs/ocfs2/journal.c:812
+ ocfs2_xa_journal_dirty fs/ocfs2/xattr.c:1453 [inline]
+ ocfs2_xa_set+0x2516/0x3050 fs/ocfs2/xattr.c:2263
+ ocfs2_xattr_block_set+0x3c4/0x2bc0 fs/ocfs2/xattr.c:2985
+ __ocfs2_xattr_set_handle+0x661/0xf20 fs/ocfs2/xattr.c:3387
+ ocfs2_xattr_set+0xde8/0x11f0 fs/ocfs2/xattr.c:3650
+ __vfs_setxattr+0x439/0x480 fs/xattr.c:200
+ __vfs_setxattr_noperm+0x12d/0x660 fs/xattr.c:234
+ vfs_setxattr+0x16b/0x2f0 fs/xattr.c:321
+ do_setxattr fs/xattr.c:636 [inline]
+ filename_setxattr+0x274/0x600 fs/xattr.c:665
+ path_setxattrat+0x364/0x3a0 fs/xattr.c:713
+ __do_sys_setxattr fs/xattr.c:747 [inline]
+ __se_sys_setxattr fs/xattr.c:743 [inline]
+ __x64_sys_setxattr+0xbc/0xe0 fs/xattr.c:743
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f4af378e969
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f4af4634038 EFLAGS: 00000246 ORIG_RAX: 00000000000000bc
+RAX: ffffffffffffffda RBX: 00007f4af39b5fa0 RCX: 00007f4af378e969
+RDX: 0000200000000400 RSI: 00002000000003c0 RDI: 00002000000001c0
+RBP: 00007f4af3810ab1 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000031 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007f4af39b5fa0 R15: 00007fff0b31a588
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:jbd2_journal_dirty_metadata+0x234/0xcd0 fs/jbd2/transaction.c:1531
+Code: 74 08 4c 89 ff e8 3c a6 9c ff 4d 39 37 0f 84 49 01 00 00 e8 2e b1 3a ff 31 c0 e9 5e 05 00 00 4c 8b 34 24 4c 89 f0 48 c1 e8 03 <80> 3c 18 00 74 08 4c 89 f7 e8 0e a6 9c ff 49 8b 06 48 89 44 24 38
+RSP: 0018:ffffc9000d4aec18 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: dffffc0000000000 RCX: 0000000000000002
+RDX: ffff88801f3e0000 RSI: 0000000000000000 RDI: 0000000000000001
+RBP: ffff88801c1977e8 R08: ffff88804394bd9f R09: 1ffff110087297b3
+R10: dffffc0000000000 R11: ffffed10087297b4 R12: 1ffff110024a7175
+R13: 1ffff11003832efd R14: 0000000000000000 R15: 1ffff110024a7172
+FS:  00007f4af46346c0(0000) GS:ffff88808d6cc000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000200000027000 CR3: 000000001fa72000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	74 08                	je     0xa
+   2:	4c 89 ff             	mov    %r15,%rdi
+   5:	e8 3c a6 9c ff       	call   0xff9ca646
+   a:	4d 39 37             	cmp    %r14,(%r15)
+   d:	0f 84 49 01 00 00    	je     0x15c
+  13:	e8 2e b1 3a ff       	call   0xff3ab146
+  18:	31 c0                	xor    %eax,%eax
+  1a:	e9 5e 05 00 00       	jmp    0x57d
+  1f:	4c 8b 34 24          	mov    (%rsp),%r14
+  23:	4c 89 f0             	mov    %r14,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	80 3c 18 00          	cmpb   $0x0,(%rax,%rbx,1) <-- trapping instruction
+  2e:	74 08                	je     0x38
+  30:	4c 89 f7             	mov    %r14,%rdi
+  33:	e8 0e a6 9c ff       	call   0xff9ca646
+  38:	49 8b 06             	mov    (%r14),%rax
+  3b:	48 89 44 24 38       	mov    %rax,0x38(%rsp)

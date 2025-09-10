@@ -1,0 +1,20 @@
+id: 959223586843e69a2674
+bug_link: https://syzkaller.appspot.com/bug?extid=959223586843e69a2674
+title: possible deadlock in sctp_addr_wq_timeout_handler
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2e9f60932a2c19e8a11b4a69d419f107024b05a0
+fix_commit: 01bfe5e8e428b475982a98a46cca5755726f3f7f
+datetime: '2021-05-03T13:36:21-07:00'
+fix_commit_message: "Revert \"net/sctp: fix race condition in sctp_destroy_sock\"\n\
+  \nThis reverts commit b166a20b07382b8bc1dcee2a448715c9c2c81b5b.\n\nThis one has\
+  \ to be reverted as it introduced a dead lock, as\nsyzbot reported:\n\n       CPU0\
+  \                    CPU1\n       ----                    ----\n  lock(&net->sctp.addr_wq_lock);\n\
+  \                               lock(slock-AF_INET6);\n                        \
+  \       lock(&net->sctp.addr_wq_lock);\n  lock(slock-AF_INET6);\n\nCPU0 is the thread\
+  \ of sctp_addr_wq_timeout_handler(), and CPU1\nis that of sctp_close().\n\nThe original\
+  \ issue this commit fixed will be fixed in the next\npatch.\n\nReported-by: syzbot+959223586843e69a2674@syzkaller.appspotmail.com\n\
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 4
+covered_count: 4

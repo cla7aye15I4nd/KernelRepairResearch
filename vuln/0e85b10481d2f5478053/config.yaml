@@ -1,0 +1,59 @@
+id: 0e85b10481d2f5478053
+bug_link: https://syzkaller.appspot.com/bug?extid=0e85b10481d2f5478053
+title: WARNING in pppol2tp_release
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: dcc59d3e328e3afe54df4f395796042735b1c420
+fix_commit: c1b2e36b8776a20a1fbdeb9d3be0637c00d671b0
+datetime: '2024-08-11T04:38:50+01:00'
+fix_commit_message: "l2tp: flush workqueue before draining it\n\nsyzbot exposes a\
+  \ race where a net used by l2tp is removed while an\nexisting pppol2tp socket is\
+  \ closed. In l2tp_pre_exit_net, l2tp queues\nTUNNEL_DELETE work items to close each\
+  \ tunnel in the net. When these\nare run, new SESSION_DELETE work items are queued\
+  \ to delete each\nsession in the tunnel. This all happens in drain_workqueue. However,\n\
+  drain_workqueue allows only new work items if they are queued by other\nwork items\
+  \ which are already in the queue. If pppol2tp_release runs\nafter drain_workqueue\
+  \ has started, it may queue a SESSION_DELETE work\nitem, which results in the warning\
+  \ below in drain_workqueue.\n\nAddress this by flushing the workqueue before drain_workqueue\
+  \ such\nthat all queued TUNNEL_DELETE work items run before drain_workqueue is\n\
+  started. This will queue SESSION_DELETE work items for each session in\nthe tunnel,\
+  \ hence pppol2tp_release or other API requests won't queue\nSESSION_DELETE requests\
+  \ once drain_workqueue is started.\n\n  WARNING: CPU: 1 PID: 5467 at kernel/workqueue.c:2259\
+  \ __queue_work+0xcd3/0xf50 kernel/workqueue.c:2258\n  Modules linked in:\n  CPU:\
+  \ 1 UID: 0 PID: 5467 Comm: syz.3.43 Not tainted 6.11.0-rc1-syzkaller-00247-g3608d6aca5e7\
+  \ #0\n  Hardware name: Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 06/27/2024\n  RIP: 0010:__queue_work+0xcd3/0xf50 kernel/workqueue.c:2258\n  Code:\
+  \ ff e8 11 84 36 00 90 0f 0b 90 e9 1e fd ff ff e8 03 84 36 00 eb 13 e8 fc 83 36\
+  \ 00 eb 0c e8 f5 83 36 00 eb 05 e8 ee 83 36 00 90 <0f> 0b 90 48 83 c4 60 5b 41 5c\
+  \ 41 5d 41 5e 41 5f 5d c3 cc cc cc cc\n  RSP: 0018:ffffc90004607b48 EFLAGS: 00010093\n\
+  \  RAX: ffffffff815ce274 RBX: ffff8880661fda00 RCX: ffff8880661fda00\n  RDX: 0000000000000000\
+  \ RSI: 0000000000000000 RDI: 0000000000000000\n  RBP: 0000000000000000 R08: ffffffff815cd6d4\
+  \ R09: 0000000000000000\n  R10: ffffc90004607c20 R11: fffff520008c0f85 R12: ffff88802ac33800\n\
+  \  R13: ffff88802ac339c0 R14: dffffc0000000000 R15: 0000000000000008\n  FS:  00005555713eb500(0000)\
+  \ GS:ffff8880b9300000(0000) knlGS:0000000000000000\n  CS:  0010 DS: 0000 ES: 0000\
+  \ CR0: 0000000080050033\n  CR2: 0000000000000008 CR3: 000000001eda6000 CR4: 00000000003506f0\n\
+  \  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n  DR3: 0000000000000000\
+  \ DR6: 00000000fffe0ff0 DR7: 0000000000000400\n  Call Trace:\n   <TASK>\n   queue_work_on+0x1c2/0x380\
+  \ kernel/workqueue.c:2392\n   pppol2tp_release+0x163/0x230 net/l2tp/l2tp_ppp.c:445\n\
+  \   __sock_release net/socket.c:659 [inline]\n   sock_close+0xbc/0x240 net/socket.c:1421\n\
+  \   __fput+0x24a/0x8a0 fs/file_table.c:422\n   task_work_run+0x24f/0x310 kernel/task_work.c:228\n\
+  \   resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]\n   exit_to_user_mode_loop\
+  \ kernel/entry/common.c:114 [inline]\n   exit_to_user_mode_prepare include/linux/entry-common.h:328\
+  \ [inline]\n   __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]\n\
+  \   syscall_exit_to_user_mode+0x168/0x370 kernel/entry/common.c:218\n   do_syscall_64+0x100/0x230\
+  \ arch/x86/entry/common.c:89\n   entry_SYSCALL_64_after_hwframe+0x77/0x7f\n  RIP:\
+  \ 0033:0x7f061e9779f9\n  Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00\
+  \ 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48>\
+  \ 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48\n  RSP: 002b:00007ffff1c1fce8\
+  \ EFLAGS: 00000246 ORIG_RAX: 00000000000001b4\n  RAX: 0000000000000000 RBX: 000000000001017d\
+  \ RCX: 00007f061e9779f9\n  RDX: 0000000000000000 RSI: 000000000000001e RDI: 0000000000000003\n\
+  \  RBP: 00007ffff1c1fdc0 R08: 0000000000000001 R09: 00007ffff1c1ffcf\n  R10: 00007f061e800000\
+  \ R11: 0000000000000246 R12: 0000000000000032\n  R13: 00007ffff1c1fde0 R14: 00007ffff1c1fe00\
+  \ R15: ffffffffffffffff\n  </TASK>\n\nFixes: fc7ec7f554d7 (\"l2tp: delete sessions\
+  \ using work queue\")\nReported-by: syzbot+0e85b10481d2f5478053@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=0e85b10481d2f5478053\nSigned-off-by:\
+  \ James Chapman <jchapman@katalix.com>\nSigned-off-by: Tom Parkin <tparkin@katalix.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/l2tp
+hunk_count: 1
+covered_count: 0

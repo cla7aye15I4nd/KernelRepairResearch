@@ -1,0 +1,54 @@
+BUG: memory leak
+unreferenced object 0xffff88810d532a00 (size 640):
+  comm "syz-executor.0", pid 5107, jiffies 4294993486
+  hex dump (first 32 bytes):
+    00 00 00 00 00 00 00 01 1a 0c 01 02 00 00 00 00  ................
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+  backtrace (crc d037fcd3):
+    [<ffffffff8165ce9c>] kmemleak_alloc_recursive include/linux/kmemleak.h:42 [inline]
+    [<ffffffff8165ce9c>] slab_post_alloc_hook mm/slub.c:3802 [inline]
+    [<ffffffff8165ce9c>] slab_alloc_node mm/slub.c:3845 [inline]
+    [<ffffffff8165ce9c>] kmem_cache_alloc_node+0x28c/0x330 mm/slub.c:3888
+    [<ffffffff84335146>] kmalloc_reserve+0xe6/0x180 net/core/skbuff.c:577
+    [<ffffffff84338bc5>] __alloc_skb+0xd5/0x220 net/core/skbuff.c:668
+    [<ffffffff84a7773b>] alloc_skb include/linux/skbuff.h:1318 [inline]
+    [<ffffffff84a7773b>] bt_skb_alloc include/net/bluetooth/bluetooth.h:489 [inline]
+    [<ffffffff84a7773b>] hci_prepare_cmd+0x2b/0xb0 net/bluetooth/hci_request.c:219
+    [<ffffffff84a77d67>] hci_req_add_ev net/bluetooth/hci_request.c:253 [inline]
+    [<ffffffff84a77d67>] hci_req_add+0x57/0xe0 net/bluetooth/hci_request.c:273
+    [<ffffffff84a09e51>] hci_scan_req+0x41/0x70 net/bluetooth/hci_core.c:73
+    [<ffffffff84a77170>] __hci_req_sync+0x70/0x3c0 net/bluetooth/hci_request.c:128
+    [<ffffffff84a776c7>] hci_req_sync+0x67/0xa0 net/bluetooth/hci_request.c:204
+    [<ffffffff84a0f3f3>] hci_dev_cmd+0x3f3/0x550 net/bluetooth/hci_core.c:790
+    [<ffffffff84a51f8c>] hci_sock_ioctl+0x3ec/0x6f0 net/bluetooth/hci_sock.c:1153
+    [<ffffffff84320912>] sock_do_ioctl+0x82/0x1a0 net/socket.c:1222
+    [<ffffffff84322b3e>] sock_ioctl+0x14e/0x480 net/socket.c:1341
+    [<ffffffff817354e6>] vfs_ioctl fs/ioctl.c:51 [inline]
+    [<ffffffff817354e6>] __do_sys_ioctl fs/ioctl.c:904 [inline]
+    [<ffffffff817354e6>] __se_sys_ioctl fs/ioctl.c:890 [inline]
+    [<ffffffff817354e6>] __x64_sys_ioctl+0xf6/0x150 fs/ioctl.c:890
+    [<ffffffff85087f05>] do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+    [<ffffffff85087f05>] do_syscall_64+0xa5/0x1e0 arch/x86/entry/common.c:83
+    [<ffffffff85200126>] entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+BUG: memory leak
+unreferenced object 0xffff88810c90e900 (size 240):
+  comm "kworker/u9:2", pid 5109, jiffies 4294993486
+  hex dump (first 32 bytes):
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+  backtrace (crc 778d5d40):
+    [<ffffffff8165c571>] kmemleak_alloc_recursive include/linux/kmemleak.h:42 [inline]
+    [<ffffffff8165c571>] slab_post_alloc_hook mm/slub.c:3802 [inline]
+    [<ffffffff8165c571>] slab_alloc_node mm/slub.c:3845 [inline]
+    [<ffffffff8165c571>] kmem_cache_alloc+0x271/0x310 mm/slub.c:3852
+    [<ffffffff843400aa>] skb_clone+0xaa/0x190 net/core/skbuff.c:2063
+    [<ffffffff84a0a7fb>] hci_send_cmd_sync net/bluetooth/hci_core.c:4220 [inline]
+    [<ffffffff84a0a7fb>] hci_cmd_work+0x1db/0x200 net/bluetooth/hci_core.c:4240
+    [<ffffffff812ec200>] process_one_work+0x290/0x630 kernel/workqueue.c:3254
+    [<ffffffff812ed22d>] process_scheduled_works kernel/workqueue.c:3335 [inline]
+    [<ffffffff812ed22d>] worker_thread+0x2bd/0x510 kernel/workqueue.c:3416
+    [<ffffffff812fb36c>] kthread+0xfc/0x140 kernel/kthread.c:388
+    [<ffffffff81158245>] ret_from_fork+0x45/0x60 arch/x86/kernel/process.c:147
+    [<ffffffff81002efa>] ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+

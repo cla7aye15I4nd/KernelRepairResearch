@@ -1,0 +1,64 @@
+diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
+index 4c77f39ebd65..5eef6c8e2741 100644
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -3228,6 +3228,12 @@ static inline int netif_set_real_num_rx_queues(struct net_device *dev,
+ }
+ #endif
+ 
++static inline struct netdev_rx_queue *
++__netif_get_rx_queue(struct net_device *dev, unsigned int rxq)
++{
++	return dev->_rx + rxq;
++}
++
+ #ifdef CONFIG_SYSFS
+ static inline unsigned int get_netdev_rx_queue_index(
+ 		struct netdev_rx_queue *queue)
+diff --git a/net/bpf/test_run.c b/net/bpf/test_run.c
+index a86e6687026e..2ced48662c1f 100644
+--- a/net/bpf/test_run.c
++++ b/net/bpf/test_run.c
+@@ -151,6 +151,7 @@ int bpf_prog_test_run_xdp(struct bpf_prog *prog, const union bpf_attr *kattr,
+ {
+ 	u32 size = kattr->test.data_size_in;
+ 	u32 repeat = kattr->test.repeat;
++	struct netdev_rx_queue *rxqueue;
+ 	struct xdp_buff xdp = {};
+ 	u32 retval, duration;
+ 	void *data;
+@@ -165,6 +166,9 @@ int bpf_prog_test_run_xdp(struct bpf_prog *prog, const union bpf_attr *kattr,
+ 	xdp.data_meta = xdp.data;
+ 	xdp.data_end = xdp.data + size;
+ 
++	rxqueue = __netif_get_rx_queue(current->nsproxy->net_ns->loopback_dev, 0);
++	xdp.rxq = &rxqueue->xdp_rxq;
++
+ 	retval = bpf_test_run(prog, &xdp, repeat, &duration);
+ 	if (xdp.data != data + XDP_PACKET_HEADROOM + NET_IP_ALIGN)
+ 		size = xdp.data_end - xdp.data;
+diff --git a/tools/testing/selftests/bpf/test_verifier.c b/tools/testing/selftests/bpf/test_verifier.c
+index 697bd83de295..c0f16e93f9bd 100644
+--- a/tools/testing/selftests/bpf/test_verifier.c
++++ b/tools/testing/selftests/bpf/test_verifier.c
+@@ -7779,6 +7779,20 @@ static struct bpf_test tests[] = {
+ 		.errstr = "unknown opcode d7",
+ 		.result = REJECT,
+ 	},
++	{
++		"XDP, using ifindex from netdev",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, 0),
++			BPF_LDX_MEM(BPF_W, BPF_REG_2, BPF_REG_1,
++				    offsetof(struct xdp_md, ingress_ifindex)),
++			BPF_JMP_IMM(BPF_JLT, BPF_REG_2, 1, 1),
++			BPF_MOV64_IMM(BPF_REG_0, 1),
++			BPF_EXIT_INSN(),
++		},
++		.result = ACCEPT,
++		.prog_type = BPF_PROG_TYPE_XDP,
++		.retval = 1,
++	},
+ 	{
+ 		"meta access, test1",
+ 		.insns = {

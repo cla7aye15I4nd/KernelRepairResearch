@@ -1,0 +1,22 @@
+id: df9412138a14678abd73a2b70a57241f63563ed1
+bug_link: https://syzkaller.appspot.com/bug?extid=df9412138a14678abd73a2b70a57241f63563ed1
+title: 'KASAN: use-after-free Read in sctp_association_free'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6363b3f3ac5be096d08c8c504128befa0c033529
+fix_commit: ca3af4dd28cff4e7216e213ba3b671fbf9f84758
+datetime: '2017-11-16T10:49:00+09:00'
+fix_commit_message: "sctp: do not free asoc when it is already dead in sctp_sendmsg\n\
+  \nNow in sctp_sendmsg sctp_wait_for_sndbuf could schedule out without\nholding sock\
+  \ sk. It means the current asoc can be freed elsewhere,\nlike when receiving an\
+  \ abort packet.\n\nIf the asoc is just created in sctp_sendmsg and sctp_wait_for_sndbuf\n\
+  returns err, the asoc will be freed again due to new_asoc is not nil.\nAn use-after-free\
+  \ issue would be triggered by this.\n\nThis patch is to fix it by setting new_asoc\
+  \ with nil if the asoc is\nalready dead when cpu schedules back, so that it will\
+  \ not be freed\nagain in sctp_sendmsg.\n\nv1->v2:\n  set new_asoc as nil in sctp_sendmsg\
+  \ instead of sctp_wait_for_sndbuf.\n\nSuggested-by: Neil Horman <nhorman@tuxdriver.com>\n\
+  Reported-by: Dmitry Vyukov <dvyukov@google.com>\nSigned-off-by: Xin Long <lucien.xin@gmail.com>\n\
+  Acked-by: Neil Horman <nhorman@tuxdriver.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 3
+covered_count: 1

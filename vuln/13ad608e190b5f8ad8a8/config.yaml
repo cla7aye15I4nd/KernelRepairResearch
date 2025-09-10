@@ -1,0 +1,32 @@
+id: 13ad608e190b5f8ad8a8
+bug_link: https://syzkaller.appspot.com/bug?extid=13ad608e190b5f8ad8a8
+title: memory leak in garp_request_join
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a34dcbfa1475f18a8f1b1dc3dedb76d746874e61
+fix_commit: 42ca63f980842918560b25f0244307fd83b4777c
+datetime: '2021-07-01T11:21:57-07:00'
+fix_commit_message: "net/802/garp: fix memleak in garp_request_join()\n\nI got kmemleak\
+  \ report when doing fuzz test:\n\nBUG: memory leak\nunreferenced object 0xffff88810c909b80\
+  \ (size 64):\n  comm \"syz\", pid 957, jiffies 4295220394 (age 399.090s)\n  hex\
+  \ dump (first 32 bytes):\n    01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n\
+  \    00 00 00 00 00 00 00 00 08 00 00 00 01 02 00 04  ................\n  backtrace:\n\
+  \    [<00000000ca1f2e2e>] garp_request_join+0x285/0x3d0\n    [<00000000bf153351>]\
+  \ vlan_gvrp_request_join+0x15b/0x190\n    [<0000000024005e72>] vlan_dev_open+0x706/0x980\n\
+  \    [<00000000dc20c4d4>] __dev_open+0x2bb/0x460\n    [<0000000066573004>] __dev_change_flags+0x501/0x650\n\
+  \    [<0000000035b42f83>] rtnl_configure_link+0xee/0x280\n    [<00000000a5e69de0>]\
+  \ __rtnl_newlink+0xed5/0x1550\n    [<00000000a5258f4a>] rtnl_newlink+0x66/0x90\n\
+  \    [<00000000506568ee>] rtnetlink_rcv_msg+0x439/0xbd0\n    [<00000000b7eaeae1>]\
+  \ netlink_rcv_skb+0x14d/0x420\n    [<00000000c373ce66>] netlink_unicast+0x550/0x750\n\
+  \    [<00000000ec74ce74>] netlink_sendmsg+0x88b/0xda0\n    [<00000000381ff246>]\
+  \ sock_sendmsg+0xc9/0x120\n    [<000000008f6a2db3>] ____sys_sendmsg+0x6e8/0x820\n\
+  \    [<000000008d9c1735>] ___sys_sendmsg+0x145/0x1c0\n    [<00000000aa39dd8b>] __sys_sendmsg+0xfe/0x1d0\n\
+  \nCalling garp_request_leave() after garp_request_join(), the attr->state\nis set\
+  \ to GARP_APPLICANT_VO, garp_attr_destroy() won't be called in last\ntransmit event\
+  \ in garp_uninit_applicant(), the attr of applicant will be\nleaked. To fix this\
+  \ leak, iterate and free each attr of applicant before\nrerturning from garp_uninit_applicant().\n\
+  \nReported-by: Hulk Robot <hulkci@huawei.com>\nSigned-off-by: Yang Yingliang <yangyingliang@huawei.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/802
+hunk_count: 2
+covered_count: 1

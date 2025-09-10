@@ -1,0 +1,28 @@
+id: 46f513c3033d592409d2
+bug_link: https://syzkaller.appspot.com/bug?extid=46f513c3033d592409d2
+title: 'WARNING: ODEBUG bug in tcindex_destroy_work (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1a323ea5356edbb3073dc59d51b9e6b86908857d
+fix_commit: 304e024216a802a7dc8ba75d36de82fa136bbf3e
+datetime: '2020-04-01T11:06:23-07:00'
+fix_commit_message: "net_sched: add a temporary refcnt for struct tcindex_data\n\n\
+  Although we intentionally use an ordered workqueue for all tc\nfilter works, the\
+  \ ordering is not guaranteed by RCU work,\ngiven that tcf_queue_work() is esstenially\
+  \ a call_rcu().\n\nThis problem is demostrated by Thomas:\n\n  CPU 0:\n    tcf_queue_work()\n\
+  \      tcf_queue_work(&r->rwork, tcindex_destroy_rexts_work);\n\n  -> Migration\
+  \ to CPU 1\n\n  CPU 1:\n     tcf_queue_work(&p->rwork, tcindex_destroy_work);\n\n\
+  so the 2nd work could be queued before the 1st one, which leads\nto a free-after-free.\n\
+  \nEnforcing this order in RCU work is hard as it requires to change\nRCU code too.\
+  \ Fortunately we can workaround this problem in tcindex\nfilter by taking a temporary\
+  \ refcnt, we only refcnt it right before\nwe begin to destroy it. This simplifies\
+  \ the code a lot as a full\nrefcnt requires much more changes in tcindex_set_parms().\n\
+  \nReported-by: syzbot+46f513c3033d592409d2@syzkaller.appspotmail.com\nFixes: 3d210534cc93\
+  \ (\"net_sched: fix a race condition in tcindex_destroy()\")\nCc: Thomas Gleixner\
+  \ <tglx@linutronix.de>\nCc: Paul E. McKenney <paulmck@kernel.org>\nCc: Jamal Hadi\
+  \ Salim <jhs@mojatatu.com>\nCc: Jiri Pirko <jiri@resnulli.us>\nSigned-off-by: Cong\
+  \ Wang <xiyou.wangcong@gmail.com>\nReviewed-by: Paul E. McKenney <paulmck@kernel.org>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sched
+hunk_count: 14
+covered_count: 8

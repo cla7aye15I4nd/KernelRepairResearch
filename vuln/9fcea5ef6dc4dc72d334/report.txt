@@ -1,0 +1,130 @@
+ntfs3: loop0: Failed to initialize $Extend/$Reparse.
+ntfs3: loop0: Mark volume as dirty due to NTFS errors
+==================================================================
+BUG: KASAN: slab-out-of-bounds in ntfs_list_ea fs/ntfs3/xattr.c:232 [inline]
+BUG: KASAN: slab-out-of-bounds in ntfs_listxattr+0x3b6/0x5b0 fs/ntfs3/xattr.c:733
+Read of size 48 at addr ffff88801c865e30 by task syz-executor215/5061
+
+CPU: 0 PID: 5061 Comm: syz-executor215 Not tainted 6.6.0-syzkaller-16176-g1b907d050735 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/09/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2d0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0x163/0x540 mm/kasan/report.c:475
+ kasan_report+0x142/0x170 mm/kasan/report.c:588
+ kasan_check_range+0x27e/0x290 mm/kasan/generic.c:187
+ __asan_memcpy+0x29/0x70 mm/kasan/shadow.c:105
+ ntfs_list_ea fs/ntfs3/xattr.c:232 [inline]
+ ntfs_listxattr+0x3b6/0x5b0 fs/ntfs3/xattr.c:733
+ vfs_listxattr fs/xattr.c:494 [inline]
+ listxattr+0x103/0x280 fs/xattr.c:841
+ path_listxattr fs/xattr.c:865 [inline]
+ __do_sys_listxattr fs/xattr.c:877 [inline]
+ __se_sys_listxattr fs/xattr.c:874 [inline]
+ __x64_sys_listxattr+0x176/0x230 fs/xattr.c:874
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7f742ba5f5b9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffff4e73db8 EFLAGS: 00000246 ORIG_RAX: 00000000000000c2
+RAX: ffffffffffffffda RBX: 0032656c69662f2e RCX: 00007f742ba5f5b9
+RDX: 0000000000000098 RSI: 0000000020000100 RDI: 0000000020000040
+RBP: 00007f742baf1610 R08: 000000000001f1b1 R09: 0000000000000000
+R10: 00007ffff4e73c80 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffff4e73f88 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+Allocated by task 5061:
+ kasan_save_stack mm/kasan/common.c:45 [inline]
+ kasan_set_track+0x4f/0x70 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:383
+ kasan_kmalloc include/linux/kasan.h:198 [inline]
+ __do_kmalloc_node mm/slab_common.c:1007 [inline]
+ __kmalloc+0xb9/0x230 mm/slab_common.c:1020
+ kmalloc include/linux/slab.h:604 [inline]
+ ntfs_read_ea+0x48e/0xa10 fs/ntfs3/xattr.c:118
+ ntfs_list_ea fs/ntfs3/xattr.c:204 [inline]
+ ntfs_listxattr+0x17d/0x5b0 fs/ntfs3/xattr.c:733
+ vfs_listxattr fs/xattr.c:494 [inline]
+ listxattr+0x103/0x280 fs/xattr.c:841
+ path_listxattr fs/xattr.c:865 [inline]
+ __do_sys_listxattr fs/xattr.c:877 [inline]
+ __se_sys_listxattr fs/xattr.c:874 [inline]
+ __x64_sys_listxattr+0x176/0x230 fs/xattr.c:874
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+The buggy address belongs to the object at ffff88801c865e00
+ which belongs to the cache kmalloc-64 of size 64
+The buggy address is located 48 bytes inside of
+ allocated 60-byte region [ffff88801c865e00, ffff88801c865e3c)
+
+The buggy address belongs to the physical page:
+page:ffffea0000721940 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x1c865
+anon flags: 0xfff00000000800(slab|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000800 ffff888012c41640 ffffea0000a43b80 dead000000000005
+raw: 0000000000000000 0000000080200020 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x12c40(GFP_NOFS|__GFP_NOWARN|__GFP_NORETRY), pid 4517, tgid 4517 (udevadm), ts 19228779552, free_ts 14013421357
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x1e6/0x210 mm/page_alloc.c:1537
+ prep_new_page mm/page_alloc.c:1544 [inline]
+ get_page_from_freelist+0x339a/0x3530 mm/page_alloc.c:3312
+ __alloc_pages+0x255/0x670 mm/page_alloc.c:4568
+ alloc_pages_mpol+0x3de/0x640 mm/mempolicy.c:2133
+ alloc_slab_page+0x6a/0x160 mm/slub.c:1870
+ allocate_slab mm/slub.c:2017 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2070
+ ___slab_alloc+0xc85/0x1310 mm/slub.c:3223
+ __slab_alloc mm/slub.c:3322 [inline]
+ __slab_alloc_node mm/slub.c:3375 [inline]
+ slab_alloc_node mm/slub.c:3468 [inline]
+ __kmem_cache_alloc_node+0x21d/0x300 mm/slub.c:3517
+ __do_kmalloc_node mm/slab_common.c:1006 [inline]
+ __kmalloc+0xa8/0x230 mm/slab_common.c:1020
+ kmalloc include/linux/slab.h:604 [inline]
+ tomoyo_add_entry security/tomoyo/common.c:2023 [inline]
+ tomoyo_supervisor+0xe06/0x11f0 security/tomoyo/common.c:2095
+ tomoyo_audit_path_log security/tomoyo/file.c:168 [inline]
+ tomoyo_path_permission+0x243/0x360 security/tomoyo/file.c:587
+ tomoyo_path_perm+0x480/0x730 security/tomoyo/file.c:838
+ security_inode_getattr+0xd3/0x120 security/security.c:2153
+ vfs_getattr+0x2a/0x3a0 fs/stat.c:169
+ vfs_statx+0x198/0x4c0 fs/stat.c:244
+ vfs_fstatat+0x135/0x190 fs/stat.c:295
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1137 [inline]
+ free_unref_page_prepare+0x92a/0xa50 mm/page_alloc.c:2347
+ free_unref_page+0x37/0x3f0 mm/page_alloc.c:2487
+ kasan_depopulate_vmalloc_pte+0x74/0x90 mm/kasan/shadow.c:427
+ apply_to_pte_range mm/memory.c:2598 [inline]
+ apply_to_pmd_range mm/memory.c:2642 [inline]
+ apply_to_pud_range mm/memory.c:2678 [inline]
+ apply_to_p4d_range mm/memory.c:2714 [inline]
+ __apply_to_page_range+0x8e2/0xe00 mm/memory.c:2748
+ kasan_release_vmalloc+0x9a/0xb0 mm/kasan/shadow.c:544
+ __purge_vmap_area_lazy+0xc0f/0x19c0 mm/vmalloc.c:1770
+ drain_vmap_area_work+0x40/0xd0 mm/vmalloc.c:1804
+ process_one_work kernel/workqueue.c:2630 [inline]
+ process_scheduled_works+0x90f/0x1400 kernel/workqueue.c:2703
+ worker_thread+0xa5f/0xff0 kernel/workqueue.c:2784
+ kthread+0x2d3/0x370 kernel/kthread.c:388
+ ret_from_fork+0x48/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+
+Memory state around the buggy address:
+ ffff88801c865d00: 00 00 00 00 00 00 00 07 fc fc fc fc fc fc fc fc
+ ffff88801c865d80: 00 00 00 00 00 00 fc fc fc fc fc fc fc fc fc fc
+>ffff88801c865e00: 00 00 00 00 00 00 00 04 fc fc fc fc fc fc fc fc
+                                        ^
+ ffff88801c865e80: 00 00 00 00 00 00 00 06 fc fc fc fc fc fc fc fc
+ ffff88801c865f00: 00 00 00 00 00 00 fc fc fc fc fc fc fc fc fc fc
+==================================================================

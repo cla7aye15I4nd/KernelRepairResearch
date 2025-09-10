@@ -1,0 +1,81 @@
+id: 6efc50cc1f8d718d6cb7
+bug_link: https://syzkaller.appspot.com/bug?extid=6efc50cc1f8d718d6cb7
+title: 'KASAN: slab-out-of-bounds Read in extract_iter_to_sg'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7a7f094635349a7d0314364ad50bdeb770b6df4f
+fix_commit: 4380499218c6a1aa77e80e3bf6da107dd8babf62
+datetime: '2023-06-18T14:26:21+01:00'
+fix_commit_message: 'crypto: Fix af_alg_sendmsg(MSG_SPLICE_PAGES) sglist limit
+
+
+  When af_alg_sendmsg() calls extract_iter_to_sg(), it passes MAX_SGL_ENTS as
+
+  the maximum number of elements that may be written to, but some of the
+
+  elements may already have been used (as recorded in sgl->cur), so
+
+  extract_iter_to_sg() may end up overrunning the scatterlist.
+
+
+  Fix this to limit the number of elements to "MAX_SGL_ENTS - sgl->cur".
+
+
+  Note: It probably makes sense in future to alter the behaviour of
+
+  extract_iter_to_sg() to stop if "sgtable->nents >= sg_max" instead, but
+
+  this is a smaller fix for now.
+
+
+  The bug causes errors looking something like:
+
+
+  BUG: KASAN: slab-out-of-bounds in sg_assign_page include/linux/scatterlist.h:109
+  [inline]
+
+  BUG: KASAN: slab-out-of-bounds in sg_set_page include/linux/scatterlist.h:139 [inline]
+
+  BUG: KASAN: slab-out-of-bounds in extract_bvec_to_sg lib/scatterlist.c:1183 [inline]
+
+  BUG: KASAN: slab-out-of-bounds in extract_iter_to_sg lib/scatterlist.c:1352 [inline]
+
+  BUG: KASAN: slab-out-of-bounds in extract_iter_to_sg+0x17a6/0x1960 lib/scatterlist.c:1339
+
+
+  Fixes: bf63e250c4b1 ("crypto: af_alg: Support MSG_SPLICE_PAGES")
+
+  Reported-by: syzbot+6efc50cc1f8d718d6cb7@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/000000000000b2585a05fdeb8379@google.com/
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  Tested-by: syzbot+6efc50cc1f8d718d6cb7@syzkaller.appspotmail.com
+
+  cc: Herbert Xu <herbert@gondor.apana.org.au>
+
+  cc: "David S. Miller" <davem@davemloft.net>
+
+  cc: Eric Dumazet <edumazet@google.com>
+
+  cc: Jakub Kicinski <kuba@kernel.org>
+
+  cc: Paolo Abeni <pabeni@redhat.com>
+
+  cc: Jens Axboe <axboe@kernel.dk>
+
+  cc: Matthew Wilcox <willy@infradead.org>
+
+  cc: linux-crypto@vger.kernel.org
+
+  cc: netdev@vger.kernel.org
+
+  Acked-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- crypto
+hunk_count: 1
+covered_count: 1

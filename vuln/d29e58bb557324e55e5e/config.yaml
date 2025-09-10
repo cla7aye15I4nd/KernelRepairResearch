@@ -1,0 +1,44 @@
+id: d29e58bb557324e55e5e
+bug_link: https://syzkaller.appspot.com/bug?extid=d29e58bb557324e55e5e
+title: 'KASAN: vmalloc-out-of-bounds Read in bpf_trace_run3'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f2a99ddfd0aaff5f5c53ea1f652b5160ba5ee9b7
+fix_commit: befe6d946551d65cddbd32b9cb0170b0249fd5ed
+datetime: '2021-02-02T17:02:07-05:00'
+fix_commit_message: "tracepoint: Do not fail unregistering a probe due to memory failure\n\
+  \nThe list of tracepoint callbacks is managed by an array that is protected\nby\
+  \ RCU. To update this array, a new array is allocated, the updates are\ncopied over\
+  \ to the new array, and then the list of functions for the\ntracepoint is switched\
+  \ over to the new array. After a completion of an RCU\ngrace period, the old array\
+  \ is freed.\n\nThis process happens for both adding a callback as well as removing\
+  \ one.\nBut on removing a callback, if the new array fails to be allocated, the\n\
+  callback is not removed, and may be used after it is freed by the clients\nof the\
+  \ tracepoint.\n\nThere's really no reason to fail if the allocation for a new array\
+  \ fails\nwhen removing a function. Instead, the function can simply be replaced\
+  \ by a\nstub function that could be cleaned up on the next modification of the\n\
+  array. That is, instead of calling the function registered to the\ntracepoint, it\
+  \ would call a stub function in its place.\n\nLink: https://lore.kernel.org/r/20201115055256.65625-1-mmullins@mmlx.us\n\
+  Link: https://lore.kernel.org/r/20201116175107.02db396d@gandalf.local.home\nLink:\
+  \ https://lore.kernel.org/r/20201117211836.54acaef2@oasis.local.home\nLink: https://lkml.kernel.org/r/20201118093405.7a6d2290@gandalf.local.home\n\
+  \n[ Note, this version does use undefined compiler behavior (assuming that\n  a\
+  \ stub function with no parameters or return, can be called by a location\n  that\
+  \ thinks it has parameters but still no return value. Static calls\n  do the same\
+  \ thing, so this trick is not without precedent.\n\n  There's another solution that\
+  \ uses RCU tricks and is more complex, but\n  can be an alternative if this solution\
+  \ becomes an issue.\n\n  Link: https://lore.kernel.org/lkml/20210127170721.58bce7cc@gandalf.local.home/\n\
+  ]\n\nCc: Peter Zijlstra <peterz@infradead.org>\nCc: Josh Poimboeuf <jpoimboe@redhat.com>\n\
+  Cc: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>\nCc: Ingo Molnar <mingo@redhat.com>\n\
+  Cc: Alexei Starovoitov <ast@kernel.org>\nCc: Daniel Borkmann <daniel@iogearbox.net>\n\
+  Cc: Dmitry Vyukov <dvyukov@google.com>\nCc: Martin KaFai Lau <kafai@fb.com>\nCc:\
+  \ Song Liu <songliubraving@fb.com>\nCc: Yonghong Song <yhs@fb.com>\nCc: Andrii Nakryiko\
+  \ <andriin@fb.com>\nCc: John Fastabend <john.fastabend@gmail.com>\nCc: KP Singh\
+  \ <kpsingh@chromium.org>\nCc: netdev <netdev@vger.kernel.org>\nCc: bpf <bpf@vger.kernel.org>\n\
+  Cc: Kees Cook <keescook@chromium.org>\nCc: Florian Weimer <fw@deneb.enyo.de>\nFixes:\
+  \ 97e1c18e8d17b (\"tracing: Kernel Tracepoints\")\nReported-by: syzbot+83aa762ef23b6f0d1991@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+d29e58bb557324e55e5e@syzkaller.appspotmail.com\nReported-by:\
+  \ Matt Mullins <mmullins@mmlx.us>\nSigned-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>\n\
+  Tested-by: Matt Mullins <mmullins@mmlx.us>\n"
+submodule:
+- kernel
+hunk_count: 6
+covered_count: 0

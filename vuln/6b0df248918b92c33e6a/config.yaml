@@ -1,0 +1,29 @@
+id: 6b0df248918b92c33e6a
+bug_link: https://syzkaller.appspot.com/bug?extid=6b0df248918b92c33e6a
+title: 'KASAN: slab-use-after-free Write in recv_work'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ce32496ec1abe866225f2e2005ceda68cf4c7bf4
+fix_commit: 844b8cdc681612ff24df62cdefddeab5772fadf1
+datetime: '2025-01-06T07:38:20-07:00'
+fix_commit_message: "nbd: don't allow reconnect after disconnect\n\nFollowing process\
+  \ can cause nbd_config UAF:\n\n1) grab nbd_config temporarily;\n\n2) nbd_genl_disconnect()\
+  \ flush all recv_work() and release the\ninitial reference:\n\n  nbd_genl_disconnect\n\
+  \   nbd_disconnect_and_put\n    nbd_disconnect\n     flush_workqueue(nbd->recv_workq)\n\
+  \    if (test_and_clear_bit(NBD_RT_HAS_CONFIG_REF, ...))\n     nbd_config_put\n\
+  \     -> due to step 1), reference is still not zero\n\n3) nbd_genl_reconfigure()\
+  \ queue recv_work() again;\n\n  nbd_genl_reconfigure\n   config = nbd_get_config_unlocked(nbd)\n\
+  \   if (!config)\n   -> succeed\n   if (!test_bit(NBD_RT_BOUND, ...))\n   -> succeed\n\
+  \   nbd_reconnect_socket\n    queue_work(nbd->recv_workq, &args->work)\n\n4) step\
+  \ 1) release the reference;\n\n5) Finially, recv_work() will trigger UAF:\n\n  recv_work\n\
+  \   nbd_config_put(nbd)\n   -> nbd_config is freed\n   atomic_dec(&config->recv_threads)\n\
+  \   -> UAF\n\nFix the problem by clearing NBD_RT_BOUND in nbd_genl_disconnect(),\
+  \ so\nthat nbd_genl_reconfigure() will fail.\n\nFixes: b7aa3d39385d (\"nbd: add\
+  \ a reconfigure netlink command\")\nReported-by: syzbot+6b0df248918b92c33e6a@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/all/675bfb65.050a0220.1a2d0d.0006.GAE@google.com/\n\
+  Signed-off-by: Yu Kuai <yukuai3@huawei.com>\nReviewed-by: Christoph Hellwig <hch@lst.de>\n\
+  Link: https://lore.kernel.org/r/20250103092859.3574648-1-yukuai1@huaweicloud.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 1
+covered_count: 0

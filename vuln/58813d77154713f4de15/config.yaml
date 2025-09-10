@@ -1,0 +1,40 @@
+id: 58813d77154713f4de15
+bug_link: https://syzkaller.appspot.com/bug?extid=58813d77154713f4de15
+title: 'KASAN: use-after-free Read in snd_timer_process_callbacks'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4b81dad109ad7d7b288804fcdc6475b48f242210
+fix_commit: df55531b8b0eea9d2473f5697ae4f38d0df6bec7
+datetime: '2019-04-09T12:29:34+02:00'
+fix_commit_message: 'ALSA: timer: Revert active callback sync check at close
+
+
+  This is essentially a revert of the commit a7588c896b05 ("ALSA: timer:
+
+  Check ack_list emptiness instead of bit flag").  The intended change
+
+  by the commit turns out to be insufficient, as snd_timer_close*()
+
+  always calls snd_timer_stop() that deletes the ack_list beforehand.
+
+
+  In theory, we can change the behavior of snd_timer_stop() to sync the
+
+  pending ack_list, but this will become a deadlock for the callback
+
+  like sequencer that calls again snd_timer_stop() from itself.  So,
+
+  reverting the change is a more straightforward solution.
+
+
+  Fixes: a7588c896b05 ("ALSA: timer: Check ack_list emptiness instead of bit flag")
+
+  Reported-by: syzbot+58813d77154713f4de15@syzkaller.appspotmail.com
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- include/sound
+- sound/core
+hunk_count: 3
+covered_count: 2

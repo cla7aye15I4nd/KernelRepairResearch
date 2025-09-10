@@ -1,0 +1,48 @@
+id: be51ca5a4d97f017cd50
+bug_link: https://syzkaller.appspot.com/bug?extid=be51ca5a4d97f017cd50
+title: 'KASAN: null-ptr-deref Write in io_uring_cancel_sqpoll'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0b8c0e7c9692cfcfa02c9052d4d53ae67901c400
+fix_commit: 6d042ffb598ed83e7d5623cc961d249def5b9829
+datetime: '2021-04-27T07:37:39-06:00'
+fix_commit_message: 'io_uring: Check current->io_uring in io_uring_cancel_sqpoll
+
+
+  syzkaller identified KASAN: null-ptr-deref Write in
+
+  io_uring_cancel_sqpoll.
+
+
+  io_uring_cancel_sqpoll is called by io_sq_thread before calling
+
+  io_uring_alloc_task_context. This leads to current->io_uring being NULL.
+
+  io_uring_cancel_sqpoll should not have to deal with threads where
+
+  current->io_uring is NULL.
+
+
+  In order to cast a wider safety net, perform input sanitisation directly
+
+  in io_uring_cancel_sqpoll and return for NULL value of current->io_uring.
+
+  This is safe since if current->io_uring isn''t set, then there''s no way
+
+  for the task to have submitted any requests.
+
+
+  Reported-by: syzbot+be51ca5a4d97f017cd50@syzkaller.appspotmail.com
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Palash Oswal <hello@oswalpalash.com>
+
+  Link: https://lore.kernel.org/r/20210427125148.21816-1-hello@oswalpalash.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- fs
+hunk_count: 1
+covered_count: 0

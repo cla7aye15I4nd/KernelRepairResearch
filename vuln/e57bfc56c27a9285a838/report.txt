@@ -1,0 +1,67 @@
+REISERFS (device loop0): using 3.5.x disk format
+REISERFS warning (device loop0): vs-13060 reiserfs_update_sd_size: stat data of object [1 2 0x0 SD] (nlink == 4) not found (pos 2)
+REISERFS (device loop0): Created .reiserfs_priv - reserved for xattr storage.
+------------[ cut here ]------------
+kernel BUG at fs/reiserfs/item_ops.c:569!
+invalid opcode: 0000 [#1] PREEMPT SMP KASAN
+CPU: 1 PID: 5062 Comm: syz-executor395 Not tainted 6.6.0-syzkaller-15365-g305230142ae0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/09/2023
+RIP: 0010:direntry_check_right+0x26b/0x280 fs/reiserfs/item_ops.c:569
+Code: df e9 38 ff ff ff 89 d9 80 e1 07 38 c1 0f 8c 3e ff ff ff be 04 00 00 00 48 89 df e8 7f 36 af ff e9 2c ff ff ff e8 d5 13 53 ff <0f> 0b e8 ce 13 53 ff 0f 0b 66 2e 0f 1f 84 00 00 00 00 00 66 90 f3
+RSP: 0018:ffffc90003afeed0 EFLAGS: 00010293
+RAX: ffffffff823ba82b RBX: 0000000000000020 RCX: ffff888079929dc0
+RDX: 0000000000000000 RSI: 0000000000000020 RDI: 0000000000000041
+RBP: 0000000000000021 R08: ffffffff823ba69e R09: ffffffff8235650d
+R10: 0000000000000004 R11: ffff888079929dc0 R12: 00000000fffffffe
+R13: 0000000000000000 R14: 0000000000000002 R15: ffff8880549c4120
+FS:  0000000000000000(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f3e01595ed8 CR3: 0000000028720000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ check_right+0x4d1/0x770 fs/reiserfs/fix_node.c:355
+ dc_check_balance_leaf fs/reiserfs/fix_node.c:1983 [inline]
+ dc_check_balance fs/reiserfs/fix_node.c:2039 [inline]
+ check_balance fs/reiserfs/fix_node.c:2086 [inline]
+ fix_nodes+0x3ff3/0x8ce0 fs/reiserfs/fix_node.c:2636
+ reiserfs_cut_from_item+0x466/0x2580 fs/reiserfs/stree.c:1740
+ reiserfs_do_truncate+0x9b9/0x14c0 fs/reiserfs/stree.c:1971
+ reiserfs_truncate_file+0x4da/0x820 fs/reiserfs/inode.c:2302
+ reiserfs_file_release+0x8ca/0xaa0 fs/reiserfs/file.c:109
+ __fput+0x3cc/0xa10 fs/file_table.c:394
+ task_work_run+0x24a/0x300 kernel/task_work.c:180
+ exit_task_work include/linux/task_work.h:38 [inline]
+ do_exit+0xa34/0x2750 kernel/exit.c:871
+ do_group_exit+0x206/0x2c0 kernel/exit.c:1021
+ __do_sys_exit_group kernel/exit.c:1032 [inline]
+ __se_sys_exit_group kernel/exit.c:1030 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1030
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7fe19c8650b9
+Code: Unable to access opcode bytes at 0x7fe19c86508f.
+RSP: 002b:00007ffdbbdc7968 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fe19c8650b9
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000000
+RBP: 00007fe19c8e0370 R08: ffffffffffffffb8 R09: 00007ffdbbdc7b88
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007fe19c8e0370
+R13: 0000000000000000 R14: 00007fe19c8e10e0 R15: 00007fe19c833980
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:direntry_check_right+0x26b/0x280 fs/reiserfs/item_ops.c:569
+Code: df e9 38 ff ff ff 89 d9 80 e1 07 38 c1 0f 8c 3e ff ff ff be 04 00 00 00 48 89 df e8 7f 36 af ff e9 2c ff ff ff e8 d5 13 53 ff <0f> 0b e8 ce 13 53 ff 0f 0b 66 2e 0f 1f 84 00 00 00 00 00 66 90 f3
+RSP: 0018:ffffc90003afeed0 EFLAGS: 00010293
+RAX: ffffffff823ba82b RBX: 0000000000000020 RCX: ffff888079929dc0
+RDX: 0000000000000000 RSI: 0000000000000020 RDI: 0000000000000041
+RBP: 0000000000000021 R08: ffffffff823ba69e R09: ffffffff8235650d
+R10: 0000000000000004 R11: ffff888079929dc0 R12: 00000000fffffffe
+R13: 0000000000000000 R14: 0000000000000002 R15: ffff8880549c4120
+FS:  0000000000000000(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f3e01595ed8 CR3: 0000000028720000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

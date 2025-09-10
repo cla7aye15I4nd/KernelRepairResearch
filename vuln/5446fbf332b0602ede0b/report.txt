@@ -1,0 +1,79 @@
+general protection fault, probably for non-canonical address 0xdffffc0185c8bde6: 0000 [#1] PREEMPT SMP KASAN NOPTI
+KASAN: probably user-memory-access in range [0x0000000c2e45ef30-0x0000000c2e45ef37]
+CPU: 1 PID: 5103 Comm: syz-executor.1 Not tainted 6.9.0-rc7-syzkaller-00012-gdccb07f2914c #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+RIP: 0010:hook_inode_free_security+0x5b/0xb0 security/landlock/fs.c:1047
+Code: 8a fd 48 8b 1b 48 c7 c0 c4 4e d5 8d 48 c1 e8 03 42 0f b6 04 30 84 c0 75 3e 48 63 05 33 59 65 09 48 01 c3 48 89 d8 48 c1 e8 03 <42> 80 3c 30 00 74 08 48 89 df e8 66 be 8a fd 48 83 3b 00 75 0d e8
+RSP: 0018:ffffc9000315f9a8 EFLAGS: 00010212
+RAX: 0000000185c8bde6 RBX: 0000000c2e45ef30 RCX: ffff888065638000
+RDX: 0000000000000000 RSI: 0000000000000040 RDI: ffff88805cc53270
+RBP: ffffffff8c01fb00 R08: ffffffff82132a15 R09: 1ffff1100b98a65f
+R10: dffffc0000000000 R11: ffffffff846ff540 R12: dffffc0000000000
+R13: 1ffff1100b98a683 R14: dffffc0000000000 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f32cfd7b000 CR3: 000000007a484000 CR4: 0000000000350ef0
+Call Trace:
+ <TASK>
+ security_inode_free+0x4a/0xd0 security/security.c:1613
+ __destroy_inode+0x2d9/0x650 fs/inode.c:286
+ destroy_inode fs/inode.c:309 [inline]
+ evict+0x521/0x630 fs/inode.c:682
+ dispose_list fs/inode.c:700 [inline]
+ evict_inodes+0x5f9/0x690 fs/inode.c:750
+ generic_shutdown_super+0x9d/0x2d0 fs/super.c:626
+ kill_block_super+0x44/0x90 fs/super.c:1675
+ deactivate_locked_super+0xc6/0x130 fs/super.c:472
+ cleanup_mnt+0x426/0x4c0 fs/namespace.c:1267
+ task_work_run+0x251/0x310 kernel/task_work.c:180
+ exit_task_work include/linux/task_work.h:38 [inline]
+ do_exit+0xa1b/0x27e0 kernel/exit.c:878
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1027
+ __do_sys_exit_group kernel/exit.c:1038 [inline]
+ __se_sys_exit_group kernel/exit.c:1036 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1036
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f2c7527dd69
+Code: Unable to access opcode bytes at 0x7f2c7527dd3f.
+RSP: 002b:00007ffd5d359e88 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 00007f2c752c93a3 RCX: 00007f2c7527dd69
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000002 R08: 00007ffd5d357c27 R09: 00007ffd5d35b140
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffd5d35b140
+R13: 00007f2c752c937e R14: 0000000000015e03 R15: 000000000000001e
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:hook_inode_free_security+0x5b/0xb0 security/landlock/fs.c:1047
+Code: 8a fd 48 8b 1b 48 c7 c0 c4 4e d5 8d 48 c1 e8 03 42 0f b6 04 30 84 c0 75 3e 48 63 05 33 59 65 09 48 01 c3 48 89 d8 48 c1 e8 03 <42> 80 3c 30 00 74 08 48 89 df e8 66 be 8a fd 48 83 3b 00 75 0d e8
+RSP: 0018:ffffc9000315f9a8 EFLAGS: 00010212
+RAX: 0000000185c8bde6 RBX: 0000000c2e45ef30 RCX: ffff888065638000
+RDX: 0000000000000000 RSI: 0000000000000040 RDI: ffff88805cc53270
+RBP: ffffffff8c01fb00 R08: ffffffff82132a15 R09: 1ffff1100b98a65f
+R10: dffffc0000000000 R11: ffffffff846ff540 R12: dffffc0000000000
+R13: 1ffff1100b98a683 R14: dffffc0000000000 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000020009000 CR3: 0000000023ea2000 CR4: 0000000000350ef0
+----------------
+Code disassembly (best guess):
+   0:	8a fd                	mov    %ch,%bh
+   2:	48 8b 1b             	mov    (%rbx),%rbx
+   5:	48 c7 c0 c4 4e d5 8d 	mov    $0xffffffff8dd54ec4,%rax
+   c:	48 c1 e8 03          	shr    $0x3,%rax
+  10:	42 0f b6 04 30       	movzbl (%rax,%r14,1),%eax
+  15:	84 c0                	test   %al,%al
+  17:	75 3e                	jne    0x57
+  19:	48 63 05 33 59 65 09 	movslq 0x9655933(%rip),%rax        # 0x9655953
+  20:	48 01 c3             	add    %rax,%rbx
+  23:	48 89 d8             	mov    %rbx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 80 3c 30 00       	cmpb   $0x0,(%rax,%r14,1) <-- trapping instruction
+  2f:	74 08                	je     0x39
+  31:	48 89 df             	mov    %rbx,%rdi
+  34:	e8 66 be 8a fd       	call   0xfd8abe9f
+  39:	48 83 3b 00          	cmpq   $0x0,(%rbx)
+  3d:	75 0d                	jne    0x4c
+  3f:	e8                   	.byte 0xe8

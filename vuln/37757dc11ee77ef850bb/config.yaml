@@ -1,0 +1,47 @@
+id: 37757dc11ee77ef850bb
+bug_link: https://syzkaller.appspot.com/bug?extid=37757dc11ee77ef850bb
+title: general protection fault in ata_msense_control
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e5dd410acb34c7341a0a93b429dcf3dabf9e3323
+fix_commit: 03a9cfc1314bf75cc7a83995f3a029a7ebf49c05
+datetime: '2024-09-24T16:56:21+09:00'
+fix_commit_message: 'ata: libata-scsi: Fix ata_msense_control_spgt2()
+
+
+  ata_msense_control_spgt2() can be called even for devices that do not
+
+  support CDL when the user requests the ALL_SUB_MPAGES mode sense page,
+
+  but for such device, this will cause a NULL pointer dereference as
+
+  dev->cdl is NULL. Similarly, we should not return any data if
+
+  ata_msense_control_spgt2() is called when the user requested the
+
+  CDL_T2A_SUB_MPAGE or CDL_T2B_SUB_MPAGE pages for a device that does not
+
+  support CDL.
+
+
+  Avoid this potential NULL pointer dereference by checking if the device
+
+  support CDL on entry to ata_msense_control_spgt2() and return 0 if it
+
+  does not support CDL.
+
+
+  Reported-by: syzbot+37757dc11ee77ef850bb@syzkaller.appspotmail.com
+
+  Tested-by: syzbot+37757dc11ee77ef850bb@syzkaller.appspotmail.com
+
+  Fixes: 602bcf212637 ("ata: libata: Improve CDL resource management")
+
+  Signed-off-by: Damien Le Moal <dlemoal@kernel.org>
+
+  Reviewed-by: Hannes Reinecke <hare@suse.de>
+
+  '
+submodule:
+- drivers/ata
+hunk_count: 1
+covered_count: 1

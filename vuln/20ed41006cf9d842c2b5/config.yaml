@@ -1,0 +1,89 @@
+id: 20ed41006cf9d842c2b5
+bug_link: https://syzkaller.appspot.com/bug?extid=20ed41006cf9d842c2b5
+title: 'BUG: unable to handle kernel paging request in vma_merge_existing_range'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9c02223e2d9df5cb37c51aedb78f3960294e09b5
+fix_commit: 41e6ddcaa0f18dda4c3fadf22533775a30d6f72f
+datetime: '2025-04-11T17:32:37-07:00'
+fix_commit_message: 'mm/vma: add give_up_on_oom option on modify/merge, use in uffd
+  release
+
+
+  Currently, if a VMA merge fails due to an OOM condition arising on commit
+
+  merge or a failure to duplicate anon_vma''s, we report this so the caller
+
+  can handle it.
+
+
+  However there are cases where the caller is only ostensibly trying a
+
+  merge, and doesn''t mind if it fails due to this condition.
+
+
+  Since we do not want to introduce an implicit assumption that we only
+
+  actually modify VMAs after OOM conditions might arise, add a ''give up on
+
+  oom'' option and make an explicit contract that, should this flag be set, we
+
+  absolutely will not modify any VMAs should OOM arise and just bail out.
+
+
+  Since it''d be very unusual for a user to try to vma_modify() with this flag
+
+  set but be specifying a range within a VMA which ends up being split (which
+
+  can fail due to rlimit issues, not only OOM), we add a debug warning for
+
+  this condition.
+
+
+  The motivating reason for this is uffd release - syzkaller (and Pedro
+
+  Falcato''s VERY astute analysis) found a way in which an injected fault on
+
+  allocation, triggering an OOM condition on commit merge, would result in
+
+  uffd code becoming confused and treating an error value as if it were a VMA
+
+  pointer.
+
+
+  To avoid this, we make use of this new VMG flag to ensure that this never
+
+  occurs, utilising the fact that, should we be clearing entire VMAs, we do
+
+  not wish an OOM event to be reported to us.
+
+
+  Many thanks to Pedro Falcato for his excellent analysis and Jann Horn for
+
+  his insightful and intelligent analysis of the situation, both of whom were
+
+  instrumental in this fix.
+
+
+  Link: https://lkml.kernel.org/r/20250321100937.46634-1-lorenzo.stoakes@oracle.com
+
+  Reported-by: syzbot+20ed41006cf9d842c2b5@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/all/67dc67f0.050a0220.25ae54.001e.GAE@google.com/
+
+  Fixes: 47b16d0462a4 ("mm: abort vma_modify() on merge out of memory failure")
+
+  Signed-off-by: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
+
+  Suggested-by: Pedro Falcato <pfalcato@suse.de>
+
+  Suggested-by: Jann Horn <jannh@google.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 13
+covered_count: 5

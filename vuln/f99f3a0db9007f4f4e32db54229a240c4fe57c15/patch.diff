@@ -1,0 +1,88 @@
+diff --git a/block/bio.c b/block/bio.c
+index 5e901bfc0576..cc60213e56d8 100644
+--- a/block/bio.c
++++ b/block/bio.c
+@@ -935,7 +935,7 @@ static void submit_bio_wait_endio(struct bio *bio)
+  */
+ int submit_bio_wait(struct bio *bio)
+ {
+-	DECLARE_COMPLETION_ONSTACK(done);
++	DECLARE_COMPLETION_ONSTACK_MAP(done, bio->bi_disk->lockdep_map);
+ 
+ 	bio->bi_private = &done;
+ 	bio->bi_end_io = submit_bio_wait_endio;
+diff --git a/block/genhd.c b/block/genhd.c
+index dd305c65ffb0..630c0da6cfcf 100644
+--- a/block/genhd.c
++++ b/block/genhd.c
+@@ -1354,13 +1354,7 @@ dev_t blk_lookup_devt(const char *name, int partno)
+ }
+ EXPORT_SYMBOL(blk_lookup_devt);
+ 
+-struct gendisk *alloc_disk(int minors)
+-{
+-	return alloc_disk_node(minors, NUMA_NO_NODE);
+-}
+-EXPORT_SYMBOL(alloc_disk);
+-
+-struct gendisk *alloc_disk_node(int minors, int node_id)
++struct gendisk *__alloc_disk_node(int minors, int node_id)
+ {
+ 	struct gendisk *disk;
+ 	struct disk_part_tbl *ptbl;
+@@ -1411,7 +1405,7 @@ struct gendisk *alloc_disk_node(int minors, int node_id)
+ 	}
+ 	return disk;
+ }
+-EXPORT_SYMBOL(alloc_disk_node);
++EXPORT_SYMBOL(__alloc_disk_node);
+ 
+ struct kobject *get_disk(struct gendisk *disk)
+ {
+diff --git a/include/linux/genhd.h b/include/linux/genhd.h
+index ea652bfcd675..19d18710546a 100644
+--- a/include/linux/genhd.h
++++ b/include/linux/genhd.h
+@@ -206,6 +206,7 @@ struct gendisk {
+ #endif	/* CONFIG_BLK_DEV_INTEGRITY */
+ 	int node_id;
+ 	struct badblocks *bb;
++	struct lockdep_map lockdep_map;
+ };
+ 
+ static inline struct gendisk *part_to_disk(struct hd_struct *part)
+@@ -590,8 +591,7 @@ extern void __delete_partition(struct percpu_ref *);
+ extern void delete_partition(struct gendisk *, int);
+ extern void printk_all_partitions(void);
+ 
+-extern struct gendisk *alloc_disk_node(int minors, int node_id);
+-extern struct gendisk *alloc_disk(int minors);
++extern struct gendisk *__alloc_disk_node(int minors, int node_id);
+ extern struct kobject *get_disk(struct gendisk *disk);
+ extern void put_disk(struct gendisk *disk);
+ extern void blk_register_region(dev_t devt, unsigned long range,
+@@ -615,6 +615,24 @@ extern ssize_t part_fail_store(struct device *dev,
+ 			       const char *buf, size_t count);
+ #endif /* CONFIG_FAIL_MAKE_REQUEST */
+ 
++#define alloc_disk_node(minors, node_id)				\
++({									\
++	static struct lock_class_key __key;				\
++	const char *__name;						\
++	struct gendisk *__disk;						\
++									\
++	__name = "(gendisk_completion)"#minors"("#node_id")";		\
++									\
++	__disk = __alloc_disk_node(minors, node_id);			\
++									\
++	if (__disk)							\
++		lockdep_init_map(&__disk->lockdep_map, __name, &__key, 0); \
++									\
++	__disk;								\
++})
++
++#define alloc_disk(minors) alloc_disk_node(minors, NUMA_NO_NODE)
++
+ static inline int hd_ref_init(struct hd_struct *part)
+ {
+ 	if (percpu_ref_init(&part->ref, __delete_partition, 0,

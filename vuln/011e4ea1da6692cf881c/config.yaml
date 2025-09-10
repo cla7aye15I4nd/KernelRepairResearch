@@ -1,0 +1,55 @@
+id: 011e4ea1da6692cf881c
+bug_link: https://syzkaller.appspot.com/bug?extid=011e4ea1da6692cf881c
+title: possible deadlock in pipe_write
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 12c1b632d970c0138b4c5c65a1065e7d0604d272
+fix_commit: 055ca83559912f2cfd91c9441427bac4caf3c74e
+datetime: '2023-11-28T14:08:47+01:00'
+fix_commit_message: 'fs/pipe: Fix lockdep false-positive in watchqueue pipe_write()
+
+
+  When you try to splice between a normal pipe and a notification pipe,
+
+  get_pipe_info(..., true) fails, so splice() falls back to treating the
+
+  notification pipe like a normal pipe - so we end up in
+
+  iter_file_splice_write(), which first locks the input pipe, then calls
+
+  vfs_iter_write(), which locks the output pipe.
+
+
+  Lockdep complains about that, because we''re taking a pipe lock while
+
+  already holding another pipe lock.
+
+
+  I think this probably (?) can''t actually lead to deadlocks, since you''d
+
+  need another way to nest locking a normal pipe into locking a
+
+  watch_queue pipe, but the lockdep annotations don''t make that clear.
+
+
+  Bail out earlier in pipe_write() for notification pipes, before taking
+
+  the pipe lock.
+
+
+  Reported-and-tested-by: <syzbot+011e4ea1da6692cf881c@syzkaller.appspotmail.com>
+
+  Closes: https://syzkaller.appspot.com/bug?extid=011e4ea1da6692cf881c
+
+  Fixes: c73be61cede5 ("pipe: Add general notification queue support")
+
+  Signed-off-by: Jann Horn <jannh@google.com>
+
+  Link: https://lore.kernel.org/r/20231124150822.2121798-1-jannh@google.com
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

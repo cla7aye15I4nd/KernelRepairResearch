@@ -1,0 +1,68 @@
+diff --git a/kernel/bpf/sockmap.c b/kernel/bpf/sockmap.c
+index 00fb2e328d1b..9c67e96fe336 100644
+--- a/kernel/bpf/sockmap.c
++++ b/kernel/bpf/sockmap.c
+@@ -312,10 +312,12 @@ static void bpf_tcp_close(struct sock *sk, long timeout)
+ 	struct smap_psock *psock;
+ 	struct sock *osk;
+ 
++	lock_sock(sk);
+ 	rcu_read_lock();
+ 	psock = smap_psock_sk(sk);
+ 	if (unlikely(!psock)) {
+ 		rcu_read_unlock();
++		release_sock(sk);
+ 		return sk->sk_prot->close(sk, timeout);
+ 	}
+ 
+@@ -371,6 +373,7 @@ static void bpf_tcp_close(struct sock *sk, long timeout)
+ 		e = psock_map_pop(sk, psock);
+ 	}
+ 	rcu_read_unlock();
++	release_sock(sk);
+ 	close_fun(sk, timeout);
+ }
+ 
+@@ -2069,7 +2072,13 @@ static int sock_map_update_elem(struct bpf_map *map,
+ 		return -EOPNOTSUPP;
+ 	}
+ 
++	lock_sock(skops.sk);
++	preempt_disable();
++	rcu_read_lock();
+ 	err = sock_map_ctx_update_elem(&skops, map, key, flags);
++	rcu_read_unlock();
++	preempt_enable();
++	release_sock(skops.sk);
+ 	fput(socket->file);
+ 	return err;
+ }
+@@ -2410,7 +2419,13 @@ static int sock_hash_update_elem(struct bpf_map *map,
+ 		return -EINVAL;
+ 	}
+ 
++	lock_sock(skops.sk);
++	preempt_disable();
++	rcu_read_lock();
+ 	err = sock_hash_ctx_update_elem(&skops, map, key, flags);
++	rcu_read_unlock();
++	preempt_enable();
++	release_sock(skops.sk);
+ 	fput(socket->file);
+ 	return err;
+ }
+diff --git a/kernel/bpf/syscall.c b/kernel/bpf/syscall.c
+index d10ecd78105f..a31a1ba0f8ea 100644
+--- a/kernel/bpf/syscall.c
++++ b/kernel/bpf/syscall.c
+@@ -735,7 +735,9 @@ static int map_update_elem(union bpf_attr *attr)
+ 	if (bpf_map_is_dev_bound(map)) {
+ 		err = bpf_map_offload_update_elem(map, key, value, attr->flags);
+ 		goto out;
+-	} else if (map->map_type == BPF_MAP_TYPE_CPUMAP) {
++	} else if (map->map_type == BPF_MAP_TYPE_CPUMAP ||
++		   map->map_type == BPF_MAP_TYPE_SOCKHASH ||
++		   map->map_type == BPF_MAP_TYPE_SOCKMAP) {
+ 		err = map->ops->map_update_elem(map, key, value, attr->flags);
+ 		goto out;
+ 	}

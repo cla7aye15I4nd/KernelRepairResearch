@@ -1,0 +1,53 @@
+id: d84c80f9fe26a0f7a734
+bug_link: https://syzkaller.appspot.com/bug?extid=d84c80f9fe26a0f7a734
+title: 'BUG: unable to handle kernel paging request in isolate_freepages_block'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a6cf4e0fe3e740ed7af39fdda721e1ac12247dd3
+fix_commit: 60fce36afa9c77c7ccbf980c4f670f3be3651fce
+datetime: '2019-05-18T15:52:26-07:00'
+fix_commit_message: "mm/compaction.c: correct zone boundary handling when isolating\
+  \ pages from a pageblock\n\nsyzbot reported the following error from a tree with\
+  \ a head commit of\nbaf76f0c58ae (\"slip: make slhc_free() silently accept an error\
+  \ pointer\")\n\n  BUG: unable to handle kernel paging request at ffffea0003348000\n\
+  \  #PF error: [normal kernel read fault]\n  PGD 12c3f9067 P4D 12c3f9067 PUD 12c3f8067\
+  \ PMD 0\n  Oops: 0000 [#1] PREEMPT SMP KASAN\n  CPU: 1 PID: 28916 Comm: syz-executor.2\
+  \ Not tainted 5.1.0-rc6+ #89\n  Hardware name: Google Google Compute Engine/Google\
+  \ Compute Engine, BIOS Google 01/01/2011\n  RIP: 0010:constant_test_bit arch/x86/include/asm/bitops.h:314\
+  \ [inline]\n  RIP: 0010:PageCompound include/linux/page-flags.h:186 [inline]\n \
+  \ RIP: 0010:isolate_freepages_block+0x1c0/0xd40 mm/compaction.c:579\n  Code: 01\
+  \ d8 ff 4d 85 ed 0f 84 ef 07 00 00 e8 29 00 d8 ff 4c 89 e0 83 85 38 ff\n  ff ff\
+  \ 01 48 c1 e8 03 42 80 3c 38 00 0f 85 31 0a 00 00 <4d> 8b 2c 24 31 ff 49\n  c1 ed\
+  \ 10 41 83 e5 01 44 89 ee e8 3a 01 d8 ff\n  RSP: 0018:ffff88802b31eab8 EFLAGS: 00010246\n\
+  \  RAX: 1ffffd4000669000 RBX: 00000000000cd200 RCX: ffffc9000a235000\n  RDX: 000000000001ca5e\
+  \ RSI: ffffffff81988cc7 RDI: 0000000000000001\n  RBP: ffff88802b31ebd8 R08: ffff88805af700c0\
+  \ R09: 0000000000000000\n  R10: 0000000000000000 R11: 0000000000000000 R12: ffffea0003348000\n\
+  \  R13: 0000000000000000 R14: ffff88802b31f030 R15: dffffc0000000000\n  FS:  00007f61648dc700(0000)\
+  \ GS:ffff8880ae900000(0000) knlGS:0000000000000000\n  CS:  0010 DS: 0000 ES: 0000\
+  \ CR0: 0000000080050033\n  CR2: ffffea0003348000 CR3: 0000000037c64000 CR4: 00000000001426e0\n\
+  \  Call Trace:\n   fast_isolate_around mm/compaction.c:1243 [inline]\n   fast_isolate_freepages\
+  \ mm/compaction.c:1418 [inline]\n   isolate_freepages mm/compaction.c:1438 [inline]\n\
+  \   compaction_alloc+0x1aee/0x22e0 mm/compaction.c:1550\n\nThere is no reproducer\
+  \ and it is difficult to hit -- 1 crash every few\ndays.  The issue is very similar\
+  \ to the fix in commit 6b0868c820ff\n(\"mm/compaction.c: correct zone boundary handling\
+  \ when resetting pageblock\nskip hints\").  When isolating free pages around a target\
+  \ pageblock, the\nboundary handling is off by one and can stray into the next pageblock.\n\
+  Triggering the syzbot error requires that the end of pageblock is section\nor zone\
+  \ aligned, and that the next section is unpopulated.\n\nA more subtle consequence\
+  \ of the bug is that pageblocks were being\nimproperly used as migration targets\
+  \ which potentially hurts fragmentation\navoidance in the long-term one page at\
+  \ a time.\n\nA debugging patch revealed that it's definitely possible to stray outside\n\
+  of a pageblock which is not intended.  While syzbot cannot be used to\nverify this\
+  \ patch, it was confirmed that the debugging warning no longer\ntriggers with this\
+  \ patch applied.  It has also been confirmed that the THP\nallocation stress tests\
+  \ are not degraded by this patch.\n\nLink: http://lkml.kernel.org/r/20190510182124.GI18914@techsingularity.net\n\
+  Fixes: e332f741a8dd (\"mm, compaction: be selective about what pageblocks to clear\
+  \ skip hints\")\nSigned-off-by: Mel Gorman <mgorman@techsingularity.net>\nReported-by:\
+  \ syzbot+d84c80f9fe26a0f7a734@syzkaller.appspotmail.com\nCc: Dmitry Vyukov <dvyukov@google.com>\n\
+  Cc: Andrey Ryabinin <aryabinin@virtuozzo.com>\nCc: Qian Cai <cai@lca.pw>\nCc: Michal\
+  \ Hocko <mhocko@suse.com>\nCc: Vlastimil Babka <vbabka@suse.cz>\nCc: <stable@vger.kernel.org>\
+  \ # v5.1+\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 2
+covered_count: 2

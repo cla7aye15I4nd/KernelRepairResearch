@@ -1,0 +1,47 @@
+==================================================================
+BUG: KCSAN: data-race in __fsnotify_parent / __fsnotify_recalc_mask
+
+write to 0xffff888101441fd8 of 4 bytes by task 3256 on cpu 1:
+ __fsnotify_recalc_mask+0x216/0x320 fs/notify/mark.c:248
+ fsnotify_recalc_mask+0xaa/0x190 fs/notify/mark.c:286
+ fsnotify_add_mark_locked+0x6e0/0x840 fs/notify/mark.c:807
+ fsnotify_add_inode_mark_locked include/linux/fsnotify_backend.h:814 [inline]
+ inotify_new_watch fs/notify/inotify/inotify_user.c:620 [inline]
+ inotify_update_watch fs/notify/inotify/inotify_user.c:647 [inline]
+ __do_sys_inotify_add_watch fs/notify/inotify/inotify_user.c:786 [inline]
+ __se_sys_inotify_add_watch+0x660/0x800 fs/notify/inotify/inotify_user.c:729
+ __x64_sys_inotify_add_watch+0x43/0x50 fs/notify/inotify/inotify_user.c:729
+ x64_sys_call+0x2acb/0x2d60 arch/x86/include/generated/asm/syscalls_64.h:255
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff888101441fd8 of 4 bytes by task 8514 on cpu 0:
+ fsnotify_object_watched fs/notify/fsnotify.c:198 [inline]
+ __fsnotify_parent+0xd4/0x380 fs/notify/fsnotify.c:228
+ fsnotify_parent include/linux/fsnotify.h:96 [inline]
+ fsnotify_file include/linux/fsnotify.h:131 [inline]
+ fsnotify_open include/linux/fsnotify.h:401 [inline]
+ vfs_open+0x1b5/0x1f0 fs/open.c:1095
+ do_open fs/namei.c:3774 [inline]
+ path_openat+0x1ac2/0x1fa0 fs/namei.c:3933
+ do_filp_open+0xf7/0x200 fs/namei.c:3960
+ do_sys_openat2+0xab/0x120 fs/open.c:1415
+ do_sys_open fs/open.c:1430 [inline]
+ __do_sys_openat fs/open.c:1446 [inline]
+ __se_sys_openat fs/open.c:1441 [inline]
+ __x64_sys_openat+0xf3/0x120 fs/open.c:1441
+ x64_sys_call+0x1025/0x2d60 arch/x86/include/generated/asm/syscalls_64.h:258
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x00000000 -> 0x00002008
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 8514 Comm: syz.4.1929 Not tainted 6.11.0-syzkaller-11993-g3efc57369a0c #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+==================================================================
+loop4: detected capacity change from 0 to 512
+ext4 filesystem being mounted at /352/file0 supports timestamps until 2038-01-19 (0x7fffffff)
+tmpfs: Bad value for 'mpol'

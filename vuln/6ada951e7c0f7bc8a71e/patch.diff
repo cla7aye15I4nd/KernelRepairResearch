@@ -1,0 +1,34 @@
+diff --git a/include/linux/hugetlb.h b/include/linux/hugetlb.h
+index d3acecc5db4b..236ec7b63c54 100644
+--- a/include/linux/hugetlb.h
++++ b/include/linux/hugetlb.h
+@@ -1268,10 +1268,7 @@ static inline bool __vma_shareable_lock(struct vm_area_struct *vma)
+ 	return (vma->vm_flags & VM_MAYSHARE) && vma->vm_private_data;
+ }
+ 
+-static inline bool __vma_private_lock(struct vm_area_struct *vma)
+-{
+-	return (!(vma->vm_flags & VM_MAYSHARE)) && vma->vm_private_data;
+-}
++bool __vma_private_lock(struct vm_area_struct *vma);
+ 
+ /*
+  * Safe version of huge_pte_offset() to check the locks.  See comments
+diff --git a/mm/hugetlb.c b/mm/hugetlb.c
+index 1169ef2f2176..6feb3e0630d1 100644
+--- a/mm/hugetlb.c
++++ b/mm/hugetlb.c
+@@ -1182,6 +1182,13 @@ static int is_vma_resv_set(struct vm_area_struct *vma, unsigned long flag)
+ 	return (get_vma_private_data(vma) & flag) != 0;
+ }
+ 
++bool __vma_private_lock(struct vm_area_struct *vma)
++{
++	return !(vma->vm_flags & VM_MAYSHARE) &&
++		get_vma_private_data(vma) & ~HPAGE_RESV_MASK &&
++		is_vma_resv_set(vma, HPAGE_RESV_OWNER);
++}
++
+ void hugetlb_dup_vma_private(struct vm_area_struct *vma)
+ {
+ 	VM_BUG_ON_VMA(!is_vm_hugetlb_page(vma), vma);

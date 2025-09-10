@@ -1,0 +1,21 @@
+id: 1917d778024161609247
+bug_link: https://syzkaller.appspot.com/bug?extid=1917d778024161609247
+title: 'KASAN: slab-out-of-bounds Read in qrtr_endpoint_post (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b87b04f5019e821c8c6c7761f258402e43500a1f
+fix_commit: ad9d24c9429e2159d1e279dc3a83191ccb4daf1d
+datetime: '2021-06-14T13:01:26-07:00'
+fix_commit_message: "net: qrtr: fix OOB Read in qrtr_endpoint_post\n\nSyzbot reported\
+  \ slab-out-of-bounds Read in\nqrtr_endpoint_post. The problem was in wrong\n_size_\
+  \ type:\n\n\tif (len != ALIGN(size, 4) + hdrlen)\n\t\tgoto err;\n\nIf size from\
+  \ qrtr_hdr is 4294967293 (0xfffffffd), the result of\nALIGN(size, 4) will be 0.\
+  \ In case of len == hdrlen and size == 4294967293\nin header this check won't fail\
+  \ and\n\n\tskb_put_data(skb, data + hdrlen, size);\n\nwill read out of bound from\
+  \ data, which is hdrlen allocated block.\n\nFixes: 194ccc88297a (\"net: qrtr: Support\
+  \ decoding incoming v2 packets\")\nReported-and-tested-by: syzbot+1917d778024161609247@syzkaller.appspotmail.com\n\
+  Signed-off-by: Pavel Skripkin <paskripkin@gmail.com>\nReviewed-by: Bjorn Andersson\
+  \ <bjorn.andersson@linaro.org>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/qrtr
+hunk_count: 1
+covered_count: 0

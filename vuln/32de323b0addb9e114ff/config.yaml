@@ -1,0 +1,22 @@
+id: 32de323b0addb9e114ff
+bug_link: https://syzkaller.appspot.com/bug?extid=32de323b0addb9e114ff
+title: 'UBSAN: shift-out-of-bounds in pcl812_attach'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ed93c6f68a3be06e4e0c331c6e751f462dee3932
+fix_commit: b14b076ce593f72585412fc7fd3747e03a5e3632
+datetime: '2025-07-16T15:02:44+02:00'
+fix_commit_message: "comedi: pcl812: Fix bit shift out of bounds\n\nWhen checking\
+  \ for a supported IRQ number, the following test is used:\n\n\tif ((1 << it->options[1])\
+  \ & board->irq_bits) {\n\nHowever, `it->options[i]` is an unchecked `int` value\
+  \ from userspace, so\nthe shift amount could be negative or out of bounds.  Fix\
+  \ the test by\nrequiring `it->options[1]` to be within bounds before proceeding\
+  \ with\nthe original test.  Valid `it->options[1]` values that select the IRQ\n\
+  will be in the range [1,15]. The value 0 explicitly disables the use of\ninterrupts.\n\
+  \nReported-by: syzbot+32de323b0addb9e114ff@syzkaller.appspotmail.com\nCloses: https://syzkaller.appspot.com/bug?extid=32de323b0addb9e114ff\n\
+  Fixes: fcdb427bc7cf (\"Staging: comedi: add pcl821 driver\")\nCc: stable@vger.kernel.org\
+  \ # 5.13+\nSigned-off-by: Ian Abbott <abbotti@mev.co.uk>\nLink: https://lore.kernel.org/r/20250707133429.73202-1-abbotti@mev.co.uk\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/comedi/drivers
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,43 @@
+id: 0bef568258653cff272f
+bug_link: https://syzkaller.appspot.com/bug?extid=0bef568258653cff272f
+title: general protection fault in hci_event_packet
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 547801380ec7e6104ea679f599d03c342b4b39a0
+fix_commit: 6dfccd13db2ff2b709ef60a50163925d477549aa
+datetime: '2020-11-09T13:09:43+01:00'
+fix_commit_message: 'Bluetooth: Fix null pointer dereference in hci_event_packet()
+
+
+  AMP_MGR is getting derefernced in hci_phy_link_complete_evt(), when called
+
+  from hci_event_packet() and there is a possibility, that hcon->amp_mgr may
+
+  not be found when accessing after initialization of hcon.
+
+
+  - net/bluetooth/hci_event.c:4945
+
+  The bug seems to get triggered in this line:
+
+
+  bredr_hcon = hcon->amp_mgr->l2cap_conn->hcon;
+
+
+  Fix it by adding a NULL check for the hcon->amp_mgr before checking the ev-status.
+
+
+  Fixes: d5e911928bd8 ("Bluetooth: AMP: Process Physical Link Complete evt")
+
+  Reported-and-tested-by: syzbot+0bef568258653cff272f@syzkaller.appspotmail.com
+
+  Link: https://syzkaller.appspot.com/bug?extid=0bef568258653cff272f
+
+  Signed-off-by: Anmol Karn <anmol.karan123@gmail.com>
+
+  Signed-off-by: Marcel Holtmann <marcel@holtmann.org>
+
+  '
+submodule:
+- net/bluetooth
+hunk_count: 1
+covered_count: 1

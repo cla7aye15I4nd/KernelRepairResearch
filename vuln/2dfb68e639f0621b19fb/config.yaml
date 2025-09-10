@@ -1,0 +1,33 @@
+id: 2dfb68e639f0621b19fb
+bug_link: https://syzkaller.appspot.com/bug?extid=2dfb68e639f0621b19fb
+title: 'unregister_netdevice: waiting for DEV to become free'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 45c180bc29babbedd6b8c01b975780ef44d9d09c
+fix_commit: 8cc88773855f988d6a3bbf102bbd9dd9c828eb81
+datetime: '2018-06-23T15:28:37+02:00'
+fix_commit_message: "xfrm: fix missing dst_release() after policy blocking lbcast\
+  \ and multicast\n\nFix missing dst_release() when local broadcast or multicast traffic\
+  \ is\nxfrm policy blocked.\n\nFor IPv4 this results to dst leak: ip_route_output_flow()\
+  \ allocates\ndst_entry via __ip_route_output_key() and passes it to\nxfrm_lookup_route().\
+  \ xfrm_lookup returns ERR_PTR(-EPERM) that is\npropagated. The dst that was allocated\
+  \ is never released.\n\nIPv4 local broadcast testcase:\n ping -b 192.168.1.255 &\n\
+  \ sleep 1\n ip xfrm policy add src 0.0.0.0/0 dst 192.168.1.255/32 dir out action\
+  \ block\n\nIPv4 multicast testcase:\n ping 224.0.0.1 &\n sleep 1\n ip xfrm policy\
+  \ add src 0.0.0.0/0 dst 224.0.0.1/32 dir out action block\n\nFor IPv6 the missing\
+  \ dst_release() causes trouble e.g. when used in netns:\n ip netns add TEST\n ip\
+  \ netns exec TEST ip link set lo up\n ip link add dummy0 type dummy\n ip link set\
+  \ dev dummy0 netns TEST\n ip netns exec TEST ip addr add fd00::1111 dev dummy0\n\
+  \ ip netns exec TEST ip link set dummy0 up\n ip netns exec TEST ping -6 -c 5 ff02::1%dummy0\
+  \ &\n sleep 1\n ip netns exec TEST ip xfrm policy add src ::/0 dst ff02::1 dir out\
+  \ action block\n wait\n ip netns del TEST\n\nAfter netns deletion we see:\n[  258.239097]\
+  \ unregister_netdevice: waiting for lo to become free. Usage count = 2\n[  268.279061]\
+  \ unregister_netdevice: waiting for lo to become free. Usage count = 2\n[  278.367018]\
+  \ unregister_netdevice: waiting for lo to become free. Usage count = 2\n[  288.375259]\
+  \ unregister_netdevice: waiting for lo to become free. Usage count = 2\n\nFixes:\
+  \ ac37e2515c1a (\"xfrm: release dst_orig in case of error in xfrm_lookup()\")\n\
+  Signed-off-by: Tommi Rantala <tommi.t.rantala@nokia.com>\nSigned-off-by: Steffen\
+  \ Klassert <steffen.klassert@secunet.com>\n"
+submodule:
+- net/xfrm
+hunk_count: 1
+covered_count: 0

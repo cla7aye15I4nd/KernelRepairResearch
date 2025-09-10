@@ -1,0 +1,65 @@
+id: 38ca19393fb3344f57e6
+bug_link: https://syzkaller.appspot.com/bug?extid=38ca19393fb3344f57e6
+title: possible deadlock in shmem_uncharge (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: de4c0e7ca8b526a82ff7e5ee5533787bb6d01724
+fix_commit: 509f006932de7556d48eaa7afcd02dcf1ca9a3e9
+datetime: '2023-08-09T09:15:40+02:00'
+fix_commit_message: 'shmem: fix quota lock nesting in huge hole handling
+
+
+  i_pages lock nests inside i_lock, but shmem_charge() and shmem_uncharge()
+
+  were being called from THP splitting or collapsing while i_pages lock was
+
+  held, and now go on to call dquot_alloc_block_nodirty() which takes
+
+  i_lock to update i_blocks.
+
+
+  We may well want to take i_lock out of this path later, in the non-quota
+
+  case even if it''s left in the quota case (or perhaps use i_lock instead
+
+  of shmem''s info->lock throughout); but don''t get into that at this time.
+
+
+  Move the shmem_charge() and shmem_uncharge() calls out from under i_pages
+
+  lock, accounting the full batch of holes in a single call.
+
+
+  Still pass the pages argument to shmem_uncharge(), but it happens now to
+
+  be unused: shmem_recalc_inode() is designed to account for clean pages
+
+  freed behind shmem''s back, so it gets the accounting right by itself;
+
+  then the later call to shmem_inode_unacct_blocks() led to imbalance
+
+  (that WARN_ON(inode->i_blocks) in shmem_evict_inode()).
+
+
+  Reported-by: syzbot+38ca19393fb3344f57e6@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/lkml/0000000000008e62f40600bfe080@google.com/
+
+  Reported-by: syzbot+440ff8cca06ee7a1d4db@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/lkml/00000000000076a7840600bfb6e8@google.com/
+
+  Signed-off-by: Hugh Dickins <hughd@google.com>
+
+  Tested-by: Carlos Maiolino <cmaiolino@redhat.com>
+
+  Reviewed-by: Carlos Maiolino <cmaiolino@redhat.com>
+
+  Message-Id: <20230725144510.253763-8-cem@kernel.org>
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- mm
+hunk_count: 8
+covered_count: 5

@@ -1,0 +1,67 @@
+id: 822d1359297e2694f873
+bug_link: https://syzkaller.appspot.com/bug?extid=822d1359297e2694f873
+title: 'KASAN: slab-use-after-free Read in xsk_diag_dump'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7d35eb1a184a3f0759ad9e9cde4669b5c55b2063
+fix_commit: 3e019d8a05a38abb5c85d4f1e85fda964610aa14
+datetime: '2023-08-31T13:21:11+02:00'
+fix_commit_message: 'xsk: Fix xsk_diag use-after-free error during socket cleanup
+
+
+  Fix a use-after-free error that is possible if the xsk_diag interface
+
+  is used after the socket has been unbound from the device. This can
+
+  happen either due to the socket being closed or the device
+
+  disappearing. In the early days of AF_XDP, the way we tested that a
+
+  socket was not bound to a device was to simply check if the netdevice
+
+  pointer in the xsk socket structure was NULL. Later, a better system
+
+  was introduced by having an explicit state variable in the xsk socket
+
+  struct. For example, the state of a socket that is on the way to being
+
+  closed and has been unbound from the device is XSK_UNBOUND.
+
+
+  The commit in the Fixes tag below deleted the old way of signalling
+
+  that a socket is unbound, setting dev to NULL. This in the belief that
+
+  all code using the old way had been exterminated. That was
+
+  unfortunately not true as the xsk diagnostics code was still using the
+
+  old way and thus does not work as intended when a socket is going
+
+  down. Fix this by introducing a test against the state variable. If
+
+  the socket is in the state XSK_UNBOUND, simply abort the diagnostic''s
+
+  netlink operation.
+
+
+  Fixes: 18b1ab7aa76b ("xsk: Fix race at socket teardown")
+
+  Reported-by: syzbot+822d1359297e2694f873@syzkaller.appspotmail.com
+
+  Signed-off-by: Magnus Karlsson <magnus.karlsson@intel.com>
+
+  Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+
+  Tested-by: syzbot+822d1359297e2694f873@syzkaller.appspotmail.com
+
+  Tested-by: Maciej Fijalkowski <maciej.fijalkowski@intel.com>
+
+  Reviewed-by: Maciej Fijalkowski <maciej.fijalkowski@intel.com>
+
+  Link: https://lore.kernel.org/bpf/20230831100119.17408-1-magnus.karlsson@gmail.com
+
+  '
+submodule:
+- net/xdp
+hunk_count: 1
+covered_count: 1

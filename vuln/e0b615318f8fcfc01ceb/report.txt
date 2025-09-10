@@ -1,0 +1,128 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in __list_del_entry_valid_or_report+0x2f/0x130 lib/list_debug.c:49
+Read of size 8 at addr ffff88814964d8b0 by task kworker/u4:1/12
+
+CPU: 1 PID: 12 Comm: kworker/u4:1 Not tainted 6.6.0-syzkaller-15494-g6bc986ab839c #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/09/2023
+Workqueue: btrfs-qgroup-rescan btrfs_work_helper
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2d0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0x163/0x540 mm/kasan/report.c:475
+ kasan_report+0x142/0x170 mm/kasan/report.c:588
+ __list_del_entry_valid_or_report+0x2f/0x130 lib/list_debug.c:49
+ __list_del_entry_valid include/linux/list.h:124 [inline]
+ __list_del_entry include/linux/list.h:215 [inline]
+ list_del_init include/linux/list.h:287 [inline]
+ qgroup_iterator_nested_clean fs/btrfs/qgroup.c:2623 [inline]
+ btrfs_qgroup_account_extent+0x18b/0x1150 fs/btrfs/qgroup.c:2883
+ qgroup_rescan_leaf fs/btrfs/qgroup.c:3543 [inline]
+ btrfs_qgroup_rescan_worker+0x1078/0x1c60 fs/btrfs/qgroup.c:3604
+ btrfs_work_helper+0x37c/0xbd0 fs/btrfs/async-thread.c:315
+ process_one_work kernel/workqueue.c:2630 [inline]
+ process_scheduled_works+0x90f/0x1400 kernel/workqueue.c:2703
+ worker_thread+0xa5f/0xff0 kernel/workqueue.c:2784
+ kthread+0x2d3/0x370 kernel/kthread.c:388
+ ret_from_fork+0x48/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+ </TASK>
+
+Allocated by task 8141:
+ kasan_save_stack mm/kasan/common.c:45 [inline]
+ kasan_set_track+0x4f/0x70 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:383
+ kmalloc include/linux/slab.h:600 [inline]
+ kzalloc include/linux/slab.h:721 [inline]
+ btrfs_quota_enable+0xee9/0x2060 fs/btrfs/qgroup.c:1209
+ btrfs_ioctl_quota_ctl+0x143/0x190 fs/btrfs/ioctl.c:3705
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:871 [inline]
+ __se_sys_ioctl+0xf8/0x170 fs/ioctl.c:857
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Freed by task 8141:
+ kasan_save_stack mm/kasan/common.c:45 [inline]
+ kasan_set_track+0x4f/0x70 mm/kasan/common.c:52
+ kasan_save_free_info+0x28/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free+0xd6/0x120 mm/kasan/common.c:236
+ kasan_slab_free include/linux/kasan.h:164 [inline]
+ slab_free_hook mm/slub.c:1800 [inline]
+ slab_free_freelist_hook mm/slub.c:1826 [inline]
+ slab_free mm/slub.c:3809 [inline]
+ __kmem_cache_free+0x263/0x3a0 mm/slub.c:3822
+ btrfs_remove_qgroup+0x764/0x8c0 fs/btrfs/qgroup.c:1787
+ btrfs_ioctl_qgroup_create+0x185/0x1e0 fs/btrfs/ioctl.c:3811
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:871 [inline]
+ __se_sys_ioctl+0xf8/0x170 fs/ioctl.c:857
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Last potentially related work creation:
+ kasan_save_stack+0x3f/0x60 mm/kasan/common.c:45
+ __kasan_record_aux_stack+0xad/0xc0 mm/kasan/generic.c:492
+ __call_rcu_common kernel/rcu/tree.c:2681 [inline]
+ call_rcu+0x167/0xa70 kernel/rcu/tree.c:2795
+ kthread_worker_fn+0x4ba/0xa90 kernel/kthread.c:841
+ kthread+0x2d3/0x370 kernel/kthread.c:388
+ ret_from_fork+0x48/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+
+The buggy address belongs to the object at ffff88814964d800
+ which belongs to the cache kmalloc-512 of size 512
+The buggy address is located 176 bytes inside of
+ freed 512-byte region [ffff88814964d800, ffff88814964da00)
+
+The buggy address belongs to the physical page:
+page:ffffea0005259300 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x14964c
+head:ffffea0005259300 order:2 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0x57ff00000000840(slab|head|node=1|zone=2|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 057ff00000000840 ffff888012c41c80 dead000000000100 dead000000000122
+raw: 0000000000000000 0000000080100010 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 2, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 1, tgid 1 (swapper/0), ts 9778680535, free_ts 0
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x1e6/0x210 mm/page_alloc.c:1537
+ prep_new_page mm/page_alloc.c:1544 [inline]
+ get_page_from_freelist+0x339a/0x3530 mm/page_alloc.c:3312
+ __alloc_pages+0x255/0x670 mm/page_alloc.c:4568
+ alloc_pages_mpol+0x3de/0x640 mm/mempolicy.c:2133
+ alloc_slab_page+0x6a/0x160 mm/slub.c:1870
+ allocate_slab mm/slub.c:2017 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2070
+ ___slab_alloc+0xc85/0x1310 mm/slub.c:3223
+ __slab_alloc mm/slub.c:3322 [inline]
+ __slab_alloc_node mm/slub.c:3375 [inline]
+ slab_alloc_node mm/slub.c:3468 [inline]
+ __kmem_cache_alloc_node+0x21d/0x300 mm/slub.c:3517
+ __do_kmalloc_node mm/slab_common.c:1006 [inline]
+ __kmalloc_node+0xa7/0x230 mm/slab_common.c:1014
+ kmalloc_node include/linux/slab.h:620 [inline]
+ kvmalloc_node+0x72/0x180 mm/util.c:607
+ kvmalloc include/linux/slab.h:738 [inline]
+ kvzalloc include/linux/slab.h:746 [inline]
+ v4l2_ctrl_new+0x914/0x1900 drivers/media/v4l2-core/v4l2-ctrls-core.c:1927
+ v4l2_ctrl_new_std+0x449/0x5b0 drivers/media/v4l2-core/v4l2-ctrls-core.c:2064
+ vivid_create_controls+0x1f08/0x3580 drivers/media/test-drivers/vivid/vivid-ctrls.c:1874
+ vivid_create_instance drivers/media/test-drivers/vivid/vivid-core.c:1840 [inline]
+ vivid_probe+0x4289/0x6fa0 drivers/media/test-drivers/vivid/vivid-core.c:2004
+ platform_probe+0x135/0x1b0 drivers/base/platform.c:1404
+ really_probe+0x294/0xc30 drivers/base/dd.c:658
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff88814964d780: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88814964d800: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff88814964d880: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                     ^
+ ffff88814964d900: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88814964d980: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

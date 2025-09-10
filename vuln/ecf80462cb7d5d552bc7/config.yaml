@@ -1,0 +1,39 @@
+id: ecf80462cb7d5d552bc7
+bug_link: https://syzkaller.appspot.com/bug?extid=ecf80462cb7d5d552bc7
+title: general protection fault in madvise_cold_or_pageout_pte_range
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 678ff6a7afccc43d352c1b8c94b6d8c0ee1464ad
+fix_commit: ce2684254bd4818ca3995c0d021fb62c4cf10a19
+datetime: '2020-09-26T10:48:08-07:00'
+fix_commit_message: "mm: validate pmd after splitting\n\nsyzbot reported the following\
+  \ KASAN splat:\n\n  general protection fault, probably for non-canonical address\
+  \ 0xdffffc0000000003: 0000 [#1] PREEMPT SMP KASAN\n  KASAN: null-ptr-deref in range\
+  \ [0x0000000000000018-0x000000000000001f]\n  CPU: 1 PID: 6826 Comm: syz-executor142\
+  \ Not tainted 5.9.0-rc4-syzkaller #0\n  Hardware name: Google Google Compute Engine/Google\
+  \ Compute Engine, BIOS Google 01/01/2011\n  RIP: 0010:__lock_acquire+0x84/0x2ae0\
+  \ kernel/locking/lockdep.c:4296\n  Code: ff df 8a 04 30 84 c0 0f 85 e3 16 00 00\
+  \ 83 3d 56 58 35 08 00 0f 84 0e 17 00 00 83 3d 25 c7 f5 07 00 74 2c 4c 89 e8 48\
+  \ c1 e8 03 <80> 3c 30 00 74 12 4c 89 ef e8 3e d1 5a 00 48 be 00 00 00 00 00 fc\n\
+  \  RSP: 0018:ffffc90004b9f850 EFLAGS: 00010006\n  Call Trace:\n    lock_acquire+0x140/0x6f0\
+  \ kernel/locking/lockdep.c:5006\n    __raw_spin_lock include/linux/spinlock_api_smp.h:142\
+  \ [inline]\n    _raw_spin_lock+0x2a/0x40 kernel/locking/spinlock.c:151\n    spin_lock\
+  \ include/linux/spinlock.h:354 [inline]\n    madvise_cold_or_pageout_pte_range+0x52f/0x25c0\
+  \ mm/madvise.c:389\n    walk_pmd_range mm/pagewalk.c:89 [inline]\n    walk_pud_range\
+  \ mm/pagewalk.c:160 [inline]\n    walk_p4d_range mm/pagewalk.c:193 [inline]\n  \
+  \  walk_pgd_range mm/pagewalk.c:229 [inline]\n    __walk_page_range+0xe7b/0x1da0\
+  \ mm/pagewalk.c:331\n    walk_page_range+0x2c3/0x5c0 mm/pagewalk.c:427\n    madvise_pageout_page_range\
+  \ mm/madvise.c:521 [inline]\n    madvise_pageout mm/madvise.c:557 [inline]\n   \
+  \ madvise_vma mm/madvise.c:946 [inline]\n    do_madvise+0x12d0/0x2090 mm/madvise.c:1145\n\
+  \    __do_sys_madvise mm/madvise.c:1171 [inline]\n    __se_sys_madvise mm/madvise.c:1169\
+  \ [inline]\n    __x64_sys_madvise+0x76/0x80 mm/madvise.c:1169\n    do_syscall_64+0x31/0x70\
+  \ arch/x86/entry/common.c:46\n    entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nThe\
+  \ backing vma was shmem.\n\nIn case of split page of file-backed THP, madvise zaps\
+  \ the pmd instead\nof remapping of sub-pages.  So we need to check pmd validity\
+  \ after\nsplit.\n\nReported-by: syzbot+ecf80462cb7d5d552bc7@syzkaller.appspotmail.com\n\
+  Fixes: 1a4e58cce84e (\"mm: introduce MADV_PAGEOUT\")\nSigned-off-by: Minchan Kim\
+  \ <minchan@kernel.org>\nAcked-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

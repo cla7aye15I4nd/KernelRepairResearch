@@ -1,0 +1,72 @@
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 40d2fa90df42..62103dd6a48e 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -2144,6 +2144,8 @@ static inline struct mutex *__get_task_blocked_on(struct task_struct *p)
+ 
+ static inline void __set_task_blocked_on(struct task_struct *p, struct mutex *m)
+ {
++	struct mutex *blocked_on = READ_ONCE(p->blocked_on);
++
+ 	WARN_ON_ONCE(!m);
+ 	/* The task should only be setting itself as blocked */
+ 	WARN_ON_ONCE(p != current);
+@@ -2154,8 +2156,8 @@ static inline void __set_task_blocked_on(struct task_struct *p, struct mutex *m)
+ 	 * with a different mutex. Note, setting it to the same
+ 	 * lock repeatedly is ok.
+ 	 */
+-	WARN_ON_ONCE(p->blocked_on && p->blocked_on != m);
+-	p->blocked_on = m;
++	WARN_ON_ONCE(blocked_on && blocked_on != m);
++	WRITE_ONCE(p->blocked_on, m);
+ }
+ 
+ static inline void set_task_blocked_on(struct task_struct *p, struct mutex *m)
+@@ -2166,16 +2168,19 @@ static inline void set_task_blocked_on(struct task_struct *p, struct mutex *m)
+ 
+ static inline void __clear_task_blocked_on(struct task_struct *p, struct mutex *m)
+ {
+-	WARN_ON_ONCE(!m);
+-	/* Currently we serialize blocked_on under the mutex::wait_lock */
+-	lockdep_assert_held_once(&m->wait_lock);
+-	/*
+-	 * There may be cases where we re-clear already cleared
+-	 * blocked_on relationships, but make sure we are not
+-	 * clearing the relationship with a different lock.
+-	 */
+-	WARN_ON_ONCE(m && p->blocked_on && p->blocked_on != m);
+-	p->blocked_on = NULL;
++	if (m) {
++		struct mutex *blocked_on = READ_ONCE(p->blocked_on);
++
++		/* Currently we serialize blocked_on under the mutex::wait_lock */
++		lockdep_assert_held_once(&m->wait_lock);
++		/*
++		 * There may be cases where we re-clear already cleared
++		 * blocked_on relationships, but make sure we are not
++		 * clearing the relationship with a different lock.
++		 */
++		WARN_ON_ONCE(blocked_on && blocked_on != m);
++	}
++	WRITE_ONCE(p->blocked_on, NULL);
+ }
+ 
+ static inline void clear_task_blocked_on(struct task_struct *p, struct mutex *m)
+diff --git a/kernel/locking/ww_mutex.h b/kernel/locking/ww_mutex.h
+index 086fd5487ca7..31a785afee6c 100644
+--- a/kernel/locking/ww_mutex.h
++++ b/kernel/locking/ww_mutex.h
+@@ -342,8 +342,12 @@ static bool __ww_mutex_wound(struct MUTEX *lock,
+ 			 * When waking up the task to wound, be sure to clear the
+ 			 * blocked_on pointer. Otherwise we can see circular
+ 			 * blocked_on relationships that can't resolve.
++			 *
++			 * NOTE: We pass NULL here instead of lock, because we
++			 * are waking the mutex owner, who may be currently
++			 * blocked on a different mutex.
+ 			 */
+-			__clear_task_blocked_on(owner, lock);
++			__clear_task_blocked_on(owner, NULL);
+ 			wake_q_add(wake_q, owner);
+ 		}
+ 		return true;

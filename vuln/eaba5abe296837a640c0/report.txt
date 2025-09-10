@@ -1,0 +1,25 @@
+EXT4-fs (loop0): mounted filesystem 00000000-0000-0000-0000-000000000000 r/w without journal. Quota mode: none.
+EXT4-fs warning (device loop0): __ext4fs_dirhash:270: inode #12: comm syz-executor253: Siphash requires key
+=====================================================
+BUG: KMSAN: uninit-value in ext4_inlinedir_to_tree+0xde2/0x15a0 fs/ext4/inline.c:1415
+ ext4_inlinedir_to_tree+0xde2/0x15a0 fs/ext4/inline.c:1415
+ ext4_htree_fill_tree+0x1941/0x1cd0 fs/ext4/namei.c:1210
+ ext4_dx_readdir fs/ext4/dir.c:597 [inline]
+ ext4_readdir+0x4bbf/0x5b00 fs/ext4/dir.c:142
+ iterate_dir+0x688/0x870 fs/readdir.c:110
+ __do_sys_getdents64 fs/readdir.c:409 [inline]
+ __se_sys_getdents64+0x169/0x530 fs/readdir.c:394
+ __x64_sys_getdents64+0x96/0xe0 fs/readdir.c:394
+ x64_sys_call+0x343d/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:218
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Local variable hinfo created at:
+ ext4_htree_fill_tree+0x52/0x1cd0 fs/ext4/namei.c:1185
+ ext4_dx_readdir fs/ext4/dir.c:597 [inline]
+ ext4_readdir+0x4bbf/0x5b00 fs/ext4/dir.c:142
+
+CPU: 1 PID: 5020 Comm: syz-executor253 Not tainted 6.9.0-rc5-syzkaller-00042-ge88c4cfcb7b8 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+=====================================================

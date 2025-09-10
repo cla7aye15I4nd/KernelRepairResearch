@@ -1,0 +1,148 @@
+id: 4d24267b490e2b68a5fa
+bug_link: https://syzkaller.appspot.com/bug?extid=4d24267b490e2b68a5fa
+title: possible deadlock in bch2_replicas_entry_validate
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0f25eb4b60771f08fbcca878a8f7f88086d0c885
+fix_commit: bf4baaa087e2be0279991f1dbf9acaa7a4c9148c
+datetime: '2024-10-06T03:03:45-04:00'
+fix_commit_message: 'bcachefs: Fix lockdep splat in bch2_accounting_read
+
+
+  We can''t take sb_lock while holding mark_lock, so split out
+
+  replicas_entry_validate() and replicas_entry_sb_validate() -
+
+  replicas_entry_validate() now uses the normal online device interface.
+
+
+  00039 ========= TEST   set_option
+
+  00039
+
+  00039 WATCHDOG 30
+
+  00040 bcachefs (vdb): starting version 1.12: rebalance_work_acct_fix opts=errors=panic
+
+  00040 bcachefs (vdb): initializing new filesystem
+
+  00040 bcachefs (vdb): going read-write
+
+  00040 bcachefs (vdb): marking superblocks
+
+  00040 bcachefs (vdb): initializing freespace
+
+  00040 bcachefs (vdb): done initializing freespace
+
+  00040 bcachefs (vdb): reading snapshots table
+
+  00040 bcachefs (vdb): reading snapshots done
+
+  00040 bcachefs (vdb): done starting filesystem
+
+  00040 zstd
+
+  00041 bcachefs (vdb): shutting down
+
+  00041 bcachefs (vdb): going read-only
+
+  00041 bcachefs (vdb): finished waiting for writes to stop
+
+  00041 bcachefs (vdb): flushing journal and stopping allocators, journal seq 3
+
+  00041 bcachefs (vdb): flushing journal and stopping allocators complete, journal
+  seq 11
+
+  00041 bcachefs (vdb): shutdown complete, journal seq 12
+
+  00041 bcachefs (vdb): marking filesystem clean
+
+  00041 bcachefs (vdb): shutdown complete
+
+  00041 Setting option on offline fs
+
+  00041 bch2_write_super(): fatal error : attempting to write superblock that wasn''t
+  version downgraded (1.12: (unknown version) > 1.10: disk_accounting_v3)
+
+  00041 fatal error - emergency read only
+
+  00041 bch2_write_super(): fatal error : attempting to write superblock that wasn''t
+  version downgraded (1.12: (unknown version) > 1.10: disk_accounting_v3)
+
+  00042 bcachefs (vdb): starting version 1.12: rebalance_work_acct_fix opts=errors=panic,compression=zstd
+
+  00042 bcachefs (vdb): recovering from clean shutdown, journal seq 12
+
+  00042 bcachefs (vdb): accounting_read...
+
+  00042
+
+  00042 ======================================================
+
+  00042 WARNING: possible circular locking dependency detected
+
+  00042 6.12.0-rc1-ktest-g805e938a8502 #6807 Not tainted
+
+  00042 ------------------------------------------------------
+
+  00042 mount.bcachefs/665 is trying to acquire lock:
+
+  00045 ffffff80cc280908 (&c->sb_lock){+.+.}-{3:3}, at: bch2_replicas_entry_validate
+  (fs/bcachefs/replicas.c:102)
+
+  00045
+
+  00045 but task is already holding lock:
+
+  00048 ffffff80cc284870 (&c->mark_lock){++++}-{0:0}, at: bch2_accounting_read (fs/bcachefs/disk_accounting.c:670
+  (discriminator 1))
+
+  00048
+
+  00048 which lock already depends on the new lock.
+
+  00048
+
+  00048
+
+  00048 the existing dependency chain (in reverse order) is:
+
+  00048
+
+  00048 -> #1 (&c->mark_lock){++++}-{0:0}:
+
+  00049 percpu_down_write (kernel/locking/percpu-rwsem.c:232)
+
+  00052 bch2_sb_replicas_to_cpu_replicas (fs/bcachefs/replicas.c:583)
+
+  00055 bch2_sb_to_fs (fs/bcachefs/super-io.c:614)
+
+  00057 bch2_fs_open (fs/bcachefs/super.c:828 fs/bcachefs/super.c:2050)
+
+  00060 bch2_fs_get_tree (fs/bcachefs/fs.c:2067)
+
+  00062 vfs_get_tree (fs/super.c:1801)
+
+  00064 path_mount (fs/namespace.c:3507 fs/namespace.c:3834)
+
+  00066 __arm64_sys_mount (fs/namespace.c:3847 fs/namespace.c:4055 fs/namespace.c:4032
+  fs/namespace.c:4032)
+
+  00067 invoke_syscall.constprop.0 (arch/arm64/include/asm/syscall.h:61 arch/arm64/kernel/syscall.c:54)
+
+  00068 do_el0_svc (include/linux/thread_info.h:127 (discriminator 2) arch/arm64/kernel/syscall.c:140
+  (discriminator 2) arch/arm64/kernel/syscall.c:151 (discriminator 2))
+
+  00069 el0_svc (arch/arm64/include/asm/irqflags.h:82 arch/arm64/include/asm/irqflags.h:123
+  arch/arm64/include/asm/irqflags.h:136 arch/arm64/kernel/entry-common.c:165 arch/arm64/kernel/entry-common.c:178
+  arch/arm64/kernel/entry-common.c:713)
+
+  00069 ========= FAILED TIMEOUT set_option in 30s
+
+
+  Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>
+
+  '
+submodule:
+- fs/bcachefs
+hunk_count: 3
+covered_count: 2

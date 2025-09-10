@@ -1,0 +1,46 @@
+id: d69a7cc8c683c2cb7506
+bug_link: https://syzkaller.appspot.com/bug?extid=d69a7cc8c683c2cb7506
+title: 'KCSAN: data-race in p9_conn_cancel / p9_write_work (7)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ad6d4558a7112af9e5f6727ac24fd8cd17469739
+fix_commit: fbc0283fbeae27b88448c90305e738991457fee2
+datetime: '2025-03-19T21:20:31+09:00'
+fix_commit_message: '9p/trans_fd: mark concurrent read and writes to p9_conn->err
+
+
+  Writes for the error value of a connection are spinlock-protected inside
+
+  p9_conn_cancel, but lockless reads are present elsewhere to avoid
+
+  performing unnecessary work after an error has been met.
+
+
+  Mark the write and lockless reads to make KCSAN happy. Mark the write as
+
+  exclusive following the recommendation in "Lock-Protected Writes with
+
+  Lockless Reads" in tools/memory-model/Documentation/access-marking.txt
+
+  while we are at it.
+
+
+  Mark p9_fd_request and p9_conn_cancel m->err reads despite the fact that
+
+  they do not race with concurrent writes for stylistic reasons.
+
+
+  Reported-by: syzbot+d69a7cc8c683c2cb7506@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+483d6c9b9231ea7e1851@syzkaller.appspotmail.com
+
+  Signed-off-by: Ignacio Encinas <ignacio@iencinas.com>
+
+  Message-ID: <20250318-p9_conn_err_benign_data_race-v3-1-290bb18335cc@iencinas.com>
+
+  Signed-off-by: Dominique Martinet <asmadeus@codewreck.org>
+
+  '
+submodule:
+- net/9p
+hunk_count: 6
+covered_count: 2

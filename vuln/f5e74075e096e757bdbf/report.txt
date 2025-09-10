@@ -1,0 +1,140 @@
+F2FS-fs (loop0): Mounted with checkpoint version = 1b41e954
+==================================================================
+BUG: KASAN: slab-out-of-bounds in __find_xattr fs/f2fs/xattr.c:235 [inline]
+BUG: KASAN: slab-out-of-bounds in __find_inline_xattr fs/f2fs/xattr.c:261 [inline]
+BUG: KASAN: slab-out-of-bounds in lookup_all_xattrs fs/f2fs/xattr.c:345 [inline]
+BUG: KASAN: slab-out-of-bounds in f2fs_getxattr+0x1334/0x13b0 fs/f2fs/xattr.c:533
+Read of size 4 at addr ffff88802f565078 by task syz-executor290/5819
+
+CPU: 0 UID: 0 PID: 5819 Comm: syz-executor290 Not tainted 6.13.0-rc5-syzkaller-00161-g63676eefb7a0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:489
+ kasan_report+0x143/0x180 mm/kasan/report.c:602
+ __find_xattr fs/f2fs/xattr.c:235 [inline]
+ __find_inline_xattr fs/f2fs/xattr.c:261 [inline]
+ lookup_all_xattrs fs/f2fs/xattr.c:345 [inline]
+ f2fs_getxattr+0x1334/0x13b0 fs/f2fs/xattr.c:533
+ __vfs_getxattr+0x433/0x470 fs/xattr.c:423
+ smk_fetch+0xb1/0x140 security/smack/smack_lsm.c:306
+ smack_d_instantiate+0x749/0xa50 security/smack/smack_lsm.c:3615
+ security_d_instantiate+0x107/0x1f0 security/security.c:4070
+ d_splice_alias+0x6f/0x330 fs/dcache.c:3001
+ f2fs_lookup+0x4ff/0x820 fs/f2fs/namei.c:523
+ lookup_open fs/namei.c:3627 [inline]
+ open_last_lookups fs/namei.c:3748 [inline]
+ path_openat+0x11a7/0x3590 fs/namei.c:3984
+ do_filp_open+0x27f/0x4e0 fs/namei.c:4014
+ do_sys_openat2+0x13e/0x1d0 fs/open.c:1402
+ do_sys_open fs/open.c:1417 [inline]
+ __do_sys_openat fs/open.c:1433 [inline]
+ __se_sys_openat fs/open.c:1428 [inline]
+ __x64_sys_openat+0x247/0x2a0 fs/open.c:1428
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fd1790cab99
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe10d93778 EFLAGS: 00000246 ORIG_RAX: 0000000000000101
+RAX: ffffffffffffffda RBX: 0031656c69662f2e RCX: 00007fd1790cab99
+RDX: 0000000000101042 RSI: 0000000020000040 RDI: 00000000ffffff9c
+RBP: 00007fd17914e5f0 R08: 00000000000105b6 R09: 000055556ca634c0
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffe10d937a0
+R13: 00007ffe10d939c8 R14: 431bde82d7b634db R15: 00007fd17911303b
+ </TASK>
+
+Allocated by task 5819:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __do_kmalloc_node mm/slub.c:4298 [inline]
+ __kmalloc_noprof+0x285/0x4c0 mm/slub.c:4310
+ xattr_alloc fs/f2fs/xattr.c:34 [inline]
+ lookup_all_xattrs fs/f2fs/xattr.c:333 [inline]
+ f2fs_getxattr+0x10f7/0x13b0 fs/f2fs/xattr.c:533
+ __vfs_getxattr+0x433/0x470 fs/xattr.c:423
+ smk_fetch+0xb1/0x140 security/smack/smack_lsm.c:306
+ smack_d_instantiate+0x749/0xa50 security/smack/smack_lsm.c:3615
+ security_d_instantiate+0x107/0x1f0 security/security.c:4070
+ d_splice_alias+0x6f/0x330 fs/dcache.c:3001
+ f2fs_lookup+0x4ff/0x820 fs/f2fs/namei.c:523
+ lookup_open fs/namei.c:3627 [inline]
+ open_last_lookups fs/namei.c:3748 [inline]
+ path_openat+0x11a7/0x3590 fs/namei.c:3984
+ do_filp_open+0x27f/0x4e0 fs/namei.c:4014
+ do_sys_openat2+0x13e/0x1d0 fs/open.c:1402
+ do_sys_open fs/open.c:1417 [inline]
+ __do_sys_openat fs/open.c:1433 [inline]
+ __se_sys_openat fs/open.c:1428 [inline]
+ __x64_sys_openat+0x247/0x2a0 fs/open.c:1428
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88802f565060
+ which belongs to the cache kmalloc-16 of size 16
+The buggy address is located 12 bytes to the right of
+ allocated 12-byte region [ffff88802f565060, ffff88802f56506c)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x2f565
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000000 ffff88801ac41640 dead000000000100 dead000000000122
+raw: 0000000000000000 0000000080800080 00000001f5000000 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x52cc0(GFP_KERNEL|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 1, tgid 1 (swapper/0), ts 15278427856, free_ts 15123069831
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1558
+ prep_new_page mm/page_alloc.c:1566 [inline]
+ get_page_from_freelist+0x3651/0x37a0 mm/page_alloc.c:3476
+ __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4753
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2269
+ alloc_slab_page+0x6a/0x110 mm/slub.c:2423
+ allocate_slab+0x5a/0x2b0 mm/slub.c:2589
+ new_slab mm/slub.c:2642 [inline]
+ ___slab_alloc+0xc27/0x14a0 mm/slub.c:3830
+ __slab_alloc+0x58/0xa0 mm/slub.c:3920
+ __slab_alloc_node mm/slub.c:3995 [inline]
+ slab_alloc_node mm/slub.c:4156 [inline]
+ __do_kmalloc_node mm/slub.c:4297 [inline]
+ __kmalloc_node_track_caller_noprof+0x2e9/0x4c0 mm/slub.c:4317
+ __kmemdup_nul mm/util.c:61 [inline]
+ kstrdup+0x39/0xb0 mm/util.c:81
+ snd_info_create_entry+0x78/0x350 sound/core/info.c:669
+ create_substream_info_entry sound/core/pcm.c:540 [inline]
+ snd_pcm_substream_proc_init sound/core/pcm.c:573 [inline]
+ snd_pcm_new_stream+0xc87/0x1240 sound/core/pcm.c:677
+ _snd_pcm_new+0x1d1/0x410 sound/core/pcm.c:730
+ snd_pcm_new+0x3e/0x60 sound/core/pcm.c:772
+ snd_card_dummy_pcm sound/drivers/dummy.c:675 [inline]
+ snd_dummy_probe+0x5f2/0x18a0 sound/drivers/dummy.c:1047
+ platform_probe+0x13a/0x1c0 drivers/base/platform.c:1404
+page last free pid 973 tgid 973 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_page+0xd2c/0x1000 mm/page_alloc.c:2659
+ vfree+0x1c3/0x360 mm/vmalloc.c:3383
+ delayed_vfree_work+0x56/0x80 mm/vmalloc.c:3303
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa66/0x1840 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Memory state around the buggy address:
+ ffff88802f564f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff88802f564f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff88802f565000: 00 07 fc fc fa fb fc fc fa fb fc fc 00 04 fc fc
+                                                                ^
+ ffff88802f565080: 00 00 fc fc 00 00 fc fc 00 00 fc fc 00 00 fc fc
+ ffff88802f565100: 00 00 fc fc 00 00 fc fc 00 00 fc fc 00 00 fc fc
+==================================================================

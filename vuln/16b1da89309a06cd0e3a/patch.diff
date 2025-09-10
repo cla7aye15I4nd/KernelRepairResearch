@@ -1,0 +1,286 @@
+diff --git a/include/linux/mm_inline.h b/include/linux/mm_inline.h
+index f9157a0c42a5..89b518ff097e 100644
+--- a/include/linux/mm_inline.h
++++ b/include/linux/mm_inline.h
+@@ -447,6 +447,8 @@ static inline bool anon_vma_name_eq(struct anon_vma_name *anon_name1,
+ 
+ #endif  /* CONFIG_ANON_VMA_NAME */
+ 
++void pfnmap_track_ctx_release(struct kref *ref);
++
+ static inline void init_tlb_flush_pending(struct mm_struct *mm)
+ {
+ 	atomic_set(&mm->tlb_flush_pending, 0);
+diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
+index 15808cad2bc1..3e934dc6057c 100644
+--- a/include/linux/mm_types.h
++++ b/include/linux/mm_types.h
+@@ -763,6 +763,14 @@ struct vma_numab_state {
+ 	int prev_scan_seq;
+ };
+ 
++#ifdef __HAVE_PFNMAP_TRACKING
++struct pfnmap_track_ctx {
++	struct kref kref;
++	unsigned long pfn;
++	unsigned long size;	/* in bytes */
++};
++#endif
++
+ /*
+  * Describes a VMA that is about to be mmap()'ed. Drivers may choose to
+  * manipulate mutable fields which will cause those fields to be updated in the
+@@ -900,6 +908,9 @@ struct vm_area_struct {
+ 	struct anon_vma_name *anon_name;
+ #endif
+ 	struct vm_userfaultfd_ctx vm_userfaultfd_ctx;
++#ifdef __HAVE_PFNMAP_TRACKING
++	struct pfnmap_track_ctx *pfnmap_track_ctx;
++#endif
+ } __randomize_layout;
+ 
+ #ifdef CONFIG_NUMA
+diff --git a/mm/memory.c b/mm/memory.c
+index 064fc55d8eab..4cf4adb0de26 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -1371,7 +1371,7 @@ copy_page_range(struct vm_area_struct *dst_vma, struct vm_area_struct *src_vma)
+ 	struct mm_struct *dst_mm = dst_vma->vm_mm;
+ 	struct mm_struct *src_mm = src_vma->vm_mm;
+ 	struct mmu_notifier_range range;
+-	unsigned long next, pfn = 0;
++	unsigned long next;
+ 	bool is_cow;
+ 	int ret;
+ 
+@@ -1381,12 +1381,6 @@ copy_page_range(struct vm_area_struct *dst_vma, struct vm_area_struct *src_vma)
+ 	if (is_vm_hugetlb_page(src_vma))
+ 		return copy_hugetlb_page_range(dst_mm, src_mm, dst_vma, src_vma);
+ 
+-	if (unlikely(src_vma->vm_flags & VM_PFNMAP)) {
+-		ret = track_pfn_copy(dst_vma, src_vma, &pfn);
+-		if (ret)
+-			return ret;
+-	}
+-
+ 	/*
+ 	 * We need to invalidate the secondary MMU mappings only when
+ 	 * there could be a permission downgrade on the ptes of the
+@@ -1428,8 +1422,6 @@ copy_page_range(struct vm_area_struct *dst_vma, struct vm_area_struct *src_vma)
+ 		raw_write_seqcount_end(&src_mm->write_protect_seq);
+ 		mmu_notifier_invalidate_range_end(&range);
+ 	}
+-	if (ret && unlikely(src_vma->vm_flags & VM_PFNMAP))
+-		untrack_pfn_copy(dst_vma, pfn);
+ 	return ret;
+ }
+ 
+@@ -1924,9 +1916,6 @@ static void unmap_single_vma(struct mmu_gather *tlb,
+ 	if (vma->vm_file)
+ 		uprobe_munmap(vma, start, end);
+ 
+-	if (unlikely(vma->vm_flags & VM_PFNMAP))
+-		untrack_pfn(vma, 0, 0, mm_wr_locked);
+-
+ 	if (start != end) {
+ 		if (unlikely(is_vm_hugetlb_page(vma))) {
+ 			/*
+@@ -2872,6 +2861,36 @@ int remap_pfn_range_notrack(struct vm_area_struct *vma, unsigned long addr,
+ 	return error;
+ }
+ 
++#ifdef __HAVE_PFNMAP_TRACKING
++static inline struct pfnmap_track_ctx *pfnmap_track_ctx_alloc(unsigned long pfn,
++		unsigned long size, pgprot_t *prot)
++{
++	struct pfnmap_track_ctx *ctx;
++
++	if (pfnmap_track(pfn, size, prot))
++		return ERR_PTR(-EINVAL);
++
++	ctx = kmalloc(sizeof(*ctx), GFP_KERNEL);
++	if (unlikely(!ctx)) {
++		pfnmap_untrack(pfn, size);
++		return ERR_PTR(-ENOMEM);
++	}
++
++	ctx->pfn = pfn;
++	ctx->size = size;
++	kref_init(&ctx->kref);
++	return ctx;
++}
++
++void pfnmap_track_ctx_release(struct kref *ref)
++{
++	struct pfnmap_track_ctx *ctx = container_of(ref, struct pfnmap_track_ctx, kref);
++
++	pfnmap_untrack(ctx->pfn, ctx->size);
++	kfree(ctx);
++}
++#endif /* __HAVE_PFNMAP_TRACKING */
++
+ /**
+  * remap_pfn_range - remap kernel memory to userspace
+  * @vma: user vma to map to
+@@ -2884,20 +2903,51 @@ int remap_pfn_range_notrack(struct vm_area_struct *vma, unsigned long addr,
+  *
+  * Return: %0 on success, negative error code otherwise.
+  */
++#ifdef __HAVE_PFNMAP_TRACKING
+ int remap_pfn_range(struct vm_area_struct *vma, unsigned long addr,
+ 		    unsigned long pfn, unsigned long size, pgprot_t prot)
+ {
++	struct pfnmap_track_ctx *ctx = NULL;
+ 	int err;
+ 
+-	err = track_pfn_remap(vma, &prot, pfn, addr, PAGE_ALIGN(size));
+-	if (err)
++	size = PAGE_ALIGN(size);
++
++	/*
++	 * If we cover the full VMA, we'll perform actual tracking, and
++	 * remember to untrack when the last reference to our tracking
++	 * context from a VMA goes away. We'll keep tracking the whole pfn
++	 * range even during VMA splits and partial unmapping.
++	 *
++	 * If we only cover parts of the VMA, we'll only setup the cachemode
++	 * in the pgprot for the pfn range.
++	 */
++	if (addr == vma->vm_start && addr + size == vma->vm_end) {
++		if (vma->pfnmap_track_ctx)
++			return -EINVAL;
++		ctx = pfnmap_track_ctx_alloc(pfn, size, &prot);
++		if (IS_ERR(ctx))
++			return PTR_ERR(ctx);
++	} else if (pfnmap_setup_cachemode(pfn, size, &prot)) {
+ 		return -EINVAL;
++	}
+ 
+ 	err = remap_pfn_range_notrack(vma, addr, pfn, size, prot);
+-	if (err)
+-		untrack_pfn(vma, pfn, PAGE_ALIGN(size), true);
++	if (ctx) {
++		if (err)
++			kref_put(&ctx->kref, pfnmap_track_ctx_release);
++		else
++			vma->pfnmap_track_ctx = ctx;
++	}
+ 	return err;
+ }
++
++#else
++int remap_pfn_range(struct vm_area_struct *vma, unsigned long addr,
++		    unsigned long pfn, unsigned long size, pgprot_t prot)
++{
++	return remap_pfn_range_notrack(vma, addr, pfn, size, prot);
++}
++#endif
+ EXPORT_SYMBOL(remap_pfn_range);
+ 
+ /**
+diff --git a/mm/mmap.c b/mm/mmap.c
+index 50f902c08341..09c563c95112 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -1784,11 +1784,6 @@ __latent_entropy int dup_mmap(struct mm_struct *mm, struct mm_struct *oldmm)
+ 		tmp = vm_area_dup(mpnt);
+ 		if (!tmp)
+ 			goto fail_nomem;
+-
+-		/* track_pfn_copy() will later take care of copying internal state. */
+-		if (unlikely(tmp->vm_flags & VM_PFNMAP))
+-			untrack_pfn_clear(tmp);
+-
+ 		retval = vma_dup_policy(mpnt, tmp);
+ 		if (retval)
+ 			goto fail_nomem_policy;
+diff --git a/mm/mremap.c b/mm/mremap.c
+index 7db9da609c84..6e78e02f74bd 100644
+--- a/mm/mremap.c
++++ b/mm/mremap.c
+@@ -1191,10 +1191,6 @@ static int copy_vma_and_data(struct vma_remap_struct *vrm,
+ 	if (is_vm_hugetlb_page(vma))
+ 		clear_vma_resv_huge_pages(vma);
+ 
+-	/* Tell pfnmap has moved from this vma */
+-	if (unlikely(vma->vm_flags & VM_PFNMAP))
+-		untrack_pfn_clear(vma);
+-
+ 	*new_vma_ptr = new_vma;
+ 	return err;
+ }
+diff --git a/mm/vma_init.c b/mm/vma_init.c
+index 967ca8517986..8e53c7943561 100644
+--- a/mm/vma_init.c
++++ b/mm/vma_init.c
+@@ -71,7 +71,51 @@ static void vm_area_init_from(const struct vm_area_struct *src,
+ #ifdef CONFIG_NUMA
+ 	dest->vm_policy = src->vm_policy;
+ #endif
++#ifdef __HAVE_PFNMAP_TRACKING
++	dest->pfnmap_track_ctx = NULL;
++#endif
++}
++
++#ifdef __HAVE_PFNMAP_TRACKING
++static inline int vma_pfnmap_track_ctx_dup(struct vm_area_struct *orig,
++		struct vm_area_struct *new)
++{
++	struct pfnmap_track_ctx *ctx = orig->pfnmap_track_ctx;
++
++	if (likely(!ctx))
++		return 0;
++
++	/*
++	 * We don't expect to ever hit this. If ever required, we would have
++	 * to duplicate the tracking.
++	 */
++	if (unlikely(kref_read(&ctx->kref) >= REFCOUNT_MAX))
++		return -ENOMEM;
++	kref_get(&ctx->kref);
++	new->pfnmap_track_ctx = ctx;
++	return 0;
++}
++
++static inline void vma_pfnmap_track_ctx_release(struct vm_area_struct *vma)
++{
++	struct pfnmap_track_ctx *ctx = vma->pfnmap_track_ctx;
++
++	if (likely(!ctx))
++		return;
++
++	kref_put(&ctx->kref, pfnmap_track_ctx_release);
++	vma->pfnmap_track_ctx = NULL;
++}
++#else
++static inline int vma_pfnmap_track_ctx_dup(struct vm_area_struct *orig,
++		struct vm_area_struct *new)
++{
++	return 0;
+ }
++static inline void vma_pfnmap_track_ctx_release(struct vm_area_struct *vma)
++{
++}
++#endif
+ 
+ struct vm_area_struct *vm_area_dup(struct vm_area_struct *orig)
+ {
+@@ -83,6 +127,11 @@ struct vm_area_struct *vm_area_dup(struct vm_area_struct *orig)
+ 	ASSERT_EXCLUSIVE_WRITER(orig->vm_flags);
+ 	ASSERT_EXCLUSIVE_WRITER(orig->vm_file);
+ 	vm_area_init_from(orig, new);
++
++	if (vma_pfnmap_track_ctx_dup(orig, new)) {
++		kmem_cache_free(vm_area_cachep, new);
++		return NULL;
++	}
+ 	vma_lock_init(new, true);
+ 	INIT_LIST_HEAD(&new->anon_vma_chain);
+ 	vma_numab_state_init(new);
+@@ -97,5 +146,6 @@ void vm_area_free(struct vm_area_struct *vma)
+ 	vma_assert_detached(vma);
+ 	vma_numab_state_free(vma);
+ 	free_anon_vma_name(vma);
++	vma_pfnmap_track_ctx_release(vma);
+ 	kmem_cache_free(vm_area_cachep, vma);
+ }

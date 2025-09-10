@@ -1,0 +1,168 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in tcp_can_ingest net/ipv4/tcp_input.c:4896 [inline]
+BUG: KASAN: slab-use-after-free in tcp_prune_ofo_queue+0x37e/0x6e0 net/ipv4/tcp_input.c:5520
+Read of size 4 at addr ffff88807712d850 by task syz.0.66/6172
+
+CPU: 0 UID: 0 PID: 6172 Comm: syz.0.66 Not tainted 6.16.0-rc5-syzkaller-01444-g55e8757c6962 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0xd2/0x2b0 mm/kasan/report.c:521
+ kasan_report+0x118/0x150 mm/kasan/report.c:634
+ tcp_can_ingest net/ipv4/tcp_input.c:4896 [inline]
+ tcp_prune_ofo_queue+0x37e/0x6e0 net/ipv4/tcp_input.c:5520
+ tcp_prune_queue net/ipv4/tcp_input.c:5575 [inline]
+ tcp_try_rmem_schedule+0xb6b/0x1830 net/ipv4/tcp_input.c:4907
+ tcp_data_queue+0x4e3/0x6380 net/ipv4/tcp_input.c:5192
+ tcp_rcv_established+0xf9e/0x1eb0 net/ipv4/tcp_input.c:6208
+ tcp_v4_do_rcv+0xa23/0xce0 net/ipv4/tcp_ipv4.c:1925
+ sk_backlog_rcv include/net/sock.h:1148 [inline]
+ __release_sock+0x21c/0x350 net/core/sock.c:3188
+ release_sock+0x5f/0x1f0 net/core/sock.c:3742
+ tcp_sendmsg+0x39/0x50 net/ipv4/tcp.c:1394
+ sock_sendmsg_nosec net/socket.c:714 [inline]
+ __sock_sendmsg+0x19c/0x270 net/socket.c:729
+ __sys_sendto+0x3bd/0x520 net/socket.c:2228
+ __do_sys_sendto net/socket.c:2235 [inline]
+ __se_sys_sendto net/socket.c:2231 [inline]
+ __x64_sys_sendto+0xde/0x100 net/socket.c:2231
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fcc22d8e929
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fffe0b93918 EFLAGS: 00000246 ORIG_RAX: 000000000000002c
+RAX: ffffffffffffffda RBX: 00007fcc22fb5fa0 RCX: 00007fcc22d8e929
+RDX: 000000000000059a RSI: 0000200000000580 RDI: 0000000000000003
+RBP: 00007fcc22e10b39 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000010008095 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007fcc22fb5fa0 R14: 00007fcc22fb5fa0 R15: 0000000000000006
+ </TASK>
+
+Allocated by task 6172:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3e/0x80 mm/kasan/common.c:68
+ unpoison_slab_object mm/kasan/common.c:319 [inline]
+ __kasan_slab_alloc+0x6c/0x80 mm/kasan/common.c:345
+ kasan_slab_alloc include/linux/kasan.h:250 [inline]
+ slab_post_alloc_hook mm/slub.c:4148 [inline]
+ slab_alloc_node mm/slub.c:4197 [inline]
+ kmem_cache_alloc_node_noprof+0x1bb/0x3c0 mm/slub.c:4249
+ __alloc_skb+0x112/0x2d0 net/core/skbuff.c:659
+ alloc_skb_fclone include/linux/skbuff.h:1386 [inline]
+ tcp_stream_alloc_skb+0x3d/0x340 net/ipv4/tcp.c:892
+ tso_fragment net/ipv4/tcp_output.c:2174 [inline]
+ tcp_write_xmit+0xeec/0x67f0 net/ipv4/tcp_output.c:2819
+ __tcp_push_pending_frames+0x97/0x360 net/ipv4/tcp_output.c:3016
+ tcp_sendmsg_locked+0x483c/0x56d0 net/ipv4/tcp.c:1356
+ tcp_sendmsg+0x2f/0x50 net/ipv4/tcp.c:1393
+ sock_sendmsg_nosec net/socket.c:714 [inline]
+ __sock_sendmsg+0x19c/0x270 net/socket.c:729
+ __sys_sendto+0x3bd/0x520 net/socket.c:2228
+ __do_sys_sendto net/socket.c:2235 [inline]
+ __se_sys_sendto net/socket.c:2231 [inline]
+ __x64_sys_sendto+0xde/0x100 net/socket.c:2231
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 6172:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3e/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x46/0x50 mm/kasan/generic.c:576
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x62/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2381 [inline]
+ slab_free mm/slub.c:4643 [inline]
+ kmem_cache_free+0x18f/0x400 mm/slub.c:4745
+ tcp_prune_ofo_queue+0x198/0x6e0 net/ipv4/tcp_input.c:5517
+ tcp_prune_queue net/ipv4/tcp_input.c:5575 [inline]
+ tcp_try_rmem_schedule+0xb6b/0x1830 net/ipv4/tcp_input.c:4907
+ tcp_data_queue+0x4e3/0x6380 net/ipv4/tcp_input.c:5192
+ tcp_rcv_established+0xf9e/0x1eb0 net/ipv4/tcp_input.c:6208
+ tcp_v4_do_rcv+0xa23/0xce0 net/ipv4/tcp_ipv4.c:1925
+ sk_backlog_rcv include/net/sock.h:1148 [inline]
+ __release_sock+0x21c/0x350 net/core/sock.c:3188
+ release_sock+0x5f/0x1f0 net/core/sock.c:3742
+ tcp_sendmsg+0x39/0x50 net/ipv4/tcp.c:1394
+ sock_sendmsg_nosec net/socket.c:714 [inline]
+ __sock_sendmsg+0x19c/0x270 net/socket.c:729
+ __sys_sendto+0x3bd/0x520 net/socket.c:2228
+ __do_sys_sendto net/socket.c:2235 [inline]
+ __se_sys_sendto net/socket.c:2231 [inline]
+ __x64_sys_sendto+0xde/0x100 net/socket.c:2231
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88807712d680
+ which belongs to the cache skbuff_fclone_cache of size 488
+The buggy address is located 464 bytes inside of
+ freed 488-byte region [ffff88807712d680, ffff88807712d868)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x7712c
+head: order:1 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000000040(head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000040 ffff88801eed0b40 dead000000000122 0000000000000000
+raw: 0000000000000000 00000000000c000c 00000000f5000000 0000000000000000
+head: 00fff00000000040 ffff88801eed0b40 dead000000000122 0000000000000000
+head: 0000000000000000 00000000000c000c 00000000f5000000 0000000000000000
+head: 00fff00000000001 ffffea0001dc4b01 00000000ffffffff 00000000ffffffff
+head: ffffffffffffffff 0000000000000000 00000000ffffffff 0000000000000002
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 1, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 6172, tgid 6172 (syz.0.66), ts 94614480964, free_ts 88683708339
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x240/0x2a0 mm/page_alloc.c:1704
+ prep_new_page mm/page_alloc.c:1712 [inline]
+ get_page_from_freelist+0x21e4/0x22c0 mm/page_alloc.c:3669
+ __alloc_frozen_pages_noprof+0x181/0x370 mm/page_alloc.c:4959
+ alloc_pages_mpol+0x232/0x4a0 mm/mempolicy.c:2419
+ alloc_slab_page mm/slub.c:2451 [inline]
+ allocate_slab+0x8a/0x3b0 mm/slub.c:2619
+ new_slab mm/slub.c:2673 [inline]
+ ___slab_alloc+0xbfc/0x1480 mm/slub.c:3859
+ __slab_alloc mm/slub.c:3949 [inline]
+ __slab_alloc_node mm/slub.c:4024 [inline]
+ slab_alloc_node mm/slub.c:4185 [inline]
+ kmem_cache_alloc_node_noprof+0x280/0x3c0 mm/slub.c:4249
+ __alloc_skb+0x112/0x2d0 net/core/skbuff.c:659
+ alloc_skb_fclone include/linux/skbuff.h:1386 [inline]
+ tcp_stream_alloc_skb+0x3d/0x340 net/ipv4/tcp.c:892
+ tcp_sendmsg_locked+0xefc/0x56d0 net/ipv4/tcp.c:1198
+ tcp_sendmsg+0x2f/0x50 net/ipv4/tcp.c:1393
+ sock_sendmsg_nosec net/socket.c:714 [inline]
+ __sock_sendmsg+0x19c/0x270 net/socket.c:729
+ __sys_sendto+0x3bd/0x520 net/socket.c:2228
+ __do_sys_sendto net/socket.c:2235 [inline]
+ __se_sys_sendto net/socket.c:2231 [inline]
+ __x64_sys_sendto+0xde/0x100 net/socket.c:2231
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+page last free pid 15 tgid 15 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1248 [inline]
+ __free_frozen_pages+0xc71/0xe70 mm/page_alloc.c:2706
+ rcu_do_batch kernel/rcu/tree.c:2576 [inline]
+ rcu_core+0xca8/0x1710 kernel/rcu/tree.c:2832
+ handle_softirqs+0x286/0x870 kernel/softirq.c:579
+ run_ksoftirqd+0x9b/0x100 kernel/softirq.c:968
+ smpboot_thread_fn+0x53f/0xa60 kernel/smpboot.c:164
+ kthread+0x70e/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+Memory state around the buggy address:
+ ffff88807712d700: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88807712d780: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff88807712d800: fb fb fb fb fb fb fb fb fb fb fb fb fb fc fc fc
+                                                 ^
+ ffff88807712d880: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88807712d900: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+==================================================================

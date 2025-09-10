@@ -1,0 +1,56 @@
+  stripe            0
+  stripe_redundancy 0
+  io_time[READ]     0
+  io_time[WRITE]    0
+  fragmentation     0
+  bp_start          8
+  incorrectly set at freespace:0:24:0 (free 0, genbits 0 should be 0), fixing
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/btree_locking.h:306!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 11 Comm: kworker/u8:0 Not tainted 6.12.0-next-20241120-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/30/2024
+Workqueue: btree_node_rewrite async_btree_node_rewrite_work
+RIP: 0010:__btree_node_lock_write fs/bcachefs/btree_locking.h:306 [inline]
+RIP: 0010:bch2_btree_node_lock_write+0x400/0x430 fs/bcachefs/btree_locking.h:327
+Code: 06 be 03 00 00 00 48 c7 c7 80 97 f2 8e 48 89 da e8 a5 c3 d4 00 49 bf 00 00 00 00 00 fc ff df e9 f2 fd ff ff e8 b1 69 79 fd 90 <0f> 0b e8 a9 69 79 fd 90 0f 0b e8 a1 69 79 fd 90 0f 0b 48 8b 4c 24
+RSP: 0018:ffffc90000107778 EFLAGS: 00010293
+RAX: ffffffff8426110f RBX: ffff88803485c288 RCX: ffff88801befbc00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000004
+RBP: ffff88803485c000 R08: ffffffff84260d65 R09: 1ffffffff2030b7e
+R10: dffffc0000000000 R11: fffffbfff2030b7f R12: ffff88803485c268
+R13: 1ffff110061a4b13 R14: ffff888030d25800 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055976c6126b8 CR3: 000000007b348000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_btree_set_root+0x1d8/0xd10 fs/bcachefs/btree_update_interior.c:1323
+ bch2_btree_node_rewrite+0x69d/0x1280 fs/bcachefs/btree_update_interior.c:2172
+ async_btree_node_rewrite_trans fs/bcachefs/btree_update_interior.c:2236 [inline]
+ async_btree_node_rewrite_work+0x31e/0xdf0 fs/bcachefs/btree_update_interior.c:2249
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa63/0x1850 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__btree_node_lock_write fs/bcachefs/btree_locking.h:306 [inline]
+RIP: 0010:bch2_btree_node_lock_write+0x400/0x430 fs/bcachefs/btree_locking.h:327
+Code: 06 be 03 00 00 00 48 c7 c7 80 97 f2 8e 48 89 da e8 a5 c3 d4 00 49 bf 00 00 00 00 00 fc ff df e9 f2 fd ff ff e8 b1 69 79 fd 90 <0f> 0b e8 a9 69 79 fd 90 0f 0b e8 a1 69 79 fd 90 0f 0b 48 8b 4c 24
+RSP: 0018:ffffc90000107778 EFLAGS: 00010293
+RAX: ffffffff8426110f RBX: ffff88803485c288 RCX: ffff88801befbc00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000004
+RBP: ffff88803485c000 R08: ffffffff84260d65 R09: 1ffffffff2030b7e
+R10: dffffc0000000000 R11: fffffbfff2030b7f R12: ffff88803485c268
+R13: 1ffff110061a4b13 R14: ffff888030d25800 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055976c6126b8 CR3: 000000000e736000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

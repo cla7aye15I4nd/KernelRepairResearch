@@ -1,0 +1,41 @@
+id: 976d5ecfab0c7eb43ac3
+bug_link: https://syzkaller.appspot.com/bug?extid=976d5ecfab0c7eb43ac3
+title: WARNING in bpf_raw_tp_link_fill_link_info
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 99408c422d336db32bfab5cbebc10038a70cf7d2
+fix_commit: b474959d5afda6e341a02c85f9595d85d39189ae
+datetime: '2020-08-24T21:03:07-07:00'
+fix_commit_message: 'bpf: Fix a buffer out-of-bound access when filling raw_tp link_info
+
+
+  Commit f2e10bff16a0 ("bpf: Add support for BPF_OBJ_GET_INFO_BY_FD for bpf_link")
+
+  added link query for raw_tp. One of fields in link_info is to
+
+  fill a user buffer with tp_name. The Scurrent checking only
+
+  declares "ulen && !ubuf" as invalid. So "!ulen && ubuf" will be
+
+  valid. Later on, we do "copy_to_user(ubuf, tp_name, ulen - 1)" which
+
+  may overwrite user memory incorrectly.
+
+
+  This patch fixed the problem by disallowing "!ulen && ubuf" case as well.
+
+
+  Fixes: f2e10bff16a0 ("bpf: Add support for BPF_OBJ_GET_INFO_BY_FD for bpf_link")
+
+  Signed-off-by: Yonghong Song <yhs@fb.com>
+
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>
+
+  Acked-by: Andrii Nakryiko <andriin@fb.com>
+
+  Link: https://lore.kernel.org/bpf/20200821191054.714731-1-yhs@fb.com
+
+  '
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 1

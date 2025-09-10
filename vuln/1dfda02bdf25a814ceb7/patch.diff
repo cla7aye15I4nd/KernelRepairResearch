@@ -1,0 +1,32 @@
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index ff58c37469d6..bdb48e5dba04 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -1419,11 +1419,14 @@ static void copy_templates(struct xfrm_policy *xp, struct xfrm_user_tmpl *ut,
+ 
+ static int validate_tmpl(int nr, struct xfrm_user_tmpl *ut, u16 family)
+ {
++	u16 prev_family;
+ 	int i;
+ 
+ 	if (nr > XFRM_MAX_DEPTH)
+ 		return -EINVAL;
+ 
++	prev_family = family;
++
+ 	for (i = 0; i < nr; i++) {
+ 		/* We never validated the ut->family value, so many
+ 		 * applications simply leave it at zero.  The check was
+@@ -1435,6 +1438,12 @@ static int validate_tmpl(int nr, struct xfrm_user_tmpl *ut, u16 family)
+ 		if (!ut[i].family)
+ 			ut[i].family = family;
+ 
++		if ((ut[i].mode == XFRM_MODE_TRANSPORT) &&
++		    (ut[i].family != prev_family))
++			return -EINVAL;
++
++		prev_family = ut[i].family;
++
+ 		switch (ut[i].family) {
+ 		case AF_INET:
+ 			break;

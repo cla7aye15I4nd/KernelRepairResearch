@@ -1,0 +1,126 @@
+=============================
+[ BUG: Invalid wait context ]
+6.12.0-syzkaller-10684-gf1cd565ce577 #0 Not tainted
+-----------------------------
+syz-executor318/5855 is trying to lock:
+ffffffff8eacb678 (kernfs_rename_lock){....}-{3:3}, at: kernfs_path_from_node+0x92/0xb00 fs/kernfs/dir.c:229
+other info that might help us debug this:
+context-{5:5}
+8 locks held by syz-executor318/5855:
+ #0: ffffffff8e991968 (tracepoints_mutex){+.+.}-{4:4}, at: tracepoint_probe_register_prio_may_exist+0xbb/0x190 kernel/tracepoint.c:431
+ #1: ffffffff8e7d6450 (cpu_hotplug_lock){++++}-{0:0}, at: static_key_enable+0x12/0x20 kernel/jump_label.c:222
+ #2: ffffffff8e9f4e68 (jump_label_mutex){+.+.}-{4:4}, at: jump_label_lock kernel/jump_label.c:27 [inline]
+ #2: ffffffff8e9f4e68 (jump_label_mutex){+.+.}-{4:4}, at: static_key_enable_cpuslocked+0xd7/0x260 kernel/jump_label.c:207
+ #3: ffffffff8e7eb828 (text_mutex){+.+.}-{4:4}, at: arch_jump_label_transform_apply+0x17/0x30 arch/x86/kernel/jump_label.c:145
+ #4: ffffffff8e93c560 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:337 [inline]
+ #4: ffffffff8e93c560 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:849 [inline]
+ #4: ffffffff8e93c560 (rcu_read_lock){....}-{1:3}, at: __pte_offset_map+0x82/0x380 mm/pgtable-generic.c:287
+ #5: ffff8880b873e798 (&rq->__lock){-.-.}-{2:2}, at: raw_spin_rq_lock_nested+0x2a/0x140 kernel/sched/core.c:598
+ #6: ffffffff8e93c560 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:337 [inline]
+ #6: ffffffff8e93c560 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:849 [inline]
+ #6: ffffffff8e93c560 (rcu_read_lock){....}-{1:3}, at: __bpf_trace_run kernel/trace/bpf_trace.c:2350 [inline]
+ #6: ffffffff8e93c560 (rcu_read_lock){....}-{1:3}, at: bpf_trace_run2+0x1fc/0x540 kernel/trace/bpf_trace.c:2392
+ #7: ffff888079f6bc60 (&mm->mmap_lock){++++}-{4:4}, at: mmap_read_trylock include/linux/mmap_lock.h:163 [inline]
+ #7: ffff888079f6bc60 (&mm->mmap_lock){++++}-{4:4}, at: stack_map_get_build_id_offset+0x431/0x870 kernel/bpf/stackmap.c:157
+stack backtrace:
+CPU: 1 UID: 0 PID: 5855 Comm: syz-executor318 Not tainted 6.12.0-syzkaller-10684-gf1cd565ce577 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_lock_invalid_wait_context kernel/locking/lockdep.c:4826 [inline]
+ check_wait_context kernel/locking/lockdep.c:4898 [inline]
+ __lock_acquire+0x15a8/0x2100 kernel/locking/lockdep.c:5176
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5849
+ __raw_read_lock_irqsave include/linux/rwlock_api_smp.h:160 [inline]
+ _raw_read_lock_irqsave+0xdd/0x130 kernel/locking/spinlock.c:236
+ kernfs_path_from_node+0x92/0xb00 fs/kernfs/dir.c:229
+ kernfs_path include/linux/kernfs.h:598 [inline]
+ cgroup_path include/linux/cgroup.h:599 [inline]
+ get_mm_memcg_path+0x95/0x350 mm/mmap_lock.c:59
+ __mmap_lock_do_trace_acquire_returned+0xfc/0x300 mm/mmap_lock.c:79
+ __mmap_lock_trace_acquire_returned include/linux/mmap_lock.h:36 [inline]
+ mmap_read_trylock include/linux/mmap_lock.h:164 [inline]
+ stack_map_get_build_id_offset+0x84d/0x870 kernel/bpf/stackmap.c:157
+ __bpf_get_stack+0x8da/0xad0 kernel/bpf/stackmap.c:483
+ ____bpf_get_stack kernel/bpf/stackmap.c:499 [inline]
+ bpf_get_stack+0x33/0x50 kernel/bpf/stackmap.c:496
+ ____bpf_get_stack_raw_tp kernel/trace/bpf_trace.c:1944 [inline]
+ bpf_get_stack_raw_tp+0x1a3/0x240 kernel/trace/bpf_trace.c:1934
+ bpf_prog_ec3b2eefa702d8d3+0x43/0x47
+ bpf_dispatcher_nop_func include/linux/bpf.h:1290 [inline]
+ __bpf_prog_run include/linux/filter.h:701 [inline]
+ bpf_prog_run include/linux/filter.h:708 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2351 [inline]
+ bpf_trace_run2+0x2ec/0x540 kernel/trace/bpf_trace.c:2392
+ __traceiter_tlb_flush+0x77/0xd0 include/trace/events/tlb.h:38
+ trace_tlb_flush+0x118/0x140 include/trace/events/tlb.h:38
+ switch_mm_irqs_off+0x77a/0xa70
+ context_switch kernel/sched/core.c:5353 [inline]
+ __schedule+0x10c8/0x4c30 kernel/sched/core.c:6756
+ preempt_schedule_irq+0xfb/0x1c0 kernel/sched/core.c:7078
+ irqentry_exit+0x5e/0x90 kernel/entry/common.c:354
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:lock_acquire+0x264/0x550 kernel/locking/lockdep.c:5853
+Code: 2b 00 74 08 4c 89 f7 e8 3a af 8f 00 f6 44 24 61 02 0f 85 85 01 00 00 41 f7 c7 00 02 00 00 74 01 fb 48 c7 44 24 40 0e 36 e0 45 <4b> c7 44 25 00 00 00 00 00 43 c7 44 25 09 00 00 00 00 43 c7 44 25
+RSP: 0018:ffffc90003e17380 EFLAGS: 00000206
+RAX: 0000000000000001 RBX: 1ffff920007c2e7c RCX: ffff88807d7bc6d8
+RDX: dffffc0000000000 RSI: ffffffff8c0aeb60 RDI: ffffffff8c6158a0
+RBP: ffffc90003e174c8 R08: ffffffff94323887 R09: 1ffffffff2864710
+R10: dffffc0000000000 R11: fffffbfff2864711 R12: 1ffff920007c2e78
+R13: dffffc0000000000 R14: ffffc90003e173e0 R15: 0000000000000246
+ rcu_lock_acquire include/linux/rcupdate.h:337 [inline]
+ rcu_read_lock include/linux/rcupdate.h:849 [inline]
+ __pte_offset_map+0x9e/0x380 mm/pgtable-generic.c:287
+ __pte_offset_map_lock+0xc7/0x300 mm/pgtable-generic.c:398
+ get_locked_pte include/linux/mm.h:2739 [inline]
+ __text_poke+0x2c5/0xd30 arch/x86/kernel/alternative.c:1928
+ text_poke arch/x86/kernel/alternative.c:2013 [inline]
+ text_poke_bp_batch+0x265/0xb30 arch/x86/kernel/alternative.c:2321
+ text_poke_flush arch/x86/kernel/alternative.c:2515 [inline]
+ text_poke_finish+0x30/0x50 arch/x86/kernel/alternative.c:2522
+ arch_jump_label_transform_apply+0x1c/0x30 arch/x86/kernel/jump_label.c:146
+ static_key_enable_cpuslocked+0x136/0x260 kernel/jump_label.c:210
+ static_key_enable+0x1a/0x20 kernel/jump_label.c:223
+ tracepoint_add_func+0x973/0xaa0 kernel/tracepoint.c:315
+ tracepoint_probe_register_prio_may_exist+0x122/0x190 kernel/tracepoint.c:435
+ bpf_raw_tp_link_attach+0x4a3/0x700 kernel/bpf/syscall.c:3981
+ bpf_raw_tracepoint_open+0x177/0x1f0 kernel/bpf/syscall.c:4012
+ __sys_bpf+0x3c0/0x810 kernel/bpf/syscall.c:5832
+ __do_sys_bpf kernel/bpf/syscall.c:5897 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5895 [inline]
+ __x64_sys_bpf+0x7c/0x90 kernel/bpf/syscall.c:5895
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f3b097d1169
+Code: Unable to access opcode bytes at 0x7f3b097d113f.
+RSP: 002b:00007ffe3b3b2358 EFLAGS: 00000246 ORIG_RAX: 0000000000000141
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f3b097d1169
+RDX: 0000000000000010 RSI: 0000000020000080 RDI: 0000000000000011
+RBP: 0000000000000000 R08: 00000000000000a0 R09: 00000000000000a0
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+----------------
+Code disassembly (best guess):
+   0:	2b 00                	sub    (%rax),%eax
+   2:	74 08                	je     0xc
+   4:	4c 89 f7             	mov    %r14,%rdi
+   7:	e8 3a af 8f 00       	call   0x8faf46
+   c:	f6 44 24 61 02       	testb  $0x2,0x61(%rsp)
+  11:	0f 85 85 01 00 00    	jne    0x19c
+  17:	41 f7 c7 00 02 00 00 	test   $0x200,%r15d
+  1e:	74 01                	je     0x21
+  20:	fb                   	sti
+  21:	48 c7 44 24 40 0e 36 	movq   $0x45e0360e,0x40(%rsp)
+  28:	e0 45
+* 2a:	4b c7 44 25 00 00 00 	movq   $0x0,0x0(%r13,%r12,1) <-- trapping instruction
+  31:	00 00
+  33:	43 c7 44 25 09 00 00 	movl   $0x0,0x9(%r13,%r12,1)
+  3a:	00 00
+  3c:	43                   	rex.XB
+  3d:	c7                   	.byte 0xc7
+  3e:	44                   	rex.R
+  3f:	25                   	.byte 0x25

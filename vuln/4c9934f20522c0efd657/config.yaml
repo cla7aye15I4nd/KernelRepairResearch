@@ -1,0 +1,24 @@
+id: 4c9934f20522c0efd657
+bug_link: https://syzkaller.appspot.com/bug?extid=4c9934f20522c0efd657
+title: general protection fault in sctp_sched_rr_dequeue
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ee60ad219f5c7c4fb2f047f88037770063ef785f
+fix_commit: 2e990dfd13974d9eae493006f42ffb48707970ef
+datetime: '2019-03-08T11:24:33-08:00'
+fix_commit_message: "sctp: remove sched init from sctp_stream_init\n\nsyzbot reported\
+  \ a NULL-ptr deref caused by that sched->init() in\nsctp_stream_init() set stream->rr_next\
+  \ = NULL.\n\n  kasan: GPF could be caused by NULL-ptr deref or user memory access\n\
+  \  RIP: 0010:sctp_sched_rr_dequeue+0xd3/0x170 net/sctp/stream_sched_rr.c:141\n \
+  \ Call Trace:\n    sctp_outq_dequeue_data net/sctp/outqueue.c:90 [inline]\n    sctp_outq_flush_data\
+  \ net/sctp/outqueue.c:1079 [inline]\n    sctp_outq_flush+0xba2/0x2790 net/sctp/outqueue.c:1205\n\
+  \nAll sched info is saved in sout->ext now, in sctp_stream_init()\nsctp_stream_alloc_out()\
+  \ will not change it, there's no need to\ncall sched->init() again, since sctp_outq_init()\
+  \ has already\ndone it.\n\nFixes: 5bbbbe32a431 (\"sctp: introduce stream scheduler\
+  \ foundations\")\nReported-by: syzbot+4c9934f20522c0efd657@syzkaller.appspotmail.com\n\
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>\nAcked-by: Neil Horman <nhorman@tuxdriver.com>\n\
+  Acked-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>\nSigned-off-by: David\
+  \ S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 1
+covered_count: 0

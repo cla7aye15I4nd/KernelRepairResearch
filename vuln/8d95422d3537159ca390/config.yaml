@@ -1,0 +1,67 @@
+id: 8d95422d3537159ca390
+bug_link: https://syzkaller.appspot.com/bug?extid=8d95422d3537159ca390
+title: kernel BUG in find_mergeable_anon_vma
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 790e1fa86b340c2bd4a327e01c161f7a1ad885f6
+fix_commit: 3dd4432549415f3c65dd52d5c687629efbf4ece1
+datetime: '2023-04-05T18:06:22-07:00'
+fix_commit_message: 'mm: enable maple tree RCU mode by default
+
+
+  Use the maple tree in RCU mode for VMA tracking.
+
+
+  The maple tree tracks the stack and is able to update the pivot
+
+  (lower/upper boundary) in-place to allow the page fault handler to write
+
+  to the tree while holding just the mmap read lock.  This is safe as the
+
+  writes to the stack have a guard VMA which ensures there will always be a
+
+  NULL in the direction of the growth and thus will only update a pivot.
+
+
+  It is possible, but not recommended, to have VMAs that grow up/down
+
+  without guard VMAs.  syzbot has constructed a testcase which sets up a VMA
+
+  to grow and consume the empty space.  Overwriting the entire NULL entry
+
+  causes the tree to be altered in a way that is not safe for concurrent
+
+  readers; the readers may see a node being rewritten or one that does not
+
+  match the maple state they are using.
+
+
+  Enabling RCU mode allows the concurrent readers to see a stable node and
+
+  will return the expected result.
+
+
+  [Liam.Howlett@Oracle.com: we don''t need to free the nodes with RCU[
+
+  Link: https://lore.kernel.org/linux-mm/000000000000b0a65805f663ace6@google.com/
+
+  Link: https://lkml.kernel.org/r/20230227173632.3292573-9-surenb@google.com
+
+  Fixes: d4af56c5c7c6 ("mm: start tracking VMAs with maple tree")
+
+  Signed-off-by: Liam R. Howlett <Liam.Howlett@oracle.com>
+
+  Signed-off-by: Suren Baghdasaryan <surenb@google.com>
+
+  Reported-by: syzbot+8d95422d3537159ca390@syzkaller.appspotmail.com
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- include/linux
+- kernel
+- mm
+hunk_count: 5
+covered_count: 0

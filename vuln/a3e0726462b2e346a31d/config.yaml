@@ -1,0 +1,26 @@
+id: a3e0726462b2e346a31d
+bug_link: https://syzkaller.appspot.com/bug?extid=a3e0726462b2e346a31d
+title: WARNING in __debug_object_init
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a84d1169164b274f13b97a23ff235c000efe3b49
+fix_commit: bd03143007eb9b03a7f2316c677780561b68ba2a
+datetime: '2018-03-29T16:10:07+02:00'
+fix_commit_message: "alarmtimer: Init nanosleep alarm timer on stack\n\nsyszbot reported\
+  \ the following debugobjects splat:\n\n ODEBUG: object is on stack, but not annotated\n\
+  \ WARNING: CPU: 0 PID: 4185 at lib/debugobjects.c:328\n\n RIP: 0010:debug_object_is_on_stack\
+  \ lib/debugobjects.c:327 [inline]\n debug_object_init+0x17/0x20 lib/debugobjects.c:391\n\
+  \ debug_hrtimer_init kernel/time/hrtimer.c:410 [inline]\n debug_init kernel/time/hrtimer.c:458\
+  \ [inline]\n hrtimer_init+0x8c/0x410 kernel/time/hrtimer.c:1259\n alarm_init kernel/time/alarmtimer.c:339\
+  \ [inline]\n alarm_timer_nsleep+0x164/0x4d0 kernel/time/alarmtimer.c:787\n SYSC_clock_nanosleep\
+  \ kernel/time/posix-timers.c:1226 [inline]\n SyS_clock_nanosleep+0x235/0x330 kernel/time/posix-timers.c:1204\n\
+  \ do_syscall_64+0x281/0x940 arch/x86/entry/common.c:287\n entry_SYSCALL_64_after_hwframe+0x42/0xb7\n\
+  \nThis happens because the hrtimer for the alarm nanosleep is on stack, but\nthe\
+  \ code does not use the proper debug objects initialization.\n\nSplit out the code\
+  \ for the allocated use cases and invoke\nhrtimer_init_on_stack() for the nanosleep\
+  \ related functions.\n\nReported-by: syzbot+a3e0726462b2e346a31d@syzkaller.appspotmail.com\n\
+  Signed-off-by: Thomas Gleixner <tglx@linutronix.de>\nCc: John Stultz <john.stultz@linaro.org>\n\
+  Cc: syzkaller-bugs@googlegroups.com\nLink: https://lkml.kernel.org/r/alpine.DEB.2.21.1803261528270.1585@nanos.tec.linutronix.de\n"
+submodule:
+- kernel/time
+hunk_count: 6
+covered_count: 5

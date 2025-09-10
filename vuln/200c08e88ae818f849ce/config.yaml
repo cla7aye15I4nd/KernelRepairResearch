@@ -1,0 +1,42 @@
+id: 200c08e88ae818f849ce
+bug_link: https://syzkaller.appspot.com/bug?extid=200c08e88ae818f849ce
+title: WARNING in exception_type
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 678a305b85d95f288c12e3d69a32d3351b34f2bb
+fix_commit: e7177339d7b5f9594b316842122b5fda9513d5e2
+datetime: '2021-09-06T06:18:02-04:00'
+fix_commit_message: "Revert \"KVM: x86: mmu: Add guest physical address check in translate_gpa()\"\
+  \n\nRevert a misguided illegal GPA check when \"translating\" a non-nested GPA.\n\
+  The check is woefully incomplete as it does not fill in @exception as\nexpected\
+  \ by all callers, which leads to KVM attempting to inject a bogus\nexception, potentially\
+  \ exposing kernel stack information in the process.\n\n WARNING: CPU: 0 PID: 8469\
+  \ at arch/x86/kvm/x86.c:525 exception_type+0x98/0xb0 arch/x86/kvm/x86.c:525\n CPU:\
+  \ 1 PID: 8469 Comm: syz-executor531 Not tainted 5.14.0-rc7-syzkaller #0\n RIP: 0010:exception_type+0x98/0xb0\
+  \ arch/x86/kvm/x86.c:525\n Call Trace:\n  x86_emulate_instruction+0xef6/0x1460 arch/x86/kvm/x86.c:7853\n\
+  \  kvm_mmu_page_fault+0x2f0/0x1810 arch/x86/kvm/mmu/mmu.c:5199\n  handle_ept_misconfig+0xdf/0x3e0\
+  \ arch/x86/kvm/vmx/vmx.c:5336\n  __vmx_handle_exit arch/x86/kvm/vmx/vmx.c:6021 [inline]\n\
+  \  vmx_handle_exit+0x336/0x1800 arch/x86/kvm/vmx/vmx.c:6038\n  vcpu_enter_guest+0x2a1c/0x4430\
+  \ arch/x86/kvm/x86.c:9712\n  vcpu_run arch/x86/kvm/x86.c:9779 [inline]\n  kvm_arch_vcpu_ioctl_run+0x47d/0x1b20\
+  \ arch/x86/kvm/x86.c:10010\n  kvm_vcpu_ioctl+0x49e/0xe50 arch/x86/kvm/../../../virt/kvm/kvm_main.c:3652\n\
+  \nThe bug has escaped notice because practically speaking the GPA check is\nuseless.\
+  \  The GPA check in question only comes into play when KVM is\nwalking guest page\
+  \ tables (or \"translating\" CR3), and KVM already handles\nillegal GPA checks by\
+  \ setting reserved bits in rsvd_bits_mask for each\nPxE, or in the case of CR3 for\
+  \ loading PTDPTRs, manually checks for an\nillegal CR3.  This particular failure\
+  \ doesn't hit the existing reserved\nbits checks because syzbot sets guest.MAXPHYADDR=1,\
+  \ and IA32 architecture\nsimply doesn't allow for such an absurd MAXPHYADDR, e.g.\
+  \ 32-bit paging\ndoesn't define any reserved PA bits checks, which KVM emulates\
+  \ by only\nincorporating the reserved PA bits into the \"high\" bits, i.e. bits\
+  \ 63:32.\n\nSimply remove the bogus check.  There is zero meaningful value and no\n\
+  architectural justification for supporting guest.MAXPHYADDR < 32, and\nproperly\
+  \ filling the exception would introduce non-trivial complexity.\n\nThis reverts\
+  \ commit ec7771ab471ba6a945350353617e2e3385d0e013.\n\nFixes: ec7771ab471b (\"KVM:\
+  \ x86: mmu: Add guest physical address check in translate_gpa()\")\nCc: stable@vger.kernel.org\n\
+  Reported-by: syzbot+200c08e88ae818f849ce@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Sean Christopherson <seanjc@google.com>\nMessage-Id: <20210831164224.1119728-2-seanjc@google.com>\n\
+  Reviewed-by: Vitaly Kuznetsov <vkuznets@redhat.com>\nSigned-off-by: Paolo Bonzini\
+  \ <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm/mmu
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,52 @@
+id: b07d8440edb5f8988eea
+bug_link: https://syzkaller.appspot.com/bug?extid=b07d8440edb5f8988eea
+title: 'BUG: sleeping function called from invalid context in stack_depot_save'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 54aa386661fef92b5f092d7068bc6d4952b91a71
+fix_commit: 187ad460b8413e863c951998cb321a117a717868
+datetime: '2021-07-15T10:13:49-07:00'
+fix_commit_message: "mm/page_alloc: avoid page allocator recursion with pagesets.lock\
+  \ held\n\nSyzbot is reporting potential deadlocks due to pagesets.lock when\nPAGE_OWNER\
+  \ is enabled.  One example from Desmond Cheong Zhi Xi is as\nfollows\n\n  __alloc_pages_bulk()\n\
+  \    local_lock_irqsave(&pagesets.lock, flags) <---- outer lock here\n    prep_new_page():\n\
+  \      post_alloc_hook():\n        set_page_owner():\n          __set_page_owner():\n\
+  \            save_stack():\n              stack_depot_save():\n                alloc_pages():\n\
+  \                  alloc_page_interleave():\n                    __alloc_pages():\n\
+  \                      get_page_from_freelist():\n                        rm_queue():\n\
+  \                          rm_queue_pcplist():\n                            local_lock_irqsave(&pagesets.lock,\
+  \ flags);\n                            *** DEADLOCK ***\n\nZhang, Qiang also reported\n\
+  \n  BUG: sleeping function called from invalid context at mm/page_alloc.c:5179\n\
+  \  in_atomic(): 0, irqs_disabled(): 1, non_block: 0, pid: 1, name: swapper/0\n \
+  \ .....\n  __dump_stack lib/dump_stack.c:79 [inline]\n  dump_stack_lvl+0xcd/0x134\
+  \ lib/dump_stack.c:96\n  ___might_sleep.cold+0x1f1/0x237 kernel/sched/core.c:9153\n\
+  \  prepare_alloc_pages+0x3da/0x580 mm/page_alloc.c:5179\n  __alloc_pages+0x12f/0x500\
+  \ mm/page_alloc.c:5375\n  alloc_page_interleave+0x1e/0x200 mm/mempolicy.c:2147\n\
+  \  alloc_pages+0x238/0x2a0 mm/mempolicy.c:2270\n  stack_depot_save+0x39d/0x4e0 lib/stackdepot.c:303\n\
+  \  save_stack+0x15e/0x1e0 mm/page_owner.c:120\n  __set_page_owner+0x50/0x290 mm/page_owner.c:181\n\
+  \  prep_new_page mm/page_alloc.c:2445 [inline]\n  __alloc_pages_bulk+0x8b9/0x1870\
+  \ mm/page_alloc.c:5313\n  alloc_pages_bulk_array_node include/linux/gfp.h:557 [inline]\n\
+  \  vm_area_alloc_pages mm/vmalloc.c:2775 [inline]\n  __vmalloc_area_node mm/vmalloc.c:2845\
+  \ [inline]\n  __vmalloc_node_range+0x39d/0x960 mm/vmalloc.c:2947\n  __vmalloc_node\
+  \ mm/vmalloc.c:2996 [inline]\n  vzalloc+0x67/0x80 mm/vmalloc.c:3066\n\nThere are\
+  \ a number of ways it could be fixed.  The page owner code could\nbe audited to\
+  \ strip GFP flags that allow sleeping but it'll impair the\nfunctionality of PAGE_OWNER\
+  \ if allocations fail.  The bulk allocator could\nadd a special case to release/reacquire\
+  \ the lock for prep_new_page and\nlookup PCP after the lock is reacquired at the\
+  \ cost of performance.  The\npages requiring prep could be tracked using the least\
+  \ significant bit and\nlooping through the array although it is more complicated\
+  \ for the list\ninterface.  The options are relatively complex and the second one\
+  \ still\nincurs a performance penalty when PAGE_OWNER is active so this patch takes\n\
+  the simple approach -- disable bulk allocation of PAGE_OWNER is active.\nThe caller\
+  \ will be forced to allocate one page at a time incurring a\nperformance penalty\
+  \ but PAGE_OWNER is already a performance penalty.\n\nLink: https://lkml.kernel.org/r/20210708081434.GV3840@techsingularity.net\n\
+  Fixes: dbbee9d5cd83 (\"mm/page_alloc: convert per-cpu list protection to local_lock\"\
+  )\nSigned-off-by: Mel Gorman <mgorman@techsingularity.net>\nReported-by: Desmond\
+  \ Cheong Zhi Xi <desmondcheongzx@gmail.com>\nReported-by: \"Zhang, Qiang\" <Qiang.Zhang@windriver.com>\n\
+  Reported-by: syzbot+127fd7828d6eeb611703@syzkaller.appspotmail.com\nTested-by: syzbot+127fd7828d6eeb611703@syzkaller.appspotmail.com\n\
+  Acked-by: Rafael Aquini <aquini@redhat.com>\nCc: Shuah Khan <skhan@linuxfoundation.org>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds\
+  \ <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 0

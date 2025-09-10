@@ -1,0 +1,52 @@
+id: 00cd27751f78817f167b
+bug_link: https://syzkaller.appspot.com/bug?extid=00cd27751f78817f167b
+title: WARNING in blkdev_get_by_dev
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e89e001f24bf7bc558d9ebccb97fd559443021da
+fix_commit: 985958b8584cc143555f1bd735e7ab5066c944a7
+datetime: '2023-06-20T07:17:46-06:00'
+fix_commit_message: 'block: fix wrong mode for blkdev_get_by_dev() from disk_scan_partitions()
+
+
+  After commit 2736e8eeb0cc ("block: use the holder as indication for
+
+  exclusive opens"), blkdev_get_by_dev() will warn if holder is NULL and
+
+  mode contains ''FMODE_EXCL''.
+
+
+  holder from blkdev_get_by_dev() from disk_scan_partitions() is always NULL,
+
+  hence it should not use ''FMODE_EXCL'', which is broben by the commit. For
+
+  consequence, WARN_ON_ONCE() will be triggered from blkdev_get_by_dev()
+
+  if user scan partitions with device opened exclusively.
+
+
+  Fix this problem by removing ''FMODE_EXCL'' from disk_scan_partitions(),
+
+  as it used to be.
+
+
+  Reported-by: syzbot+00cd27751f78817f167b@syzkaller.appspotmail.com
+
+  Link: https://syzkaller.appspot.com/bug?extid=00cd27751f78817f167b
+
+  Fixes: 2736e8eeb0cc ("block: use the holder as indication for exclusive opens")
+
+  Signed-off-by: Yu Kuai <yukuai3@huawei.com>
+
+  Reviewed-by: Christian Brauner <brauner@kernel.org>
+
+  Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+  Link: https://lore.kernel.org/r/20230618140402.7556-1-yukuai1@huaweicloud.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- block
+hunk_count: 1
+covered_count: 1

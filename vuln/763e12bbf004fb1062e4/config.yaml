@@ -1,0 +1,39 @@
+id: 763e12bbf004fb1062e4
+bug_link: https://syzkaller.appspot.com/bug?extid=763e12bbf004fb1062e4
+title: 'WARNING: ODEBUG bug in io_sq_offload_create'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 91a7703a036b146481b8a0bd6efa6200d296ca5d
+fix_commit: f2320f1dd6f6f82cb2c7aff23a12bab537bdea89
+datetime: '2025-06-17T06:43:18-06:00'
+fix_commit_message: 'io_uring/sqpoll: don''t put task_struct on tctx setup failure
+
+
+  A recent commit moved the error handling of sqpoll thread and tctx
+
+  failures into the thread itself, as part of fixing an issue. However, it
+
+  missed that tctx allocation may also fail, and that
+
+  io_sq_offload_create() does its own error handling for the task_struct
+
+  in that case.
+
+
+  Remove the manual task putting in io_sq_offload_create(), as
+
+  io_sq_thread() will notice that the tctx did not get setup and hence it
+
+  should put itself and exit.
+
+
+  Reported-by: syzbot+763e12bbf004fb1062e4@syzkaller.appspotmail.com
+
+  Fixes: ac0b8b327a56 ("io_uring: fix use-after-free of sq->thread in __io_uring_show_fdinfo()")
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 3
+covered_count: 2

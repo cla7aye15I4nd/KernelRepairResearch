@@ -1,0 +1,46 @@
+diff --git a/include/linux/lockdep.h b/include/linux/lockdep.h
+index 0cc65d216701..467b94257105 100644
+--- a/include/linux/lockdep.h
++++ b/include/linux/lockdep.h
+@@ -329,12 +329,6 @@ extern void lock_unpin_lock(struct lockdep_map *lock, struct pin_cookie);
+ 
+ #define lockdep_assert_none_held_once()		\
+ 	lockdep_assert_once(!current->lockdep_depth)
+-/*
+- * Ensure that softirq is handled within the callchain and not delayed and
+- * handled by chance.
+- */
+-#define lockdep_assert_softirq_will_run()	\
+-	lockdep_assert_once(hardirq_count() | softirq_count())
+ 
+ #define lockdep_recursing(tsk)	((tsk)->lockdep_recursion)
+ 
+@@ -420,7 +414,6 @@ extern int lockdep_is_held(const void *);
+ #define lockdep_assert_held_read(l)		do { (void)(l); } while (0)
+ #define lockdep_assert_held_once(l)		do { (void)(l); } while (0)
+ #define lockdep_assert_none_held_once()	do { } while (0)
+-#define lockdep_assert_softirq_will_run()	do { } while (0)
+ 
+ #define lockdep_recursing(tsk)			(0)
+ 
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 8e0cc5f2020d..8a5109479dbe 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -4277,7 +4277,6 @@ static inline void ____napi_schedule(struct softnet_data *sd,
+ {
+ 	struct task_struct *thread;
+ 
+-	lockdep_assert_softirq_will_run();
+ 	lockdep_assert_irqs_disabled();
+ 
+ 	if (test_bit(NAPI_STATE_THREADED, &napi->state)) {
+@@ -4887,7 +4886,7 @@ int __netif_rx(struct sk_buff *skb)
+ {
+ 	int ret;
+ 
+-	lockdep_assert_softirq_will_run();
++	lockdep_assert_once(hardirq_count() | softirq_count());
+ 
+ 	trace_netif_rx_entry(skb);
+ 	ret = netif_rx_internal(skb);

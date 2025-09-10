@@ -1,0 +1,26 @@
+id: acdeb633f6211ccdf886
+bug_link: https://syzkaller.appspot.com/bug?extid=acdeb633f6211ccdf886
+title: WARNING in clear_standby
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d95e674c01cfb5461e8b9fdeebf6d878c9b80b2f
+fix_commit: 4aac9228d16458cedcfd90c7fb37211cf3653ac3
+datetime: '2019-01-21T14:53:12+01:00'
+fix_commit_message: "libceph: avoid KEEPALIVE_PENDING races in ceph_con_keepalive()\n\
+  \ncon_fault() can transition the connection into STANDBY right after\nceph_con_keepalive()\
+  \ clears STANDBY in clear_standby():\n\n    libceph user thread               ceph-msgr\
+  \ worker\n\nceph_con_keepalive()\n  mutex_lock(&con->mutex)\n  clear_standby(con)\n\
+  \  mutex_unlock(&con->mutex)\n                                mutex_lock(&con->mutex)\n\
+  \                                con_fault()\n                                 \
+  \ ...\n                                  if KEEPALIVE_PENDING isn't set\n      \
+  \                              set state to STANDBY\n                          \
+  \        ...\n                                mutex_unlock(&con->mutex)\n  set KEEPALIVE_PENDING\n\
+  \  set WRITE_PENDING\n\nThis triggers warnings in clear_standby() when either ceph_con_send()\n\
+  or ceph_con_keepalive() get to clearing STANDBY next time.\n\nI don't see a reason\
+  \ to condition queue_con() call on the previous\nvalue of KEEPALIVE_PENDING, so\
+  \ move the setting of KEEPALIVE_PENDING\ninto the critical section -- unlike WRITE_PENDING,\
+  \ KEEPALIVE_PENDING\ncould have been a non-atomic flag.\n\nReported-by: syzbot+acdeb633f6211ccdf886@syzkaller.appspotmail.com\n\
+  Signed-off-by: Ilya Dryomov <idryomov@gmail.com>\nTested-by: Myungho Jung <mhjungk@gmail.com>\n"
+submodule:
+- net/ceph
+hunk_count: 1
+covered_count: 0

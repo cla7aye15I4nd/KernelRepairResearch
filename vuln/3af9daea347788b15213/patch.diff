@@ -1,0 +1,33 @@
+diff --git a/fs/bcachefs/printbuf.c b/fs/bcachefs/printbuf.c
+index 8b0369185f5c..9f529e4c1b16 100644
+--- a/fs/bcachefs/printbuf.c
++++ b/fs/bcachefs/printbuf.c
+@@ -45,6 +45,13 @@ int bch2_printbuf_make_room(struct printbuf *out, unsigned extra)
+ 
+ 	unsigned new_size = roundup_pow_of_two(out->size + extra);
+ 
++	/* Sanity check... */
++	if (new_size > PAGE_SIZE << MAX_PAGE_ORDER) {
++		out->allocation_failure = true;
++		out->overflow = true;
++		return -ENOMEM;
++	}
++
+ 	/*
+ 	 * Note: output buffer must be freeable with kfree(), it's not required
+ 	 * that the user use printbuf_exit().
+diff --git a/fs/bcachefs/super.c b/fs/bcachefs/super.c
+index 294a9d35a9f2..2206a8dee693 100644
+--- a/fs/bcachefs/super.c
++++ b/fs/bcachefs/super.c
+@@ -551,9 +551,9 @@ static void __bch2_fs_free(struct bch_fs *c)
+ 	bch2_fs_io_read_exit(c);
+ 	bch2_fs_buckets_waiting_for_journal_exit(c);
+ 	bch2_fs_btree_interior_update_exit(c);
+-	bch2_fs_btree_iter_exit(c);
+ 	bch2_fs_btree_key_cache_exit(&c->btree_key_cache);
+ 	bch2_fs_btree_cache_exit(c);
++	bch2_fs_btree_iter_exit(c);
+ 	bch2_fs_replicas_exit(c);
+ 	bch2_fs_journal_exit(&c->journal);
+ 	bch2_io_clock_exit(&c->io_clock[WRITE]);

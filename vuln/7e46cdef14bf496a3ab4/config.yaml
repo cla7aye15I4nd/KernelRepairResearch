@@ -1,0 +1,96 @@
+id: 7e46cdef14bf496a3ab4
+bug_link: https://syzkaller.appspot.com/bug?extid=7e46cdef14bf496a3ab4
+title: WARNING in push_jmp_history
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a32aee8f0d987a7cba7fcc28002553361a392048
+fix_commit: aa30eb3260b2dea3a68d3c42a39f9a09c5e99cee
+datetime: '2024-10-29T11:42:21-07:00'
+fix_commit_message: "bpf: Force checkpoint when jmp history is too long\n\nA specifically\
+  \ crafted program might trick verifier into growing very\nlong jump history within\
+  \ a single bpf_verifier_state instance.\nVery long jump history makes mark_chain_precision()\
+  \ unreasonably slow,\nespecially in case if verifier processes a loop.\n\nMitigate\
+  \ this by forcing new state in is_state_visited() in case if\ncurrent state's jump\
+  \ history is too long.\n\nUse same constant as in `skip_inf_loop_check`, but multiply\
+  \ it by\narbitrarily chosen value 2 to account for jump history containing not\n\
+  only information about jumps, but also information about stack access.\n\nFor an\
+  \ example of problematic program consider the code below,\nw/o this patch the example\
+  \ is processed by verifier for ~15 minutes,\nbefore failing to allocate big-enough\
+  \ chunk for jmp_history.\n\n    0: r7 = *(u16 *)(r1 +0);\"\n    1: r7 += 0x1ab064b9;\"\
+  \n    2: if r7 & 0x702000 goto 1b;\n    3: r7 &= 0x1ee60e;\"\n    4: r7 += r1;\"\
+  \n    5: if r7 s> 0x37d2 goto +0;\"\n    6: r0 = 0;\"\n    7: exit;\"\n\nPerf profiling\
+  \ shows that most of the time is spent in\nmark_chain_precision() ~95%.\n\nThe easiest\
+  \ way to explain why this program causes problems is to\napply the following patch:\n\
+  \n    diff --git a/include/linux/bpf.h b/include/linux/bpf.h\n    index 0c216e71cec7..4b4823961abe\
+  \ 100644\n    \\--- a/include/linux/bpf.h\n    \\+++ b/include/linux/bpf.h\n   \
+  \ \\@@ -1926,7 +1926,7 @@ struct bpf_array {\n            };\n     };\n\n    -#define\
+  \ BPF_COMPLEXITY_LIMIT_INSNS      1000000 /* yes. 1M insns */\n    +#define BPF_COMPLEXITY_LIMIT_INSNS\
+  \      256 /* yes. 1M insns */\n     #define MAX_TAIL_CALL_CNT 33\n\n     /* Maximum\
+  \ number of loops for bpf_loop and bpf_iter_num.\n    diff --git a/kernel/bpf/verifier.c\
+  \ b/kernel/bpf/verifier.c\n    index f514247ba8ba..75e88be3bb3e 100644\n    \\---\
+  \ a/kernel/bpf/verifier.c\n    \\+++ b/kernel/bpf/verifier.c\n    \\@@ -18024,8\
+  \ +18024,13 @@ static int is_state_visited(struct bpf_verifier_env *env, int insn_idx)\n\
+  \     skip_inf_loop_check:\n                            if (!force_new_state &&\n\
+  \                                env->jmps_processed - env->prev_jmps_processed\
+  \ < 20 &&\n    -                           env->insn_processed - env->prev_insn_processed\
+  \ < 100)\n    +                           env->insn_processed - env->prev_insn_processed\
+  \ < 100) {\n    +                               verbose(env, \"is_state_visited:\
+  \ suppressing checkpoint at %d, %d jmps processed, cur->jmp_history_cnt is %d\\\
+  n\",\n    +                                       env->insn_idx,\n    +        \
+  \                               env->jmps_processed - env->prev_jmps_processed,\n\
+  \    +                                       cur->jmp_history_cnt);\n          \
+  \                          add_new_state = false;\n    +                       }\n\
+  \                            goto miss;\n                    }\n               \
+  \     /* If sl->state is a part of a loop and this loop's entry is a part of\n \
+  \   \\@@ -18142,6 +18147,9 @@ static int is_state_visited(struct bpf_verifier_env\
+  \ *env, int insn_idx)\n            if (!add_new_state)\n                    return\
+  \ 0;\n\n    +       verbose(env, \"is_state_visited: new checkpoint at %d, resetting\
+  \ env->jmps_processed\\n\",\n    +               env->insn_idx);\n    +\n      \
+  \      /* There were no equivalent states, remember the current one.\n         \
+  \    * Technically the current state is not proven to be safe yet,\n           \
+  \  * but it will either reach outer most bpf_exit (which means it's safe)\n\nAnd\
+  \ observe verification log:\n\n    ...\n    is_state_visited: new checkpoint at\
+  \ 5, resetting env->jmps_processed\n    5: R1=ctx() R7=ctx(...)\n    5: (65) if\
+  \ r7 s> 0x37d2 goto pc+0     ; R7=ctx(...)\n    6: (b7) r0 = 0                 \
+  \       ; R0_w=0\n    7: (95) exit\n\n    from 5 to 6: R1=ctx() R7=ctx(...) R10=fp0\n\
+  \    6: R1=ctx() R7=ctx(...) R10=fp0\n    6: (b7) r0 = 0                       \
+  \ ; R0_w=0\n    7: (95) exit\n    is_state_visited: suppressing checkpoint at 1,\
+  \ 3 jmps processed, cur->jmp_history_cnt is 74\n\n    from 2 to 1: R1=ctx() R7_w=scalar(...)\
+  \ R10=fp0\n    1: R1=ctx() R7_w=scalar(...) R10=fp0\n    1: (07) r7 += 447767737\n\
+  \    is_state_visited: suppressing checkpoint at 2, 3 jmps processed, cur->jmp_history_cnt\
+  \ is 75\n    2: R7_w=scalar(...)\n    2: (45) if r7 & 0x702000 goto pc-2\n    ...\
+  \ mark_precise 152 steps for r7 ...\n    2: R7_w=scalar(...)\n    is_state_visited:\
+  \ suppressing checkpoint at 1, 4 jmps processed, cur->jmp_history_cnt is 75\n  \
+  \  1: (07) r7 += 447767737\n    is_state_visited: suppressing checkpoint at 2, 4\
+  \ jmps processed, cur->jmp_history_cnt is 76\n    2: R7_w=scalar(...)\n    2: (45)\
+  \ if r7 & 0x702000 goto pc-2\n    ...\n    BPF program is too large. Processed 257\
+  \ insn\n\nThe log output shows that checkpoint at label (1) is never created,\n\
+  because it is suppressed by `skip_inf_loop_check` logic:\na. When 'if' at (2) is\
+  \ processed it pushes a state with insn_idx (1)\n   onto stack and proceeds to (3);\n\
+  b. At (5) checkpoint is created, and this resets\n   env->{jmps,insns}_processed.\n\
+  c. Verification proceeds and reaches `exit`;\nd. State saved at step (a) is popped\
+  \ from stack and is_state_visited()\n   considers if checkpoint needs to be added,\
+  \ but because\n   env->{jmps,insns}_processed had been just reset at step (b)\n\
+  \   the `skip_inf_loop_check` logic forces `add_new_state` to false.\ne. Verifier\
+  \ proceeds with current state, which slowly accumulates\n   more and more entries\
+  \ in the jump history.\n\nThe accumulation of entries in the jump history is a problem\
+  \ because\nof two factors:\n- it eventually exhausts memory available for kmalloc()\
+  \ allocation;\n- mark_chain_precision() traverses the jump history of a state,\n\
+  \  meaning that if `r7` is marked precise, verifier would iterate\n  ever growing\
+  \ jump history until parent state boundary is reached.\n\n(note: the log also shows\
+  \ a REG INVARIANTS VIOLATION warning\n       upon jset processing, but that's another\
+  \ bug to fix).\n\nWith this patch applied, the example above is rejected by verifier\n\
+  under 1s of time, reaching 1M instructions limit.\n\nThe program is a simplified\
+  \ reproducer from syzbot report.\nPrevious discussion could be found at [1].\nThe\
+  \ patch does not cause any changes in verification performance,\nwhen tested on\
+  \ selftests from veristat.cfg and cilium programs taken\nfrom [2].\n\n[1] https://lore.kernel.org/bpf/20241009021254.2805446-1-eddyz87@gmail.com/\n\
+  [2] https://github.com/anakryiko/cilium\n\nChangelog:\n- v1 -> v2:\n  - moved patch\
+  \ to bpf tree;\n  - moved force_new_state variable initialization after declaration\
+  \ and\n    shortened the comment.\nv1: https://lore.kernel.org/bpf/20241018020307.1766906-1-eddyz87@gmail.com/\n\
+  \nFixes: 2589726d12a1 (\"bpf: introduce bounded loops\")\nReported-by: syzbot+7e46cdef14bf496a3ab4@syzkaller.appspotmail.com\n\
+  Signed-off-by: Eduard Zingerman <eddyz87@gmail.com>\nSigned-off-by: Andrii Nakryiko\
+  \ <andrii@kernel.org>\nAcked-by: Daniel Borkmann <daniel@iogearbox.net>\nLink: https://lore.kernel.org/bpf/20241029172641.1042523-1-eddyz87@gmail.com\n\
+  \nCloses: https://lore.kernel.org/bpf/670429f6.050a0220.49194.0517.GAE@google.com/\n"
+submodule:
+- kernel/bpf
+hunk_count: 2
+covered_count: 0

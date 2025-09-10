@@ -1,0 +1,84 @@
+============================================
+WARNING: possible recursive locking detected
+6.10.0-rc2-syzkaller-00242-g36534d3c5453 #0 Not tainted
+--------------------------------------------
+syz-executor181/5090 is trying to acquire lock:
+ffff8880b9538828 (lock#9){+.+.}-{2:2}, at: local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+ffff8880b9538828 (lock#9){+.+.}-{2:2}, at: __mmap_lock_do_trace_start_locking+0x83/0x620 mm/mmap_lock.c:230
+
+but task is already holding lock:
+ffff8880b9538828 (lock#9){+.+.}-{2:2}, at: local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+ffff8880b9538828 (lock#9){+.+.}-{2:2}, at: __mmap_lock_do_trace_start_locking+0x83/0x620 mm/mmap_lock.c:230
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(lock#9);
+  lock(lock#9);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+3 locks held by syz-executor181/5090:
+ #0: ffff8880b9538828 (lock#9){+.+.}-{2:2}, at: local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+ #0: ffff8880b9538828 (lock#9){+.+.}-{2:2}, at: __mmap_lock_do_trace_start_locking+0x83/0x620 mm/mmap_lock.c:230
+ #1: ffffffff8e333fa0 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #1: ffffffff8e333fa0 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #1: ffffffff8e333fa0 (rcu_read_lock){....}-{1:2}, at: get_mem_cgroup_from_mm+0x38/0x2a0 mm/memcontrol.c:1265
+ #2: ffffffff8e333fa0 (rcu_read_lock){....}-{1:2}, at: trace_call_bpf+0xbc/0x8a0
+
+stack backtrace:
+CPU: 1 PID: 5090 Comm: syz-executor181 Not tainted 6.10.0-rc2-syzkaller-00242-g36534d3c5453 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ check_deadlock kernel/locking/lockdep.c:3062 [inline]
+ validate_chain+0x15d3/0x5900 kernel/locking/lockdep.c:3856
+ __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+ local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+ __mmap_lock_do_trace_start_locking+0x9c/0x620 mm/mmap_lock.c:230
+ __mmap_lock_trace_start_locking include/linux/mmap_lock.h:29 [inline]
+ mmap_read_trylock include/linux/mmap_lock.h:162 [inline]
+ stack_map_get_build_id_offset+0x98a/0x9d0 kernel/bpf/stackmap.c:141
+ __bpf_get_stack+0x4ad/0x5a0 kernel/bpf/stackmap.c:449
+ bpf_prog_e6cf5f9c69743609+0x42/0x46
+ bpf_dispatcher_nop_func include/linux/bpf.h:1243 [inline]
+ __bpf_prog_run include/linux/filter.h:691 [inline]
+ bpf_prog_run include/linux/filter.h:698 [inline]
+ bpf_prog_run_array include/linux/bpf.h:2103 [inline]
+ trace_call_bpf+0x369/0x8a0 kernel/trace/bpf_trace.c:147
+ perf_trace_run_bpf_submit+0x7c/0x1d0 kernel/events/core.c:10269
+ perf_trace_lock+0x388/0x490 include/trace/events/lock.h:50
+ trace_lock_release include/trace/events/lock.h:69 [inline]
+ lock_release+0x986/0x9f0 kernel/locking/lockdep.c:5765
+ rcu_lock_release include/linux/rcupdate.h:339 [inline]
+ rcu_read_unlock include/linux/rcupdate.h:812 [inline]
+ get_mem_cgroup_from_mm+0x1ad/0x2a0 mm/memcontrol.c:1271
+ get_mm_memcg_path+0x1b/0x600 mm/mmap_lock.c:202
+ __mmap_lock_do_trace_start_locking+0x134/0x620 mm/mmap_lock.c:230
+ __mmap_lock_trace_start_locking include/linux/mmap_lock.h:29 [inline]
+ mmap_read_lock include/linux/mmap_lock.h:143 [inline]
+ acct_collect+0x7e7/0x830 kernel/acct.c:563
+ do_exit+0x936/0x27e0 kernel/exit.c:853
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1023
+ __do_sys_exit_group kernel/exit.c:1034 [inline]
+ __se_sys_exit_group kernel/exit.c:1032 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1032
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f9c47742279
+Code: 90 49 c7 c0 b8 ff ff ff be e7 00 00 00 ba 3c 00 00 00 eb 12 0f 1f 44 00 00 89 d0 0f 05 48 3d 00 f0 ff ff 77 1c f4 89 f0 0f 05 <48> 3d 00 f0 ff ff 76 e7 f7 d8 64 41 89 00 eb df 0f 1f 80 00 00 00
+RSP: 002b:00007ffd321ae558 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f9c47742279
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000000
+RBP: 00007f9c477bd2b0 R08: ffffffffffffffb8 R09: 00000000000000a0
+R10: 00000000000000a0 R11: 0000000000000246 R12: 00007f9c477bd2b0
+R13: 0000000000000000 R14: 00007f9c477bdd20 R15: 00007f9c47713400
+ </TASK>

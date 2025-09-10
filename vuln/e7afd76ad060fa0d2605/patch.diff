@@ -1,0 +1,32 @@
+diff --git a/drivers/base/class.c b/drivers/base/class.c
+index ac1808d1a2e8..05d9df90f621 100644
+--- a/drivers/base/class.c
++++ b/drivers/base/class.c
+@@ -320,6 +320,7 @@ void class_dev_iter_init(struct class_dev_iter *iter, const struct class *class,
+ 		start_knode = &start->p->knode_class;
+ 	klist_iter_init_node(&sp->klist_devices, &iter->ki, start_knode);
+ 	iter->type = type;
++	iter->sp = sp;
+ }
+ EXPORT_SYMBOL_GPL(class_dev_iter_init);
+ 
+@@ -361,6 +362,7 @@ EXPORT_SYMBOL_GPL(class_dev_iter_next);
+ void class_dev_iter_exit(struct class_dev_iter *iter)
+ {
+ 	klist_iter_exit(&iter->ki);
++	subsys_put(iter->sp);
+ }
+ EXPORT_SYMBOL_GPL(class_dev_iter_exit);
+ 
+diff --git a/include/linux/device/class.h b/include/linux/device/class.h
+index 9deeaeb457bb..abf3d3bfb6fe 100644
+--- a/include/linux/device/class.h
++++ b/include/linux/device/class.h
+@@ -74,6 +74,7 @@ struct class {
+ struct class_dev_iter {
+ 	struct klist_iter		ki;
+ 	const struct device_type	*type;
++	struct subsys_private		*sp;
+ };
+ 
+ int __must_check class_register(const struct class *class);

@@ -1,0 +1,46 @@
+id: e5167d7144a62715044c
+bug_link: https://syzkaller.appspot.com/bug?extid=e5167d7144a62715044c
+title: 'KASAN: slab-use-after-free Read in ip_skb_dst_mtu'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 40d4b4807cadd83fb3f46cc8cd67a945b5b25461
+fix_commit: 18685451fc4e546fc0e718580d32df3c0e5c8272
+datetime: '2024-03-28T12:06:22+01:00'
+fix_commit_message: "inet: inet_defrag: prevent sk release while still in use\n\n\
+  ip_local_out() and other functions can pass skb->sk as function argument.\n\nIf\
+  \ the skb is a fragment and reassembly happens before such function call\nreturns,\
+  \ the sk must not be released.\n\nThis affects skb fragments reassembled via netfilter\
+  \ or similar\nmodules, e.g. openvswitch or ct_act.c, when run as part of tx pipeline.\n\
+  \nEric Dumazet made an initial analysis of this bug.  Quoting Eric:\n  Calling ip_defrag()\
+  \ in output path is also implying skb_orphan(),\n  which is buggy because output\
+  \ path relies on sk not disappearing.\n\n  A relevant old patch about the issue\
+  \ was :\n  8282f27449bf (\"inet: frag: Always orphan skbs inside ip_defrag()\")\n\
+  \n  [..]\n\n  net/ipv4/ip_output.c depends on skb->sk being set, and probably to\
+  \ an\n  inet socket, not an arbitrary one.\n\n  If we orphan the packet in ipvlan,\
+  \ then downstream things like FQ\n  packet scheduler will not work properly.\n\n\
+  \  We need to change ip_defrag() to only use skb_orphan() when really\n  needed,\
+  \ ie whenever frag_list is going to be used.\n\nEric suggested to stash sk in fragment\
+  \ queue and made an initial patch.\nHowever there is a problem with this:\n\nIf\
+  \ skb is refragmented again right after, ip_do_fragment() will copy\nhead->sk to\
+  \ the new fragments, and sets up destructor to sock_wfree.\nIOW, we have no choice\
+  \ but to fix up sk_wmem accouting to reflect the\nfully reassembled skb, else wmem\
+  \ will underflow.\n\nThis change moves the orphan down into the core, to last possible\
+  \ moment.\nAs ip_defrag_offset is aliased with sk_buff->sk member, we must move\
+  \ the\noffset into the FRAG_CB, else skb->sk gets clobbered.\n\nThis allows to delay\
+  \ the orphaning long enough to learn if the skb has\nto be queued or if the skb\
+  \ is completing the reasm queue.\n\nIn the former case, things work as before, skb\
+  \ is orphaned.  This is\nsafe because skb gets queued/stolen and won't continue\
+  \ past reasm engine.\n\nIn the latter case, we will steal the skb->sk reference,\
+  \ reattach it to\nthe head skb, and fix up wmem accouting when inet_frag inflates\
+  \ truesize.\n\nFixes: 7026b1ddb6b8 (\"netfilter: Pass socket pointer down through\
+  \ okfn().\")\nDiagnosed-by: Eric Dumazet <edumazet@google.com>\nReported-by: xingwei\
+  \ lee <xrivendell7@gmail.com>\nReported-by: yue sun <samsun1006219@gmail.com>\n\
+  Reported-by: syzbot+e5167d7144a62715044c@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Florian Westphal <fw@strlen.de>\nReviewed-by: Eric Dumazet <edumazet@google.com>\n\
+  Link: https://lore.kernel.org/r/20240326101845.30836-1-fw@strlen.de\nSigned-off-by:\
+  \ Paolo Abeni <pabeni@redhat.com>\n"
+submodule:
+- include/linux
+- net/ipv4
+- net/ipv6
+hunk_count: 18
+covered_count: 0

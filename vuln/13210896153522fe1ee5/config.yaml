@@ -1,0 +1,111 @@
+id: 13210896153522fe1ee5
+bug_link: https://syzkaller.appspot.com/bug?extid=13210896153522fe1ee5
+title: memory leak in internal_dev_create
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b5b9181c2403025b2c7ae7ea44333fd8fe6dbb54
+fix_commit: 9464cc37f3671ee69cb1c00662b5e1f113a96b23
+datetime: '2019-10-22T14:45:08-07:00'
+fix_commit_message: "net: openvswitch: free vport unless register_netdevice() succeeds\n\
+  \nsyzbot found the following crash on:\n\nHEAD commit:    1e78030e Merge tag 'mmc-v5.3-rc1'\
+  \ of git://git.kernel.org/..\ngit tree:       upstream\nconsole output: https://syzkaller.appspot.com/x/log.txt?x=148d3d1a600000\n\
+  kernel config:  https://syzkaller.appspot.com/x/.config?x=30cef20daf3e9977\ndashboard\
+  \ link: https://syzkaller.appspot.com/bug?extid=13210896153522fe1ee5\ncompiler:\
+  \       gcc (GCC) 9.0.0 20181231 (experimental)\nsyz repro:      https://syzkaller.appspot.com/x/repro.syz?x=136aa8c4600000\n\
+  C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=109ba792600000\n\n=====================================================================\n\
+  BUG: memory leak\nunreferenced object 0xffff8881207e4100 (size 128):\n   comm \"\
+  syz-executor032\", pid 7014, jiffies 4294944027 (age 13.830s)\n   hex dump (first\
+  \ 32 bytes):\n     00 70 16 18 81 88 ff ff 80 af 8c 22 81 88 ff ff  .p.........\"\
+  ....\n     00 b6 23 17 81 88 ff ff 00 00 00 00 00 00 00 00  ..#.............\n \
+  \  backtrace:\n     [<000000000eb78212>] kmemleak_alloc_recursive  include/linux/kmemleak.h:43\
+  \ [inline]\n     [<000000000eb78212>] slab_post_alloc_hook mm/slab.h:522 [inline]\n\
+  \     [<000000000eb78212>] slab_alloc mm/slab.c:3319 [inline]\n     [<000000000eb78212>]\
+  \ kmem_cache_alloc_trace+0x145/0x2c0 mm/slab.c:3548\n     [<00000000006ea6c6>] kmalloc\
+  \ include/linux/slab.h:552 [inline]\n     [<00000000006ea6c6>] kzalloc include/linux/slab.h:748\
+  \ [inline]\n     [<00000000006ea6c6>] ovs_vport_alloc+0x37/0xf0  net/openvswitch/vport.c:130\n\
+  \     [<00000000f9a04a7d>] internal_dev_create+0x24/0x1d0  net/openvswitch/vport-internal_dev.c:164\n\
+  \     [<0000000056ee7c13>] ovs_vport_add+0x81/0x190  net/openvswitch/vport.c:199\n\
+  \     [<000000005434efc7>] new_vport+0x19/0x80 net/openvswitch/datapath.c:194\n\
+  \     [<00000000b7b253f1>] ovs_dp_cmd_new+0x22f/0x410  net/openvswitch/datapath.c:1614\n\
+  \     [<00000000e0988518>] genl_family_rcv_msg+0x2ab/0x5b0  net/netlink/genetlink.c:629\n\
+  \     [<00000000d0cc9347>] genl_rcv_msg+0x54/0x9c net/netlink/genetlink.c:654\n\
+  \     [<000000006694b647>] netlink_rcv_skb+0x61/0x170  net/netlink/af_netlink.c:2477\n\
+  \     [<0000000088381f37>] genl_rcv+0x29/0x40 net/netlink/genetlink.c:665\n    \
+  \ [<00000000dad42a47>] netlink_unicast_kernel  net/netlink/af_netlink.c:1302 [inline]\n\
+  \     [<00000000dad42a47>] netlink_unicast+0x1ec/0x2d0  net/netlink/af_netlink.c:1328\n\
+  \     [<0000000067e6b079>] netlink_sendmsg+0x270/0x480  net/netlink/af_netlink.c:1917\n\
+  \     [<00000000aab08a47>] sock_sendmsg_nosec net/socket.c:637 [inline]\n     [<00000000aab08a47>]\
+  \ sock_sendmsg+0x54/0x70 net/socket.c:657\n     [<000000004cb7c11d>] ___sys_sendmsg+0x393/0x3c0\
+  \ net/socket.c:2311\n     [<00000000c4901c63>] __sys_sendmsg+0x80/0xf0 net/socket.c:2356\n\
+  \     [<00000000c10abb2d>] __do_sys_sendmsg net/socket.c:2365 [inline]\n     [<00000000c10abb2d>]\
+  \ __se_sys_sendmsg net/socket.c:2363 [inline]\n     [<00000000c10abb2d>] __x64_sys_sendmsg+0x23/0x30\
+  \ net/socket.c:2363\n\nBUG: memory leak\nunreferenced object 0xffff88811723b600\
+  \ (size 64):\n   comm \"syz-executor032\", pid 7014, jiffies 4294944027 (age 13.830s)\n\
+  \   hex dump (first 32 bytes):\n     01 00 00 00 01 00 00 00 00 00 00 00 00 00 00\
+  \ 00  ................\n     00 00 00 00 00 00 00 00 02 00 00 00 05 35 82 c1  .............5..\n\
+  \   backtrace:\n     [<00000000352f46d8>] kmemleak_alloc_recursive  include/linux/kmemleak.h:43\
+  \ [inline]\n     [<00000000352f46d8>] slab_post_alloc_hook mm/slab.h:522 [inline]\n\
+  \     [<00000000352f46d8>] slab_alloc mm/slab.c:3319 [inline]\n     [<00000000352f46d8>]\
+  \ __do_kmalloc mm/slab.c:3653 [inline]\n     [<00000000352f46d8>] __kmalloc+0x169/0x300\
+  \ mm/slab.c:3664\n     [<000000008e48f3d1>] kmalloc include/linux/slab.h:557 [inline]\n\
+  \     [<000000008e48f3d1>] ovs_vport_set_upcall_portids+0x54/0xd0  net/openvswitch/vport.c:343\n\
+  \     [<00000000541e4f4a>] ovs_vport_alloc+0x7f/0xf0  net/openvswitch/vport.c:139\n\
+  \     [<00000000f9a04a7d>] internal_dev_create+0x24/0x1d0  net/openvswitch/vport-internal_dev.c:164\n\
+  \     [<0000000056ee7c13>] ovs_vport_add+0x81/0x190  net/openvswitch/vport.c:199\n\
+  \     [<000000005434efc7>] new_vport+0x19/0x80 net/openvswitch/datapath.c:194\n\
+  \     [<00000000b7b253f1>] ovs_dp_cmd_new+0x22f/0x410  net/openvswitch/datapath.c:1614\n\
+  \     [<00000000e0988518>] genl_family_rcv_msg+0x2ab/0x5b0  net/netlink/genetlink.c:629\n\
+  \     [<00000000d0cc9347>] genl_rcv_msg+0x54/0x9c net/netlink/genetlink.c:654\n\
+  \     [<000000006694b647>] netlink_rcv_skb+0x61/0x170  net/netlink/af_netlink.c:2477\n\
+  \     [<0000000088381f37>] genl_rcv+0x29/0x40 net/netlink/genetlink.c:665\n    \
+  \ [<00000000dad42a47>] netlink_unicast_kernel  net/netlink/af_netlink.c:1302 [inline]\n\
+  \     [<00000000dad42a47>] netlink_unicast+0x1ec/0x2d0  net/netlink/af_netlink.c:1328\n\
+  \     [<0000000067e6b079>] netlink_sendmsg+0x270/0x480  net/netlink/af_netlink.c:1917\n\
+  \     [<00000000aab08a47>] sock_sendmsg_nosec net/socket.c:637 [inline]\n     [<00000000aab08a47>]\
+  \ sock_sendmsg+0x54/0x70 net/socket.c:657\n     [<000000004cb7c11d>] ___sys_sendmsg+0x393/0x3c0\
+  \ net/socket.c:2311\n     [<00000000c4901c63>] __sys_sendmsg+0x80/0xf0 net/socket.c:2356\n\
+  \nBUG: memory leak\nunreferenced object 0xffff8881228ca500 (size 128):\n   comm\
+  \ \"syz-executor032\", pid 7015, jiffies 4294944622 (age 7.880s)\n   hex dump (first\
+  \ 32 bytes):\n     00 f0 27 18 81 88 ff ff 80 ac 8c 22 81 88 ff ff  ..'........\"\
+  ....\n     40 b7 23 17 81 88 ff ff 00 00 00 00 00 00 00 00  @.#.............\n \
+  \  backtrace:\n     [<000000000eb78212>] kmemleak_alloc_recursive  include/linux/kmemleak.h:43\
+  \ [inline]\n     [<000000000eb78212>] slab_post_alloc_hook mm/slab.h:522 [inline]\n\
+  \     [<000000000eb78212>] slab_alloc mm/slab.c:3319 [inline]\n     [<000000000eb78212>]\
+  \ kmem_cache_alloc_trace+0x145/0x2c0 mm/slab.c:3548\n     [<00000000006ea6c6>] kmalloc\
+  \ include/linux/slab.h:552 [inline]\n     [<00000000006ea6c6>] kzalloc include/linux/slab.h:748\
+  \ [inline]\n     [<00000000006ea6c6>] ovs_vport_alloc+0x37/0xf0  net/openvswitch/vport.c:130\n\
+  \     [<00000000f9a04a7d>] internal_dev_create+0x24/0x1d0  net/openvswitch/vport-internal_dev.c:164\n\
+  \     [<0000000056ee7c13>] ovs_vport_add+0x81/0x190  net/openvswitch/vport.c:199\n\
+  \     [<000000005434efc7>] new_vport+0x19/0x80 net/openvswitch/datapath.c:194\n\
+  \     [<00000000b7b253f1>] ovs_dp_cmd_new+0x22f/0x410  net/openvswitch/datapath.c:1614\n\
+  \     [<00000000e0988518>] genl_family_rcv_msg+0x2ab/0x5b0  net/netlink/genetlink.c:629\n\
+  \     [<00000000d0cc9347>] genl_rcv_msg+0x54/0x9c net/netlink/genetlink.c:654\n\
+  \     [<000000006694b647>] netlink_rcv_skb+0x61/0x170  net/netlink/af_netlink.c:2477\n\
+  \     [<0000000088381f37>] genl_rcv+0x29/0x40 net/netlink/genetlink.c:665\n    \
+  \ [<00000000dad42a47>] netlink_unicast_kernel  net/netlink/af_netlink.c:1302 [inline]\n\
+  \     [<00000000dad42a47>] netlink_unicast+0x1ec/0x2d0  net/netlink/af_netlink.c:1328\n\
+  \     [<0000000067e6b079>] netlink_sendmsg+0x270/0x480  net/netlink/af_netlink.c:1917\n\
+  \     [<00000000aab08a47>] sock_sendmsg_nosec net/socket.c:637 [inline]\n     [<00000000aab08a47>]\
+  \ sock_sendmsg+0x54/0x70 net/socket.c:657\n     [<000000004cb7c11d>] ___sys_sendmsg+0x393/0x3c0\
+  \ net/socket.c:2311\n     [<00000000c4901c63>] __sys_sendmsg+0x80/0xf0 net/socket.c:2356\n\
+  \     [<00000000c10abb2d>] __do_sys_sendmsg net/socket.c:2365 [inline]\n     [<00000000c10abb2d>]\
+  \ __se_sys_sendmsg net/socket.c:2363 [inline]\n     [<00000000c10abb2d>] __x64_sys_sendmsg+0x23/0x30\
+  \ net/socket.c:2363\n=====================================================================\n\
+  \nThe function in net core, register_netdevice(), may fail with vport's\ndestruction\
+  \ callback either invoked or not. After commit 309b66970ee2\n(\"net: openvswitch:\
+  \ do not free vport if register_netdevice() is failed.\"),\nthe duty to destroy\
+  \ vport is offloaded from the driver OTOH, which ends\nup in the memory leak reported.\n\
+  \nIt is fixed by releasing vport unless device is registered successfully.\nTo do\
+  \ that, the callback assignment is defered until device is registered.\n\nReported-by:\
+  \ syzbot+13210896153522fe1ee5@syzkaller.appspotmail.com\nFixes: 309b66970ee2 (\"\
+  net: openvswitch: do not free vport if register_netdevice() is failed.\")\nCc: Taehee\
+  \ Yoo <ap420073@gmail.com>\nCc: Greg Rose <gvrose8192@gmail.com>\nCc: Eric Dumazet\
+  \ <eric.dumazet@gmail.com>\nCc: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>\n\
+  Cc: Ying Xue <ying.xue@windriver.com>\nCc: Andrey Konovalov <andreyknvl@google.com>\n\
+  Signed-off-by: Hillf Danton <hdanton@sina.com>\nAcked-by: Pravin B Shelar <pshelar@ovn.org>\n\
+  [sbrivio: this was sent to dev@openvswitch.org and never made its way\n to netdev\
+  \ -- resending original patch]\nSigned-off-by: Stefano Brivio <sbrivio@redhat.com>\n\
+  Reviewed-by: Greg Rose <gvrose8192@gmail.com>\nSigned-off-by: Jakub Kicinski <jakub.kicinski@netronome.com>\n"
+submodule:
+- net/openvswitch
+hunk_count: 4
+covered_count: 4

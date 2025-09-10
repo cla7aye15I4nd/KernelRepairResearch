@@ -1,0 +1,60 @@
+id: 0bbe42c764feafa82c5a
+bug_link: https://syzkaller.appspot.com/bug?extid=0bbe42c764feafa82c5a
+title: 'KMSAN: uninit-value in netif_skb_features'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 77ac725e0c5b27c925e514b999cd46d01eedafd1
+fix_commit: 7ce2367254e84753bceb07327aaf5c953cfce117
+datetime: '2018-04-17T13:59:28-04:00'
+fix_commit_message: "vlan: Fix reading memory beyond skb->tail in skb_vlan_tagged_multi\n\
+  \nSyzkaller spotted an old bug which leads to reading skb beyond tail by 4\nbytes\
+  \ on vlan tagged packets.\nThis is caused because skb_vlan_tagged_multi() did not\
+  \ check\nskb_headlen.\n\nBUG: KMSAN: uninit-value in eth_type_vlan include/linux/if_vlan.h:283\
+  \ [inline]\nBUG: KMSAN: uninit-value in skb_vlan_tagged_multi include/linux/if_vlan.h:656\
+  \ [inline]\nBUG: KMSAN: uninit-value in vlan_features_check include/linux/if_vlan.h:672\
+  \ [inline]\nBUG: KMSAN: uninit-value in dflt_features_check net/core/dev.c:2949\
+  \ [inline]\nBUG: KMSAN: uninit-value in netif_skb_features+0xd1b/0xdc0 net/core/dev.c:3009\n\
+  CPU: 1 PID: 3582 Comm: syzkaller435149 Not tainted 4.16.0+ #82\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\nCall Trace:\n\
+  \  __dump_stack lib/dump_stack.c:17 [inline]\n  dump_stack+0x185/0x1d0 lib/dump_stack.c:53\n\
+  \  kmsan_report+0x142/0x240 mm/kmsan/kmsan.c:1067\n  __msan_warning_32+0x6c/0xb0\
+  \ mm/kmsan/kmsan_instr.c:676\n  eth_type_vlan include/linux/if_vlan.h:283 [inline]\n\
+  \  skb_vlan_tagged_multi include/linux/if_vlan.h:656 [inline]\n  vlan_features_check\
+  \ include/linux/if_vlan.h:672 [inline]\n  dflt_features_check net/core/dev.c:2949\
+  \ [inline]\n  netif_skb_features+0xd1b/0xdc0 net/core/dev.c:3009\n  validate_xmit_skb+0x89/0x1320\
+  \ net/core/dev.c:3084\n  __dev_queue_xmit+0x1cb2/0x2b60 net/core/dev.c:3549\n  dev_queue_xmit+0x4b/0x60\
+  \ net/core/dev.c:3590\n  packet_snd net/packet/af_packet.c:2944 [inline]\n  packet_sendmsg+0x7c57/0x8a10\
+  \ net/packet/af_packet.c:2969\n  sock_sendmsg_nosec net/socket.c:630 [inline]\n\
+  \  sock_sendmsg net/socket.c:640 [inline]\n  sock_write_iter+0x3b9/0x470 net/socket.c:909\n\
+  \  do_iter_readv_writev+0x7bb/0x970 include/linux/fs.h:1776\n  do_iter_write+0x30d/0xd40\
+  \ fs/read_write.c:932\n  vfs_writev fs/read_write.c:977 [inline]\n  do_writev+0x3c9/0x830\
+  \ fs/read_write.c:1012\n  SYSC_writev+0x9b/0xb0 fs/read_write.c:1085\n  SyS_writev+0x56/0x80\
+  \ fs/read_write.c:1082\n  do_syscall_64+0x309/0x430 arch/x86/entry/common.c:287\n\
+  \  entry_SYSCALL_64_after_hwframe+0x3d/0xa2\nRIP: 0033:0x43ffa9\nRSP: 002b:00007fff2cff3948\
+  \ EFLAGS: 00000217 ORIG_RAX: 0000000000000014\nRAX: ffffffffffffffda RBX: 00000000004002c8\
+  \ RCX: 000000000043ffa9\nRDX: 0000000000000001 RSI: 0000000020000080 RDI: 0000000000000003\n\
+  RBP: 00000000006cb018 R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000\
+  \ R11: 0000000000000217 R12: 00000000004018d0\nR13: 0000000000401960 R14: 0000000000000000\
+  \ R15: 0000000000000000\n\nUninit was created at:\n  kmsan_save_stack_with_flags\
+  \ mm/kmsan/kmsan.c:278 [inline]\n  kmsan_internal_poison_shadow+0xb8/0x1b0 mm/kmsan/kmsan.c:188\n\
+  \  kmsan_kmalloc+0x94/0x100 mm/kmsan/kmsan.c:314\n  kmsan_slab_alloc+0x11/0x20 mm/kmsan/kmsan.c:321\n\
+  \  slab_post_alloc_hook mm/slab.h:445 [inline]\n  slab_alloc_node mm/slub.c:2737\
+  \ [inline]\n  __kmalloc_node_track_caller+0xaed/0x11c0 mm/slub.c:4369\n  __kmalloc_reserve\
+  \ net/core/skbuff.c:138 [inline]\n  __alloc_skb+0x2cf/0x9f0 net/core/skbuff.c:206\n\
+  \  alloc_skb include/linux/skbuff.h:984 [inline]\n  alloc_skb_with_frags+0x1d4/0xb20\
+  \ net/core/skbuff.c:5234\n  sock_alloc_send_pskb+0xb56/0x1190 net/core/sock.c:2085\n\
+  \  packet_alloc_skb net/packet/af_packet.c:2803 [inline]\n  packet_snd net/packet/af_packet.c:2894\
+  \ [inline]\n  packet_sendmsg+0x6444/0x8a10 net/packet/af_packet.c:2969\n  sock_sendmsg_nosec\
+  \ net/socket.c:630 [inline]\n  sock_sendmsg net/socket.c:640 [inline]\n  sock_write_iter+0x3b9/0x470\
+  \ net/socket.c:909\n  do_iter_readv_writev+0x7bb/0x970 include/linux/fs.h:1776\n\
+  \  do_iter_write+0x30d/0xd40 fs/read_write.c:932\n  vfs_writev fs/read_write.c:977\
+  \ [inline]\n  do_writev+0x3c9/0x830 fs/read_write.c:1012\n  SYSC_writev+0x9b/0xb0\
+  \ fs/read_write.c:1085\n  SyS_writev+0x56/0x80 fs/read_write.c:1082\n  do_syscall_64+0x309/0x430\
+  \ arch/x86/entry/common.c:287\n  entry_SYSCALL_64_after_hwframe+0x3d/0xa2\n\nFixes:\
+  \ 58e998c6d239 (\"offloading: Force software GSO for multiple vlan tags.\")\nReported-and-tested-by:\
+  \ syzbot+0bbe42c764feafa82c5a@syzkaller.appspotmail.com\nSigned-off-by: Toshiaki\
+  \ Makita <makita.toshiaki@lab.ntt.co.jp>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- include/linux
+- net/core
+hunk_count: 4
+covered_count: 4

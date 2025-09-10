@@ -1,0 +1,27 @@
+id: b904ba7c947a37b4b291
+bug_link: https://syzkaller.appspot.com/bug?extid=b904ba7c947a37b4b291
+title: WARNING in __proc_create (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2821e26f3a0a3872184581caac8115bb02641941
+fix_commit: a45ea48e2bcd92c1f678b794f488ca0bda9835b8
+datetime: '2020-01-26T08:54:04-08:00'
+fix_commit_message: "afs: Fix characters allowed into cell names\n\nThe afs filesystem\
+  \ needs to prohibit certain characters from cell names,\nsuch as '/', as these are\
+  \ used to form filenames in procfs, leading to\nthe following warning being generated:\n\
+  \n\tWARNING: CPU: 0 PID: 3489 at fs/proc/generic.c:178\n\nFix afs_alloc_cell() to\
+  \ disallow nonprintable characters, '/', '@' and\nnames that begin with a dot.\n\
+  \nRemove the check for \"@cell\" as that is then redundant.\n\nThis can be tested\
+  \ by running:\n\n\techo add foo/.bar 1.2.3.4 >/proc/fs/afs/cells\n\nNote that we\
+  \ will also need to deal with:\n\n - Names ending in \".invalid\" shouldn't be passed\
+  \ to the DNS.\n\n - Names that contain non-valid domainname chars shouldn't be passed\
+  \ to\n   the DNS.\n\n - DNS replies that say \"your-dns-needs-immediate-attention.<gTLD>\"\
+  \ and\n   replies containing A records that say 127.0.53.53 should be\n   considered\
+  \ invalid.\n   [https://www.icann.org/en/system/files/files/name-collision-mitigation-01aug14-en.pdf]\n\
+  \nbut these need to be dealt with by the kafs-client DNS program rather\nthan the\
+  \ kernel.\n\nReported-by: syzbot+b904ba7c947a37b4b291@syzkaller.appspotmail.com\n\
+  Cc: stable@kernel.org\nSigned-off-by: David Howells <dhowells@redhat.com>\nSigned-off-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs/afs
+hunk_count: 1
+covered_count: 0

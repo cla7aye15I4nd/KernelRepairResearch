@@ -1,0 +1,34 @@
+id: 6bed2d543cf7e48b822b
+bug_link: https://syzkaller.appspot.com/bug?extid=6bed2d543cf7e48b822b
+title: 'KASAN: null-ptr-deref Write in media_request_close'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7b981288285f0e8b816ea7ba8f34d0973ee39e0d
+fix_commit: e30cc79cc80fd919b697a15c5000d9f57487de8e
+datetime: '2020-06-23T15:19:37+02:00'
+fix_commit_message: "media: media-request: Fix crash if memory allocation fails\n\n\
+  Syzbot reports a NULL-ptr deref in the kref_put() call:\n\nBUG: KASAN: null-ptr-deref\
+  \ in media_request_put drivers/media/mc/mc-request.c:81 [inline]\n kref_put include/linux/kref.h:64\
+  \ [inline]\n media_request_put drivers/media/mc/mc-request.c:81 [inline]\n media_request_close+0x4d/0x170\
+  \ drivers/media/mc/mc-request.c:89\n __fput+0x2ed/0x750 fs/file_table.c:281\n task_work_run+0x147/0x1d0\
+  \ kernel/task_work.c:123\n tracehook_notify_resume include/linux/tracehook.h:188\
+  \ [inline]\n exit_to_usermode_loop arch/x86/entry/common.c:165 [inline]\n prepare_exit_to_usermode+0x48e/0x600\
+  \ arch/x86/entry/common.c:196\n\nWhat led to this crash was an injected memory allocation\
+  \ failure in\nmedia_request_alloc():\n\nFAULT_INJECTION: forcing a failure.\nname\
+  \ failslab, interval 1, probability 0, space 0, times 0\n should_failslab+0x5/0x20\n\
+  \ kmem_cache_alloc_trace+0x57/0x300\n ? anon_inode_getfile+0xe5/0x170\n media_request_alloc+0x339/0x440\n\
+  \ media_device_request_alloc+0x94/0xc0\n media_device_ioctl+0x1fb/0x330\n ? do_vfs_ioctl+0x6ea/0x1a00\n\
+  \ ? media_ioctl+0x101/0x120\n ? __media_device_usb_init+0x430/0x430\n ? media_poll+0x110/0x110\n\
+  \ __se_sys_ioctl+0xf9/0x160\n do_syscall_64+0xf3/0x1b0\n\nWhen that allocation fails,\
+  \ filp->private_data is left uninitialized\nwhich media_request_close() does not\
+  \ expect and crashes.\n\nTo avoid this, reorder media_request_alloc() such that\n\
+  allocating the struct file happens as the last step thus\nmedia_request_close()\
+  \ will no longer get called for a partially created\nmedia request.\n\nReported-by:\
+  \ syzbot+6bed2d543cf7e48b822b@syzkaller.appspotmail.com\nCc: stable@vger.kernel.org\n\
+  Signed-off-by: Tuomas Tynkkynen <tuomas.tynkkynen@iki.fi>\nFixes: 10905d70d788 (\"\
+  media: media-request: implement media requests\")\nReviewed-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>\n\
+  Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>\nSigned-off-by: Mauro\
+  \ Carvalho Chehab <mchehab+huawei@kernel.org>\n"
+submodule:
+- drivers/media/mc
+hunk_count: 3
+covered_count: 0

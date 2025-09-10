@@ -1,0 +1,30 @@
+id: a004c8dcbae7c160bf1bbd6e6af2e9cf4fa54f84
+bug_link: https://syzkaller.appspot.com/bug?extid=a004c8dcbae7c160bf1bbd6e6af2e9cf4fa54f84
+title: WARNING in refcount_sub_and_test
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 151516fab4e82ab5da35fd14c972efc90a1c4aa4
+fix_commit: d04adf1b355181e737b6b1e23d801b07f0b7c4c0
+datetime: '2017-10-29T12:06:57+09:00'
+fix_commit_message: "sctp: reset owner sk for data chunks on out queues when migrating\
+  \ a sock\n\nNow when migrating sock to another one in sctp_sock_migrate(), it only\n\
+  resets owner sk for the data in receive queues, not the chunks on out\nqueues.\n\
+  \nIt would cause that data chunks length on the sock is not consistent\nwith sk\
+  \ sk_wmem_alloc. When closing the sock or freeing these chunks,\nthe old sk would\
+  \ never be freed, and the new sock may crash due to\nthe overflow sk_wmem_alloc.\n\
+  \nsyzbot found this issue with this series:\n\n  r0 = socket$inet_sctp()\n  sendto$inet(r0)\n\
+  \  listen(r0)\n  accept4(r0)\n  close(r0)\n\nAlthough listen() should have returned\
+  \ error when one TCP-style socket\nis in connecting (I may fix this one in another\
+  \ patch), it could also\nbe reproduced by peeling off an assoc.\n\nThis issue is\
+  \ there since very beginning.\n\nThis patch is to reset owner sk for the chunks\
+  \ on out queues so that\nsk sk_wmem_alloc has correct value after accept one sock\
+  \ or peeloff\nan assoc to one sock.\n\nNote that when resetting owner sk for chunks\
+  \ on outqueue, it has to\nsctp_clear_owner_w/skb_orphan chunks before changing assoc->base.sk\n\
+  first and then sctp_set_owner_w them after changing assoc->base.sk,\ndue to that\
+  \ sctp_wfree and it's callees are using assoc->base.sk.\n\nReported-by: Dmitry Vyukov\
+  \ <dvyukov@google.com>\nSigned-off-by: Xin Long <lucien.xin@gmail.com>\nAcked-by:\
+  \ Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 2
+covered_count: 1

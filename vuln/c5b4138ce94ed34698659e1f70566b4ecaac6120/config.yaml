@@ -1,0 +1,24 @@
+id: c5b4138ce94ed34698659e1f70566b4ecaac6120
+bug_link: https://syzkaller.appspot.com/bug?extid=c5b4138ce94ed34698659e1f70566b4ecaac6120
+title: 'KASAN: use-after-free Read in __xfrm_state_lookup'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 74784da82ff74379d0583a3ffe42835888705ac7
+fix_commit: cb79a180f2e7eb51de5a4848652893197637bccb
+datetime: '2017-11-02T11:53:53+01:00'
+fix_commit_message: "xfrm: defer daddr pointer assignment after spi parsing\n\nsyzbot\
+  \ reports:\nBUG: KASAN: use-after-free in __xfrm_state_lookup+0x695/0x6b0\nRead\
+  \ of size 4 at addr ffff8801d434e538 by task syzkaller647520/2991\n[..]\n__xfrm_state_lookup+0x695/0x6b0\
+  \ net/xfrm/xfrm_state.c:833\nxfrm_state_lookup+0x8a/0x160 net/xfrm/xfrm_state.c:1592\n\
+  xfrm_input+0x8e5/0x22f0 net/xfrm/xfrm_input.c:302\n\nThe use-after-free is the ipv4\
+  \ destination address, which points\nto an skb head area that has been reallocated:\n\
+  \  pskb_expand_head+0x36b/0x1210 net/core/skbuff.c:1494\n  __pskb_pull_tail+0x14a/0x17c0\
+  \ net/core/skbuff.c:1877\n  pskb_may_pull include/linux/skbuff.h:2102 [inline]\n\
+  \  xfrm_parse_spi+0x3d3/0x4d0 net/xfrm/xfrm_input.c:170\n  xfrm_input+0xce2/0x22f0\
+  \ net/xfrm/xfrm_input.c:291\n\nso the real bug is that xfrm_parse_spi() uses pskb_may_pull,\
+  \ but\nfor now do smaller workaround that makes xfrm_input fetch daddr\nafter spi\
+  \ parsing.\n\nReported-by: syzbot <syzkaller@googlegroups.com>\nSigned-off-by: Florian\
+  \ Westphal <fw@strlen.de>\nSigned-off-by: Steffen Klassert <steffen.klassert@secunet.com>\n"
+submodule:
+- net/xfrm
+hunk_count: 2
+covered_count: 2

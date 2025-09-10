@@ -1,0 +1,57 @@
+gspca_cpia1: usb_control_msg 05, error -71
+gspca_cpia1: usb_control_msg 03, error -71
+================================================================================
+UBSAN: shift-out-of-bounds in drivers/media/usb/gspca/cpia1.c:1031:27
+shift exponent 245 is too large for 32-bit type 'int'
+CPU: 1 PID: 5199 Comm: kworker/1:11 Not tainted 6.6.0-syzkaller-14500-g1c41041124bd #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/09/2023
+Workqueue: usb_hub_wq hub_event
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x125/0x1b0 lib/dump_stack.c:106
+ ubsan_epilogue lib/ubsan.c:217 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x27a/0x600 lib/ubsan.c:387
+ set_flicker.cold+0x1b/0x20 drivers/media/usb/gspca/cpia1.c:1031
+ sd_s_ctrl+0x2c6/0xbf0 drivers/media/usb/gspca/cpia1.c:1782
+ __v4l2_ctrl_handler_setup+0x511/0x710 drivers/media/v4l2-core/v4l2-ctrls-core.c:2481
+ v4l2_ctrl_handler_setup drivers/media/v4l2-core/v4l2-ctrls-core.c:2498 [inline]
+ v4l2_ctrl_handler_setup+0x50/0xa0 drivers/media/v4l2-core/v4l2-ctrls-core.c:2490
+ gspca_set_default_mode drivers/media/usb/gspca/gspca.c:908 [inline]
+ gspca_dev_probe2+0xdd6/0x1b20 drivers/media/usb/gspca/gspca.c:1541
+ gspca_dev_probe+0x18b/0x270 drivers/media/usb/gspca/gspca.c:1610
+ usb_probe_interface+0x307/0x930 drivers/usb/core/driver.c:396
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x234/0xc90 drivers/base/dd.c:658
+ __driver_probe_device+0x1de/0x4b0 drivers/base/dd.c:800
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:830
+ __device_attach_driver+0x1d4/0x300 drivers/base/dd.c:958
+ bus_for_each_drv+0x157/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e8/0x4b0 drivers/base/dd.c:1030
+ bus_probe_device+0x17c/0x1c0 drivers/base/bus.c:532
+ device_add+0x117e/0x1aa0 drivers/base/core.c:3625
+ usb_set_configuration+0x10cb/0x1c40 drivers/usb/core/message.c:2207
+ usb_generic_driver_probe+0xca/0x130 drivers/usb/core/generic.c:238
+ usb_probe_device+0xda/0x2c0 drivers/usb/core/driver.c:293
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x234/0xc90 drivers/base/dd.c:658
+ __driver_probe_device+0x1de/0x4b0 drivers/base/dd.c:800
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:830
+ __device_attach_driver+0x1d4/0x300 drivers/base/dd.c:958
+ bus_for_each_drv+0x157/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e8/0x4b0 drivers/base/dd.c:1030
+ bus_probe_device+0x17c/0x1c0 drivers/base/bus.c:532
+ device_add+0x117e/0x1aa0 drivers/base/core.c:3625
+ usb_new_device+0xd80/0x19f0 drivers/usb/core/hub.c:2599
+ hub_port_connect drivers/usb/core/hub.c:5463 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5603 [inline]
+ port_event drivers/usb/core/hub.c:5763 [inline]
+ hub_event+0x2dac/0x4e10 drivers/usb/core/hub.c:5845
+ process_one_work+0x884/0x15c0 kernel/workqueue.c:2630
+ process_scheduled_works kernel/workqueue.c:2703 [inline]
+ worker_thread+0x8b9/0x1290 kernel/workqueue.c:2784
+ kthread+0x33c/0x440 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+ </TASK>
+================================================================================

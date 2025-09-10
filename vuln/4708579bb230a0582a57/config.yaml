@@ -1,0 +1,23 @@
+id: 4708579bb230a0582a57
+bug_link: https://syzkaller.appspot.com/bug?extid=4708579bb230a0582a57
+title: 'UBSAN: shift-out-of-bounds in gfs2_dir_read (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5c8f12cf1e64e0e8e6cb80b0c935389973e8be8d
+fix_commit: 557c024ca7250bb65ae60f16c02074106c2f197b
+datetime: '2025-07-16T15:26:44+02:00'
+fix_commit_message: "gfs2: Validate i_depth for exhash directories\n\nA fuzzer test\
+  \ introduced corruption that ends up with a depth of 0 in\ndir_e_read(), causing\
+  \ an undefined shift by 32 at:\n\n  index = hash >> (32 - dip->i_depth);\n\nAs calculated\
+  \ in an open-coded way in dir_make_exhash(), the minimum\ndepth for an exhash directory\
+  \ is ilog2(sdp->sd_hash_ptrs) and 0 is\ninvalid as sdp->sd_hash_ptrs is fixed as\
+  \ sdp->bsize / 16 at mount time.\n\nSo we can avoid the undefined behaviour by checking\
+  \ for depth values\nlower than the minimum in gfs2_dinode_in(). Values greater than\
+  \ the\nmaximum are already being checked for there.\n\nAlso switch the calculation\
+  \ in dir_make_exhash() to use ilog2() to\nclarify how the depth is calculated.\n\
+  \nTested with the syzkaller repro.c and xfstests '-g quick'.\n\nReported-by: syzbot+4708579bb230a0582a57@syzkaller.appspotmail.com\n\
+  Signed-off-by: Andrew Price <anprice@redhat.com>\nSigned-off-by: Andreas Gruenbacher\
+  \ <agruenba@redhat.com>\n"
+submodule:
+- fs/gfs2
+hunk_count: 5
+covered_count: 1

@@ -1,0 +1,203 @@
+BUG: sleeping function called from invalid context at ./include/linux/percpu-rwsem.h:49
+in_atomic(): 1, irqs_disabled(): 0, non_block: 0, pid: 0, name: swapper/0
+preempt_count: 101, expected: 0
+RCU nest depth: 0, expected: 0
+1 lock held by swapper/0/0:
+ #0: ffffffff8e1bb3e0 (rcu_callback){....}-{0:0}, at: rcu_lock_acquire include/linux/rcupdate.h:337 [inline]
+ #0: ffffffff8e1bb3e0 (rcu_callback){....}-{0:0}, at: rcu_do_batch kernel/rcu/tree.c:2561 [inline]
+ #0: ffffffff8e1bb3e0 (rcu_callback){....}-{0:0}, at: rcu_core+0x741/0x14d0 kernel/rcu/tree.c:2823
+Preemption disabled at:
+[<ffffffff8b2a07bd>] schedule_preempt_disabled+0x1d/0x30 kernel/sched/core.c:6906
+CPU: 0 UID: 0 PID: 0 Comm: swapper/0 Not tainted 6.13.0-rc2-syzkaller-00036-g231825b2e1ff #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x16c/0x1f0 lib/dump_stack.c:120
+ __might_resched+0x3c0/0x5e0 kernel/sched/core.c:8758
+ percpu_down_read include/linux/percpu-rwsem.h:49 [inline]
+ cpus_read_lock+0x1b/0x160 kernel/cpu.c:490
+ __static_key_slow_dec kernel/jump_label.c:320 [inline]
+ static_key_slow_dec+0x53/0xc0 kernel/jump_label.c:336
+ nf_tables_chain_destroy+0x294/0x650 net/netfilter/nf_tables_api.c:2263
+ nft_release_basechain_rcu+0x146/0x230 net/netfilter/nf_tables_api.c:11707
+ rcu_do_batch kernel/rcu/tree.c:2567 [inline]
+ rcu_core+0x79d/0x14d0 kernel/rcu/tree.c:2823
+ handle_softirqs+0x213/0x8f0 kernel/softirq.c:561
+ __do_softirq kernel/softirq.c:595 [inline]
+ invoke_softirq kernel/softirq.c:435 [inline]
+ __irq_exit_rcu+0x109/0x170 kernel/softirq.c:662
+ irq_exit_rcu+0x9/0x30 kernel/softirq.c:678
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1049 [inline]
+ sysvec_apic_timer_interrupt+0xa4/0xc0 arch/x86/kernel/apic/apic.c:1049
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:native_irq_disable arch/x86/include/asm/irqflags.h:37 [inline]
+RIP: 0010:arch_local_irq_disable arch/x86/include/asm/irqflags.h:92 [inline]
+RIP: 0010:default_idle+0xf/0x20 arch/x86/kernel/process.c:743
+Code: 4c 01 c7 4c 29 c2 e9 72 ff ff ff 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 f3 0f 1e fa eb 07 0f 00 2d c3 a4 3d 00 fb f4 <fa> c3 cc cc cc cc 66 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90
+RSP: 0018:ffffffff8de07e20 EFLAGS: 00000202
+RAX: 00000000000aa075 RBX: 0000000000000000 RCX: ffffffff8b28e679
+RDX: 0000000000000000 RSI: ffffffff8b6cd860 RDI: ffffffff8bd1d340
+RBP: fffffbfff1bd2ef8 R08: 0000000000000001 R09: ffffed100d4c6fed
+R10: ffff88806a637f6b R11: 0000000000000000 R12: 0000000000000000
+R13: ffffffff8de977c0 R14: ffffffff905f15d0 R15: 0000000000000000
+ default_idle_call+0x6d/0xb0 kernel/sched/idle.c:117
+ cpuidle_idle_call kernel/sched/idle.c:185 [inline]
+ do_idle+0x329/0x3f0 kernel/sched/idle.c:325
+ cpu_startup_entry+0x4f/0x60 kernel/sched/idle.c:423
+ rest_init+0x16b/0x2b0 init/main.c:747
+ start_kernel+0x3e4/0x4d0 init/main.c:1102
+ x86_64_start_reservations+0x18/0x30 arch/x86/kernel/head64.c:507
+ x86_64_start_kernel+0xb2/0xc0 arch/x86/kernel/head64.c:488
+ common_startup_64+0x13e/0x148
+ </TASK>
+vkms_vblank_simulate: vblank timer overrun
+
+================================
+WARNING: inconsistent lock state
+6.13.0-rc2-syzkaller-00036-g231825b2e1ff #0 Tainted: G        W         
+--------------------------------
+inconsistent {SOFTIRQ-ON-W} -> {IN-SOFTIRQ-R} usage.
+swapper/0/0 [HC0[0]:SC1[1]:HE1:SE0] takes:
+ffffffff8e05eb50 (cpu_hotplug_lock){+++?}-{0:0}, at: __static_key_slow_dec kernel/jump_label.c:320 [inline]
+ffffffff8e05eb50 (cpu_hotplug_lock){+++?}-{0:0}, at: static_key_slow_dec+0x53/0xc0 kernel/jump_label.c:336
+{SOFTIRQ-ON-W} state was registered at:
+  lock_acquire.part.0+0x11b/0x380 kernel/locking/lockdep.c:5849
+  percpu_down_write+0x53/0x3e0 kernel/locking/percpu-rwsem.c:229
+  cpus_write_lock kernel/cpu.c:508 [inline]
+  _cpu_up+0x68/0x910 kernel/cpu.c:1638
+  cpu_up+0x1dc/0x240 kernel/cpu.c:1722
+  cpuhp_bringup_mask+0xdc/0x210 kernel/cpu.c:1788
+  cpuhp_bringup_cpus_parallel kernel/cpu.c:1866 [inline]
+  bringup_nonboot_cpus+0xf5/0x1c0 kernel/cpu.c:1892
+  smp_init+0x34/0x160 kernel/smp.c:1009
+  kernel_init_freeable+0x3ad/0x900 init/main.c:1569
+  kernel_init+0x1c/0x2b0 init/main.c:1466
+  ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+  ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+irq event stamp: 696692
+hardirqs last  enabled at (696692): [<ffffffff8b4014ca>] asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+hardirqs last disabled at (696691): [<ffffffff8b28c9ce>] sysvec_apic_timer_interrupt+0xe/0xc0 arch/x86/kernel/apic/apic.c:1049
+softirqs last  enabled at (696408): [<ffffffff815c517b>] softirq_handle_end kernel/softirq.c:407 [inline]
+softirqs last  enabled at (696408): [<ffffffff815c517b>] handle_softirqs+0x5bb/0x8f0 kernel/softirq.c:589
+softirqs last disabled at (696439): [<ffffffff815c5649>] __do_softirq kernel/softirq.c:595 [inline]
+softirqs last disabled at (696439): [<ffffffff815c5649>] invoke_softirq kernel/softirq.c:435 [inline]
+softirqs last disabled at (696439): [<ffffffff815c5649>] __irq_exit_rcu+0x109/0x170 kernel/softirq.c:662
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(cpu_hotplug_lock);
+  <Interrupt>
+    lock(cpu_hotplug_lock);
+
+ *** DEADLOCK ***
+
+1 lock held by swapper/0/0:
+ #0: ffffffff8e1bb3e0 (rcu_callback){....}-{0:0}, at: rcu_lock_acquire include/linux/rcupdate.h:337 [inline]
+ #0: ffffffff8e1bb3e0 (rcu_callback){....}-{0:0}, at: rcu_do_batch kernel/rcu/tree.c:2561 [inline]
+ #0: ffffffff8e1bb3e0 (rcu_callback){....}-{0:0}, at: rcu_core+0x741/0x14d0 kernel/rcu/tree.c:2823
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 0 Comm: swapper/0 Tainted: G        W          6.13.0-rc2-syzkaller-00036-g231825b2e1ff #0
+Tainted: [W]=WARN
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_usage_bug.part.0+0x3a2/0x560 kernel/locking/lockdep.c:4038
+ print_usage_bug kernel/locking/lockdep.c:4006 [inline]
+ valid_state kernel/locking/lockdep.c:4052 [inline]
+ mark_lock_irq kernel/locking/lockdep.c:4263 [inline]
+ mark_lock+0x92d/0xc60 kernel/locking/lockdep.c:4749
+ mark_usage kernel/locking/lockdep.c:4638 [inline]
+ __lock_acquire+0x12fb/0x3c40 kernel/locking/lockdep.c:5180
+ lock_acquire.part.0+0x11b/0x380 kernel/locking/lockdep.c:5849
+ percpu_down_read include/linux/percpu-rwsem.h:51 [inline]
+ cpus_read_lock+0x42/0x160 kernel/cpu.c:490
+ __static_key_slow_dec kernel/jump_label.c:320 [inline]
+ static_key_slow_dec+0x53/0xc0 kernel/jump_label.c:336
+ nf_tables_chain_destroy+0x294/0x650 net/netfilter/nf_tables_api.c:2263
+ nft_release_basechain_rcu+0x146/0x230 net/netfilter/nf_tables_api.c:11707
+ rcu_do_batch kernel/rcu/tree.c:2567 [inline]
+ rcu_core+0x79d/0x14d0 kernel/rcu/tree.c:2823
+ handle_softirqs+0x213/0x8f0 kernel/softirq.c:561
+ __do_softirq kernel/softirq.c:595 [inline]
+ invoke_softirq kernel/softirq.c:435 [inline]
+ __irq_exit_rcu+0x109/0x170 kernel/softirq.c:662
+ irq_exit_rcu+0x9/0x30 kernel/softirq.c:678
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1049 [inline]
+ sysvec_apic_timer_interrupt+0xa4/0xc0 arch/x86/kernel/apic/apic.c:1049
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:native_irq_disable arch/x86/include/asm/irqflags.h:37 [inline]
+RIP: 0010:arch_local_irq_disable arch/x86/include/asm/irqflags.h:92 [inline]
+RIP: 0010:default_idle+0xf/0x20 arch/x86/kernel/process.c:743
+Code: 4c 01 c7 4c 29 c2 e9 72 ff ff ff 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 f3 0f 1e fa eb 07 0f 00 2d c3 a4 3d 00 fb f4 <fa> c3 cc cc cc cc 66 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90
+RSP: 0018:ffffffff8de07e20 EFLAGS: 00000202
+RAX: 00000000000aa075 RBX: 0000000000000000 RCX: ffffffff8b28e679
+RDX: 0000000000000000 RSI: ffffffff8b6cd860 RDI: ffffffff8bd1d340
+RBP: fffffbfff1bd2ef8 R08: 0000000000000001 R09: ffffed100d4c6fed
+R10: ffff88806a637f6b R11: 0000000000000000 R12: 0000000000000000
+R13: ffffffff8de977c0 R14: ffffffff905f15d0 R15: 0000000000000000
+ default_idle_call+0x6d/0xb0 kernel/sched/idle.c:117
+ cpuidle_idle_call kernel/sched/idle.c:185 [inline]
+ do_idle+0x329/0x3f0 kernel/sched/idle.c:325
+ cpu_startup_entry+0x4f/0x60 kernel/sched/idle.c:423
+ rest_init+0x16b/0x2b0 init/main.c:747
+ start_kernel+0x3e4/0x4d0 init/main.c:1102
+ x86_64_start_reservations+0x18/0x30 arch/x86/kernel/head64.c:507
+ x86_64_start_kernel+0xb2/0xc0 arch/x86/kernel/head64.c:488
+ common_startup_64+0x13e/0x148
+ </TASK>
+vkms_vblank_simulate: vblank timer overrun
+BUG: scheduling while atomic: swapper/0/0/0x00000102
+INFO: lockdep is turned off.
+Modules linked in:
+Preemption disabled at:
+[<ffffffff8b2a07bd>] schedule_preempt_disabled+0x1d/0x30 kernel/sched/core.c:6906
+----------------
+Code disassembly (best guess):
+   0:	4c 01 c7             	add    %r8,%rdi
+   3:	4c 29 c2             	sub    %r8,%rdx
+   6:	e9 72 ff ff ff       	jmp    0xffffff7d
+   b:	90                   	nop
+   c:	90                   	nop
+   d:	90                   	nop
+   e:	90                   	nop
+   f:	90                   	nop
+  10:	90                   	nop
+  11:	90                   	nop
+  12:	90                   	nop
+  13:	90                   	nop
+  14:	90                   	nop
+  15:	90                   	nop
+  16:	90                   	nop
+  17:	90                   	nop
+  18:	90                   	nop
+  19:	90                   	nop
+  1a:	90                   	nop
+  1b:	f3 0f 1e fa          	endbr64
+  1f:	eb 07                	jmp    0x28
+  21:	0f 00 2d c3 a4 3d 00 	verw   0x3da4c3(%rip)        # 0x3da4eb
+  28:	fb                   	sti
+  29:	f4                   	hlt
+* 2a:	fa                   	cli <-- trapping instruction
+  2b:	c3                   	ret
+  2c:	cc                   	int3
+  2d:	cc                   	int3
+  2e:	cc                   	int3
+  2f:	cc                   	int3
+  30:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+  37:	00 00 00 00
+  3b:	90                   	nop
+  3c:	90                   	nop
+  3d:	90                   	nop
+  3e:	90                   	nop
+  3f:	90                   	nop

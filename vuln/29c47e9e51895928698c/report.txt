@@ -1,0 +1,224 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in instrument_atomic_read_write include/linux/instrumented.h:96 [inline]
+BUG: KASAN: slab-use-after-free in atomic_dec_and_test include/linux/atomic/atomic-instrumented.h:1375 [inline]
+BUG: KASAN: slab-use-after-free in gfs2_qd_dealloc+0x83/0xf0 fs/gfs2/quota.c:115
+Write of size 4 at addr ffff888020f1ca78 by task syz-executor103/5026
+
+CPU: 1 PID: 5026 Comm: syz-executor103 Not tainted 6.6.0-rc6-syzkaller-00285-g9c5d00cb7b6b #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/06/2023
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2d0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0x163/0x540 mm/kasan/report.c:475
+ kasan_report+0x175/0x1b0 mm/kasan/report.c:588
+ kasan_check_range+0x27e/0x290 mm/kasan/generic.c:187
+ instrument_atomic_read_write include/linux/instrumented.h:96 [inline]
+ atomic_dec_and_test include/linux/atomic/atomic-instrumented.h:1375 [inline]
+ gfs2_qd_dealloc+0x83/0xf0 fs/gfs2/quota.c:115
+ rcu_do_batch kernel/rcu/tree.c:2139 [inline]
+ rcu_core+0xacf/0x1790 kernel/rcu/tree.c:2403
+ __do_softirq+0x2ab/0x908 kernel/softirq.c:553
+ invoke_softirq kernel/softirq.c:427 [inline]
+ __irq_exit_rcu+0xf1/0x1b0 kernel/softirq.c:632
+ irq_exit_rcu+0x9/0x20 kernel/softirq.c:644
+ sysvec_apic_timer_interrupt+0x95/0xb0 arch/x86/kernel/apic/apic.c:1074
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:645
+RIP: 0010:get_current arch/x86/include/asm/current.h:41 [inline]
+RIP: 0010:__sanitizer_cov_trace_pc+0x8/0x60 kernel/kcov.c:206
+Code: 00 00 f3 0f 1e fa 53 48 89 fb e8 13 00 00 00 48 8b 3d 34 9d 0b 0d 48 89 de 5b e9 53 a3 59 00 0f 1f 00 f3 0f 1e fa 48 8b 04 24 <65> 48 8b 0d 80 ab 75 7e 65 8b 15 81 ab 75 7e f7 c2 00 01 ff 00 74
+RSP: 0018:ffffc900038972b0 EFLAGS: 00000293
+RAX: ffffffff813dd529 RBX: ffffc90003897f20 RCX: ffff888024590000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: ffffc90003897f20
+RBP: ffffc90003897f20 R08: ffffffff813dcbdb R09: ffffffff813db790
+R10: 0000000000000003 R11: ffff888024590000 R12: 1ffff92000712e81
+R13: 1ffff92000712e82 R14: 1ffff92000712e80 R15: ffffc90003898000
+ __read_once_word_nocheck+0x9/0x10 include/asm-generic/rwonce.h:66
+ deref_stack_reg+0x1c7/0x250 arch/x86/kernel/unwind_orc.c:406
+ unwind_next_frame+0x1ab9/0x29e0 arch/x86/kernel/unwind_orc.c:648
+ arch_stack_walk+0x146/0x1a0 arch/x86/kernel/stacktrace.c:25
+ stack_trace_save+0x117/0x1c0 kernel/stacktrace.c:122
+ save_stack+0xfa/0x1e0 mm/page_owner.c:128
+ __reset_page_owner+0x4f/0x190 mm/page_owner.c:149
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1136 [inline]
+ free_unref_page_prepare+0x8c3/0x9f0 mm/page_alloc.c:2312
+ free_unref_page_list+0x596/0x830 mm/page_alloc.c:2451
+ release_pages+0x2113/0x23f0 mm/swap.c:1042
+ __folio_batch_release+0x84/0x100 mm/swap.c:1062
+ folio_batch_release include/linux/pagevec.h:83 [inline]
+ truncate_inode_pages_range+0x45d/0x11a0 mm/truncate.c:371
+ kill_bdev block/bdev.c:76 [inline]
+ blkdev_flush_mapping+0x15a/0x2b0 block/bdev.c:630
+ blkdev_put_whole block/bdev.c:661 [inline]
+ blkdev_put+0x4a9/0x770 block/bdev.c:898
+ deactivate_locked_super+0xa4/0x110 fs/super.c:481
+ cleanup_mnt+0x426/0x4c0 fs/namespace.c:1254
+ task_work_run+0x24a/0x300 kernel/task_work.c:180
+ ptrace_notify+0x2cd/0x380 kernel/signal.c:2387
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:251 [inline]
+ syscall_exit_to_user_mode_prepare kernel/entry/common.c:278 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:283 [inline]
+ syscall_exit_to_user_mode+0x15c/0x280 kernel/entry/common.c:296
+ do_syscall_64+0x4d/0xc0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7fc21a5c4407
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b8 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffe49e5ebe8 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007fc21a5c4407
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffe49e5eca0
+RBP: 00007ffe49e5eca0 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffe49e5fd00
+R13: 00005555572a16c0 R14: 0000000000000002 R15: 431bde82d7b634db
+ </TASK>
+
+Allocated by task 5030:
+ kasan_save_stack mm/kasan/common.c:45 [inline]
+ kasan_set_track+0x4f/0x70 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:383
+ kmalloc include/linux/slab.h:599 [inline]
+ kzalloc include/linux/slab.h:720 [inline]
+ init_sbd fs/gfs2/ops_fstype.c:77 [inline]
+ gfs2_fill_super+0x136/0x26c0 fs/gfs2/ops_fstype.c:1164
+ get_tree_bdev+0x416/0x5b0 fs/super.c:1577
+ gfs2_get_tree+0x54/0x210 fs/gfs2/ops_fstype.c:1348
+ vfs_get_tree+0x8c/0x280 fs/super.c:1750
+ do_new_mount+0x28f/0xae0 fs/namespace.c:3335
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount+0x2d9/0x3c0 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 5026:
+ kasan_save_stack mm/kasan/common.c:45 [inline]
+ kasan_set_track+0x4f/0x70 mm/kasan/common.c:52
+ kasan_save_free_info+0x28/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free+0xd6/0x120 mm/kasan/common.c:236
+ kasan_slab_free include/linux/kasan.h:164 [inline]
+ slab_free_hook mm/slub.c:1800 [inline]
+ slab_free_freelist_hook mm/slub.c:1826 [inline]
+ slab_free mm/slub.c:3809 [inline]
+ __kmem_cache_free+0x25f/0x3b0 mm/slub.c:3822
+ generic_shutdown_super+0x13a/0x2c0 fs/super.c:693
+ kill_block_super+0x41/0x70 fs/super.c:1646
+ deactivate_locked_super+0xa4/0x110 fs/super.c:481
+ cleanup_mnt+0x426/0x4c0 fs/namespace.c:1254
+ task_work_run+0x24a/0x300 kernel/task_work.c:180
+ ptrace_notify+0x2cd/0x380 kernel/signal.c:2387
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:251 [inline]
+ syscall_exit_to_user_mode_prepare kernel/entry/common.c:278 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:283 [inline]
+ syscall_exit_to_user_mode+0x15c/0x280 kernel/entry/common.c:296
+ do_syscall_64+0x4d/0xc0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+The buggy address belongs to the object at ffff888020f1c000
+ which belongs to the cache kmalloc-8k of size 8192
+The buggy address is located 2680 bytes inside of
+ freed 8192-byte region [ffff888020f1c000, ffff888020f1e000)
+
+The buggy address belongs to the physical page:
+page:ffffea000083c600 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x20f18
+head:ffffea000083c600 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+anon flags: 0xfff00000000840(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000840 ffff888012842280 ffffea0000844200 0000000000000005
+raw: 0000000000000000 0000000080020002 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd2040(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 4691, tgid 4691 (rcS), ts 31365276121, free_ts 31364458381
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x1e6/0x210 mm/page_alloc.c:1536
+ prep_new_page mm/page_alloc.c:1543 [inline]
+ get_page_from_freelist+0x31db/0x3360 mm/page_alloc.c:3170
+ __alloc_pages+0x255/0x670 mm/page_alloc.c:4426
+ alloc_slab_page+0x6a/0x160 mm/slub.c:1870
+ allocate_slab mm/slub.c:2017 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2070
+ ___slab_alloc+0xc85/0x1310 mm/slub.c:3223
+ __slab_alloc mm/slub.c:3322 [inline]
+ __slab_alloc_node mm/slub.c:3375 [inline]
+ slab_alloc_node mm/slub.c:3468 [inline]
+ __kmem_cache_alloc_node+0x1af/0x270 mm/slub.c:3517
+ kmalloc_trace+0x2a/0xe0 mm/slab_common.c:1117
+ kmalloc include/linux/slab.h:599 [inline]
+ kzalloc include/linux/slab.h:720 [inline]
+ tomoyo_print_bprm security/tomoyo/audit.c:26 [inline]
+ tomoyo_init_log+0x11cd/0x2040 security/tomoyo/audit.c:264
+ tomoyo_supervisor+0x386/0x11f0 security/tomoyo/common.c:2089
+ tomoyo_audit_env_log security/tomoyo/environ.c:36 [inline]
+ tomoyo_env_perm+0x178/0x210 security/tomoyo/environ.c:63
+ tomoyo_environ security/tomoyo/domain.c:672 [inline]
+ tomoyo_find_next_domain+0x1383/0x1cf0 security/tomoyo/domain.c:878
+ tomoyo_bprm_check_security+0x114/0x170 security/tomoyo/tomoyo.c:101
+ security_bprm_check+0x63/0xa0 security/security.c:1103
+ search_binary_handler fs/exec.c:1727 [inline]
+ exec_binprm fs/exec.c:1781 [inline]
+ bprm_execve+0x8c7/0x17c0 fs/exec.c:1856
+ do_execveat_common+0x580/0x720 fs/exec.c:1964
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1136 [inline]
+ free_unref_page_prepare+0x8c3/0x9f0 mm/page_alloc.c:2312
+ free_unref_page+0x37/0x3f0 mm/page_alloc.c:2405
+ discard_slab mm/slub.c:2116 [inline]
+ __unfreeze_partials+0x1dc/0x220 mm/slub.c:2655
+ put_cpu_partial+0x17b/0x250 mm/slub.c:2731
+ __slab_free+0x2b6/0x390 mm/slub.c:3679
+ qlink_free mm/kasan/quarantine.c:166 [inline]
+ qlist_free_all+0x75/0xe0 mm/kasan/quarantine.c:185
+ kasan_quarantine_reduce+0x14b/0x160 mm/kasan/quarantine.c:292
+ __kasan_slab_alloc+0x23/0x70 mm/kasan/common.c:305
+ kasan_slab_alloc include/linux/kasan.h:188 [inline]
+ slab_post_alloc_hook+0x67/0x3d0 mm/slab.h:762
+ slab_alloc_node mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_node+0x141/0x270 mm/slub.c:3517
+ __do_kmalloc_node mm/slab_common.c:1025 [inline]
+ __kmalloc+0xa8/0x230 mm/slab_common.c:1039
+ kmalloc include/linux/slab.h:603 [inline]
+ tomoyo_add_entry security/tomoyo/common.c:2023 [inline]
+ tomoyo_supervisor+0xe06/0x11f0 security/tomoyo/common.c:2095
+ tomoyo_audit_env_log security/tomoyo/environ.c:36 [inline]
+ tomoyo_env_perm+0x178/0x210 security/tomoyo/environ.c:63
+ tomoyo_environ security/tomoyo/domain.c:672 [inline]
+ tomoyo_find_next_domain+0x1383/0x1cf0 security/tomoyo/domain.c:878
+ tomoyo_bprm_check_security+0x114/0x170 security/tomoyo/tomoyo.c:101
+ security_bprm_check+0x63/0xa0 security/security.c:1103
+
+Memory state around the buggy address:
+ ffff888020f1c900: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888020f1c980: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888020f1ca00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                                                ^
+ ffff888020f1ca80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888020f1cb00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+----------------
+Code disassembly (best guess):
+   0:	00 00                	add    %al,(%rax)
+   2:	f3 0f 1e fa          	endbr64
+   6:	53                   	push   %rbx
+   7:	48 89 fb             	mov    %rdi,%rbx
+   a:	e8 13 00 00 00       	call   0x22
+   f:	48 8b 3d 34 9d 0b 0d 	mov    0xd0b9d34(%rip),%rdi        # 0xd0b9d4a
+  16:	48 89 de             	mov    %rbx,%rsi
+  19:	5b                   	pop    %rbx
+  1a:	e9 53 a3 59 00       	jmp    0x59a372
+  1f:	0f 1f 00             	nopl   (%rax)
+  22:	f3 0f 1e fa          	endbr64
+  26:	48 8b 04 24          	mov    (%rsp),%rax
+* 2a:	65 48 8b 0d 80 ab 75 	mov    %gs:0x7e75ab80(%rip),%rcx        # 0x7e75abb2 <-- trapping instruction
+  31:	7e
+  32:	65 8b 15 81 ab 75 7e 	mov    %gs:0x7e75ab81(%rip),%edx        # 0x7e75abba
+  39:	f7 c2 00 01 ff 00    	test   $0xff0100,%edx
+  3f:	74                   	.byte 0x74

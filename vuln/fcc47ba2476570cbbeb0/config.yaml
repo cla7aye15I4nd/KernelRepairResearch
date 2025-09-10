@@ -1,0 +1,59 @@
+id: fcc47ba2476570cbbeb0
+bug_link: https://syzkaller.appspot.com/bug?extid=fcc47ba2476570cbbeb0
+title: WARNING in blk_mq_start_request
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c96b8175522a2c52e297ee0a49827a668f95e1e8
+fix_commit: 53f2bca2609237f910531f2c1a7779b16ce7952d
+datetime: '2023-11-20T10:26:26-07:00'
+fix_commit_message: 'block/null_blk: Fix double blk_mq_start_request() warning
+
+
+  When CONFIG_BLK_DEV_NULL_BLK_FAULT_INJECTION is enabled, null_queue_rq()
+
+  would return BLK_STS_RESOURCE or BLK_STS_DEV_RESOURCE for the request,
+
+  which has been marked as MQ_RQ_IN_FLIGHT by blk_mq_start_request().
+
+
+  Then null_queue_rqs() put these requests in the rqlist, return back to
+
+  the block layer core, which would try to queue them individually again,
+
+  so the warning in blk_mq_start_request() triggered.
+
+
+  Fix it by splitting the null_queue_rq() into two parts: the first is the
+
+  preparation of request, the second is the handling of request. We put
+
+  the blk_mq_start_request() after the preparation part, which may fail
+
+  and return back to the block layer core.
+
+
+  The throttling also belongs to the preparation part, so move it before
+
+  blk_mq_start_request(). And change the return type of null_handle_cmd()
+
+  to void, since it always return BLK_STS_OK now.
+
+
+  Reported-by:  <syzbot+fcc47ba2476570cbbeb0@syzkaller.appspotmail.com>
+
+  Closes: https://lore.kernel.org/all/0000000000000e6aac06098aee0c@google.com/
+
+  Fixes: d78bfa1346ab ("block/null_blk: add queue_rqs() support")
+
+  Suggested-by: Bart Van Assche <bvanassche@acm.org>
+
+  Signed-off-by: Chengming Zhou <zhouchengming@bytedance.com>
+
+  Link: https://lore.kernel.org/r/20231120032521.1012037-1-chengming.zhou@linux.dev
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- drivers/block/null_blk
+hunk_count: 5
+covered_count: 3

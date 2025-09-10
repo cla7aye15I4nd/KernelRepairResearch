@@ -1,0 +1,44 @@
+id: af05535bb79520f95431
+bug_link: https://syzkaller.appspot.com/bug?extid=af05535bb79520f95431
+title: possible deadlock in io_submit_one (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c7eb6869632a5d33b41d0a00d683b8395392b7ee
+fix_commit: 76e43c8ccaa35c30d5df853013561145a0f750a5
+datetime: '2019-09-10T16:29:29+02:00'
+fix_commit_message: "fuse: fix deadlock with aio poll and fuse_iqueue::waitq.lock\n\
+  \nWhen IOCB_CMD_POLL is used on the FUSE device, aio_poll() disables IRQs\nand takes\
+  \ kioctx::ctx_lock, then fuse_iqueue::waitq.lock.\n\nThis may have to wait for fuse_iqueue::waitq.lock\
+  \ to be released by one\nof many places that take it with IRQs enabled.  Since the\
+  \ IRQ handler\nmay take kioctx::ctx_lock, lockdep reports that a deadlock is possible.\n\
+  \nFix it by protecting the state of struct fuse_iqueue with a separate\nspinlock,\
+  \ and only accessing fuse_iqueue::waitq using the versions of\nthe waitqueue functions\
+  \ which do IRQ-safe locking internally.\n\nReproducer:\n\n\t#include <fcntl.h>\n\
+  \t#include <stdio.h>\n\t#include <sys/mount.h>\n\t#include <sys/stat.h>\n\t#include\
+  \ <sys/syscall.h>\n\t#include <unistd.h>\n\t#include <linux/aio_abi.h>\n\n\tint\
+  \ main()\n\t{\n\t\tchar opts[128];\n\t\tint fd = open(\"/dev/fuse\", O_RDWR);\n\t\
+  \taio_context_t ctx = 0;\n\t\tstruct iocb cb = { .aio_lio_opcode = IOCB_CMD_POLL,\
+  \ .aio_fildes = fd };\n\t\tstruct iocb *cbp = &cb;\n\n\t\tsprintf(opts, \"fd=%d,rootmode=040000,user_id=0,group_id=0\"\
+  , fd);\n\t\tmkdir(\"mnt\", 0700);\n\t\tmount(\"foo\",  \"mnt\", \"fuse\", 0, opts);\n\
+  \t\tsyscall(__NR_io_setup, 1, &ctx);\n\t\tsyscall(__NR_io_submit, ctx, 1, &cbp);\n\
+  \t}\n\nBeginning of lockdep output:\n\n\t=====================================================\n\
+  \tWARNING: SOFTIRQ-safe -> SOFTIRQ-unsafe lock order detected\n\t5.3.0-rc5 #9 Not\
+  \ tainted\n\t-----------------------------------------------------\n\tsyz_fuse/135\
+  \ [HC0[0]:SC0[0]:HE0:SE1] is trying to acquire:\n\t000000003590ceda (&fiq->waitq){+.+.},\
+  \ at: spin_lock include/linux/spinlock.h:338 [inline]\n\t000000003590ceda (&fiq->waitq){+.+.},\
+  \ at: aio_poll fs/aio.c:1751 [inline]\n\t000000003590ceda (&fiq->waitq){+.+.}, at:\
+  \ __io_submit_one.constprop.0+0x203/0x5b0 fs/aio.c:1825\n\n\tand this task is already\
+  \ holding:\n\t0000000075037284 (&(&ctx->ctx_lock)->rlock){..-.}, at: spin_lock_irq\
+  \ include/linux/spinlock.h:363 [inline]\n\t0000000075037284 (&(&ctx->ctx_lock)->rlock){..-.},\
+  \ at: aio_poll fs/aio.c:1749 [inline]\n\t0000000075037284 (&(&ctx->ctx_lock)->rlock){..-.},\
+  \ at: __io_submit_one.constprop.0+0x1f4/0x5b0 fs/aio.c:1825\n\twhich would create\
+  \ a new lock dependency:\n\t (&(&ctx->ctx_lock)->rlock){..-.} -> (&fiq->waitq){+.+.}\n\
+  \n\tbut this new dependency connects a SOFTIRQ-irq-safe lock:\n\t (&(&ctx->ctx_lock)->rlock){..-.}\n\
+  \n\t[...]\n\nReported-by: syzbot+af05535bb79520f95431@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+d86c4426a01f60feddc7@syzkaller.appspotmail.com\nFixes: bfe4037e722e\
+  \ (\"aio: implement IOCB_CMD_POLL\")\nCc: <stable@vger.kernel.org> # v4.19+\nCc:\
+  \ Christoph Hellwig <hch@lst.de>\nSigned-off-by: Eric Biggers <ebiggers@google.com>\n\
+  Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>\n"
+submodule:
+- fs/fuse
+hunk_count: 24
+covered_count: 5

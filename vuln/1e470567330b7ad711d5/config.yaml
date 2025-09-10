@@ -1,0 +1,30 @@
+id: 1e470567330b7ad711d5
+bug_link: https://syzkaller.appspot.com/bug?extid=1e470567330b7ad711d5
+title: 'KASAN: use-after-free Read in ext4_data_block_valid'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4c273352bb4583750bf511fe24fe410610414496
+fix_commit: 7727ae52975d4f4ef7ff69ed8e6e25f6a4168158
+datetime: '2019-08-28T11:13:24-04:00'
+fix_commit_message: "ext4: fix potential use after free after remounting with noblock_validity\n\
+  \nRemount process will release system zone which was allocated before if\n\"noblock_validity\"\
+  \ is specified. If we mount an ext4 file system to two\nmountpoints with default\
+  \ mount options, and then remount one of them\nwith \"noblock_validity\", it may\
+  \ trigger a use after free problem when\nsomeone accessing the other one.\n\n #\
+  \ mount /dev/sda foo\n # mount /dev/sda bar\n\nUser access mountpoint \"foo\"  \
+  \ |   Remount mountpoint \"bar\"\n                               |\next4_map_blocks()\
+  \              |   ext4_remount()\ncheck_block_validity()         |   ext4_setup_system_zone()\n\
+  ext4_data_block_valid()        |   ext4_release_system_zone()\n                \
+  \               |   free system_blks rb nodes\naccess system_blks rb nodes    |\n\
+  trigger use after free         |\n\nThis problem can also be reproduced by one mountpint,\
+  \ At the same time,\nadd_system_zone() can get called during remount as well so\
+  \ there can be\nracing ext4_data_block_valid() reading the rbtree at the same time.\n\
+  \nThis patch add RCU to protect system zone from releasing or building\nwhen doing\
+  \ a remount which inverse current \"noblock_validity\" mount\noption. It assign\
+  \ the rbtree after the whole tree was complete and\ndo actual freeing after rcu\
+  \ grace period, avoid any intermediate state.\n\nReported-by: syzbot+1e470567330b7ad711d5@syzkaller.appspotmail.com\n\
+  Signed-off-by: zhangyi (F) <yi.zhang@huawei.com>\nSigned-off-by: Theodore Ts'o <tytso@mit.edu>\n\
+  Reviewed-by: Jan Kara <jack@suse.cz>\n"
+submodule:
+- fs/ext4
+hunk_count: 11
+covered_count: 8

@@ -1,0 +1,40 @@
+diff --git a/include/net/tls.h b/include/net/tls.h
+index 4a55ce6a303f..53d96bca220d 100644
+--- a/include/net/tls.h
++++ b/include/net/tls.h
+@@ -373,21 +373,6 @@ static inline bool tls_is_partially_sent_record(struct tls_context *ctx)
+ 	return !!ctx->partially_sent_record;
+ }
+ 
+-static inline int tls_complete_pending_work(struct sock *sk,
+-					    struct tls_context *ctx,
+-					    int flags, long *timeo)
+-{
+-	int rc = 0;
+-
+-	if (unlikely(sk->sk_write_pending))
+-		rc = wait_on_pending_writer(sk, timeo);
+-
+-	if (!rc && tls_is_partially_sent_record(ctx))
+-		rc = tls_push_partial_record(sk, ctx, flags);
+-
+-	return rc;
+-}
+-
+ static inline bool tls_is_pending_open_record(struct tls_context *tls_ctx)
+ {
+ 	return tls_ctx->pending_open_record_frags;
+diff --git a/net/tls/tls_main.c b/net/tls/tls_main.c
+index fc81ae18cc44..e2b69e805d46 100644
+--- a/net/tls/tls_main.c
++++ b/net/tls/tls_main.c
+@@ -279,7 +279,8 @@ static void tls_sk_proto_close(struct sock *sk, long timeout)
+ 		goto skip_tx_cleanup;
+ 	}
+ 
+-	if (!tls_complete_pending_work(sk, ctx, 0, &timeo))
++	if (unlikely(sk->sk_write_pending) &&
++	    !wait_on_pending_writer(sk, &timeo))
+ 		tls_handle_open_record(sk, 0);
+ 
+ 	/* We need these for tls_sw_fallback handling of other packets */

@@ -1,0 +1,44 @@
+id: d1e3b1d92d25abf97943
+bug_link: https://syzkaller.appspot.com/bug?extid=d1e3b1d92d25abf97943
+title: general protection fault in legacy_parse_param
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cdeea45422f579b9302e377d1ede29133d3fde8e
+fix_commit: ecff30575b5ad0eda149aadad247b7f75411fd47
+datetime: '2022-01-27T20:43:02-05:00'
+fix_commit_message: 'LSM: general protection fault in legacy_parse_param
+
+
+  The usual LSM hook "bail on fail" scheme doesn''t work for cases where
+
+  a security module may return an error code indicating that it does not
+
+  recognize an input.  In this particular case Smack sees a mount option
+
+  that it recognizes, and returns 0. A call to a BPF hook follows, which
+
+  returns -ENOPARAM, which confuses the caller because Smack has processed
+
+  its data.
+
+
+  The SELinux hook incorrectly returns 1 on success. There was a time
+
+  when this was correct, however the current expectation is that it
+
+  return 0 on success. This is repaired.
+
+
+  Reported-by: syzbot+d1e3b1d92d25abf97943@syzkaller.appspotmail.com
+
+  Signed-off-by: Casey Schaufler <casey@schaufler-ca.com>
+
+  Acked-by: James Morris <jamorris@linux.microsoft.com>
+
+  Signed-off-by: Paul Moore <paul@paul-moore.com>
+
+  '
+submodule:
+- security
+- security/selinux
+hunk_count: 2
+covered_count: 0

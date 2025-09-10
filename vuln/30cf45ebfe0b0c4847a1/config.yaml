@@ -1,0 +1,33 @@
+id: 30cf45ebfe0b0c4847a1
+bug_link: https://syzkaller.appspot.com/bug?extid=30cf45ebfe0b0c4847a1
+title: 'KASAN: use-after-free Read in ld_usb_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0cf25bc5d0816a40b464269d36b85021dd091f6d
+fix_commit: 303911cfc5b95d33687d9046133ff184cf5043ff
+datetime: '2019-08-12T22:47:24+02:00'
+fix_commit_message: "USB: core: Fix races in character device registration and deregistraion\n\
+  \nThe syzbot fuzzer has found two (!) races in the USB character device\nregistration\
+  \ and deregistration routines.  This patch fixes the races.\n\nThe first race results\
+  \ from the fact that usb_deregister_dev() sets\nusb_minors[intf->minor] to NULL\
+  \ before calling device_destroy() on the\nclass device.  This leaves a window during\
+  \ which another thread can\nallocate the same minor number but will encounter a\
+  \ duplicate name\nerror when it tries to register its own class device.  A typical\
+  \ error\nmessage in the system log would look like:\n\n    sysfs: cannot create\
+  \ duplicate filename '/class/usbmisc/ldusb0'\n\nThe patch fixes this race by destroying\
+  \ the class device first.\n\nThe second race is in usb_register_dev().  When that\
+  \ routine runs, it\nfirst allocates a minor number, then drops minor_rwsem, and\
+  \ then\ncreates the class device.  If the device creation fails, the minor\nnumber\
+  \ is deallocated and the whole routine returns an error.  But\nduring the time while\
+  \ minor_rwsem was dropped, there is a window in\nwhich the minor number is allocated\
+  \ and so another thread can\nsuccessfully open the device file.  Typically this\
+  \ results in\nuse-after-free errors or invalid accesses when the other thread closes\n\
+  its open file reference, because the kernel then tries to release\nresources that\
+  \ were already deallocated when usb_register_dev()\nfailed.  The patch fixes this\
+  \ race by keeping minor_rwsem locked\nthroughout the entire routine.\n\nReported-and-tested-by:\
+  \ syzbot+30cf45ebfe0b0c4847a1@syzkaller.appspotmail.com\nSigned-off-by: Alan Stern\
+  \ <stern@rowland.harvard.edu>\nCC: <stable@vger.kernel.org>\nLink: https://lore.kernel.org/r/Pine.LNX.4.44L0.1908121607590.1659-100000@iolanthe.rowland.org\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/core
+hunk_count: 3
+covered_count: 0

@@ -1,0 +1,35 @@
+id: aae58876fb5a1fad0a4b
+bug_link: https://syzkaller.appspot.com/bug?extid=aae58876fb5a1fad0a4b
+title: 'KASAN: use-after-free Read in tipc_group_size'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 30c3e9d470358a6741e00e1034a1ea85c6a516f0
+fix_commit: 60c2530696320ee6ffe4491c17079fa403790c98
+datetime: '2018-01-19T15:12:21-05:00'
+fix_commit_message: 'tipc: fix race between poll() and setsockopt()
+
+
+  Letting tipc_poll() dereference a socket''s pointer to struct tipc_group
+
+  entails a race risk, as the group item may be deleted in a concurrent
+
+  tipc_sk_join() or tipc_sk_leave() thread.
+
+
+  We now move the ''open'' flag in struct tipc_group to struct tipc_sock,
+
+  and let the former retain only a pointer to the moved field. This will
+
+  eliminate the race risk.
+
+
+  Reported-by: syzbot+799dafde0286795858ac@syzkaller.appspotmail.com
+
+  Signed-off-by: Jon Maloy <jon.maloy@ericsson.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/tipc
+hunk_count: 12
+covered_count: 7

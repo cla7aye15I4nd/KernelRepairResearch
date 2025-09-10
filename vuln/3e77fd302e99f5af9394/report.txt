@@ -1,0 +1,32 @@
+==================================================================
+BUG: KCSAN: data-race in io_submit_sqes / io_uring_show_fdinfo
+
+read-write to 0xffff88810a2fe870 of 4 bytes by task 5625 on cpu 0:
+ io_get_sqe io_uring/io_uring.c:2286 [inline]
+ io_submit_sqes+0x235/0x1000 io_uring/io_uring.c:2339
+ __io_sq_thread io_uring/sqpoll.c:189 [inline]
+ io_sq_thread+0x778/0x1110 io_uring/sqpoll.c:312
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+read to 0xffff88810a2fe870 of 4 bytes by task 5624 on cpu 1:
+ io_uring_show_fdinfo+0x150/0xc40 io_uring/fdinfo.c:126
+ seq_show+0x331/0x3b0 fs/proc/fd.c:68
+ traverse+0x141/0x3a0 fs/seq_file.c:111
+ seq_lseek+0xb5/0x170 fs/seq_file.c:323
+ vfs_llseek fs/read_write.c:387 [inline]
+ ksys_lseek fs/read_write.c:400 [inline]
+ __do_sys_lseek fs/read_write.c:410 [inline]
+ __se_sys_lseek fs/read_write.c:408 [inline]
+ __x64_sys_lseek+0xe5/0x160 fs/read_write.c:408
+ x64_sys_call+0x2d2a/0x2fb0 arch/x86/include/generated/asm/syscalls_64.h:9
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xd0/0x1a0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x0000e4d3 -> 0x0000e4f2
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 UID: 0 PID: 5624 Comm: syz.0.732 Not tainted 6.15.0-rc4-syzkaller-00021-gca91b9500108 #0 PREEMPT(voluntary) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/19/2025
+==================================================================

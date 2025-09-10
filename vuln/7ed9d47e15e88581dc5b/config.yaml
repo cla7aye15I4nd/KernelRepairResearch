@@ -1,0 +1,45 @@
+id: 7ed9d47e15e88581dc5b
+bug_link: https://syzkaller.appspot.com/bug?extid=7ed9d47e15e88581dc5b
+title: 'KMSAN: uninit-value in xfrm_state_find (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b56bbaf8c9ffe02468f6ba8757668e95dda7e62c
+fix_commit: 94d077c331730510d5611b438640a292097341f0
+datetime: '2025-06-03T15:39:48+02:00'
+fix_commit_message: 'xfrm: state: initialize state_ptrs earlier in xfrm_state_find
+
+
+  In case of preemption, xfrm_state_look_at will find a different
+
+  pcpu_id and look up states for that other CPU. If we matched a state
+
+  for CPU2 in the state_cache while the lookup started on CPU1, we will
+
+  jump to "found", but the "best" state that we got will be ignored and
+
+  we will enter the "acquire" block. This block uses state_ptrs, which
+
+  isn''t initialized at this point.
+
+
+  Let''s initialize state_ptrs just after taking rcu_read_lock. This will
+
+  also prevent a possible misuse in the future, if someone adjusts this
+
+  function.
+
+
+  Reported-by: syzbot+7ed9d47e15e88581dc5b@syzkaller.appspotmail.com
+
+  Fixes: e952837f3ddb ("xfrm: state: fix out-of-bounds read during lookup")
+
+  Signed-off-by: Sabrina Dubroca <sd@queasysnail.net>
+
+  Reviewed-by: Florian Westphal <fw@strlen.de>
+
+  Signed-off-by: Steffen Klassert <steffen.klassert@secunet.com>
+
+  '
+submodule:
+- net/xfrm
+hunk_count: 2
+covered_count: 2

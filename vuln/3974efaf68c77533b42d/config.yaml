@@ -1,0 +1,51 @@
+id: 3974efaf68c77533b42d
+bug_link: https://syzkaller.appspot.com/bug?extid=3974efaf68c77533b42d
+title: 'KASAN: use-after-free Read in nilfs_mdt_destroy'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 568035b01cfb107af8d2e4bd2fb9aea22cf5b868
+fix_commit: 2e488f13755ffbb60f307e991b27024716a33b29
+datetime: '2022-09-01T17:30:24-04:00'
+fix_commit_message: 'fs: fix UAF/GPF bug in nilfs_mdt_destroy
+
+
+  In alloc_inode, inode_init_always() could return -ENOMEM if
+
+  security_inode_alloc() fails, which causes inode->i_private
+
+  uninitialized. Then nilfs_is_metadata_file_inode() returns
+
+  true and nilfs_free_inode() wrongly calls nilfs_mdt_destroy(),
+
+  which frees the uninitialized inode->i_private
+
+  and leads to crashes(e.g., UAF/GPF).
+
+
+  Fix this by moving security_inode_alloc just prior to
+
+  this_cpu_inc(nr_inodes)
+
+
+  Link: https://lkml.kernel.org/r/CAFcO6XOcf1Jj2SeGt=jJV59wmhESeSKpfR0omdFRq+J9nD1vfQ@mail.gmail.com
+
+  Reported-by: butt3rflyh4ck <butterflyhuangxx@gmail.com>
+
+  Reported-by: Hao Sun <sunhao.th@gmail.com>
+
+  Reported-by: Jiacheng Xu <stitch@zju.edu.cn>
+
+  Reviewed-by: Christian Brauner (Microsoft) <brauner@kernel.org>
+
+  Signed-off-by: Dongliang Mu <mudongliangabcd@gmail.com>
+
+  Cc: Al Viro <viro@zeniv.linux.org.uk>
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+
+  '
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

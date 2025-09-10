@@ -1,0 +1,38 @@
+id: fd404f6b03a58e8bc403
+bug_link: https://syzkaller.appspot.com/bug?extid=fd404f6b03a58e8bc403
+title: kernel BUG in iov_iter_revert
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 296455ade1fdcf5f8f8c033201633b60946c589a
+fix_commit: 0991abeddefa118479b0af32c28bcd662dec1561
+datetime: '2024-01-18T23:01:51+09:00'
+fix_commit_message: 'exfat: fix zero the unwritten part for dio read
+
+
+  For dio read, bio will be leave in flight when a successful partial
+
+  aio read have been setup, blockdev_direct_IO() will return
+
+  -EIOCBQUEUED. In the case, iter->iov_offset will be not advanced,
+
+  the oops reported by syzbot will occur if revert iter->iov_offset
+
+  with iov_iter_revert(). The unwritten part had been zeroed by aio
+
+  read, so there is no need to zero it in dio read.
+
+
+  Reported-by: syzbot+fd404f6b03a58e8bc403@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=fd404f6b03a58e8bc403
+
+  Fixes: 11a347fb6cef ("exfat: change to get file size from DataLength")
+
+  Signed-off-by: Yuezhang Mo <Yuezhang.Mo@sony.com>
+
+  Signed-off-by: Namjae Jeon <linkinjeon@kernel.org>
+
+  '
+submodule:
+- fs/exfat
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,24 @@
+diff --git a/net/smc/af_smc.c b/net/smc/af_smc.c
+index 0ee7721afbe5..e7de5f282722 100644
+--- a/net/smc/af_smc.c
++++ b/net/smc/af_smc.c
+@@ -1522,12 +1522,16 @@ static int smc_ioctl(struct socket *sock, unsigned int cmd,
+ 
+ 	smc = smc_sk(sock->sk);
+ 	conn = &smc->conn;
++	lock_sock(&smc->sk);
+ 	if (smc->use_fallback) {
+-		if (!smc->clcsock)
++		if (!smc->clcsock) {
++			release_sock(&smc->sk);
+ 			return -EBADF;
+-		return smc->clcsock->ops->ioctl(smc->clcsock, cmd, arg);
++		}
++		answ = smc->clcsock->ops->ioctl(smc->clcsock, cmd, arg);
++		release_sock(&smc->sk);
++		return answ;
+ 	}
+-	lock_sock(&smc->sk);
+ 	switch (cmd) {
+ 	case SIOCINQ: /* same as FIONREAD */
+ 		if (smc->sk.sk_state == SMC_LISTEN) {

@@ -1,0 +1,81 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000007: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000038-0x000000000000003f]
+CPU: 1 UID: 0 PID: 5101 Comm: syz-executor153 Not tainted 6.10.0-rc6-next-20240703-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+RIP: 0010:bpf_net_ctx_get_ri include/linux/filter.h:788 [inline]
+RIP: 0010:__bpf_xdp_redirect_map include/linux/filter.h:1699 [inline]
+RIP: 0010:dev_map_redirect+0x65/0x6a0 kernel/bpf/devmap.c:1015
+Code: 48 c1 e8 03 80 3c 28 00 74 08 48 89 df e8 83 b3 3d 00 4c 8b 2b 4d 8d 7d 38 4c 89 fb 48 c1 eb 03 48 b8 00 00 00 00 00 fc ff df <0f> b6 04 03 84 c0 0f 85 6e 04 00 00 41 8b 2f 89 ee 83 e6 02 31 ff
+RSP: 0018:ffffc9000355f6e8 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 0000000000000007 RCX: ffff888018b78000
+RDX: 0000000000000000 RSI: 000000000355f738 RDI: ffff8880183a2800
+RBP: dffffc0000000000 R08: 0000000000000007 R09: ffffffff81b5ee2f
+R10: 0000000000000004 R11: ffff888018b78000 R12: 000000000355f738
+R13: 0000000000000000 R14: 0000000000000008 R15: 0000000000000038
+FS:  000055557cbd4380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000002000f000 CR3: 0000000078ac6000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bpf_prog_ec9efaa32d58ce69+0x56/0x5a
+ __bpf_prog_run include/linux/filter.h:691 [inline]
+ bpf_prog_run_xdp include/net/xdp.h:514 [inline]
+ bpf_prog_run_generic_xdp+0x679/0x14c0 net/core/dev.c:4962
+ netif_receive_generic_xdp net/core/dev.c:5075 [inline]
+ do_xdp_generic+0x673/0xb90 net/core/dev.c:5134
+ tun_get_user+0x2805/0x4560 drivers/net/tun.c:1924
+ tun_chr_write_iter+0x113/0x1f0 drivers/net/tun.c:2048
+ new_sync_write fs/read_write.c:497 [inline]
+ vfs_write+0xa72/0xc90 fs/read_write.c:590
+ ksys_write+0x1a0/0x2c0 fs/read_write.c:643
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa9a2adcf90
+Code: 40 00 48 c7 c2 b8 ff ff ff f7 d8 64 89 02 48 c7 c0 ff ff ff ff eb b7 0f 1f 00 80 3d 31 e1 07 00 00 74 17 b8 01 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 58 c3 0f 1f 80 00 00 00 00 48 83 ec 28 48 89
+RSP: 002b:00007ffd3cd09788 EFLAGS: 00000202 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fa9a2adcf90
+RDX: 000000000000fdef RSI: 0000000020000100 RDI: 00000000000000c8
+RBP: 0000000000000000 R08: 00007ffd3cd098b8 R09: 00007ffd3cd098b8
+R10: 0000000000000000 R11: 0000000000000202 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bpf_net_ctx_get_ri include/linux/filter.h:788 [inline]
+RIP: 0010:__bpf_xdp_redirect_map include/linux/filter.h:1699 [inline]
+RIP: 0010:dev_map_redirect+0x65/0x6a0 kernel/bpf/devmap.c:1015
+Code: 48 c1 e8 03 80 3c 28 00 74 08 48 89 df e8 83 b3 3d 00 4c 8b 2b 4d 8d 7d 38 4c 89 fb 48 c1 eb 03 48 b8 00 00 00 00 00 fc ff df <0f> b6 04 03 84 c0 0f 85 6e 04 00 00 41 8b 2f 89 ee 83 e6 02 31 ff
+RSP: 0018:ffffc9000355f6e8 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 0000000000000007 RCX: ffff888018b78000
+RDX: 0000000000000000 RSI: 000000000355f738 RDI: ffff8880183a2800
+RBP: dffffc0000000000 R08: 0000000000000007 R09: ffffffff81b5ee2f
+R10: 0000000000000004 R11: ffff888018b78000 R12: 000000000355f738
+R13: 0000000000000000 R14: 0000000000000008 R15: 0000000000000038
+FS:  000055557cbd4380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000002000f000 CR3: 0000000078ac6000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	48 c1 e8 03          	shr    $0x3,%rax
+   4:	80 3c 28 00          	cmpb   $0x0,(%rax,%rbp,1)
+   8:	74 08                	je     0x12
+   a:	48 89 df             	mov    %rbx,%rdi
+   d:	e8 83 b3 3d 00       	call   0x3db395
+  12:	4c 8b 2b             	mov    (%rbx),%r13
+  15:	4d 8d 7d 38          	lea    0x38(%r13),%r15
+  19:	4c 89 fb             	mov    %r15,%rbx
+  1c:	48 c1 eb 03          	shr    $0x3,%rbx
+  20:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  27:	fc ff df
+* 2a:	0f b6 04 03          	movzbl (%rbx,%rax,1),%eax <-- trapping instruction
+  2e:	84 c0                	test   %al,%al
+  30:	0f 85 6e 04 00 00    	jne    0x4a4
+  36:	41 8b 2f             	mov    (%r15),%ebp
+  39:	89 ee                	mov    %ebp,%esi
+  3b:	83 e6 02             	and    $0x2,%esi
+  3e:	31 ff                	xor    %edi,%edi

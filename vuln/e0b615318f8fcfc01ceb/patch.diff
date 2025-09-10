@@ -1,0 +1,25 @@
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index edb84cc03237..e48eba7e9379 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2874,13 +2874,19 @@ int btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans, u64 bytenr,
+ 	qgroup_update_counters(fs_info, &qgroups, nr_old_roots, nr_new_roots,
+ 			       num_bytes, seq);
+ 
++	/*
++	 * We're done using the iterator, release all its qgroups while holding
++	 * fs_info->qgroup_lock so that we don't race with btrfs_remove_qgroup()
++	 * and trigger use-after-free accesses to qgroups.
++	 */
++	qgroup_iterator_nested_clean(&qgroups);
++
+ 	/*
+ 	 * Bump qgroup_seq to avoid seq overlap
+ 	 */
+ 	fs_info->qgroup_seq += max(nr_old_roots, nr_new_roots) + 1;
+ 	spin_unlock(&fs_info->qgroup_lock);
+ out_free:
+-	qgroup_iterator_nested_clean(&qgroups);
+ 	ulist_free(old_roots);
+ 	ulist_free(new_roots);
+ 	return ret;

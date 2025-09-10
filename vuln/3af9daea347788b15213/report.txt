@@ -1,0 +1,70 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000030: 0000 [#1] PREEMPT SMP KASAN NOPTI
+KASAN: null-ptr-deref in range [0x0000000000000180-0x0000000000000187]
+CPU: 0 PID: 111 Comm: kswapd0 Not tainted 6.9.0-syzkaller-10713-g2a8120d7b482 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+RIP: 0010:rcu_seq_done kernel/rcu/rcu.h:156 [inline]
+RIP: 0010:poll_state_synchronize_srcu+0x43/0x90 kernel/rcu/srcutree.c:1543
+Code: 48 83 ec 08 48 c1 ea 03 80 3c 02 00 75 45 48 b8 00 00 00 00 00 fc ff df 48 8b 5b 38 48 8d bb 80 01 00 00 48 89 fa 48 c1 ea 03 <80> 3c 02 00 75 32 48 8b 93 80 01 00 00 31 c0 48 39 f2 78 0b f0 83
+RSP: 0018:ffffc90000e6f698 EFLAGS: 00010206
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: ffff888062204528
+RDX: 0000000000000030 RSI: 0000000000000004 RDI: 0000000000000180
+RBP: dffffc0000000000 R08: 0000000000000000 R09: fffffbfff283f87a
+R10: ffffffff941fc3d7 R11: 0000000000000002 R12: ffff88804bca2cf0
+R13: ffff88804bc3aec8 R14: ffff888062200000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff88802c000000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00000000f7f8cea0 CR3: 0000000045b60000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_btree_key_cache_scan+0x3c7/0x1820 fs/bcachefs/btree_key_cache.c:835
+ do_shrink_slab+0x44f/0x11c0 mm/shrinker.c:435
+ shrink_slab+0x18a/0x1310 mm/shrinker.c:662
+ shrink_one+0x493/0x7c0 mm/vmscan.c:4790
+ shrink_many mm/vmscan.c:4851 [inline]
+ lru_gen_shrink_node+0x89f/0x1750 mm/vmscan.c:4951
+ shrink_node mm/vmscan.c:5910 [inline]
+ kswapd_shrink_node mm/vmscan.c:6720 [inline]
+ balance_pgdat+0x1105/0x1970 mm/vmscan.c:6911
+ kswapd+0x5ea/0xbf0 mm/vmscan.c:7180
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:rcu_seq_done kernel/rcu/rcu.h:156 [inline]
+RIP: 0010:poll_state_synchronize_srcu+0x43/0x90 kernel/rcu/srcutree.c:1543
+Code: 48 83 ec 08 48 c1 ea 03 80 3c 02 00 75 45 48 b8 00 00 00 00 00 fc ff df 48 8b 5b 38 48 8d bb 80 01 00 00 48 89 fa 48 c1 ea 03 <80> 3c 02 00 75 32 48 8b 93 80 01 00 00 31 c0 48 39 f2 78 0b f0 83
+RSP: 0018:ffffc90000e6f698 EFLAGS: 00010206
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: ffff888062204528
+RDX: 0000000000000030 RSI: 0000000000000004 RDI: 0000000000000180
+RBP: dffffc0000000000 R08: 0000000000000000 R09: fffffbfff283f87a
+R10: ffffffff941fc3d7 R11: 0000000000000002 R12: ffff88804bca2cf0
+R13: ffff88804bc3aec8 R14: ffff888062200000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff88802c100000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fbbf486e060 CR3: 0000000045a9e000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	48 83 ec 08          	sub    $0x8,%rsp
+   4:	48 c1 ea 03          	shr    $0x3,%rdx
+   8:	80 3c 02 00          	cmpb   $0x0,(%rdx,%rax,1)
+   c:	75 45                	jne    0x53
+   e:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  15:	fc ff df
+  18:	48 8b 5b 38          	mov    0x38(%rbx),%rbx
+  1c:	48 8d bb 80 01 00 00 	lea    0x180(%rbx),%rdi
+  23:	48 89 fa             	mov    %rdi,%rdx
+  26:	48 c1 ea 03          	shr    $0x3,%rdx
+* 2a:	80 3c 02 00          	cmpb   $0x0,(%rdx,%rax,1) <-- trapping instruction
+  2e:	75 32                	jne    0x62
+  30:	48 8b 93 80 01 00 00 	mov    0x180(%rbx),%rdx
+  37:	31 c0                	xor    %eax,%eax
+  39:	48 39 f2             	cmp    %rsi,%rdx
+  3c:	78 0b                	js     0x49
+  3e:	f0                   	lock
+  3f:	83                   	.byte 0x83

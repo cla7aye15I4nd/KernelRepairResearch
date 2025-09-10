@@ -1,0 +1,124 @@
+diff --git a/fs/bcachefs/journal.c b/fs/bcachefs/journal.c
+index d8f74b6d0a75..84cb74ba91e6 100644
+--- a/fs/bcachefs/journal.c
++++ b/fs/bcachefs/journal.c
+@@ -1462,8 +1462,6 @@ int bch2_fs_journal_start(struct journal *j, u64 cur_seq)
+ 		j->last_empty_seq = cur_seq - 1; /* to match j->seq */
+ 
+ 	spin_lock(&j->lock);
+-
+-	set_bit(JOURNAL_running, &j->flags);
+ 	j->last_flush_write = jiffies;
+ 
+ 	j->reservations.idx = journal_cur_seq(j);
+@@ -1474,6 +1472,21 @@ int bch2_fs_journal_start(struct journal *j, u64 cur_seq)
+ 	return 0;
+ }
+ 
++void bch2_journal_set_replay_done(struct journal *j)
++{
++	/*
++	 * journal_space_available must happen before setting JOURNAL_running
++	 * JOURNAL_running must happen before JOURNAL_replay_done
++	 */
++	spin_lock(&j->lock);
++	bch2_journal_space_available(j);
++
++	set_bit(JOURNAL_need_flush_write, &j->flags);
++	set_bit(JOURNAL_running, &j->flags);
++	set_bit(JOURNAL_replay_done, &j->flags);
++	spin_unlock(&j->lock);
++}
++
+ /* init/exit: */
+ 
+ void bch2_dev_journal_exit(struct bch_dev *ca)
+diff --git a/fs/bcachefs/journal.h b/fs/bcachefs/journal.h
+index 47828771f9c2..641e20c05a14 100644
+--- a/fs/bcachefs/journal.h
++++ b/fs/bcachefs/journal.h
+@@ -437,12 +437,6 @@ static inline int bch2_journal_error(struct journal *j)
+ 
+ struct bch_dev;
+ 
+-static inline void bch2_journal_set_replay_done(struct journal *j)
+-{
+-	BUG_ON(!test_bit(JOURNAL_running, &j->flags));
+-	set_bit(JOURNAL_replay_done, &j->flags);
+-}
+-
+ void bch2_journal_unblock(struct journal *);
+ void bch2_journal_block(struct journal *);
+ struct journal_buf *bch2_next_write_buffer_flush_journal_buf(struct journal *, u64, bool *);
+@@ -459,6 +453,7 @@ void bch2_dev_journal_stop(struct journal *, struct bch_dev *);
+ 
+ void bch2_fs_journal_stop(struct journal *);
+ int bch2_fs_journal_start(struct journal *, u64);
++void bch2_journal_set_replay_done(struct journal *);
+ 
+ void bch2_dev_journal_exit(struct bch_dev *);
+ int bch2_dev_journal_init(struct bch_dev *, struct bch_sb *);
+diff --git a/fs/bcachefs/recovery.c b/fs/bcachefs/recovery.c
+index 606d684e6f23..bea578e33988 100644
+--- a/fs/bcachefs/recovery.c
++++ b/fs/bcachefs/recovery.c
+@@ -1129,13 +1129,13 @@ int bch2_fs_initialize(struct bch_fs *c)
+ 	if (ret)
+ 		goto err;
+ 
+-	set_bit(BCH_FS_accounting_replay_done, &c->flags);
+-	bch2_journal_set_replay_done(&c->journal);
+-
+ 	ret = bch2_fs_read_write_early(c);
+ 	if (ret)
+ 		goto err;
+ 
++	set_bit(BCH_FS_accounting_replay_done, &c->flags);
++	bch2_journal_set_replay_done(&c->journal);
++
+ 	for_each_member_device(c, ca) {
+ 		ret = bch2_dev_usage_init(ca, false);
+ 		if (ret) {
+diff --git a/fs/bcachefs/super.c b/fs/bcachefs/super.c
+index e8a17ed1615d..a8bc02540cce 100644
+--- a/fs/bcachefs/super.c
++++ b/fs/bcachefs/super.c
+@@ -466,29 +466,28 @@ static int __bch2_fs_read_write(struct bch_fs *c, bool early)
+ 
+ 	clear_bit(BCH_FS_clean_shutdown, &c->flags);
+ 
++	__for_each_online_member(c, ca, BIT(BCH_MEMBER_STATE_rw), READ) {
++		bch2_dev_allocator_add(c, ca);
++		percpu_ref_reinit(&ca->io_ref[WRITE]);
++	}
++	bch2_recalc_capacity(c);
++
+ 	/*
+ 	 * First journal write must be a flush write: after a clean shutdown we
+ 	 * don't read the journal, so the first journal write may end up
+ 	 * overwriting whatever was there previously, and there must always be
+ 	 * at least one non-flush write in the journal or recovery will fail:
+ 	 */
++	spin_lock(&c->journal.lock);
+ 	set_bit(JOURNAL_need_flush_write, &c->journal.flags);
+ 	set_bit(JOURNAL_running, &c->journal.flags);
+-
+-	__for_each_online_member(c, ca, BIT(BCH_MEMBER_STATE_rw), READ) {
+-		bch2_dev_allocator_add(c, ca);
+-		percpu_ref_reinit(&ca->io_ref[WRITE]);
+-	}
+-	bch2_recalc_capacity(c);
++	bch2_journal_space_available(&c->journal);
++	spin_unlock(&c->journal.lock);
+ 
+ 	ret = bch2_fs_mark_dirty(c);
+ 	if (ret)
+ 		goto err;
+ 
+-	spin_lock(&c->journal.lock);
+-	bch2_journal_space_available(&c->journal);
+-	spin_unlock(&c->journal.lock);
+-
+ 	ret = bch2_journal_reclaim_start(&c->journal);
+ 	if (ret)
+ 		goto err;

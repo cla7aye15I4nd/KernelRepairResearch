@@ -1,0 +1,33 @@
+------------[ cut here ]------------
+gfs2_meta_aops does not implement migrate_folio
+WARNING: CPU: 0 PID: 30 at mm/migrate.c:944 fallback_migrate_folio mm/migrate.c:942 [inline]
+WARNING: CPU: 0 PID: 30 at mm/migrate.c:944 move_to_new_folio+0x696/0x7a0 mm/migrate.c:996
+Modules linked in:
+CPU: 0 UID: 0 PID: 30 Comm: kcompactd1 Not tainted 6.16.0-rc7-syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:fallback_migrate_folio mm/migrate.c:942 [inline]
+RIP: 0010:move_to_new_folio+0x696/0x7a0 mm/migrate.c:996
+Code: 0d 01 90 42 80 7c 3d 00 00 74 0a 48 8b 7c 24 20 e8 2f 53 fe ff 48 8b 44 24 20 48 8b 30 48 c7 c7 e0 ba 97 8b e8 bb b7 5e ff 90 <0f> 0b 90 90 49 bf 00 00 00 00 00 fc ff df e9 7e fd ff ff e8 62 d2
+RSP: 0000:ffffc90000516fd0 EFLAGS: 00010246
+RAX: d66b15ea8eda2d00 RBX: ffffea0000feabc0 RCX: ffff888030530000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000002
+RBP: 1ffff11006dee878 R08: 0000000000000003 R09: 0000000000000004
+R10: dffffc0000000000 R11: fffffbfff1bfaa6c R12: ffffea0001636000
+R13: ffff888036f742a0 R14: ffffea0000feabc8 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff88808d218000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fec9fee7000 CR3: 000000003f9ae000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ migrate_folio_move mm/migrate.c:1301 [inline]
+ migrate_folios_move mm/migrate.c:1653 [inline]
+ migrate_pages_batch+0x1c34/0x2830 mm/migrate.c:1900
+ migrate_pages_sync mm/migrate.c:1930 [inline]
+ migrate_pages+0x1bcc/0x2930 mm/migrate.c:2039
+ compact_zone+0x23f4/0x4ad0 mm/compaction.c:2683
+ compact_node+0x1d2/0x280 mm/compaction.c:2952
+ kcompactd+0xbc8/0x1290 mm/compaction.c:3250
+ kthread+0x70e/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>

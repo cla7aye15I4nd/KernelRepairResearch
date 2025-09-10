@@ -1,0 +1,53 @@
+loop0: detected capacity change from 0 to 9061
+(syz-executor268,5095,0):ocfs2_read_blocks:240 ERROR: status = -12
+=====================================
+WARNING: bad unlock balance detected!
+6.11.0-rc3-syzkaller-00338-gc3f2d783a459 #0 Not tainted
+-------------------------------------
+syz-executor268/5095 is trying to release lock (&oi->ip_io_mutex) at:
+[<ffffffff837f37f6>] ocfs2_read_blocks+0x11c6/0x1620 fs/ocfs2/buffer_head_io.c:394
+but there are no more locks to release!
+
+other info that might help us debug this:
+1 lock held by syz-executor268/5095:
+ #0: ffff8880207680e0 (&type->s_umount_key#43/1){+.+.}-{3:3}, at: alloc_super+0x221/0x9d0 fs/super.c:344
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 5095 Comm: syz-executor268 Not tainted 6.11.0-rc3-syzkaller-00338-gc3f2d783a459 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:93 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:119
+ print_unlock_imbalance_bug+0x256/0x2c0 kernel/locking/lockdep.c:5199
+ __lock_release kernel/locking/lockdep.c:5436 [inline]
+ lock_release+0x5cb/0xa30 kernel/locking/lockdep.c:5780
+ __mutex_unlock_slowpath+0xe2/0x750 kernel/locking/mutex.c:912
+ ocfs2_read_blocks+0x11c6/0x1620 fs/ocfs2/buffer_head_io.c:394
+ ocfs2_map_slot_buffers fs/ocfs2/slot_map.c:385 [inline]
+ ocfs2_init_slot_info+0xb35/0x13d0 fs/ocfs2/slot_map.c:424
+ ocfs2_initialize_super fs/ocfs2/super.c:2274 [inline]
+ ocfs2_fill_super+0x31b7/0x5880 fs/ocfs2/super.c:994
+ mount_bdev+0x20a/0x2d0 fs/super.c:1679
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2a0 fs/super.c:1800
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3472
+ do_mount fs/namespace.c:3812 [inline]
+ __do_sys_mount fs/namespace.c:4020 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:3997
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f0669b38cea
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f0669aed048 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 0000000020000100 RCX: 00007f0669b38cea
+RDX: 0000000020000100 RSI: 00000000200044c0 RDI: 00007f0669aed0a0
+RBP: 00000000200044c0 R08: 00007f0669aed0e0 R09: 00000000ffffffe8
+R10: 0000000000000000 R11: 0000000000000282 R12: 00007f0669aed0e0
+R13: 000000000000447d R14: 0000000000000000 R15: 0000000020002340
+ </TASK>
+(syz-executor268,5095,0):ocfs2_map_slot_buffers:388 ERROR: status = -12
+(syz-executor268,5095,0):ocfs2_init_slot_info:426 ERROR: status = -12
+(syz-executor268,5095,0):ocfs2_initialize_super:2276 ERROR: status = -12
+(syz-executor268,5095,0):ocfs2_fill_super:1178 ERROR: status = -12

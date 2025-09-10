@@ -1,0 +1,91 @@
+id: 429d3f82d757c211bff3
+bug_link: https://syzkaller.appspot.com/bug?extid=429d3f82d757c211bff3
+title: 'KASAN: use-after-free Read in nbd_genl_connect'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ffa772cfe9356ce94d3061335c2681f60e7c1c5b
+fix_commit: c9a2f90f4d6b9d42b9912f7aaf68e8d748acfffd
+datetime: '2021-02-22T13:17:23-07:00'
+fix_commit_message: "nbd: handle device refs for DESTROY_ON_DISCONNECT properly\n\n\
+  There exists a race where we can be attempting to create a new nbd\nconfiguration\
+  \ while a previous configuration is going down, both\nconfigured with DESTROY_ON_DISCONNECT.\
+  \  Normally devices all have a\nreference of 1, as they won't be cleaned up until\
+  \ the module is torn\ndown.  However with DESTROY_ON_DISCONNECT we'll make sure\
+  \ that there is\nonly 1 reference (generally) on the device for the config itself,\
+  \ and\nthen once the config is dropped, the device is torn down.\n\nThe race that\
+  \ exists looks like this\n\nTASK1\t\t\t\t\tTASK2\nnbd_genl_connect()\n  idr_find()\n\
+  \    refcount_inc_not_zero(nbd)\n      * count is 2 here ^^\n\t\t\t\t\tnbd_config_put()\n\
+  \t\t\t\t\t  nbd_put(nbd) (count is 1)\n    setup new config\n      check DESTROY_ON_DISCONNECT\n\
+  \tput_dev = true\n    if (put_dev) nbd_put(nbd)\n\t* free'd here ^^\n\nIn nbd_genl_connect()\
+  \ we assume that the nbd ref count will be 2,\nhowever clearly that won't be true\
+  \ if the nbd device had been setup as\nDESTROY_ON_DISCONNECT with its prior configuration.\
+  \  Fix this by getting\nrid of the runtime flag to check if we need to mess with\
+  \ the nbd device\nrefcount, and use the device NBD_DESTROY_ON_DISCONNECT flag to\
+  \ check if\nwe need to adjust the ref counts.  This was reported by syzkaller with\n\
+  the following kasan dump\n\nBUG: KASAN: use-after-free in instrument_atomic_read\
+  \ include/linux/instrumented.h:71 [inline]\nBUG: KASAN: use-after-free in atomic_read\
+  \ include/asm-generic/atomic-instrumented.h:27 [inline]\nBUG: KASAN: use-after-free\
+  \ in refcount_dec_not_one+0x71/0x1e0 lib/refcount.c:76\nRead of size 4 at addr ffff888143bf71a0\
+  \ by task systemd-udevd/8451\n\nCPU: 0 PID: 8451 Comm: systemd-udevd Not tainted\
+  \ 5.11.0-rc7-syzkaller #0\nHardware name: Google Google Compute Engine/Google Compute\
+  \ Engine, BIOS Google 01/01/2011\nCall Trace:\n __dump_stack lib/dump_stack.c:79\
+  \ [inline]\n dump_stack+0x107/0x163 lib/dump_stack.c:120\n print_address_description.constprop.0.cold+0x5b/0x2f8\
+  \ mm/kasan/report.c:230\n __kasan_report mm/kasan/report.c:396 [inline]\n kasan_report.cold+0x79/0xd5\
+  \ mm/kasan/report.c:413\n check_memory_region_inline mm/kasan/generic.c:179 [inline]\n\
+  \ check_memory_region+0x13d/0x180 mm/kasan/generic.c:185\n instrument_atomic_read\
+  \ include/linux/instrumented.h:71 [inline]\n atomic_read include/asm-generic/atomic-instrumented.h:27\
+  \ [inline]\n refcount_dec_not_one+0x71/0x1e0 lib/refcount.c:76\n refcount_dec_and_mutex_lock+0x19/0x140\
+  \ lib/refcount.c:115\n nbd_put drivers/block/nbd.c:248 [inline]\n nbd_release+0x116/0x190\
+  \ drivers/block/nbd.c:1508\n __blkdev_put+0x548/0x800 fs/block_dev.c:1579\n blkdev_put+0x92/0x570\
+  \ fs/block_dev.c:1632\n blkdev_close+0x8c/0xb0 fs/block_dev.c:1640\n __fput+0x283/0x920\
+  \ fs/file_table.c:280\n task_work_run+0xdd/0x190 kernel/task_work.c:140\n tracehook_notify_resume\
+  \ include/linux/tracehook.h:189 [inline]\n exit_to_user_mode_loop kernel/entry/common.c:174\
+  \ [inline]\n exit_to_user_mode_prepare+0x249/0x250 kernel/entry/common.c:201\n __syscall_exit_to_user_mode_work\
+  \ kernel/entry/common.c:283 [inline]\n syscall_exit_to_user_mode+0x19/0x50 kernel/entry/common.c:294\n\
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xa9\nRIP: 0033:0x7fc1e92b5270\nCode: 73 01\
+  \ c3 48 8b 0d 38 7d 20 00 f7 d8 64 89 01 48 83 c8 ff c3 66 0f 1f 44 00 00 83 3d\
+  \ 59 c1 20 00 00 75 10 b8 03 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 31 c3 48 83 ec\
+  \ 08 e8 ee fb ff ff 48 89 04 24\nRSP: 002b:00007ffe8beb2d18 EFLAGS: 00000246 ORIG_RAX:\
+  \ 0000000000000003\nRAX: 0000000000000000 RBX: 0000000000000007 RCX: 00007fc1e92b5270\n\
+  RDX: 000000000aba9500 RSI: 0000000000000000 RDI: 0000000000000007\nRBP: 00007fc1ea16f710\
+  \ R08: 000000000000004a R09: 0000000000000008\nR10: 0000562f8cb0b2a8 R11: 0000000000000246\
+  \ R12: 0000000000000000\nR13: 0000562f8cb0afd0 R14: 0000000000000003 R15: 000000000000000e\n\
+  \nAllocated by task 1:\n kasan_save_stack+0x1b/0x40 mm/kasan/common.c:38\n kasan_set_track\
+  \ mm/kasan/common.c:46 [inline]\n set_alloc_info mm/kasan/common.c:401 [inline]\n\
+  \ ____kasan_kmalloc.constprop.0+0x82/0xa0 mm/kasan/common.c:429\n kmalloc include/linux/slab.h:552\
+  \ [inline]\n kzalloc include/linux/slab.h:682 [inline]\n nbd_dev_add+0x44/0x8e0\
+  \ drivers/block/nbd.c:1673\n nbd_init+0x250/0x271 drivers/block/nbd.c:2394\n do_one_initcall+0x103/0x650\
+  \ init/main.c:1223\n do_initcall_level init/main.c:1296 [inline]\n do_initcalls\
+  \ init/main.c:1312 [inline]\n do_basic_setup init/main.c:1332 [inline]\n kernel_init_freeable+0x605/0x689\
+  \ init/main.c:1533\n kernel_init+0xd/0x1b8 init/main.c:1421\n ret_from_fork+0x1f/0x30\
+  \ arch/x86/entry/entry_64.S:296\n\nFreed by task 8451:\n kasan_save_stack+0x1b/0x40\
+  \ mm/kasan/common.c:38\n kasan_set_track+0x1c/0x30 mm/kasan/common.c:46\n kasan_set_free_info+0x20/0x30\
+  \ mm/kasan/generic.c:356\n ____kasan_slab_free+0xe1/0x110 mm/kasan/common.c:362\n\
+  \ kasan_slab_free include/linux/kasan.h:192 [inline]\n slab_free_hook mm/slub.c:1547\
+  \ [inline]\n slab_free_freelist_hook+0x5d/0x150 mm/slub.c:1580\n slab_free mm/slub.c:3143\
+  \ [inline]\n kfree+0xdb/0x3b0 mm/slub.c:4139\n nbd_dev_remove drivers/block/nbd.c:243\
+  \ [inline]\n nbd_put.part.0+0x180/0x1d0 drivers/block/nbd.c:251\n nbd_put drivers/block/nbd.c:295\
+  \ [inline]\n nbd_config_put+0x6dd/0x8c0 drivers/block/nbd.c:1242\n nbd_release+0x103/0x190\
+  \ drivers/block/nbd.c:1507\n __blkdev_put+0x548/0x800 fs/block_dev.c:1579\n blkdev_put+0x92/0x570\
+  \ fs/block_dev.c:1632\n blkdev_close+0x8c/0xb0 fs/block_dev.c:1640\n __fput+0x283/0x920\
+  \ fs/file_table.c:280\n task_work_run+0xdd/0x190 kernel/task_work.c:140\n tracehook_notify_resume\
+  \ include/linux/tracehook.h:189 [inline]\n exit_to_user_mode_loop kernel/entry/common.c:174\
+  \ [inline]\n exit_to_user_mode_prepare+0x249/0x250 kernel/entry/common.c:201\n __syscall_exit_to_user_mode_work\
+  \ kernel/entry/common.c:283 [inline]\n syscall_exit_to_user_mode+0x19/0x50 kernel/entry/common.c:294\n\
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nThe buggy address belongs to the object\
+  \ at ffff888143bf7000\n which belongs to the cache kmalloc-1k of size 1024\nThe\
+  \ buggy address is located 416 bytes inside of\n 1024-byte region [ffff888143bf7000,\
+  \ ffff888143bf7400)\nThe buggy address belongs to the page:\npage:000000005238f4ce\
+  \ refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x143bf0\nhead:000000005238f4ce\
+  \ order:3 compound_mapcount:0 compound_pincount:0\nflags: 0x57ff00000010200(slab|head)\n\
+  raw: 057ff00000010200 ffffea00004b1400 0000000300000003 ffff888010c41140\nraw: 0000000000000000\
+  \ 0000000000100010 00000001ffffffff 0000000000000000\npage dumped because: kasan:\
+  \ bad access detected\n\nMemory state around the buggy address:\n ffff888143bf7080:\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n ffff888143bf7100: fb fb fb fb\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb\n>ffff888143bf7180: fb fb fb fb fb fb fb fb\
+  \ fb fb fb fb fb fb fb fb\n                               ^\n ffff888143bf7200:\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n\nReported-and-tested-by: syzbot+429d3f82d757c211bff3@syzkaller.appspotmail.com\n\
+  Signed-off-by: Josef Bacik <josef@toxicpanda.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 3
+covered_count: 1

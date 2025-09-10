@@ -1,0 +1,25 @@
+==================================================================
+BUG: KCSAN: data-race in io_sq_thread / io_uring_try_cancel_requests
+
+write to 0xffff888116bd30f8 of 8 bytes by task 22779 on cpu 1:
+ io_sq_thread+0xe68/0x10b0 io_uring/sqpoll.c:378
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+read to 0xffff888116bd30f8 of 8 bytes by task 3431 on cpu 0:
+ io_uring_try_cancel_requests+0x18d/0x340 io_uring/io_uring.c:3099
+ io_ring_exit_work+0x148/0x500 io_uring/io_uring.c:2901
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0x483/0x9a0 kernel/workqueue.c:3310
+ worker_thread+0x51d/0x6f0 kernel/workqueue.c:3391
+ kthread+0x1d1/0x210 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+value changed: 0xffff888138eea100 -> 0x0000000000000000
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 3431 Comm: kworker/u8:7 Not tainted 6.13.0-rc6-syzkaller-00051-geea6e4b4dfb8 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Workqueue: iou_exit io_ring_exit_work
+==================================================================

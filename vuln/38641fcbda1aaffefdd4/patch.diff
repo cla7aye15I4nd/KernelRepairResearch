@@ -1,0 +1,319 @@
+diff --git a/fs/bcachefs/alloc_foreground.c b/fs/bcachefs/alloc_foreground.c
+index 57d5f14c93d0..6df41c331a52 100644
+--- a/fs/bcachefs/alloc_foreground.c
++++ b/fs/bcachefs/alloc_foreground.c
+@@ -107,14 +107,10 @@ void __bch2_open_bucket_put(struct bch_fs *c, struct open_bucket *ob)
+ 		return;
+ 	}
+ 
+-	percpu_down_read(&c->mark_lock);
+ 	spin_lock(&ob->lock);
+-
+ 	ob->valid = false;
+ 	ob->data_type = 0;
+-
+ 	spin_unlock(&ob->lock);
+-	percpu_up_read(&c->mark_lock);
+ 
+ 	spin_lock(&c->freelist_lock);
+ 	bch2_open_bucket_hash_remove(c, ob);
+diff --git a/fs/bcachefs/bcachefs.h b/fs/bcachefs/bcachefs.h
+index e6cd93e1ed0f..3a3cb79d8518 100644
+--- a/fs/bcachefs/bcachefs.h
++++ b/fs/bcachefs/bcachefs.h
+@@ -547,15 +547,13 @@ struct bch_dev {
+ 
+ 	/*
+ 	 * Buckets:
+-	 * Per-bucket arrays are protected by c->mark_lock, bucket_lock and
+-	 * gc_gens_lock, for device resize - holding any is sufficient for
+-	 * access: Or rcu_read_lock(), but only for dev_ptr_stale():
++	 * Per-bucket arrays are protected by either rcu_read_lock or
++	 * state_lock, for device resize.
+ 	 */
+ 	GENRADIX(struct bucket)	buckets_gc;
+ 	struct bucket_gens __rcu *bucket_gens;
+ 	u8			*oldest_gen;
+ 	unsigned long		*buckets_nouse;
+-	struct rw_semaphore	bucket_lock;
+ 
+ 	struct bch_dev_usage __percpu	*usage;
+ 
+diff --git a/fs/bcachefs/btree_gc.c b/fs/bcachefs/btree_gc.c
+index 24f2f3bdf704..e5ba7d1429b9 100644
+--- a/fs/bcachefs/btree_gc.c
++++ b/fs/bcachefs/btree_gc.c
+@@ -811,7 +811,6 @@ static int bch2_alloc_write_key(struct btree_trans *trans,
+ 	old = bch2_alloc_to_v4(k, &old_convert);
+ 	gc = new = *old;
+ 
+-	percpu_down_read(&c->mark_lock);
+ 	__bucket_m_to_alloc(&gc, *gc_bucket(ca, iter->pos.offset));
+ 
+ 	old_gc = gc;
+@@ -822,7 +821,6 @@ static int bch2_alloc_write_key(struct btree_trans *trans,
+ 		gc.data_type = old->data_type;
+ 		gc.dirty_sectors = old->dirty_sectors;
+ 	}
+-	percpu_up_read(&c->mark_lock);
+ 
+ 	/*
+ 	 * gc.data_type doesn't yet include need_discard & need_gc_gen states -
+@@ -840,11 +838,9 @@ static int bch2_alloc_write_key(struct btree_trans *trans,
+ 		 * safe w.r.t. transaction restarts, so fixup the gc_bucket so
+ 		 * we don't run it twice:
+ 		 */
+-		percpu_down_read(&c->mark_lock);
+ 		struct bucket *gc_m = gc_bucket(ca, iter->pos.offset);
+ 		gc_m->data_type = gc.data_type;
+ 		gc_m->dirty_sectors = gc.dirty_sectors;
+-		percpu_up_read(&c->mark_lock);
+ 	}
+ 
+ 	if (fsck_err_on(new.data_type != gc.data_type,
+@@ -1088,7 +1084,6 @@ static int gc_btree_gens_key(struct btree_trans *trans,
+ 	if (unlikely(test_bit(BCH_FS_going_ro, &c->flags)))
+ 		return -EROFS;
+ 
+-	percpu_down_read(&c->mark_lock);
+ 	rcu_read_lock();
+ 	bkey_for_each_ptr(ptrs, ptr) {
+ 		struct bch_dev *ca = bch2_dev_rcu(c, ptr->dev);
+@@ -1097,7 +1092,6 @@ static int gc_btree_gens_key(struct btree_trans *trans,
+ 
+ 		if (dev_ptr_stale(ca, ptr) > 16) {
+ 			rcu_read_unlock();
+-			percpu_up_read(&c->mark_lock);
+ 			goto update;
+ 		}
+ 	}
+@@ -1112,7 +1106,6 @@ static int gc_btree_gens_key(struct btree_trans *trans,
+ 			*gen = ptr->gen;
+ 	}
+ 	rcu_read_unlock();
+-	percpu_up_read(&c->mark_lock);
+ 	return 0;
+ update:
+ 	u = bch2_bkey_make_mut(trans, iter, &k, 0);
+diff --git a/fs/bcachefs/buckets.c b/fs/bcachefs/buckets.c
+index afd35c93fcfb..eb2ed4edbbbc 100644
+--- a/fs/bcachefs/buckets.c
++++ b/fs/bcachefs/buckets.c
+@@ -262,8 +262,6 @@ int bch2_check_fix_ptrs(struct btree_trans *trans,
+ 	struct printbuf buf = PRINTBUF;
+ 	int ret = 0;
+ 
+-	percpu_down_read(&c->mark_lock);
+-
+ 	bkey_for_each_ptr_decode(k.k, ptrs_c, p, entry_c) {
+ 		ret = bch2_check_fix_ptr(trans, k, p, entry_c, &do_update);
+ 		if (ret)
+@@ -364,7 +362,6 @@ int bch2_check_fix_ptrs(struct btree_trans *trans,
+ 			bch_info(c, "new key %s", buf.buf);
+ 		}
+ 
+-		percpu_up_read(&c->mark_lock);
+ 		struct btree_iter iter;
+ 		bch2_trans_node_iter_init(trans, &iter, btree, new->k.p, 0, level,
+ 					  BTREE_ITER_intent|BTREE_ITER_all_snapshots);
+@@ -373,8 +370,6 @@ int bch2_check_fix_ptrs(struct btree_trans *trans,
+ 					  BTREE_UPDATE_internal_snapshot_node|
+ 					  BTREE_TRIGGER_norun);
+ 		bch2_trans_iter_exit(trans, &iter);
+-		percpu_down_read(&c->mark_lock);
+-
+ 		if (ret)
+ 			goto err;
+ 
+@@ -382,7 +377,6 @@ int bch2_check_fix_ptrs(struct btree_trans *trans,
+ 			bch2_btree_node_update_key_early(trans, btree, level - 1, k, new);
+ 	}
+ err:
+-	percpu_up_read(&c->mark_lock);
+ 	printbuf_exit(&buf);
+ 	return ret;
+ }
+@@ -603,13 +597,12 @@ static int bch2_trigger_pointer(struct btree_trans *trans,
+ 	}
+ 
+ 	if (flags & BTREE_TRIGGER_gc) {
+-		percpu_down_read(&c->mark_lock);
+ 		struct bucket *g = gc_bucket(ca, bucket.offset);
+ 		if (bch2_fs_inconsistent_on(!g, c, "reference to invalid bucket on device %u\n  %s",
+ 					    p.ptr.dev,
+ 					    (bch2_bkey_val_to_text(&buf, c, k), buf.buf))) {
+ 			ret = -BCH_ERR_trigger_pointer;
+-			goto err_unlock;
++			goto err;
+ 		}
+ 
+ 		bucket_lock(g);
+@@ -617,8 +610,6 @@ static int bch2_trigger_pointer(struct btree_trans *trans,
+ 		ret = __mark_pointer(trans, ca, k, &p, *sectors, bp.v.data_type, &new);
+ 		alloc_to_bucket(g, new);
+ 		bucket_unlock(g);
+-err_unlock:
+-		percpu_up_read(&c->mark_lock);
+ 
+ 		if (!ret)
+ 			ret = bch2_alloc_key_to_dev_counters(trans, ca, &old, &new, flags);
+@@ -996,11 +987,10 @@ static int bch2_mark_metadata_bucket(struct btree_trans *trans, struct bch_dev *
+ 	struct bch_fs *c = trans->c;
+ 	int ret = 0;
+ 
+-	percpu_down_read(&c->mark_lock);
+ 	struct bucket *g = gc_bucket(ca, b);
+ 	if (bch2_fs_inconsistent_on(!g, c, "reference to invalid bucket on device %u when marking metadata type %s",
+ 				    ca->dev_idx, bch2_data_type_str(data_type)))
+-		goto err_unlock;
++		goto err;
+ 
+ 	bucket_lock(g);
+ 	struct bch_alloc_v4 old = bucket_m_to_alloc(*g);
+@@ -1010,26 +1000,24 @@ static int bch2_mark_metadata_bucket(struct btree_trans *trans, struct bch_dev *
+ 			"different types of data in same bucket: %s, %s",
+ 			bch2_data_type_str(g->data_type),
+ 			bch2_data_type_str(data_type)))
+-		goto err;
++		goto err_unlock;
+ 
+ 	if (bch2_fs_inconsistent_on((u64) g->dirty_sectors + sectors > ca->mi.bucket_size, c,
+ 			"bucket %u:%llu gen %u data type %s sector count overflow: %u + %u > bucket size",
+ 			ca->dev_idx, b, g->gen,
+ 			bch2_data_type_str(g->data_type ?: data_type),
+ 			g->dirty_sectors, sectors))
+-		goto err;
++		goto err_unlock;
+ 
+ 	g->data_type = data_type;
+ 	g->dirty_sectors += sectors;
+ 	struct bch_alloc_v4 new = bucket_m_to_alloc(*g);
+ 	bucket_unlock(g);
+-	percpu_up_read(&c->mark_lock);
+ 	ret = bch2_alloc_key_to_dev_counters(trans, ca, &old, &new, flags);
+ 	return ret;
+-err:
+-	bucket_unlock(g);
+ err_unlock:
+-	percpu_up_read(&c->mark_lock);
++	bucket_unlock(g);
++err:
+ 	return -BCH_ERR_metadata_bucket_inconsistency;
+ }
+ 
+@@ -1295,7 +1283,11 @@ int bch2_dev_buckets_resize(struct bch_fs *c, struct bch_dev *ca, u64 nbuckets)
+ 	bool resize = ca->bucket_gens != NULL;
+ 	int ret;
+ 
+-	BUG_ON(resize && ca->buckets_nouse);
++	if (resize)
++		lockdep_assert_held(&c->state_lock);
++
++	if (resize && ca->buckets_nouse)
++		return -BCH_ERR_no_resize_with_buckets_nouse;
+ 
+ 	bucket_gens = kvmalloc(struct_size(bucket_gens, b, nbuckets),
+ 			       GFP_KERNEL|__GFP_ZERO);
+@@ -1309,11 +1301,6 @@ int bch2_dev_buckets_resize(struct bch_fs *c, struct bch_dev *ca, u64 nbuckets)
+ 	bucket_gens->nbuckets_minus_first =
+ 		bucket_gens->nbuckets - bucket_gens->first_bucket;
+ 
+-	if (resize) {
+-		down_write(&ca->bucket_lock);
+-		percpu_down_write(&c->mark_lock);
+-	}
+-
+ 	old_bucket_gens = rcu_dereference_protected(ca->bucket_gens, 1);
+ 
+ 	if (resize) {
+@@ -1331,11 +1318,6 @@ int bch2_dev_buckets_resize(struct bch_fs *c, struct bch_dev *ca, u64 nbuckets)
+ 
+ 	nbuckets = ca->mi.nbuckets;
+ 
+-	if (resize) {
+-		percpu_up_write(&c->mark_lock);
+-		up_write(&ca->bucket_lock);
+-	}
+-
+ 	ret = 0;
+ err:
+ 	if (bucket_gens)
+diff --git a/fs/bcachefs/buckets.h b/fs/bcachefs/buckets.h
+index 3bebc4c3044f..a9acdd6c0c86 100644
+--- a/fs/bcachefs/buckets.h
++++ b/fs/bcachefs/buckets.h
+@@ -82,16 +82,15 @@ static inline void bucket_lock(struct bucket *b)
+ 
+ static inline struct bucket *gc_bucket(struct bch_dev *ca, size_t b)
+ {
+-	return genradix_ptr(&ca->buckets_gc, b);
++	return bucket_valid(ca, b)
++		? genradix_ptr(&ca->buckets_gc, b)
++		: NULL;
+ }
+ 
+ static inline struct bucket_gens *bucket_gens(struct bch_dev *ca)
+ {
+ 	return rcu_dereference_check(ca->bucket_gens,
+-				     !ca->fs ||
+-				     percpu_rwsem_is_held(&ca->fs->mark_lock) ||
+-				     lockdep_is_held(&ca->fs->state_lock) ||
+-				     lockdep_is_held(&ca->bucket_lock));
++				     lockdep_is_held(&ca->fs->state_lock));
+ }
+ 
+ static inline u8 *bucket_gen(struct bch_dev *ca, size_t b)
+diff --git a/fs/bcachefs/ec.c b/fs/bcachefs/ec.c
+index df9c0e453391..3e7e41cd8380 100644
+--- a/fs/bcachefs/ec.c
++++ b/fs/bcachefs/ec.c
+@@ -305,13 +305,12 @@ static int mark_stripe_bucket(struct btree_trans *trans,
+ 	}
+ 
+ 	if (flags & BTREE_TRIGGER_gc) {
+-		percpu_down_read(&c->mark_lock);
+ 		struct bucket *g = gc_bucket(ca, bucket.offset);
+ 		if (bch2_fs_inconsistent_on(!g, c, "reference to invalid bucket on device %u\n  %s",
+ 					    ptr->dev,
+ 					    (bch2_bkey_val_to_text(&buf, c, s.s_c), buf.buf))) {
+ 			ret = -BCH_ERR_mark_stripe;
+-			goto err_unlock;
++			goto err;
+ 		}
+ 
+ 		bucket_lock(g);
+@@ -319,8 +318,7 @@ static int mark_stripe_bucket(struct btree_trans *trans,
+ 		ret = __mark_stripe_bucket(trans, ca, s, ptr_idx, deleting, bucket, &new, flags);
+ 		alloc_to_bucket(g, new);
+ 		bucket_unlock(g);
+-err_unlock:
+-		percpu_up_read(&c->mark_lock);
++
+ 		if (!ret)
+ 			ret = bch2_alloc_key_to_dev_counters(trans, ca, &old, &new, flags);
+ 	}
+diff --git a/fs/bcachefs/errcode.h b/fs/bcachefs/errcode.h
+index 5e4dd85ac669..a6a9561a890d 100644
+--- a/fs/bcachefs/errcode.h
++++ b/fs/bcachefs/errcode.h
+@@ -195,6 +195,7 @@
+ 	x(EINVAL,			opt_parse_error)			\
+ 	x(EINVAL,			remove_with_metadata_missing_unimplemented)\
+ 	x(EINVAL,			remove_would_lose_data)			\
++	x(EINVAL,			no_resize_with_buckets_nouse)		\
+ 	x(EROFS,			erofs_trans_commit)			\
+ 	x(EROFS,			erofs_no_writes)			\
+ 	x(EROFS,			erofs_journal_err)			\
+diff --git a/fs/bcachefs/super.c b/fs/bcachefs/super.c
+index 14157820705d..2b2e0835c8fe 100644
+--- a/fs/bcachefs/super.c
++++ b/fs/bcachefs/super.c
+@@ -1311,8 +1311,6 @@ static struct bch_dev *__bch2_dev_alloc(struct bch_fs *c,
+ 	init_completion(&ca->ref_completion);
+ 	init_completion(&ca->io_ref_completion);
+ 
+-	init_rwsem(&ca->bucket_lock);
+-
+ 	INIT_WORK(&ca->io_error_work, bch2_io_error_work);
+ 
+ 	bch2_time_stats_quantiles_init(&ca->io_latency[READ]);

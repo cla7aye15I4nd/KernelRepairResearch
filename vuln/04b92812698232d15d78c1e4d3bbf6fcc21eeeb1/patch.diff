@@ -1,0 +1,22 @@
+diff --git a/lib/asn1_decoder.c b/lib/asn1_decoder.c
+index fef5d2e114be..1ef0cec38d78 100644
+--- a/lib/asn1_decoder.c
++++ b/lib/asn1_decoder.c
+@@ -228,7 +228,7 @@ int asn1_ber_decoder(const struct asn1_decoder *decoder,
+ 		hdr = 2;
+ 
+ 		/* Extract a tag from the data */
+-		if (unlikely(dp >= datalen - 1))
++		if (unlikely(datalen - dp < 2))
+ 			goto data_overrun_error;
+ 		tag = data[dp++];
+ 		if (unlikely((tag & 0x1f) == ASN1_LONG_TAG))
+@@ -274,7 +274,7 @@ int asn1_ber_decoder(const struct asn1_decoder *decoder,
+ 				int n = len - 0x80;
+ 				if (unlikely(n > 2))
+ 					goto length_too_long;
+-				if (unlikely(dp >= datalen - n))
++				if (unlikely(n > datalen - dp))
+ 					goto data_overrun_error;
+ 				hdr += n;
+ 				for (len = 0; n > 0; n--) {

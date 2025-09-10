@@ -1,0 +1,47 @@
+id: f36cfe60b1006a94f9dc
+bug_link: https://syzkaller.appspot.com/bug?extid=f36cfe60b1006a94f9dc
+title: 'KCSAN: data-race in page_counter_try_charge / page_counter_try_charge (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a449bf58e45abf919b27ba62a9dcbae3ad36e725
+fix_commit: 6e4bd50f3888fa8fea8bc66a0ad4ad5f1c862961
+datetime: '2020-08-14T19:56:57-07:00'
+fix_commit_message: "mm/page_counter: fix various data races at memsw\n\nCommit 3e32cb2e0a12\
+  \ (\"mm: memcontrol: lockless page counters\") could had\nmemcg->memsw->watermark\
+  \ and memcg->memsw->failcnt been accessed\nconcurrently as reported by KCSAN,\n\n\
+  \ BUG: KCSAN: data-race in page_counter_try_charge / page_counter_try_charge\n\n\
+  \ read to 0xffff8fb18c4cd190 of 8 bytes by task 1081 on cpu 59:\n  page_counter_try_charge+0x4d/0x150\
+  \ mm/page_counter.c:138\n  try_charge+0x131/0xd50 mm/memcontrol.c:2405\n  __memcg_kmem_charge_memcg+0x58/0x140\n\
+  \  __memcg_kmem_charge+0xcc/0x280\n  __alloc_pages_nodemask+0x1e1/0x450\n  alloc_pages_current+0xa6/0x120\n\
+  \  pte_alloc_one+0x17/0xd0\n  __pte_alloc+0x3a/0x1f0\n  copy_p4d_range+0xc36/0x1990\n\
+  \  copy_page_range+0x21d/0x360\n  dup_mmap+0x5f5/0x7a0\n  dup_mm+0xa2/0x240\n  copy_process+0x1b3f/0x3460\n\
+  \  _do_fork+0xaa/0xa20\n  __x64_sys_clone+0x13b/0x170\n  do_syscall_64+0x91/0xb47\n\
+  \  entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\n write to 0xffff8fb18c4cd190 of 8\
+  \ bytes by task 1153 on cpu 120:\n  page_counter_try_charge+0x5b/0x150 mm/page_counter.c:139\n\
+  \  try_charge+0x131/0xd50 mm/memcontrol.c:2405\n  mem_cgroup_try_charge+0x159/0x460\n\
+  \  mem_cgroup_try_charge_delay+0x3d/0xa0\n  wp_page_copy+0x14d/0x930\n  do_wp_page+0x107/0x7b0\n\
+  \  __handle_mm_fault+0xce6/0xd40\n  handle_mm_fault+0xfc/0x2f0\n  do_page_fault+0x263/0x6f9\n\
+  \  page_fault+0x34/0x40\n\n BUG: KCSAN: data-race in page_counter_try_charge / page_counter_try_charge\n\
+  \n write to 0xffff88809bbf2158 of 8 bytes by task 11782 on cpu 0:\n  page_counter_try_charge+0x100/0x170\
+  \ mm/page_counter.c:129\n  try_charge+0x185/0xbf0 mm/memcontrol.c:2405\n  __memcg_kmem_charge_memcg+0x4a/0xe0\
+  \ mm/memcontrol.c:2837\n  __memcg_kmem_charge+0xcf/0x1b0 mm/memcontrol.c:2877\n\
+  \  __alloc_pages_nodemask+0x26c/0x310 mm/page_alloc.c:4780\n\n read to 0xffff88809bbf2158\
+  \ of 8 bytes by task 11814 on cpu 1:\n  page_counter_try_charge+0xef/0x170 mm/page_counter.c:129\n\
+  \  try_charge+0x185/0xbf0 mm/memcontrol.c:2405\n  __memcg_kmem_charge_memcg+0x4a/0xe0\
+  \ mm/memcontrol.c:2837\n  __memcg_kmem_charge+0xcf/0x1b0 mm/memcontrol.c:2877\n\
+  \  __alloc_pages_nodemask+0x26c/0x310 mm/page_alloc.c:4780\n\nSince watermark could\
+  \ be compared or set to garbage due to a data race\nwhich would change the code\
+  \ logic, fix it by adding a pair of READ_ONCE()\nand WRITE_ONCE() in those places.\n\
+  \nThe \"failcnt\" counter is tolerant of some degree of inaccuracy and is only\n\
+  used to report stats, a data race will not be harmful, thus mark it as an\nintentional\
+  \ data race using the data_race() macro.\n\nFixes: 3e32cb2e0a12 (\"mm: memcontrol:\
+  \ lockless page counters\")\nReported-by: syzbot+f36cfe60b1006a94f9dc@syzkaller.appspotmail.com\n\
+  Signed-off-by: Qian Cai <cai@lca.pw>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Acked-by: Michal Hocko <mhocko@suse.com>\nCc: David Hildenbrand <david@redhat.com>\n\
+  Cc: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nCc: Marco Elver <elver@google.com>\n\
+  Cc: Dmitry Vyukov <dvyukov@google.com>\nCc: Johannes Weiner <hannes@cmpxchg.org>\n\
+  Link: http://lkml.kernel.org/r/1581519682-23594-1-git-send-email-cai@lca.pw\nSigned-off-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 3
+covered_count: 3

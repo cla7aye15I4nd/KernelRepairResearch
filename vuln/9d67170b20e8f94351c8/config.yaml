@@ -1,0 +1,23 @@
+id: 9d67170b20e8f94351c8
+bug_link: https://syzkaller.appspot.com/bug?extid=9d67170b20e8f94351c8
+title: memory leak in ntfs_init_fs_context
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 92f017c4aee6e2bb79593adeacccbea3afe62223
+fix_commit: 51e76a232f8c037f1d9e9922edc25b003d5f3414
+datetime: '2022-09-30T17:39:51+03:00'
+fix_commit_message: "fs/ntfs3: Fix memory leak on ntfs_fill_super() error path\n\n\
+  syzbot reported kmemleak as below:\n\nBUG: memory leak\nunreferenced object 0xffff8880122f1540\
+  \ (size 32):\n  comm \"a.out\", pid 6664, jiffies 4294939771 (age 25.500s)\n  hex\
+  \ dump (first 32 bytes):\n    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n\
+  \    00 00 00 00 00 00 00 00 ed ff ed ff 00 00 00 00  ................\n  backtrace:\n\
+  \    [<ffffffff81b16052>] ntfs_init_fs_context+0x22/0x1c0\n    [<ffffffff8164aaa7>]\
+  \ alloc_fs_context+0x217/0x430\n    [<ffffffff81626dd4>] path_mount+0x704/0x1080\n\
+  \    [<ffffffff81627e7c>] __x64_sys_mount+0x18c/0x1d0\n    [<ffffffff84593e14>]\
+  \ do_syscall_64+0x34/0xb0\n    [<ffffffff84600087>] entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\
+  \nThis patch fixes this issue by freeing mount options on error path of\nntfs_fill_super().\n\
+  \nReported-by: syzbot+9d67170b20e8f94351c8@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Shigeru Yoshida <syoshida@redhat.com>\nSigned-off-by: Konstantin Komarov <almaz.alexandrovich@paragon-software.com>\n"
+submodule:
+- fs/ntfs3
+hunk_count: 1
+covered_count: 0

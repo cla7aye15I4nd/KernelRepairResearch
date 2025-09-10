@@ -1,0 +1,48 @@
+id: 6fc359860535c8a466fa
+bug_link: https://syzkaller.appspot.com/bug?extid=6fc359860535c8a466fa
+title: stack segment fault in cpu_map_redirect
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3b2aef99221d395ce37efa426d7b50e7dcd621d6
+fix_commit: fecef4cd42c689a200bdd39e6fffa71475904bc1
+datetime: '2024-07-05T16:59:37-07:00'
+fix_commit_message: 'tun: Assign missing bpf_net_context.
+
+
+  During the introduction of struct bpf_net_context handling for
+
+  XDP-redirect, the tun driver has been missed.
+
+  Jakub also pointed out that there is another call chain to
+
+  do_xdp_generic() originating from netif_receive_skb() and drivers may
+
+  use it outside from the NAPI context.
+
+
+  Set the bpf_net_context before invoking BPF XDP program within the TUN
+
+  driver. Set the bpf_net_context also in do_xdp_generic() if a xdp
+
+  program is available.
+
+
+  Reported-by: syzbot+0b5c75599f1d872bea6f@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+5ae46b237278e2369cac@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+c1e04a422bbc0f0f2921@syzkaller.appspotmail.com
+
+  Fixes: 401cb7dae8130 ("net: Reference bpf_redirect_info via task_struct on PREEMPT_RT.")
+
+  Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+
+  Link: https://patch.msgid.link/20240704144815.j8xQda5r@linutronix.de
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- drivers/net
+- net/core
+hunk_count: 8
+covered_count: 3

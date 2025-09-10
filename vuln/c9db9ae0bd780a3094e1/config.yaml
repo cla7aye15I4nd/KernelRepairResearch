@@ -1,0 +1,35 @@
+id: c9db9ae0bd780a3094e1
+bug_link: https://syzkaller.appspot.com/bug?extid=c9db9ae0bd780a3094e1
+title: general protection fault in end_page_writeback
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 81a70c21d9170de67a45843bdd627f4cce9c4215
+fix_commit: 512c5ca01a3610ab14ff6309db363de51f1c13a6
+datetime: '2022-11-22T18:50:45-08:00'
+fix_commit_message: "nilfs2: fix nilfs_sufile_mark_dirty() not set segment usage as\
+  \ dirty\n\nWhen extending segments, nilfs_sufile_alloc() is called to get an\nunassigned\
+  \ segment, then mark it as dirty to avoid accidentally allocating\nthe same segment\
+  \ in the future.\n\nBut for some special cases such as a corrupted image it can\
+  \ be unreliable.\nIf such corruption of the dirty state of the segment occurs, nilfs2\
+  \ may\nreallocate a segment that is in use and pick the same segment for writing\n\
+  twice at the same time.\n\nThis will cause the problem reported by syzkaller:\n\
+  https://syzkaller.appspot.com/bug?id=c7c4748e11ffcc367cef04f76e02e931833cbd24\n\n\
+  This case started with segbuf1.segnum = 3, nextnum = 4 when constructed. \nIt supposed\
+  \ segment 4 has already been allocated and marked as dirty.\n\nHowever the dirty\
+  \ state was corrupted and segment 4 usage was not dirty. \nFor the first time nilfs_segctor_extend_segments()\
+  \ segment 4 was allocated\nagain, which made segbuf2 and next segbuf3 had same segment\
+  \ 4.\n\nsb_getblk() will get same bh for segbuf2 and segbuf3, and this bh is added\n\
+  to both buffer lists of two segbuf.  It makes the lists broken which\ncauses NULL\
+  \ pointer dereference.\n\nFix the problem by setting usage as dirty every time in\n\
+  nilfs_sufile_mark_dirty(), which is called during constructing current\nsegment\
+  \ to be written out and before allocating next segment.\n\n[chenzhongjin@huawei.com:\
+  \ add lock protection per Ryusuke]\n  Link: https://lkml.kernel.org/r/20221121091141.214703-1-chenzhongjin@huawei.com\n\
+  Link: https://lkml.kernel.org/r/20221118063304.140187-1-chenzhongjin@huawei.com\n\
+  Fixes: 9ff05123e3bf (\"nilfs2: segment constructor\")\nSigned-off-by: Chen Zhongjin\
+  \ <chenzhongjin@huawei.com>\nReported-by: <syzbot+77e4f0...@syzkaller.appspotmail.com>\n\
+  Reported-by: Liu Shixin <liushixin2@huawei.com>\nAcked-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>\n\
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>\nCc: <stable@vger.kernel.org>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- fs/nilfs2
+hunk_count: 1
+covered_count: 0

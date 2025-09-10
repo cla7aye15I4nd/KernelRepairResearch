@@ -1,0 +1,46 @@
+id: 90d5ec0c05e708f3b66d
+bug_link: https://syzkaller.appspot.com/bug?extid=90d5ec0c05e708f3b66d
+title: kernel BUG at net/ipv4/ip_output.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 64cf5481262b9664ae3cdcb333f4a06af3e8fb58
+fix_commit: e7c87bd6cc4ec7b0ac1ed0a88a58f8206c577488
+datetime: '2019-01-20T01:11:48+01:00'
+fix_commit_message: "bpf: in __bpf_redirect_no_mac pull mac only if present\n\nSyzkaller\
+  \ was able to construct a packet of negative length by\nredirecting from bpf_prog_test_run_skb\
+  \ with BPF_PROG_TYPE_LWT_XMIT:\n\n    BUG: KASAN: slab-out-of-bounds in memcpy include/linux/string.h:345\
+  \ [inline]\n    BUG: KASAN: slab-out-of-bounds in skb_copy_from_linear_data include/linux/skbuff.h:3421\
+  \ [inline]\n    BUG: KASAN: slab-out-of-bounds in __pskb_copy_fclone+0x2dd/0xeb0\
+  \ net/core/skbuff.c:1395\n    Read of size 4294967282 at addr ffff8801d798009c by\
+  \ task syz-executor2/12942\n\n    kasan_report.cold.9+0x242/0x309 mm/kasan/report.c:412\n\
+  \    check_memory_region_inline mm/kasan/kasan.c:260 [inline]\n    check_memory_region+0x13e/0x1b0\
+  \ mm/kasan/kasan.c:267\n    memcpy+0x23/0x50 mm/kasan/kasan.c:302\n    memcpy include/linux/string.h:345\
+  \ [inline]\n    skb_copy_from_linear_data include/linux/skbuff.h:3421 [inline]\n\
+  \    __pskb_copy_fclone+0x2dd/0xeb0 net/core/skbuff.c:1395\n    __pskb_copy include/linux/skbuff.h:1053\
+  \ [inline]\n    pskb_copy include/linux/skbuff.h:2904 [inline]\n    skb_realloc_headroom+0xe7/0x120\
+  \ net/core/skbuff.c:1539\n    ipip6_tunnel_xmit net/ipv6/sit.c:965 [inline]\n  \
+  \  sit_tunnel_xmit+0xe1b/0x30d0 net/ipv6/sit.c:1029\n    __netdev_start_xmit include/linux/netdevice.h:4325\
+  \ [inline]\n    netdev_start_xmit include/linux/netdevice.h:4334 [inline]\n    xmit_one\
+  \ net/core/dev.c:3219 [inline]\n    dev_hard_start_xmit+0x295/0xc90 net/core/dev.c:3235\n\
+  \    __dev_queue_xmit+0x2f0d/0x3950 net/core/dev.c:3805\n    dev_queue_xmit+0x17/0x20\
+  \ net/core/dev.c:3838\n    __bpf_tx_skb net/core/filter.c:2016 [inline]\n    __bpf_redirect_common\
+  \ net/core/filter.c:2054 [inline]\n    __bpf_redirect+0x5cf/0xb20 net/core/filter.c:2061\n\
+  \    ____bpf_clone_redirect net/core/filter.c:2094 [inline]\n    bpf_clone_redirect+0x2f6/0x490\
+  \ net/core/filter.c:2066\n    bpf_prog_41f2bcae09cd4ac3+0xb25/0x1000\n\nThe generated\
+  \ test constructs a packet with mac header, network\nheader, skb->data pointing\
+  \ to network header and skb->len 0.\n\nRedirecting to a sit0 through __bpf_redirect_no_mac\
+  \ pulls the\nmac length, even though skb->data already is at skb->network_header.\n\
+  bpf_prog_test_run_skb has already pulled it as LWT_XMIT !is_l2.\n\nUpdate the offset\
+  \ calculation to pull only if skb->data differs\nfrom skb->network_header, which\
+  \ is not true in this case.\n\nThe test itself can be run only from commit 1cf1cae963c2\
+  \ (\"bpf:\nintroduce BPF_PROG_TEST_RUN command\"), but the same type of packets\n\
+  with skb at network header could already be built from lwt xmit hooks,\nso this\
+  \ fix is more relevant to that commit.\n\nAlso set the mac header on redirect from\
+  \ LWT_XMIT, as even after this\nchange to __bpf_redirect_no_mac that field is expected\
+  \ to be set, but\nis not yet in ip_finish_output2.\n\nFixes: 3a0af8fd61f9 (\"bpf:\
+  \ BPF for lightweight tunnel infrastructure\")\nReported-by: syzbot <syzkaller@googlegroups.com>\n\
+  Signed-off-by: Willem de Bruijn <willemb@google.com>\nAcked-by: Martin KaFai Lau\
+  \ <kafai@fb.com>\nSigned-off-by: Daniel Borkmann <daniel@iogearbox.net>\n"
+submodule:
+- net/core
+hunk_count: 2
+covered_count: 1

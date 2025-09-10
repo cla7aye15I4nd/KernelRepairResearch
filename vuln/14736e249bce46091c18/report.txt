@@ -1,0 +1,37 @@
+------------[ cut here ]------------
+ODEBUG: activate active (active state 1) object: ffff88801529b000 object type: rcu_head hint: 0x0
+WARNING: CPU: 0 PID: 57 at lib/debugobjects.c:514 debug_print_object+0x19e/0x2a0 lib/debugobjects.c:514
+Modules linked in:
+CPU: 0 PID: 57 Comm: kworker/u4:4 Not tainted 6.5.0-rc1-syzkaller-00458-g03b123debcbc #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/03/2023
+Workqueue: netns cleanup_net
+RIP: 0010:debug_print_object+0x19e/0x2a0 lib/debugobjects.c:514
+Code: 00 fc ff df 48 89 fa 48 c1 ea 03 80 3c 02 00 75 49 48 8b 14 dd c0 20 c8 8a 41 56 4c 89 e6 48 c7 c7 20 14 c8 8a e8 b2 fa 28 fd <0f> 0b 58 83 05 5c 8b 87 0a 01 48 83 c4 18 5b 5d 41 5c 41 5d 41 5e
+RSP: 0018:ffffc90001587828 EFLAGS: 00010286
+RAX: 0000000000000000 RBX: 0000000000000003 RCX: 0000000000000000
+RDX: ffff888016ee5940 RSI: ffffffff814d4986 RDI: 0000000000000001
+RBP: 0000000000000001 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000001 R12: ffffffff8ac81a80
+R13: ffffffff8a6df720 R14: 0000000000000000 R15: ffff88802a6b65c8
+FS:  0000000000000000(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000000 CR3: 000000000c776000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ debug_object_activate+0x32b/0x490 lib/debugobjects.c:733
+ debug_rcu_head_queue kernel/rcu/rcu.h:226 [inline]
+ kvfree_call_rcu+0x30/0xbe0 kernel/rcu/tree.c:3359
+ tcx_entry_free include/net/tcx.h:96 [inline]
+ tcx_uninstall+0x2fd/0x630 kernel/bpf/tcx.c:115
+ dev_tcx_uninstall include/net/tcx.h:174 [inline]
+ unregister_netdevice_many_notify+0x5e7/0x1a20 net/core/dev.c:10899
+ ip6gre_exit_batch_net+0x3ea/0x580 net/ipv6/ip6_gre.c:1642
+ ops_exit_list+0x125/0x170 net/core/net_namespace.c:175
+ cleanup_net+0x505/0xb20 net/core/net_namespace.c:614
+ process_one_work+0xaa2/0x16f0 kernel/workqueue.c:2597
+ worker_thread+0x687/0x1110 kernel/workqueue.c:2748
+ kthread+0x33a/0x430 kernel/kthread.c:389
+ ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308
+ </TASK>

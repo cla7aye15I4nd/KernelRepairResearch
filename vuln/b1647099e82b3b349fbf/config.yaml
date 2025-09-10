@@ -1,0 +1,46 @@
+id: b1647099e82b3b349fbf
+bug_link: https://syzkaller.appspot.com/bug?extid=b1647099e82b3b349fbf
+title: 'KMSAN: uninit-value in io_issue_sqe'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e112311615a24e1618a591c73506571dc304eb8d
+fix_commit: 18414a4a2eabb0281d12d374c92874327e0e3fe3
+datetime: '2024-05-30T14:04:37-06:00'
+fix_commit_message: "io_uring/net: assign kmsg inq/flags before buffer selection\n\
+  \nsyzbot reports that recv is using an uninitialized value:\n\n=====================================================\n\
+  BUG: KMSAN: uninit-value in io_req_cqe_overflow io_uring/io_uring.c:810 [inline]\n\
+  BUG: KMSAN: uninit-value in io_req_complete_post io_uring/io_uring.c:937 [inline]\n\
+  BUG: KMSAN: uninit-value in io_issue_sqe+0x1f1b/0x22c0 io_uring/io_uring.c:1763\n\
+  \ io_req_cqe_overflow io_uring/io_uring.c:810 [inline]\n io_req_complete_post io_uring/io_uring.c:937\
+  \ [inline]\n io_issue_sqe+0x1f1b/0x22c0 io_uring/io_uring.c:1763\n io_wq_submit_work+0xa17/0xeb0\
+  \ io_uring/io_uring.c:1860\n io_worker_handle_work+0xc04/0x2000 io_uring/io-wq.c:597\n\
+  \ io_wq_worker+0x447/0x1410 io_uring/io-wq.c:651\n ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147\n\
+  \ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244\n\nUninit was stored\
+  \ to memory at:\n io_req_set_res io_uring/io_uring.h:215 [inline]\n io_recv_finish+0xf10/0x1560\
+  \ io_uring/net.c:861\n io_recv+0x12ec/0x1ea0 io_uring/net.c:1175\n io_issue_sqe+0x429/0x22c0\
+  \ io_uring/io_uring.c:1751\n io_wq_submit_work+0xa17/0xeb0 io_uring/io_uring.c:1860\n\
+  \ io_worker_handle_work+0xc04/0x2000 io_uring/io-wq.c:597\n io_wq_worker+0x447/0x1410\
+  \ io_uring/io-wq.c:651\n ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147\n\
+  \ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244\n\nUninit was created\
+  \ at:\n slab_post_alloc_hook mm/slub.c:3877 [inline]\n slab_alloc_node mm/slub.c:3918\
+  \ [inline]\n __do_kmalloc_node mm/slub.c:4038 [inline]\n __kmalloc+0x6e4/0x1060\
+  \ mm/slub.c:4052\n kmalloc include/linux/slab.h:632 [inline]\n io_alloc_async_data+0xc0/0x220\
+  \ io_uring/io_uring.c:1662\n io_msg_alloc_async io_uring/net.c:166 [inline]\n io_recvmsg_prep_setup\
+  \ io_uring/net.c:725 [inline]\n io_recvmsg_prep+0xbe8/0x1a20 io_uring/net.c:806\n\
+  \ io_init_req io_uring/io_uring.c:2135 [inline]\n io_submit_sqe io_uring/io_uring.c:2182\
+  \ [inline]\n io_submit_sqes+0x1135/0x2f10 io_uring/io_uring.c:2335\n __do_sys_io_uring_enter\
+  \ io_uring/io_uring.c:3246 [inline]\n __se_sys_io_uring_enter+0x40f/0x3c80 io_uring/io_uring.c:3183\n\
+  \ __x64_sys_io_uring_enter+0x11f/0x1a0 io_uring/io_uring.c:3183\n x64_sys_call+0x2c0/0x3b50\
+  \ arch/x86/include/generated/asm/syscalls_64.h:427\n do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \nwhich appears to be io_recv_finish() reading kmsg->msg.msg_inq to decide\nif it\
+  \ needs to set IORING_CQE_F_SOCK_NONEMPTY or not. If the recv is\nentered with buffer\
+  \ selection, but no buffer is available, then we jump\nerror path which calls io_recv_finish()\
+  \ without having assigned\nkmsg->msg_inq. This might cause an errant setting of\
+  \ the NONEMPTY flag\nfor a request get gets errored with -ENOBUFS.\n\nReported-by:\
+  \ syzbot+b1647099e82b3b349fbf@syzkaller.appspotmail.com\nFixes: 4a3223f7bfda (\"\
+  io_uring/net: switch io_recv() to using io_async_msghdr\")\nSigned-off-by: Jens\
+  \ Axboe <axboe@kernel.dk>\n"
+submodule:
+- io_uring
+hunk_count: 2
+covered_count: 2

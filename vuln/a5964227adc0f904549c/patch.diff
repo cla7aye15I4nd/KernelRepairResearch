@@ -1,0 +1,165 @@
+diff --git a/kernel/bpf/verifier.c b/kernel/bpf/verifier.c
+index 41fd93db8258..8ad7338e726b 100644
+--- a/kernel/bpf/verifier.c
++++ b/kernel/bpf/verifier.c
+@@ -7788,6 +7788,12 @@ static int check_atomic_rmw(struct bpf_verifier_env *env,
+ static int check_atomic_load(struct bpf_verifier_env *env,
+ 			     struct bpf_insn *insn)
+ {
++	int err;
++
++	err = check_load_mem(env, insn, true, false, false, "atomic_load");
++	if (err)
++		return err;
++
+ 	if (!atomic_ptr_type_ok(env, insn->src_reg, insn)) {
+ 		verbose(env, "BPF_ATOMIC loads from R%d %s is not allowed\n",
+ 			insn->src_reg,
+@@ -7795,12 +7801,18 @@ static int check_atomic_load(struct bpf_verifier_env *env,
+ 		return -EACCES;
+ 	}
+ 
+-	return check_load_mem(env, insn, true, false, false, "atomic_load");
++	return 0;
+ }
+ 
+ static int check_atomic_store(struct bpf_verifier_env *env,
+ 			      struct bpf_insn *insn)
+ {
++	int err;
++
++	err = check_store_reg(env, insn, true);
++	if (err)
++		return err;
++
+ 	if (!atomic_ptr_type_ok(env, insn->dst_reg, insn)) {
+ 		verbose(env, "BPF_ATOMIC stores into R%d %s is not allowed\n",
+ 			insn->dst_reg,
+@@ -7808,7 +7820,7 @@ static int check_atomic_store(struct bpf_verifier_env *env,
+ 		return -EACCES;
+ 	}
+ 
+-	return check_store_reg(env, insn, true);
++	return 0;
+ }
+ 
+ static int check_atomic(struct bpf_verifier_env *env, struct bpf_insn *insn)
+diff --git a/tools/testing/selftests/bpf/progs/verifier_load_acquire.c b/tools/testing/selftests/bpf/progs/verifier_load_acquire.c
+index 608097453832..77698d5a19e4 100644
+--- a/tools/testing/selftests/bpf/progs/verifier_load_acquire.c
++++ b/tools/testing/selftests/bpf/progs/verifier_load_acquire.c
+@@ -139,10 +139,16 @@ __naked void load_acquire_from_pkt_pointer(void)
+ {
+ 	asm volatile (
+ 	"r2 = *(u32 *)(r1 + %[xdp_md_data]);"
++	"r3 = *(u32 *)(r1 + %[xdp_md_data_end]);"
++	"r1 = r2;"
++	"r1 += 8;"
++	"if r1 >= r3 goto l0_%=;"
+ 	".8byte %[load_acquire_insn];" // w0 = load_acquire((u8 *)(r2 + 0));
++"l0_%=:  r0 = 0;"
+ 	"exit;"
+ 	:
+ 	: __imm_const(xdp_md_data, offsetof(struct xdp_md, data)),
++	  __imm_const(xdp_md_data_end, offsetof(struct xdp_md, data_end)),
+ 	  __imm_insn(load_acquire_insn,
+ 		     BPF_ATOMIC_OP(BPF_B, BPF_LOAD_ACQ, BPF_REG_0, BPF_REG_2, 0))
+ 	: __clobber_all);
+@@ -172,12 +178,28 @@ __naked void load_acquire_from_sock_pointer(void)
+ {
+ 	asm volatile (
+ 	"r2 = *(u64 *)(r1 + %[sk_reuseport_md_sk]);"
+-	".8byte %[load_acquire_insn];" // w0 = load_acquire((u8 *)(r2 + 0));
++	// w0 = load_acquire((u8 *)(r2 + offsetof(struct bpf_sock, family)));
++	".8byte %[load_acquire_insn];"
+ 	"exit;"
+ 	:
+ 	: __imm_const(sk_reuseport_md_sk, offsetof(struct sk_reuseport_md, sk)),
+ 	  __imm_insn(load_acquire_insn,
+-		     BPF_ATOMIC_OP(BPF_B, BPF_LOAD_ACQ, BPF_REG_0, BPF_REG_2, 0))
++		     BPF_ATOMIC_OP(BPF_B, BPF_LOAD_ACQ, BPF_REG_0, BPF_REG_2,
++				   offsetof(struct bpf_sock, family)))
++	: __clobber_all);
++}
++
++SEC("socket")
++__description("load-acquire with invalid register R15")
++__failure __failure_unpriv __msg("R15 is invalid")
++__naked void load_acquire_with_invalid_reg(void)
++{
++	asm volatile (
++	".8byte %[load_acquire_insn];" // r0 = load_acquire((u64 *)(r15 + 0));
++	"exit;"
++	:
++	: __imm_insn(load_acquire_insn,
++		     BPF_ATOMIC_OP(BPF_DW, BPF_LOAD_ACQ, BPF_REG_0, 15 /* invalid reg */, 0))
+ 	: __clobber_all);
+ }
+ 
+diff --git a/tools/testing/selftests/bpf/progs/verifier_store_release.c b/tools/testing/selftests/bpf/progs/verifier_store_release.c
+index f1c64c08f25f..c0442d5bb049 100644
+--- a/tools/testing/selftests/bpf/progs/verifier_store_release.c
++++ b/tools/testing/selftests/bpf/progs/verifier_store_release.c
+@@ -140,11 +140,13 @@ __naked void store_release_to_ctx_pointer(void)
+ {
+ 	asm volatile (
+ 	"w0 = 0;"
+-	".8byte %[store_release_insn];" // store_release((u8 *)(r1 + 0), w0);
++	// store_release((u8 *)(r1 + offsetof(struct __sk_buff, cb[0])), w0);
++	".8byte %[store_release_insn];"
+ 	"exit;"
+ 	:
+ 	: __imm_insn(store_release_insn,
+-		     BPF_ATOMIC_OP(BPF_B, BPF_STORE_REL, BPF_REG_1, BPF_REG_0, 0))
++		     BPF_ATOMIC_OP(BPF_B, BPF_STORE_REL, BPF_REG_1, BPF_REG_0,
++				   offsetof(struct __sk_buff, cb[0])))
+ 	: __clobber_all);
+ }
+ 
+@@ -156,10 +158,16 @@ __naked void store_release_to_pkt_pointer(void)
+ 	asm volatile (
+ 	"w0 = 0;"
+ 	"r2 = *(u32 *)(r1 + %[xdp_md_data]);"
++	"r3 = *(u32 *)(r1 + %[xdp_md_data_end]);"
++	"r1 = r2;"
++	"r1 += 8;"
++	"if r1 >= r3 goto l0_%=;"
+ 	".8byte %[store_release_insn];" // store_release((u8 *)(r2 + 0), w0);
++"l0_%=:  r0 = 0;"
+ 	"exit;"
+ 	:
+ 	: __imm_const(xdp_md_data, offsetof(struct xdp_md, data)),
++	  __imm_const(xdp_md_data_end, offsetof(struct xdp_md, data_end)),
+ 	  __imm_insn(store_release_insn,
+ 		     BPF_ATOMIC_OP(BPF_B, BPF_STORE_REL, BPF_REG_2, BPF_REG_0, 0))
+ 	: __clobber_all);
+@@ -185,7 +193,7 @@ __naked void store_release_to_flow_keys_pointer(void)
+ 
+ SEC("sk_reuseport")
+ __description("store-release to sock pointer")
+-__failure __msg("BPF_ATOMIC stores into R2 sock is not allowed")
++__failure __msg("R2 cannot write into sock")
+ __naked void store_release_to_sock_pointer(void)
+ {
+ 	asm volatile (
+@@ -249,6 +257,20 @@ __naked void store_release_leak_pointer_to_map(void)
+ 	: __clobber_all);
+ }
+ 
++SEC("socket")
++__description("store-release with invalid register R15")
++__failure __failure_unpriv __msg("R15 is invalid")
++__naked void store_release_with_invalid_reg(void)
++{
++	asm volatile (
++	".8byte %[store_release_insn];" // store_release((u64 *)(r15 + 0), r1);
++	"exit;"
++	:
++	: __imm_insn(store_release_insn,
++		     BPF_ATOMIC_OP(BPF_DW, BPF_STORE_REL, 15 /* invalid reg */, BPF_REG_1, 0))
++	: __clobber_all);
++}
++
+ #else
+ 
+ SEC("socket")

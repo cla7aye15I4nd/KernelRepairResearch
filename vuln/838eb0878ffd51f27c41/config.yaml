@@ -1,0 +1,32 @@
+id: 838eb0878ffd51f27c41
+bug_link: https://syzkaller.appspot.com/bug?extid=838eb0878ffd51f27c41
+title: 'KASAN: slab-out-of-bounds Write in pipe_write'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8c7b8c34ae952cc062c12d7db9ee2f298c09dca4
+fix_commit: 8f868d68d335a17923dffb6858f8e9b656424699
+datetime: '2019-12-05T15:56:20-08:00'
+fix_commit_message: "pipe: Fix missing mask update after pipe_wait()\n\nFix pipe_write()\
+  \ to not cache the ring index mask and max_usage as their\nvalues are invalidated\
+  \ by calling pipe_wait() because the latter\nfunction drops the pipe lock, thereby\
+  \ allowing F_SETPIPE_SZ change them.\nWithout this, pipe_write() may subsequently\
+  \ miscalculate the array\nindices and pipe fullness, leading to an oops like the\
+  \ following:\n\n  BUG: KASAN: slab-out-of-bounds in pipe_write+0xc25/0xe10 fs/pipe.c:481\n\
+  \  Write of size 8 at addr ffff8880771167a8 by task syz-executor.3/7987\n  ...\n\
+  \  CPU: 1 PID: 7987 Comm: syz-executor.3 Not tainted 5.4.0-rc2-syzkaller #0\n  ...\n\
+  \  Call Trace:\n    pipe_write+0xc25/0xe10 fs/pipe.c:481\n    call_write_iter include/linux/fs.h:1895\
+  \ [inline]\n    new_sync_write+0x3fd/0x7e0 fs/read_write.c:483\n    __vfs_write+0x94/0x110\
+  \ fs/read_write.c:496\n    vfs_write+0x18a/0x520 fs/read_write.c:558\n    ksys_write+0x105/0x220\
+  \ fs/read_write.c:611\n    __do_sys_write fs/read_write.c:623 [inline]\n    __se_sys_write\
+  \ fs/read_write.c:620 [inline]\n    __x64_sys_write+0x6e/0xb0 fs/read_write.c:620\n\
+  \    do_syscall_64+0xca/0x5d0 arch/x86/entry/common.c:290\n    entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nThis is not a problem for pipe_read() as the mask is recalculated on\neach pass\
+  \ of the loop, after pipe_wait() has been called.\n\nFixes: 8cefc107ca54 (\"pipe:\
+  \ Use head and tail pointers for the ring, not cursor and length\")\nReported-by:\
+  \ syzbot+838eb0878ffd51f27c41@syzkaller.appspotmail.com\nSigned-off-by: David Howells\
+  \ <dhowells@redhat.com>\nCc: Eric Biggers <ebiggers@kernel.org>\n[ Changed it to\
+  \ use a temporary variable 'mask' to avoid long lines -Linus ]\nSigned-off-by: Linus\
+  \ Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs
+hunk_count: 5
+covered_count: 3

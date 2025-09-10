@@ -1,0 +1,51 @@
+id: 486f97f892efeb2075a3
+bug_link: https://syzkaller.appspot.com/bug?extid=486f97f892efeb2075a3
+title: 'KASAN: slab-out-of-bounds Write in sha1_finup'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2e20ce4a66b798671c60198ea2547d5e090dd991
+fix_commit: 3619dec5103dd999a777e3e4ea08c8f40a6ddc57
+datetime: '2018-06-26T09:43:05-07:00'
+fix_commit_message: 'dh key: fix rounding up KDF output length
+
+
+  Commit 383203eff718 ("dh key: get rid of stack allocated array") changed
+
+  kdf_ctr() to assume that the length of key material to derive is a
+
+  multiple of the digest size.  The length was supposed to be rounded up
+
+  accordingly.  However, the round_up() macro was used which only gives
+
+  the correct result on power-of-2 arguments, whereas not all hash
+
+  algorithms have power-of-2 digest sizes.  In some cases this resulted in
+
+  a write past the end of the ''outbuf'' buffer.
+
+
+  Fix it by switching to roundup(), which works for non-power-of-2 inputs.
+
+
+  Reported-by: syzbot+486f97f892efeb2075a3@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+29d17b7898b41ee120a5@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+8a608baf8751184ec727@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+d04e58bd384f1fe0b112@syzkaller.appspotmail.com
+
+  Fixes: 383203eff718 ("dh key: get rid of stack allocated array")
+
+  Signed-off-by: Eric Biggers <ebiggers@google.com>
+
+  Acked-by: Kees Cook <keescook@chromium.org>
+
+  Acked-by: Tycho Andersen <tycho@tycho.ws>
+
+  Signed-off-by: James Morris <james.morris@microsoft.com>
+
+  '
+submodule:
+- security/keys
+hunk_count: 2
+covered_count: 2

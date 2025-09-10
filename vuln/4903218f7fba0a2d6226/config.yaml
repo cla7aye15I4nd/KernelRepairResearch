@@ -1,0 +1,53 @@
+id: 4903218f7fba0a2d6226
+bug_link: https://syzkaller.appspot.com/bug?extid=4903218f7fba0a2d6226
+title: 'UBSAN: array-index-out-of-bounds in nfnetlink_unbind'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 02ded5a173619b11728b8bf75a3fd995a2c1ff28
+fix_commit: ffd219efd9ee1ceccc7ccfa9361fd40705680fc3
+datetime: '2022-05-27T11:16:33+02:00'
+fix_commit_message: 'netfilter: nfnetlink: fix warn in nfnetlink_unbind
+
+
+  syzbot reports following warn:
+
+  WARNING: CPU: 0 PID: 3600 at net/netfilter/nfnetlink.c:703 nfnetlink_unbind+0x357/0x3b0
+  net/netfilter/nfnetlink.c:694
+
+
+  The syzbot generated program does this:
+
+
+  socket(AF_NETLINK, SOCK_RAW, NETLINK_NETFILTER) = 3
+
+  setsockopt(3, SOL_NETLINK, NETLINK_DROP_MEMBERSHIP, [1], 4) = 0
+
+
+  ... which triggers ''WARN_ON_ONCE(nfnlnet->ctnetlink_listeners == 0)'' check.
+
+
+  Instead of counting, just enable reporting for every bind request
+
+  and check if we still have listeners on unbind.
+
+
+  While at it, also add the needed bounds check on nfnl_group2type[]
+
+  access.
+
+
+  Reported-by: <syzbot+4903218f7fba0a2d6226@syzkaller.appspotmail.com>
+
+  Reported-by: <syzbot+afd2d80e495f96049571@syzkaller.appspotmail.com>
+
+  Fixes: 2794cdb0b97b ("netfilter: nfnetlink: allow to detect if ctnetlink listeners
+  exist")
+
+  Signed-off-by: Florian Westphal <fw@strlen.de>
+
+  Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+
+  '
+submodule:
+- net/netfilter
+hunk_count: 3
+covered_count: 3

@@ -1,0 +1,56 @@
+ slab kmalloc-1k start ffff88801b488800 pointer offset 576 size 1024
+list_del corruption. prev->next should be ffff88802a7d3180, but was ffff88801b488a40. (prev=ffff88801b488a40)
+------------[ cut here ]------------
+kernel BUG at lib/list_debug.c:62!
+Oops: invalid opcode: 0000 [#1] SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5851 Comm: syz-executor420 Not tainted 6.15.0-syzkaller-10820-gcd2e103d57e5 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:__list_del_entry_valid_or_report+0x17a/0x200 lib/list_debug.c:62
+Code: 00 00 fc ff df 48 c1 ea 03 80 3c 02 00 0f 85 8d 00 00 00 48 8b 55 00 48 89 e9 48 89 de 48 c7 c7 40 33 f5 8b e8 f7 0d be fc 90 <0f> 0b 4c 89 e7 e8 1c aa 21 fd 48 89 ea 48 b8 00 00 00 00 00 fc ff
+RSP: 0018:ffffc9000436fb70 EFLAGS: 00010286
+RAX: 000000000000006d RBX: ffff88802a7d3180 RCX: ffffffff819a75b9
+RDX: 0000000000000000 RSI: ffffffff819af446 RDI: 0000000000000005
+RBP: ffff88801b488a40 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000080000000 R11: 0000000000000001 R12: ffff88802a7d3e00
+R13: ffff88802a7d3180 R14: ffff88802a7d3e00 R15: 0000000000000001
+FS:  0000555580420380(0000) GS:ffff888124a75000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f1e1bcb9130 CR3: 0000000075590000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __list_del_entry_valid include/linux/list.h:124 [inline]
+ __list_del_entry include/linux/list.h:215 [inline]
+ list_del_init include/linux/list.h:287 [inline]
+ ring_buffer_subbuf_order_set+0x92e/0x18f0 kernel/trace/ring_buffer.c:6921
+ buffer_subbuf_size_write+0x182/0x280 kernel/trace/trace.c:9546
+ vfs_write+0x2a0/0x1150 fs/read_write.c:684
+ ksys_write+0x12a/0x250 fs/read_write.c:738
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x490 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f1e1bc3eca9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 c1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fffe8f63c48 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f1e1bc3eca9
+RDX: 000000000000fdef RSI: 0000000000000000 RDI: 0000000000000003
+RBP: 00000000000f4240 R08: 00000000000000a0 R09: 00000000000000a0
+R10: 00000000000000a0 R11: 0000000000000246 R12: 00000000000175b3
+R13: 00007fffe8f63c5c R14: 00007fffe8f63c70 R15: 00007fffe8f63c60
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__list_del_entry_valid_or_report+0x17a/0x200 lib/list_debug.c:62
+Code: 00 00 fc ff df 48 c1 ea 03 80 3c 02 00 0f 85 8d 00 00 00 48 8b 55 00 48 89 e9 48 89 de 48 c7 c7 40 33 f5 8b e8 f7 0d be fc 90 <0f> 0b 4c 89 e7 e8 1c aa 21 fd 48 89 ea 48 b8 00 00 00 00 00 fc ff
+RSP: 0018:ffffc9000436fb70 EFLAGS: 00010286
+RAX: 000000000000006d RBX: ffff88802a7d3180 RCX: ffffffff819a75b9
+RDX: 0000000000000000 RSI: ffffffff819af446 RDI: 0000000000000005
+RBP: ffff88801b488a40 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000080000000 R11: 0000000000000001 R12: ffff88802a7d3e00
+R13: ffff88802a7d3180 R14: ffff88802a7d3e00 R15: 0000000000000001
+FS:  0000555580420380(0000) GS:ffff888124a75000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f1e1bcb60d0 CR3: 0000000075590000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

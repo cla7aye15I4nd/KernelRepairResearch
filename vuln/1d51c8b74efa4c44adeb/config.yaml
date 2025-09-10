@@ -1,0 +1,57 @@
+id: 1d51c8b74efa4c44adeb
+bug_link: https://syzkaller.appspot.com/bug?extid=1d51c8b74efa4c44adeb
+title: 'WARNING: proc registration bug in snmp6_register_dev'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b835a71ef64a61383c414d6bf2896d2c0161deca
+fix_commit: de0083c7ed7dba036d1ed6e012157649d45313c8
+datetime: '2020-06-22T20:42:23-07:00'
+fix_commit_message: "hsr: avoid to create proc file after unregister\n\nWhen an interface\
+  \ is being deleted, \"/proc/net/dev_snmp6/<interface name>\"\nis deleted.\nThe function\
+  \ for this is addrconf_ifdown() in the addrconf_notify() and\nit is called by notification,\
+  \ which is NETDEV_UNREGISTER.\nBut, if NETDEV_CHANGEMTU is triggered after NETDEV_UNREGISTER,\n\
+  this proc file will be created again.\nThis recreated proc file will be deleted\
+  \ by netdev_wati_allrefs().\nBefore netdev_wait_allrefs() is called, creating a\
+  \ new HSR interface\nroutine can be executed and It tries to create a proc file\
+  \ but it will\nfind an un-deleted proc file.\nAt this point, it warns about it.\n\
+  \nTo avoid this situation, it can use ->dellink() instead of\n->ndo_uninit() to\
+  \ release resources because ->dellink() is called\nbefore NETDEV_UNREGISTER.\nSo,\
+  \ a proc file will not be recreated.\n\nTest commands\n    ip link add dummy0 type\
+  \ dummy\n    ip link add dummy1 type dummy\n    ip link set dummy0 mtu 1300\n\n\
+  \    #SHELL1\n    while :\n    do\n        ip link add hsr0 type hsr slave1 dummy0\
+  \ slave2 dummy1\n    done\n\n    #SHELL2\n    while :\n    do\n        ip link del\
+  \ hsr0\n    done\n\nSplat looks like:\n[ 9888.980852][ T2752] proc_dir_entry 'dev_snmp6/hsr0'\
+  \ already registered\n[ 9888.981797][    C2] WARNING: CPU: 2 PID: 2752 at fs/proc/generic.c:372\
+  \ proc_register+0x2d5/0x430\n[ 9888.981798][    C2] Modules linked in: hsr dummy\
+  \ veth openvswitch nsh nf_conncount nf_nat nf_conntrack nf_defrag_ipv6x\n[ 9888.981814][\
+  \    C2] CPU: 2 PID: 2752 Comm: ip Tainted: G        W         5.8.0-rc1+ #616\n\
+  [ 9888.981815][    C2] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox\
+  \ 12/01/2006\n[ 9888.981816][    C2] RIP: 0010:proc_register+0x2d5/0x430\n[ 9888.981818][\
+  \    C2] Code: fc ff df 48 89 fa 48 c1 ea 03 80 3c 02 00 0f 85 65 01 00 00 49 8b\
+  \ b5 e0 00 00 00 48 89 ea 40\n[ 9888.981819][    C2] RSP: 0018:ffff8880628dedf0\
+  \ EFLAGS: 00010286\n[ 9888.981821][    C2] RAX: dffffc0000000008 RBX: ffff888028c69170\
+  \ RCX: ffffffffaae09a62\n[ 9888.981822][    C2] RDX: 0000000000000001 RSI: 0000000000000008\
+  \ RDI: ffff88806c9f75ac\n[ 9888.981823][    C2] RBP: ffff888028c693f4 R08: ffffed100d9401bd\
+  \ R09: ffffed100d9401bd\n[ 9888.981824][    C2] R10: ffffffffaddf406f R11: 0000000000000001\
+  \ R12: ffff888028c69308\n[ 9888.981825][    C2] R13: ffff8880663584c8 R14: dffffc0000000000\
+  \ R15: ffffed100518d27e\n[ 9888.981827][    C2] FS:  00007f3876b3b0c0(0000) GS:ffff88806c800000(0000)\
+  \ knlGS:0000000000000000\n[ 9888.981828][    C2] CS:  0010 DS: 0000 ES: 0000 CR0:\
+  \ 0000000080050033\n[ 9888.981829][    C2] CR2: 00007f387601a8c0 CR3: 000000004101a002\
+  \ CR4: 00000000000606e0\n[ 9888.981830][    C2] DR0: 0000000000000000 DR1: 0000000000000000\
+  \ DR2: 0000000000000000\n[ 9888.981831][    C2] DR3: 0000000000000000 DR6: 00000000fffe0ff0\
+  \ DR7: 0000000000000400\n[ 9888.981832][    C2] Call Trace:\n[ 9888.981833][   \
+  \ C2]  ? snmp6_seq_show+0x180/0x180\n[ 9888.981834][    C2]  proc_create_single_data+0x7c/0xa0\n\
+  [ 9888.981835][    C2]  snmp6_register_dev+0xb0/0x130\n[ 9888.981836][    C2]  ipv6_add_dev+0x4b7/0xf60\n\
+  [ 9888.981837][    C2]  addrconf_notify+0x684/0x1ca0\n[ 9888.981838][    C2]  ?\
+  \ __mutex_unlock_slowpath+0xd0/0x670\n[ 9888.981839][    C2]  ? kasan_unpoison_shadow+0x30/0x40\n\
+  [ 9888.981840][    C2]  ? wait_for_completion+0x250/0x250\n[ 9888.981841][    C2]\
+  \  ? inet6_ifinfo_notify+0x100/0x100\n[ 9888.981842][    C2]  ? dropmon_net_event+0x227/0x410\n\
+  [ 9888.981843][    C2]  ? notifier_call_chain+0x90/0x160\n[ 9888.981844][    C2]\
+  \  ? inet6_ifinfo_notify+0x100/0x100\n[ 9888.981845][    C2]  notifier_call_chain+0x90/0x160\n\
+  [ 9888.981846][    C2]  register_netdevice+0xbe5/0x1070\n[ ... ]\n\nReported-by:\
+  \ syzbot+1d51c8b74efa4c44adeb@syzkaller.appspotmail.com\nFixes: e0a4b99773d3 (\"\
+  hsr: use upper/lower device infrastructure\")\nSigned-off-by: Taehee Yoo <ap420073@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/hsr
+hunk_count: 9
+covered_count: 2

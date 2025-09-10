@@ -1,0 +1,28 @@
+id: 0abd373e2e50d704db87
+bug_link: https://syzkaller.appspot.com/bug?extid=0abd373e2e50d704db87
+title: 'INFO: task hung in vhost_work_dev_flush'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b9d102dafec6af1c07b610faf0a6d4e8aee14ae0
+fix_commit: e2ae38cf3d91837a493cb2093c87700ff3cbe667
+datetime: '2022-03-06T06:05:45-05:00'
+fix_commit_message: "vhost: fix hung thread due to erroneous iotlb entries\n\nIn vhost_iotlb_add_range_ctx(),\
+  \ range size can overflow to 0 when\nstart is 0 and last is ULONG_MAX. One instance\
+  \ where it can happen\nis when userspace sends an IOTLB message with iova=size=uaddr=0\n\
+  (vhost_process_iotlb_msg). So, an entry with size = 0, start = 0,\nlast = ULONG_MAX\
+  \ ends up in the iotlb. Next time a packet is sent,\niotlb_access_ok() loops indefinitely\
+  \ due to that erroneous entry.\n\n\tCall Trace:\n\t <TASK>\n\t iotlb_access_ok+0x21b/0x3e0\
+  \ drivers/vhost/vhost.c:1340\n\t vq_meta_prefetch+0xbc/0x280 drivers/vhost/vhost.c:1366\n\
+  \t vhost_transport_do_send_pkt+0xe0/0xfd0 drivers/vhost/vsock.c:104\n\t vhost_worker+0x23d/0x3d0\
+  \ drivers/vhost/vhost.c:372\n\t kthread+0x2e9/0x3a0 kernel/kthread.c:377\n\t ret_from_fork+0x1f/0x30\
+  \ arch/x86/entry/entry_64.S:295\n\t </TASK>\n\nReported by syzbot at:\n\thttps://syzkaller.appspot.com/bug?extid=0abd373e2e50d704db87\n\
+  \nTo fix this, do two things:\n\n1. Return -EINVAL in vhost_chr_write_iter() when\
+  \ userspace asks to map\n   a range with size 0.\n2. Fix vhost_iotlb_add_range_ctx()\
+  \ to handle the range [0, ULONG_MAX]\n   by splitting it into two entries.\n\nFixes:\
+  \ 0bbe30668d89e (\"vhost: factor out IOTLB\")\nReported-by: syzbot+0abd373e2e50d704db87@syzkaller.appspotmail.com\n\
+  Tested-by: syzbot+0abd373e2e50d704db87@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Anirudh Rayabharam <mail@anirudhrb.com>\nLink: https://lore.kernel.org/r/20220305095525.5145-1-mail@anirudhrb.com\n\
+  Signed-off-by: Michael S. Tsirkin <mst@redhat.com>\n"
+submodule:
+- drivers/vhost
+hunk_count: 2
+covered_count: 0

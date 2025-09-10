@@ -1,0 +1,49 @@
+id: 01ffaf5d9568dd1609f7
+bug_link: https://syzkaller.appspot.com/bug?extid=01ffaf5d9568dd1609f7
+title: general protection fault in mount_fs
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c8ed98cd88a2b39f504e1ce6af42423c71ebe5b7
+fix_commit: 7464726cb5998846306ed0a7d6714afb2e37b25d
+datetime: '2018-08-22T10:52:50-07:00'
+fix_commit_message: 'hfsplus: don''t return 0 when fill_super() failed
+
+
+  syzbot is reporting NULL pointer dereference at mount_fs() [1].  This is
+
+  because hfsplus_fill_super() is by error returning 0 when
+
+  hfsplus_fill_super() detected invalid filesystem image, and mount_bdev()
+
+  is returning NULL because dget(s->s_root) == NULL if s->s_root == NULL,
+
+  and mount_fs() is accessing root->d_sb because IS_ERR(root) == false if
+
+  root == NULL.  Fix this by returning -EINVAL when hfsplus_fill_super()
+
+  detected invalid filesystem image.
+
+
+  [1] https://syzkaller.appspot.com/bug?id=21acb6850cecbc960c927229e597158cf35f33d0
+
+
+  Link: http://lkml.kernel.org/r/d83ce31a-874c-dd5b-f790-41405983a5be@I-love.SAKURA.ne.jp
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Reported-by: syzbot <syzbot+01ffaf5d9568dd1609f7@syzkaller.appspotmail.com>
+
+  Reviewed-by: Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
+
+  Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+
+  Cc: Al Viro <viro@zeniv.linux.org.uk>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- fs/hfsplus
+hunk_count: 1
+covered_count: 0

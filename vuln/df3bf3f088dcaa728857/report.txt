@@ -1,0 +1,68 @@
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/lru.h:22!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 PID: 5082 Comm: syz-executor251 Not tainted 6.10.0-rc3-syzkaller-00044-g2ccbdf43d5e7 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+RIP: 0010:lru_pos fs/bcachefs/lru.h:22 [inline]
+RIP: 0010:__bch2_lru_set fs/bcachefs/lru.c:48 [inline]
+RIP: 0010:bch2_lru_del fs/bcachefs/lru.c:54 [inline]
+RIP: 0010:bch2_lru_change+0x65c/0x680 fs/bcachefs/lru.c:69
+Code: 80 e1 07 38 c1 0f 8c 47 fd ff ff be 14 00 00 00 48 8b 7c 24 10 e8 84 e1 c4 fd e9 33 fd ff ff e8 fa 25 4a 07 e8 25 65 62 fd 90 <0f> 0b e8 1d 65 62 fd 90 0f 0b e8 15 65 62 fd 90 0f 0b e8 0d 65 62
+RSP: 0018:ffffc90002e36c00 EFLAGS: 00010293
+RAX: ffffffff8433c0eb RBX: 1ffff920005c6d96 RCX: ffff888023ab1e00
+RDX: 0000000000000000 RSI: 5fcf000010000000 RDI: 0000ffffffffffff
+RBP: ffffc90002e36d30 R08: ffffffff8433bc33 R09: ffffffff84012068
+R10: 0000000000000003 R11: ffff888023ab1e00 R12: 0000ffffffffffff
+R13: 1ffff920005c6d88 R14: 5fcf000010000000 R15: ffff000010000000
+FS:  00005555744f0380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fff302f2f28 CR3: 000000007bf7e000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_trigger_alloc+0x1660/0x3bc0 fs/bcachefs/alloc_background.c:798
+ bch2_key_trigger fs/bcachefs/bkey_methods.h:88 [inline]
+ run_one_trans_trigger fs/bcachefs/btree_trans_commit.c:509 [inline]
+ run_btree_triggers+0xbff/0x11d0 fs/bcachefs/btree_trans_commit.c:544
+ bch2_trans_commit_run_triggers fs/bcachefs/btree_trans_commit.c:587 [inline]
+ __bch2_trans_commit+0x574/0x88e0 fs/bcachefs/btree_trans_commit.c:1022
+ bch2_trans_commit fs/bcachefs/btree_update.h:170 [inline]
+ bch2_inode_delete_keys+0xae8/0x1440 fs/bcachefs/inode.c:845
+ bch2_inode_rm+0x165/0xd40 fs/bcachefs/inode.c:874
+ bch2_evict_inode+0x21c/0x3c0 fs/bcachefs/fs.c:1581
+ evict+0x2a8/0x630 fs/inode.c:667
+ do_unlinkat+0x512/0x830 fs/namei.c:4414
+ __do_sys_unlink fs/namei.c:4455 [inline]
+ __se_sys_unlink fs/namei.c:4453 [inline]
+ __x64_sys_unlink+0x49/0x60 fs/namei.c:4453
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7ff5ee8e4b17
+Code: 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48 83 c8 ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 57 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff302f36d8 EFLAGS: 00000206 ORIG_RAX: 0000000000000057
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007ff5ee8e4b17
+RDX: 00007fff302f3700 RSI: 00007fff302f3790 RDI: 00007fff302f3790
+RBP: 00007fff302f3790 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000100 R11: 0000000000000206 R12: 00007fff302f4880
+R13: 00005555744f9700 R14: 0000000000000001 R15: 431bde82d7b634db
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:lru_pos fs/bcachefs/lru.h:22 [inline]
+RIP: 0010:__bch2_lru_set fs/bcachefs/lru.c:48 [inline]
+RIP: 0010:bch2_lru_del fs/bcachefs/lru.c:54 [inline]
+RIP: 0010:bch2_lru_change+0x65c/0x680 fs/bcachefs/lru.c:69
+Code: 80 e1 07 38 c1 0f 8c 47 fd ff ff be 14 00 00 00 48 8b 7c 24 10 e8 84 e1 c4 fd e9 33 fd ff ff e8 fa 25 4a 07 e8 25 65 62 fd 90 <0f> 0b e8 1d 65 62 fd 90 0f 0b e8 15 65 62 fd 90 0f 0b e8 0d 65 62
+RSP: 0018:ffffc90002e36c00 EFLAGS: 00010293
+RAX: ffffffff8433c0eb RBX: 1ffff920005c6d96 RCX: ffff888023ab1e00
+RDX: 0000000000000000 RSI: 5fcf000010000000 RDI: 0000ffffffffffff
+RBP: ffffc90002e36d30 R08: ffffffff8433bc33 R09: ffffffff84012068
+R10: 0000000000000003 R11: ffff888023ab1e00 R12: 0000ffffffffffff
+R13: 1ffff920005c6d88 R14: 5fcf000010000000 R15: ffff000010000000
+FS:  00005555744f0380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fff302f2f28 CR3: 000000007bf7e000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

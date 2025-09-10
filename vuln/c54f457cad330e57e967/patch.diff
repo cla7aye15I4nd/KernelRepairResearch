@@ -1,0 +1,26 @@
+diff --git a/net/ipv4/ip_input.c b/net/ipv4/ip_input.c
+index c59a78a267c3..24a95126e698 100644
+--- a/net/ipv4/ip_input.c
++++ b/net/ipv4/ip_input.c
+@@ -611,5 +611,6 @@ void ip_list_rcv(struct list_head *head, struct packet_type *pt,
+ 		list_add_tail(&skb->list, &sublist);
+ 	}
+ 	/* dispatch final sublist */
+-	ip_sublist_rcv(&sublist, curr_dev, curr_net);
++	if (!list_empty(&sublist))
++		ip_sublist_rcv(&sublist, curr_dev, curr_net);
+ }
+diff --git a/net/ipv6/ip6_input.c b/net/ipv6/ip6_input.c
+index 3d71c7d6102c..ef7f707d9ae3 100644
+--- a/net/ipv6/ip6_input.c
++++ b/net/ipv6/ip6_input.c
+@@ -325,7 +325,8 @@ void ipv6_list_rcv(struct list_head *head, struct packet_type *pt,
+ 		list_add_tail(&skb->list, &sublist);
+ 	}
+ 	/* dispatch final sublist */
+-	ip6_sublist_rcv(&sublist, curr_dev, curr_net);
++	if (!list_empty(&sublist))
++		ip6_sublist_rcv(&sublist, curr_dev, curr_net);
+ }
+ 
+ INDIRECT_CALLABLE_DECLARE(int udpv6_rcv(struct sk_buff *));

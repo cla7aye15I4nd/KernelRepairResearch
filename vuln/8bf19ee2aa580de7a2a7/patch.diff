@@ -1,0 +1,20 @@
+diff --git a/kernel/seccomp.c b/kernel/seccomp.c
+index e815781ed751..a43c601ac252 100644
+--- a/kernel/seccomp.c
++++ b/kernel/seccomp.c
+@@ -267,6 +267,7 @@ static u32 seccomp_run_filters(const struct seccomp_data *sd,
+ 	 * All filters in the list are evaluated and the lowest BPF return
+ 	 * value always takes priority (ignoring the DATA).
+ 	 */
++	preempt_disable();
+ 	for (; f; f = f->prev) {
+ 		u32 cur_ret = BPF_PROG_RUN(f->prog, sd);
+ 
+@@ -275,6 +276,7 @@ static u32 seccomp_run_filters(const struct seccomp_data *sd,
+ 			*match = f;
+ 		}
+ 	}
++	preempt_enable();
+ 	return ret;
+ }
+ #endif /* CONFIG_SECCOMP_FILTER */

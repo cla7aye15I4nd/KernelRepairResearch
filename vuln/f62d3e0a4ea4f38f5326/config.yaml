@@ -1,0 +1,42 @@
+id: f62d3e0a4ea4f38f5326
+bug_link: https://syzkaller.appspot.com/bug?extid=f62d3e0a4ea4f38f5326
+title: 'INFO: task hung in io_wq_put_and_exit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 009ad9f0c6eed0caa7943bc46aa1ae2cb8c382fb
+fix_commit: 3b33e3f4a6c0296812a7ee757bdae83290e64aed
+datetime: '2021-09-08T19:57:26-06:00'
+fix_commit_message: "io-wq: fix silly logic error in io_task_work_match()\n\nWe check\
+  \ for the func with an OR condition, which means it always ends\nup being false\
+  \ and we never match the task_work we want to cancel. In\nthe unexpected case that\
+  \ we do exit with that pending, we can trigger\na hang waiting for a worker to exit,\
+  \ but it was never created. syzbot\nreports that as such:\n\nINFO: task syz-executor687:8514\
+  \ blocked for more than 143 seconds.\n      Not tainted 5.14.0-syzkaller #0\n\"\
+  echo 0 > /proc/sys/kernel/hung_task_timeout_secs\" disables this message.\ntask:syz-executor687\
+  \ state:D stack:27296 pid: 8514 ppid:  8479 flags:0x00024004\nCall Trace:\n context_switch\
+  \ kernel/sched/core.c:4940 [inline]\n __schedule+0x940/0x26f0 kernel/sched/core.c:6287\n\
+  \ schedule+0xd3/0x270 kernel/sched/core.c:6366\n schedule_timeout+0x1db/0x2a0 kernel/time/timer.c:1857\n\
+  \ do_wait_for_common kernel/sched/completion.c:85 [inline]\n __wait_for_common kernel/sched/completion.c:106\
+  \ [inline]\n wait_for_common kernel/sched/completion.c:117 [inline]\n wait_for_completion+0x176/0x280\
+  \ kernel/sched/completion.c:138\n io_wq_exit_workers fs/io-wq.c:1162 [inline]\n\
+  \ io_wq_put_and_exit+0x40c/0xc70 fs/io-wq.c:1197\n io_uring_clean_tctx fs/io_uring.c:9607\
+  \ [inline]\n io_uring_cancel_generic+0x5fe/0x740 fs/io_uring.c:9687\n io_uring_files_cancel\
+  \ include/linux/io_uring.h:16 [inline]\n do_exit+0x265/0x2a30 kernel/exit.c:780\n\
+  \ do_group_exit+0x125/0x310 kernel/exit.c:922\n get_signal+0x47f/0x2160 kernel/signal.c:2868\n\
+  \ arch_do_signal_or_restart+0x2a9/0x1c40 arch/x86/kernel/signal.c:865\n handle_signal_work\
+  \ kernel/entry/common.c:148 [inline]\n exit_to_user_mode_loop kernel/entry/common.c:172\
+  \ [inline]\n exit_to_user_mode_prepare+0x17d/0x290 kernel/entry/common.c:209\n __syscall_exit_to_user_mode_work\
+  \ kernel/entry/common.c:291 [inline]\n syscall_exit_to_user_mode+0x19/0x60 kernel/entry/common.c:302\n\
+  \ do_syscall_64+0x42/0xb0 arch/x86/entry/common.c:86\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  RIP: 0033:0x445cd9\nRSP: 002b:00007fc657f4b308 EFLAGS: 00000246 ORIG_RAX: 00000000000000ca\n\
+  RAX: 0000000000000001 RBX: 00000000004cb448 RCX: 0000000000445cd9\nRDX: 00000000000f4240\
+  \ RSI: 0000000000000081 RDI: 00000000004cb44c\nRBP: 00000000004cb440 R08: 000000000000000e\
+  \ R09: 0000000000000000\nR10: 0000000000000000 R11: 0000000000000246 R12: 000000000049b154\n\
+  R13: 0000000000000003 R14: 00007fc657f4b400 R15: 0000000000022000\n\nWhile in there,\
+  \ also decrement accr->nr_workers. This isn't strictly\nneeded as we're exiting,\
+  \ but let's make sure the accounting matches up.\n\nFixes: 3146cba99aa2 (\"io-wq:\
+  \ make worker creation resilient against signals\")\nReported-by: syzbot+f62d3e0a4ea4f38f5326@syzkaller.appspotmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

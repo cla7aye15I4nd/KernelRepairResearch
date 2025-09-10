@@ -1,0 +1,39 @@
+==================================================================
+BUG: KCSAN: assert: race in srcu_get_delay kernel/rcu/srcutree.c:658 [inline]
+BUG: KCSAN: assert: race in srcu_funnel_gp_start kernel/rcu/srcutree.c:1089 [inline]
+BUG: KCSAN: assert: race in srcu_gp_start_if_needed+0x808/0x9f0 kernel/rcu/srcutree.c:1339
+
+race at unknown origin, with assert no writes to 0xffffffff8676ffc8 of 8 bytes by task 6285 on cpu 0:
+ srcu_get_delay kernel/rcu/srcutree.c:658 [inline]
+ srcu_funnel_gp_start kernel/rcu/srcutree.c:1089 [inline]
+ srcu_gp_start_if_needed+0x808/0x9f0 kernel/rcu/srcutree.c:1339
+ __call_srcu kernel/rcu/srcutree.c:1384 [inline]
+ __synchronize_srcu+0x114/0x150 kernel/rcu/srcutree.c:1432
+ synchronize_srcu+0x1ae/0x1d0
+ uprobe_unregister_sync+0x1a/0x20 kernel/events/uprobes.c:1328
+ __probe_event_disable kernel/trace/trace_uprobe.c:1138 [inline]
+ probe_event_disable+0x1f5/0x240 kernel/trace/trace_uprobe.c:1222
+ trace_uprobe_register+0xbb/0x3c0 kernel/trace/trace_uprobe.c:1512
+ perf_trace_event_unreg+0x6c/0x1a0 kernel/trace/trace_event_perf.c:162
+ perf_uprobe_destroy+0x6a/0xf0 kernel/trace/trace_event_perf.c:345
+ _free_event+0x7ca/0xa10 kernel/events/core.c:5357
+ put_event kernel/events/core.c:5454 [inline]
+ perf_event_release_kernel+0x61a/0x670 kernel/events/core.c:5579
+ perf_release+0x1f/0x30 kernel/events/core.c:5589
+ __fput+0x17a/0x6d0 fs/file_table.c:450
+ ____fput+0x1c/0x30 fs/file_table.c:478
+ task_work_run+0x13a/0x1a0 kernel/task_work.c:239
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:114 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0xa8/0x120 kernel/entry/common.c:218
+ do_syscall_64+0xd6/0x1c0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x0000000000000000 -> 0x0000000000000001
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 6285 Comm: syz.1.1056 Not tainted 6.12.0-syzkaller-08756-g42d9e8b7ccdd #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+==================================================================

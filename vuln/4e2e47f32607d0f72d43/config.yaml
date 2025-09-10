@@ -1,0 +1,80 @@
+id: 4e2e47f32607d0f72d43
+bug_link: https://syzkaller.appspot.com/bug?extid=4e2e47f32607d0f72d43
+title: general protection fault in crypto_shash_finup
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 462a3daad679406eed5d31b6bed8a19c236e1352
+fix_commit: b6d972f6898308fbe7e693bf8d44ebfdb1cd2dc4
+datetime: '2023-06-20T12:10:36-07:00'
+fix_commit_message: 'crypto: af_alg/hash: Fix recvmsg() after sendmsg(MSG_MORE)
+
+
+  If an AF_ALG socket bound to a hashing algorithm is sent a zero-length
+
+  message with MSG_MORE set and then recvmsg() is called without first
+
+  sending another message without MSG_MORE set to end the operation, an oops
+
+  will occur because the crypto context and result doesn''t now get set up in
+
+  advance because hash_sendmsg() now defers that as long as possible in the
+
+  hope that it can use crypto_ahash_digest() - and then because the message
+
+  is zero-length, it the data wrangling loop is skipped.
+
+
+  Fix this by handling zero-length sends at the top of the hash_sendmsg()
+
+  function.  If we''re not continuing the previous sendmsg(), then just ignore
+
+  the send (hash_recvmsg() will invent something when called); if we are
+
+  continuing, then we finalise the request at this point if MSG_MORE is not
+
+  set to get any error here, otherwise the send is of no effect and can be
+
+  ignored.
+
+
+  Whilst we''re at it, remove the code to create a kvmalloc''d scatterlist if
+
+  we get more than ALG_MAX_PAGES - this shouldn''t happen.
+
+
+  Fixes: c662b043cdca ("crypto: af_alg/hash: Support MSG_SPLICE_PAGES")
+
+  Reported-by: syzbot+13a08c0bf4d212766c3c@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/000000000000b928f705fdeb873a@google.com/
+
+  Reported-by: syzbot+14234ccf6d0ef629ec1a@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/000000000000c047db05fdeb8790@google.com/
+
+  Reported-by: syzbot+4e2e47f32607d0f72d43@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/000000000000bcca3205fdeb87fb@google.com/
+
+  Reported-by: syzbot+472626bb5e7c59fb768f@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/000000000000b55d8805fdeb8385@google.com/
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  Reported-and-tested-by: syzbot+6efc50cc1f8d718d6cb7@syzkaller.appspotmail.com
+
+  cc: Jens Axboe <axboe@kernel.dk>
+
+  cc: Matthew Wilcox <willy@infradead.org>
+
+  Acked-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  Link: https://lore.kernel.org/r/427646.1686913832@warthog.procyon.org.uk
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- crypto
+hunk_count: 4
+covered_count: 0

@@ -1,0 +1,109 @@
+  node offset 8/24 bset u64s 375 bset byte offset 184: keys out of order: u64s 11 type alloc_v4 0:32:0 len 0 ver 0 > u64s 11 type alloc_v4 0:2:0 len 0 ver 0, fixing
+bcachefs (loop0): btree_node_read_work: rewriting btree node at btree=alloc level=0 SPOS_MAX due to error
+==================================================================
+BUG: KASAN: use-after-free in bch2_btree_node_read_done+0xfbe/0x5e90 fs/bcachefs/btree_io.c:1087
+Read of size 8 at addr ffff888076abc010 by task syz-executor345/5842
+
+CPU: 1 UID: 0 PID: 5842 Comm: syz-executor345 Not tainted 6.12.0-syzkaller-08446-g228a1157fb9f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ bch2_btree_node_read_done+0xfbe/0x5e90 fs/bcachefs/btree_io.c:1087
+ btree_node_read_work+0x68b/0x1260 fs/bcachefs/btree_io.c:1323
+ bch2_btree_node_read+0x2433/0x2a10
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1749 [inline]
+ bch2_btree_root_read+0x617/0x7a0 fs/bcachefs/btree_io.c:1771
+ read_btree_roots+0x296/0x840 fs/bcachefs/recovery.c:523
+ bch2_fs_recovery+0x2585/0x39d0 fs/bcachefs/recovery.c:853
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1037
+ bch2_fs_get_tree+0xd68/0x1710 fs/bcachefs/fs.c:2170
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fc4572667ea
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 3e 06 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd22484098 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fc4572667ea
+RDX: 00000000200000c0 RSI: 0000000020000180 RDI: 00007ffd224840f0
+RBP: 0000000000000004 R08: 00007ffd22484130 R09: 000000000000593e
+R10: 0000000000000010 R11: 0000000000000282 R12: 00007ffd22484130
+R13: 0000000001000000 R14: 0000000000000003 R15: 0000000000000010
+ </TASK>
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x76abc
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+raw: 00fff00000000000 ffffea0001ca0108 ffff8880b87447e0 0000000000000000
+raw: 0000000000000000 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as freed
+page last allocated via order 2, migratetype Reclaimable, gfp_mask 0x452cd0(GFP_KERNEL_ACCOUNT|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_RECLAIMABLE), pid 5842, tgid 5842 (syz-executor345), ts 64163821991, free_ts 64389007908
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1556
+ prep_new_page mm/page_alloc.c:1564 [inline]
+ get_page_from_freelist+0x363e/0x3790 mm/page_alloc.c:3474
+ __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4751
+ __alloc_pages_node_noprof include/linux/gfp.h:269 [inline]
+ alloc_pages_node_noprof include/linux/gfp.h:296 [inline]
+ ___kmalloc_large_node+0x8b/0x1d0 mm/slub.c:4209
+ __kmalloc_large_node_noprof+0x1a/0x80 mm/slub.c:4236
+ __do_kmalloc_node mm/slub.c:4252 [inline]
+ __kmalloc_node_noprof+0x2d2/0x440 mm/slub.c:4270
+ __kvmalloc_node_noprof+0x72/0x190 mm/util.c:658
+ btree_node_data_alloc+0xdb/0x260 fs/bcachefs/btree_cache.c:153
+ __bch2_btree_node_mem_alloc+0x1d8/0x3e0 fs/bcachefs/btree_cache.c:198
+ bch2_fs_btree_cache_init+0x26f/0x630 fs/bcachefs/btree_cache.c:653
+ bch2_fs_alloc fs/bcachefs/super.c:917 [inline]
+ bch2_fs_open+0x2aa4/0x2f80 fs/bcachefs/super.c:2065
+ bch2_fs_get_tree+0x738/0x1710 fs/bcachefs/fs.c:2157
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+page last free pid 5842 tgid 5842 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_page+0xded/0x1130 mm/page_alloc.c:2657
+ __folio_put+0x2c7/0x440 mm/swap.c:112
+ folio_put include/linux/mm.h:1490 [inline]
+ free_large_kmalloc+0x105/0x1c0 mm/slub.c:4698
+ kfree+0x21c/0x440 mm/slub.c:4721
+ btree_bounce_free fs/bcachefs/btree_io.c:112 [inline]
+ bch2_btree_node_read_done+0x3c8a/0x5e90 fs/bcachefs/btree_io.c:1209
+ btree_node_read_work+0x68b/0x1260 fs/bcachefs/btree_io.c:1323
+ bch2_btree_node_read+0x2433/0x2a10
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1749 [inline]
+ bch2_btree_root_read+0x617/0x7a0 fs/bcachefs/btree_io.c:1771
+ read_btree_roots+0x296/0x840 fs/bcachefs/recovery.c:523
+ bch2_fs_recovery+0x2585/0x39d0 fs/bcachefs/recovery.c:853
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1037
+ bch2_fs_get_tree+0xd68/0x1710 fs/bcachefs/fs.c:2170
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+
+Memory state around the buggy address:
+ ffff888076abbf00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff888076abbf80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff888076abc000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+                         ^
+ ffff888076abc080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff888076abc100: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+==================================================================

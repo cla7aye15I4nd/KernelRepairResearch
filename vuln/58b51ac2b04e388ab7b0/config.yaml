@@ -1,0 +1,31 @@
+id: 58b51ac2b04e388ab7b0
+bug_link: https://syzkaller.appspot.com/bug?extid=58b51ac2b04e388ab7b0
+title: kernel BUG in binder_alloc_deferred_release
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 15d2ce7129f25c51d8a840a8a002c7ba0bb1509d
+fix_commit: a43cfc87caaf46710c8027a8c23b8a55f1078f19
+datetime: '2022-07-29T18:07:13-07:00'
+fix_commit_message: "android: binder: stop saving a pointer to the VMA\n\nDo not record\
+  \ a pointer to a VMA outside of the mmap_lock for later use. \nThis is unsafe and\
+  \ there are a number of failure paths *after* the\nrecorded VMA pointer may be freed\
+  \ during setup.  There is no callback to\nthe driver to clear the saved pointer\
+  \ from generic mm code.  Furthermore,\nthe VMA pointer may become stale if any number\
+  \ of VMA operations end up\nfreeing the VMA so saving it was fragile to being with.\n\
+  \nInstead, change the binder_alloc struct to record the start address of the\nVMA\
+  \ and use vma_lookup() to get the vma when needed.  Add lockdep\nmmap_lock checks\
+  \ on updates to the vma pointer to ensure the lock is held\nand depend on that lock\
+  \ for synchronization of readers and writers - which\nwas already the case anyways,\
+  \ so the smp_wmb()/smp_rmb() was not\nnecessary.\n\n[akpm@linux-foundation.org:\
+  \ fix drivers/android/binder_alloc_selftest.c]\nLink: https://lkml.kernel.org/r/20220621140212.vpkio64idahetbyf@revolver\n\
+  Fixes: da1b9564e85b (\"android: binder: fix the race mmap and alloc_new_buf_locked\"\
+  )\nReported-by: syzbot+58b51ac2b04e388ab7b0@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Liam R. Howlett <Liam.Howlett@oracle.com>\nCc: Minchan Kim <minchan@kernel.org>\n\
+  Cc: Christian Brauner (Microsoft) <brauner@kernel.org>\nCc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n\
+  Cc: Hridya Valsaraju <hridya@google.com>\nCc: Joel Fernandes <joel@joelfernandes.org>\n\
+  Cc: Martijn Coenen <maco@android.com>\nCc: Suren Baghdasaryan <surenb@google.com>\n\
+  Cc: Todd Kjos <tkjos@android.com>\nCc: Matthew Wilcox (Oracle) <willy@infradead.org>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- drivers/android
+hunk_count: 6
+covered_count: 1

@@ -1,0 +1,58 @@
+id: 9b9124ae9b12d5af5d95
+bug_link: https://syzkaller.appspot.com/bug?extid=9b9124ae9b12d5af5d95
+title: 'KMSAN: kernel-infoleak in vmci_host_unlocked_ioctl (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cf4d2ce1eded8de0a678f5e473322eef84adb5e8
+fix_commit: 8282013b56059c34590ac0245c74ea7ed7642924
+datetime: '2025-07-16T14:23:57+02:00'
+fix_commit_message: 'vmci: Prevent the dispatching of uninitialized payloads
+
+
+  The reproducer executes the host''s unlocked_ioctl call in two different
+
+  tasks. When init_context fails, the struct vmci_event_ctx is not fully
+
+  initialized when executing vmci_datagram_dispatch() to send events to all
+
+  vm contexts. This affects the datagram taken from the datagram queue of
+
+  its context by another task, because the datagram payload is not initialized
+
+  according to the size payload_size, which causes the kernel data to leak
+
+  to the user space.
+
+
+  Before dispatching the datagram, and before setting the payload content,
+
+  explicitly set the payload content to 0 to avoid data leakage caused by
+
+  incomplete payload initialization.
+
+
+  To avoid the oob check failure when executing __compiletime_lessthan()
+
+  in memset(), directly use the address of the vmci_event_ctx instance ev
+
+  to replace ev.msg.hdr, because their addresses are the same.
+
+
+  Fixes: 28d6692cd8fb ("VMCI: context implementation.")
+
+  Reported-by: syzbot+9b9124ae9b12d5af5d95@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=9b9124ae9b12d5af5d95
+
+  Tested-by: syzbot+9b9124ae9b12d5af5d95@syzkaller.appspotmail.com
+
+  Signed-off-by: Lizhi Xu <lizhi.xu@windriver.com>
+
+  Link: https://lore.kernel.org/r/20250703075334.856445-1-lizhi.xu@windriver.com
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/misc/vmw_vmci
+hunk_count: 1
+covered_count: 0

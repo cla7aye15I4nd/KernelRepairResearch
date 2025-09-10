@@ -1,0 +1,47 @@
+diff --git a/include/linux/netfilter_arp/arp_tables.h b/include/linux/netfilter_arp/arp_tables.h
+index 2aab9612f6ab..4f9a4b3c5892 100644
+--- a/include/linux/netfilter_arp/arp_tables.h
++++ b/include/linux/netfilter_arp/arp_tables.h
+@@ -53,8 +53,7 @@ int arpt_register_table(struct net *net, const struct xt_table *table,
+ 			const struct arpt_replace *repl,
+ 			const struct nf_hook_ops *ops);
+ void arpt_unregister_table(struct net *net, const char *name);
+-void arpt_unregister_table_pre_exit(struct net *net, const char *name,
+-				    const struct nf_hook_ops *ops);
++void arpt_unregister_table_pre_exit(struct net *net, const char *name);
+ extern unsigned int arpt_do_table(struct sk_buff *skb,
+ 				  const struct nf_hook_state *state,
+ 				  struct xt_table *table);
+diff --git a/net/ipv4/netfilter/arp_tables.c b/net/ipv4/netfilter/arp_tables.c
+index cf20316094d0..c53f14b94356 100644
+--- a/net/ipv4/netfilter/arp_tables.c
++++ b/net/ipv4/netfilter/arp_tables.c
+@@ -1556,13 +1556,12 @@ int arpt_register_table(struct net *net,
+ 	return ret;
+ }
+ 
+-void arpt_unregister_table_pre_exit(struct net *net, const char *name,
+-				    const struct nf_hook_ops *ops)
++void arpt_unregister_table_pre_exit(struct net *net, const char *name)
+ {
+ 	struct xt_table *table = xt_find_table(net, NFPROTO_ARP, name);
+ 
+ 	if (table)
+-		nf_unregister_net_hooks(net, ops, hweight32(table->valid_hooks));
++		nf_unregister_net_hooks(net, table->ops, hweight32(table->valid_hooks));
+ }
+ EXPORT_SYMBOL(arpt_unregister_table_pre_exit);
+ 
+diff --git a/net/ipv4/netfilter/arptable_filter.c b/net/ipv4/netfilter/arptable_filter.c
+index b8f45e9bbec8..6922612df456 100644
+--- a/net/ipv4/netfilter/arptable_filter.c
++++ b/net/ipv4/netfilter/arptable_filter.c
+@@ -54,7 +54,7 @@ static int __net_init arptable_filter_table_init(struct net *net)
+ 
+ static void __net_exit arptable_filter_net_pre_exit(struct net *net)
+ {
+-	arpt_unregister_table_pre_exit(net, "filter", arpfilter_ops);
++	arpt_unregister_table_pre_exit(net, "filter");
+ }
+ 
+ static void __net_exit arptable_filter_net_exit(struct net *net)

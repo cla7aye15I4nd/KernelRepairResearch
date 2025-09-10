@@ -1,0 +1,18 @@
+diff --git a/net/l2tp/l2tp_ppp.c b/net/l2tp/l2tp_ppp.c
+index 1404bc1c1bb7..1fd9e145076a 100644
+--- a/net/l2tp/l2tp_ppp.c
++++ b/net/l2tp/l2tp_ppp.c
+@@ -619,6 +619,13 @@ static int pppol2tp_connect(struct socket *sock, struct sockaddr *uservaddr,
+ 	lock_sock(sk);
+ 
+ 	error = -EINVAL;
++
++	if (sockaddr_len != sizeof(struct sockaddr_pppol2tp) &&
++	    sockaddr_len != sizeof(struct sockaddr_pppol2tpv3) &&
++	    sockaddr_len != sizeof(struct sockaddr_pppol2tpin6) &&
++	    sockaddr_len != sizeof(struct sockaddr_pppol2tpv3in6))
++		goto end;
++
+ 	if (sp->sa_protocol != PX_PROTO_OL2TP)
+ 		goto end;
+ 

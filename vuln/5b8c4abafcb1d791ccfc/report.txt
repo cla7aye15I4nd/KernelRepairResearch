@@ -1,0 +1,85 @@
+8<--- cut here ---
+Unable to handle kernel NULL pointer dereference at virtual address 0000000e when read
+[0000000e] *pgd=84997003, *pmd=df9a9003
+Internal error: Oops: 205 [#1] SMP ARM
+Modules linked in:
+CPU: 0 UID: 0 PID: 3102 Comm: syz-executor415 Not tainted 6.15.0-rc5-syzkaller #0 PREEMPT 
+Hardware name: ARM-Versatile Express
+PC is at io_ring_buffers_peek+0x24/0x258 io_uring/kbuf.c:227
+LR is at io_buffers_peek+0x68/0x8c io_uring/kbuf.c:343
+pc : [<8088956c>]    lr : [<80889cb0>]    psr: 20000013
+sp : df991dc0  ip : df991e08  fp : df991e04
+r10: 00012361  r9 : 00000000  r8 : 8498d740
+r7 : 84498a0c  r6 : 84498a00  r5 : df991e44  r4 : 84995000
+r3 : 00000001  r2 : 84498a0c  r1 : df991e44  r0 : 84995000
+Flags: nzCv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment user
+Control: 30c5387d  Table: 845f43c0  DAC: fffffffd
+Register r0 information: slab io_kiocb start 84995000 pointer offset 0 size 192
+Register r1 information: 2-page vmalloc region starting at 0xdf990000 allocated at kernel_clone+0xac/0x3e4 kernel/fork.c:2844
+Register r2 information: slab kmalloc-256 start 84498a00 pointer offset 12 size 256
+Register r3 information: non-paged memory
+Register r4 information: slab io_kiocb start 84995000 pointer offset 0 size 192
+Register r5 information: 2-page vmalloc region starting at 0xdf990000 allocated at kernel_clone+0xac/0x3e4 kernel/fork.c:2844
+Register r6 information: slab kmalloc-256 start 84498a00 pointer offset 0 size 256
+Register r7 information: slab kmalloc-256 start 84498a00 pointer offset 12 size 256
+Register r8 information: slab kmalloc-64 start 8498d740 pointer offset 0 size 64
+Register r9 information: NULL pointer
+Register r10 information: non-paged memory
+Register r11 information: 2-page vmalloc region starting at 0xdf990000 allocated at kernel_clone+0xac/0x3e4 kernel/fork.c:2844
+Register r12 information: 2-page vmalloc region starting at 0xdf990000 allocated at kernel_clone+0xac/0x3e4 kernel/fork.c:2844
+Process syz-executor415 (pid: 3102, stack limit = 0xdf990000)
+Stack: (0xdf991dc0 to 0xdf992000)
+1dc0: 81a4be54 8030cb0c 8495d100 00000001 00010000 84498a0c 00000000 84995000
+1de0: df991e44 84498a00 84498a0c 00000000 80000001 00012361 df991e1c df991e08
+1e00: 80889cb0 80889554 837e3b80 84995000 df991e84 df991e20 808931e0 80889c54
+1e20: df991e4c df991e30 8089ec2c 8050a4c4 00010001 00000001 8057abbc 00000000
+1e40: 00000000 84498a0c 00000000 00000000 00010001 7df2f2e8 80886a40 84995000
+1e60: 81cf0ca0 00000000 80000001 81cf0b5c 0000001b 83b4ec00 df991ebc df991e88
+1e80: 80886bd8 80892f38 849953c0 84995480 84995540 8495d000 8499506c 84995000
+1ea0: 84ae0000 00000000 00000000 83b4ec00 df991f14 df991ec0 808877a8 80886b7c
+1ec0: 8088e164 81a4bdf8 8499bdb8 845f43c8 00000800 00000800 81cf0b5c 00000800
+1ee0: 8495d000 7df2f2e8 840ae0c0 00000042 8495d000 00003517 840ae0c0 00000000
+1f00: 83b4ec00 00000000 df991fa4 df991f18 80888250 808875a8 df991f74 8495d040
+1f20: 00000000 0000173d 840ae000 00000000 df991f94 df991f40 8151ae48 8057a670
+1f40: df991f60 84404000 00000000 8281d1f0 00000a0f 76f57000 df991fb0 80234108
+1f60: 20000280 00000000 df991fac df991f78 8023478c 7df2f2e8 00000120 00000000
+1f80: 00000000 0008e068 000001aa 8020029c 83b4ec00 000001aa 00000000 df991fa8
+1fa0: 80200060 80888124 00000000 00000000 00000003 00003517 0000173d 00000042
+1fc0: 00000000 00000000 0008e068 000001aa 20000080 20000280 00000000 00000000
+1fe0: 7e8b7c70 7e8b7c60 00010874 0002f900 40000010 00000003 00000000 00000000
+Call trace: 
+[<80889548>] (io_ring_buffers_peek) from [<80889cb0>] (io_buffers_peek+0x68/0x8c io_uring/kbuf.c:343)
+ r10:00012361 r9:80000001 r8:00000000 r7:84498a0c r6:84498a00 r5:df991e44
+ r4:84995000
+[<80889c48>] (io_buffers_peek) from [<808931e0>] (io_recv_buf_select io_uring/net.c:1077 [inline])
+[<80889c48>] (io_buffers_peek) from [<808931e0>] (io_recv+0x2b4/0x46c io_uring/net.c:1138)
+ r5:84995000 r4:837e3b80
+[<80892f2c>] (io_recv) from [<80886bd8>] (__io_issue_sqe io_uring/io_uring.c:1740 [inline])
+[<80892f2c>] (io_recv) from [<80886bd8>] (io_issue_sqe+0x68/0x658 io_uring/io_uring.c:1759)
+ r10:83b4ec00 r9:0000001b r8:81cf0b5c r7:80000001 r6:00000000 r5:81cf0ca0
+ r4:84995000
+[<80886b70>] (io_issue_sqe) from [<808877a8>] (io_queue_sqe io_uring/io_uring.c:1975 [inline])
+[<80886b70>] (io_issue_sqe) from [<808877a8>] (io_submit_sqe io_uring/io_uring.c:2231 [inline])
+[<80886b70>] (io_issue_sqe) from [<808877a8>] (io_submit_sqes+0x20c/0x938 io_uring/io_uring.c:2348)
+ r10:83b4ec00 r9:00000000 r8:00000000 r7:84ae0000 r6:84995000 r5:8499506c
+ r4:8495d000
+[<8088759c>] (io_submit_sqes) from [<80888250>] (__do_sys_io_uring_enter io_uring/io_uring.c:3408 [inline])
+[<8088759c>] (io_submit_sqes) from [<80888250>] (sys_io_uring_enter+0x138/0x780 io_uring/io_uring.c:3342)
+ r10:00000000 r9:83b4ec00 r8:00000000 r7:840ae0c0 r6:00003517 r5:8495d000
+ r4:00000042
+[<80888118>] (sys_io_uring_enter) from [<80200060>] (ret_fast_syscall+0x0/0x1c arch/arm/mm/proc-v7.S:67)
+Exception stack(0xdf991fa8 to 0xdf991ff0)
+1fa0:                   00000000 00000000 00000003 00003517 0000173d 00000042
+1fc0: 00000000 00000000 0008e068 000001aa 20000080 20000280 00000000 00000000
+1fe0: 7e8b7c70 7e8b7c60 00010874 0002f900
+ r10:000001aa r9:83b4ec00 r8:8020029c r7:000001aa r6:0008e068 r5:00000000
+ r4:00000000
+Code: e1a08002 e5912000 e50b2030 e1a05001 (e1d920be) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	e1a08002 	mov	r8, r2
+   4:	e5912000 	ldr	r2, [r1]
+   8:	e50b2030 	str	r2, [fp, #-48]	@ 0xffffffd0
+   c:	e1a05001 	mov	r5, r1
+* 10:	e1d920be 	ldrh	r2, [r9, #14] <-- trapping instruction

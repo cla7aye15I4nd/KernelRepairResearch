@@ -1,0 +1,25 @@
+id: db48ce201b524603190a
+bug_link: https://syzkaller.appspot.com/bug?extid=db48ce201b524603190a
+title: 'KASAN: use-after-free Read in debugfs_remove (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8236b0ae31c837d2b3a2565c5f8d77f637e824cc
+fix_commit: f53823c18131e755905b4f654196fd2cc3953f6e
+datetime: '2018-05-03T09:36:24-06:00'
+fix_commit_message: "bdi: Fix use after free bug in debugfs_remove()\n\nsyzbot is\
+  \ reporting use after free bug in debugfs_remove() [1].\n\nThis is because fault\
+  \ injection made memory allocation for\ndebugfs_create_file() from bdi_debug_register()\
+  \ from bdi_register_va()\nfail and continued with setting WB_registered. But when\
+  \ debugfs_remove()\nis called from debugfs_remove(bdi->debug_dir) from bdi_debug_unregister()\n\
+  \ from bdi_unregister() from release_bdi() because WB_registered was set\nby bdi_register_va(),\
+  \ IS_ERR_OR_NULL(bdi->debug_dir) == false despite\ndebugfs_remove(bdi->debug_dir)\
+  \ was already called from bdi_register_va().\n\nFix this by making IS_ERR_OR_NULL(bdi->debug_dir)\
+  \ == true.\n\n[1] https://syzkaller.appspot.com/bug?id=5ab4efd91a96dcea9b68104f159adf4af2a6dfc1\n\
+  \nSigned-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nReported-by:\
+  \ syzbot <syzbot+049cb4ae097049dac137@syzkaller.appspotmail.com>\nFixes: 97f07697932e6faf\
+  \ (\"bdi: convert bdi_debug_register to int\")\nCc: weiping zhang <zhangweiping@didichuxing.com>\n\
+  Reviewed-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\nReviewed-by: Jan Kara\
+  \ <jack@suse.cz>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,61 @@
+gfs2: fsid=syz:syz.0: first mount done, others may mount
+gfs2: fsid=syz:syz.0: found 1 quota changes
+------------[ cut here ]------------
+kernel BUG at fs/gfs2/quota.c:1508!
+invalid opcode: 0000 [#1] PREEMPT SMP KASAN
+CPU: 1 PID: 5056 Comm: syz-executor244 Not tainted 6.7.0-rc6-syzkaller-00010-g2cf4f94d8e86 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+RIP: 0010:gfs2_quota_cleanup+0x6b5/0x6c0 fs/gfs2/quota.c:1508
+Code: fe e9 cf fd ff ff 44 89 e9 80 e1 07 80 c1 03 38 c1 0f 8c 2d fe ff ff 4c 89 ef e8 f6 02 23 fe e9 20 fe ff ff e8 1c fe c6 fd 90 <0f> 0b e8 84 03 50 07 0f 1f 40 00 66 0f 1f 00 55 41 57 41 56 41 54
+RSP: 0018:ffffc90003a8f9e0 EFLAGS: 00010293
+RAX: ffffffff83c76944 RBX: 0000000000000002 RCX: ffff88801e13bb80
+RDX: 0000000000000000 RSI: 0000000000000002 RDI: 0000000000000000
+RBP: ffffc90003a8fb00 R08: ffffffff83c763a0 R09: 1ffff11003ce4815
+R10: dffffc0000000000 R11: ffffed1003ce4816 R12: dffffc0000000000
+R13: ffff88801e724828 R14: ffff88801c67f580 R15: ffff88801e724000
+FS:  0000000000000000(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f27ce94fcf8 CR3: 000000000d731000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ gfs2_put_super+0x2e1/0x940 fs/gfs2/super.c:611
+ generic_shutdown_super+0x13a/0x2c0 fs/super.c:696
+ kill_block_super+0x44/0x90 fs/super.c:1667
+ deactivate_locked_super+0xc1/0x130 fs/super.c:484
+ cleanup_mnt+0x426/0x4c0 fs/namespace.c:1256
+ task_work_run+0x24a/0x300 kernel/task_work.c:180
+ exit_task_work include/linux/task_work.h:38 [inline]
+ do_exit+0xa2c/0x2740 kernel/exit.c:869
+ do_group_exit+0x206/0x2c0 kernel/exit.c:1018
+ __do_sys_exit_group kernel/exit.c:1029 [inline]
+ __se_sys_exit_group kernel/exit.c:1027 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1027
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x45/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7f27ce905789
+Code: Unable to access opcode bytes at 0x7f27ce90575f.
+RSP: 002b:00007ffd1d420598 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007f27ce905789
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000001
+RBP: 00007f27ce9932d0 R08: ffffffffffffffb8 R09: 00007ffd1d420670
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f27ce9932d0
+R13: 0000000000000000 R14: 00007f27ce994040 R15: 00007f27ce8d3cb0
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:gfs2_quota_cleanup+0x6b5/0x6c0 fs/gfs2/quota.c:1508
+Code: fe e9 cf fd ff ff 44 89 e9 80 e1 07 80 c1 03 38 c1 0f 8c 2d fe ff ff 4c 89 ef e8 f6 02 23 fe e9 20 fe ff ff e8 1c fe c6 fd 90 <0f> 0b e8 84 03 50 07 0f 1f 40 00 66 0f 1f 00 55 41 57 41 56 41 54
+RSP: 0018:ffffc90003a8f9e0 EFLAGS: 00010293
+RAX: ffffffff83c76944 RBX: 0000000000000002 RCX: ffff88801e13bb80
+RDX: 0000000000000000 RSI: 0000000000000002 RDI: 0000000000000000
+RBP: ffffc90003a8fb00 R08: ffffffff83c763a0 R09: 1ffff11003ce4815
+R10: dffffc0000000000 R11: ffffed1003ce4816 R12: dffffc0000000000
+R13: ffff88801e724828 R14: ffff88801c67f580 R15: ffff88801e724000
+FS:  0000000000000000(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f27ce9910f8 CR3: 0000000029041000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

@@ -1,0 +1,20 @@
+id: 61958888b1c60361a791
+bug_link: https://syzkaller.appspot.com/bug?extid=61958888b1c60361a791
+title: 'KASAN: slab-out-of-bounds Read in ovl_check_fb_len'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 144da23beab87b27992e5e1b41bd954de0bf2581
+fix_commit: 522f6e6cba6880a038e2bd88e10390b84cd3febd
+datetime: '2020-06-02T22:20:25+02:00'
+fix_commit_message: "ovl: fix out of bounds access warning in ovl_check_fb_len()\n\
+  \nsyzbot reported out of bounds memory access from open_by_handle_at()\nwith a crafted\
+  \ file handle that looks like this:\n\n  { .handle_bytes = 2, .handle_type = OVL_FILEID_V1\
+  \ }\n\nhandle_bytes gets rounded down to 0 and we end up calling:\n  ovl_check_fh_len(fh,\
+  \ 0) => ovl_check_fb_len(fh + 3, -3)\n\nBut fh buffer is only 2 bytes long, so accessing\
+  \ struct ovl_fb at\nfh + 3 is illegal.\n\nFixes: cbe7fba8edfc (\"ovl: make sure\
+  \ that real fid is 32bit aligned in memory\")\nReported-and-tested-by: syzbot+61958888b1c60361a791@syzkaller.appspotmail.com\n\
+  Cc: <stable@vger.kernel.org> # v5.5\nSigned-off-by: Amir Goldstein <amir73il@gmail.com>\n\
+  Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>\n"
+submodule:
+- fs/overlayfs
+hunk_count: 1
+covered_count: 1

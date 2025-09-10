@@ -1,0 +1,29 @@
+id: 8a78ecea7ac1a2ea26e5
+bug_link: https://syzkaller.appspot.com/bug?extid=8a78ecea7ac1a2ea26e5
+title: general protection fault in ptp_ioctl
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 89cdf9d556016a54ff6ddd62324aa5ec790c05cc
+fix_commit: 8a4f030dbced6fc255cbe67b2d0a129947e18493
+datetime: '2023-11-10T08:35:59+00:00'
+fix_commit_message: "ptp: Fixes a null pointer dereference in ptp_ioctl\n\nSyzkaller\
+  \ found a null pointer dereference in ptp_ioctl\noriginating from the lack of a\
+  \ null check for tsevq.\n\n```\ngeneral protection fault, probably for non-canonical\n\
+  \taddress 0xdffffc000000020b: 0000 [#1] PREEMPT SMP KASAN\nKASAN: probably user-memory-access\
+  \ in range\n\t[0x0000000000001058-0x000000000000105f]\nCPU: 0 PID: 5053 Comm: syz-executor353\
+  \ Not tainted\n\t6.6.0-syzkaller-10396-g4652b8e4f3ff #0\nHardware name: Google Google\
+  \ Compute Engine/Google Compute Engine,\n\tBIOS Google 10/09/2023\nRIP: 0010:ptp_ioctl+0xcb7/0x1d10\
+  \ drivers/ptp/ptp_chardev.c:476\n...\nCall Trace:\n <TASK>\n posix_clock_ioctl+0xf8/0x160\
+  \ kernel/time/posix-clock.c:86\n vfs_ioctl fs/ioctl.c:51 [inline]\n __do_sys_ioctl\
+  \ fs/ioctl.c:871 [inline]\n __se_sys_ioctl fs/ioctl.c:857 [inline]\n __x64_sys_ioctl+0x18f/0x210\
+  \ fs/ioctl.c:857\n do_syscall_x64 arch/x86/entry/common.c:51 [inline]\n do_syscall_64+0x3f/0x110\
+  \ arch/x86/entry/common.c:82\n entry_SYSCALL_64_after_hwframe+0x63/0x6b\n```\n\n\
+  This patch fixes the issue by adding a check for tsevq and\nensuring ptp_ioctl returns\
+  \ with an error if tsevq is null.\n\nReported-by: syzbot+8a78ecea7ac1a2ea26e5@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=8a78ecea7ac1a2ea26e5\nFixes: c5a445b1e934\
+  \ (\"ptp: support event queue reader channel masks\")\nSigned-off-by: Yuran Pereira\
+  \ <yuran.pereira@hotmail.com>\nReviewed-by: Przemek Kitszel <przemyslaw.kitszel@intel.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- drivers/ptp
+hunk_count: 1
+covered_count: 0

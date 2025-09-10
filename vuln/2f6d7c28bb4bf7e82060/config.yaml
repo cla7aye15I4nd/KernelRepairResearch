@@ -1,0 +1,38 @@
+id: 2f6d7c28bb4bf7e82060
+bug_link: https://syzkaller.appspot.com/bug?extid=2f6d7c28bb4bf7e82060
+title: inconsistent lock state in sco_sock_timeout
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 146af22649020e6b163482bc66150683ebf893bf
+fix_commit: ba316be1b6a00db7126ed9a39f9bee434a508043
+datetime: '2021-08-10T10:40:48-07:00'
+fix_commit_message: "Bluetooth: schedule SCO timeouts with delayed_work\n\nstruct\
+  \ sock.sk_timer should be used as a sock cleanup timer. However,\nSCO uses it to\
+  \ implement sock timeouts.\n\nThis causes issues because struct sock.sk_timer's\
+  \ callback is run in\nan IRQ context, and the timer callback function sco_sock_timeout\
+  \ takes\na spin lock on the socket. However, other functions such as\nsco_conn_del\
+  \ and sco_conn_ready take the spin lock with interrupts\nenabled.\n\nThis inconsistent\
+  \ {SOFTIRQ-ON-W} -> {IN-SOFTIRQ-W} lock usage could\nlead to deadlocks as reported\
+  \ by Syzbot [1]:\n       CPU0\n       ----\n  lock(slock-AF_BLUETOOTH-BTPROTO_SCO);\n\
+  \  <Interrupt>\n    lock(slock-AF_BLUETOOTH-BTPROTO_SCO);\n\nTo fix this, we use\
+  \ delayed work to implement SCO sock timouts\ninstead. This allows us to avoid taking\
+  \ the spin lock on the socket in\nan IRQ context, and corrects the misuse of struct\
+  \ sock.sk_timer.\n\nAs a note, cancel_delayed_work is used instead of\ncancel_delayed_work_sync\
+  \ in sco_sock_set_timer and\nsco_sock_clear_timer to avoid a deadlock. In the future,\
+  \ the call to\nbh_lock_sock inside sco_sock_timeout should be changed to lock_sock\
+  \ to\nsynchronize with other functions using lock_sock. However, since\nsco_sock_set_timer\
+  \ and sco_sock_clear_timer are sometimes called under\nthe locked socket (in sco_connect\
+  \ and __sco_sock_close),\ncancel_delayed_work_sync might cause them to sleep until\
+  \ an\nsco_sock_timeout that has started finishes running. But\nsco_sock_timeout\
+  \ would also sleep until it can grab the lock_sock.\n\nUsing cancel_delayed_work\
+  \ is fine because sco_sock_timeout does not\nchange from run to run, hence there\
+  \ is no functional difference\nbetween:\n1. waiting for a timeout to finish running\
+  \ before scheduling another\ntimeout\n2. scheduling another timeout while a timeout\
+  \ is running.\n\nLink: https://syzkaller.appspot.com/bug?id=9089d89de0502e120f234ca0fc8a703f7368b31e\
+  \ [1]\nReported-by: syzbot+2f6d7c28bb4bf7e82060@syzkaller.appspotmail.com\nTested-by:\
+  \ syzbot+2f6d7c28bb4bf7e82060@syzkaller.appspotmail.com\nSigned-off-by: Desmond\
+  \ Cheong Zhi Xi <desmondcheongzx@gmail.com>\nSigned-off-by: Luiz Augusto von Dentz\
+  \ <luiz.von.dentz@intel.com>\n"
+submodule:
+- net/bluetooth
+hunk_count: 6
+covered_count: 5

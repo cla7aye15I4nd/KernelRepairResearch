@@ -1,0 +1,155 @@
+loop5: detected capacity change from 0 to 8192
+======================================================
+WARNING: possible circular locking dependency detected
+6.12.0-syzkaller-11930-g0e287d31b62b #0 Not tainted
+------------------------------------------------------
+syz.5.2049/20355 is trying to acquire lock:
+ffff88804d8140b0 (&sbi->fat_lock){+.+.}-{4:4}, at: lock_fat fs/fat/fatent.c:281 [inline]
+ffff88804d8140b0 (&sbi->fat_lock){+.+.}-{4:4}, at: fat_count_free_clusters+0x138/0x9d0 fs/fat/fatent.c:724
+
+but task is already holding lock:
+ffff88814330df00 (&q->limits_lock){+.+.}-{4:4}, at: queue_limits_start_update include/linux/blkdev.h:945 [inline]
+ffff88814330df00 (&q->limits_lock){+.+.}-{4:4}, at: loop_reconfigure_limits+0x2da/0x8d0 drivers/block/loop.c:1003
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (&q->limits_lock){+.+.}-{4:4}:
+       __mutex_lock_common kernel/locking/mutex.c:585 [inline]
+       __mutex_lock+0x19b/0xa60 kernel/locking/mutex.c:735
+       queue_limits_start_update include/linux/blkdev.h:945 [inline]
+       loop_reconfigure_limits+0x2da/0x8d0 drivers/block/loop.c:1003
+       loop_set_block_size drivers/block/loop.c:1473 [inline]
+       lo_simple_ioctl drivers/block/loop.c:1496 [inline]
+       lo_ioctl+0x901/0x18b0 drivers/block/loop.c:1559
+       blkdev_ioctl+0x279/0x6d0 block/ioctl.c:693
+       vfs_ioctl fs/ioctl.c:51 [inline]
+       __do_sys_ioctl fs/ioctl.c:906 [inline]
+       __se_sys_ioctl fs/ioctl.c:892 [inline]
+       __x64_sys_ioctl+0x193/0x200 fs/ioctl.c:892
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #1 (&q->q_usage_counter(io)
+#24){++++}-{0:0}:
+       bio_queue_enter block/blk.h:75 [inline]
+       blk_mq_submit_bio+0x1fb6/0x24c0 block/blk-mq.c:3092
+       __submit_bio+0x384/0x540 block/blk-core.c:629
+       __submit_bio_noacct_mq block/blk-core.c:710 [inline]
+       submit_bio_noacct_nocheck+0x698/0xd70 block/blk-core.c:739
+       submit_bio_noacct+0x93a/0x1e20 block/blk-core.c:868
+       submit_bh fs/buffer.c:2819 [inline]
+       __bread_slow fs/buffer.c:1264 [inline]
+       __bread_gfp+0x189/0x340 fs/buffer.c:1488
+       sb_bread include/linux/buffer_head.h:346 [inline]
+       fat12_ent_bread+0x141/0x410 fs/fat/fatent.c:77
+       fat_ent_read+0x6a4/0xb90 fs/fat/fatent.c:368
+       fat_free_clusters+0x1b7/0xa60 fs/fat/fatent.c:568
+       fat_free fs/fat/file.c:376 [inline]
+       fat_truncate_blocks+0x53a/0xbe0 fs/fat/file.c:394
+       fat_evict_inode+0x8d/0x280 fs/fat/inode.c:656
+       evict+0x40c/0x960 fs/inode.c:796
+       iput_final fs/inode.c:1946 [inline]
+       iput fs/inode.c:1972 [inline]
+       iput+0x52a/0x890 fs/inode.c:1958
+       do_unlinkat+0x5c3/0x760 fs/namei.c:4594
+       __do_sys_unlinkat fs/namei.c:4630 [inline]
+       __se_sys_unlinkat fs/namei.c:4623 [inline]
+       __x64_sys_unlinkat+0xbf/0x130 fs/namei.c:4623
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&sbi->fat_lock){+.+.}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3161 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3280 [inline]
+       validate_chain kernel/locking/lockdep.c:3904 [inline]
+       __lock_acquire+0x249e/0x3c40 kernel/locking/lockdep.c:5226
+       lock_acquire.part.0+0x11b/0x380 kernel/locking/lockdep.c:5849
+       __mutex_lock_common kernel/locking/mutex.c:585 [inline]
+       __mutex_lock+0x19b/0xa60 kernel/locking/mutex.c:735
+       lock_fat fs/fat/fatent.c:281 [inline]
+       fat_count_free_clusters+0x138/0x9d0 fs/fat/fatent.c:724
+       fat_statfs+0x3c2/0x4d0 fs/fat/inode.c:834
+       statfs_by_dentry+0x12e/0x210 fs/statfs.c:66
+       vfs_statfs+0x3a/0xa0 fs/statfs.c:90
+       loop_config_discard drivers/block/loop.c:798 [inline]
+       loop_reconfigure_limits+0x5b7/0x8d0 drivers/block/loop.c:1012
+       loop_configure+0x7a0/0x11f0 drivers/block/loop.c:1093
+       lo_ioctl+0xa6a/0x18b0 drivers/block/loop.c:1532
+       blkdev_ioctl+0x279/0x6d0 block/ioctl.c:693
+       vfs_ioctl fs/ioctl.c:51 [inline]
+       __do_sys_ioctl fs/ioctl.c:906 [inline]
+       __se_sys_ioctl fs/ioctl.c:892 [inline]
+       __x64_sys_ioctl+0x193/0x200 fs/ioctl.c:892
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+Chain exists of:
+  &sbi->fat_lock --> &q->q_usage_counter(io)#24 --> &q->limits_lock
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&q->limits_lock);
+                               lock(&q->q_usage_counter(io)#24);
+                               lock(&q->limits_lock);
+  lock(&sbi->fat_lock);
+
+ *** DEADLOCK ***
+
+2 locks held by syz.5.2049/20355:
+ #0: ffff888145ac7360 (&lo->lo_mutex){+.+.}-{4:4}, at: loop_global_lock_killable drivers/block/loop.c:120 [inline]
+ #0: ffff888145ac7360 (&lo->lo_mutex){+.+.}-{4:4}, at: loop_configure+0x22f/0x11f0 drivers/block/loop.c:1044
+ #1: ffff88814330df00 (&q->limits_lock){+.+.}-{4:4}, at: queue_limits_start_update include/linux/blkdev.h:945 [inline]
+ #1: ffff88814330df00 (&q->limits_lock){+.+.}-{4:4}, at: loop_reconfigure_limits+0x2da/0x8d0 drivers/block/loop.c:1003
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 20355 Comm: syz.5.2049 Not tainted 6.12.0-syzkaller-11930-g0e287d31b62b #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_circular_bug+0x419/0x5d0 kernel/locking/lockdep.c:2074
+ check_noncircular+0x31a/0x400 kernel/locking/lockdep.c:2206
+ check_prev_add kernel/locking/lockdep.c:3161 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3280 [inline]
+ validate_chain kernel/locking/lockdep.c:3904 [inline]
+ __lock_acquire+0x249e/0x3c40 kernel/locking/lockdep.c:5226
+ lock_acquire.part.0+0x11b/0x380 kernel/locking/lockdep.c:5849
+ __mutex_lock_common kernel/locking/mutex.c:585 [inline]
+ __mutex_lock+0x19b/0xa60 kernel/locking/mutex.c:735
+ lock_fat fs/fat/fatent.c:281 [inline]
+ fat_count_free_clusters+0x138/0x9d0 fs/fat/fatent.c:724
+ fat_statfs+0x3c2/0x4d0 fs/fat/inode.c:834
+ statfs_by_dentry+0x12e/0x210 fs/statfs.c:66
+ vfs_statfs+0x3a/0xa0 fs/statfs.c:90
+ loop_config_discard drivers/block/loop.c:798 [inline]
+ loop_reconfigure_limits+0x5b7/0x8d0 drivers/block/loop.c:1012
+ loop_configure+0x7a0/0x11f0 drivers/block/loop.c:1093
+ lo_ioctl+0xa6a/0x18b0 drivers/block/loop.c:1532
+ blkdev_ioctl+0x279/0x6d0 block/ioctl.c:693
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl fs/ioctl.c:892 [inline]
+ __x64_sys_ioctl+0x193/0x200 fs/ioctl.c:892
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fe588180849
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fe589035058 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007fe588345fa0 RCX: 00007fe588180849
+RDX: 00000000200002c0 RSI: 0000000000004c0a RDI: 0000000000000004
+RBP: 00007fe5881f3986 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007fe588345fa0 R15: 00007fff267de898
+ </TASK>

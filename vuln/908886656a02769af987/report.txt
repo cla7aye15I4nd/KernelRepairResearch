@@ -1,0 +1,139 @@
+Booting Linux on physical CPU 0x0000000000 [0x000f0510]
+Linux version 6.11.0-rc5-syzkaller-g33faa93bc856 (syzkaller@syzkaller) (gcc (Debian 12.2.0-14) 12.2.0, GNU ld (GNU Binutils for Debian) 2.40) #0 SMP PREEMPT now
+random: crng init done
+Machine model: linux,dummy-virt
+efi: UEFI not found.
+NUMA: No NUMA configuration found
+NUMA: Faking a node at [mem 0x0000000040000000-0x00000000bfffffff]
+NUMA: NODE_DATA [mem 0xbfc1d340-0xbfc20fff]
+Zone ranges:
+  DMA      [mem 0x0000000040000000-0x00000000bfffffff]
+  DMA32    empty
+  Normal   empty
+  Device   empty
+Movable zone start for each node
+Early memory node ranges
+  node   0: [mem 0x0000000040000000-0x00000000bfffffff]
+Initmem setup node 0 [mem 0x0000000040000000-0x00000000bfffffff]
+cma: Reserved 32 MiB at 0x00000000bba00000 on node -1
+psci: probing for conduit method from DT.
+psci: PSCIv1.1 detected in firmware.
+psci: Using standard PSCI v0.2 function IDs
+psci: Trusted OS migration not required
+psci: SMC Calling Convention v1.0
+==================================================================
+BUG: KASAN: invalid-access in smp_build_mpidr_hash arch/arm64/kernel/setup.c:133 [inline]
+BUG: KASAN: invalid-access in setup_arch+0x984/0xd60 arch/arm64/kernel/setup.c:356
+Write of size 4 at addr 03ff800086867e00 by task swapper/0
+Pointer tag: [03], memory tag: [fe]
+
+CPU: 0 UID: 0 PID: 0 Comm: swapper Not tainted 6.11.0-rc5-syzkaller-g33faa93bc856 #0
+Hardware name: linux,dummy-virt (DT)
+Call trace:
+ dump_backtrace+0x204/0x3b8 arch/arm64/kernel/stacktrace.c:317
+ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:324
+ __dump_stack lib/dump_stack.c:93 [inline]
+ dump_stack_lvl+0x260/0x3b4 lib/dump_stack.c:119
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x118/0x5ac mm/kasan/report.c:488
+ kasan_report+0xc8/0x108 mm/kasan/report.c:601
+ kasan_check_range+0x94/0xb8 mm/kasan/sw_tags.c:84
+ __hwasan_store4_noabort+0x20/0x2c mm/kasan/sw_tags.c:149
+ smp_build_mpidr_hash arch/arm64/kernel/setup.c:133 [inline]
+ setup_arch+0x984/0xd60 arch/arm64/kernel/setup.c:356
+ start_kernel+0xe0/0xff0 init/main.c:926
+ __primary_switched+0x84/0x8c arch/arm64/kernel/head.S:243
+
+The buggy address belongs to stack of task swapper/0
+
+Memory state around the buggy address:
+ ffff800086867c00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff800086867d00: 00 fe fe 00 00 00 fe fe fe fe fe fe fe fe fe fe
+>ffff800086867e00: fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe
+                   ^
+ ffff800086867f00: fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe
+ ffff800086868000: fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe fe
+==================================================================
+percpu: Embedded 35 pages/cpu s104840 r8192 d30328 u143360
+Detected PIPT I-cache on CPU0
+CPU features: detected: GIC system register CPU interface
+CPU features: detected: HCRX_EL2 register
+CPU features: detected: 52-bit Virtual Addressing (LPA2)
+CPU features: detected: Virtualization Host Extensions
+CPU features: detected: Spectre-v4
+alternatives: applying boot alternatives
+kasan: KernelAddressSanitizer initialized (sw-tags, stacktrace=on)
+Kernel command line: root=/dev/vda console=ttyAMA0 
+Dentry cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+Inode-cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+Fallback order for Node 0: 0 
+Built 1 zonelists, mobility grouping on.  Total pages: 524288
+Policy zone: DMA
+mem auto-init: stack:all(zero), heap alloc:on, heap free:off
+stackdepot: allocating hash table via alloc_large_system_hash
+stackdepot hash table entries: 1048576 (order: 12, 16777216 bytes, linear)
+software IO TLB: SWIOTLB bounce buffer size adjusted to 2MB
+software IO TLB: area num 1.
+software IO TLB: mapped [mem 0x00000000b1a29000-0x00000000b1c29000] (2MB)
+SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+allocated 4194304 bytes of page_ext
+trace event string verifier disabled
+Running RCU self tests
+Running RCU synchronous self tests
+rcu: Preemptible hierarchical RCU implementation.
+rcu: 	RCU lockdep checking is enabled.
+rcu: 	RCU restricting CPUs from NR_CPUS=8 to nr_cpu_ids=1.
+rcu: 	RCU callback double-/use-after-free debug is enabled.
+rcu: 	RCU debug extended QS entry/exit.
+	Trampoline variant of Tasks RCU enabled.
+	Tracing variant of Tasks RCU enabled.
+rcu: RCU calculated value of scheduler-enlistment delay is 10 jiffies.
+rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=1
+Running RCU synchronous self tests
+RCU Tasks: Setting shift to 0 and lim to 1 rcu_task_cb_adjust=1.
+RCU Tasks Trace: Setting shift to 0 and lim to 1 rcu_task_cb_adjust=1.
+NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+GICv3: GIC: Using split EOI/Deactivate mode
+GICv3: 256 SPIs implemented
+GICv3: 0 Extended SPIs implemented
+Root IRQ handler: gic_handle_irq
+GICv3: GICv3 features: 16 PPIs
+GICv3: GICv4 features: 
+GICv3: GICD_CTRL.DS=1, SCR_EL3.FIQ=0
+GICv3: CPU0: found redistributor 0 region 0:0x00000000080a0000
+ITS [mem 0x08080000-0x0809ffff]
+ITS@0x0000000008080000: Single VMOVP capable
+ITS@0x0000000008080000: allocated 8192 Devices @4a230000 (indirect, esz 8, psz 64K, shr 1)
+ITS@0x0000000008080000: allocated 8192 Interrupt Collections @4a240000 (flat, esz 8, psz 64K, shr 1)
+ITS@0x0000000008080000: allocated 8192 Virtual CPUs @4a250000 (indirect, esz 8, psz 64K, shr 1)
+GICv3: using LPI property table @0x000000004a260000
+ITS: Allocated DevID ffff as GICv4 proxy device (2 slots)
+ITS: Enabling GICv4 support
+GICv3: CPU0: using allocated LPI pending table @0x000000004a270000
+rcu: srcu_init: Setting srcu_struct sizes based on contention.
+arch_timer: cp15 timer(s) running at 62.50MHz (phys).
+clocksource: arch_sys_counter: mask: 0x1ffffffffffffff max_cycles: 0x1cd42e208c, max_idle_ns: 881590405314 ns
+sched_clock: 57 bits at 63MHz, resolution 16ns, wraps every 4398046511096ns
+Console: colour dummy device 80x25
+Lock dependency validator: Copyright (c) 2006 Red Hat, Inc., Ingo Molnar
+... MAX_LOCKDEP_SUBCLASSES:  8
+... MAX_LOCK_DEPTH:          48
+... MAX_LOCKDEP_KEYS:        8192
+... CLASSHASH_SIZE:          4096
+... MAX_LOCKDEP_ENTRIES:     131072
+... MAX_LOCKDEP_CHAINS:      65536
+... CHAINHASH_SIZE:          32768
+ memory used by lock dependency info: 11817 kB
+ memory used for stack traces: 8320 kB
+ per task-struct memory footprint: 1920 bytes
+Calibrating delay loop (skipped), value calculated using timer frequency.. 125.00 BogoMIPS (lpj=625000)
+pid_max: default: 32768 minimum: 301
+LSM: initializing lsm=lockdown,capability,landlock,yama,safesetid,tomoyo,selinux,ima,evm
+landlock: Up and running.
+Yama: becoming mindful.
+TOMOYO Linux initialized
+SELinux:  Initializing.
+Mount-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+Mountpoint-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+Running RCU synchronous self tests
+Running RCU synchronous self tests

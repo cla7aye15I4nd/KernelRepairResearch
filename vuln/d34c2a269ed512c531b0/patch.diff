@@ -1,0 +1,26 @@
+diff --git a/fs/gfs2/glock.c b/fs/gfs2/glock.c
+index 4a026703a28d..269c3bc7fced 100644
+--- a/fs/gfs2/glock.c
++++ b/fs/gfs2/glock.c
+@@ -2251,6 +2251,7 @@ void gfs2_gl_hash_clear(struct gfs2_sbd *sdp)
+ 	gfs2_free_dead_glocks(sdp);
+ 	glock_hash_walk(dump_glock_func, sdp);
+ 	destroy_workqueue(sdp->sd_glock_wq);
++	sdp->sd_glock_wq = NULL;
+ }
+ 
+ static const char *state2str(unsigned state)
+diff --git a/fs/gfs2/ops_fstype.c b/fs/gfs2/ops_fstype.c
+index ff1f3e3dc65c..e83d293c3614 100644
+--- a/fs/gfs2/ops_fstype.c
++++ b/fs/gfs2/ops_fstype.c
+@@ -1307,7 +1307,8 @@ static int gfs2_fill_super(struct super_block *sb, struct fs_context *fc)
+ fail_delete_wq:
+ 	destroy_workqueue(sdp->sd_delete_wq);
+ fail_glock_wq:
+-	destroy_workqueue(sdp->sd_glock_wq);
++	if (sdp->sd_glock_wq)
++		destroy_workqueue(sdp->sd_glock_wq);
+ fail_free:
+ 	free_sbd(sdp);
+ 	sb->s_fs_info = NULL;

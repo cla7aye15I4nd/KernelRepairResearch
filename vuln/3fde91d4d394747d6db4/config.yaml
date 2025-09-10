@@ -1,0 +1,56 @@
+id: 3fde91d4d394747d6db4
+bug_link: https://syzkaller.appspot.com/bug?extid=3fde91d4d394747d6db4
+title: 'KMSAN: uninit-value in ip6_tnl_start_xmit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aa86b03c3ee65fc7bd4438dbb70665534df86050
+fix_commit: 76c0ddd8c3a683f6e2c6e60e11dc1a1558caf4bc
+datetime: '2018-09-19T21:24:28-07:00'
+fix_commit_message: "ip6_tunnel: be careful when accessing the inner header\n\nthe\
+  \ ip6 tunnel xmit ndo assumes that the processed skb always\ncontains an ip[v6]\
+  \ header, but syzbot has found a way to send\nframes that fall short of this assumption,\
+  \ leading to the following splat:\n\nBUG: KMSAN: uninit-value in ip6ip6_tnl_xmit\
+  \ net/ipv6/ip6_tunnel.c:1307\n[inline]\nBUG: KMSAN: uninit-value in ip6_tnl_start_xmit+0x7d2/0x1ef0\n\
+  net/ipv6/ip6_tunnel.c:1390\nCPU: 0 PID: 4504 Comm: syz-executor558 Not tainted 4.16.0+\
+  \ #87\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS\n\
+  Google 01/01/2011\nCall Trace:\n  __dump_stack lib/dump_stack.c:17 [inline]\n  dump_stack+0x185/0x1d0\
+  \ lib/dump_stack.c:53\n  kmsan_report+0x142/0x240 mm/kmsan/kmsan.c:1067\n  __msan_warning_32+0x6c/0xb0\
+  \ mm/kmsan/kmsan_instr.c:683\n  ip6ip6_tnl_xmit net/ipv6/ip6_tunnel.c:1307 [inline]\n\
+  \  ip6_tnl_start_xmit+0x7d2/0x1ef0 net/ipv6/ip6_tunnel.c:1390\n  __netdev_start_xmit\
+  \ include/linux/netdevice.h:4066 [inline]\n  netdev_start_xmit include/linux/netdevice.h:4075\
+  \ [inline]\n  xmit_one net/core/dev.c:3026 [inline]\n  dev_hard_start_xmit+0x5f1/0xc70\
+  \ net/core/dev.c:3042\n  __dev_queue_xmit+0x27ee/0x3520 net/core/dev.c:3557\n  dev_queue_xmit+0x4b/0x60\
+  \ net/core/dev.c:3590\n  packet_snd net/packet/af_packet.c:2944 [inline]\n  packet_sendmsg+0x7c70/0x8a30\
+  \ net/packet/af_packet.c:2969\n  sock_sendmsg_nosec net/socket.c:630 [inline]\n\
+  \  sock_sendmsg net/socket.c:640 [inline]\n  ___sys_sendmsg+0xec0/0x1310 net/socket.c:2046\n\
+  \  __sys_sendmmsg+0x42d/0x800 net/socket.c:2136\n  SYSC_sendmmsg+0xc4/0x110 net/socket.c:2167\n\
+  \  SyS_sendmmsg+0x63/0x90 net/socket.c:2162\n  do_syscall_64+0x309/0x430 arch/x86/entry/common.c:287\n\
+  \  entry_SYSCALL_64_after_hwframe+0x3d/0xa2\nRIP: 0033:0x441819\nRSP: 002b:00007ffe58ee8268\
+  \ EFLAGS: 00000213 ORIG_RAX: 0000000000000133\nRAX: ffffffffffffffda RBX: 0000000000000003\
+  \ RCX: 0000000000441819\nRDX: 0000000000000002 RSI: 0000000020000100 RDI: 0000000000000003\n\
+  RBP: 00000000006cd018 R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000\
+  \ R11: 0000000000000213 R12: 0000000000402510\nR13: 00000000004025a0 R14: 0000000000000000\
+  \ R15: 0000000000000000\n\nUninit was created at:\n  kmsan_save_stack_with_flags\
+  \ mm/kmsan/kmsan.c:278 [inline]\n  kmsan_internal_poison_shadow+0xb8/0x1b0 mm/kmsan/kmsan.c:188\n\
+  \  kmsan_kmalloc+0x94/0x100 mm/kmsan/kmsan.c:314\n  kmsan_slab_alloc+0x11/0x20 mm/kmsan/kmsan.c:321\n\
+  \  slab_post_alloc_hook mm/slab.h:445 [inline]\n  slab_alloc_node mm/slub.c:2737\
+  \ [inline]\n  __kmalloc_node_track_caller+0xaed/0x11c0 mm/slub.c:4369\n  __kmalloc_reserve\
+  \ net/core/skbuff.c:138 [inline]\n  __alloc_skb+0x2cf/0x9f0 net/core/skbuff.c:206\n\
+  \  alloc_skb include/linux/skbuff.h:984 [inline]\n  alloc_skb_with_frags+0x1d4/0xb20\
+  \ net/core/skbuff.c:5234\n  sock_alloc_send_pskb+0xb56/0x1190 net/core/sock.c:2085\n\
+  \  packet_alloc_skb net/packet/af_packet.c:2803 [inline]\n  packet_snd net/packet/af_packet.c:2894\
+  \ [inline]\n  packet_sendmsg+0x6454/0x8a30 net/packet/af_packet.c:2969\n  sock_sendmsg_nosec\
+  \ net/socket.c:630 [inline]\n  sock_sendmsg net/socket.c:640 [inline]\n  ___sys_sendmsg+0xec0/0x1310\
+  \ net/socket.c:2046\n  __sys_sendmmsg+0x42d/0x800 net/socket.c:2136\n  SYSC_sendmmsg+0xc4/0x110\
+  \ net/socket.c:2167\n  SyS_sendmmsg+0x63/0x90 net/socket.c:2162\n  do_syscall_64+0x309/0x430\
+  \ arch/x86/entry/common.c:287\n  entry_SYSCALL_64_after_hwframe+0x3d/0xa2\n\nThis\
+  \ change addresses the issue adding the needed check before\naccessing the inner\
+  \ header.\n\nThe ipv4 side of the issue is apparently there since the ipv4 over\
+  \ ipv6\ninitial support, and the ipv6 side predates git history.\n\nFixes: c4d3efafcc93\
+  \ (\"[IPV6] IP6TUNNEL: Add support to IPv4 over IPv6 tunnel.\")\nFixes: 1da177e4c3f4\
+  \ (\"Linux-2.6.12-rc2\")\nReported-by: syzbot+3fde91d4d394747d6db4@syzkaller.appspotmail.com\n\
+  Tested-by: Alexander Potapenko <glider@google.com>\nSigned-off-by: Paolo Abeni <pabeni@redhat.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv6
+hunk_count: 4
+covered_count: 2

@@ -1,0 +1,26 @@
+id: 76e7efc4748495855a4d
+bug_link: https://syzkaller.appspot.com/bug?extid=76e7efc4748495855a4d
+title: WARNING in __alloc_pages_slowpath
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 430505962765fc133f8eca2f58e848cdc4d81b80
+fix_commit: 0c75f10312a35b149b2cebb1832316b35c2337ca
+datetime: '2018-01-09T15:38:48+01:00'
+fix_commit_message: "staging: android: ion: Add __GFP_NOWARN for system contig heap\n\
+  \nsyzbot reported a warning from Ion:\n\n  WARNING: CPU: 1 PID: 3485 at mm/page_alloc.c:3926\n\
+  \n  ...\n   __alloc_pages_nodemask+0x9fb/0xd80 mm/page_alloc.c:4252\n  alloc_pages_current+0xb6/0x1e0\
+  \ mm/mempolicy.c:2036\n  alloc_pages include/linux/gfp.h:492 [inline]\n  ion_system_contig_heap_allocate+0x40/0x2c0\n\
+  \  drivers/staging/android/ion/ion_system_heap.c:374\n  ion_buffer_create drivers/staging/android/ion/ion.c:93\
+  \ [inline]\n  ion_alloc+0x2c1/0x9e0 drivers/staging/android/ion/ion.c:420\n  ion_ioctl+0x26d/0x380\
+  \ drivers/staging/android/ion/ion-ioctl.c:84\n  vfs_ioctl fs/ioctl.c:46 [inline]\n\
+  \  do_vfs_ioctl+0x1b1/0x1520 fs/ioctl.c:686\n  SYSC_ioctl fs/ioctl.c:701 [inline]\n\
+  \  SyS_ioctl+0x8f/0xc0 fs/ioctl.c:692\n\nThis is a warning about attempting to allocate\
+  \ order > MAX_ORDER. This\nis coming from a userspace Ion allocation request. Since\
+  \ userspace is\nfree to request however much memory it wants (and the kernel is\
+  \ free to\ndeny its allocation), silence the allocation attempt with __GFP_NOWARN\n\
+  in case it fails.\n\nReported-by: syzbot+76e7efc4748495855a4d@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot <syzkaller@googlegroups.com>\nSigned-off-by: Laura Abbott <labbott@redhat.com>\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/staging/android/ion
+hunk_count: 1
+covered_count: 1

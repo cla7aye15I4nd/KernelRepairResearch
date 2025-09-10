@@ -1,0 +1,46 @@
+id: 8bb053b5d63595ab47db
+bug_link: https://syzkaller.appspot.com/bug?extid=8bb053b5d63595ab47db
+title: memory leak in sctp_packet_transmit
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e5b2e810daf9f2d87fe132eb4d2a85fb08a0db98
+fix_commit: 4e45170d9acc2d5ae8f545bf3f2f67504a361338
+datetime: '2024-02-15T07:34:52-08:00'
+fix_commit_message: 'net: sctp: fix skb leak in sctp_inq_free()
+
+
+  In case of GSO, ''chunk->skb'' pointer may point to an entry from
+
+  fraglist created in ''sctp_packet_gso_append()''. To avoid freeing
+
+  random fraglist entry (and so undefined behavior and/or memory
+
+  leak), introduce ''sctp_inq_chunk_free()'' helper to ensure that
+
+  ''chunk->skb'' is set to ''chunk->head_skb'' (i.e. fraglist head)
+
+  before calling ''sctp_chunk_free()'', and use the aforementioned
+
+  helper in ''sctp_inq_pop()'' as well.
+
+
+  Reported-by: syzbot+8bb053b5d63595ab47db@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?id=0d8351bbe54fd04a492c2daab0164138db008042
+
+  Fixes: 90017accff61 ("sctp: Add GSO support")
+
+  Suggested-by: Xin Long <lucien.xin@gmail.com>
+
+  Signed-off-by: Dmitry Antipov <dmantipov@yandex.ru>
+
+  Acked-by: Xin Long <lucien.xin@gmail.com>
+
+  Link: https://lore.kernel.org/r/20240214082224.10168-1-dmantipov@yandex.ru
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/sctp
+hunk_count: 3
+covered_count: 3

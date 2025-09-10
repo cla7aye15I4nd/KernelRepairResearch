@@ -1,0 +1,145 @@
+netlink: 'syz-executor371': attribute type 10 has an invalid length.
+======================================================
+WARNING: possible circular locking dependency detected
+6.15.0-rc2-syzkaller-00400-g3088d26962e8 #0 Not tainted
+------------------------------------------------------
+syz-executor371/5855 is trying to acquire lock:
+ffff888035d5ce00 (team->team_lock_key){+.+.}-{4:4}, at: team_port_change_check+0x51/0x1e0 drivers/net/team/team_core.c:2966
+
+but task is already holding lock:
+ffff8880364c6d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2751 [inline]
+ffff8880364c6d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ffff8880364c6d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: do_setlink+0x3c1/0x4390 net/core/rtnetlink.c:3051
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&dev_instance_lock_key#3){+.+.}-{4:4}:
+       lock_acquire+0x116/0x2f0 kernel/locking/lockdep.c:5866
+       __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+       __mutex_lock+0x1a5/0x10c0 kernel/locking/mutex.c:746
+       netdev_lock include/linux/netdevice.h:2751 [inline]
+       netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+       dev_set_mtu+0x11c/0x270 net/core/dev_api.c:246
+       team_port_add drivers/net/team/team_core.c:1215 [inline]
+       team_add_slave+0x83b/0x28b0 drivers/net/team/team_core.c:1989
+       do_set_master+0x579/0x730 net/core/rtnetlink.c:2946
+       do_setlink+0xf76/0x4390 net/core/rtnetlink.c:3159
+       rtnl_changelink net/core/rtnetlink.c:3769 [inline]
+       __rtnl_newlink net/core/rtnetlink.c:3928 [inline]
+       rtnl_newlink+0x17e2/0x1fe0 net/core/rtnetlink.c:4065
+       rtnetlink_rcv_msg+0x80f/0xd70 net/core/rtnetlink.c:6955
+       netlink_rcv_skb+0x208/0x480 net/netlink/af_netlink.c:2534
+       netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+       netlink_unicast+0x7f8/0x9a0 net/netlink/af_netlink.c:1339
+       netlink_sendmsg+0x8c3/0xcd0 net/netlink/af_netlink.c:1883
+       sock_sendmsg_nosec net/socket.c:712 [inline]
+       __sock_sendmsg+0x221/0x270 net/socket.c:727
+       ____sys_sendmsg+0x523/0x860 net/socket.c:2566
+       ___sys_sendmsg net/socket.c:2620 [inline]
+       __sys_sendmsg+0x271/0x360 net/socket.c:2652
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf3/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (team->team_lock_key){+.+.}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3166 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+       validate_chain+0xa69/0x24e0 kernel/locking/lockdep.c:3909
+       __lock_acquire+0xad5/0xd80 kernel/locking/lockdep.c:5235
+       lock_acquire+0x116/0x2f0 kernel/locking/lockdep.c:5866
+       __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+       __mutex_lock+0x1a5/0x10c0 kernel/locking/mutex.c:746
+       team_port_change_check+0x51/0x1e0 drivers/net/team/team_core.c:2966
+       team_device_event+0x161/0x5b0 drivers/net/team/team_core.c:2992
+       notifier_call_chain+0x1a5/0x3f0 kernel/notifier.c:85
+       __dev_notify_flags+0x209/0x410 net/core/dev.c:-1
+       netif_change_flags+0xf0/0x1a0 net/core/dev.c:9434
+       do_setlink+0xee3/0x4390 net/core/rtnetlink.c:3152
+       rtnl_changelink net/core/rtnetlink.c:3769 [inline]
+       __rtnl_newlink net/core/rtnetlink.c:3928 [inline]
+       rtnl_newlink+0x17e2/0x1fe0 net/core/rtnetlink.c:4065
+       rtnetlink_rcv_msg+0x80f/0xd70 net/core/rtnetlink.c:6955
+       netlink_rcv_skb+0x208/0x480 net/netlink/af_netlink.c:2534
+       netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+       netlink_unicast+0x7f8/0x9a0 net/netlink/af_netlink.c:1339
+       netlink_sendmsg+0x8c3/0xcd0 net/netlink/af_netlink.c:1883
+       sock_sendmsg_nosec net/socket.c:712 [inline]
+       __sock_sendmsg+0x221/0x270 net/socket.c:727
+       ____sys_sendmsg+0x523/0x860 net/socket.c:2566
+       ___sys_sendmsg net/socket.c:2620 [inline]
+       __sys_sendmsg+0x271/0x360 net/socket.c:2652
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf3/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&dev_instance_lock_key#3);
+                               lock(team->team_lock_key);
+                               lock(&dev_instance_lock_key#3);
+  lock(team->team_lock_key);
+
+ *** DEADLOCK ***
+
+2 locks held by syz-executor371/5855:
+ #0: ffffffff900fd548 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_lock net/core/rtnetlink.c:80 [inline]
+ #0: ffffffff900fd548 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_nets_lock net/core/rtnetlink.c:341 [inline]
+ #0: ffffffff900fd548 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_newlink+0xd68/0x1fe0 net/core/rtnetlink.c:4064
+ #1: ffff8880364c6d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2751 [inline]
+ #1: ffff8880364c6d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ #1: ffff8880364c6d30 (&dev_instance_lock_key#3){+.+.}-{4:4}, at: do_setlink+0x3c1/0x4390 net/core/rtnetlink.c:3051
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 5855 Comm: syz-executor371 Not tainted 6.15.0-rc2-syzkaller-00400-g3088d26962e8 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_circular_bug+0x2e1/0x300 kernel/locking/lockdep.c:2079
+ check_noncircular+0x142/0x160 kernel/locking/lockdep.c:2211
+ check_prev_add kernel/locking/lockdep.c:3166 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+ validate_chain+0xa69/0x24e0 kernel/locking/lockdep.c:3909
+ __lock_acquire+0xad5/0xd80 kernel/locking/lockdep.c:5235
+ lock_acquire+0x116/0x2f0 kernel/locking/lockdep.c:5866
+ __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+ __mutex_lock+0x1a5/0x10c0 kernel/locking/mutex.c:746
+ team_port_change_check+0x51/0x1e0 drivers/net/team/team_core.c:2966
+ team_device_event+0x161/0x5b0 drivers/net/team/team_core.c:2992
+ notifier_call_chain+0x1a5/0x3f0 kernel/notifier.c:85
+ __dev_notify_flags+0x209/0x410 net/core/dev.c:-1
+ netif_change_flags+0xf0/0x1a0 net/core/dev.c:9434
+ do_setlink+0xee3/0x4390 net/core/rtnetlink.c:3152
+ rtnl_changelink net/core/rtnetlink.c:3769 [inline]
+ __rtnl_newlink net/core/rtnetlink.c:3928 [inline]
+ rtnl_newlink+0x17e2/0x1fe0 net/core/rtnetlink.c:4065
+ rtnetlink_rcv_msg+0x80f/0xd70 net/core/rtnetlink.c:6955
+ netlink_rcv_skb+0x208/0x480 net/netlink/af_netlink.c:2534
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x7f8/0x9a0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x8c3/0xcd0 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg+0x221/0x270 net/socket.c:727
+ ____sys_sendmsg+0x523/0x860 net/socket.c:2566
+ ___sys_sendmsg net/socket.c:2620 [inline]
+ __sys_sendmsg+0x271/0x360 net/socket.c:2652
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x210 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f325884b4d9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 01 1a 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffdbc9d2158 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007f325884b4d9
+RDX: 0000000000000000 RSI: 0000200000000600 RDI: 0000000000000003
+RBP: 00007ffdbc9d2190 R08: 0000000000000001 R09: 0000000000000001
+R10: 0000000000000000 R11: 0000000000000246 R12: 00000000000f4240
+R13: 0000000000018e47 R14: 00007ffdbc9d2174 R15: 00007ffdbc9d2180
+ </TASK>

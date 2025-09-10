@@ -1,0 +1,128 @@
+id: e0b615318f8fcfc01ceb
+bug_link: https://syzkaller.appspot.com/bug?extid=e0b615318f8fcfc01ceb
+title: 'KASAN: slab-use-after-free Read in btrfs_qgroup_account_extent'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cd63ffbd23edc176f09cac5c9287db732d7cbb73
+fix_commit: 6c8e69e4a702b072206f166111c003d704de15d9
+datetime: '2023-11-09T14:01:54+01:00'
+fix_commit_message: "btrfs: fix race between accounting qgroup extents and removing\
+  \ a qgroup\n\nWhen doing qgroup accounting for an extent, we take the spinlock\n\
+  fs_info->qgroup_lock and then add qgroups to the local list (iterator)\nnamed \"\
+  qgroups\". These qgroups are found in the fs_info->qgroup_tree\nrbtree. After we're\
+  \ done, we unlock fs_info->qgroup_lock and then call\nqgroup_iterator_nested_clean(),\
+  \ which will iterate over all the qgroups\nadded to the local list \"qgroups\" and\
+  \ then delete them from the list.\nDeleting a qgroup from the list can however result\
+  \ in a use-after-free\nif a qgroup remove operation happens after we unlock fs_info->qgroup_lock\n\
+  and before or while we are at qgroup_iterator_nested_clean().\n\nFix this by calling\
+  \ qgroup_iterator_nested_clean() while still holding\nthe lock fs_info->qgroup_lock\
+  \ - we don't need it under the 'out' label\nsince before taking the lock the \"\
+  qgroups\" list is always empty. This\nguarantees safety because btrfs_remove_qgroup()\
+  \ takes that lock before\nremoving a qgroup from the rbtree fs_info->qgroup_tree.\n\
+  \nThis was reported by syzbot with the following stack traces:\n\n   BUG: KASAN:\
+  \ slab-use-after-free in __list_del_entry_valid_or_report+0x2f/0x130 lib/list_debug.c:49\n\
+  \   Read of size 8 at addr ffff888027e420b0 by task kworker/u4:3/48\n\n   CPU: 1\
+  \ PID: 48 Comm: kworker/u4:3 Not tainted 6.6.0-syzkaller-10396-g4652b8e4f3ff #0\n\
+  \   Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 10/09/2023\n   Workqueue: btrfs-qgroup-rescan btrfs_work_helper\n   Call Trace:\n\
+  \    <TASK>\n    __dump_stack lib/dump_stack.c:88 [inline]\n    dump_stack_lvl+0x1e7/0x2d0\
+  \ lib/dump_stack.c:106\n    print_address_description mm/kasan/report.c:364 [inline]\n\
+  \    print_report+0x163/0x540 mm/kasan/report.c:475\n    kasan_report+0x175/0x1b0\
+  \ mm/kasan/report.c:588\n    __list_del_entry_valid_or_report+0x2f/0x130 lib/list_debug.c:49\n\
+  \    __list_del_entry_valid include/linux/list.h:124 [inline]\n    __list_del_entry\
+  \ include/linux/list.h:215 [inline]\n    list_del_init include/linux/list.h:287\
+  \ [inline]\n    qgroup_iterator_nested_clean fs/btrfs/qgroup.c:2623 [inline]\n \
+  \   btrfs_qgroup_account_extent+0x18b/0x1150 fs/btrfs/qgroup.c:2883\n    qgroup_rescan_leaf\
+  \ fs/btrfs/qgroup.c:3543 [inline]\n    btrfs_qgroup_rescan_worker+0x1078/0x1c60\
+  \ fs/btrfs/qgroup.c:3604\n    btrfs_work_helper+0x37c/0xbd0 fs/btrfs/async-thread.c:315\n\
+  \    process_one_work kernel/workqueue.c:2630 [inline]\n    process_scheduled_works+0x90f/0x1400\
+  \ kernel/workqueue.c:2703\n    worker_thread+0xa5f/0xff0 kernel/workqueue.c:2784\n\
+  \    kthread+0x2d3/0x370 kernel/kthread.c:388\n    ret_from_fork+0x48/0x80 arch/x86/kernel/process.c:147\n\
+  \    ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242\n    </TASK>\n\n\
+  \   Allocated by task 6355:\n    kasan_save_stack mm/kasan/common.c:45 [inline]\n\
+  \    kasan_set_track+0x4f/0x70 mm/kasan/common.c:52\n    ____kasan_kmalloc mm/kasan/common.c:374\
+  \ [inline]\n    __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:383\n    kmalloc include/linux/slab.h:600\
+  \ [inline]\n    kzalloc include/linux/slab.h:721 [inline]\n    btrfs_quota_enable+0xee9/0x2060\
+  \ fs/btrfs/qgroup.c:1209\n    btrfs_ioctl_quota_ctl+0x143/0x190 fs/btrfs/ioctl.c:3705\n\
+  \    vfs_ioctl fs/ioctl.c:51 [inline]\n    __do_sys_ioctl fs/ioctl.c:871 [inline]\n\
+  \    __se_sys_ioctl+0xf8/0x170 fs/ioctl.c:857\n    do_syscall_x64 arch/x86/entry/common.c:51\
+  \ [inline]\n    do_syscall_64+0x44/0x110 arch/x86/entry/common.c:82\n    entry_SYSCALL_64_after_hwframe+0x63/0x6b\n\
+  \n   Freed by task 6355:\n    kasan_save_stack mm/kasan/common.c:45 [inline]\n \
+  \   kasan_set_track+0x4f/0x70 mm/kasan/common.c:52\n    kasan_save_free_info+0x28/0x40\
+  \ mm/kasan/generic.c:522\n    ____kasan_slab_free+0xd6/0x120 mm/kasan/common.c:236\n\
+  \    kasan_slab_free include/linux/kasan.h:164 [inline]\n    slab_free_hook mm/slub.c:1800\
+  \ [inline]\n    slab_free_freelist_hook mm/slub.c:1826 [inline]\n    slab_free mm/slub.c:3809\
+  \ [inline]\n    __kmem_cache_free+0x263/0x3a0 mm/slub.c:3822\n    btrfs_remove_qgroup+0x764/0x8c0\
+  \ fs/btrfs/qgroup.c:1787\n    btrfs_ioctl_qgroup_create+0x185/0x1e0 fs/btrfs/ioctl.c:3811\n\
+  \    vfs_ioctl fs/ioctl.c:51 [inline]\n    __do_sys_ioctl fs/ioctl.c:871 [inline]\n\
+  \    __se_sys_ioctl+0xf8/0x170 fs/ioctl.c:857\n    do_syscall_x64 arch/x86/entry/common.c:51\
+  \ [inline]\n    do_syscall_64+0x44/0x110 arch/x86/entry/common.c:82\n    entry_SYSCALL_64_after_hwframe+0x63/0x6b\n\
+  \n   Last potentially related work creation:\n    kasan_save_stack+0x3f/0x60 mm/kasan/common.c:45\n\
+  \    __kasan_record_aux_stack+0xad/0xc0 mm/kasan/generic.c:492\n    __call_rcu_common\
+  \ kernel/rcu/tree.c:2667 [inline]\n    call_rcu+0x167/0xa70 kernel/rcu/tree.c:2781\n\
+  \    kthread_worker_fn+0x4ba/0xa90 kernel/kthread.c:823\n    kthread+0x2d3/0x370\
+  \ kernel/kthread.c:388\n    ret_from_fork+0x48/0x80 arch/x86/kernel/process.c:147\n\
+  \    ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242\n\n   Second to last\
+  \ potentially related work creation:\n    kasan_save_stack+0x3f/0x60 mm/kasan/common.c:45\n\
+  \    __kasan_record_aux_stack+0xad/0xc0 mm/kasan/generic.c:492\n    __call_rcu_common\
+  \ kernel/rcu/tree.c:2667 [inline]\n    call_rcu+0x167/0xa70 kernel/rcu/tree.c:2781\n\
+  \    kthread_worker_fn+0x4ba/0xa90 kernel/kthread.c:823\n    kthread+0x2d3/0x370\
+  \ kernel/kthread.c:388\n    ret_from_fork+0x48/0x80 arch/x86/kernel/process.c:147\n\
+  \    ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242\n\n   The buggy address\
+  \ belongs to the object at ffff888027e42000\n    which belongs to the cache kmalloc-512\
+  \ of size 512\n   The buggy address is located 176 bytes inside of\n    freed 512-byte\
+  \ region [ffff888027e42000, ffff888027e42200)\n\n   The buggy address belongs to\
+  \ the physical page:\n   page:ffffea00009f9000 refcount:1 mapcount:0 mapping:0000000000000000\
+  \ index:0x0 pfn:0x27e40\n   head:ffffea00009f9000 order:2 entire_mapcount:0 nr_pages_mapped:0\
+  \ pincount:0\n   flags: 0xfff00000000840(slab|head|node=0|zone=1|lastcpupid=0x7ff)\n\
+  \   page_type: 0xffffffff()\n   raw: 00fff00000000840 ffff888012c41c80 ffffea0000a5ba00\
+  \ dead000000000002\n   raw: 0000000000000000 0000000080100010 00000001ffffffff 0000000000000000\n\
+  \   page dumped because: kasan: bad access detected\n   page_owner tracks the page\
+  \ as allocated\n   page last allocated via order 2, migratetype Unmovable, gfp_mask\
+  \ 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC),\
+  \ pid 4514, tgid 4514 (udevadm), ts 24598439480, free_ts 23755696267\n    set_page_owner\
+  \ include/linux/page_owner.h:31 [inline]\n    post_alloc_hook+0x1e6/0x210 mm/page_alloc.c:1536\n\
+  \    prep_new_page mm/page_alloc.c:1543 [inline]\n    get_page_from_freelist+0x31db/0x3360\
+  \ mm/page_alloc.c:3170\n    __alloc_pages+0x255/0x670 mm/page_alloc.c:4426\n   \
+  \ alloc_slab_page+0x6a/0x160 mm/slub.c:1870\n    allocate_slab mm/slub.c:2017 [inline]\n\
+  \    new_slab+0x84/0x2f0 mm/slub.c:2070\n    ___slab_alloc+0xc85/0x1310 mm/slub.c:3223\n\
+  \    __slab_alloc mm/slub.c:3322 [inline]\n    __slab_alloc_node mm/slub.c:3375\
+  \ [inline]\n    slab_alloc_node mm/slub.c:3468 [inline]\n    __kmem_cache_alloc_node+0x19d/0x270\
+  \ mm/slub.c:3517\n    kmalloc_trace+0x2a/0xe0 mm/slab_common.c:1098\n    kmalloc\
+  \ include/linux/slab.h:600 [inline]\n    kzalloc include/linux/slab.h:721 [inline]\n\
+  \    kernfs_fop_open+0x3e7/0xcc0 fs/kernfs/file.c:670\n    do_dentry_open+0x8fd/0x1590\
+  \ fs/open.c:948\n    do_open fs/namei.c:3622 [inline]\n    path_openat+0x2845/0x3280\
+  \ fs/namei.c:3779\n    do_filp_open+0x234/0x490 fs/namei.c:3809\n    do_sys_openat2+0x13e/0x1d0\
+  \ fs/open.c:1440\n    do_sys_open fs/open.c:1455 [inline]\n    __do_sys_openat fs/open.c:1471\
+  \ [inline]\n    __se_sys_openat fs/open.c:1466 [inline]\n    __x64_sys_openat+0x247/0x290\
+  \ fs/open.c:1466\n    do_syscall_x64 arch/x86/entry/common.c:51 [inline]\n    do_syscall_64+0x44/0x110\
+  \ arch/x86/entry/common.c:82\n    entry_SYSCALL_64_after_hwframe+0x63/0x6b\n   page\
+  \ last free stack trace:\n    reset_page_owner include/linux/page_owner.h:24 [inline]\n\
+  \    free_pages_prepare mm/page_alloc.c:1136 [inline]\n    free_unref_page_prepare+0x8c3/0x9f0\
+  \ mm/page_alloc.c:2312\n    free_unref_page+0x37/0x3f0 mm/page_alloc.c:2405\n  \
+  \  discard_slab mm/slub.c:2116 [inline]\n    __unfreeze_partials+0x1dc/0x220 mm/slub.c:2655\n\
+  \    put_cpu_partial+0x17b/0x250 mm/slub.c:2731\n    __slab_free+0x2b6/0x390 mm/slub.c:3679\n\
+  \    qlink_free mm/kasan/quarantine.c:166 [inline]\n    qlist_free_all+0x75/0xe0\
+  \ mm/kasan/quarantine.c:185\n    kasan_quarantine_reduce+0x14b/0x160 mm/kasan/quarantine.c:292\n\
+  \    __kasan_slab_alloc+0x23/0x70 mm/kasan/common.c:305\n    kasan_slab_alloc include/linux/kasan.h:188\
+  \ [inline]\n    slab_post_alloc_hook+0x67/0x3d0 mm/slab.h:762\n    slab_alloc_node\
+  \ mm/slub.c:3478 [inline]\n    slab_alloc mm/slub.c:3486 [inline]\n    __kmem_cache_alloc_lru\
+  \ mm/slub.c:3493 [inline]\n    kmem_cache_alloc+0x104/0x2c0 mm/slub.c:3502\n   \
+  \ getname_flags+0xbc/0x4f0 fs/namei.c:140\n    do_sys_openat2+0xd2/0x1d0 fs/open.c:1434\n\
+  \    do_sys_open fs/open.c:1455 [inline]\n    __do_sys_openat fs/open.c:1471 [inline]\n\
+  \    __se_sys_openat fs/open.c:1466 [inline]\n    __x64_sys_openat+0x247/0x290 fs/open.c:1466\n\
+  \    do_syscall_x64 arch/x86/entry/common.c:51 [inline]\n    do_syscall_64+0x44/0x110\
+  \ arch/x86/entry/common.c:82\n    entry_SYSCALL_64_after_hwframe+0x63/0x6b\n\n \
+  \  Memory state around the buggy address:\n    ffff888027e41f80: fc fc fc fc fc\
+  \ fc fc fc fc fc fc fc fc fc fc fc\n    ffff888027e42000: fa fb fb fb fb fb fb fb\
+  \ fb fb fb fb fb fb fb fb\n   >ffff888027e42080: fb fb fb fb fb fb fb fb fb fb fb\
+  \ fb fb fb fb fb\n                                        ^\n    ffff888027e42100:\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb\n    ffff888027e42180: fb fb fb\
+  \ fb fb fb fb fb fb fb fb fb fb fb fb fb\n\nReported-by: syzbot+e0b615318f8fcfc01ceb@syzkaller.appspotmail.com\n\
+  Fixes: dce28769a33a (\"btrfs: qgroup: use qgroup_iterator_nested to in qgroup_update_refcnt()\"\
+  )\nCC: stable@vger.kernel.org # 6.6\nLink: https://lore.kernel.org/linux-btrfs/00000000000091a5b2060936bf6d@google.com/\n\
+  Reviewed-by: Josef Bacik <josef@toxicpanda.com>\nReviewed-by: Qu Wenruo <wqu@suse.com>\n\
+  Signed-off-by: Filipe Manana <fdmanana@suse.com>\nSigned-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 1

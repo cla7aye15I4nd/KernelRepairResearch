@@ -1,0 +1,65 @@
+HfR: left promiscuous mode
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000003: 0000 [#1] SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000018-0x000000000000001f]
+CPU: 0 UID: 0 PID: 16606 Comm: kworker/u10:0 Tainted: G     U              6.16.0-rc3-syzkaller-00306-gaaf724ed6926 #0 PREEMPT(full) 
+Tainted: [U]=USER
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Workqueue: netns cleanup_net
+RIP: 0010:tipc_conn_close+0x48/0x1c0 net/tipc/topsrv.c:158
+Code: fc ff df 48 c1 ea 03 80 3c 02 00 0f 85 5b 01 00 00 48 b8 00 00 00 00 00 fc ff df 48 8b 6b 08 48 8d 7d 18 48 89 fa 48 c1 ea 03 <80> 3c 02 00 0f 85 45 01 00 00 4c 8b 6d 18 49 8d ad d8 03 00 00 48
+RSP: 0018:ffffc9000ba3fa58 EFLAGS: 00010206
+RAX: dffffc0000000000 RBX: ffff88805234ac00 RCX: 0000000000000007
+RDX: 0000000000000003 RSI: ffffffff8b1ed264 RDI: 0000000000000018
+RBP: 0000000000000000 R08: 0000000000000001 R09: 0000000000000001
+R10: ffffffff90a82757 R11: 0000000000000001 R12: ffff8881457a4c58
+R13: ffffed1028af4993 R14: ffff88805234ac08 R15: ffff88805234ac00
+FS:  0000000000000000(0000) GS:ffff88812475f000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fffbf822d88 CR3: 0000000031fe6000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ tipc_topsrv_stop net/tipc/topsrv.c:708 [inline]
+ tipc_topsrv_exit_net+0x146/0x3b0 net/tipc/topsrv.c:730
+ ops_exit_list net/core/net_namespace.c:200 [inline]
+ ops_undo_list+0x2eb/0xab0 net/core/net_namespace.c:253
+ cleanup_net+0x408/0x890 net/core/net_namespace.c:686
+ process_one_work+0x9cc/0x1b70 kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3321 [inline]
+ worker_thread+0x6c8/0xf10 kernel/workqueue.c:3402
+ kthread+0x3c5/0x780 kernel/kthread.c:464
+ ret_from_fork+0x5d4/0x6f0 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:tipc_conn_close+0x48/0x1c0 net/tipc/topsrv.c:158
+Code: fc ff df 48 c1 ea 03 80 3c 02 00 0f 85 5b 01 00 00 48 b8 00 00 00 00 00 fc ff df 48 8b 6b 08 48 8d 7d 18 48 89 fa 48 c1 ea 03 <80> 3c 02 00 0f 85 45 01 00 00 4c 8b 6d 18 49 8d ad d8 03 00 00 48
+RSP: 0018:ffffc9000ba3fa58 EFLAGS: 00010206
+RAX: dffffc0000000000 RBX: ffff88805234ac00 RCX: 0000000000000007
+RDX: 0000000000000003 RSI: ffffffff8b1ed264 RDI: 0000000000000018
+RBP: 0000000000000000 R08: 0000000000000001 R09: 0000000000000001
+R10: ffffffff90a82757 R11: 0000000000000001 R12: ffff8881457a4c58
+R13: ffffed1028af4993 R14: ffff88805234ac08 R15: ffff88805234ac00
+FS:  0000000000000000(0000) GS:ffff88812475f000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f1017b8bf98 CR3: 000000004ec58000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess), 3 bytes skipped:
+   0:	48 c1 ea 03          	shr    $0x3,%rdx
+   4:	80 3c 02 00          	cmpb   $0x0,(%rdx,%rax,1)
+   8:	0f 85 5b 01 00 00    	jne    0x169
+   e:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  15:	fc ff df
+  18:	48 8b 6b 08          	mov    0x8(%rbx),%rbp
+  1c:	48 8d 7d 18          	lea    0x18(%rbp),%rdi
+  20:	48 89 fa             	mov    %rdi,%rdx
+  23:	48 c1 ea 03          	shr    $0x3,%rdx
+* 27:	80 3c 02 00          	cmpb   $0x0,(%rdx,%rax,1) <-- trapping instruction
+  2b:	0f 85 45 01 00 00    	jne    0x176
+  31:	4c 8b 6d 18          	mov    0x18(%rbp),%r13
+  35:	49 8d ad d8 03 00 00 	lea    0x3d8(%r13),%rbp
+  3c:	48                   	rex.W

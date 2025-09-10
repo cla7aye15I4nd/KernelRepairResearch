@@ -1,0 +1,77 @@
+INFO: task syz-executor218:5106 blocked for more than 143 seconds.
+      Not tainted 6.8.0-rc2-next-20240202-syzkaller #0
+"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+task:syz-executor218 state:D stack:18928 pid:5106  tgid:5106  ppid:5102   flags:0x00004002
+Call Trace:
+ <TASK>
+ context_switch kernel/sched/core.c:5400 [inline]
+ __schedule+0x17df/0x4a40 kernel/sched/core.c:6727
+ __schedule_loop kernel/sched/core.c:6804 [inline]
+ schedule+0x14b/0x320 kernel/sched/core.c:6819
+ schedule_timeout+0xb0/0x310 kernel/time/timer.c:2159
+ do_wait_for_common kernel/sched/completion.c:95 [inline]
+ __wait_for_common kernel/sched/completion.c:116 [inline]
+ wait_for_common kernel/sched/completion.c:127 [inline]
+ wait_for_completion+0x355/0x620 kernel/sched/completion.c:148
+ __flush_workqueue+0x730/0x1630 kernel/workqueue.c:3617
+ xfs_inodegc_wait_all fs/xfs/xfs_icache.c:465 [inline]
+ xfs_inodegc_flush+0xe1/0x3e0 fs/xfs/xfs_icache.c:1912
+ xfs_unmountfs+0x25/0x200 fs/xfs/xfs_mount.c:1064
+ xfs_fs_put_super+0x65/0x140 fs/xfs/xfs_super.c:1136
+ generic_shutdown_super+0x136/0x2d0 fs/super.c:646
+ kill_block_super+0x44/0x90 fs/super.c:1680
+ xfs_kill_sb+0x15/0x50 fs/xfs/xfs_super.c:2026
+ deactivate_locked_super+0xc4/0x130 fs/super.c:477
+ cleanup_mnt+0x426/0x4c0 fs/namespace.c:1267
+ task_work_run+0x24f/0x310 kernel/task_work.c:180
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:108 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:201 [inline]
+ syscall_exit_to_user_mode+0x168/0x370 kernel/entry/common.c:212
+ do_syscall_64+0x10a/0x240 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f1a396ed8f7
+RSP: 002b:00007ffec055f888 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f1a396ed8f7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffec055f940
+RBP: 00007ffec055f940 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffec05609b0
+R13: 000055555739d6c0 R14: 00000000000c93c9 R15: 0000000000000108
+ </TASK>
+
+Showing all locks held in the system:
+1 lock held by khungtaskd/29:
+ #0: ffffffff8e130d60 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:298 [inline]
+ #0: ffffffff8e130d60 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:750 [inline]
+ #0: ffffffff8e130d60 (rcu_read_lock){....}-{1:2}, at: debug_show_all_locks+0x55/0x2a0 kernel/locking/lockdep.c:6614
+2 locks held by getty/4817:
+ #0: ffff88802a9230a0 (&tty->ldisc_sem){++++}-{0:0}, at: tty_ldisc_ref_wait+0x25/0x70 drivers/tty/tty_ldisc.c:243
+ #1: ffffc90002f162f0 (&ldata->atomic_read_lock){+.+.}-{3:3}, at: n_tty_read+0x6b5/0x1e10 drivers/tty/n_tty.c:2201
+1 lock held by syz-executor218/5106:
+ #0: ffff88807f4d40e0 (&type->s_umount_key#48){+.+.}-{3:3}, at: __super_lock fs/super.c:56 [inline]
+ #0: ffff88807f4d40e0 (&type->s_umount_key#48){+.+.}-{3:3}, at: __super_lock_excl fs/super.c:71 [inline]
+ #0: ffff88807f4d40e0 (&type->s_umount_key#48){+.+.}-{3:3}, at: deactivate_super+0xb5/0xf0 fs/super.c:509
+
+=============================================
+
+NMI backtrace for cpu 1
+CPU: 1 PID: 29 Comm: khungtaskd Not tainted 6.8.0-rc2-next-20240202-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/25/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2e0 lib/dump_stack.c:106
+ nmi_cpu_backtrace+0x49c/0x4d0 lib/nmi_backtrace.c:113
+ nmi_trigger_cpumask_backtrace+0x198/0x320 lib/nmi_backtrace.c:62
+ trigger_all_cpu_backtrace include/linux/nmi.h:160 [inline]
+ check_hung_uninterruptible_tasks kernel/hung_task.c:222 [inline]
+ watchdog+0xfb0/0xff0 kernel/hung_task.c:379
+ kthread+0x2f0/0x390 kernel/kthread.c:388
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:242
+ </TASK>
+Sending NMI from CPU 1 to CPUs 0:
+NMI backtrace for cpu 0 skipped: idling at native_safe_halt arch/x86/include/asm/irqflags.h:48 [inline]
+NMI backtrace for cpu 0 skipped: idling at arch_safe_halt arch/x86/include/asm/irqflags.h:86 [inline]
+NMI backtrace for cpu 0 skipped: idling at acpi_safe_halt+0x21/0x30 drivers/acpi/processor_idle.c:112

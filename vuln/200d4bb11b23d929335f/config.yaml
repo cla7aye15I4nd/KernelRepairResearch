@@ -1,0 +1,43 @@
+id: 200d4bb11b23d929335f
+bug_link: https://syzkaller.appspot.com/bug?extid=200d4bb11b23d929335f
+title: 'KASAN: use-after-free Read in p54u_load_firmware_cb'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ec2e93cf1910d4517bb68cd67f2925665c5ef005
+fix_commit: 6e41e2257f1094acc37618bf6c856115374c6922
+datetime: '2019-06-25T07:40:27+03:00'
+fix_commit_message: "p54usb: Fix race between disconnect and firmware loading\n\n\
+  The syzbot fuzzer found a bug in the p54 USB wireless driver.  The\nissue involves\
+  \ a race between disconnect and the firmware-loader\ncallback routine, and it has\
+  \ several aspects.\n\nOne big problem is that when the firmware can't be loaded,\
+  \ the\ncallback routine tries to unbind the driver from the USB _device_ (by\ncalling\
+  \ device_release_driver) instead of from the USB _interface_ to\nwhich it is actually\
+  \ bound (by calling usb_driver_release_interface).\n\nThe race involves access to\
+  \ the private data structure.  The driver's\ndisconnect handler waits for a completion\
+  \ that is signalled by the\nfirmware-loader callback routine.  As soon as the completion\
+  \ is\nsignalled, you have to assume that the private data structure may have\nbeen\
+  \ deallocated by the disconnect handler -- even if the firmware was\nloaded without\
+  \ errors.  However, the callback routine does access the\nprivate data several times\
+  \ after that point.\n\nAnother problem is that, in order to ensure that the USB\
+  \ device\nstructure hasn't been freed when the callback routine runs, the driver\n\
+  takes a reference to it.  This isn't good enough any more, because now\nthat the\
+  \ callback routine calls usb_driver_release_interface, it has\nto ensure that the\
+  \ interface structure hasn't been freed.\n\nFinally, the driver takes an unnecessary\
+  \ reference to the USB device\nstructure in the probe function and drops the reference\
+  \ in the\ndisconnect handler.  This extra reference doesn't accomplish anything,\n\
+  because the USB core already guarantees that a device structure won't\nbe deallocated\
+  \ while a driver is still bound to any of its interfaces.\n\nTo fix these problems,\
+  \ this patch makes the following changes:\n\n\tCall usb_driver_release_interface()\
+  \ rather than\n\tdevice_release_driver().\n\n\tDon't signal the completion until\
+  \ after the important\n\tinformation has been copied out of the private data structure,\n\
+  \tand don't refer to the private data at all thereafter.\n\n\tLock udev (the interface's\
+  \ parent) before unbinding the driver\n\tinstead of locking udev->parent.\n\n\t\
+  During the firmware loading process, take a reference to the\n\tUSB interface instead\
+  \ of the USB device.\n\n\tDon't take an unnecessary reference to the device during\
+  \ probe\n\t(and then don't drop it during disconnect).\n\nSigned-off-by: Alan Stern\
+  \ <stern@rowland.harvard.edu>\nReported-and-tested-by: syzbot+200d4bb11b23d929335f@syzkaller.appspotmail.com\n\
+  CC: <stable@vger.kernel.org>\nAcked-by: Christian Lamparter <chunkeey@gmail.com>\n\
+  Signed-off-by: Kalle Valo <kvalo@codeaurora.org>\n"
+submodule:
+- drivers/net/wireless/intersil/p54
+hunk_count: 7
+covered_count: 4

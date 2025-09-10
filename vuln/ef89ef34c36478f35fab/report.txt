@@ -1,0 +1,138 @@
+INFO: task kworker/1:2:4500 blocked for more than 155 seconds.
+      Not tainted 6.10.0-rc6-syzkaller-00215-g22f902dfc51e #0
+"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+task:kworker/1:2     state:D stack:23664 pid:4500  tgid:4500  ppid:2      flags:0x00004000
+Workqueue: events_power_efficient crda_timeout_work
+Call Trace:
+ <TASK>
+ context_switch kernel/sched/core.c:5408 [inline]
+ __schedule+0xf15/0x5d00 kernel/sched/core.c:6745
+ __schedule_loop kernel/sched/core.c:6822 [inline]
+ schedule+0xe7/0x350 kernel/sched/core.c:6837
+ schedule_preempt_disabled+0x13/0x30 kernel/sched/core.c:6894
+ __mutex_lock_common kernel/locking/mutex.c:684 [inline]
+ __mutex_lock+0x5b8/0x9c0 kernel/locking/mutex.c:752
+ crda_timeout_work+0x15/0x50 net/wireless/reg.c:540
+ process_one_work+0x9c5/0x1b40 kernel/workqueue.c:3248
+ process_scheduled_works kernel/workqueue.c:3329 [inline]
+ worker_thread+0x6c8/0xf30 kernel/workqueue.c:3409
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+
+Showing all locks held in the system:
+4 locks held by kworker/0:0/8:
+3 locks held by kworker/u8:0/11:
+3 locks held by kworker/u8:1/12:
+3 locks held by kworker/1:0/25:
+1 lock held by khungtaskd/30:
+ #0: ffffffff8dbb1620 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #0: ffffffff8dbb1620 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #0: ffffffff8dbb1620 (rcu_read_lock){....}-{1:2}, at: debug_show_all_locks+0x75/0x340 kernel/locking/lockdep.c:6614
+3 locks held by kworker/u8:2/35:
+3 locks held by kworker/u8:3/51:
+3 locks held by kworker/u8:4/61:
+4 locks held by kworker/u8:5/744:
+3 locks held by kworker/0:2/929:
+ #0: ffff888015481948 ((wq_completion)events_power_efficient){+.+.}-{0:0}, at: process_one_work+0x1277/0x1b40 kernel/workqueue.c:3223
+ #1: ffffc900041ffd80 ((reg_check_chans).work){+.+.}-{0:0}, at: process_one_work+0x921/0x1b40 kernel/workqueue.c:3224
+ #2: ffffffff8f748268 (rtnl_mutex){+.+.}-{3:3}, at: reg_check_chans_work+0x7d/0x10e0 net/wireless/reg.c:2478
+3 locks held by kworker/u8:6/1058:
+3 locks held by kworker/u8:7/1201:
+3 locks held by kworker/u8:9/2463:
+3 locks held by kworker/u8:10/2807:
+4 locks held by kworker/u8:12/2857:
+3 locks held by kworker/u8:13/2889:
+ #0: ffff88802a6b8148 ((wq_completion)ipv6_addrconf){+.+.}-{0:0}, at: process_one_work+0x1277/0x1b40 kernel/workqueue.c:3223
+ #1: ffffc90009f07d80 ((work_completion)(&(&net->ipv6.addr_chk_work)->work)){+.+.}-{0:0}, at: process_one_work+0x921/0x1b40 kernel/workqueue.c:3224
+ #2: ffffffff8f748268 (rtnl_mutex){+.+.}-{3:3}, at: addrconf_verify_work+0x12/0x30 net/ipv6/addrconf.c:4733
+3 locks held by kworker/1:2/4500:
+ #0: ffff888015481948 ((wq_completion)events_power_efficient){+.+.}-{0:0}, at: process_one_work+0x1277/0x1b40 kernel/workqueue.c:3223
+ #1: ffffc9000d6a7d80 ((crda_timeout).work){+.+.}-{0:0}, at: process_one_work+0x921/0x1b40 kernel/workqueue.c:3224
+ #2: ffffffff8f748268 (rtnl_mutex){+.+.}-{3:3}, at: crda_timeout_work+0x15/0x50 net/wireless/reg.c:540
+2 locks held by getty/4834:
+ #0: ffff88802ab5c0a0 (&tty->ldisc_sem){++++}-{0:0}, at: tty_ldisc_ref_wait+0x24/0x80 drivers/tty/tty_ldisc.c:243
+ #1: ffffc90002f062f0 (&ldata->atomic_read_lock){+.+.}-{3:3}, at: n_tty_read+0xfc8/0x1490 drivers/tty/n_tty.c:2211
+2 locks held by syz-executor/5081:
+2 locks held by kworker/1:3/5087:
+2 locks held by kworker/1:4/5133:
+4 locks held by kworker/1:7/5165:
+ #0: ffff888015480948 ((wq_completion)events){+.+.}-{0:0}, at: process_one_work+0x1277/0x1b40 kernel/workqueue.c:3223
+ #1: ffffc9000359fd80 (reg_work){+.+.}-{0:0}, at: process_one_work+0x921/0x1b40 kernel/workqueue.c:3224
+ #2: ffffffff8f748268 (rtnl_mutex){+.+.}-{3:3}, at: reg_todo+0x1c/0x910 net/wireless/reg.c:3216
+ #3: ffff888060fd8768 (&rdev->wiphy.mtx){+.+.}-{3:3}, at: wiphy_lock include/net/cfg80211.h:5966 [inline]
+ #3: ffff888060fd8768 (&rdev->wiphy.mtx){+.+.}-{3:3}, at: reg_process_self_managed_hints+0x95/0x1e0 net/wireless/reg.c:3206
+5 locks held by syz.4.122/5675:
+1 lock held by syz.3.124/5684:
+2 locks held by syz-executor/5700:
+2 locks held by syz-executor/5703:
+2 locks held by dhcpcd/5708:
+ #0: ffff888078e76810 (&sb->s_type->i_mutex_key#10){+.+.}-{3:3}, at: inode_lock include/linux/fs.h:791 [inline]
+ #0: ffff888078e76810 (&sb->s_type->i_mutex_key#10){+.+.}-{3:3}, at: __sock_release+0x86/0x270 net/socket.c:658
+ #1: ffffffff8dbbcdb8 (rcu_state.exp_mutex){+.+.}-{3:3}, at: exp_funnel_lock+0x282/0x3b0 kernel/rcu/tree_exp.h:291
+2 locks held by syz-executor/5709:
+2 locks held by dhcpcd/5710:
+ #0: ffff88802368e258 (sk_lock-AF_PACKET){+.+.}-{0:0}, at: lock_sock include/net/sock.h:1602 [inline]
+ #0: ffff88802368e258 (sk_lock-AF_PACKET){+.+.}-{0:0}, at: packet_do_bind+0x2c/0xf60 net/packet/af_packet.c:3201
+ #1: ffffffff8dbbcdb8 (rcu_state.exp_mutex){+.+.}-{3:3}, at: exp_funnel_lock+0x1a4/0x3b0 kernel/rcu/tree_exp.h:323
+
+=============================================
+
+NMI backtrace for cpu 1
+CPU: 1 PID: 30 Comm: khungtaskd Not tainted 6.10.0-rc6-syzkaller-00215-g22f902dfc51e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ nmi_cpu_backtrace+0x27b/0x390 lib/nmi_backtrace.c:113
+ nmi_trigger_cpumask_backtrace+0x29c/0x300 lib/nmi_backtrace.c:62
+ trigger_all_cpu_backtrace include/linux/nmi.h:162 [inline]
+ check_hung_uninterruptible_tasks kernel/hung_task.c:223 [inline]
+ watchdog+0xf86/0x1240 kernel/hung_task.c:379
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Sending NMI from CPU 1 to CPUs 0:
+NMI backtrace for cpu 0
+CPU: 0 PID: 8 Comm: kworker/0:0 Not tainted 6.10.0-rc6-syzkaller-00215-g22f902dfc51e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Workqueue: events_power_efficient gc_worker
+RIP: 0010:check_region_inline mm/kasan/generic.c:174 [inline]
+RIP: 0010:kasan_check_range+0x1b/0x1a0 mm/kasan/generic.c:189
+Code: 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 66 0f 1f 00 48 85 f6 0f 84 50 01 00 00 48 89 f8 41 54 44 0f b6 c2 48 01 f0 55 53 <0f> 82 c6 00 00 00 48 b8 ff ff ff ff ff 7f ff ff 48 39 f8 0f 83 b3
+RSP: 0018:ffffc900000d79f0 EFLAGS: 00000082
+RAX: ffffffff94265308 RBX: 0000000000000214 RCX: ffffffff816ae7ce
+RDX: 0000000000000000 RSI: 0000000000000008 RDI: ffffffff94265300
+RBP: ffffc900000d7b58 R08: 0000000000000000 R09: fffffbfff284ca6a
+R10: ffffffff94265357 R11: 0000000000000003 R12: ffff8880176ada00
+R13: 0000000000000040 R14: 0000000000000006 R15: 1ffff9200001af4a
+FS:  0000000000000000(0000) GS:ffff8880b9200000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fdcc0fa3ca0 CR3: 0000000061d76000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <NMI>
+ </NMI>
+ <TASK>
+ instrument_atomic_read include/linux/instrumented.h:68 [inline]
+ _test_bit include/asm-generic/bitops/instrumented-non-atomic.h:141 [inline]
+ hlock_class+0x4e/0x130 kernel/locking/lockdep.c:228
+ mark_lock+0xb5/0xc60 kernel/locking/lockdep.c:4656
+ mark_held_locks+0x9f/0xe0 kernel/locking/lockdep.c:4274
+ __trace_hardirqs_on_caller kernel/locking/lockdep.c:4300 [inline]
+ lockdep_hardirqs_on_prepare+0x27a/0x420 kernel/locking/lockdep.c:4359
+ trace_hardirqs_on+0x36/0x40 kernel/trace/trace_preemptirq.c:61
+ seqcount_lockdep_reader_access include/linux/seqlock.h:74 [inline]
+ nf_conntrack_get_ht include/net/netfilter/nf_conntrack.h:345 [inline]
+ gc_worker+0xe9f/0x1770 net/netfilter/nf_conntrack_core.c:1488
+ process_one_work+0x9c5/0x1b40 kernel/workqueue.c:3248
+ process_scheduled_works kernel/workqueue.c:3329 [inline]
+ worker_thread+0x6c8/0xf30 kernel/workqueue.c:3409
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

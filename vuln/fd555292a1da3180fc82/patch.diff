@@ -1,0 +1,27 @@
+diff --git a/arch/x86/kvm/xen.c b/arch/x86/kvm/xen.c
+index f65b35a05d91..67bb4e89c399 100644
+--- a/arch/x86/kvm/xen.c
++++ b/arch/x86/kvm/xen.c
+@@ -741,7 +741,7 @@ int kvm_xen_hvm_set_attr(struct kvm *kvm, struct kvm_xen_hvm_attr *data)
+ 		} else {
+ 			void __user * hva = u64_to_user_ptr(data->u.shared_info.hva);
+ 
+-			if (!PAGE_ALIGNED(hva) || !access_ok(hva, PAGE_SIZE)) {
++			if (!PAGE_ALIGNED(hva)) {
+ 				r = -EINVAL;
+ 			} else if (!hva) {
+ 				kvm_gpc_deactivate(&kvm->arch.xen.shinfo_cache);
+diff --git a/virt/kvm/pfncache.c b/virt/kvm/pfncache.c
+index e3453e869e92..f0039efb9e1e 100644
+--- a/virt/kvm/pfncache.c
++++ b/virt/kvm/pfncache.c
+@@ -430,6 +430,9 @@ int kvm_gpc_activate(struct gfn_to_pfn_cache *gpc, gpa_t gpa, unsigned long len)
+ 
+ int kvm_gpc_activate_hva(struct gfn_to_pfn_cache *gpc, unsigned long uhva, unsigned long len)
+ {
++	if (!access_ok((void __user *)uhva, len))
++		return -EINVAL;
++
+ 	return __kvm_gpc_activate(gpc, INVALID_GPA, uhva, len);
+ }
+ 

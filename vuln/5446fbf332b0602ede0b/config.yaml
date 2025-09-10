@@ -1,0 +1,50 @@
+id: 5446fbf332b0602ede0b
+bug_link: https://syzkaller.appspot.com/bug?extid=5446fbf332b0602ede0b
+title: general protection fault in hook_inode_free_security
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 711f5c5ce6c2c640c1b3b569ab2a8847be5ab21f
+fix_commit: 63dff3e48871b0583be5032ff8fb7260c349a18c
+datetime: '2024-08-12T15:35:04-04:00'
+fix_commit_message: 'lsm: add the inode_free_security_rcu() LSM implementation hook
+
+
+  The LSM framework has an existing inode_free_security() hook which
+
+  is used by LSMs that manage state associated with an inode, but
+
+  due to the use of RCU to protect the inode, special care must be
+
+  taken to ensure that the LSMs do not fully release the inode state
+
+  until it is safe from a RCU perspective.
+
+
+  This patch implements a new inode_free_security_rcu() implementation
+
+  hook which is called when it is safe to free the LSM''s internal inode
+
+  state.  Unfortunately, this new hook does not have access to the inode
+
+  itself as it may already be released, so the existing
+
+  inode_free_security() hook is retained for those LSMs which require
+
+  access to the inode.
+
+
+  Cc: stable@vger.kernel.org
+
+  Reported-by: syzbot+5446fbf332b0602ede0b@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/r/00000000000076ba3b0617f65cc8@google.com
+
+  Signed-off-by: Paul Moore <paul@paul-moore.com>
+
+  '
+submodule:
+- include/linux
+- security
+- security/integrity/ima
+- security/landlock
+hunk_count: 8
+covered_count: 2

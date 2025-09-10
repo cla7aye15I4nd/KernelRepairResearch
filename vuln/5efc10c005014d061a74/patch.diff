@@ -1,0 +1,17 @@
+diff --git a/drivers/input/joystick/iforce/iforce-usb.c b/drivers/input/joystick/iforce/iforce-usb.c
+index 29abfeeef9a5..6c554c11a7ac 100644
+--- a/drivers/input/joystick/iforce/iforce-usb.c
++++ b/drivers/input/joystick/iforce/iforce-usb.c
+@@ -201,7 +201,12 @@ static int iforce_usb_probe(struct usb_interface *intf,
+ 		return -ENODEV;
+ 
+ 	epirq = &interface->endpoint[0].desc;
++	if (!usb_endpoint_is_int_in(epirq))
++		return -ENODEV;
++
+ 	epout = &interface->endpoint[1].desc;
++	if (!usb_endpoint_is_int_out(epout))
++		return -ENODEV;
+ 
+ 	iforce_usb = kzalloc(sizeof(*iforce_usb), GFP_KERNEL);
+ 	if (!iforce_usb)

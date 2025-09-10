@@ -1,0 +1,29 @@
+id: eba589d8f49c73d356da
+bug_link: https://syzkaller.appspot.com/bug?extid=eba589d8f49c73d356da
+title: 'INFO: trying to register non-static key in skb_dequeue (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 18e7e3e4217083a682e2c7282011c70c8a1ba070
+fix_commit: 2a62b6210ce876c596086ab8fd4c8a0c3d10611a
+datetime: '2023-06-09T13:22:58-03:00'
+fix_commit_message: "RDMA/rxe: Fix the use-before-initialization error of resp_pkts\n\
+  \nIn the following:\n\n  Call Trace:\n   <TASK>\n   __dump_stack lib/dump_stack.c:88\
+  \ [inline]\n   dump_stack_lvl+0xd9/0x150 lib/dump_stack.c:106\n   assign_lock_key\
+  \ kernel/locking/lockdep.c:982 [inline]\n   register_lock_class+0xdb6/0x1120 kernel/locking/lockdep.c:1295\n\
+  \   __lock_acquire+0x10a/0x5df0 kernel/locking/lockdep.c:4951\n   lock_acquire kernel/locking/lockdep.c:5691\
+  \ [inline]\n   lock_acquire+0x1b1/0x520 kernel/locking/lockdep.c:5656\n   __raw_spin_lock_irqsave\
+  \ include/linux/spinlock_api_smp.h:110 [inline]\n   _raw_spin_lock_irqsave+0x3d/0x60\
+  \ kernel/locking/spinlock.c:162\n   skb_dequeue+0x20/0x180 net/core/skbuff.c:3639\n\
+  \   drain_resp_pkts drivers/infiniband/sw/rxe/rxe_comp.c:555 [inline]\n   rxe_completer+0x250d/0x3cc0\
+  \ drivers/infiniband/sw/rxe/rxe_comp.c:652\n   rxe_qp_do_cleanup+0x1be/0x820 drivers/infiniband/sw/rxe/rxe_qp.c:761\n\
+  \   execute_in_process_context+0x3b/0x150 kernel/workqueue.c:3473\n   __rxe_cleanup+0x21e/0x370\
+  \ drivers/infiniband/sw/rxe/rxe_pool.c:233\n   rxe_create_qp+0x3f6/0x5f0 drivers/infiniband/sw/rxe/rxe_verbs.c:583\n\
+  \nThis is a use-before-initialization problem.\n\nIt happens because rxe_qp_do_cleanup\
+  \ is called during error unwind before\nthe struct has been fully initialized.\n\
+  \nMove the initialization of the skb earlier.\n\nFixes: 8700e3e7c485 (\"Soft RoCE\
+  \ driver\")\nLink: https://lore.kernel.org/r/20230602035408.741534-1-yanjun.zhu@intel.com\n\
+  Reported-by: syzbot+eba589d8f49c73d356da@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Zhu Yanjun <yanjun.zhu@linux.dev>\nSigned-off-by: Jason Gunthorpe <jgg@nvidia.com>\n"
+submodule:
+- drivers/infiniband/sw/rxe
+hunk_count: 3
+covered_count: 0

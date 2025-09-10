@@ -1,0 +1,71 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 0 UID: 0 PID: 27018 Comm: syz.1.4414 Not tainted 6.14.0-rc3-next-20250218-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+RIP: 0010:vma_refcount_put include/linux/mm.h:712 [inline]
+RIP: 0010:vma_end_read include/linux/mm.h:811 [inline]
+RIP: 0010:lock_vma_under_rcu+0x578/0xac0 mm/memory.c:6454
+Code: be 5d b1 ff 49 be 00 00 00 00 00 fc ff df 4d 85 ff 74 0d 49 81 ff 01 f0 ff ff 0f 82 a3 02 00 00 49 83 ff f5 0f 85 55 03 00 00 <41> 80 3e 00 74 0a bf 05 00 00 00 e8 28 df 18 00 4c 8b 34 25 05 00
+RSP: 0000:ffffc9000b837d80 EFLAGS: 00010246
+RAX: fffffffffffffff5 RBX: 0000000000000000 RCX: ffff888079eb8000
+RDX: ffff888079eb8000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc9000b837ed8 R08: ffffffff8210a26a R09: 1ffff110068be328
+R10: dffffc0000000000 R11: ffffed10068be329 R12: ffffc9000b837e10
+R13: ffff88802890aa20 R14: dffffc0000000000 R15: fffffffffffffff5
+FS:  00005555908b1500(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000400000002fc0 CR3: 0000000011df6000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ do_user_addr_fault arch/x86/mm/fault.c:1328 [inline]
+ handle_page_fault arch/x86/mm/fault.c:1480 [inline]
+ exc_page_fault+0x17b/0x920 arch/x86/mm/fault.c:1538
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+RIP: 0033:0x7f617a954ed8
+Code: fc 89 37 c3 c5 fa 6f 06 c5 fa 6f 4c 16 f0 c5 fa 7f 07 c5 fa 7f 4c 17 f0 c3 66 0f 1f 84 00 00 00 00 00 48 8b 4c 16 f8 48 8b 36 <48> 89 37 48 89 4c 17 f8 c3 c5 fe 6f 54 16 e0 c5 fe 6f 5c 16 c0 c5
+RSP: 002b:00007ffc20f24718 EFLAGS: 00010246
+RAX: 0000400000002fc0 RBX: 0000000000000004 RCX: 0031313230386c6e
+RDX: 0000000000000008 RSI: 0031313230386c6e RDI: 0000400000002fc0
+RBP: 0000000000000000 R08: 00007f617a800000 R09: 0000000000000001
+R10: 0000000000000001 R11: 0000000000000009 R12: 00007f617aba5fac
+R13: 00007f617aba5fa0 R14: fffffffffffffffe R15: 0000000000000006
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:vma_refcount_put include/linux/mm.h:712 [inline]
+RIP: 0010:vma_end_read include/linux/mm.h:811 [inline]
+RIP: 0010:lock_vma_under_rcu+0x578/0xac0 mm/memory.c:6454
+Code: be 5d b1 ff 49 be 00 00 00 00 00 fc ff df 4d 85 ff 74 0d 49 81 ff 01 f0 ff ff 0f 82 a3 02 00 00 49 83 ff f5 0f 85 55 03 00 00 <41> 80 3e 00 74 0a bf 05 00 00 00 e8 28 df 18 00 4c 8b 34 25 05 00
+RSP: 0000:ffffc9000b837d80 EFLAGS: 00010246
+RAX: fffffffffffffff5 RBX: 0000000000000000 RCX: ffff888079eb8000
+RDX: ffff888079eb8000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc9000b837ed8 R08: ffffffff8210a26a R09: 1ffff110068be328
+R10: dffffc0000000000 R11: ffffed10068be329 R12: ffffc9000b837e10
+R13: ffff88802890aa20 R14: dffffc0000000000 R15: fffffffffffffff5
+FS:  00005555908b1500(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ff182f3cf98 CR3: 0000000011df6000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess), 1 bytes skipped:
+   0:	5d                   	pop    %rbp
+   1:	b1 ff                	mov    $0xff,%cl
+   3:	49 be 00 00 00 00 00 	movabs $0xdffffc0000000000,%r14
+   a:	fc ff df
+   d:	4d 85 ff             	test   %r15,%r15
+  10:	74 0d                	je     0x1f
+  12:	49 81 ff 01 f0 ff ff 	cmp    $0xfffffffffffff001,%r15
+  19:	0f 82 a3 02 00 00    	jb     0x2c2
+  1f:	49 83 ff f5          	cmp    $0xfffffffffffffff5,%r15
+  23:	0f 85 55 03 00 00    	jne    0x37e
+* 29:	41 80 3e 00          	cmpb   $0x0,(%r14) <-- trapping instruction
+  2d:	74 0a                	je     0x39
+  2f:	bf 05 00 00 00       	mov    $0x5,%edi
+  34:	e8 28 df 18 00       	call   0x18df61
+  39:	4c                   	rex.WR
+  3a:	8b                   	.byte 0x8b
+  3b:	34 25                	xor    $0x25,%al
+  3d:	05                   	.byte 0x5

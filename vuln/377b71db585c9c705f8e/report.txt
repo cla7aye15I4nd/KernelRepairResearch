@@ -1,0 +1,82 @@
+============================================
+WARNING: possible recursive locking detected
+6.14.0-syzkaller-12245-g91e5bfe317d8 #0 Not tainted
+--------------------------------------------
+dhcpcd/5658 is trying to acquire lock:
+ffff88802b21cd30 (&dev->lock){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2751 [inline]
+ffff88802b21cd30 (&dev->lock){+.+.}-{4:4}, at: netif_napi_add_weight include/linux/netdevice.h:2783 [inline]
+ffff88802b21cd30 (&dev->lock){+.+.}-{4:4}, at: lapbeth_new_device drivers/net/wan/lapbether.c:415 [inline]
+ffff88802b21cd30 (&dev->lock){+.+.}-{4:4}, at: lapbeth_device_event+0x586/0xbe0 drivers/net/wan/lapbether.c:460
+
+but task is already holding lock:
+ffff88803a7c4d30 (&dev->lock){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2751 [inline]
+ffff88803a7c4d30 (&dev->lock){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ffff88803a7c4d30 (&dev->lock){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:39 [inline]
+ffff88803a7c4d30 (&dev->lock){+.+.}-{4:4}, at: dev_change_flags+0xa7/0x250 net/core/dev_api.c:67
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&dev->lock);
+  lock(&dev->lock);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+2 locks held by dhcpcd/5658:
+ #0: ffffffff90129ba8 (rtnl_mutex){+.+.}-{4:4}, at: rtnl_net_lock include/linux/rtnetlink.h:130 [inline]
+ #0: ffffffff90129ba8 (rtnl_mutex){+.+.}-{4:4}, at: devinet_ioctl+0x26d/0x1f50 net/ipv4/devinet.c:1121
+ #1: ffff88803a7c4d30 (&dev->lock){+.+.}-{4:4}, at: netdev_lock include/linux/netdevice.h:2751 [inline]
+ #1: ffff88803a7c4d30 (&dev->lock){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:42 [inline]
+ #1: ffff88803a7c4d30 (&dev->lock){+.+.}-{4:4}, at: netdev_lock_ops include/net/netdev_lock.h:39 [inline]
+ #1: ffff88803a7c4d30 (&dev->lock){+.+.}-{4:4}, at: dev_change_flags+0xa7/0x250 net/core/dev_api.c:67
+
+stack backtrace:
+CPU: 3 UID: 0 PID: 5658 Comm: dhcpcd Not tainted 6.14.0-syzkaller-12245-g91e5bfe317d8 #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_deadlock_bug+0x1e9/0x240 kernel/locking/lockdep.c:3042
+ check_deadlock kernel/locking/lockdep.c:3094 [inline]
+ validate_chain kernel/locking/lockdep.c:3896 [inline]
+ __lock_acquire+0xff7/0x1ba0 kernel/locking/lockdep.c:5235
+ lock_acquire kernel/locking/lockdep.c:5866 [inline]
+ lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5823
+ __mutex_lock_common kernel/locking/mutex.c:601 [inline]
+ __mutex_lock+0x199/0xb90 kernel/locking/mutex.c:746
+ netdev_lock include/linux/netdevice.h:2751 [inline]
+ netif_napi_add_weight include/linux/netdevice.h:2783 [inline]
+ lapbeth_new_device drivers/net/wan/lapbether.c:415 [inline]
+ lapbeth_device_event+0x586/0xbe0 drivers/net/wan/lapbether.c:460
+ notifier_call_chain+0xb9/0x410 kernel/notifier.c:85
+ call_netdevice_notifiers_info+0xbe/0x140 net/core/dev.c:2180
+ call_netdevice_notifiers_extack net/core/dev.c:2218 [inline]
+ call_netdevice_notifiers net/core/dev.c:2232 [inline]
+ __dev_notify_flags+0x12c/0x2e0 net/core/dev.c:9409
+ netif_change_flags+0x108/0x160 net/core/dev.c:9438
+ dev_change_flags+0xba/0x250 net/core/dev_api.c:68
+ devinet_ioctl+0x11d5/0x1f50 net/ipv4/devinet.c:1200
+ inet_ioctl+0x3a7/0x3f0 net/ipv4/af_inet.c:1001
+ sock_do_ioctl+0x115/0x280 net/socket.c:1190
+ sock_ioctl+0x227/0x6b0 net/socket.c:1311
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl fs/ioctl.c:892 [inline]
+ __x64_sys_ioctl+0x190/0x200 fs/ioctl.c:892
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x260 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fdf113f9d49
+Code: 5c c3 48 8d 44 24 08 48 89 54 24 e0 48 89 44 24 c0 48 8d 44 24 d0 48 89 44 24 c8 b8 10 00 00 00 c7 44 24 b8 10 00 00 00 0f 05 <41> 89 c0 3d 00 f0 ff ff 76 10 48 8b 15 ae 60 0d 00 f7 d8 41 83 c8
+RSP: 002b:00007ffe17b63bc8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007fdf1132b6c0 RCX: 00007fdf113f9d49
+RDX: 00007ffe17b73db8 RSI: 0000000000008914 RDI: 000000000000001b
+RBP: 00007ffe17b83f78 R08: 00007ffe17b73d78 R09: 00007ffe17b73d28
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007ffe17b73db8 R14: 0000000000000028 R15: 0000000000008914
+ </TASK>

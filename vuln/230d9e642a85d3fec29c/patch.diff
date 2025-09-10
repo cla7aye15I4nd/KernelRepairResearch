@@ -1,0 +1,27 @@
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index 15daf5e2638d..9c3630146cec 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -2698,6 +2698,8 @@ enum nl80211_attrs {
+ #define NL80211_ATTR_KEYS NL80211_ATTR_KEYS
+ #define NL80211_ATTR_FEATURE_FLAGS NL80211_ATTR_FEATURE_FLAGS
+ 
++#define NL80211_WIPHY_NAME_MAXLEN		128
++
+ #define NL80211_MAX_SUPP_RATES			32
+ #define NL80211_MAX_SUPP_HT_RATES		77
+ #define NL80211_MAX_SUPP_REG_RULES		64
+diff --git a/net/wireless/core.c b/net/wireless/core.c
+index a6f3cac8c640..c0fd8a85e7f7 100644
+--- a/net/wireless/core.c
++++ b/net/wireless/core.c
+@@ -95,6 +95,9 @@ static int cfg80211_dev_check_name(struct cfg80211_registered_device *rdev,
+ 
+ 	ASSERT_RTNL();
+ 
++	if (strlen(newname) > NL80211_WIPHY_NAME_MAXLEN)
++		return -EINVAL;
++
+ 	/* prohibit calling the thing phy%d when %d is not its number */
+ 	sscanf(newname, PHY_NAME "%d%n", &wiphy_idx, &taken);
+ 	if (taken == strlen(newname) && wiphy_idx != rdev->wiphy_idx) {

@@ -1,0 +1,23 @@
+id: 1e911ad71dd4ea72e04a
+bug_link: https://syzkaller.appspot.com/bug?extid=1e911ad71dd4ea72e04a
+title: 'UBSAN: shift-out-of-bounds in snto32'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: de925e2fbb44eed8a2a7ce166b485fed5eae01aa
+fix_commit: a0312af1f94d13800e63a7d0a66e563582e39aec
+datetime: '2021-01-08T14:50:40+01:00'
+fix_commit_message: "HID: core: detect and skip invalid inputs to snto32()\n\nPrevent\
+  \ invalid (0, 0) inputs to hid-core's snto32() function.\n\nMaybe it is just the\
+  \ dummy device here that is causing this, but\nthere are hundreds of calls to snto32(0,\
+  \ 0). Having n (bits count)\nof 0 is causing the current UBSAN trap with a shift\
+  \ value of\n0xffffffff (-1, or n - 1 in this function).\n\nEither of the value to\
+  \ shift being 0 or the bits count being 0 can be\nhandled by just returning 0 to\
+  \ the caller, avoiding the following\ncomplex shift + OR operations:\n\n\treturn\
+  \ value & (1 << (n - 1)) ? value | (~0U << n) : value;\n\nFixes: dde5845a529f (\"\
+  [PATCH] Generic HID layer - code split\")\nSigned-off-by: Randy Dunlap <rdunlap@infradead.org>\n\
+  Reported-by: syzbot+1e911ad71dd4ea72e04a@syzkaller.appspotmail.com\nCc: Jiri Kosina\
+  \ <jikos@kernel.org>\nCc: Benjamin Tissoires <benjamin.tissoires@redhat.com>\nCc:\
+  \ linux-input@vger.kernel.org\nSigned-off-by: Jiri Kosina <jkosina@suse.cz>\n"
+submodule:
+- drivers/hid
+hunk_count: 1
+covered_count: 1

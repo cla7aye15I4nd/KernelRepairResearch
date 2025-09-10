@@ -1,0 +1,26 @@
+diff --git a/arch/arm64/include/asm/memory.h b/arch/arm64/include/asm/memory.h
+index 99d7e1494aaa..3c1aaa522cbd 100644
+--- a/arch/arm64/include/asm/memory.h
++++ b/arch/arm64/include/asm/memory.h
+@@ -332,7 +332,7 @@ static inline void *phys_to_virt(phys_addr_t x)
+ #endif /* !CONFIG_SPARSEMEM_VMEMMAP || CONFIG_DEBUG_VIRTUAL */
+ 
+ #define virt_addr_valid(addr)	({					\
+-	__typeof__(addr) __addr = addr;					\
++	__typeof__(addr) __addr = __tag_reset(addr);			\
+ 	__is_lm_address(__addr) && pfn_valid(virt_to_pfn(__addr));	\
+ })
+ 
+diff --git a/arch/arm64/mm/physaddr.c b/arch/arm64/mm/physaddr.c
+index 67a9ba9eaa96..cde44c13dda1 100644
+--- a/arch/arm64/mm/physaddr.c
++++ b/arch/arm64/mm/physaddr.c
+@@ -9,7 +9,7 @@
+ 
+ phys_addr_t __virt_to_phys(unsigned long x)
+ {
+-	WARN(!__is_lm_address(x),
++	WARN(!__is_lm_address(__tag_reset(x)),
+ 	     "virt_to_phys used for non-linear address: %pK (%pS)\n",
+ 	      (void *)x,
+ 	      (void *)x);

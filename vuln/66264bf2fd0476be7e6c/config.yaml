@@ -1,0 +1,45 @@
+id: 66264bf2fd0476be7e6c
+bug_link: https://syzkaller.appspot.com/bug?extid=66264bf2fd0476be7e6c
+title: 'BUG: corrupted list in kobject_add_internal (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a25fca4d3c18766b6f7a3c95fa8faec23ef464c5
+fix_commit: 92fe24a7db751b80925214ede43f8d2be792ea7b
+datetime: '2021-07-29T13:37:29+02:00'
+fix_commit_message: 'Bluetooth: skip invalid hci_sync_conn_complete_evt
+
+
+  Syzbot reported a corrupted list in kobject_add_internal [1]. This
+
+  happens when multiple HCI_EV_SYNC_CONN_COMPLETE event packets with
+
+  status 0 are sent for the same HCI connection. This causes us to
+
+  register the device more than once which corrupts the kset list.
+
+
+  As this is forbidden behavior, we add a check for whether we''re
+
+  trying to process the same HCI_EV_SYNC_CONN_COMPLETE event multiple
+
+  times for one connection. If that''s the case, the event is invalid, so
+
+  we report an error that the device is misbehaving, and ignore the
+
+  packet.
+
+
+  Link: https://syzkaller.appspot.com/bug?extid=66264bf2fd0476be7e6c [1]
+
+  Reported-by: syzbot+66264bf2fd0476be7e6c@syzkaller.appspotmail.com
+
+  Tested-by: syzbot+66264bf2fd0476be7e6c@syzkaller.appspotmail.com
+
+  Signed-off-by: Desmond Cheong Zhi Xi <desmondcheongzx@gmail.com>
+
+  Signed-off-by: Marcel Holtmann <marcel@holtmann.org>
+
+  '
+submodule:
+- net/bluetooth
+hunk_count: 1
+covered_count: 1

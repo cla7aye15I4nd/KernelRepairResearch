@@ -1,0 +1,42 @@
+id: 4fad2e57beb6397ab2fc
+bug_link: https://syzkaller.appspot.com/bug?extid=4fad2e57beb6397ab2fc
+title: 'KMSAN: uninit-value in drm_mode_setcrtc'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5a6c9a05e55cb2972396cc991af9d74c8c15029a
+fix_commit: 3823119b9c2b5f9e9b760336f75bc989b805cde6
+datetime: '2023-12-08T10:20:56+01:00'
+fix_commit_message: 'drm/crtc: Fix uninit-value bug in drm_mode_setcrtc
+
+
+  The connector_set contains uninitialized values when allocated with
+
+  kmalloc_array. However, in the "out" branch, the logic assumes that any
+
+  element in connector_set would be equal to NULL if failed to
+
+  initialize, which causes the bug reported by Syzbot. The fix is to use
+
+  an extra variable to keep track of how many connectors are initialized
+
+  indeed, and use that variable to decrease any refcounts in the "out"
+
+  branch.
+
+
+  Reported-by: syzbot+4fad2e57beb6397ab2fc@syzkaller.appspotmail.com
+
+  Signed-off-by: Ziqi Zhao <astrajoan@yahoo.com>
+
+  Reported-and-tested-by: syzbot+4fad2e57beb6397ab2fc@syzkaller.appspotmail.com
+
+  Tested-by: Harshit Mogalapalli <harshit.m.mogalapalli@oracle.com>
+
+  Link: https://lore.kernel.org/r/20230721161446.8602-1-astrajoan@yahoo.com
+
+  Signed-off-by: Maxime Ripard <mripard@kernel.org>
+
+  '
+submodule:
+- drivers/gpu/drm
+hunk_count: 5
+covered_count: 4

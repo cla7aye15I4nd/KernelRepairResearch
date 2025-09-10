@@ -1,0 +1,53 @@
+loop0: rw=0, sector=8073605, nr_sectors = 1 limit=0
+syz-executor142: attempt to access beyond end of device
+loop0: rw=0, sector=3245521, nr_sectors = 1 limit=0
+syz-executor142: attempt to access beyond end of device
+loop0: rw=2049, sector=2, nr_sectors = 1 limit=0
+Buffer I/O error on dev loop0, logical block 2, lost sync page write
+IO error syncing sysv inode [loop0:00000002]
+sysv_free_inode: inode 0,1,2 or nonexistent inode
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 5221 at fs/buffer.c:1177 mark_buffer_dirty+0x2e5/0x520 fs/buffer.c:1177
+Modules linked in:
+CPU: 1 UID: 0 PID: 5221 Comm: syz-executor142 Not tainted 6.12.0-rc4-syzkaller-00085-g4e46774408d9 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:mark_buffer_dirty+0x2e5/0x520 fs/buffer.c:1177
+Code: 89 df e8 3e 87 db ff 48 8b 3b be 20 00 00 00 5b 41 5e 41 5f 5d e9 fb e8 fb ff e8 66 e5 74 ff e9 73 ff ff ff e8 5c e5 74 ff 90 <0f> 0b 90 e9 61 fd ff ff e8 4e e5 74 ff 90 0f 0b 90 e9 88 fd ff ff
+RSP: 0018:ffffc90002d6fb28 EFLAGS: 00010293
+RAX: ffffffff821ff234 RBX: 1ffff110024a2001 RCX: ffff88801dba5a00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff821fef91 R09: 1ffff1100e50dacb
+R10: dffffc0000000000 R11: ffffed100e50dacc R12: dffffc0000000000
+R13: dffffc0000000000 R14: ffff88807286d658 R15: ffff888012510438
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f797cd490f8 CR3: 000000007a552000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ sysv_put_super+0x93/0x180 fs/sysv/inode.c:76
+ generic_shutdown_super+0x139/0x2d0 fs/super.c:642
+ kill_block_super+0x44/0x90 fs/super.c:1696
+ deactivate_locked_super+0xc4/0x130 fs/super.c:473
+ cleanup_mnt+0x41f/0x4b0 fs/namespace.c:1373
+ task_work_run+0x24f/0x310 kernel/task_work.c:239
+ exit_task_work include/linux/task_work.h:43 [inline]
+ do_exit+0xa2f/0x28e0 kernel/exit.c:939
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1088
+ __do_sys_exit_group kernel/exit.c:1099 [inline]
+ __se_sys_exit_group kernel/exit.c:1097 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1097
+ x64_sys_call+0x2634/0x2640 arch/x86/include/generated/asm/syscalls_64.h:232
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f797ccc4f49
+Code: Unable to access opcode bytes at 0x7f797ccc4f1f.
+RSP: 002b:00007ffc49dc82e8 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007f797ccc4f49
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000001
+RBP: 00007f797cd4b390 R08: ffffffffffffffb8 R09: 0000000000000006
+R10: 0000000020000e00 R11: 0000000000000246 R12: 00007f797cd4b390
+R13: 0000000000000000 R14: 00007f797cd4c100 R15: 00007f797cc93230
+ </TASK>

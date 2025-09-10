@@ -1,0 +1,30 @@
+diff --git a/fs/bcachefs/errcode.h b/fs/bcachefs/errcode.h
+index 5c8e40dea711..c8696f01eb14 100644
+--- a/fs/bcachefs/errcode.h
++++ b/fs/bcachefs/errcode.h
+@@ -310,6 +310,7 @@
+ 	x(BCH_ERR_data_write,		data_write_misaligned)			\
+ 	x(BCH_ERR_decompress,		data_read)				\
+ 	x(BCH_ERR_data_read,		no_device_to_read_from)			\
++	x(BCH_ERR_data_read,		no_devices_valid)			\
+ 	x(BCH_ERR_data_read,		data_read_io_err)			\
+ 	x(BCH_ERR_data_read,		data_read_csum_err)			\
+ 	x(BCH_ERR_data_read,		data_read_retry)			\
+diff --git a/fs/bcachefs/extents.c b/fs/bcachefs/extents.c
+index ae1a1d917805..ae7c7a177e10 100644
+--- a/fs/bcachefs/extents.c
++++ b/fs/bcachefs/extents.c
+@@ -227,8 +227,11 @@ int bch2_bkey_pick_read_device(struct bch_fs *c, struct bkey_s_c k,
+ 	if (have_io_errors)
+ 		return -BCH_ERR_data_read_io_err;
+ 
+-	WARN_ONCE(1, "unhandled error case in %s\n", __func__);
+-	return -EINVAL;
++	/*
++	 * If we get here, we have pointers (bkey_ptrs_validate() ensures that),
++	 * but they don't point to valid devices:
++	 */
++	return -BCH_ERR_no_devices_valid;
+ }
+ 
+ /* KEY_TYPE_btree_ptr: */

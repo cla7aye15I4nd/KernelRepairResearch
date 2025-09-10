@@ -1,0 +1,44 @@
+diff --git a/fs/fhandle.c b/fs/fhandle.c
+index 57a12614addf..8a7f86c2139a 100644
+--- a/fs/fhandle.c
++++ b/fs/fhandle.c
+@@ -36,7 +36,7 @@ static long do_sys_name_to_handle(const struct path *path,
+ 	if (f_handle.handle_bytes > MAX_HANDLE_SZ)
+ 		return -EINVAL;
+ 
+-	handle = kzalloc(sizeof(struct file_handle) + f_handle.handle_bytes,
++	handle = kzalloc(struct_size(handle, f_handle, f_handle.handle_bytes),
+ 			 GFP_KERNEL);
+ 	if (!handle)
+ 		return -ENOMEM;
+@@ -71,7 +71,7 @@ static long do_sys_name_to_handle(const struct path *path,
+ 	/* copy the mount id */
+ 	if (put_user(real_mount(path->mnt)->mnt_id, mnt_id) ||
+ 	    copy_to_user(ufh, handle,
+-			 sizeof(struct file_handle) + handle_bytes))
++			 struct_size(handle, f_handle, handle_bytes)))
+ 		retval = -EFAULT;
+ 	kfree(handle);
+ 	return retval;
+@@ -192,7 +192,7 @@ static int handle_to_path(int mountdirfd, struct file_handle __user *ufh,
+ 		retval = -EINVAL;
+ 		goto out_err;
+ 	}
+-	handle = kmalloc(sizeof(struct file_handle) + f_handle.handle_bytes,
++	handle = kmalloc(struct_size(handle, f_handle, f_handle.handle_bytes),
+ 			 GFP_KERNEL);
+ 	if (!handle) {
+ 		retval = -ENOMEM;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 00fc429b0af0..914245085597 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1033,7 +1033,7 @@ struct file_handle {
+ 	__u32 handle_bytes;
+ 	int handle_type;
+ 	/* file identifier */
+-	unsigned char f_handle[];
++	unsigned char f_handle[] __counted_by(handle_bytes);
+ };
+ 
+ static inline struct file *get_file(struct file *f)

@@ -1,0 +1,29 @@
+==================================================================
+BUG: KCSAN: data-race in __se_sys_io_uring_register / io_sqe_files_register
+
+read-write to 0xffff8881021940b8 of 4 bytes by task 5923 on cpu 1:
+ io_sqe_files_register+0x2c4/0x3b0 io_uring/rsrc.c:713
+ __io_uring_register io_uring/register.c:403 [inline]
+ __do_sys_io_uring_register io_uring/register.c:611 [inline]
+ __se_sys_io_uring_register+0x8d0/0x1280 io_uring/register.c:591
+ __x64_sys_io_uring_register+0x55/0x70 io_uring/register.c:591
+ x64_sys_call+0x202/0x2d60 arch/x86/include/generated/asm/syscalls_64.h:428
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff8881021940b8 of 4 bytes by task 5924 on cpu 0:
+ __do_sys_io_uring_register io_uring/register.c:613 [inline]
+ __se_sys_io_uring_register+0xe4a/0x1280 io_uring/register.c:591
+ __x64_sys_io_uring_register+0x55/0x70 io_uring/register.c:591
+ x64_sys_call+0x202/0x2d60 arch/x86/include/generated/asm/syscalls_64.h:428
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x00000000 -> 0x00000001
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 5924 Comm: syz.1.1000 Not tainted 6.12.0-rc7-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+==================================================================

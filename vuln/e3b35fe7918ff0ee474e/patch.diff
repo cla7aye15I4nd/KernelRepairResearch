@@ -1,0 +1,60 @@
+diff --git a/include/net/sctp/structs.h b/include/net/sctp/structs.h
+index 503fbc3cd819..2b6f3f13d5bc 100644
+--- a/include/net/sctp/structs.h
++++ b/include/net/sctp/structs.h
+@@ -1239,6 +1239,9 @@ struct sctp_ep_common {
+ 	/* What socket does this endpoint belong to?  */
+ 	struct sock *sk;
+ 
++	/* Cache netns and it won't change once set */
++	struct net *net;
++
+ 	/* This is where we receive inbound chunks.  */
+ 	struct sctp_inq	  inqueue;
+ 
+diff --git a/net/sctp/associola.c b/net/sctp/associola.c
+index d2ffc9a0ba3a..41839b85c268 100644
+--- a/net/sctp/associola.c
++++ b/net/sctp/associola.c
+@@ -64,6 +64,7 @@ static struct sctp_association *sctp_association_init(
+ 	/* Discarding const is appropriate here.  */
+ 	asoc->ep = (struct sctp_endpoint *)ep;
+ 	asoc->base.sk = (struct sock *)sk;
++	asoc->base.net = sock_net(sk);
+ 
+ 	sctp_endpoint_hold(asoc->ep);
+ 	sock_hold(asoc->base.sk);
+diff --git a/net/sctp/endpointola.c b/net/sctp/endpointola.c
+index ea53049d1db6..3067deb0fbec 100644
+--- a/net/sctp/endpointola.c
++++ b/net/sctp/endpointola.c
+@@ -110,6 +110,7 @@ static struct sctp_endpoint *sctp_endpoint_init(struct sctp_endpoint *ep,
+ 
+ 	/* Remember who we are attached to.  */
+ 	ep->base.sk = sk;
++	ep->base.net = sock_net(sk);
+ 	sock_hold(ep->base.sk);
+ 
+ 	return ep;
+diff --git a/net/sctp/input.c b/net/sctp/input.c
+index 2277981559d0..4d2bcfc9d7f8 100644
+--- a/net/sctp/input.c
++++ b/net/sctp/input.c
+@@ -882,7 +882,7 @@ static inline int sctp_hash_cmp(struct rhashtable_compare_arg *arg,
+ 	if (!sctp_transport_hold(t))
+ 		return err;
+ 
+-	if (!net_eq(sock_net(t->asoc->base.sk), x->net))
++	if (!net_eq(t->asoc->base.net, x->net))
+ 		goto out;
+ 	if (x->lport != htons(t->asoc->base.bind_addr.port))
+ 		goto out;
+@@ -897,7 +897,7 @@ static inline __u32 sctp_hash_obj(const void *data, u32 len, u32 seed)
+ {
+ 	const struct sctp_transport *t = data;
+ 
+-	return sctp_hashfn(sock_net(t->asoc->base.sk),
++	return sctp_hashfn(t->asoc->base.net,
+ 			   htons(t->asoc->base.bind_addr.port),
+ 			   &t->ipaddr, seed);
+ }

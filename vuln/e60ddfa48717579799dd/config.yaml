@@ -1,0 +1,41 @@
+id: e60ddfa48717579799dd
+bug_link: https://syzkaller.appspot.com/bug?extid=e60ddfa48717579799dd
+title: 'KCSAN: data-race in snd_seq_check_queue / snd_seq_control_queue'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0fbb027b44e79700da80e4b8bd1c1914d4796af6
+fix_commit: bb51e669fa49feb5904f452b2991b240ef31bc97
+datetime: '2020-02-14T15:52:59+01:00'
+fix_commit_message: 'ALSA: seq: Avoid concurrent access to queue flags
+
+
+  The queue flags are represented in bit fields and the concurrent
+
+  access may result in unexpected results.  Although the current code
+
+  should be mostly OK as it''s only reading a field while writing other
+
+  fields as KCSAN reported, it''s safer to cover both with a proper
+
+  spinlock protection.
+
+
+  This patch fixes the possible concurrent read by protecting with
+
+  q->owner_lock.  Also the queue owner field is protected as well since
+
+  it''s the field to be protected by the lock itself.
+
+
+  Reported-by: syzbot+65c6c92d04304d0a8efc@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+e60ddfa48717579799dd@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/20200214111316.26939-2-tiwai@suse.de
+
+  Signed-off-by: Takashi Iwai <tiwai@suse.de>
+
+  '
+submodule:
+- sound/core/seq
+hunk_count: 5
+covered_count: 4

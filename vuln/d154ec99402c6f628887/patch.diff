@@ -1,0 +1,109 @@
+diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
+index eb14e833e5ca..c2d1208b2c87 100644
+--- a/fs/f2fs/f2fs.h
++++ b/fs/f2fs/f2fs.h
+@@ -1585,18 +1585,6 @@ static inline bool __exist_node_summaries(struct f2fs_sb_info *sbi)
+ 			is_set_ckpt_flags(sbi, CP_FASTBOOT_FLAG));
+ }
+ 
+-/*
+- * Check whether the given nid is within node id range.
+- */
+-static inline int check_nid_range(struct f2fs_sb_info *sbi, nid_t nid)
+-{
+-	if (unlikely(nid < F2FS_ROOT_INO(sbi)))
+-		return -EINVAL;
+-	if (unlikely(nid >= NM_I(sbi)->max_nid))
+-		return -EINVAL;
+-	return 0;
+-}
+-
+ /*
+  * Check whether the inode has blocks or not
+  */
+@@ -2770,6 +2758,7 @@ f2fs_hash_t f2fs_dentry_hash(const struct qstr *name_info,
+ struct dnode_of_data;
+ struct node_info;
+ 
++int check_nid_range(struct f2fs_sb_info *sbi, nid_t nid);
+ bool available_free_memory(struct f2fs_sb_info *sbi, int type);
+ int need_dentry_mark(struct f2fs_sb_info *sbi, nid_t nid);
+ bool is_checkpointed_node(struct f2fs_sb_info *sbi, nid_t nid);
+diff --git a/fs/f2fs/inode.c b/fs/f2fs/inode.c
+index 176f8e84bb6e..414b1ede642b 100644
+--- a/fs/f2fs/inode.c
++++ b/fs/f2fs/inode.c
+@@ -194,12 +194,8 @@ static int do_read_inode(struct inode *inode)
+ 	projid_t i_projid;
+ 
+ 	/* Check if ino is within scope */
+-	if (check_nid_range(sbi, inode->i_ino)) {
+-		f2fs_msg(inode->i_sb, KERN_ERR, "bad inode number: %lu",
+-			 (unsigned long) inode->i_ino);
+-		WARN_ON(1);
++	if (check_nid_range(sbi, inode->i_ino))
+ 		return -EINVAL;
+-	}
+ 
+ 	node_page = get_node_page(sbi, inode->i_ino);
+ 	if (IS_ERR(node_page))
+@@ -588,8 +584,11 @@ void f2fs_evict_inode(struct inode *inode)
+ 		alloc_nid_failed(sbi, inode->i_ino);
+ 		clear_inode_flag(inode, FI_FREE_NID);
+ 	} else {
+-		f2fs_bug_on(sbi, err &&
+-			!exist_written_data(sbi, inode->i_ino, ORPHAN_INO));
++		/*
++		 * If xattr nid is corrupted, we can reach out error condition,
++		 * err & !exist_written_data(sbi, inode->i_ino, ORPHAN_INO)).
++		 * In that case, check_nid_range() is enough to give a clue.
++		 */
+ 	}
+ out_clear:
+ 	fscrypt_put_encryption_info(inode);
+diff --git a/fs/f2fs/node.c b/fs/f2fs/node.c
+index 3a3d38b3e9ec..437a66ba56fd 100644
+--- a/fs/f2fs/node.c
++++ b/fs/f2fs/node.c
+@@ -29,6 +29,21 @@ static struct kmem_cache *nat_entry_slab;
+ static struct kmem_cache *free_nid_slab;
+ static struct kmem_cache *nat_entry_set_slab;
+ 
++/*
++ * Check whether the given nid is within node id range.
++ */
++int check_nid_range(struct f2fs_sb_info *sbi, nid_t nid)
++{
++	if (unlikely(nid < F2FS_ROOT_INO(sbi) || nid >= NM_I(sbi)->max_nid)) {
++		set_sbi_flag(sbi, SBI_NEED_FSCK);
++		f2fs_msg(sbi->sb, KERN_WARNING,
++				"%s: out-of-range nid=%x, run fsck to fix.",
++				__func__, nid);
++		return -EINVAL;
++	}
++	return 0;
++}
++
+ bool available_free_memory(struct f2fs_sb_info *sbi, int type)
+ {
+ 	struct f2fs_nm_info *nm_i = NM_I(sbi);
+@@ -1158,7 +1173,8 @@ void ra_node_page(struct f2fs_sb_info *sbi, nid_t nid)
+ 
+ 	if (!nid)
+ 		return;
+-	f2fs_bug_on(sbi, check_nid_range(sbi, nid));
++	if (check_nid_range(sbi, nid))
++		return;
+ 
+ 	rcu_read_lock();
+ 	apage = radix_tree_lookup(&NODE_MAPPING(sbi)->i_pages, nid);
+@@ -1182,7 +1198,8 @@ static struct page *__get_node_page(struct f2fs_sb_info *sbi, pgoff_t nid,
+ 
+ 	if (!nid)
+ 		return ERR_PTR(-ENOENT);
+-	f2fs_bug_on(sbi, check_nid_range(sbi, nid));
++	if (check_nid_range(sbi, nid))
++		return ERR_PTR(-EINVAL);
+ repeat:
+ 	page = f2fs_grab_cache_page(NODE_MAPPING(sbi), nid, false);
+ 	if (!page)

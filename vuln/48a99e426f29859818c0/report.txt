@@ -1,0 +1,61 @@
+EXT4-fs (loop0): mounted filesystem 00000000-0000-0000-0000-000000000000 r/w without journal. Quota mode: writeback.
+usercopy: Kernel memory exposure attempt detected from SLUB object 'ext4_inode_cache' (offset 0, size 176)!
+------------[ cut here ]------------
+kernel BUG at mm/usercopy.c:102!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5826 Comm: syz-executor349 Not tainted 6.13.0-syzkaller-09793-g69b8923f5003 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+RIP: 0010:usercopy_abort+0x84/0x90 mm/usercopy.c:102
+Code: 49 89 ce 48 c7 c3 80 5f 18 8c 48 0f 44 de 48 c7 c7 20 5e 18 8c 4c 89 de 48 89 c1 41 52 41 56 53 e8 d1 3a f5 fe 48 83 c4 18 90 <0f> 0b 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90
+RSP: 0018:ffffc90003fa7c90 EFLAGS: 00010296
+RAX: 000000000000006b RBX: ffffffff8c185f80 RCX: ba71ae4bd9cf0200
+RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff819f1fbc R09: 1ffff920007f4f2c
+R10: dffffc0000000000 R11: fffff520007f4f2d R12: ffffea0001e70200
+R13: 00000000000000b0 R14: 0000000000000000 R15: 00000000000000b0
+FS:  00005555602a7380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000000066c7e0 CR3: 0000000078aac000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __check_heap_object+0xb1/0x100 mm/slub.c:5818
+ check_heap_object mm/usercopy.c:196 [inline]
+ __check_object_size+0x1da/0x730 mm/usercopy.c:251
+ check_object_size include/linux/thread_info.h:228 [inline]
+ check_copy_size include/linux/thread_info.h:264 [inline]
+ copy_to_user include/linux/uaccess.h:219 [inline]
+ readlink_copy fs/namei.c:5284 [inline]
+ vfs_readlink+0x1cf/0x550 fs/namei.c:5307
+ do_readlinkat+0x249/0x3a0 fs/stat.c:576
+ __do_sys_readlinkat fs/stat.c:593 [inline]
+ __se_sys_readlinkat fs/stat.c:590 [inline]
+ __x64_sys_readlinkat+0x9a/0xb0 fs/stat.c:590
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fdaffabc639
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffeb88c4948 EFLAGS: 00000246 ORIG_RAX: 000000000000010b
+RAX: ffffffffffffffda RBX: 0030656c69662f2e RCX: 00007fdaffabc639
+RDX: 00000000200002c0 RSI: 0000000020000240 RDI: 00000000ffffff9c
+RBP: 00007fdaffb30610 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000000000b0 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffeb88c4b18 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:usercopy_abort+0x84/0x90 mm/usercopy.c:102
+Code: 49 89 ce 48 c7 c3 80 5f 18 8c 48 0f 44 de 48 c7 c7 20 5e 18 8c 4c 89 de 48 89 c1 41 52 41 56 53 e8 d1 3a f5 fe 48 83 c4 18 90 <0f> 0b 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90
+RSP: 0018:ffffc90003fa7c90 EFLAGS: 00010296
+RAX: 000000000000006b RBX: ffffffff8c185f80 RCX: ba71ae4bd9cf0200
+RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: ffffffff819f1fbc R09: 1ffff920007f4f2c
+R10: dffffc0000000000 R11: fffff520007f4f2d R12: ffffea0001e70200
+R13: 00000000000000b0 R14: 0000000000000000 R15: 00000000000000b0
+FS:  00005555602a7380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055dd00353bf8 CR3: 0000000078aac000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

@@ -1,0 +1,23 @@
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index 754f3237194a..e1fcaedba4fa 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -64,7 +64,7 @@ static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
+ 		goto fail_put;
+ 
+ 	if (!setup_ipc_sysctls(ns))
+-		goto fail_put;
++		goto fail_mq;
+ 
+ 	sem_init_ns(ns);
+ 	msg_init_ns(ns);
+@@ -72,6 +72,9 @@ static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
+ 
+ 	return ns;
+ 
++fail_mq:
++	retire_mq_sysctls(ns);
++
+ fail_put:
+ 	put_user_ns(ns->user_ns);
+ 	ns_free_inum(&ns->ns);

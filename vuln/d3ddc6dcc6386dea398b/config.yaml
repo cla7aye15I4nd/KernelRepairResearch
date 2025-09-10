@@ -1,0 +1,49 @@
+id: d3ddc6dcc6386dea398b
+bug_link: https://syzkaller.appspot.com/bug?extid=d3ddc6dcc6386dea398b
+title: memory leak in btrfs_add_delayed_tree_ref
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6c8e69e4a702b072206f166111c003d704de15d9
+fix_commit: 609d99379736aa6c5b0658654084198aa808035a
+datetime: '2023-11-09T14:01:59+01:00'
+fix_commit_message: 'btrfs: fix qgroup record leaks when using simple quotas
+
+
+  When using simple quotas we are not supposed to allocate qgroup records
+
+  when adding delayed references. However we allocate them if either mode
+
+  of quotas is enabled (the new simple one or the old one), but then we
+
+  never free them because running the accounting, which frees the records,
+
+  is only run when using the old quotas (at btrfs_qgroup_account_extents()),
+
+  resulting in a memory leak of the records allocated when adding delayed
+
+  references.
+
+
+  Fix this by allocating the records only if the old quotas mode is enabled.
+
+  Also fix btrfs_qgroup_trace_extent_nolock() to return 1 if the old quotas
+
+  mode is not enabled - meaning the caller has to free the record.
+
+
+  Fixes: 182940f4f4db ("btrfs: qgroup: add new quota mode for simple quotas")
+
+  Reported-by: syzbot+d3ddc6dcc6386dea398b@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/linux-btrfs/00000000000004769106097f9a34@google.com/
+
+  Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+  Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+  Signed-off-by: David Sterba <dsterba@suse.com>
+
+  '
+submodule:
+- fs/btrfs
+hunk_count: 3
+covered_count: 1

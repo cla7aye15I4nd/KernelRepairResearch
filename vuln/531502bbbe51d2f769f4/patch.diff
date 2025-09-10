@@ -1,0 +1,67 @@
+diff --git a/io_uring/fdinfo.c b/io_uring/fdinfo.c
+index e9355276ab5d..9798d6fb4ec7 100644
+--- a/io_uring/fdinfo.c
++++ b/io_uring/fdinfo.c
+@@ -141,18 +141,26 @@ static void __io_uring_show_fdinfo(struct io_ring_ctx *ctx, struct seq_file *m)
+ 
+ 	if (ctx->flags & IORING_SETUP_SQPOLL) {
+ 		struct io_sq_data *sq = ctx->sq_data;
++		struct task_struct *tsk;
+ 
++		rcu_read_lock();
++		tsk = rcu_dereference(sq->thread);
+ 		/*
+ 		 * sq->thread might be NULL if we raced with the sqpoll
+ 		 * thread termination.
+ 		 */
+-		if (sq->thread) {
++		if (tsk) {
++			get_task_struct(tsk);
++			rcu_read_unlock();
++			getrusage(tsk, RUSAGE_SELF, &sq_usage);
++			put_task_struct(tsk);
+ 			sq_pid = sq->task_pid;
+ 			sq_cpu = sq->sq_cpu;
+-			getrusage(sq->thread, RUSAGE_SELF, &sq_usage);
+ 			sq_total_time = (sq_usage.ru_stime.tv_sec * 1000000
+ 					 + sq_usage.ru_stime.tv_usec);
+ 			sq_work_time = sq->work_time;
++		} else {
++			rcu_read_unlock();
+ 		}
+ 	}
+ 
+diff --git a/io_uring/sqpoll.c b/io_uring/sqpoll.c
+index 03c699493b5a..0625a421626f 100644
+--- a/io_uring/sqpoll.c
++++ b/io_uring/sqpoll.c
+@@ -270,7 +270,8 @@ static int io_sq_thread(void *data)
+ 	/* offload context creation failed, just exit */
+ 	if (!current->io_uring) {
+ 		mutex_lock(&sqd->lock);
+-		sqd->thread = NULL;
++		rcu_assign_pointer(sqd->thread, NULL);
++		put_task_struct(current);
+ 		mutex_unlock(&sqd->lock);
+ 		goto err_out;
+ 	}
+@@ -379,7 +380,8 @@ static int io_sq_thread(void *data)
+ 		io_sq_tw(&retry_list, UINT_MAX);
+ 
+ 	io_uring_cancel_generic(true, sqd);
+-	sqd->thread = NULL;
++	rcu_assign_pointer(sqd->thread, NULL);
++	put_task_struct(current);
+ 	list_for_each_entry(ctx, &sqd->ctx_list, sqd_list)
+ 		atomic_or(IORING_SQ_NEED_WAKEUP, &ctx->rings->sq_flags);
+ 	io_run_task_work();
+@@ -495,9 +497,6 @@ __cold int io_sq_offload_create(struct io_ring_ctx *ctx,
+ 		ret = -EINVAL;
+ 		goto err;
+ 	}
+-
+-	if (task_to_put)
+-		put_task_struct(task_to_put);
+ 	return 0;
+ err_sqpoll:
+ 	complete(&ctx->sq_data->exited);

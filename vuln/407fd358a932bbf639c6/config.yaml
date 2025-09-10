@@ -1,0 +1,61 @@
+id: 407fd358a932bbf639c6
+bug_link: https://syzkaller.appspot.com/bug?extid=407fd358a932bbf639c6
+title: general protection fault in kobject_get (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 04c349a96506961b1b31e8d03e784fe3c5413e0b
+fix_commit: 11a0ae4c4bff9b2a471b54dbe910fc0f60e58e62
+datetime: '2020-05-06T11:57:33-03:00'
+fix_commit_message: 'RDMA: Allow ib_client''s to fail when add() is called
+
+
+  When a client is added it isn''t allowed to fail, but all the client''s have
+
+  various failure paths within their add routines.
+
+
+  This creates the very fringe condition where the client was added, failed
+
+  during add and didn''t set the client_data. The core code will then still
+
+  call other client_data centric ops like remove(), rename(), get_nl_info(),
+
+  and get_net_dev_by_params() with NULL client_data - which is confusing and
+
+  unexpected.
+
+
+  If the add() callback fails, then do not call any more client ops for the
+
+  device, even remove.
+
+
+  Remove all the now redundant checks for NULL client_data in ops callbacks.
+
+
+  Update all the add() callbacks to return error codes
+
+  appropriately. EOPNOTSUPP is used for cases where the ULP does not support
+
+  the ib_device - eg because it only works with IB.
+
+
+  Link: https://lore.kernel.org/r/20200421172440.387069-1-leon@kernel.org
+
+  Signed-off-by: Leon Romanovsky <leonro@mellanox.com>
+
+  Acked-by: Ursula Braun <ubraun@linux.ibm.com>
+
+  Signed-off-by: Jason Gunthorpe <jgg@mellanox.com>
+
+  '
+submodule:
+- drivers/infiniband/core
+- drivers/infiniband/ulp/ipoib
+- drivers/infiniband/ulp/opa_vnic
+- drivers/infiniband/ulp/srp
+- drivers/infiniband/ulp/srpt
+- include/rdma
+- net/rds
+- net/smc
+hunk_count: 73
+covered_count: 0

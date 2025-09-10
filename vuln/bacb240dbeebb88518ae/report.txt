@@ -1,0 +1,476 @@
+------------[ cut here ]------------
+======================================================
+WARNING: possible circular locking dependency detected
+6.8.0-syzkaller-05204-g237bb5f7f7f5 #0 Not tainted
+------------------------------------------------------
+syz-executor141/5062 is trying to acquire lock:
+ffffffff8e125be0 (console_owner){-...}-{0:0}, at: console_trylock_spinning kernel/printk/printk.c:1951 [inline]
+ffffffff8e125be0 (console_owner){-...}-{0:0}, at: vprintk_emit+0x33e/0x720 kernel/printk/printk.c:2291
+
+but task is already holding lock:
+ffff8880b952c8d8 (hrtimer_bases.lock){-.-.}-{2:2}, at: __run_hrtimer kernel/time/hrtimer.c:1696 [inline]
+ffff8880b952c8d8 (hrtimer_bases.lock){-.-.}-{2:2}, at: __hrtimer_run_queues+0x65a/0xd00 kernel/time/hrtimer.c:1756
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #3 (hrtimer_bases.lock){-.-.}-{2:2}:
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+       _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+       lock_hrtimer_base kernel/time/hrtimer.c:175 [inline]
+       hrtimer_start_range_ns+0xdf/0xc60 kernel/time/hrtimer.c:1303
+       rpm_suspend+0x1725/0x1c10 drivers/base/power/runtime.c:605
+       __pm_runtime_idle+0x131/0x1a0 drivers/base/power/runtime.c:1103
+       pm_runtime_put include/linux/pm_runtime.h:460 [inline]
+       __device_attach+0x3e5/0x520 drivers/base/dd.c:1048
+       bus_probe_device+0x189/0x260 drivers/base/bus.c:532
+       device_add+0x8ff/0xca0 drivers/base/core.c:3639
+       serdev_controller_add+0x2f/0x4b0 drivers/tty/serdev/core.c:782
+       serdev_tty_port_register+0x163/0x260 drivers/tty/serdev/serdev-ttyport.c:302
+       tty_port_register_device_attr_serdev+0xe1/0x160 drivers/tty/tty_port.c:191
+       serial_core_add_one_port drivers/tty/serial/serial_core.c:3191 [inline]
+       serial_core_register_port+0xee0/0x1e30 drivers/tty/serial/serial_core.c:3398
+       serial8250_register_8250_port+0x1433/0x1cd0 drivers/tty/serial/8250/8250_core.c:1138
+       serial_pnp_probe+0x7d5/0xa20 drivers/tty/serial/8250/8250_pnp.c:478
+       pnp_device_probe+0x2ba/0x460 drivers/pnp/driver.c:111
+       really_probe+0x29e/0xc50 drivers/base/dd.c:658
+       __driver_probe_device+0x1a2/0x3e0 drivers/base/dd.c:800
+       driver_probe_device+0x50/0x430 drivers/base/dd.c:830
+       __driver_attach+0x45f/0x710 drivers/base/dd.c:1216
+       bus_for_each_dev+0x239/0x2b0 drivers/base/bus.c:368
+       bus_add_driver+0x347/0x620 drivers/base/bus.c:673
+       driver_register+0x23a/0x320 drivers/base/driver.c:246
+       serial8250_init+0x9e/0x170 drivers/tty/serial/8250/8250_core.c:1239
+       do_one_initcall+0x238/0x830 init/main.c:1241
+       do_initcall_level+0x157/0x210 init/main.c:1303
+       do_initcalls+0x3f/0x80 init/main.c:1319
+       kernel_init_freeable+0x435/0x5d0 init/main.c:1557
+       kernel_init+0x1d/0x2a0 init/main.c:1446
+       ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+
+-> #2 (&dev->power.lock){-...}-{2:2}:
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+       _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+       __pm_runtime_resume+0x112/0x180 drivers/base/power/runtime.c:1170
+       pm_runtime_get include/linux/pm_runtime.h:408 [inline]
+       __uart_start+0x17a/0x3c0 drivers/tty/serial/serial_core.c:148
+       uart_write+0x427/0x5c0 drivers/tty/serial/serial_core.c:615
+       process_output_block drivers/tty/n_tty.c:574 [inline]
+       n_tty_write+0xd6a/0x1230 drivers/tty/n_tty.c:2379
+       iterate_tty_write drivers/tty/tty_io.c:1021 [inline]
+       file_tty_write+0x54f/0x9b0 drivers/tty/tty_io.c:1096
+       call_write_iter include/linux/fs.h:2108 [inline]
+       new_sync_write fs/read_write.c:497 [inline]
+       vfs_write+0xa84/0xcb0 fs/read_write.c:590
+       ksys_write+0x1a0/0x2c0 fs/read_write.c:643
+       do_syscall_64+0xfb/0x240
+       entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+-> #1 (&port_lock_key){-.-.}-{2:2}:
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+       _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+       uart_port_lock_irqsave include/linux/serial_core.h:616 [inline]
+       serial8250_console_write+0x1a8/0x1840 drivers/tty/serial/8250/8250_port.c:3403
+       console_emit_next_record kernel/printk/printk.c:2890 [inline]
+       console_flush_all+0x80b/0xec0 kernel/printk/printk.c:2956
+       console_unlock+0x13b/0x4d0 kernel/printk/printk.c:3025
+       vprintk_emit+0x509/0x720 kernel/printk/printk.c:2292
+       _printk+0xd5/0x120 kernel/printk/printk.c:2317
+       register_console+0x70a/0xcd0 kernel/printk/printk.c:3531
+       univ8250_console_init+0x49/0x50 drivers/tty/serial/8250/8250_core.c:717
+       console_init+0x198/0x680 kernel/printk/printk.c:3677
+       start_kernel+0x2d3/0x500 init/main.c:1012
+       x86_64_start_reservations+0x2a/0x30 arch/x86/kernel/head64.c:509
+       x86_64_start_kernel+0x99/0xa0 arch/x86/kernel/head64.c:490
+       common_startup_64+0x13e/0x147
+
+-> #0 (console_owner){-...}-{0:0}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+       __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       console_trylock_spinning kernel/printk/printk.c:1951 [inline]
+       vprintk_emit+0x35b/0x720 kernel/printk/printk.c:2291
+       _printk+0xd5/0x120 kernel/printk/printk.c:2317
+       __report_bug lib/bug.c:195 [inline]
+       report_bug+0x346/0x500 lib/bug.c:219
+       handle_bug+0x3e/0x70 arch/x86/kernel/traps.c:239
+       exc_invalid_op+0x1a/0x50 arch/x86/kernel/traps.c:260
+       asm_exc_invalid_op+0x1a/0x20 arch/x86/include/asm/idtentry.h:621
+       __local_bh_disable_ip+0x1f6/0x220 kernel/softirq.c:307
+       __raw_spin_lock_bh include/linux/spinlock_api_smp.h:125 [inline]
+       _raw_spin_lock_bh+0x1c/0x50 kernel/locking/spinlock.c:178
+       spin_lock_bh include/linux/spinlock.h:356 [inline]
+       sock_hash_delete_elem+0xb0/0x300 net/core/sock_map.c:939
+       bpf_prog_8b502551ebbde0c1+0x42/0x4b
+       bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+       __bpf_prog_run include/linux/filter.h:657 [inline]
+       bpf_prog_run include/linux/filter.h:664 [inline]
+       __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+       bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+       trace_hrtimer_start include/trace/events/timer.h:222 [inline]
+       debug_activate kernel/time/hrtimer.c:479 [inline]
+       enqueue_hrtimer+0x335/0x3a0 kernel/time/hrtimer.c:1090
+       __run_hrtimer kernel/time/hrtimer.c:1709 [inline]
+       __hrtimer_run_queues+0x6b5/0xd00 kernel/time/hrtimer.c:1756
+       hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1818
+       local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+       __sysvec_apic_timer_interrupt+0x107/0x3a0 arch/x86/kernel/apic/apic.c:1049
+       instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+       sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1043
+       asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+       unwind_get_return_address+0x3f/0xc0 arch/x86/kernel/unwind_orc.c:369
+       arch_stack_walk+0x125/0x1b0 arch/x86/kernel/stacktrace.c:26
+       stack_trace_save+0x118/0x1d0 kernel/stacktrace.c:122
+       save_stack+0xfb/0x1f0 mm/page_owner.c:129
+       __reset_page_owner+0x44/0x2d0 mm/page_owner.c:150
+       reset_page_owner include/linux/page_owner.h:24 [inline]
+       free_pages_prepare mm/page_alloc.c:1140 [inline]
+       free_unref_page_prepare+0x968/0xa90 mm/page_alloc.c:2346
+       free_unref_page_list+0x5a3/0x850 mm/page_alloc.c:2532
+       release_pages+0x2744/0x2a80 mm/swap.c:1042
+       tlb_batch_pages_flush mm/mmu_gather.c:98 [inline]
+       tlb_flush_mmu_free mm/mmu_gather.c:293 [inline]
+       tlb_flush_mmu+0x34d/0x4e0 mm/mmu_gather.c:300
+       tlb_finish_mmu+0xd4/0x200 mm/mmu_gather.c:392
+       exit_mmap+0x4b6/0xd40 mm/mmap.c:3300
+       __mmput+0x115/0x3c0 kernel/fork.c:1345
+       exit_mm+0x220/0x310 kernel/exit.c:569
+       do_exit+0x99e/0x27e0 kernel/exit.c:865
+       do_group_exit+0x207/0x2c0 kernel/exit.c:1027
+       __do_sys_exit_group kernel/exit.c:1038 [inline]
+       __se_sys_exit_group kernel/exit.c:1036 [inline]
+       __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1036
+       do_syscall_64+0xfb/0x240
+       entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+other info that might help us debug this:
+
+Chain exists of:
+  console_owner --> &dev->power.lock --> hrtimer_bases.lock
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(hrtimer_bases.lock);
+                               lock(&dev->power.lock);
+                               lock(hrtimer_bases.lock);
+  lock(console_owner);
+
+ *** DEADLOCK ***
+
+4 locks held by syz-executor141/5062:
+ #0: ffff888021b80b20 (&mm->mmap_lock){++++}-{3:3}, at: mmap_write_lock include/linux/mmap_lock.h:108 [inline]
+ #0: ffff888021b80b20 (&mm->mmap_lock){++++}-{3:3}, at: exit_mmap+0x30f/0xd40 mm/mmap.c:3295
+ #1: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:298 [inline]
+ #1: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:750 [inline]
+ #1: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: page_ext_get+0x20/0x2a0 mm/page_ext.c:508
+ #2: ffff8880b952c8d8 (hrtimer_bases.lock){-.-.}-{2:2}, at: __run_hrtimer kernel/time/hrtimer.c:1696 [inline]
+ #2: ffff8880b952c8d8 (hrtimer_bases.lock){-.-.}-{2:2}, at: __hrtimer_run_queues+0x65a/0xd00 kernel/time/hrtimer.c:1756
+ #3: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:298 [inline]
+ #3: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:750 [inline]
+ #3: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: __bpf_trace_run kernel/trace/bpf_trace.c:2380 [inline]
+ #3: ffffffff8e131920 (rcu_read_lock){....}-{1:2}, at: bpf_trace_run2+0x114/0x420 kernel/trace/bpf_trace.c:2420
+
+stack backtrace:
+CPU: 1 PID: 5062 Comm: syz-executor141 Not tainted 6.8.0-syzkaller-05204-g237bb5f7f7f5 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2e0 lib/dump_stack.c:106
+ check_noncircular+0x36a/0x4a0 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+ __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+ lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+ console_trylock_spinning kernel/printk/printk.c:1951 [inline]
+ vprintk_emit+0x35b/0x720 kernel/printk/printk.c:2291
+ _printk+0xd5/0x120 kernel/printk/printk.c:2317
+ __report_bug lib/bug.c:195 [inline]
+ report_bug+0x346/0x500 lib/bug.c:219
+ handle_bug+0x3e/0x70 arch/x86/kernel/traps.c:239
+ exc_invalid_op+0x1a/0x50 arch/x86/kernel/traps.c:260
+ asm_exc_invalid_op+0x1a/0x20 arch/x86/include/asm/idtentry.h:621
+RIP: 0010:__local_bh_disable_ip+0x1f6/0x220 kernel/softirq.c:307
+Code: 2c 0b 00 65 48 8b 04 25 28 00 00 00 48 3b 84 24 80 00 00 00 75 33 48 8d 65 d8 5b 41 5c 41 5d 41 5e 41 5f 5d c3 cc cc cc cc 90 <0f> 0b 90 e9 99 fe ff ff e8 4d 84 16 0a 41 f7 c6 00 02 00 00 0f 85
+RSP: 0018:ffffc90000a08b00 EFLAGS: 00010006
+RAX: 0000000000010002 RBX: ffffffff895fc820 RCX: ffff88801e899e00
+RDX: dffffc0000000000 RSI: 0000000000000201 RDI: ffffffff895fc820
+RBP: ffffc90000a08bc8 R08: 0000000000000005 R09: ffffffff89600b3e
+R10: 000000000000000c R11: ffff88801e899e00 R12: dffffc0000000000
+R13: 1ffff92000141164 R14: ffffc90000a08b60 R15: 0000000000000201
+ __raw_spin_lock_bh include/linux/spinlock_api_smp.h:125 [inline]
+ _raw_spin_lock_bh+0x1c/0x50 kernel/locking/spinlock.c:178
+ spin_lock_bh include/linux/spinlock.h:356 [inline]
+ sock_hash_delete_elem+0xb0/0x300 net/core/sock_map.c:939
+ bpf_prog_8b502551ebbde0c1+0x42/0x4b
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+ trace_hrtimer_start include/trace/events/timer.h:222 [inline]
+ debug_activate kernel/time/hrtimer.c:479 [inline]
+ enqueue_hrtimer+0x335/0x3a0 kernel/time/hrtimer.c:1090
+ __run_hrtimer kernel/time/hrtimer.c:1709 [inline]
+ __hrtimer_run_queues+0x6b5/0xd00 kernel/time/hrtimer.c:1756
+ hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1818
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0x107/0x3a0 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:unwind_get_return_address+0x3f/0xc0 arch/x86/kernel/unwind_orc.c:369
+Code: ff df e8 a4 62 54 00 48 89 d8 48 c1 e8 03 42 0f b6 04 30 84 c0 75 72 8b 2b 31 ff 89 ee e8 c9 66 54 00 85 ed 74 4a 48 83 c3 48 <49> 89 df 49 c1 ef 03 43 80 3c 37 00 74 08 48 89 df e8 ab a6 b7 00
+RSP: 0018:ffffc90003adf438 EFLAGS: 00000282
+RAX: 0000000000000000 RBX: ffffc90003adf4a8 RCX: ffff88801e899e00
+RDX: ffff88801e899e00 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: 0000000000000001 R08: ffffffff81408de7 R09: ffffffff8140a8df
+R10: 0000000000000003 R11: ffff88801e899e00 R12: ffff88801e899e00
+R13: ffffffff8180dbc0 R14: dffffc0000000000 R15: ffffc90003adf460
+ arch_stack_walk+0x125/0x1b0 arch/x86/kernel/stacktrace.c:26
+ stack_trace_save+0x118/0x1d0 kernel/stacktrace.c:122
+ save_stack+0xfb/0x1f0 mm/page_owner.c:129
+ __reset_page_owner+0x44/0x2d0 mm/page_owner.c:150
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1140 [inline]
+ free_unref_page_prepare+0x968/0xa90 mm/page_alloc.c:2346
+ free_unref_page_list+0x5a3/0x850 mm/page_alloc.c:2532
+ release_pages+0x2744/0x2a80 mm/swap.c:1042
+ tlb_batch_pages_flush mm/mmu_gather.c:98 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:293 [inline]
+ tlb_flush_mmu+0x34d/0x4e0 mm/mmu_gather.c:300
+ tlb_finish_mmu+0xd4/0x200 mm/mmu_gather.c:392
+ exit_mmap+0x4b6/0xd40 mm/mmap.c:3300
+ __mmput+0x115/0x3c0 kernel/fork.c:1345
+ exit_mm+0x220/0x310 kernel/exit.c:569
+ do_exit+0x99e/0x27e0 kernel/exit.c:865
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1027
+ __do_sys_exit_group kernel/exit.c:1038 [inline]
+ __se_sys_exit_group kernel/exit.c:1036 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1036
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f410f5eff09
+Code: Unable to access opcode bytes at 0x7f410f5efedf.
+RSP: 002b:00007fff28b1bb08 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f410f5eff09
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000000
+RBP: 00007f410f66b2b0 R08: ffffffffffffffb8 R09: 0000000000000006
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f410f66b2b0
+R13: 0000000000000000 R14: 00007f410f66bd00 R15: 00007f410f5c1160
+ </TASK>
+WARNING: CPU: 1 PID: 5062 at kernel/softirq.c:307 __local_bh_disable_ip+0x1f6/0x220 kernel/softirq.c:307
+Modules linked in:
+CPU: 1 PID: 5062 Comm: syz-executor141 Not tainted 6.8.0-syzkaller-05204-g237bb5f7f7f5 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+RIP: 0010:__local_bh_disable_ip+0x1f6/0x220 kernel/softirq.c:307
+Code: 2c 0b 00 65 48 8b 04 25 28 00 00 00 48 3b 84 24 80 00 00 00 75 33 48 8d 65 d8 5b 41 5c 41 5d 41 5e 41 5f 5d c3 cc cc cc cc 90 <0f> 0b 90 e9 99 fe ff ff e8 4d 84 16 0a 41 f7 c6 00 02 00 00 0f 85
+RSP: 0018:ffffc90000a08b00 EFLAGS: 00010006
+
+RAX: 0000000000010002 RBX: ffffffff895fc820 RCX: ffff88801e899e00
+RDX: dffffc0000000000 RSI: 0000000000000201 RDI: ffffffff895fc820
+RBP: ffffc90000a08bc8 R08: 0000000000000005 R09: ffffffff89600b3e
+R10: 000000000000000c R11: ffff88801e899e00 R12: dffffc0000000000
+R13: 1ffff92000141164 R14: ffffc90000a08b60 R15: 0000000000000201
+FS:  0000000000000000(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f410f66c110 CR3: 000000000df32000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ __raw_spin_lock_bh include/linux/spinlock_api_smp.h:125 [inline]
+ _raw_spin_lock_bh+0x1c/0x50 kernel/locking/spinlock.c:178
+ spin_lock_bh include/linux/spinlock.h:356 [inline]
+ sock_hash_delete_elem+0xb0/0x300 net/core/sock_map.c:939
+ bpf_prog_8b502551ebbde0c1+0x42/0x4b
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+ trace_hrtimer_start include/trace/events/timer.h:222 [inline]
+ debug_activate kernel/time/hrtimer.c:479 [inline]
+ enqueue_hrtimer+0x335/0x3a0 kernel/time/hrtimer.c:1090
+ __run_hrtimer kernel/time/hrtimer.c:1709 [inline]
+ __hrtimer_run_queues+0x6b5/0xd00 kernel/time/hrtimer.c:1756
+ hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1818
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0x107/0x3a0 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:unwind_get_return_address+0x3f/0xc0 arch/x86/kernel/unwind_orc.c:369
+Code: ff df e8 a4 62 54 00 48 89 d8 48 c1 e8 03 42 0f b6 04 30 84 c0 75 72 8b 2b 31 ff 89 ee e8 c9 66 54 00 85 ed 74 4a 48 83 c3 48 <49> 89 df 49 c1 ef 03 43 80 3c 37 00 74 08 48 89 df e8 ab a6 b7 00
+RSP: 0018:ffffc90003adf438 EFLAGS: 00000282
+
+RAX: 0000000000000000 RBX: ffffc90003adf4a8 RCX: ffff88801e899e00
+RDX: ffff88801e899e00 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: 0000000000000001 R08: ffffffff81408de7 R09: ffffffff8140a8df
+R10: 0000000000000003 R11: ffff88801e899e00 R12: ffff88801e899e00
+R13: ffffffff8180dbc0 R14: dffffc0000000000 R15: ffffc90003adf460
+ arch_stack_walk+0x125/0x1b0 arch/x86/kernel/stacktrace.c:26
+ stack_trace_save+0x118/0x1d0 kernel/stacktrace.c:122
+ save_stack+0xfb/0x1f0 mm/page_owner.c:129
+ __reset_page_owner+0x44/0x2d0 mm/page_owner.c:150
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1140 [inline]
+ free_unref_page_prepare+0x968/0xa90 mm/page_alloc.c:2346
+ free_unref_page_list+0x5a3/0x850 mm/page_alloc.c:2532
+ release_pages+0x2744/0x2a80 mm/swap.c:1042
+ tlb_batch_pages_flush mm/mmu_gather.c:98 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:293 [inline]
+ tlb_flush_mmu+0x34d/0x4e0 mm/mmu_gather.c:300
+ tlb_finish_mmu+0xd4/0x200 mm/mmu_gather.c:392
+ exit_mmap+0x4b6/0xd40 mm/mmap.c:3300
+ __mmput+0x115/0x3c0 kernel/fork.c:1345
+ exit_mm+0x220/0x310 kernel/exit.c:569
+ do_exit+0x99e/0x27e0 kernel/exit.c:865
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1027
+ __do_sys_exit_group kernel/exit.c:1038 [inline]
+ __se_sys_exit_group kernel/exit.c:1036 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1036
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f410f5eff09
+Code: Unable to access opcode bytes at 0x7f410f5efedf.
+RSP: 002b:00007fff28b1bb08 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f410f5eff09
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000000
+RBP: 00007f410f66b2b0 R08: ffffffffffffffb8 R09: 0000000000000006
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f410f66b2b0
+R13: 0000000000000000 R14: 00007f410f66bd00 R15: 00007f410f5c1160
+ </TASK>
+irq event stamp: 1168
+hardirqs last  enabled at (1167): [<ffffffff82009291>] uncharge_batch+0x321/0x4f0 mm/memcontrol.c:7430
+hardirqs last disabled at (1168): [<ffffffff8b6fdf0e>] sysvec_apic_timer_interrupt+0xe/0xc0 arch/x86/kernel/apic/apic.c:1043
+softirqs last  enabled at (926): [<ffffffff81a4c4f1>] spin_unlock_bh include/linux/spinlock.h:396 [inline]
+softirqs last  enabled at (926): [<ffffffff81a4c4f1>] bpf_link_settle+0x81/0x150 kernel/bpf/syscall.c:3181
+softirqs last disabled at (924): [<ffffffff81a4c49a>] spin_lock_bh include/linux/spinlock.h:356 [inline]
+softirqs last disabled at (924): [<ffffffff81a4c49a>] bpf_link_settle+0x2a/0x150 kernel/bpf/syscall.c:3179
+---[ end trace 0000000000000000 ]---
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 5062 at kernel/softirq.c:361 __local_bh_enable_ip+0x1ae/0x200 kernel/softirq.c:361
+Modules linked in:
+CPU: 1 PID: 5062 Comm: syz-executor141 Tainted: G        W          6.8.0-syzkaller-05204-g237bb5f7f7f5 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+RIP: 0010:__local_bh_enable_ip+0x1ae/0x200 kernel/softirq.c:361
+Code: 04 1c 00 00 00 00 65 48 8b 04 25 28 00 00 00 48 3b 44 24 60 75 52 48 8d 65 d8 5b 41 5c 41 5d 41 5e 41 5f 5d c3 cc cc cc cc 90 <0f> 0b 90 e9 ca fe ff ff e8 55 00 00 00 eb 9c 90 0f 0b 90 e9 fa fe
+RSP: 0018:ffffc90000a08b20 EFLAGS: 00010006
+RAX: 0000000000010203 RBX: 1ffff92000141168 RCX: 0000000000000001
+RDX: 0000000000000000 RSI: 0000000000000201 RDI: ffffffff895fc916
+RBP: ffffc90000a08be0 R08: ffff8880213ce0e3 R09: 1ffff11004279c1c
+R10: dffffc0000000000 R11: ffffed1004279c1d R12: dffffc0000000000
+R13: 0000000000000006 R14: ffff888021ce4c00 R15: 0000000000000201
+FS:  0000000000000000(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f410f66c110 CR3: 000000000df32000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ spin_unlock_bh include/linux/spinlock.h:396 [inline]
+ sock_hash_delete_elem+0x1a6/0x300 net/core/sock_map.c:947
+ bpf_prog_8b502551ebbde0c1+0x42/0x4b
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+ trace_hrtimer_start include/trace/events/timer.h:222 [inline]
+ debug_activate kernel/time/hrtimer.c:479 [inline]
+ enqueue_hrtimer+0x335/0x3a0 kernel/time/hrtimer.c:1090
+ __run_hrtimer kernel/time/hrtimer.c:1709 [inline]
+ __hrtimer_run_queues+0x6b5/0xd00 kernel/time/hrtimer.c:1756
+ hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1818
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0x107/0x3a0 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:unwind_get_return_address+0x3f/0xc0 arch/x86/kernel/unwind_orc.c:369
+Code: ff df e8 a4 62 54 00 48 89 d8 48 c1 e8 03 42 0f b6 04 30 84 c0 75 72 8b 2b 31 ff 89 ee e8 c9 66 54 00 85 ed 74 4a 48 83 c3 48 <49> 89 df 49 c1 ef 03 43 80 3c 37 00 74 08 48 89 df e8 ab a6 b7 00
+RSP: 0018:ffffc90003adf438 EFLAGS: 00000282
+RAX: 0000000000000000 RBX: ffffc90003adf4a8 RCX: ffff88801e899e00
+RDX: ffff88801e899e00 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: 0000000000000001 R08: ffffffff81408de7 R09: ffffffff8140a8df
+R10: 0000000000000003 R11: ffff88801e899e00 R12: ffff88801e899e00
+R13: ffffffff8180dbc0 R14: dffffc0000000000 R15: ffffc90003adf460
+ arch_stack_walk+0x125/0x1b0 arch/x86/kernel/stacktrace.c:26
+ stack_trace_save+0x118/0x1d0 kernel/stacktrace.c:122
+ save_stack+0xfb/0x1f0 mm/page_owner.c:129
+ __reset_page_owner+0x44/0x2d0 mm/page_owner.c:150
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1140 [inline]
+ free_unref_page_prepare+0x968/0xa90 mm/page_alloc.c:2346
+ free_unref_page_list+0x5a3/0x850 mm/page_alloc.c:2532
+ release_pages+0x2744/0x2a80 mm/swap.c:1042
+ tlb_batch_pages_flush mm/mmu_gather.c:98 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:293 [inline]
+ tlb_flush_mmu+0x34d/0x4e0 mm/mmu_gather.c:300
+ tlb_finish_mmu+0xd4/0x200 mm/mmu_gather.c:392
+ exit_mmap+0x4b6/0xd40 mm/mmap.c:3300
+ __mmput+0x115/0x3c0 kernel/fork.c:1345
+ exit_mm+0x220/0x310 kernel/exit.c:569
+ do_exit+0x99e/0x27e0 kernel/exit.c:865
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1027
+ __do_sys_exit_group kernel/exit.c:1038 [inline]
+ __se_sys_exit_group kernel/exit.c:1036 [inline]
+ __x64_sys_exit_group+0x3f/0x40 kernel/exit.c:1036
+ do_syscall_64+0xfb/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f410f5eff09
+Code: Unable to access opcode bytes at 0x7f410f5efedf.
+RSP: 002b:00007fff28b1bb08 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f410f5eff09
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000000
+RBP: 00007f410f66b2b0 R08: ffffffffffffffb8 R09: 0000000000000006
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f410f66b2b0
+R13: 0000000000000000 R14: 00007f410f66bd00 R15: 00007f410f5c1160
+ </TASK>
+irq event stamp: 1168
+hardirqs last  enabled at (1167): [<ffffffff82009291>] uncharge_batch+0x321/0x4f0 mm/memcontrol.c:7430
+hardirqs last disabled at (1168): [<ffffffff8b6fdf0e>] sysvec_apic_timer_interrupt+0xe/0xc0 arch/x86/kernel/apic/apic.c:1043
+softirqs last  enabled at (926): [<ffffffff81a4c4f1>] spin_unlock_bh include/linux/spinlock.h:396 [inline]
+softirqs last  enabled at (926): [<ffffffff81a4c4f1>] bpf_link_settle+0x81/0x150 kernel/bpf/syscall.c:3181
+softirqs last disabled at (924): [<ffffffff81a4c49a>] spin_lock_bh include/linux/spinlock.h:356 [inline]
+softirqs last disabled at (924): [<ffffffff81a4c49a>] bpf_link_settle+0x2a/0x150 kernel/bpf/syscall.c:3179
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess), 2 bytes skipped:
+   0:	e8 a4 62 54 00       	call   0x5462a9
+   5:	48 89 d8             	mov    %rbx,%rax
+   8:	48 c1 e8 03          	shr    $0x3,%rax
+   c:	42 0f b6 04 30       	movzbl (%rax,%r14,1),%eax
+  11:	84 c0                	test   %al,%al
+  13:	75 72                	jne    0x87
+  15:	8b 2b                	mov    (%rbx),%ebp
+  17:	31 ff                	xor    %edi,%edi
+  19:	89 ee                	mov    %ebp,%esi
+  1b:	e8 c9 66 54 00       	call   0x5466e9
+  20:	85 ed                	test   %ebp,%ebp
+  22:	74 4a                	je     0x6e
+  24:	48 83 c3 48          	add    $0x48,%rbx
+* 28:	49 89 df             	mov    %rbx,%r15 <-- trapping instruction
+  2b:	49 c1 ef 03          	shr    $0x3,%r15
+  2f:	43 80 3c 37 00       	cmpb   $0x0,(%r15,%r14,1)
+  34:	74 08                	je     0x3e
+  36:	48 89 df             	mov    %rbx,%rdi
+  39:	e8 ab a6 b7 00       	call   0xb7a6e9

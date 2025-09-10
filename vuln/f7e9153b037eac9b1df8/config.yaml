@@ -1,0 +1,50 @@
+id: f7e9153b037eac9b1df8
+bug_link: https://syzkaller.appspot.com/bug?extid=f7e9153b037eac9b1df8
+title: memory leak in sctp_process_init
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b50e058746ba29f517e27299447831ab3d93f896
+fix_commit: 0a8dd9f67cd0da7dc284f48b032ce00db1a68791
+datetime: '2019-06-05T17:11:47-07:00'
+fix_commit_message: "Fix memory leak in sctp_process_init\n\nsyzbot found the following\
+  \ leak in sctp_process_init\nBUG: memory leak\nunreferenced object 0xffff88810ef68400\
+  \ (size 1024):\n  comm \"syz-executor273\", pid 7046, jiffies 4294945598 (age 28.770s)\n\
+  \  hex dump (first 32 bytes):\n    1d de 28 8d de 0b 1b e3 b5 c2 f9 68 fd 1a 97\
+  \ 25  ..(........h...%\n    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n\
+  \  backtrace:\n    [<00000000a02cebbd>] kmemleak_alloc_recursive include/linux/kmemleak.h:55\n\
+  [inline]\n    [<00000000a02cebbd>] slab_post_alloc_hook mm/slab.h:439 [inline]\n\
+  \    [<00000000a02cebbd>] slab_alloc mm/slab.c:3326 [inline]\n    [<00000000a02cebbd>]\
+  \ __do_kmalloc mm/slab.c:3658 [inline]\n    [<00000000a02cebbd>] __kmalloc_track_caller+0x15d/0x2c0\
+  \ mm/slab.c:3675\n    [<000000009e6245e6>] kmemdup+0x27/0x60 mm/util.c:119\n   \
+  \ [<00000000dfdc5d2d>] kmemdup include/linux/string.h:432 [inline]\n    [<00000000dfdc5d2d>]\
+  \ sctp_process_init+0xa7e/0xc20\nnet/sctp/sm_make_chunk.c:2437\n    [<00000000b58b62f8>]\
+  \ sctp_cmd_process_init net/sctp/sm_sideeffect.c:682\n[inline]\n    [<00000000b58b62f8>]\
+  \ sctp_cmd_interpreter net/sctp/sm_sideeffect.c:1384\n[inline]\n    [<00000000b58b62f8>]\
+  \ sctp_side_effects net/sctp/sm_sideeffect.c:1194\n[inline]\n    [<00000000b58b62f8>]\
+  \ sctp_do_sm+0xbdc/0x1d60 net/sctp/sm_sideeffect.c:1165\n    [<0000000044e11f96>]\
+  \ sctp_assoc_bh_rcv+0x13c/0x200\nnet/sctp/associola.c:1074\n    [<00000000ec43804d>]\
+  \ sctp_inq_push+0x7f/0xb0 net/sctp/inqueue.c:95\n    [<00000000726aa954>] sctp_backlog_rcv+0x5e/0x2a0\
+  \ net/sctp/input.c:354\n    [<00000000d9e249a8>] sk_backlog_rcv include/net/sock.h:950\
+  \ [inline]\n    [<00000000d9e249a8>] __release_sock+0xab/0x110 net/core/sock.c:2418\n\
+  \    [<00000000acae44fa>] release_sock+0x37/0xd0 net/core/sock.c:2934\n    [<00000000963cc9ae>]\
+  \ sctp_sendmsg+0x2c0/0x990 net/sctp/socket.c:2122\n    [<00000000a7fc7565>] inet_sendmsg+0x64/0x120\
+  \ net/ipv4/af_inet.c:802\n    [<00000000b732cbd3>] sock_sendmsg_nosec net/socket.c:652\
+  \ [inline]\n    [<00000000b732cbd3>] sock_sendmsg+0x54/0x70 net/socket.c:671\n \
+  \   [<00000000274c57ab>] ___sys_sendmsg+0x393/0x3c0 net/socket.c:2292\n    [<000000008252aedb>]\
+  \ __sys_sendmsg+0x80/0xf0 net/socket.c:2330\n    [<00000000f7bf23d1>] __do_sys_sendmsg\
+  \ net/socket.c:2339 [inline]\n    [<00000000f7bf23d1>] __se_sys_sendmsg net/socket.c:2337\
+  \ [inline]\n    [<00000000f7bf23d1>] __x64_sys_sendmsg+0x23/0x30 net/socket.c:2337\n\
+  \    [<00000000a8b4131f>] do_syscall_64+0x76/0x1a0 arch/x86/entry/common.c:3\n\n\
+  The problem was that the peer.cookie value points to an skb allocated\narea on the\
+  \ first pass through this function, at which point it is\noverwritten with a heap\
+  \ allocated value, but in certain cases, where a\nCOOKIE_ECHO chunk is included\
+  \ in the packet, a second pass through\nsctp_process_init is made, where the cookie\
+  \ value is re-allocated,\nleaking the first allocation.\n\nFix is to always allocate\
+  \ the cookie value, and free it when we are done\nusing it.\n\nSigned-off-by: Neil\
+  \ Horman <nhorman@tuxdriver.com>\nReported-by: syzbot+f7e9153b037eac9b1df8@syzkaller.appspotmail.com\n\
+  CC: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>\nCC: \"David S. Miller\"\
+  \ <davem@davemloft.net>\nCC: netdev@vger.kernel.org\nAcked-by: Marcelo Ricardo Leitner\
+  \ <marcelo.leitner@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 4
+covered_count: 2

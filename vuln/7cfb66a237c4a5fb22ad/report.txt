@@ -1,0 +1,119 @@
+ptp ptp0: delete virtual clock ptp4
+======================================================
+WARNING: possible circular locking dependency detected
+6.17.0-rc1-syzkaller-00036-gdfc0f6373094 #0 Tainted: G     U             
+------------------------------------------------------
+syz.3.3108/26039 is trying to acquire lock:
+ffff888076900130 (&clk->rwsem){++++}-{4:4}, at: posix_clock_unregister+0x4d/0xd0 kernel/time/posix-clock.c:184
+
+but task is already holding lock:
+ffff88814c1c6870 (&ptp->n_vclocks_mux){+.+.}-{4:4}, at: n_vclocks_store+0xf1/0x6d0 drivers/ptp/ptp_sysfs.c:215
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&ptp->n_vclocks_mux){+.+.}-{4:4}:
+       __mutex_lock_common kernel/locking/mutex.c:598 [inline]
+       __mutex_lock+0x193/0x10b0 kernel/locking/mutex.c:760
+       ptp_vclock_in_use drivers/ptp/ptp_private.h:113 [inline]
+       ptp_vclock_in_use drivers/ptp/ptp_private.h:99 [inline]
+       ptp_clock_freerun drivers/ptp/ptp_private.h:130 [inline]
+       ptp_clock_freerun drivers/ptp/ptp_private.h:125 [inline]
+       ptp_clock_adjtime+0x527/0x760 drivers/ptp/ptp_clock.c:125
+       pc_clock_adjtime+0x115/0x1e0 kernel/time/posix-clock.c:239
+       do_clock_adjtime kernel/time/posix-timers.c:1162 [inline]
+       __do_sys_clock_adjtime+0x172/0x290 kernel/time/posix-timers.c:1174
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xcd/0x490 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&clk->rwsem){++++}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3165 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3284 [inline]
+       validate_chain kernel/locking/lockdep.c:3908 [inline]
+       __lock_acquire+0x12a6/0x1ce0 kernel/locking/lockdep.c:5237
+       lock_acquire kernel/locking/lockdep.c:5868 [inline]
+       lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5825
+       down_write+0x92/0x200 kernel/locking/rwsem.c:1590
+       posix_clock_unregister+0x4d/0xd0 kernel/time/posix-clock.c:184
+       ptp_clock_unregister+0x14f/0x250 drivers/ptp/ptp_clock.c:432
+       ptp_vclock_unregister+0x11a/0x160 drivers/ptp/ptp_vclock.c:228
+       unregister_vclock+0x108/0x1a0 drivers/ptp/ptp_sysfs.c:177
+       device_for_each_child_reverse+0x133/0x1a0 drivers/base/core.c:4048
+       n_vclocks_store+0x4b6/0x6d0 drivers/ptp/ptp_sysfs.c:241
+       dev_attr_store+0x58/0x80 drivers/base/core.c:2437
+       sysfs_kf_write+0xf2/0x150 fs/sysfs/file.c:145
+       kernfs_fop_write_iter+0x354/0x510 fs/kernfs/file.c:334
+       new_sync_write fs/read_write.c:593 [inline]
+       vfs_write+0x7d0/0x11d0 fs/read_write.c:686
+       ksys_write+0x12a/0x250 fs/read_write.c:738
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xcd/0x490 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&ptp->n_vclocks_mux);
+                               lock(&clk->rwsem);
+                               lock(&ptp->n_vclocks_mux);
+  lock(&clk->rwsem);
+
+ *** DEADLOCK ***
+
+5 locks held by syz.3.3108/26039:
+ #0: ffff88801f370b78 (&f->f_pos_lock){+.+.}-{4:4}, at: fdget_pos+0x2a2/0x370 fs/file.c:1232
+ #1: ffff88807d134428 (sb_writers#7){.+.+}-{0:0}, at: ksys_write+0x12a/0x250 fs/read_write.c:738
+ #2: ffff8880300eac88 (&of->mutex){+.+.}-{4:4}, at: kernfs_fop_write_iter+0x28f/0x510 fs/kernfs/file.c:325
+ #3: ffff88814c582d28 (kn->active#248){.+.+}-{0:0}, at: kernfs_fop_write_iter+0x2b2/0x510 fs/kernfs/file.c:326
+ #4: ffff88814c1c6870 (&ptp->n_vclocks_mux){+.+.}-{4:4}, at: n_vclocks_store+0xf1/0x6d0 drivers/ptp/ptp_sysfs.c:215
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 26039 Comm: syz.3.3108 Tainted: G     U              6.17.0-rc1-syzkaller-00036-gdfc0f6373094 #0 PREEMPT(full) 
+Tainted: [U]=USER
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_circular_bug+0x275/0x350 kernel/locking/lockdep.c:2043
+ check_noncircular+0x14c/0x170 kernel/locking/lockdep.c:2175
+ check_prev_add kernel/locking/lockdep.c:3165 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3284 [inline]
+ validate_chain kernel/locking/lockdep.c:3908 [inline]
+ __lock_acquire+0x12a6/0x1ce0 kernel/locking/lockdep.c:5237
+ lock_acquire kernel/locking/lockdep.c:5868 [inline]
+ lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5825
+ down_write+0x92/0x200 kernel/locking/rwsem.c:1590
+ posix_clock_unregister+0x4d/0xd0 kernel/time/posix-clock.c:184
+ ptp_clock_unregister+0x14f/0x250 drivers/ptp/ptp_clock.c:432
+ ptp_vclock_unregister+0x11a/0x160 drivers/ptp/ptp_vclock.c:228
+ unregister_vclock+0x108/0x1a0 drivers/ptp/ptp_sysfs.c:177
+ device_for_each_child_reverse+0x133/0x1a0 drivers/base/core.c:4048
+ n_vclocks_store+0x4b6/0x6d0 drivers/ptp/ptp_sysfs.c:241
+ dev_attr_store+0x58/0x80 drivers/base/core.c:2437
+ sysfs_kf_write+0xf2/0x150 fs/sysfs/file.c:145
+ kernfs_fop_write_iter+0x354/0x510 fs/kernfs/file.c:334
+ new_sync_write fs/read_write.c:593 [inline]
+ vfs_write+0x7d0/0x11d0 fs/read_write.c:686
+ ksys_write+0x12a/0x250 fs/read_write.c:738
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x490 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f977ab8ebe9
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f977b985038 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 00007f977adb6180 RCX: 00007f977ab8ebe9
+RDX: 0000000000080001 RSI: 00002000000003c0 RDI: 0000000000000005
+RBP: 00007f977ac11e19 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007f977adb6218 R14: 00007f977adb6180 R15: 00007ffd93b81058
+ </TASK>
+ptp ptp0: delete virtual clock ptp3
+ptp ptp0: delete virtual clock ptp2
+ptp ptp0: only physical clock in use now

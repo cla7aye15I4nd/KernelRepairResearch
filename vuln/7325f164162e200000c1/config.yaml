@@ -1,0 +1,184 @@
+id: 7325f164162e200000c1
+bug_link: https://syzkaller.appspot.com/bug?extid=7325f164162e200000c1
+title: 'KASAN: slab-use-after-free Read in free_block_entry'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3ed51857a50f530ac7a1482e069dfbd1298558d4
+fix_commit: 7c4e39f9d2af4abaf82ca0e315d1fd340456620f
+datetime: '2024-11-29T16:52:29+01:00'
+fix_commit_message: "btrfs: ref-verify: fix use-after-free after invalid ref action\n\
+  \nAt btrfs_ref_tree_mod() after we successfully inserted the new ref entry\n(local\
+  \ variable 'ref') into the respective block entry's rbtree (local\nvariable 'be'),\
+  \ if we find an unexpected action of BTRFS_DROP_DELAYED_REF,\nwe error out and free\
+  \ the ref entry without removing it from the block\nentry's rbtree. Then in the\
+  \ error path of btrfs_ref_tree_mod() we call\nbtrfs_free_ref_cache(), which iterates\
+  \ over all block entries and then\ncalls free_block_entry() for each one, and there\
+  \ we will trigger a\nuse-after-free when we are called against the block entry to\
+  \ which we\nadded the freed ref entry to its rbtree, since the rbtree still points\n\
+  to the block entry, as we didn't remove it from the rbtree before freeing\nit in\
+  \ the error path at btrfs_ref_tree_mod(). Fix this by removing the\nnew ref entry\
+  \ from the rbtree before freeing it.\n\nSyzbot report this with the following stack\
+  \ traces:\n\n   BTRFS error (device loop0 state EA):   Ref action 2, root 5, ref_root\
+  \ 0, parent 8564736, owner 0, offset 0, num_refs 18446744073709551615\n      __btrfs_mod_ref+0x7dd/0xac0\
+  \ fs/btrfs/extent-tree.c:2523\n      update_ref_for_cow+0x9cd/0x11f0 fs/btrfs/ctree.c:512\n\
+  \      btrfs_force_cow_block+0x9f6/0x1da0 fs/btrfs/ctree.c:594\n      btrfs_cow_block+0x35e/0xa40\
+  \ fs/btrfs/ctree.c:754\n      btrfs_search_slot+0xbdd/0x30d0 fs/btrfs/ctree.c:2116\n\
+  \      btrfs_insert_empty_items+0x9c/0x1a0 fs/btrfs/ctree.c:4314\n      btrfs_insert_empty_item\
+  \ fs/btrfs/ctree.h:669 [inline]\n      btrfs_insert_orphan_item+0x1f1/0x320 fs/btrfs/orphan.c:23\n\
+  \      btrfs_orphan_add+0x6d/0x1a0 fs/btrfs/inode.c:3482\n      btrfs_unlink+0x267/0x350\
+  \ fs/btrfs/inode.c:4293\n      vfs_unlink+0x365/0x650 fs/namei.c:4469\n      do_unlinkat+0x4ae/0x830\
+  \ fs/namei.c:4533\n      __do_sys_unlinkat fs/namei.c:4576 [inline]\n      __se_sys_unlinkat\
+  \ fs/namei.c:4569 [inline]\n      __x64_sys_unlinkat+0xcc/0xf0 fs/namei.c:4569\n\
+  \      do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n      do_syscall_64+0xf3/0x230\
+  \ arch/x86/entry/common.c:83\n      entry_SYSCALL_64_after_hwframe+0x77/0x7f\n \
+  \  BTRFS error (device loop0 state EA):   Ref action 1, root 5, ref_root 5, parent\
+  \ 0, owner 260, offset 0, num_refs 1\n      __btrfs_mod_ref+0x76b/0xac0 fs/btrfs/extent-tree.c:2521\n\
+  \      update_ref_for_cow+0x96a/0x11f0\n      btrfs_force_cow_block+0x9f6/0x1da0\
+  \ fs/btrfs/ctree.c:594\n      btrfs_cow_block+0x35e/0xa40 fs/btrfs/ctree.c:754\n\
+  \      btrfs_search_slot+0xbdd/0x30d0 fs/btrfs/ctree.c:2116\n      btrfs_lookup_inode+0xdc/0x480\
+  \ fs/btrfs/inode-item.c:411\n      __btrfs_update_delayed_inode+0x1e7/0xb90 fs/btrfs/delayed-inode.c:1030\n\
+  \      btrfs_update_delayed_inode fs/btrfs/delayed-inode.c:1114 [inline]\n     \
+  \ __btrfs_commit_inode_delayed_items+0x2318/0x24a0 fs/btrfs/delayed-inode.c:1137\n\
+  \      __btrfs_run_delayed_items+0x213/0x490 fs/btrfs/delayed-inode.c:1171\n   \
+  \   btrfs_commit_transaction+0x8a8/0x3740 fs/btrfs/transaction.c:2313\n      prepare_to_relocate+0x3c4/0x4c0\
+  \ fs/btrfs/relocation.c:3586\n      relocate_block_group+0x16c/0xd40 fs/btrfs/relocation.c:3611\n\
+  \      btrfs_relocate_block_group+0x77d/0xd90 fs/btrfs/relocation.c:4081\n     \
+  \ btrfs_relocate_chunk+0x12c/0x3b0 fs/btrfs/volumes.c:3377\n      __btrfs_balance+0x1b0f/0x26b0\
+  \ fs/btrfs/volumes.c:4161\n      btrfs_balance+0xbdc/0x10c0 fs/btrfs/volumes.c:4538\n\
+  \   BTRFS error (device loop0 state EA):   Ref action 2, root 5, ref_root 0, parent\
+  \ 8564736, owner 0, offset 0, num_refs 18446744073709551615\n      __btrfs_mod_ref+0x7dd/0xac0\
+  \ fs/btrfs/extent-tree.c:2523\n      update_ref_for_cow+0x9cd/0x11f0 fs/btrfs/ctree.c:512\n\
+  \      btrfs_force_cow_block+0x9f6/0x1da0 fs/btrfs/ctree.c:594\n      btrfs_cow_block+0x35e/0xa40\
+  \ fs/btrfs/ctree.c:754\n      btrfs_search_slot+0xbdd/0x30d0 fs/btrfs/ctree.c:2116\n\
+  \      btrfs_lookup_inode+0xdc/0x480 fs/btrfs/inode-item.c:411\n      __btrfs_update_delayed_inode+0x1e7/0xb90\
+  \ fs/btrfs/delayed-inode.c:1030\n      btrfs_update_delayed_inode fs/btrfs/delayed-inode.c:1114\
+  \ [inline]\n      __btrfs_commit_inode_delayed_items+0x2318/0x24a0 fs/btrfs/delayed-inode.c:1137\n\
+  \      __btrfs_run_delayed_items+0x213/0x490 fs/btrfs/delayed-inode.c:1171\n   \
+  \   btrfs_commit_transaction+0x8a8/0x3740 fs/btrfs/transaction.c:2313\n      prepare_to_relocate+0x3c4/0x4c0\
+  \ fs/btrfs/relocation.c:3586\n      relocate_block_group+0x16c/0xd40 fs/btrfs/relocation.c:3611\n\
+  \      btrfs_relocate_block_group+0x77d/0xd90 fs/btrfs/relocation.c:4081\n     \
+  \ btrfs_relocate_chunk+0x12c/0x3b0 fs/btrfs/volumes.c:3377\n      __btrfs_balance+0x1b0f/0x26b0\
+  \ fs/btrfs/volumes.c:4161\n      btrfs_balance+0xbdc/0x10c0 fs/btrfs/volumes.c:4538\n\
+  \   ==================================================================\n   BUG:\
+  \ KASAN: slab-use-after-free in rb_first+0x69/0x70 lib/rbtree.c:473\n   Read of\
+  \ size 8 at addr ffff888042d1af38 by task syz.0.0/5329\n\n   CPU: 0 UID: 0 PID:\
+  \ 5329 Comm: syz.0.0 Not tainted 6.12.0-rc7-syzkaller #0\n   Hardware name: QEMU\
+  \ Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014\n\
+  \   Call Trace:\n    <TASK>\n    __dump_stack lib/dump_stack.c:94 [inline]\n   \
+  \ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120\n    print_address_description\
+  \ mm/kasan/report.c:377 [inline]\n    print_report+0x169/0x550 mm/kasan/report.c:488\n\
+  \    kasan_report+0x143/0x180 mm/kasan/report.c:601\n    rb_first+0x69/0x70 lib/rbtree.c:473\n\
+  \    free_block_entry+0x78/0x230 fs/btrfs/ref-verify.c:248\n    btrfs_free_ref_cache+0xa3/0x100\
+  \ fs/btrfs/ref-verify.c:917\n    btrfs_ref_tree_mod+0x139f/0x15e0 fs/btrfs/ref-verify.c:898\n\
+  \    btrfs_free_extent+0x33c/0x380 fs/btrfs/extent-tree.c:3544\n    __btrfs_mod_ref+0x7dd/0xac0\
+  \ fs/btrfs/extent-tree.c:2523\n    update_ref_for_cow+0x9cd/0x11f0 fs/btrfs/ctree.c:512\n\
+  \    btrfs_force_cow_block+0x9f6/0x1da0 fs/btrfs/ctree.c:594\n    btrfs_cow_block+0x35e/0xa40\
+  \ fs/btrfs/ctree.c:754\n    btrfs_search_slot+0xbdd/0x30d0 fs/btrfs/ctree.c:2116\n\
+  \    btrfs_lookup_inode+0xdc/0x480 fs/btrfs/inode-item.c:411\n    __btrfs_update_delayed_inode+0x1e7/0xb90\
+  \ fs/btrfs/delayed-inode.c:1030\n    btrfs_update_delayed_inode fs/btrfs/delayed-inode.c:1114\
+  \ [inline]\n    __btrfs_commit_inode_delayed_items+0x2318/0x24a0 fs/btrfs/delayed-inode.c:1137\n\
+  \    __btrfs_run_delayed_items+0x213/0x490 fs/btrfs/delayed-inode.c:1171\n    btrfs_commit_transaction+0x8a8/0x3740\
+  \ fs/btrfs/transaction.c:2313\n    prepare_to_relocate+0x3c4/0x4c0 fs/btrfs/relocation.c:3586\n\
+  \    relocate_block_group+0x16c/0xd40 fs/btrfs/relocation.c:3611\n    btrfs_relocate_block_group+0x77d/0xd90\
+  \ fs/btrfs/relocation.c:4081\n    btrfs_relocate_chunk+0x12c/0x3b0 fs/btrfs/volumes.c:3377\n\
+  \    __btrfs_balance+0x1b0f/0x26b0 fs/btrfs/volumes.c:4161\n    btrfs_balance+0xbdc/0x10c0\
+  \ fs/btrfs/volumes.c:4538\n    btrfs_ioctl_balance+0x493/0x7c0 fs/btrfs/ioctl.c:3673\n\
+  \    vfs_ioctl fs/ioctl.c:51 [inline]\n    __do_sys_ioctl fs/ioctl.c:907 [inline]\n\
+  \    __se_sys_ioctl+0xf9/0x170 fs/ioctl.c:893\n    do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n    do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83\n    entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \   RIP: 0033:0x7f996df7e719\n   RSP: 002b:00007f996ede7038 EFLAGS: 00000246 ORIG_RAX:\
+  \ 0000000000000010\n   RAX: ffffffffffffffda RBX: 00007f996e135f80 RCX: 00007f996df7e719\n\
+  \   RDX: 0000000020000180 RSI: 00000000c4009420 RDI: 0000000000000004\n   RBP: 00007f996dff139e\
+  \ R08: 0000000000000000 R09: 0000000000000000\n   R10: 0000000000000000 R11: 0000000000000246\
+  \ R12: 0000000000000000\n   R13: 0000000000000000 R14: 00007f996e135f80 R15: 00007fff79f32e68\n\
+  \    </TASK>\n\n   Allocated by task 5329:\n    kasan_save_stack mm/kasan/common.c:47\
+  \ [inline]\n    kasan_save_track+0x3f/0x80 mm/kasan/common.c:68\n    poison_kmalloc_redzone\
+  \ mm/kasan/common.c:377 [inline]\n    __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:394\n\
+  \    kasan_kmalloc include/linux/kasan.h:257 [inline]\n    __kmalloc_cache_noprof+0x19c/0x2c0\
+  \ mm/slub.c:4295\n    kmalloc_noprof include/linux/slab.h:878 [inline]\n    kzalloc_noprof\
+  \ include/linux/slab.h:1014 [inline]\n    btrfs_ref_tree_mod+0x264/0x15e0 fs/btrfs/ref-verify.c:701\n\
+  \    btrfs_free_extent+0x33c/0x380 fs/btrfs/extent-tree.c:3544\n    __btrfs_mod_ref+0x7dd/0xac0\
+  \ fs/btrfs/extent-tree.c:2523\n    update_ref_for_cow+0x9cd/0x11f0 fs/btrfs/ctree.c:512\n\
+  \    btrfs_force_cow_block+0x9f6/0x1da0 fs/btrfs/ctree.c:594\n    btrfs_cow_block+0x35e/0xa40\
+  \ fs/btrfs/ctree.c:754\n    btrfs_search_slot+0xbdd/0x30d0 fs/btrfs/ctree.c:2116\n\
+  \    btrfs_lookup_inode+0xdc/0x480 fs/btrfs/inode-item.c:411\n    __btrfs_update_delayed_inode+0x1e7/0xb90\
+  \ fs/btrfs/delayed-inode.c:1030\n    btrfs_update_delayed_inode fs/btrfs/delayed-inode.c:1114\
+  \ [inline]\n    __btrfs_commit_inode_delayed_items+0x2318/0x24a0 fs/btrfs/delayed-inode.c:1137\n\
+  \    __btrfs_run_delayed_items+0x213/0x490 fs/btrfs/delayed-inode.c:1171\n    btrfs_commit_transaction+0x8a8/0x3740\
+  \ fs/btrfs/transaction.c:2313\n    prepare_to_relocate+0x3c4/0x4c0 fs/btrfs/relocation.c:3586\n\
+  \    relocate_block_group+0x16c/0xd40 fs/btrfs/relocation.c:3611\n    btrfs_relocate_block_group+0x77d/0xd90\
+  \ fs/btrfs/relocation.c:4081\n    btrfs_relocate_chunk+0x12c/0x3b0 fs/btrfs/volumes.c:3377\n\
+  \    __btrfs_balance+0x1b0f/0x26b0 fs/btrfs/volumes.c:4161\n    btrfs_balance+0xbdc/0x10c0\
+  \ fs/btrfs/volumes.c:4538\n    btrfs_ioctl_balance+0x493/0x7c0 fs/btrfs/ioctl.c:3673\n\
+  \    vfs_ioctl fs/ioctl.c:51 [inline]\n    __do_sys_ioctl fs/ioctl.c:907 [inline]\n\
+  \    __se_sys_ioctl+0xf9/0x170 fs/ioctl.c:893\n    do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n    do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83\n    entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \n   Freed by task 5329:\n    kasan_save_stack mm/kasan/common.c:47 [inline]\n \
+  \   kasan_save_track+0x3f/0x80 mm/kasan/common.c:68\n    kasan_save_free_info+0x40/0x50\
+  \ mm/kasan/generic.c:579\n    poison_slab_object mm/kasan/common.c:247 [inline]\n\
+  \    __kasan_slab_free+0x59/0x70 mm/kasan/common.c:264\n    kasan_slab_free include/linux/kasan.h:230\
+  \ [inline]\n    slab_free_hook mm/slub.c:2342 [inline]\n    slab_free mm/slub.c:4579\
+  \ [inline]\n    kfree+0x1a0/0x440 mm/slub.c:4727\n    btrfs_ref_tree_mod+0x136c/0x15e0\n\
+  \    btrfs_free_extent+0x33c/0x380 fs/btrfs/extent-tree.c:3544\n    __btrfs_mod_ref+0x7dd/0xac0\
+  \ fs/btrfs/extent-tree.c:2523\n    update_ref_for_cow+0x9cd/0x11f0 fs/btrfs/ctree.c:512\n\
+  \    btrfs_force_cow_block+0x9f6/0x1da0 fs/btrfs/ctree.c:594\n    btrfs_cow_block+0x35e/0xa40\
+  \ fs/btrfs/ctree.c:754\n    btrfs_search_slot+0xbdd/0x30d0 fs/btrfs/ctree.c:2116\n\
+  \    btrfs_lookup_inode+0xdc/0x480 fs/btrfs/inode-item.c:411\n    __btrfs_update_delayed_inode+0x1e7/0xb90\
+  \ fs/btrfs/delayed-inode.c:1030\n    btrfs_update_delayed_inode fs/btrfs/delayed-inode.c:1114\
+  \ [inline]\n    __btrfs_commit_inode_delayed_items+0x2318/0x24a0 fs/btrfs/delayed-inode.c:1137\n\
+  \    __btrfs_run_delayed_items+0x213/0x490 fs/btrfs/delayed-inode.c:1171\n    btrfs_commit_transaction+0x8a8/0x3740\
+  \ fs/btrfs/transaction.c:2313\n    prepare_to_relocate+0x3c4/0x4c0 fs/btrfs/relocation.c:3586\n\
+  \    relocate_block_group+0x16c/0xd40 fs/btrfs/relocation.c:3611\n    btrfs_relocate_block_group+0x77d/0xd90\
+  \ fs/btrfs/relocation.c:4081\n    btrfs_relocate_chunk+0x12c/0x3b0 fs/btrfs/volumes.c:3377\n\
+  \    __btrfs_balance+0x1b0f/0x26b0 fs/btrfs/volumes.c:4161\n    btrfs_balance+0xbdc/0x10c0\
+  \ fs/btrfs/volumes.c:4538\n    btrfs_ioctl_balance+0x493/0x7c0 fs/btrfs/ioctl.c:3673\n\
+  \    vfs_ioctl fs/ioctl.c:51 [inline]\n    __do_sys_ioctl fs/ioctl.c:907 [inline]\n\
+  \    __se_sys_ioctl+0xf9/0x170 fs/ioctl.c:893\n    do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n    do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83\n    entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \n   The buggy address belongs to the object at ffff888042d1af00\n    which belongs\
+  \ to the cache kmalloc-64 of size 64\n   The buggy address is located 56 bytes inside\
+  \ of\n    freed 64-byte region [ffff888042d1af00, ffff888042d1af40)\n\n   The buggy\
+  \ address belongs to the physical page:\n   page: refcount:1 mapcount:0 mapping:0000000000000000\
+  \ index:0x0 pfn:0x42d1a\n   anon flags: 0x4fff00000000000(node=1|zone=1|lastcpupid=0x7ff)\n\
+  \   page_type: f5(slab)\n   raw: 04fff00000000000 ffff88801ac418c0 0000000000000000\
+  \ dead000000000001\n   raw: 0000000000000000 0000000000200020 00000001f5000000 0000000000000000\n\
+  \   page dumped because: kasan: bad access detected\n   page_owner tracks the page\
+  \ as allocated\n   page last allocated via order 0, migratetype Unmovable, gfp_mask\
+  \ 0x52c40(GFP_NOFS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 5055, tgid 5055 (dhcpcd-run-hook),\
+  \ ts 40377240074, free_ts 40376848335\n    set_page_owner include/linux/page_owner.h:32\
+  \ [inline]\n    post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1541\n    prep_new_page\
+  \ mm/page_alloc.c:1549 [inline]\n    get_page_from_freelist+0x3649/0x3790 mm/page_alloc.c:3459\n\
+  \    __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4735\n    alloc_pages_mpol_noprof+0x3e8/0x680\
+  \ mm/mempolicy.c:2265\n    alloc_slab_page+0x6a/0x140 mm/slub.c:2412\n    allocate_slab+0x5a/0x2f0\
+  \ mm/slub.c:2578\n    new_slab mm/slub.c:2631 [inline]\n    ___slab_alloc+0xcd1/0x14b0\
+  \ mm/slub.c:3818\n    __slab_alloc+0x58/0xa0 mm/slub.c:3908\n    __slab_alloc_node\
+  \ mm/slub.c:3961 [inline]\n    slab_alloc_node mm/slub.c:4122 [inline]\n    __do_kmalloc_node\
+  \ mm/slub.c:4263 [inline]\n    __kmalloc_noprof+0x25a/0x400 mm/slub.c:4276\n   \
+  \ kmalloc_noprof include/linux/slab.h:882 [inline]\n    kzalloc_noprof include/linux/slab.h:1014\
+  \ [inline]\n    tomoyo_encode2 security/tomoyo/realpath.c:45 [inline]\n    tomoyo_encode+0x26f/0x540\
+  \ security/tomoyo/realpath.c:80\n    tomoyo_realpath_from_path+0x59e/0x5e0 security/tomoyo/realpath.c:283\n\
+  \    tomoyo_get_realpath security/tomoyo/file.c:151 [inline]\n    tomoyo_check_open_permission+0x255/0x500\
+  \ security/tomoyo/file.c:771\n    security_file_open+0x777/0x990 security/security.c:3109\n\
+  \    do_dentry_open+0x369/0x1460 fs/open.c:945\n    vfs_open+0x3e/0x330 fs/open.c:1088\n\
+  \    do_open fs/namei.c:3774 [inline]\n    path_openat+0x2c84/0x3590 fs/namei.c:3933\n\
+  \   page last free pid 5055 tgid 5055 stack trace:\n    reset_page_owner include/linux/page_owner.h:25\
+  \ [inline]\n    free_pages_prepare mm/page_alloc.c:1112 [inline]\n    free_unref_page+0xcfb/0xf20\
+  \ mm/page_alloc.c:2642\n    free_pipe_info+0x300/0x390 fs/pipe.c:860\n    put_pipe_info\
+  \ fs/pipe.c:719 [inline]\n    pipe_release+0x245/0x320 fs/pipe.c:742\n    __fput+0x23f/0x880\
+  \ fs/file_table.c:431\n    __do_sys_close fs/open.c:1567 [inline]\n    __se_sys_close\
+  \ fs/open.c:1552 [inline]\n    __x64_sys_close+0x7f/0x110 fs/open.c:1552\n    do_syscall_x64\
+  \ arch/x86/entry/common.c:52 [inline]\n    do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83\n\
+  \    entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\n   Memory state around the buggy\
+  \ address:\n    ffff888042d1ae00: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc\n\
+  \    ffff888042d1ae80: 00 00 00 00 00 fc fc fc fc fc fc fc fc fc fc fc\n   >ffff888042d1af00:\
+  \ fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc\n                            \
+  \               ^\n    ffff888042d1af80: 00 00 00 00 00 00 fc fc fc fc fc fc fc\
+  \ fc fc fc\n    ffff888042d1b000: 00 00 00 00 00 fc fc 00 00 00 00 00 fc fc 00 00\n\
+  \nReported-by: syzbot+7325f164162e200000c1@syzkaller.appspotmail.com\nLink: https://lore.kernel.org/linux-btrfs/673723eb.050a0220.1324f8.00a8.GAE@google.com/T/#u\n\
+  Fixes: fd708b81d972 (\"Btrfs: add a extent ref verify tool\")\nCC: stable@vger.kernel.org\
+  \ # 4.19+\nReviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>\nSigned-off-by:\
+  \ Filipe Manana <fdmanana@suse.com>\nReviewed-by: David Sterba <dsterba@suse.com>\n\
+  Signed-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 1

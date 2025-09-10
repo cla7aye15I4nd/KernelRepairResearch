@@ -1,0 +1,69 @@
+general protection fault, probably for non-canonical address 0xdffffc000000000e: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000070-0x0000000000000077]
+CPU: 0 PID: 4455 Comm: kworker/u5:1 Not tainted 6.7.0-next-20240117-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+Workqueue: hci0 hci_power_on
+RIP: 0010:btintel_read_version+0x65/0x1e0 drivers/bluetooth/btintel.c:444
+Code: 08 c5 f9 48 81 fb 00 f0 ff ff 0f 87 9e 00 00 00 e8 c0 0d c5 f9 48 8d 7b 70 48 b8 00 00 00 00 00 fc ff df 48 89 fa 48 c1 ea 03 <0f> b6 04 02 84 c0 74 08 3c 03 0f 8e de 00 00 00 8b 6b 70 bf 0a 00
+RSP: 0018:ffffc9000e057958 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: ffffffff87c7146e
+RDX: 000000000000000e RSI: ffffffff87c71480 RDI: 0000000000000070
+RBP: ffffc9000e057a10 R08: 0000000000000007 R09: fffffffffffff000
+R10: 0000000000000000 R11: 0000000000000003 R12: ffff888030f74000
+R13: ffffc9000e0579f0 R14: ffff888030f74000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f27722fa1d0 CR3: 000000007ff6a000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ ag6xx_setup+0x1b0/0xc10 drivers/bluetooth/hci_ag6xx.c:169
+ hci_uart_setup+0x224/0x4d0 drivers/bluetooth/hci_ldisc.c:423
+ hci_dev_setup_sync net/bluetooth/hci_sync.c:4631 [inline]
+ hci_dev_init_sync net/bluetooth/hci_sync.c:4699 [inline]
+ hci_dev_open_sync+0x35b/0x2650 net/bluetooth/hci_sync.c:4799
+ hci_dev_do_open+0x2a/0x90 net/bluetooth/hci_core.c:483
+ hci_power_on+0x132/0x670 net/bluetooth/hci_core.c:1015
+ process_one_work+0x8d5/0x16e0 kernel/workqueue.c:2633
+ process_scheduled_works kernel/workqueue.c:2707 [inline]
+ worker_thread+0x8b6/0x1290 kernel/workqueue.c:2788
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:242
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:btintel_read_version+0x65/0x1e0 drivers/bluetooth/btintel.c:444
+Code: 08 c5 f9 48 81 fb 00 f0 ff ff 0f 87 9e 00 00 00 e8 c0 0d c5 f9 48 8d 7b 70 48 b8 00 00 00 00 00 fc ff df 48 89 fa 48 c1 ea 03 <0f> b6 04 02 84 c0 74 08 3c 03 0f 8e de 00 00 00 8b 6b 70 bf 0a 00
+RSP: 0018:ffffc9000e057958 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: ffffffff87c7146e
+RDX: 000000000000000e RSI: ffffffff87c71480 RDI: 0000000000000070
+RBP: ffffc9000e057a10 R08: 0000000000000007 R09: fffffffffffff000
+R10: 0000000000000000 R11: 0000000000000003 R12: ffff888030f74000
+R13: ffffc9000e0579f0 R14: ffff888030f74000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f27722fa1d0 CR3: 000000007ff6a000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	08 c5                	or     %al,%ch
+   2:	f9                   	stc
+   3:	48 81 fb 00 f0 ff ff 	cmp    $0xfffffffffffff000,%rbx
+   a:	0f 87 9e 00 00 00    	ja     0xae
+  10:	e8 c0 0d c5 f9       	call   0xf9c50dd5
+  15:	48 8d 7b 70          	lea    0x70(%rbx),%rdi
+  19:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  20:	fc ff df
+  23:	48 89 fa             	mov    %rdi,%rdx
+  26:	48 c1 ea 03          	shr    $0x3,%rdx
+* 2a:	0f b6 04 02          	movzbl (%rdx,%rax,1),%eax <-- trapping instruction
+  2e:	84 c0                	test   %al,%al
+  30:	74 08                	je     0x3a
+  32:	3c 03                	cmp    $0x3,%al
+  34:	0f 8e de 00 00 00    	jle    0x118
+  3a:	8b 6b 70             	mov    0x70(%rbx),%ebp
+  3d:	bf                   	.byte 0xbf
+  3e:	0a 00                	or     (%rax),%al

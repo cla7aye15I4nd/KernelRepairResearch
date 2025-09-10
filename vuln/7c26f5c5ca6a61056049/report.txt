@@ -1,0 +1,174 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in acomp_request_set_params include/crypto/acompress.h:230 [inline]
+BUG: KASAN: slab-use-after-free in zswap_compress mm/zswap.c:910 [inline]
+BUG: KASAN: slab-use-after-free in zswap_store_page mm/zswap.c:1426 [inline]
+BUG: KASAN: slab-use-after-free in zswap_store+0x2481/0x25d0 mm/zswap.c:1533
+Write of size 8 at addr ffff888035e1d1b0 by task syz.3.1058/11295
+
+CPU: 0 UID: 0 PID: 11295 Comm: syz.3.1058 Not tainted 6.13.0-rc5-syzkaller-00163-gab75170520d4 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0xc3/0x620 mm/kasan/report.c:489
+ kasan_report+0xd9/0x110 mm/kasan/report.c:602
+ acomp_request_set_params include/crypto/acompress.h:230 [inline]
+ zswap_compress mm/zswap.c:910 [inline]
+ zswap_store_page mm/zswap.c:1426 [inline]
+ zswap_store+0x2481/0x25d0 mm/zswap.c:1533
+ swap_writepage+0x3b6/0x1120 mm/page_io.c:279
+ shmem_writepage+0xf76/0x1490 mm/shmem.c:1579
+ pageout+0x3b2/0xaa0 mm/vmscan.c:689
+ shrink_folio_list+0x3025/0x42d0 mm/vmscan.c:1367
+ evict_folios+0x6e3/0x19c0 mm/vmscan.c:4593
+ try_to_shrink_lruvec+0x61e/0xa80 mm/vmscan.c:4789
+ lru_gen_shrink_lruvec mm/vmscan.c:4938 [inline]
+ shrink_lruvec+0x313/0x2ba0 mm/vmscan.c:5693
+ shrink_node_memcgs mm/vmscan.c:5929 [inline]
+ shrink_node mm/vmscan.c:5970 [inline]
+ shrink_node+0x105e/0x3f20 mm/vmscan.c:5948
+ shrink_zones mm/vmscan.c:6215 [inline]
+ do_try_to_free_pages+0x35f/0x1a30 mm/vmscan.c:6277
+ try_to_free_mem_cgroup_pages+0x31a/0x7a0 mm/vmscan.c:6609
+ try_charge_memcg+0x356/0xaf0 mm/memcontrol.c:2238
+ try_charge mm/memcontrol-v1.h:19 [inline]
+ charge_memcg mm/memcontrol.c:4497 [inline]
+ __mem_cgroup_charge+0x9b/0x280 mm/memcontrol.c:4512
+ mem_cgroup_charge include/linux/memcontrol.h:646 [inline]
+ shmem_alloc_and_add_folio+0x507/0xc00 mm/shmem.c:1847
+ shmem_get_folio_gfp+0x689/0x1530 mm/shmem.c:2357
+ shmem_get_folio mm/shmem.c:2463 [inline]
+ shmem_write_begin+0x161/0x300 mm/shmem.c:3119
+ generic_perform_write+0x2ba/0x920 mm/filemap.c:4055
+ shmem_file_write_iter+0x10e/0x140 mm/shmem.c:3295
+ __kernel_write_iter+0x318/0xa80 fs/read_write.c:612
+ dump_emit_page fs/coredump.c:884 [inline]
+ dump_user_range+0x389/0x8c0 fs/coredump.c:945
+ elf_core_dump+0x2787/0x3880 fs/binfmt_elf.c:2129
+ do_coredump+0x2dd5/0x43e0 fs/coredump.c:758
+ get_signal+0x23f3/0x2610 kernel/signal.c:3002
+ arch_do_signal_or_restart+0x90/0x7e0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:329 [inline]
+ irqentry_exit_to_user_mode+0x13f/0x280 kernel/entry/common.c:231
+ asm_exc_invalid_op+0x1a/0x20 arch/x86/include/asm/idtentry.h:621
+RIP: 0033:0x0
+Code: Unable to access opcode bytes at 0xffffffffffffffd6.
+RSP: 002b:0000000000000adb EFLAGS: 00010217
+RAX: 0000000000000000 RBX: 00007f0d80d76080 RCX: 00007f0d80b85d29
+RDX: 0000000000000000 RSI: 0000000000000ad3 RDI: 0000000000003fff
+RBP: 00007f0d80c01b08 R08: 0000000000000002 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007f0d80d76080 R15: 00007fff21790518
+ </TASK>
+
+Allocated by task 1:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __do_kmalloc_node mm/slub.c:4298 [inline]
+ __kmalloc_noprof+0x21a/0x4f0 mm/slub.c:4310
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1037 [inline]
+ __acomp_request_alloc_noprof include/crypto/internal/acompress.h:75 [inline]
+ acomp_request_alloc+0x46/0x110 crypto/acompress.c:131
+ zswap_cpu_comp_prepare+0x1f2/0x460 mm/zswap.c:840
+ cpuhp_invoke_callback+0x20c/0xa10 kernel/cpu.c:204
+ cpuhp_issue_call+0x1c0/0x980 kernel/cpu.c:2375
+ __cpuhp_state_add_instance_cpuslocked+0x1a4/0x3c0 kernel/cpu.c:2437
+ __cpuhp_state_add_instance+0xd7/0x2e0 kernel/cpu.c:2458
+ cpuhp_state_add_instance include/linux/cpuhotplug.h:386 [inline]
+ zswap_pool_create+0x27b/0x540 mm/zswap.c:288
+ __zswap_pool_create_fallback mm/zswap.c:356 [inline]
+ zswap_setup+0x402/0x810 mm/zswap.c:1781
+ zswap_init+0x2c/0x40 mm/zswap.c:1817
+ do_one_initcall+0x128/0x630 init/main.c:1266
+ do_initcall_level init/main.c:1328 [inline]
+ do_initcalls init/main.c:1344 [inline]
+ do_basic_setup init/main.c:1363 [inline]
+ kernel_init_freeable+0x58f/0x8b0 init/main.c:1577
+ kernel_init+0x1c/0x2b0 init/main.c:1466
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Freed by task 8:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ kasan_save_free_info+0x3b/0x60 mm/kasan/generic.c:582
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x51/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2353 [inline]
+ slab_free mm/slub.c:4613 [inline]
+ kfree+0x14f/0x4b0 mm/slub.c:4761
+ zswap_cpu_comp_dead+0xe3/0x1c0 mm/zswap.c:874
+ cpuhp_invoke_callback+0x528/0xa10 kernel/cpu.c:216
+ __cpuhp_invoke_callback_range+0x101/0x200 kernel/cpu.c:965
+ cpuhp_invoke_callback_range kernel/cpu.c:989 [inline]
+ cpuhp_down_callbacks kernel/cpu.c:1382 [inline]
+ _cpu_down+0x422/0xf20 kernel/cpu.c:1443
+ __cpu_down_maps_locked+0x6c/0x90 kernel/cpu.c:1473
+ work_for_cpu_fn+0x52/0xa0 kernel/workqueue.c:6724
+ process_one_work+0x958/0x1b30 kernel/workqueue.c:3229
+ process_scheduled_works kernel/workqueue.c:3310 [inline]
+ worker_thread+0x6c8/0xf00 kernel/workqueue.c:3391
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+The buggy address belongs to the object at ffff888035e1d180
+ which belongs to the cache kmalloc-96 of size 96
+The buggy address is located 48 bytes inside of
+ freed 96-byte region [ffff888035e1d180, ffff888035e1d1e0)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0xffff888035e1d300 pfn:0x35e1d
+flags: 0xfff00000000200(workingset|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000200 ffff88801ac41280 ffffea0000927190 ffffea0000d19d90
+raw: ffff888035e1d300 000000000020001d 00000001f5000000 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x252800(GFP_NOWAIT|__GFP_NORETRY|__GFP_COMP|__GFP_THISNODE), pid 1, tgid 1 (swapper/0), ts 21105999978, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x2d1/0x350 mm/page_alloc.c:1558
+ prep_new_page mm/page_alloc.c:1566 [inline]
+ get_page_from_freelist+0xfce/0x2f80 mm/page_alloc.c:3476
+ __alloc_pages_noprof+0x223/0x25b0 mm/page_alloc.c:4753
+ __alloc_pages_node_noprof include/linux/gfp.h:269 [inline]
+ alloc_slab_page mm/slub.c:2425 [inline]
+ allocate_slab mm/slub.c:2589 [inline]
+ new_slab+0xca/0x410 mm/slub.c:2642
+ ___slab_alloc+0xce2/0x1650 mm/slub.c:3830
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3920
+ __slab_alloc_node mm/slub.c:3995 [inline]
+ slab_alloc_node mm/slub.c:4156 [inline]
+ __kmalloc_cache_node_noprof+0xfb/0x3f0 mm/slub.c:4337
+ kmalloc_node_noprof include/linux/slab.h:924 [inline]
+ alloc_node_nr_active kernel/workqueue.c:4863 [inline]
+ __alloc_workqueue+0x506/0x1810 kernel/workqueue.c:5717
+ alloc_workqueue+0xd3/0x200 kernel/workqueue.c:5777
+ zswap_setup+0xcb/0x810 mm/zswap.c:1767
+ zswap_init+0x2c/0x40 mm/zswap.c:1817
+ do_one_initcall+0x128/0x630 init/main.c:1266
+ do_initcall_level init/main.c:1328 [inline]
+ do_initcalls init/main.c:1344 [inline]
+ do_basic_setup init/main.c:1363 [inline]
+ kernel_init_freeable+0x58f/0x8b0 init/main.c:1577
+ kernel_init+0x1c/0x2b0 init/main.c:1466
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff888035e1d080: 00 00 00 00 00 00 00 00 00 00 00 fc fc fc fc fc
+ ffff888035e1d100: fa fb fb fb fb fb fb fb fb fb fb fb fc fc fc fc
+>ffff888035e1d180: fa fb fb fb fb fb fb fb fb fb fb fb fc fc fc fc
+                                     ^
+ ffff888035e1d200: 00 00 00 00 00 00 00 00 00 fc fc fc fc fc fc fc
+ ffff888035e1d280: 00 00 00 00 00 00 00 00 04 fc fc fc fc fc fc fc
+==================================================================

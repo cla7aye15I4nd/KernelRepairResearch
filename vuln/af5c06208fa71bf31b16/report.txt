@@ -1,0 +1,66 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000001: 0000 [#1] PREEMPT SMP KASAN NOPTI
+KASAN: null-ptr-deref in range [0x0000000000000008-0x000000000000000f]
+CPU: 3 UID: 0 PID: 162 Comm: kworker/u32:5 Not tainted 6.13.0-syzkaller #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: events_unbound netfs_write_collection_worker
+RIP: 0010:folioq_folio include/linux/folio_queue.h:277 [inline]
+RIP: 0010:netfs_writeback_unlock_folios fs/netfs/write_collect.c:107 [inline]
+RIP: 0010:netfs_collect_write_results fs/netfs/write_collect.c:492 [inline]
+RIP: 0010:netfs_write_collection_worker+0x1cd1/0x4810 fs/netfs/write_collect.c:549
+Code: 39 f3 0f 83 37 04 00 00 e8 7c 55 53 ff 44 8b 6c 24 08 41 83 fd 1e 0f 87 96 23 00 00 4a 8d 44 ed 08 48 89 44 24 30 48 c1 e8 03 <42> 80 3c 38 00 0f 85 01 24 00 00 4a 8b 5c ed 08 48 89 df e8 c7 d4
+RSP: 0018:ffffc900030efae0 EFLAGS: 00010202
+RAX: 0000000000000001 RBX: 0000000000000005 RCX: ffffffff8246bc1a
+RDX: ffff888022de8000 RSI: ffffffff8246bec4 RDI: 0000000000000005
+RBP: 0000000000000000 R08: 0000000000000005 R09: ffff88804e5f1780
+R10: 0000000000000000 R11: 0000000000000002 R12: ffff88804e5f1680
+R13: 0000000000000000 R14: 0000000000000000 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff88806a900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000020001000 CR3: 00000000294ea000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ process_one_work+0x9c5/0x1ba0 kernel/workqueue.c:3236
+ process_scheduled_works kernel/workqueue.c:3317 [inline]
+ worker_thread+0x6c8/0xf00 kernel/workqueue.c:3398
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:folioq_folio include/linux/folio_queue.h:277 [inline]
+RIP: 0010:netfs_writeback_unlock_folios fs/netfs/write_collect.c:107 [inline]
+RIP: 0010:netfs_collect_write_results fs/netfs/write_collect.c:492 [inline]
+RIP: 0010:netfs_write_collection_worker+0x1cd1/0x4810 fs/netfs/write_collect.c:549
+Code: 39 f3 0f 83 37 04 00 00 e8 7c 55 53 ff 44 8b 6c 24 08 41 83 fd 1e 0f 87 96 23 00 00 4a 8d 44 ed 08 48 89 44 24 30 48 c1 e8 03 <42> 80 3c 38 00 0f 85 01 24 00 00 4a 8b 5c ed 08 48 89 df e8 c7 d4
+RSP: 0018:ffffc900030efae0 EFLAGS: 00010202
+RAX: 0000000000000001 RBX: 0000000000000005 RCX: ffffffff8246bc1a
+RDX: ffff888022de8000 RSI: ffffffff8246bec4 RDI: 0000000000000005
+RBP: 0000000000000000 R08: 0000000000000005 R09: ffff88804e5f1780
+R10: 0000000000000000 R11: 0000000000000002 R12: ffff88804e5f1680
+R13: 0000000000000000 R14: 0000000000000000 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff88806a800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000000 CR3: 00000000303c2000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	39 f3                	cmp    %esi,%ebx
+   2:	0f 83 37 04 00 00    	jae    0x43f
+   8:	e8 7c 55 53 ff       	call   0xff535589
+   d:	44 8b 6c 24 08       	mov    0x8(%rsp),%r13d
+  12:	41 83 fd 1e          	cmp    $0x1e,%r13d
+  16:	0f 87 96 23 00 00    	ja     0x23b2
+  1c:	4a 8d 44 ed 08       	lea    0x8(%rbp,%r13,8),%rax
+  21:	48 89 44 24 30       	mov    %rax,0x30(%rsp)
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 80 3c 38 00       	cmpb   $0x0,(%rax,%r15,1) <-- trapping instruction
+  2f:	0f 85 01 24 00 00    	jne    0x2436
+  35:	4a 8b 5c ed 08       	mov    0x8(%rbp,%r13,8),%rbx
+  3a:	48 89 df             	mov    %rbx,%rdi
+  3d:	e8                   	.byte 0xe8
+  3e:	c7                   	(bad)
+  3f:	d4                   	(bad)

@@ -1,0 +1,41 @@
+=====================================================
+BUG: KMSAN: uninit-value in af_alg_free_sg+0x1a7/0x270 crypto/af_alg.c:547
+ af_alg_free_sg+0x1a7/0x270 crypto/af_alg.c:547
+ hash_sendmsg+0x1938/0x1c30 crypto/algif_hash.c:172
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg net/socket.c:745 [inline]
+ ____sys_sendmsg+0x9c2/0xd60 net/socket.c:2586
+ ___sys_sendmsg+0x28d/0x3c0 net/socket.c:2640
+ __sys_sendmmsg+0x3c4/0x950 net/socket.c:2726
+ __do_sys_sendmmsg net/socket.c:2755 [inline]
+ __se_sys_sendmmsg net/socket.c:2752 [inline]
+ __x64_sys_sendmmsg+0xbc/0x120 net/socket.c:2752
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Uninit was created at:
+ slab_post_alloc_hook+0x129/0xa70 mm/slab.h:768
+ slab_alloc_node mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_node+0x5c9/0x970 mm/slub.c:3517
+ __do_kmalloc_node mm/slab_common.c:1006 [inline]
+ __kmalloc+0x121/0x3c0 mm/slab_common.c:1020
+ kmalloc include/linux/slab.h:604 [inline]
+ sock_kmalloc+0x128/0x1c0 net/core/sock.c:2688
+ hash_accept_parent_nokey crypto/algif_hash.c:418 [inline]
+ hash_accept_parent+0xbf/0x430 crypto/algif_hash.c:445
+ af_alg_accept+0x1fc/0x810 crypto/af_alg.c:439
+ hash_accept+0x340/0x790 crypto/algif_hash.c:254
+ do_accept+0x606/0xa80 net/socket.c:1929
+ __sys_accept4_file net/socket.c:1969 [inline]
+ __sys_accept4+0x18e/0x360 net/socket.c:1999
+ __do_sys_accept4 net/socket.c:2010 [inline]
+ __se_sys_accept4 net/socket.c:2007 [inline]
+ __x64_sys_accept4+0xb8/0x120 net/socket.c:2007
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+CPU: 1 PID: 6735 Comm: syz-executor.4 Not tainted 6.7.0-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+=====================================================

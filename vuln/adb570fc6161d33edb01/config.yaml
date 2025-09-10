@@ -1,0 +1,33 @@
+id: adb570fc6161d33edb01
+bug_link: https://syzkaller.appspot.com/bug?extid=adb570fc6161d33edb01
+title: kernel BUG in PageHuge
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fd1a745ce03e37945674c14833870a9af0882e2d
+fix_commit: d99e3140a4d33e26066183ff727d8f02f56bec64
+datetime: '2024-04-24T19:34:26-07:00'
+fix_commit_message: "mm: turn folio_test_hugetlb into a PageType\n\nThe current folio_test_hugetlb()\
+  \ can be fooled by a concurrent folio split\ninto returning true for a folio which\
+  \ has never belonged to hugetlbfs. \nThis can't happen if the caller holds a refcount\
+  \ on it, but we have a few\nplaces (memory-failure, compaction, procfs) which do\
+  \ not and should not\ntake a speculative reference.\n\nSince hugetlb pages do not\
+  \ use individual page mapcounts (they are always\nfully mapped and use the entire_mapcount\
+  \ field to record the number of\nmappings), the PageType field is available now\
+  \ that page_mapcount()\nignores the value in this field.\n\nIn compaction and with\
+  \ CONFIG_DEBUG_VM enabled, the current implementation\ncan result in an oops, as\
+  \ reported by Luis. This happens since 9c5ccf2db04b\n(\"mm: remove HUGETLB_PAGE_DTOR\"\
+  ) effectively added some VM_BUG_ON() checks\nin the PageHuge() testing path.\n\n\
+  [willy@infradead.org: update vmcoreinfo]\n  Link: https://lkml.kernel.org/r/ZgGZUvsdhaT1Va-T@casper.infradead.org\n\
+  Link: https://lkml.kernel.org/r/20240321142448.1645400-6-willy@infradead.org\nFixes:\
+  \ 9c5ccf2db04b (\"mm: remove HUGETLB_PAGE_DTOR\")\nSigned-off-by: Matthew Wilcox\
+  \ (Oracle) <willy@infradead.org>\nReviewed-by: David Hildenbrand <david@redhat.com>\n\
+  Acked-by: Vlastimil Babka <vbabka@suse.cz>\nReported-by: Luis Chamberlain <mcgrof@kernel.org>\n\
+  Closes: https://bugzilla.kernel.org/show_bug.cgi?id=218227\nCc: Miaohe Lin <linmiaohe@huawei.com>\n\
+  Cc: Muchun Song <muchun.song@linux.dev>\nCc: Oscar Salvador <osalvador@suse.de>\n\
+  Cc: <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- include/linux
+- include/trace/events
+- kernel
+- mm
+hunk_count: 12
+covered_count: 2

@@ -1,0 +1,44 @@
+diff --git a/kernel/bpf/verifier.c b/kernel/bpf/verifier.c
+index 20eb04fd155e..b7448347e6b6 100644
+--- a/kernel/bpf/verifier.c
++++ b/kernel/bpf/verifier.c
+@@ -4445,6 +4445,24 @@ static int fixup_bpf_calls(struct bpf_verifier_env *env)
+ 	int i, cnt, delta = 0;
+ 
+ 	for (i = 0; i < insn_cnt; i++, insn++) {
++		if (insn->code == (BPF_ALU | BPF_MOD | BPF_X) ||
++		    insn->code == (BPF_ALU | BPF_DIV | BPF_X)) {
++			/* due to JIT bugs clear upper 32-bits of src register
++			 * before div/mod operation
++			 */
++			insn_buf[0] = BPF_MOV32_REG(insn->src_reg, insn->src_reg);
++			insn_buf[1] = *insn;
++			cnt = 2;
++			new_prog = bpf_patch_insn_data(env, i + delta, insn_buf, cnt);
++			if (!new_prog)
++				return -ENOMEM;
++
++			delta    += cnt - 1;
++			env->prog = prog = new_prog;
++			insn      = new_prog->insnsi + i + delta;
++			continue;
++		}
++
+ 		if (insn->code != (BPF_JMP | BPF_CALL))
+ 			continue;
+ 
+diff --git a/net/core/filter.c b/net/core/filter.c
+index d339ef170df6..1c0eb436671f 100644
+--- a/net/core/filter.c
++++ b/net/core/filter.c
+@@ -458,6 +458,10 @@ static int bpf_convert_filter(struct sock_filter *prog, int len,
+ 			    convert_bpf_extensions(fp, &insn))
+ 				break;
+ 
++			if (fp->code == (BPF_ALU | BPF_DIV | BPF_X) ||
++			    fp->code == (BPF_ALU | BPF_MOD | BPF_X))
++				*insn++ = BPF_MOV32_REG(BPF_REG_X, BPF_REG_X);
++
+ 			*insn = BPF_RAW_INSN(fp->code, BPF_REG_A, BPF_REG_X, 0, fp->k);
+ 			break;
+ 

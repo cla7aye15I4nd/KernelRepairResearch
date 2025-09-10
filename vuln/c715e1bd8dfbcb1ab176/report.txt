@@ -1,0 +1,76 @@
+BUG: sleeping function called from invalid context at net/bluetooth/hci_sync.c:167
+in_atomic(): 0, irqs_disabled(): 0, non_block: 0, pid: 4449, name: kworker/u5:1
+preempt_count: 0, expected: 0
+RCU nest depth: 1, expected: 0
+4 locks held by kworker/u5:1/4449:
+ #0: ffff8880291ecd38 ((wq_completion)hci0#2){+.+.}-{0:0}, at: process_one_work+0x787/0x15c0 kernel/workqueue.c:2605
+ #1: ffffc9000e58fd80 ((work_completion)(&hdev->rx_work)){+.+.}-{0:0}, at: process_one_work+0x7e9/0x15c0 kernel/workqueue.c:2606
+ #2: ffff888074ef8078 (&hdev->lock){+.+.}-{3:3}, at: hci_le_create_big_complete_evt+0xde/0xab0 net/bluetooth/hci_event.c:7036
+ #3: ffffffff8cbab2a0 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:303 [inline]
+ #3: ffffffff8cbab2a0 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:749 [inline]
+ #3: ffffffff8cbab2a0 (rcu_read_lock){....}-{1:2}, at: hci_le_create_big_complete_evt+0x100/0xab0 net/bluetooth/hci_event.c:7037
+CPU: 0 PID: 4449 Comm: kworker/u5:1 Not tainted 6.6.0-rc2-syzkaller-00386-g3aba70aed91f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/04/2023
+Workqueue: hci0 hci_rx_work
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x125/0x1b0 lib/dump_stack.c:106
+ __might_resched+0x3c3/0x5e0 kernel/sched/core.c:10187
+ __hci_cmd_sync_sk+0x374/0xe70 net/bluetooth/hci_sync.c:167
+ __hci_cmd_sync_status_sk+0x48/0x160 net/bluetooth/hci_sync.c:248
+ __hci_cmd_sync_status net/bluetooth/hci_sync.c:274 [inline]
+ hci_le_terminate_big_sync+0xb2/0xe0 net/bluetooth/hci_sync.c:1673
+ hci_le_create_big_complete_evt+0x765/0xab0 net/bluetooth/hci_event.c:7073
+ hci_le_meta_evt+0x2bc/0x510 net/bluetooth/hci_event.c:7305
+ hci_event_func net/bluetooth/hci_event.c:7635 [inline]
+ hci_event_packet+0x642/0xfd0 net/bluetooth/hci_event.c:7690
+ hci_rx_work+0x2c4/0x13e0 net/bluetooth/hci_core.c:4094
+ process_one_work+0x884/0x15c0 kernel/workqueue.c:2630
+ process_scheduled_works kernel/workqueue.c:2703 [inline]
+ worker_thread+0x8b9/0x1290 kernel/workqueue.c:2784
+ kthread+0x33c/0x440 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+ </TASK>
+------------[ cut here ]------------
+Voluntary context switch within RCU read-side critical section!
+WARNING: CPU: 0 PID: 4449 at kernel/rcu/tree_plugin.h:320 rcu_note_context_switch+0xbfc/0x1ac0 kernel/rcu/tree_plugin.h:320
+Modules linked in:
+CPU: 0 PID: 4449 Comm: kworker/u5:1 Tainted: G        W          6.6.0-rc2-syzkaller-00386-g3aba70aed91f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/04/2023
+Workqueue: hci0 hci_rx_work
+RIP: 0010:rcu_note_context_switch+0xbfc/0x1ac0 kernel/rcu/tree_plugin.h:320
+Code: da 56 6b 00 4c 8b 54 24 30 48 8b 44 24 28 8b 4c 24 10 e9 24 04 00 00 48 c7 c7 a0 71 8e 8a c6 05 56 3f 46 0d 01 e8 24 cb db ff <0f> 0b e9 0c f5 ff ff 81 e5 ff ff ff 7f 0f 84 ab f6 ff ff 65 48 8b
+RSP: 0018:ffffc9000e58f490 EFLAGS: 00010082
+RAX: 0000000000000000 RBX: ffff8880b983d600 RCX: 0000000000000000
+RDX: ffff888029651dc0 RSI: ffffffff814df0c6 RDI: 0000000000000001
+RBP: 0000000000000000 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000001 R12: ffff888029651dc0
+R13: ffff888029651dc0 R14: ffff888029651dc0 R15: ffff8880b983c700
+FS:  0000000000000000(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000020000050 CR3: 000000007354d000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __schedule+0x293/0x5a10 kernel/sched/core.c:6595
+ schedule+0xe7/0x1b0 kernel/sched/core.c:6771
+ schedule_timeout+0x157/0x2c0 kernel/time/timer.c:2167
+ __hci_cmd_sync_sk+0x58b/0xe70 net/bluetooth/hci_sync.c:167
+ __hci_cmd_sync_status_sk+0x48/0x160 net/bluetooth/hci_sync.c:248
+ __hci_cmd_sync_status net/bluetooth/hci_sync.c:274 [inline]
+ hci_le_terminate_big_sync+0xb2/0xe0 net/bluetooth/hci_sync.c:1673
+ hci_le_create_big_complete_evt+0x765/0xab0 net/bluetooth/hci_event.c:7073
+ hci_le_meta_evt+0x2bc/0x510 net/bluetooth/hci_event.c:7305
+ hci_event_func net/bluetooth/hci_event.c:7635 [inline]
+ hci_event_packet+0x642/0xfd0 net/bluetooth/hci_event.c:7690
+ hci_rx_work+0x2c4/0x13e0 net/bluetooth/hci_core.c:4094
+ process_one_work+0x884/0x15c0 kernel/workqueue.c:2630
+ process_scheduled_works kernel/workqueue.c:2703 [inline]
+ worker_thread+0x8b9/0x1290 kernel/workqueue.c:2784
+ kthread+0x33c/0x440 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+ </TASK>

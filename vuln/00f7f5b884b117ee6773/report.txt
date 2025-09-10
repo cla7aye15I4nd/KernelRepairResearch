@@ -1,0 +1,232 @@
+NILFS error (device loop4): nilfs_bmap_lookup_contig: broken bmap (inode number=16)
+======================================================
+WARNING: possible circular locking dependency detected
+6.15.0-rc5-syzkaller-00032-g0d8d44db295c #0 Not tainted
+------------------------------------------------------
+syz-executor254/7684 is trying to acquire lock:
+ffff8880763e8090
+ (&nilfs->ns_sem){++++}-{4:4}, at: nilfs_set_error fs/nilfs2/super.c:92 [inline]
+ (&nilfs->ns_sem){++++}-{4:4}, at: __nilfs_error+0x1ca/0x4b0 fs/nilfs2/super.c:141
+
+but task is already holding lock:
+ffff88802f434070 (&dat_lock_key){.+.+}-{4:4}, at: nilfs_get_block+0x1b1/0x8f0 fs/nilfs2/inode.c:83
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #4 (&dat_lock_key){.+.+}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       down_read+0x46/0x2e0 kernel/locking/rwsem.c:1524
+       nilfs_get_block+0x1b1/0x8f0 fs/nilfs2/inode.c:83
+       do_mpage_readpage+0x86d/0x19a0 fs/mpage.c:222
+       mpage_readahead+0x398/0x650 fs/mpage.c:371
+       read_pages+0x177/0x590 mm/readahead.c:160
+       page_cache_ra_unbounded+0x6b0/0x7b0 mm/readahead.c:297
+       filemap_get_pages+0x43c/0x1eb0 mm/filemap.c:2591
+       filemap_read+0x3fa/0x11d0 mm/filemap.c:2702
+       __kernel_read+0x469/0x8c0 fs/read_write.c:528
+       integrity_kernel_read+0x89/0xd0 security/integrity/iint.c:28
+       ima_calc_file_hash_tfm security/integrity/ima/ima_crypto.c:480 [inline]
+       ima_calc_file_shash security/integrity/ima/ima_crypto.c:511 [inline]
+       ima_calc_file_hash+0x152c/0x18d0 security/integrity/ima/ima_crypto.c:568
+       ima_collect_measurement+0x42e/0x8e0 security/integrity/ima/ima_api.c:293
+       process_measurement+0x1121/0x1a40 security/integrity/ima/ima_main.c:385
+       ima_file_check+0xd7/0x120 security/integrity/ima/ima_main.c:613
+       security_file_post_open+0xbb/0x290 security/security.c:3130
+       do_open fs/namei.c:3882 [inline]
+       path_openat+0x2f26/0x3830 fs/namei.c:4039
+       do_filp_open+0x1fa/0x410 fs/namei.c:4066
+       do_sys_openat2+0x121/0x1c0 fs/open.c:1429
+       do_sys_open fs/open.c:1444 [inline]
+       __do_sys_openat fs/open.c:1460 [inline]
+       __se_sys_openat fs/open.c:1455 [inline]
+       __x64_sys_openat+0x138/0x170 fs/open.c:1455
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #3 (mapping.invalidate_lock#3){.+.+}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       down_read+0x46/0x2e0 kernel/locking/rwsem.c:1524
+       filemap_invalidate_lock_shared include/linux/fs.h:922 [inline]
+       filemap_fault+0x546/0x1200 mm/filemap.c:3391
+       __do_fault+0x135/0x390 mm/memory.c:5098
+       do_read_fault mm/memory.c:5518 [inline]
+       do_fault mm/memory.c:5652 [inline]
+       do_pte_missing mm/memory.c:4160 [inline]
+       handle_pte_fault mm/memory.c:5997 [inline]
+       __handle_mm_fault+0x363e/0x5380 mm/memory.c:6140
+       handle_mm_fault+0x2d5/0x7f0 mm/memory.c:6309
+       do_user_addr_fault+0x764/0x1390 arch/x86/mm/fault.c:1388
+       handle_page_fault arch/x86/mm/fault.c:1480 [inline]
+       exc_page_fault+0x68/0x110 arch/x86/mm/fault.c:1538
+       asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+       do_strncpy_from_user lib/strncpy_from_user.c:-1 [inline]
+       strncpy_from_user+0xb7/0x290 lib/strncpy_from_user.c:130
+       getname_flags+0xf3/0x540 fs/namei.c:157
+       getname include/linux/fs.h:2852 [inline]
+       do_sys_openat2+0xbc/0x1c0 fs/open.c:1423
+       do_sys_open fs/open.c:1444 [inline]
+       __do_sys_openat fs/open.c:1460 [inline]
+       __se_sys_openat fs/open.c:1455 [inline]
+       __x64_sys_openat+0x138/0x170 fs/open.c:1455
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #2 (&mm->mmap_lock){++++}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       __might_fault+0xcc/0x130 mm/memory.c:7151
+       _copy_to_iter+0xf3/0x15a0 lib/iov_iter.c:184
+       copy_page_to_iter+0xa7/0x150 lib/iov_iter.c:362
+       copy_folio_to_iter include/linux/uio.h:198 [inline]
+       filemap_read+0x78d/0x11d0 mm/filemap.c:2753
+       blkdev_read_iter+0x30a/0x440 block/fops.c:809
+       new_sync_read fs/read_write.c:489 [inline]
+       vfs_read+0x4cd/0x980 fs/read_write.c:570
+       ksys_read+0x145/0x250 fs/read_write.c:713
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #1 (&sb->s_type->i_mutex_key#7){++++}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       down_write+0x96/0x1f0 kernel/locking/rwsem.c:1577
+       inode_lock include/linux/fs.h:867 [inline]
+       set_blocksize+0x23b/0x500 block/bdev.c:203
+       sb_set_blocksize block/bdev.c:224 [inline]
+       sb_min_blocksize+0x119/0x210 block/bdev.c:239
+       init_nilfs+0x43/0x690 fs/nilfs2/the_nilfs.c:710
+       nilfs_fill_super+0x8f/0x650 fs/nilfs2/super.c:1060
+       nilfs_get_tree+0x4f4/0x870 fs/nilfs2/super.c:1228
+       vfs_get_tree+0x8f/0x2b0 fs/super.c:1759
+       do_new_mount+0x24a/0xa40 fs/namespace.c:3884
+       do_mount fs/namespace.c:4224 [inline]
+       __do_sys_mount fs/namespace.c:4435 [inline]
+       __se_sys_mount+0x317/0x410 fs/namespace.c:4412
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&nilfs->ns_sem){++++}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3166 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+       validate_chain+0xb9b/0x2140 kernel/locking/lockdep.c:3909
+       __lock_acquire+0xaac/0xd20 kernel/locking/lockdep.c:5235
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       down_write+0x96/0x1f0 kernel/locking/rwsem.c:1577
+       nilfs_set_error fs/nilfs2/super.c:92 [inline]
+       __nilfs_error+0x1ca/0x4b0 fs/nilfs2/super.c:141
+       nilfs_bmap_convert_error fs/nilfs2/bmap.c:35 [inline]
+       nilfs_bmap_lookup_contig+0x13e/0x160 fs/nilfs2/bmap.c:100
+       nilfs_get_block+0x1fb/0x8f0 fs/nilfs2/inode.c:84
+       do_mpage_readpage+0x86d/0x19a0 fs/mpage.c:222
+       mpage_readahead+0x398/0x650 fs/mpage.c:371
+       read_pages+0x177/0x590 mm/readahead.c:160
+       page_cache_ra_unbounded+0x6b0/0x7b0 mm/readahead.c:297
+       filemap_get_pages+0x43c/0x1eb0 mm/filemap.c:2591
+       filemap_read+0x3fa/0x11d0 mm/filemap.c:2702
+       __kernel_read+0x469/0x8c0 fs/read_write.c:528
+       integrity_kernel_read+0x89/0xd0 security/integrity/iint.c:28
+       ima_calc_file_hash_tfm security/integrity/ima/ima_crypto.c:480 [inline]
+       ima_calc_file_shash security/integrity/ima/ima_crypto.c:511 [inline]
+       ima_calc_file_hash+0x152c/0x18d0 security/integrity/ima/ima_crypto.c:568
+       ima_collect_measurement+0x42e/0x8e0 security/integrity/ima/ima_api.c:293
+       process_measurement+0x1121/0x1a40 security/integrity/ima/ima_main.c:385
+       ima_file_check+0xd7/0x120 security/integrity/ima/ima_main.c:613
+       security_file_post_open+0xbb/0x290 security/security.c:3130
+       do_open fs/namei.c:3882 [inline]
+       path_openat+0x2f26/0x3830 fs/namei.c:4039
+       do_filp_open+0x1fa/0x410 fs/namei.c:4066
+       do_sys_openat2+0x121/0x1c0 fs/open.c:1429
+       do_sys_open fs/open.c:1444 [inline]
+       __do_sys_openat fs/open.c:1460 [inline]
+       __se_sys_openat fs/open.c:1455 [inline]
+       __x64_sys_openat+0x138/0x170 fs/open.c:1455
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+Chain exists of:
+  &nilfs->ns_sem --> mapping.invalidate_lock#3 --> &dat_lock_key
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  rlock(&dat_lock_key);
+                               lock(mapping.invalidate_lock#3);
+                               lock(&dat_lock_key);
+  lock(&nilfs->ns_sem);
+
+ *** DEADLOCK ***
+
+3 locks held by syz-executor254/7684:
+ #0: ffff88807f1aec18 (&ima_iint_mutex_key[depth]){+.+.}-{4:4}, at: process_measurement+0x74b/0x1a40 security/integrity/ima/ima_main.c:279
+ #1: ffff888076e59100 (mapping.invalidate_lock#3){.+.+}-{4:4}, at: filemap_invalidate_lock_shared include/linux/fs.h:922 [inline]
+ #1: ffff888076e59100 (mapping.invalidate_lock#3){.+.+}-{4:4}, at: page_cache_ra_unbounded+0x129/0x7b0 mm/readahead.c:228
+ #2: ffff88802f434070 (&dat_lock_key){.+.+}-{4:4}, at: nilfs_get_block+0x1b1/0x8f0 fs/nilfs2/inode.c:83
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 7684 Comm: syz-executor254 Not tainted 6.15.0-rc5-syzkaller-00032-g0d8d44db295c #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/29/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_circular_bug+0x2ee/0x310 kernel/locking/lockdep.c:2079
+ check_noncircular+0x134/0x160 kernel/locking/lockdep.c:2211
+ check_prev_add kernel/locking/lockdep.c:3166 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+ validate_chain+0xb9b/0x2140 kernel/locking/lockdep.c:3909
+ __lock_acquire+0xaac/0xd20 kernel/locking/lockdep.c:5235
+ lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+ down_write+0x96/0x1f0 kernel/locking/rwsem.c:1577
+ nilfs_set_error fs/nilfs2/super.c:92 [inline]
+ __nilfs_error+0x1ca/0x4b0 fs/nilfs2/super.c:141
+ nilfs_bmap_convert_error fs/nilfs2/bmap.c:35 [inline]
+ nilfs_bmap_lookup_contig+0x13e/0x160 fs/nilfs2/bmap.c:100
+ nilfs_get_block+0x1fb/0x8f0 fs/nilfs2/inode.c:84
+ do_mpage_readpage+0x86d/0x19a0 fs/mpage.c:222
+ mpage_readahead+0x398/0x650 fs/mpage.c:371
+ read_pages+0x177/0x590 mm/readahead.c:160
+ page_cache_ra_unbounded+0x6b0/0x7b0 mm/readahead.c:297
+ filemap_get_pages+0x43c/0x1eb0 mm/filemap.c:2591
+ filemap_read+0x3fa/0x11d0 mm/filemap.c:2702
+ __kernel_read+0x469/0x8c0 fs/read_write.c:528
+ integrity_kernel_read+0x89/0xd0 security/integrity/iint.c:28
+ ima_calc_file_hash_tfm security/integrity/ima/ima_crypto.c:480 [inline]
+ ima_calc_file_shash security/integrity/ima/ima_crypto.c:511 [inline]
+ ima_calc_file_hash+0x152c/0x18d0 security/integrity/ima/ima_crypto.c:568
+ ima_collect_measurement+0x42e/0x8e0 security/integrity/ima/ima_api.c:293
+ process_measurement+0x1121/0x1a40 security/integrity/ima/ima_main.c:385
+ ima_file_check+0xd7/0x120 security/integrity/ima/ima_main.c:613
+ security_file_post_open+0xbb/0x290 security/security.c:3130
+ do_open fs/namei.c:3882 [inline]
+ path_openat+0x2f26/0x3830 fs/namei.c:4039
+ do_filp_open+0x1fa/0x410 fs/namei.c:4066
+ do_sys_openat2+0x121/0x1c0 fs/open.c:1429
+ do_sys_open fs/open.c:1444 [inline]
+ __do_sys_openat fs/open.c:1460 [inline]
+ __se_sys_openat fs/open.c:1455 [inline]
+ __x64_sys_openat+0x138/0x170 fs/open.c:1455
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f9a2fded749
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 e1 18 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f9a2fd80168 EFLAGS: 00000246 ORIG_RAX: 0000000000000101
+RAX: ffffffffffffffda RBX: 00007f9a2fe766d8 RCX: 00007f9a2fded749
+RDX: 0000000000143042 RSI: 0000200000000040 RDI: 00000000ffffff9c
+RBP: 00007f9a2fe766d0 R08: 00007f9a2fd806c0 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f9a2fe766dc
+R13: 000000000000006e R14: 00007fff69847cd0 R15: 00007fff69847db8
+ </TASK>
+Remounting filesystem read-only
+NILFS error (device loop4): nilfs_bmap_lookup_contig: broken bmap (inode number=16)
+NILFS error (device loop4): nilfs_bmap_lookup_contig: broken bmap (inode number=16)
+NILFS error (device loop4): nilfs_bmap_lookup_contig: broken bmap (inode number=16)
+syz-executor254 (7684) used greatest stack depth: 19240 bytes left

@@ -1,0 +1,58 @@
+id: 5d895828587f49e7fe9b
+bug_link: https://syzkaller.appspot.com/bug?extid=5d895828587f49e7fe9b
+title: memory leak in bpf (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 95b861a7935bf75f647959073093ab8058b88c26
+fix_commit: ccff81e1d028bbbf8573d3364a87542386c707bf
+datetime: '2021-06-28T15:57:46+02:00'
+fix_commit_message: "bpf: Fix false positive kmemleak report in bpf_ringbuf_area_alloc()\n\
+  \nkmemleak scans struct page, but it does not scan the page content. If we\nallocate\
+  \ some memory with kmalloc(), then allocate page with alloc_page(),\nand if we put\
+  \ kmalloc pointer somewhere inside that page, kmemleak will\nreport kmalloc pointer\
+  \ as a false positive.\n\nWe can instruct kmemleak to scan the memory area by calling\
+  \ kmemleak_alloc()\nand kmemleak_free(), but part of struct bpf_ringbuf is mmaped\
+  \ to user space,\nand if struct bpf_ringbuf changes we would have to revisit and\
+  \ review size\nargument in kmemleak_alloc(), because we do not want kmemleak to\
+  \ scan the\nuser space memory. Let's simplify things and use kmemleak_not_leak()\
+  \ here.\n\nFor posterity, also adding additional prior analysis from Andrii:\n\n\
+  \  I think either kmemleak or syzbot are misreporting this. I've added a\n  bunch\
+  \ of printks around all allocations performed by BPF ringbuf. [...]\n  On repro\
+  \ side I get these two warnings:\n\n  [vmuser@archvm bpf]$ sudo ./repro\n  BUG:\
+  \ memory leak\n  unreferenced object 0xffff88810d538c00 (size 64):\n    comm \"\
+  repro\", pid 2140, jiffies 4294692933 (age 14.540s)\n    hex dump (first 32 bytes):\n\
+  \      00 af 19 04 00 ea ff ff c0 ae 19 04 00 ea ff ff  ................\n     \
+  \ 80 ae 19 04 00 ea ff ff c0 29 2e 04 00 ea ff ff  .........)......\n    backtrace:\n\
+  \      [<0000000077bfbfbd>] __bpf_map_area_alloc+0x31/0xc0\n      [<00000000587fa522>]\
+  \ ringbuf_map_alloc.cold.4+0x48/0x218\n      [<0000000044d49e96>] __do_sys_bpf+0x359/0x1d90\n\
+  \      [<00000000f601d565>] do_syscall_64+0x2d/0x40\n      [<0000000043d3112a>]\
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xae\n\n  BUG: memory leak\n  unreferenced\
+  \ object 0xffff88810d538c80 (size 64):\n    comm \"repro\", pid 2143, jiffies 4294699025\
+  \ (age 8.448s)\n    hex dump (first 32 bytes):\n      80 aa 19 04 00 ea ff ff 00\
+  \ ab 19 04 00 ea ff ff  ................\n      c0 ab 19 04 00 ea ff ff 80 44 28\
+  \ 04 00 ea ff ff  .........D(.....\n    backtrace:\n      [<0000000077bfbfbd>] __bpf_map_area_alloc+0x31/0xc0\n\
+  \      [<00000000587fa522>] ringbuf_map_alloc.cold.4+0x48/0x218\n      [<0000000044d49e96>]\
+  \ __do_sys_bpf+0x359/0x1d90\n      [<00000000f601d565>] do_syscall_64+0x2d/0x40\n\
+  \      [<0000000043d3112a>] entry_SYSCALL_64_after_hwframe+0x44/0xae\n\n  Note that\
+  \ both reported leaks (ffff88810d538c80 and ffff88810d538c00)\n  correspond to pages\
+  \ array bpf_ringbuf is allocating and tracking properly\n  internally. Note also\
+  \ that syzbot repro doesn't close FD of created BPF\n  ringbufs, and even when ./repro\
+  \ itself exits with error, there are still\n  two forked processes hanging around\
+  \ in my system. So clearly ringbuf maps\n  are alive at that point. So reporting\
+  \ any memory leak looks weird at that\n  point, because that memory is being used\
+  \ by active referenced BPF ringbuf.\n\n  It's also a question why repro doesn't\
+  \ clean up its forks. But if I do a\n  `pkill repro`, I do see that all the allocated\
+  \ memory is /properly/ cleaned\n  up [and the] \"leaks\" are deallocated properly.\n\
+  \n  BTW, if I add close() right after bpf() syscall in syzbot repro, I see that\n\
+  \  everything is immediately deallocated, like designed. And no memory leak\n  is\
+  \ reported. So I don't think the problem is anywhere in bpf_ringbuf code,\n  rather\
+  \ in the leak detection and/or repro itself.\n\nReported-by: syzbot+5d895828587f49e7fe9b@syzkaller.appspotmail.com\n\
+  Signed-off-by: Rustam Kovhaev <rkovhaev@gmail.com>\n[ Daniel: also included analysis\
+  \ from Andrii to the commit log ]\nSigned-off-by: Daniel Borkmann <daniel@iogearbox.net>\n\
+  Tested-by: syzbot+5d895828587f49e7fe9b@syzkaller.appspotmail.com\nCc: Dmitry Vyukov\
+  \ <dvyukov@google.com>\nCc: Andrii Nakryiko <andrii@kernel.org>\nLink: https://lore.kernel.org/bpf/CAEf4BzYk+dqs+jwu6VKXP-RttcTEGFe+ySTGWT9CRNkagDiJVA@mail.gmail.com\n\
+  Link: https://lore.kernel.org/lkml/YNTAqiE7CWJhOK2M@nuc10\nLink: https://lore.kernel.org/lkml/20210615101515.GC26027@arm.com\n\
+  Link: https://syzkaller.appspot.com/bug?extid=5d895828587f49e7fe9b\nLink: https://lore.kernel.org/bpf/20210626181156.1873604-1-rkovhaev@gmail.com\n"
+submodule:
+- kernel/bpf
+hunk_count: 2
+covered_count: 2

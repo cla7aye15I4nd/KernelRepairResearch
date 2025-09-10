@@ -1,0 +1,98 @@
+         option from the mount to silence this warning.
+=======================================================
+==================================================================
+BUG: KASAN: use-after-free in nilfs_find_entry+0x29c/0x660 fs/nilfs2/dir.c:321
+Read of size 2 at addr ffff888073f29008 by task syz-executor298/5829
+
+CPU: 1 UID: 0 PID: 5829 Comm: syz-executor298 Not tainted 6.12.0-rc7-syzkaller-00192-gb5a24181e461 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/30/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ nilfs_find_entry+0x29c/0x660 fs/nilfs2/dir.c:321
+ nilfs_inode_by_name+0xad/0x240 fs/nilfs2/dir.c:394
+ nilfs_lookup+0xed/0x210 fs/nilfs2/namei.c:63
+ lookup_open fs/namei.c:3573 [inline]
+ open_last_lookups fs/namei.c:3694 [inline]
+ path_openat+0x11a7/0x3590 fs/namei.c:3930
+ do_filp_open+0x235/0x490 fs/namei.c:3960
+ do_sys_openat2+0x13e/0x1d0 fs/open.c:1415
+ do_sys_open fs/open.c:1430 [inline]
+ __do_sys_openat fs/open.c:1446 [inline]
+ __se_sys_openat fs/open.c:1441 [inline]
+ __x64_sys_openat+0x247/0x2a0 fs/open.c:1441
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f675ebaae49
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe8e3da638 EFLAGS: 00000246 ORIG_RAX: 0000000000000101
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f675ebaae49
+RDX: 000000000000275a RSI: 0000000020000080 RDI: 00000000ffffff9c
+RBP: 00000000000016c4 R08: 0000000000000ee3 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffe8e3da680
+R13: 00007ffe8e3da760 R14: 431bde82d7b634db R15: 00007f675ebf401d
+ </TASK>
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x7fbb80951 pfn:0x73f29
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+raw: 00fff00000000000 ffffea0001cfca88 ffff8880b8744af0 0000000000000000
+raw: 00000007fbb80951 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as freed
+page last allocated via order 0, migratetype Movable, gfp_mask 0x140dca(GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO), pid 5819, tgid 5819 (sshd), ts 52819436316, free_ts 52825063839
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1556
+ prep_new_page mm/page_alloc.c:1564 [inline]
+ get_page_from_freelist+0x363e/0x3790 mm/page_alloc.c:3474
+ __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4750
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2265
+ folio_alloc_mpol_noprof mm/mempolicy.c:2283 [inline]
+ vma_alloc_folio_noprof+0x12e/0x230 mm/mempolicy.c:2314
+ folio_prealloc+0x31/0x170
+ alloc_anon_folio mm/memory.c:4727 [inline]
+ do_anonymous_page mm/memory.c:4784 [inline]
+ do_pte_missing mm/memory.c:3963 [inline]
+ handle_pte_fault+0x24dd/0x6820 mm/memory.c:5766
+ __handle_mm_fault mm/memory.c:5909 [inline]
+ handle_mm_fault+0x1053/0x1ad0 mm/memory.c:6077
+ do_user_addr_fault arch/x86/mm/fault.c:1338 [inline]
+ handle_page_fault arch/x86/mm/fault.c:1481 [inline]
+ exc_page_fault+0x459/0x8c0 arch/x86/mm/fault.c:1539
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+page last free pid 5819 tgid 5819 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_folios+0xf21/0x1a10 mm/page_alloc.c:2704
+ folios_put_refs+0x76c/0x860 mm/swap.c:993
+ free_pages_and_swap_cache+0x2ea/0x690 mm/swap_state.c:332
+ __tlb_batch_free_encoded_pages mm/mmu_gather.c:136 [inline]
+ tlb_batch_pages_flush mm/mmu_gather.c:149 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:366 [inline]
+ tlb_flush_mmu+0x3a3/0x680 mm/mmu_gather.c:373
+ tlb_finish_mmu+0xd4/0x200 mm/mmu_gather.c:465
+ vms_clear_ptes+0x437/0x530 mm/vma.c:1102
+ vms_complete_munmap_vmas+0x214/0x8f0 mm/vma.c:1144
+ do_vmi_align_munmap+0x5ef/0x6f0 mm/vma.c:1353
+ do_vmi_munmap+0x24e/0x2d0 mm/vma.c:1401
+ __vm_munmap+0x24c/0x480 mm/mmap.c:1623
+ __do_sys_munmap mm/mmap.c:1640 [inline]
+ __se_sys_munmap mm/mmap.c:1637 [inline]
+ __x64_sys_munmap+0x60/0x70 mm/mmap.c:1637
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff888073f28f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff888073f28f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff888073f29000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+                      ^
+ ffff888073f29080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff888073f29100: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+==================================================================

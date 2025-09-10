@@ -1,0 +1,186 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in __list_add_valid_or_report+0x151/0x190 lib/list_debug.c:32
+Read of size 8 at addr ffff888036fa1400 by task syz.2.1231/9834
+
+CPU: 3 UID: 0 PID: 9834 Comm: syz.2.1231 Not tainted 6.16.0-syzkaller-00857-gced1b9e0392d #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0xcd/0x630 mm/kasan/report.c:482
+ kasan_report+0xe0/0x110 mm/kasan/report.c:595
+ __list_add_valid_or_report+0x151/0x190 lib/list_debug.c:32
+ __list_add_valid include/linux/list.h:88 [inline]
+ __list_add include/linux/list.h:150 [inline]
+ list_add_tail include/linux/list.h:183 [inline]
+ disk_add_events+0x90/0x170 block/disk-events.c:463
+ add_disk_final block/genhd.c:427 [inline]
+ add_disk_fwnode+0x3c8/0x5d0 block/genhd.c:610
+ add_disk include/linux/blkdev.h:773 [inline]
+ md_alloc+0x3c2/0x1080 drivers/md/md.c:5981
+ md_alloc_and_put drivers/md/md.c:6016 [inline]
+ md_probe drivers/md/md.c:6029 [inline]
+ md_probe+0x6e/0xd0 drivers/md/md.c:6024
+ blk_probe_dev+0x116/0x1a0 block/genhd.c:884
+ blk_request_module+0x16/0xb0 block/genhd.c:897
+ blkdev_get_no_open+0x9b/0x100 block/bdev.c:825
+ blkdev_open+0x141/0x3f0 block/fops.c:684
+ do_dentry_open+0x744/0x1c10 fs/open.c:965
+ vfs_open+0x82/0x3f0 fs/open.c:1095
+ do_open fs/namei.c:3887 [inline]
+ path_openat+0x1de4/0x2cb0 fs/namei.c:4046
+ do_filp_open+0x20b/0x470 fs/namei.c:4073
+ do_sys_openat2+0x11b/0x1d0 fs/open.c:1435
+ do_sys_open fs/open.c:1450 [inline]
+ __do_sys_openat fs/open.c:1466 [inline]
+ __se_sys_openat fs/open.c:1461 [inline]
+ __x64_sys_openat+0x174/0x210 fs/open.c:1461
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f4ea558e9a9
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f4ea645e038 EFLAGS: 00000246 ORIG_RAX: 0000000000000101
+RAX: ffffffffffffffda RBX: 00007f4ea57b6080 RCX: 00007f4ea558e9a9
+RDX: 0000000000000000 RSI: 0000200000000a80 RDI: ffffffffffffff9c
+RBP: 00007f4ea5610d69 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007f4ea57b6080 R15: 00007fff25d53038
+ </TASK>
+
+Allocated by task 9822:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:394
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ disk_alloc_events+0xf0/0x3f0 block/disk-events.c:439
+ __add_disk+0x475/0xf00 block/genhd.c:500
+ add_disk_fwnode+0x3f8/0x5d0 block/genhd.c:601
+ add_disk include/linux/blkdev.h:773 [inline]
+ md_alloc+0x3c2/0x1080 drivers/md/md.c:5981
+ md_alloc_and_put drivers/md/md.c:6016 [inline]
+ md_probe drivers/md/md.c:6029 [inline]
+ md_probe+0x6e/0xd0 drivers/md/md.c:6024
+ blk_probe_dev+0x116/0x1a0 block/genhd.c:884
+ blk_request_module+0x16/0xb0 block/genhd.c:897
+ blkdev_get_no_open+0x9b/0x100 block/bdev.c:825
+ blkdev_open+0x141/0x3f0 block/fops.c:684
+ do_dentry_open+0x744/0x1c10 fs/open.c:965
+ vfs_open+0x82/0x3f0 fs/open.c:1095
+ do_open fs/namei.c:3887 [inline]
+ path_openat+0x1de4/0x2cb0 fs/namei.c:4046
+ do_filp_open+0x20b/0x470 fs/namei.c:4073
+ do_sys_openat2+0x11b/0x1d0 fs/open.c:1435
+ do_sys_open fs/open.c:1450 [inline]
+ __do_sys_openat fs/open.c:1466 [inline]
+ __se_sys_openat fs/open.c:1461 [inline]
+ __x64_sys_openat+0x174/0x210 fs/open.c:1461
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 9817:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ kasan_save_free_info+0x3b/0x60 mm/kasan/generic.c:576
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x51/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2381 [inline]
+ slab_free mm/slub.c:4643 [inline]
+ kfree+0x2b4/0x4d0 mm/slub.c:4842
+ disk_release+0x161/0x410 block/genhd.c:1301
+ device_release+0xa1/0x240 drivers/base/core.c:2568
+ kobject_cleanup lib/kobject.c:689 [inline]
+ kobject_release lib/kobject.c:720 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ kobject_put+0x1e7/0x5a0 lib/kobject.c:737
+ put_device+0x1f/0x30 drivers/base/core.c:3800
+ blkdev_release+0x15/0x20 block/fops.c:699
+ __fput+0x402/0xb70 fs/file_table.c:468
+ task_work_run+0x14d/0x240 kernel/task_work.c:227
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop+0xeb/0x110 kernel/entry/common.c:114
+ exit_to_user_mode_prepare include/linux/entry-common.h:330 [inline]
+ syscall_exit_to_user_mode_work include/linux/entry-common.h:414 [inline]
+ syscall_exit_to_user_mode include/linux/entry-common.h:449 [inline]
+ do_syscall_64+0x3f6/0x4c0 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff888036fa1400
+ which belongs to the cache kmalloc-512 of size 512
+The buggy address is located 0 bytes inside of
+ freed 512-byte region [ffff888036fa1400, ffff888036fa1600)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x36fa0
+head: order:2 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000000040(head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000040 ffff88801b842c80 dead000000000100 dead000000000122
+raw: 0000000000000000 0000000000100010 00000000f5000000 0000000000000000
+head: 00fff00000000040 ffff88801b842c80 dead000000000100 dead000000000122
+head: 0000000000000000 0000000000100010 00000000f5000000 0000000000000000
+head: 00fff00000000002 ffffea0000dbe801 00000000ffffffff 00000000ffffffff
+head: ffffffffffffffff 0000000000000000 00000000ffffffff 0000000000000004
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 2, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 2, tgid 2 (kthreadd), ts 71482349709, free_ts 68765218476
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1c0/0x230 mm/page_alloc.c:1704
+ prep_new_page mm/page_alloc.c:1712 [inline]
+ get_page_from_freelist+0x1321/0x3890 mm/page_alloc.c:3669
+ __alloc_frozen_pages_noprof+0x261/0x23f0 mm/page_alloc.c:4959
+ alloc_pages_mpol+0x1fb/0x550 mm/mempolicy.c:2419
+ alloc_slab_page mm/slub.c:2451 [inline]
+ allocate_slab mm/slub.c:2619 [inline]
+ new_slab+0x23b/0x330 mm/slub.c:2673
+ ___slab_alloc+0xd9c/0x1940 mm/slub.c:3859
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3949
+ __slab_alloc_node mm/slub.c:4024 [inline]
+ slab_alloc_node mm/slub.c:4185 [inline]
+ __kmalloc_cache_noprof+0xfb/0x3e0 mm/slub.c:4354
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ set_kthread_struct+0xcb/0x380 kernel/kthread.c:126
+ copy_process+0x3107/0x7650 kernel/fork.c:2097
+ kernel_clone+0xfc/0x960 kernel/fork.c:2599
+ kernel_thread+0xd4/0x120 kernel/fork.c:2661
+ create_kthread kernel/kthread.c:487 [inline]
+ kthreadd+0x503/0x800 kernel/kthread.c:847
+ ret_from_fork+0x5d4/0x6f0 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+page last free pid 6016 tgid 6016 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1248 [inline]
+ __free_frozen_pages+0x7fe/0x1180 mm/page_alloc.c:2706
+ vfree+0x1fd/0xb50 mm/vmalloc.c:3434
+ kcov_put kernel/kcov.c:439 [inline]
+ kcov_put kernel/kcov.c:435 [inline]
+ kcov_close+0x34/0x60 kernel/kcov.c:535
+ __fput+0x402/0xb70 fs/file_table.c:468
+ task_work_run+0x14d/0x240 kernel/task_work.c:227
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0x86c/0x2bd0 kernel/exit.c:964
+ do_group_exit+0xd3/0x2a0 kernel/exit.c:1105
+ get_signal+0x2673/0x26d0 kernel/signal.c:3034
+ arch_do_signal_or_restart+0x8f/0x7d0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop+0x84/0x110 kernel/entry/common.c:111
+ exit_to_user_mode_prepare include/linux/entry-common.h:330 [inline]
+ syscall_exit_to_user_mode_work include/linux/entry-common.h:414 [inline]
+ syscall_exit_to_user_mode include/linux/entry-common.h:449 [inline]
+ do_syscall_64+0x3f6/0x4c0 arch/x86/entry/syscall_64.c:100
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff888036fa1300: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff888036fa1380: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+>ffff888036fa1400: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                   ^
+ ffff888036fa1480: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888036fa1500: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

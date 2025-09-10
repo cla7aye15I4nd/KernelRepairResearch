@@ -1,0 +1,19 @@
+id: e163f2ff7c3f7efd8203
+bug_link: https://syzkaller.appspot.com/bug?extid=e163f2ff7c3f7efd8203
+title: 'WARNING: suspicious RCU usage in __dev_queue_xmit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 408bdcfce8dfd6902f75fbcd3b99d8b24b506597
+fix_commit: 6316136ec6e3dd1c302f7e7289a9ee46ecc610ae
+datetime: '2022-01-09T23:35:16+01:00'
+fix_commit_message: "netfilter: egress: avoid a lockdep splat\n\ninclude/linux/netfilter_netdev.h:97\
+  \ suspicious rcu_dereference_check() usage!\n2 locks held by sd-resolve/1100:\n\
+  \ 0: ..(rcu_read_lock_bh){1:3}, at: ip_finish_output2\n 1: ..(rcu_read_lock_bh){1:3},\
+  \ at: __dev_queue_xmit\n __dev_queue_xmit+0 ..\n\nThe helper has two callers, one\
+  \ uses rcu_read_lock, the other\nrcu_read_lock_bh().  Annotate the dereference to\
+  \ reflect this.\n\nFixes: 42df6e1d221dd (\"netfilter: Introduce egress hook\")\n\
+  Signed-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Pablo Neira Ayuso\
+  \ <pablo@netfilter.org>\n"
+submodule:
+- include/linux
+hunk_count: 1
+covered_count: 1

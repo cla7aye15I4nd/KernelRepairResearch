@@ -1,0 +1,166 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in ovs_ct_limit_exit net/openvswitch/conntrack.c:1597 [inline]
+BUG: KASAN: slab-use-after-free in ovs_ct_exit+0x1f0/0x260 net/openvswitch/conntrack.c:1995
+Read of size 8 at addr ffff88801e297680 by task kworker/u8:1/11
+
+CPU: 1 PID: 11 Comm: kworker/u8:1 Not tainted 6.9.0-rc5-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Workqueue: netns cleanup_net
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0xc3/0x620 mm/kasan/report.c:488
+ kasan_report+0xd9/0x110 mm/kasan/report.c:601
+ ovs_ct_limit_exit net/openvswitch/conntrack.c:1597 [inline]
+ ovs_ct_exit+0x1f0/0x260 net/openvswitch/conntrack.c:1995
+ ovs_exit_net+0xae/0x9b0 net/openvswitch/datapath.c:2680
+ ops_exit_list+0xb0/0x180 net/core/net_namespace.c:170
+ cleanup_net+0x5b7/0xbf0 net/core/net_namespace.c:637
+ process_one_work+0x9a9/0x1ac0 kernel/workqueue.c:3254
+ process_scheduled_works kernel/workqueue.c:3335 [inline]
+ worker_thread+0x6c8/0xf70 kernel/workqueue.c:3416
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+
+Allocated by task 12625:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:370 [inline]
+ __kasan_kmalloc+0xaa/0xb0 mm/kasan/common.c:387
+ kmalloc include/linux/slab.h:628 [inline]
+ ovs_ct_limit_set_zone_limit net/openvswitch/conntrack.c:1660 [inline]
+ ovs_ct_limit_cmd_set+0x30b/0xa90 net/openvswitch/conntrack.c:1837
+ genl_family_rcv_msg_doit+0x202/0x2f0 net/netlink/genetlink.c:1113
+ genl_family_rcv_msg net/netlink/genetlink.c:1193 [inline]
+ genl_rcv_msg+0x565/0x800 net/netlink/genetlink.c:1208
+ netlink_rcv_skb+0x16b/0x440 net/netlink/af_netlink.c:2559
+ genl_rcv+0x28/0x40 net/netlink/genetlink.c:1217
+ netlink_unicast_kernel net/netlink/af_netlink.c:1335 [inline]
+ netlink_unicast+0x542/0x820 net/netlink/af_netlink.c:1361
+ netlink_sendmsg+0x8b8/0xd70 net/netlink/af_netlink.c:1905
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg net/socket.c:745 [inline]
+ ____sys_sendmsg+0xab5/0xc90 net/socket.c:2584
+ ___sys_sendmsg+0x135/0x1e0 net/socket.c:2638
+ __sys_sendmsg+0x117/0x1f0 net/socket.c:2667
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x260 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 11713:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ kasan_save_track+0x14/0x30 mm/kasan/common.c:68
+ kasan_save_free_info+0x3b/0x60 mm/kasan/generic.c:579
+ poison_slab_object mm/kasan/common.c:240 [inline]
+ __kasan_slab_free+0x11d/0x1a0 mm/kasan/common.c:256
+ kasan_slab_free include/linux/kasan.h:184 [inline]
+ slab_free_hook mm/slub.c:2106 [inline]
+ slab_free_freelist_hook mm/slub.c:2135 [inline]
+ slab_free_bulk mm/slub.c:4293 [inline]
+ kmem_cache_free_bulk mm/slub.c:4507 [inline]
+ kmem_cache_free_bulk+0x155/0x390 mm/slub.c:4495
+ kfree_bulk include/linux/slab.h:545 [inline]
+ kvfree_rcu_bulk+0x454/0x550 kernel/rcu/tree.c:3033
+ kvfree_rcu_drain_ready kernel/rcu/tree.c:3207 [inline]
+ kfree_rcu_monitor+0x47b/0x12d0 kernel/rcu/tree.c:3225
+ process_one_work+0x9a9/0x1ac0 kernel/workqueue.c:3254
+ process_scheduled_works kernel/workqueue.c:3335 [inline]
+ worker_thread+0x6c8/0xf70 kernel/workqueue.c:3416
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Last potentially related work creation:
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ __kasan_record_aux_stack+0xba/0xd0 mm/kasan/generic.c:541
+ kvfree_call_rcu+0x74/0xbe0 kernel/rcu/tree.c:3443
+ ovs_ct_limit_exit net/openvswitch/conntrack.c:1599 [inline]
+ ovs_ct_exit+0x132/0x260 net/openvswitch/conntrack.c:1995
+ ovs_exit_net+0xae/0x9b0 net/openvswitch/datapath.c:2680
+ ops_exit_list+0xb0/0x180 net/core/net_namespace.c:170
+ cleanup_net+0x5b7/0xbf0 net/core/net_namespace.c:637
+ process_one_work+0x9a9/0x1ac0 kernel/workqueue.c:3254
+ process_scheduled_works kernel/workqueue.c:3335 [inline]
+ worker_thread+0x6c8/0xf70 kernel/workqueue.c:3416
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+The buggy address belongs to the object at ffff88801e297680
+ which belongs to the cache kmalloc-cg-64 of size 64
+The buggy address is located 0 bytes inside of
+ freed 64-byte region [ffff88801e297680, ffff88801e2976c0)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0xffff88801e297180 pfn:0x1e297
+memcg:ffff888029571801
+anon flags: 0xfff80000000800(slab|node=0|zone=1|lastcpupid=0xfff)
+page_type: 0xffffffff()
+raw: 00fff80000000800 ffff88801504da00 ffffea00014f4d00 0000000000000005
+raw: ffff88801e297180 000000000020001e 00000001ffffffff ffff888029571801
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x112cc0(GFP_USER|__GFP_NOWARN|__GFP_NORETRY), pid 12449, tgid -980887775 (syz-executor.0), ts 12449, free_ts 703392532133
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x2d4/0x350 mm/page_alloc.c:1534
+ prep_new_page mm/page_alloc.c:1541 [inline]
+ get_page_from_freelist+0xa28/0x3780 mm/page_alloc.c:3317
+ __alloc_pages+0x22b/0x2460 mm/page_alloc.c:4575
+ __alloc_pages_node include/linux/gfp.h:238 [inline]
+ alloc_pages_node include/linux/gfp.h:261 [inline]
+ alloc_slab_page mm/slub.c:2175 [inline]
+ allocate_slab mm/slub.c:2338 [inline]
+ new_slab+0xcc/0x3a0 mm/slub.c:2391
+ ___slab_alloc+0x66d/0x1790 mm/slub.c:3525
+ __slab_alloc.constprop.0+0x56/0xb0 mm/slub.c:3610
+ __slab_alloc_node mm/slub.c:3663 [inline]
+ slab_alloc_node mm/slub.c:3835 [inline]
+ __do_kmalloc_node mm/slub.c:3965 [inline]
+ __kmalloc_node+0x36e/0x480 mm/slub.c:3973
+ kmalloc_node include/linux/slab.h:648 [inline]
+ kvmalloc_node+0x9d/0x1a0 mm/util.c:634
+ kvmalloc include/linux/slab.h:766 [inline]
+ kvzalloc include/linux/slab.h:774 [inline]
+ allocate_hook_entries_size net/netfilter/core.c:61 [inline]
+ nf_hook_entries_grow+0x228/0x810 net/netfilter/core.c:140
+ nf_hook_entries_insert_raw+0x3d/0x160 net/netfilter/core.c:204
+ nf_nat_register_fn+0x1fc/0x5c0 net/netfilter/nf_nat_core.c:1145
+ ip6t_nat_register_lookups net/ipv6/netfilter/ip6table_nat.c:79 [inline]
+ ip6table_nat_table_init+0xf5/0x250 net/ipv6/netfilter/ip6table_nat.c:123
+ xt_find_table_lock+0x2df/0x4f0 net/netfilter/x_tables.c:1260
+ xt_request_find_table_lock+0x28/0xf0 net/netfilter/x_tables.c:1285
+ get_info+0x19a/0x7c0 net/ipv4/netfilter/ip_tables.c:963
+ do_ip6t_get_ctl+0x16a/0xaf0 net/ipv6/netfilter/ip6_tables.c:1668
+page last free pid 12449 tgid 12449 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1141 [inline]
+ free_unref_page_prepare+0x527/0xb10 mm/page_alloc.c:2347
+ free_unref_page+0x33/0x3c0 mm/page_alloc.c:2487
+ vfree+0x181/0x7a0 mm/vmalloc.c:3340
+ copy_entries_to_user net/ipv6/netfilter/ip6_tables.c:882 [inline]
+ get_entries net/ipv6/netfilter/ip6_tables.c:1039 [inline]
+ do_ip6t_get_ctl+0x8ec/0xaf0 net/ipv6/netfilter/ip6_tables.c:1677
+ nf_getsockopt+0x79/0xe0 net/netfilter/nf_sockopt.c:116
+ ipv6_getsockopt+0x1fd/0x2c0 net/ipv6/ipv6_sockglue.c:1494
+ tcp_getsockopt+0x9e/0x100 net/ipv4/tcp.c:4375
+ do_sock_getsockopt+0x2e5/0x760 net/socket.c:2373
+ __sys_getsockopt+0x1a1/0x270 net/socket.c:2402
+ __do_sys_getsockopt net/socket.c:2412 [inline]
+ __se_sys_getsockopt net/socket.c:2409 [inline]
+ __x64_sys_getsockopt+0xbd/0x160 net/socket.c:2409
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x260 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff88801e297580: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+ ffff88801e297600: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+>ffff88801e297680: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+                   ^
+ ffff88801e297700: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+ ffff88801e297780: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+==================================================================

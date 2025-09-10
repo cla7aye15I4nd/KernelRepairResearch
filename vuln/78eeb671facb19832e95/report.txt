@@ -1,0 +1,61 @@
+ntfs3: loop0: Failed to initialize $Extend/$ObjId.
+------------[ cut here ]------------
+kernel BUG at include/linux/highmem.h:275!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 UID: 0 PID: 5229 Comm: syz-executor130 Not tainted 6.11.0-rc3-next-20240812-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/27/2024
+RIP: 0010:zero_user_segments+0x28b/0x290 include/linux/highmem.h:275
+Code: 02 02 e9 47 fe ff ff e8 23 30 a8 fe 89 ea be 00 10 00 00 48 c7 c7 30 86 ce 8e e8 e0 7b 02 02 e9 d3 fe ff ff e8 06 30 a8 fe 90 <0f> 0b 0f 1f 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 f3
+RSP: 0018:ffffc90003a574a0 EFLAGS: 00010293
+RAX: ffffffff82eb5e4a RBX: ffffea0001d39440 RCX: ffff888029bd5a00
+RDX: 0000000000000000 RSI: 0000000000001001 RDI: 0000000000001000
+RBP: 0000000000001000 R08: ffffffff82eb5c85 R09: 1ffffd40003a7288
+R10: dffffc0000000000 R11: fffff940003a7289 R12: 0000000000001001
+R13: 0000000000000000 R14: 1ffffd40003a7288 R15: 0000000000001001
+FS:  0000555572aa0380(0000) GS:ffff8880b9000000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007febeca54100 CR3: 0000000077864000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ folio_zero_range include/linux/highmem.h:647 [inline]
+ ntfs_extend_initialized_size+0x50b/0x950 fs/ntfs3/file.c:215
+ ntfs_extend+0x3fe/0x480 fs/ntfs3/file.c:403
+ ntfs_file_write_iter+0x3d1/0x740 fs/ntfs3/file.c:1187
+ iter_file_splice_write+0xbd7/0x14e0 fs/splice.c:743
+ do_splice_from fs/splice.c:941 [inline]
+ direct_splice_actor+0x11e/0x220 fs/splice.c:1164
+ splice_direct_to_actor+0x58e/0xc90 fs/splice.c:1108
+ do_splice_direct_actor fs/splice.c:1207 [inline]
+ do_splice_direct+0x28c/0x3e0 fs/splice.c:1233
+ vfs_copy_file_range+0xd37/0x1530 fs/read_write.c:1558
+ __do_sys_copy_file_range fs/read_write.c:1612 [inline]
+ __se_sys_copy_file_range+0x3f2/0x5d0 fs/read_write.c:1575
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7febec9bcdd9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffef5b189d8 EFLAGS: 00000246 ORIG_RAX: 0000000000000146
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007febec9bcdd9
+RDX: 0000000000000004 RSI: 0000000000000000 RDI: 0000000000000006
+RBP: 00007febeca505f0 R08: 0000000000000006 R09: 0000000000000000
+R10: 00000000200000c0 R11: 0000000000000246 R12: 00007ffef5b18a10
+R13: 00007ffef5b18c38 R14: 431bde82d7b634db R15: 00007febeca0603b
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:zero_user_segments+0x28b/0x290 include/linux/highmem.h:275
+Code: 02 02 e9 47 fe ff ff e8 23 30 a8 fe 89 ea be 00 10 00 00 48 c7 c7 30 86 ce 8e e8 e0 7b 02 02 e9 d3 fe ff ff e8 06 30 a8 fe 90 <0f> 0b 0f 1f 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 f3
+RSP: 0018:ffffc90003a574a0 EFLAGS: 00010293
+RAX: ffffffff82eb5e4a RBX: ffffea0001d39440 RCX: ffff888029bd5a00
+RDX: 0000000000000000 RSI: 0000000000001001 RDI: 0000000000001000
+RBP: 0000000000001000 R08: ffffffff82eb5c85 R09: 1ffffd40003a7288
+R10: dffffc0000000000 R11: fffff940003a7289 R12: 0000000000001001
+R13: 0000000000000000 R14: 1ffffd40003a7288 R15: 0000000000001001
+FS:  0000555572aa0380(0000) GS:ffff8880b9000000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007febeca54100 CR3: 0000000077864000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

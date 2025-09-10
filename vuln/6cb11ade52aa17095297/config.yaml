@@ -1,0 +1,39 @@
+id: 6cb11ade52aa17095297
+bug_link: https://syzkaller.appspot.com/bug?extid=6cb11ade52aa17095297
+title: 'KASAN: use-after-free Read in io_worker_handle_work'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 17a91051fe63b40ec651b80097c9fff5b093fdc5
+fix_commit: 3743c1723bfc62e69dbf022417720eed3f431b29
+datetime: '2021-05-26T09:03:56-06:00'
+fix_commit_message: "io-wq: Fix UAF when wakeup wqe in hash waitqueue\n\nBUG: KASAN:\
+  \ use-after-free in __wake_up_common+0x637/0x650\nRead of size 8 at addr ffff8880304250d8\
+  \ by task iou-wrk-28796/28802\n\nCall Trace:\n __dump_stack [inline]\n dump_stack+0x141/0x1d7\n\
+  \ print_address_description.constprop.0.cold+0x5b/0x2c6\n __kasan_report [inline]\n\
+  \ kasan_report.cold+0x7c/0xd8\n __wake_up_common+0x637/0x650\n __wake_up_common_lock+0xd0/0x130\n\
+  \ io_worker_handle_work+0x9dd/0x1790\n io_wqe_worker+0xb2a/0xd40\n ret_from_fork+0x1f/0x30\n\
+  \nAllocated by task 28798:\n kzalloc_node [inline]\n io_wq_create+0x3c4/0xdd0\n\
+  \ io_init_wq_offload [inline]\n io_uring_alloc_task_context+0x1bf/0x6b0\n __io_uring_add_task_file+0x29a/0x3c0\n\
+  \ io_uring_add_task_file [inline]\n io_uring_install_fd [inline]\n io_uring_create\
+  \ [inline]\n io_uring_setup+0x209a/0x2bd0\n do_syscall_64+0x3a/0xb0\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \nFreed by task 28798:\n kfree+0x106/0x2c0\n io_wq_destroy+0x182/0x380\n io_wq_put\
+  \ [inline]\n io_wq_put_and_exit+0x7a/0xa0\n io_uring_clean_tctx [inline]\n __io_uring_cancel+0x428/0x530\n\
+  \ io_uring_files_cancel\n do_exit+0x299/0x2a60\n do_group_exit+0x125/0x310\n get_signal+0x47f/0x2150\n\
+  \ arch_do_signal_or_restart+0x2a8/0x1eb0\n handle_signal_work[inline]\n exit_to_user_mode_loop\
+  \ [inline]\n exit_to_user_mode_prepare+0x171/0x280\n __syscall_exit_to_user_mode_work\
+  \ [inline]\n syscall_exit_to_user_mode+0x19/0x60\n do_syscall_64+0x47/0xb0\n entry_SYSCALL_64_after_hwframe\n\
+  \nThere are the following scenarios, hash waitqueue is shared by\nio-wq1 and io-wq2.\
+  \ (note: wqe is worker)\n\nio-wq1:worker2     | locks bit1\nio-wq2:worker1     |\
+  \ waits bit1\nio-wq1:worker3     | waits bit1\n\nio-wq1:worker2     | completes\
+  \ all wqe bit1 work items\nio-wq1:worker2     | drop bit1, exit\n\nio-wq2:worker1\
+  \     | locks bit1\nio-wq1:worker3     | can not locks bit1, waits bit1 and exit\n\
+  io-wq1             | exit and free io-wq1\nio-wq2:worker1     | drops bit1\nio-wq1:worker3\
+  \     | be waked up, even though wqe is freed\n\nAfter all iou-wrk belonging to\
+  \ io-wq1 have exited, remove wqe\nform hash waitqueue, it is guaranteed that there\
+  \ will be no more\nwqe belonging to io-wq1 in the hash waitqueue.\n\nReported-by:\
+  \ syzbot+6cb11ade52aa17095297@syzkaller.appspotmail.com\nSigned-off-by: Zqiang <qiang.zhang@windriver.com>\n\
+  Link: https://lore.kernel.org/r/20210526050826.30500-1-qiang.zhang@windriver.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

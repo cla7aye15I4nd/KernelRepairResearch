@@ -1,0 +1,53 @@
+id: c041b4ce3a6dfd1e63e2
+bug_link: https://syzkaller.appspot.com/bug?extid=c041b4ce3a6dfd1e63e2
+title: 'KASAN: slab-use-after-free Write in l2tp_session_delete'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 06cd3d4bb319fcf7a1e792fea120293fc8b6e7d3
+fix_commit: f8ad00f3fb2af98f29aacd7ceb4ecdd5ad3c9a7f
+datetime: '2024-07-09T11:06:21+02:00'
+fix_commit_message: "l2tp: fix possible UAF when cleaning up tunnels\n\nsyzbot reported\
+  \ a UAF caused by a race when the L2TP work queue closes a\ntunnel at the same time\
+  \ as a userspace thread closes a session in that\ntunnel.\n\nTunnel cleanup is handled\
+  \ by a work queue which iterates through the\nsessions contained within a tunnel,\
+  \ and closes them in turn.\n\nMeanwhile, a userspace thread may arbitrarily close\
+  \ a session via\neither netlink command or by closing the pppox socket in the case\
+  \ of\nl2tp_ppp.\n\nThe race condition may occur when l2tp_tunnel_closeall walks\
+  \ the list\nof sessions in the tunnel and deletes each one.  Currently this is\n\
+  implemented using list_for_each_safe, but because the list spinlock is\ndropped\
+  \ in the loop body it's possible for other threads to manipulate\nthe list during\
+  \ list_for_each_safe's list walk.  This can lead to the\nlist iterator being corrupted,\
+  \ leading to list_for_each_safe spinning.\nOne sequence of events which may lead\
+  \ to this is as follows:\n\n * A tunnel is created, containing two sessions A and\
+  \ B.\n * A thread closes the tunnel, triggering tunnel cleanup via the work\n  \
+  \ queue.\n * l2tp_tunnel_closeall runs in the context of the work queue.  It\n \
+  \  removes session A from the tunnel session list, then drops the list\n   lock.\
+  \  At this point the list_for_each_safe temporary variable is\n   pointing to the\
+  \ other session on the list, which is session B, and\n   the list can be manipulated\
+  \ by other threads since the list lock has\n   been released.\n * Userspace closes\
+  \ session B, which removes the session from its parent\n   tunnel via l2tp_session_delete.\
+  \  Since l2tp_tunnel_closeall has\n   released the tunnel list lock, l2tp_session_delete\
+  \ is able to call\n   list_del_init on the session B list node.\n * Back on the\
+  \ work queue, l2tp_tunnel_closeall resumes execution and\n   will now spin forever\
+  \ on the same list entry until the underlying\n   session structure is freed, at\
+  \ which point UAF occurs.\n\nThe solution is to iterate over the tunnel's session\
+  \ list using\nlist_first_entry_not_null to avoid the possibility of the list\niterator\
+  \ pointing at a list item which may be removed during the walk.\n\nAlso, have l2tp_tunnel_closeall\
+  \ ref each session while it processes it\nto prevent another thread from freeing\
+  \ it.\n\n\tcpu1\t\t\t\tcpu2\n\t---\t\t\t\t---\n\t\t\t\t\tpppol2tp_release()\n\n\t\
+  spin_lock_bh(&tunnel->list_lock);\n\tfor (;;) {\n\t\tsession = list_first_entry_or_null(&tunnel->session_list,\n\
+  \t\t\t\t\t\t   struct l2tp_session, list);\n\t\tif (!session)\n\t\t\tbreak;\n\t\t\
+  list_del_init(&session->list);\n\t\tspin_unlock_bh(&tunnel->list_lock);\n\n \t\t\
+  \t\t\tl2tp_session_delete(session);\n\n\t\tl2tp_session_delete(session);\n\t\tspin_lock_bh(&tunnel->list_lock);\n\
+  \t}\n\tspin_unlock_bh(&tunnel->list_lock);\n\nCalling l2tp_session_delete on the\
+  \ same session twice isn't a problem\nper-se, but if cpu2 manages to destruct the\
+  \ socket and unref the\nsession to zero before cpu1 progresses then it would lead\
+  \ to UAF.\n\nReported-by: syzbot+b471b7c936301a59745b@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+c041b4ce3a6dfd1e63e2@syzkaller.appspotmail.com\nFixes: d18d3f0a24fc\
+  \ (\"l2tp: replace hlist with simple list for per-tunnel session list\")\nSigned-off-by:\
+  \ James Chapman <jchapman@katalix.com>\nSigned-off-by: Tom Parkin <tparkin@katalix.com>\n\
+  Link: https://patch.msgid.link/20240704152508.1923908-1-jchapman@katalix.com\nSigned-off-by:\
+  \ Paolo Abeni <pabeni@redhat.com>\n"
+submodule:
+- net/l2tp
+hunk_count: 1
+covered_count: 1

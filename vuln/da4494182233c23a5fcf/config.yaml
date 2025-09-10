@@ -1,0 +1,25 @@
+id: da4494182233c23a5fcf
+bug_link: https://syzkaller.appspot.com/bug?extid=da4494182233c23a5fcf
+title: 'KMSAN: uninit-value in ebt_stp_mt_check (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 64e6dd1fb2f1ed799f317dc34aa6e251c64f4981
+fix_commit: c568503ef02030f169c9e19204def610a3510918
+datetime: '2018-06-08T12:40:56+02:00'
+fix_commit_message: "netfilter: x_tables: initialise match/target check parameter\
+  \ struct\n\nsyzbot reports following splat:\n\nBUG: KMSAN: uninit-value in ebt_stp_mt_check+0x24b/0x450\n\
+  \ net/bridge/netfilter/ebt_stp.c:162\n ebt_stp_mt_check+0x24b/0x450 net/bridge/netfilter/ebt_stp.c:162\n\
+  \ xt_check_match+0x1438/0x1650 net/netfilter/x_tables.c:506\n ebt_check_match net/bridge/netfilter/ebtables.c:372\
+  \ [inline]\n ebt_check_entry net/bridge/netfilter/ebtables.c:702 [inline]\n\nThe\
+  \ uninitialised access is\n   xt_mtchk_param->nft_compat\n\n... which should be\
+  \ set to 0.\nFix it by zeroing the struct beforehand, same for tgchk.\n\nip(6)tables\
+  \ targetinfo uses c99-style initialiser, so no change\nneeded there.\n\nReported-by:\
+  \ syzbot+da4494182233c23a5fcf@syzkaller.appspotmail.com\nFixes: 55917a21d0cc0 (\"\
+  netfilter: x_tables: add context to know if extension runs from nft_compat\")\n\
+  Signed-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Pablo Neira Ayuso\
+  \ <pablo@netfilter.org>\n"
+submodule:
+- net/bridge
+- net/ipv4
+- net/ipv6
+hunk_count: 3
+covered_count: 1

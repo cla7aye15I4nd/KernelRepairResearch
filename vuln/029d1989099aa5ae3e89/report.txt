@@ -1,0 +1,43 @@
+  node offset 0/16 bset u64s 0: incorrect max key U64_MAX:18374686479671623680:50331647, btree topology error: 
+bcachefs (loop0): flagging btree xattrs lost data
+bcachefs (loop0): running explicit recovery pass check_backpointers_to_extents (16), currently at recovery_pass_empty (0)
+bcachefs (loop0): running explicit recovery pass scan_for_btree_nodes (1), currently at recovery_pass_empty (0)
+bcachefs (loop0): error reading btree root btree=xattrs level=0: btree_node_read_error, fixing
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in fs/bcachefs/btree_cache.c:218:18
+shift exponent 251 is too large for 64-bit type 'unsigned long long'
+CPU: 0 UID: 0 PID: 5830 Comm: syz-executor323 Not tainted 6.15.0-rc1-syzkaller-00246-g900241a5cc15 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x3c8/0x420 lib/ubsan.c:492
+ __btree_node_pinned fs/bcachefs/btree_cache.c:218 [inline]
+ __bch2_btree_node_hash_insert+0x1b32/0x1ba0 fs/bcachefs/btree_cache.c:294
+ bch2_btree_node_hash_insert+0x7e/0xc0 fs/bcachefs/btree_cache.c:309
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1791 [inline]
+ bch2_btree_root_read+0x605/0x7e0 fs/bcachefs/btree_io.c:1819
+ read_btree_roots+0x3d7/0xa80 fs/bcachefs/recovery.c:581
+ bch2_fs_recovery+0x28e4/0x3e20 fs/bcachefs/recovery.c:928
+ bch2_fs_start+0x310/0x620 fs/bcachefs/super.c:1059
+ bch2_fs_get_tree+0x113e/0x18f0 fs/bcachefs/fs.c:2253
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1759
+ do_new_mount+0x2cf/0xb70 fs/namespace.c:3879
+ do_mount fs/namespace.c:4219 [inline]
+ __do_sys_mount fs/namespace.c:4430 [inline]
+ __se_sys_mount+0x38c/0x400 fs/namespace.c:4407
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f3aa1b3afaa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe042c3768 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffe042c3780 RCX: 00007f3aa1b3afaa
+RDX: 0000200000000180 RSI: 0000200000000540 RDI: 00007ffe042c3780
+RBP: 0000200000000540 R08: 00007ffe042c37c0 R09: 0000000000005964
+R10: 0000000000800000 R11: 0000000000000282 R12: 0000200000000180
+R13: 00007ffe042c37c0 R14: 0000000000000003 R15: 0000000000800000
+ </TASK>
+---[ end trace ]---

@@ -1,0 +1,51 @@
+id: 0665d43fa62276c7a5e3372929aa0bab96260979
+bug_link: https://syzkaller.appspot.com/bug?extid=0665d43fa62276c7a5e3372929aa0bab96260979
+title: 'KASAN: slab-out-of-bounds Read in sctp_send_reset_streams'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8f659a03a0ba9289b9aeb9b4470e6fb263d6f483
+fix_commit: 2342b8d95bcae5946e1b9b8d58645f37500ef2e7
+datetime: '2017-12-11T14:08:21-05:00'
+fix_commit_message: 'sctp: make sure stream nums can match optlen in sctp_setsockopt_reset_streams
+
+
+  Now in sctp_setsockopt_reset_streams, it only does the check
+
+  optlen < sizeof(*params) for optlen. But it''s not enough, as
+
+  params->srs_number_streams should also match optlen.
+
+
+  If the streams in params->srs_stream_list are less than stream
+
+  nums in params->srs_number_streams, later when dereferencing
+
+  the stream list, it could cause a slab-out-of-bounds crash, as
+
+  reported by syzbot.
+
+
+  This patch is to fix it by also checking the stream numbers in
+
+  sctp_setsockopt_reset_streams to make sure at least it''s not
+
+  greater than the streams in the list.
+
+
+  Fixes: 7f9d68ac944e ("sctp: implement sender-side procedures for SSN Reset Request
+  Parameter")
+
+  Reported-by: Dmitry Vyukov <dvyukov@google.com>
+
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>
+
+  Acked-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>
+
+  Acked-by: Neil Horman <nhorman@tuxdriver.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/sctp
+hunk_count: 1
+covered_count: 1

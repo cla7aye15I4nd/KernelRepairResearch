@@ -1,0 +1,44 @@
+id: afb77bdbaca0cda9e991
+bug_link: https://syzkaller.appspot.com/bug?extid=afb77bdbaca0cda9e991
+title: 'WARNING: refcount bug in crypto_mod_get'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: eebac678556d6927f09a992872f4464cf3aecc76
+fix_commit: 6603523bf5e432c7c8490fb500793bb15d4e5f61
+datetime: '2020-04-16T16:49:22+10:00'
+fix_commit_message: 'crypto: api - Fix use-after-free and race in crypto_spawn_alg
+
+
+  There are two problems in crypto_spawn_alg.  First of all it may
+
+  return spawn->alg even if spawn->dead is set.  This results in a
+
+  double-free as detected by syzbot.
+
+
+  Secondly the setting of the DYING flag is racy because we hold
+
+  the read-lock instead of the write-lock.  We should instead call
+
+  crypto_shoot_alg in a safe manner by gaining a refcount, dropping
+
+  the lock, and then releasing the refcount.
+
+
+  This patch fixes both problems.
+
+
+  Reported-by: syzbot+fc0674cde00b66844470@syzkaller.appspotmail.com
+
+  Fixes: 4f87ee118d16 ("crypto: api - Do not zap spawn->alg")
+
+  Fixes: 73669cc55646 ("crypto: api - Fix race condition in...")
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  '
+submodule:
+- crypto
+hunk_count: 3
+covered_count: 2

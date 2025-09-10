@@ -1,0 +1,70 @@
+id: 10bd8fe6741eedd2be2e
+bug_link: https://syzkaller.appspot.com/bug?extid=10bd8fe6741eedd2be2e
+title: 'BUG: corrupted list in hci_chan_del (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 872274b992839ff64fe560767fe7ee5f942ccdb1
+fix_commit: ab4eedb790cae44313759b50fe47da285e2519d5
+datetime: '2025-02-13T11:15:37-05:00'
+fix_commit_message: "Bluetooth: L2CAP: Fix corrupted list in hci_chan_del\n\nThis\
+  \ fixes the following trace by reworking the locking of l2cap_conn\nso instead of\
+  \ only locking when changing the chan_l list this promotes\nchan_lock to a general\
+  \ lock of l2cap_conn so whenever it is being held\nit would prevents the likes of\
+  \ l2cap_conn_del to run:\n\nlist_del corruption, ffff888021297e00->prev is LIST_POISON2\
+  \ (dead000000000122)\n------------[ cut here ]------------\nkernel BUG at lib/list_debug.c:61!\n\
+  Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI\nCPU: 1 UID: 0 PID: 5896 Comm:\
+  \ syz-executor213 Not tainted 6.14.0-rc1-next-20250204-syzkaller #0\nHardware name:\
+  \ Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024\nRIP:\
+  \ 0010:__list_del_entry_valid_or_report+0x12c/0x190 lib/list_debug.c:59\nCode: 8c\
+  \ 4c 89 fe 48 89 da e8 32 8c 37 fc 90 0f 0b 48 89 df e8 27 9f 14 fd 48 c7 c7 a0\
+  \ c0 60 8c 4c 89 fe 48 89 da e8 15 8c 37 fc 90 <0f> 0b 4c 89 e7 e8 0a 9f 14 fd 42\
+  \ 80 3c 2b 00 74 08 4c 89 e7 e8 cb\nRSP: 0018:ffffc90003f6f998 EFLAGS: 00010246\n\
+  RAX: 000000000000004e RBX: dead000000000122 RCX: 01454d423f7fbf00\nRDX: 0000000000000000\
+  \ RSI: 0000000080000000 RDI: 0000000000000000\nRBP: dffffc0000000000 R08: ffffffff819f077c\
+  \ R09: 1ffff920007eded0\nR10: dffffc0000000000 R11: fffff520007eded1 R12: dead000000000122\n\
+  R13: dffffc0000000000 R14: ffff8880352248d8 R15: ffff888021297e00\nFS:  00007f7ace6686c0(0000)\
+  \ GS:ffff8880b8700000(0000) knlGS:0000000000000000\nCS:  0010 DS: 0000 ES: 0000\
+  \ CR0: 0000000080050033\nCR2: 00007f7aceeeb1d0 CR3: 000000003527c000 CR4: 00000000003526f0\n\
+  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\nDR3: 0000000000000000\
+  \ DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n <TASK>\n __list_del_entry_valid\
+  \ include/linux/list.h:124 [inline]\n __list_del_entry include/linux/list.h:215\
+  \ [inline]\n list_del_rcu include/linux/rculist.h:168 [inline]\n hci_chan_del+0x70/0x1b0\
+  \ net/bluetooth/hci_conn.c:2858\n l2cap_conn_free net/bluetooth/l2cap_core.c:1816\
+  \ [inline]\n kref_put include/linux/kref.h:65 [inline]\n l2cap_conn_put+0x70/0xe0\
+  \ net/bluetooth/l2cap_core.c:1830\n l2cap_sock_shutdown+0xa8a/0x1020 net/bluetooth/l2cap_sock.c:1377\n\
+  \ l2cap_sock_release+0x79/0x1d0 net/bluetooth/l2cap_sock.c:1416\n __sock_release\
+  \ net/socket.c:642 [inline]\n sock_close+0xbc/0x240 net/socket.c:1393\n __fput+0x3e9/0x9f0\
+  \ fs/file_table.c:448\n task_work_run+0x24f/0x310 kernel/task_work.c:227\n ptrace_notify+0x2d2/0x380\
+  \ kernel/signal.c:2522\n ptrace_report_syscall include/linux/ptrace.h:415 [inline]\n\
+  \ ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]\n syscall_exit_work+0xc7/0x1d0\
+  \ kernel/entry/common.c:173\n syscall_exit_to_user_mode_prepare kernel/entry/common.c:200\
+  \ [inline]\n __syscall_exit_to_user_mode_work kernel/entry/common.c:205 [inline]\n\
+  \ syscall_exit_to_user_mode+0x24a/0x340 kernel/entry/common.c:218\n do_syscall_64+0x100/0x230\
+  \ arch/x86/entry/common.c:89\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\nRIP: 0033:0x7f7aceeaf449\n\
+  Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 41 19 00 00 90 48 89 f8 48 89 f7 48 89\
+  \ d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3\
+  \ 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48\nRSP: 002b:00007f7ace668218 EFLAGS: 00000246\
+  \ ORIG_RAX: 000000000000002a\nRAX: fffffffffffffffc RBX: 00007f7acef39328 RCX: 00007f7aceeaf449\n\
+  RDX: 000000000000000e RSI: 0000000020000100 RDI: 0000000000000004\nRBP: 00007f7acef39320\
+  \ R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000 R11: 0000000000000246\
+  \ R12: 0000000000000003\nR13: 0000000000000004 R14: 00007f7ace668670 R15: 000000000000000b\n\
+  \ </TASK>\nModules linked in:\n---[ end trace 0000000000000000 ]---\nRIP: 0010:__list_del_entry_valid_or_report+0x12c/0x190\
+  \ lib/list_debug.c:59\nCode: 8c 4c 89 fe 48 89 da e8 32 8c 37 fc 90 0f 0b 48 89\
+  \ df e8 27 9f 14 fd 48 c7 c7 a0 c0 60 8c 4c 89 fe 48 89 da e8 15 8c 37 fc 90 <0f>\
+  \ 0b 4c 89 e7 e8 0a 9f 14 fd 42 80 3c 2b 00 74 08 4c 89 e7 e8 cb\nRSP: 0018:ffffc90003f6f998\
+  \ EFLAGS: 00010246\nRAX: 000000000000004e RBX: dead000000000122 RCX: 01454d423f7fbf00\n\
+  RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000\nRBP: dffffc0000000000\
+  \ R08: ffffffff819f077c R09: 1ffff920007eded0\nR10: dffffc0000000000 R11: fffff520007eded1\
+  \ R12: dead000000000122\nR13: dffffc0000000000 R14: ffff8880352248d8 R15: ffff888021297e00\n\
+  FS:  00007f7ace6686c0(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000\nCS:\
+  \  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 00007f7acef05b08 CR3: 000000003527c000\
+  \ CR4: 00000000003526f0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\n\nReported-by:\
+  \ syzbot+10bd8fe6741eedd2be2e@syzkaller.appspotmail.com\nTested-by: syzbot+10bd8fe6741eedd2be2e@syzkaller.appspotmail.com\n\
+  Fixes: b4f82f9ed43a (\"Bluetooth: L2CAP: Fix slab-use-after-free Read in l2cap_send_cmd\"\
+  )\nSigned-off-by: Luiz Augusto von Dentz <luiz.von.dentz@intel.com>\nSigned-off-by:\
+  \ Dan Carpenter <dan.carpenter@linaro.org>\n"
+submodule:
+- include/net/bluetooth
+- net/bluetooth
+hunk_count: 52
+covered_count: 9

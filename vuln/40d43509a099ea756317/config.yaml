@@ -1,0 +1,53 @@
+id: 40d43509a099ea756317
+bug_link: https://syzkaller.appspot.com/bug?extid=40d43509a099ea756317
+title: general protection fault in tls_merge_open_record
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fd0413bbf8b11f56e8aa842783b0deda0dfe2926
+fix_commit: 53f2cb491b500897a619ff6abd72f565933760f0
+datetime: '2023-11-23T08:51:45-08:00'
+fix_commit_message: 'tls: fix NULL deref on tls_sw_splice_eof() with empty record
+
+
+  syzkaller discovered that if tls_sw_splice_eof() is executed as part of
+
+  sendfile() when the plaintext/ciphertext sk_msg are empty, the send path
+
+  gets confused because the empty ciphertext buffer does not have enough
+
+  space for the encryption overhead. This causes tls_push_record() to go on
+
+  the `split = true` path (which is only supposed to be used when interacting
+
+  with an attached BPF program), and then get further confused and hit the
+
+  tls_merge_open_record() path, which then assumes that there must be at
+
+  least one populated buffer element, leading to a NULL deref.
+
+
+  It is possible to have empty plaintext/ciphertext buffers if we previously
+
+  bailed from tls_sw_sendmsg_locked() via the tls_trim_both_msgs() path.
+
+  tls_sw_push_pending_record() already handles this case correctly; let''s do
+
+  the same check in tls_sw_splice_eof().
+
+
+  Fixes: df720d288dbb ("tls/sw: Use splice_eof() to flush")
+
+  Cc: stable@vger.kernel.org
+
+  Reported-by: syzbot+40d43509a099ea756317@syzkaller.appspotmail.com
+
+  Signed-off-by: Jann Horn <jannh@google.com>
+
+  Link: https://lore.kernel.org/r/20231122214447.675768-1-jannh@google.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/tls
+hunk_count: 1
+covered_count: 1

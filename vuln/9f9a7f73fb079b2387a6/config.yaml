@@ -1,0 +1,76 @@
+id: 9f9a7f73fb079b2387a6
+bug_link: https://syzkaller.appspot.com/bug?extid=9f9a7f73fb079b2387a6
+title: kernel BUG in const_folio_flags (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d89c8ec0546184267cb211b579514ebaf8916100
+fix_commit: 3203b3ab0fcf22132caadd72caebfad47bf0dd2b
+datetime: '2024-12-05T19:54:47-08:00'
+fix_commit_message: 'mm/filemap: don''t call folio_test_locked() without a reference
+  in next_uptodate_folio()
+
+
+  The folio can get freed + buddy-merged + reallocated in the meantime,
+
+  resulting in us calling folio_test_locked() possibly on a tail page.
+
+
+  This makes const_folio_flags VM_BUG_ON_PGFLAGS() when stumbling over the
+
+  tail page.
+
+
+  Could this result in other issues?  Doesn''t look like it.  False positives
+
+  and false negatives don''t really matter, because this folio would get
+
+  skipped either way when detecting that they have been reallocated in the
+
+  meantime.
+
+
+  Fix it by performing the folio_test_locked() checked after grabbing a
+
+  reference.  If this ever becomes a real problem, we could add a special
+
+  helper that racily checks if the bit is set even on tail pages ...  but
+
+  let''s hope that''s not required so we can just handle it cleaner: work on
+
+  the folio after we hold a reference.
+
+
+  Do we really need the folio_test_locked() check if we are going to trylock
+
+  briefly after?  Well, we can at least avoid a xas_reload().
+
+
+  It''s a bit unclear which exact change introduced that issue.  Likely, ever
+
+  since we made PG_locked obey to the PF_NO_TAIL policy it could have been
+
+  triggered in some way.
+
+
+  Link: https://lkml.kernel.org/r/20241129125303.4033164-1-david@redhat.com
+
+  Fixes: 48c935ad88f5 ("page-flags: define PG_locked behavior on compound pages")
+
+  Signed-off-by: David Hildenbrand <david@redhat.com>
+
+  Reported-by: syzbot+9f9a7f73fb079b2387a6@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/lkml/674184c9.050a0220.1cc393.0001.GAE@google.com/
+
+  Acked-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
+
+  Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>
+
+  Cc: Hillf Danton <hdanton@sina.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 1
+covered_count: 0

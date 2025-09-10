@@ -1,0 +1,55 @@
+diff --git a/net/sched/sch_taprio.c b/net/sched/sch_taprio.c
+index 1ab17e8a7260..118915055360 100644
+--- a/net/sched/sch_taprio.c
++++ b/net/sched/sch_taprio.c
+@@ -1848,6 +1848,9 @@ static int taprio_change(struct Qdisc *sch, struct nlattr *opt,
+ 	}
+ 	q->flags = taprio_flags;
+ 
++	/* Needed for length_to_duration() during netlink attribute parsing */
++	taprio_set_picos_per_byte(dev, q);
++
+ 	err = taprio_parse_mqprio_opt(dev, mqprio, extack, q->flags);
+ 	if (err < 0)
+ 		return err;
+@@ -1907,7 +1910,6 @@ static int taprio_change(struct Qdisc *sch, struct nlattr *opt,
+ 	if (err < 0)
+ 		goto free_sched;
+ 
+-	taprio_set_picos_per_byte(dev, q);
+ 	taprio_update_queue_max_sdu(q, new_admin, stab);
+ 
+ 	if (FULL_OFFLOAD_IS_ENABLED(q->flags))
+diff --git a/tools/testing/selftests/tc-testing/tc-tests/qdiscs/taprio.json b/tools/testing/selftests/tc-testing/tc-tests/qdiscs/taprio.json
+index 12da0a939e3e..8f12f00a4f57 100644
+--- a/tools/testing/selftests/tc-testing/tc-tests/qdiscs/taprio.json
++++ b/tools/testing/selftests/tc-testing/tc-tests/qdiscs/taprio.json
+@@ -132,6 +132,28 @@
+             "echo \"1\" > /sys/bus/netdevsim/del_device"
+         ]
+     },
++    {
++        "id": "6f62",
++        "name": "Add taprio Qdisc with too short interval",
++        "category": [
++            "qdisc",
++            "taprio"
++        ],
++        "plugins": {
++            "requires": "nsPlugin"
++        },
++        "setup": [
++            "echo \"1 1 8\" > /sys/bus/netdevsim/new_device"
++        ],
++        "cmdUnderTest": "$TC qdisc add dev $ETH root handle 1: taprio num_tc 2 queues 1@0 1@1 sched-entry S 01 300 sched-entry S 02 1700 clockid CLOCK_TAI",
++        "expExitCode": "2",
++        "verifyCmd": "$TC qdisc show dev $ETH",
++        "matchPattern": "qdisc taprio 1: root refcnt",
++        "matchCount": "0",
++        "teardown": [
++            "echo \"1\" > /sys/bus/netdevsim/del_device"
++        ]
++    },
+     {
+         "id": "3e1e",
+         "name": "Add taprio Qdisc with an invalid cycle-time",

@@ -1,0 +1,18 @@
+diff --git a/block/partitions/core.c b/block/partitions/core.c
+index 1a7558917c47..46f055bc7ecb 100644
+--- a/block/partitions/core.c
++++ b/block/partitions/core.c
+@@ -322,6 +322,13 @@ static struct block_device *add_partition(struct gendisk *disk, int partno,
+ 	const char *dname;
+ 	int err;
+ 
++	/*
++	 * disk_max_parts() won't be zero, either GENHD_FL_EXT_DEVT is set
++	 * or 'minors' is passed to alloc_disk().
++	 */
++	if (partno >= disk_max_parts(disk))
++		return ERR_PTR(-EINVAL);
++
+ 	/*
+ 	 * Partitions are not supported on zoned block devices that are used as
+ 	 * such.

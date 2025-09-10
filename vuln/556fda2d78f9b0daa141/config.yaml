@@ -1,0 +1,64 @@
+id: 556fda2d78f9b0daa141
+bug_link: https://syzkaller.appspot.com/bug?extid=556fda2d78f9b0daa141
+title: general protection fault in lock_vma_under_rcu
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4e0dbe105d5088c77eb09de6f049aaf44711a2ec
+fix_commit: f35ab95ca0af7a27feab57b9d7e906405bddb093
+datetime: '2025-03-16T22:06:20-07:00'
+fix_commit_message: "mm: replace vm_lock and detached flag with a reference count\n\
+  \nrw_semaphore is a sizable structure of 40 bytes and consumes considerable\nspace\
+  \ for each vm_area_struct.  However vma_lock has two important\nspecifics which\
+  \ can be used to replace rw_semaphore with a simpler\nstructure:\n\n1. Readers never\
+  \ wait.  They try to take the vma_lock and fall back to\n   mmap_lock if that fails.\n\
+  \n2. Only one writer at a time will ever try to write-lock a vma_lock\n   because\
+  \ writers first take mmap_lock in write mode.  Because of these\n   requirements,\
+  \ full rw_semaphore functionality is not needed and we can\n   replace rw_semaphore\
+  \ and the vma->detached flag with a refcount\n   (vm_refcnt).\n\nWhen vma is in\
+  \ detached state, vm_refcnt is 0 and only a call to\nvma_mark_attached() can take\
+  \ it out of this state.  Note that unlike\nbefore, now we enforce both vma_mark_attached()\
+  \ and vma_mark_detached() to\nbe done only after vma has been write-locked.  vma_mark_attached()\
+  \ changes\nvm_refcnt to 1 to indicate that it has been attached to the vma tree.\
+  \ \nWhen a reader takes read lock, it increments vm_refcnt, unless the top\nusable\
+  \ bit of vm_refcnt (0x40000000) is set, indicating presence of a\nwriter.  When\
+  \ writer takes write lock, it sets the top usable bit to\nindicate its presence.\
+  \  If there are readers, writer will wait using newly\nintroduced mm->vma_writer_wait.\
+  \  Since all writers take mmap_lock in write\nmode first, there can be only one\
+  \ writer at a time.  The last reader to\nrelease the lock will signal the writer\
+  \ to wake up.  refcount might\noverflow if there are many competing readers, in\
+  \ which case read-locking\nwill fail.  Readers are expected to handle such failures.\n\
+  \nIn summary:\n1. all readers increment the vm_refcnt;\n2. writer sets top usable\
+  \ (writer) bit of vm_refcnt;\n3. readers cannot increment the vm_refcnt if the writer\
+  \ bit is set;\n4. in the presence of readers, writer must wait for the vm_refcnt\
+  \ to drop\nto 1 (plus the VMA_LOCK_OFFSET writer bit), indicating an attached vma\n\
+  with no readers;\n5. vm_refcnt overflow is handled by the readers.\n\nWhile this\
+  \ vm_lock replacement does not yet result in a smaller\nvm_area_struct (it stays\
+  \ at 256 bytes due to cacheline alignment), it\nallows for further size optimization\
+  \ by structure member regrouping to\nbring the size of vm_area_struct below 192\
+  \ bytes.\n\n[surenb@google.com: fix a crash due to vma_end_read() that should have\
+  \ been removed]\n  Link: https://lkml.kernel.org/r/20250220200208.323769-1-surenb@google.com\n\
+  Link: https://lkml.kernel.org/r/20250213224655.1680278-13-surenb@google.com\nSigned-off-by:\
+  \ Suren Baghdasaryan <surenb@google.com>\nSuggested-by: Peter Zijlstra <peterz@infradead.org>\n\
+  Suggested-by: Matthew Wilcox <willy@infradead.org>\nTested-by: Shivank Garg <shivankg@amd.com>\n\
+  \  Link: https://lkml.kernel.org/r/5e19ec93-8307-47c2-bb13-3ddf7150624e@amd.com\n\
+  Reviewed-by: Vlastimil Babka <vbabka@suse.cz>\nCc: Christian Brauner <brauner@kernel.org>\n\
+  Cc: David Hildenbrand <david@redhat.com>\nCc: David Howells <dhowells@redhat.com>\n\
+  Cc: Davidlohr Bueso <dave@stgolabs.net>\nCc: Hugh Dickins <hughd@google.com>\nCc:\
+  \ Jann Horn <jannh@google.com>\nCc: Johannes Weiner <hannes@cmpxchg.org>\nCc: Jonathan\
+  \ Corbet <corbet@lwn.net>\nCc: Klara Modin <klarasmodin@gmail.com>\nCc: Liam R.\
+  \ Howlett <Liam.Howlett@Oracle.com>\nCc: Lokesh Gidra <lokeshgidra@google.com>\n\
+  Cc: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>\nCc: Mateusz Guzik <mjguzik@gmail.com>\n\
+  Cc: Mel Gorman <mgorman@techsingularity.net>\nCc: Michal Hocko <mhocko@suse.com>\n\
+  Cc: Minchan Kim <minchan@google.com>\nCc: Oleg Nesterov <oleg@redhat.com>\nCc: Pasha\
+  \ Tatashin <pasha.tatashin@soleen.com>\nCc: \"Paul E . McKenney\" <paulmck@kernel.org>\n\
+  Cc: Peter Xu <peterx@redhat.com>\nCc: Shakeel Butt <shakeel.butt@linux.dev>\nCc:\
+  \ Sourav Panda <souravpanda@google.com>\nCc: Wei Yang <richard.weiyang@gmail.com>\n\
+  Cc: Will Deacon <will@kernel.org>\nCc: Heiko Carstens <hca@linux.ibm.com>\nCc: Stephen\
+  \ Rothwell <sfr@canb.auug.org.au>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- include/linux
+- kernel
+- mm
+- tools/testing/vma
+- tools/testing/vma/linux
+hunk_count: 32
+covered_count: 7

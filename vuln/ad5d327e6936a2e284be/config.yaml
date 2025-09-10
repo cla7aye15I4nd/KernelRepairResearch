@@ -1,0 +1,33 @@
+id: ad5d327e6936a2e284be
+bug_link: https://syzkaller.appspot.com/bug?extid=ad5d327e6936a2e284be
+title: 'KMSAN: kernel-infoleak in sctp_getsockopt'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 40e020c129cfc991e8ab4736d2665351ffd1468d
+fix_commit: 4a2eb0c37b4759416996fbb4c45b932500cf06d3
+datetime: '2018-12-10T11:53:42-08:00'
+fix_commit_message: "sctp: initialize sin6_flowinfo for ipv6 addrs in sctp_inet6addr_event\n\
+  \nsyzbot reported a kernel-infoleak, which is caused by an uninitialized\nfield(sin6_flowinfo)\
+  \ of addr->a.v6 in sctp_inet6addr_event().\nThe call trace is as below:\n\n  BUG:\
+  \ KMSAN: kernel-infoleak in _copy_to_user+0x19a/0x230 lib/usercopy.c:33\n  CPU:\
+  \ 1 PID: 8164 Comm: syz-executor2 Not tainted 4.20.0-rc3+ #95\n  Hardware name:\
+  \ Google Google Compute Engine/Google Compute Engine, BIOS\n  Google 01/01/2011\n\
+  \  Call Trace:\n    __dump_stack lib/dump_stack.c:77 [inline]\n    dump_stack+0x32d/0x480\
+  \ lib/dump_stack.c:113\n    kmsan_report+0x12c/0x290 mm/kmsan/kmsan.c:683\n    kmsan_internal_check_memory+0x32a/0xa50\
+  \ mm/kmsan/kmsan.c:743\n    kmsan_copy_to_user+0x78/0xd0 mm/kmsan/kmsan_hooks.c:634\n\
+  \    _copy_to_user+0x19a/0x230 lib/usercopy.c:33\n    copy_to_user include/linux/uaccess.h:183\
+  \ [inline]\n    sctp_getsockopt_local_addrs net/sctp/socket.c:5998 [inline]\n  \
+  \  sctp_getsockopt+0x15248/0x186f0 net/sctp/socket.c:7477\n    sock_common_getsockopt+0x13f/0x180\
+  \ net/core/sock.c:2937\n    __sys_getsockopt+0x489/0x550 net/socket.c:1939\n   \
+  \ __do_sys_getsockopt net/socket.c:1950 [inline]\n    __se_sys_getsockopt+0xe1/0x100\
+  \ net/socket.c:1947\n    __x64_sys_getsockopt+0x62/0x80 net/socket.c:1947\n    do_syscall_64+0xcf/0x110\
+  \ arch/x86/entry/common.c:291\n    entry_SYSCALL_64_after_hwframe+0x63/0xe7\n\n\
+  sin6_flowinfo is not really used by SCTP, so it will be fixed by simply\nsetting\
+  \ it to 0.\n\nThe issue exists since very beginning.\nThanks Alexander for the reproducer\
+  \ provided.\n\nReported-by: syzbot+ad5d327e6936a2e284be@syzkaller.appspotmail.com\n\
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>\nAcked-by: Marcelo Ricardo Leitner\
+  \ <marcelo.leitner@gmail.com>\nAcked-by: Neil Horman <nhorman@tuxdriver.com>\nSigned-off-by:\
+  \ David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 1
+covered_count: 0

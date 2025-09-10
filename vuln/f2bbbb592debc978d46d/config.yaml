@@ -1,0 +1,64 @@
+id: f2bbbb592debc978d46d
+bug_link: https://syzkaller.appspot.com/bug?extid=f2bbbb592debc978d46d
+title: 'BUG: Bad rss-counter state (5)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 29e9412b250e51d0d11a57907c06b166a14e6676
+fix_commit: 43e027e414232b1ce4fa6c96a582417e2c027f2d
+datetime: '2024-07-03T19:30:03-07:00'
+fix_commit_message: "mm: memory: extend finish_fault() to support large folio\n\n\
+  Patch series \"add mTHP support for anonymous shmem\", v5.\n\nAnonymous pages have\
+  \ already been supported for multi-size (mTHP)\nallocation through commit 19eaf44954df,\
+  \ that can allow THP to be\nconfigured through the sysfs interface located at\n\
+  '/sys/kernel/mm/transparent_hugepage/hugepage-XXkb/enabled'.\n\nHowever, the anonymous\
+  \ shmem will ignore the anonymous mTHP rule\nconfigured through the sysfs interface,\
+  \ and can only use the PMD-mapped\nTHP, that is not reasonable.  Many implement\
+  \ anonymous page sharing\nthrough mmap(MAP_SHARED | MAP_ANONYMOUS), especially in\
+  \ database usage\nscenarios, therefore, users expect to apply an unified mTHP strategy\
+  \ for\nanonymous pages, also including the anonymous shared pages, in order to\n\
+  enjoy the benefits of mTHP.  For example, lower latency than PMD-mapped\nTHP, smaller\
+  \ memory bloat than PMD-mapped THP, contiguous PTEs on ARM\narchitecture to reduce\
+  \ TLB miss etc.\n\nAs discussed in the bi-weekly MM meeting[1], the mTHP controls\
+  \ should\ncontrol all of shmem, not only anonymous shmem, but support will be added\n\
+  iteratively.  Therefore, this patch set starts with support for anonymous\nshmem.\n\
+  \nThe primary strategy is similar to supporting anonymous mTHP.  Introduce a\nnew\
+  \ interface '/mm/transparent_hugepage/hugepage-XXkb/shmem_enabled',\nwhich can have\
+  \ almost the same values as the top-level\n'/sys/kernel/mm/transparent_hugepage/shmem_enabled',\
+  \ with adding a new\nadditional \"inherit\" option and dropping the testing options\
+  \ 'force' and\n'deny'.  By default all sizes will be set to \"never\" except PMD\
+  \ size,\nwhich is set to \"inherit\".  This ensures backward compatibility with\
+  \ the\nanonymous shmem enabled of the top level, meanwhile also allows\nindependent\
+  \ control of anonymous shmem enabled for each mTHP.\n\nUse the page fault latency\
+  \ tool to measure the performance of 1G anonymous shmem\nwith 32 threads on my machine\
+  \ environment with: ARM64 Architecture, 32 cores,\n125G memory:\nbase: mm-unstable\n\
+  user-time    sys_time    faults_per_sec_per_cpu     faults_per_sec\n0.04s      \
+  \  3.10s         83516.416                  2669684.890\n\nmm-unstable + patchset,\
+  \ anon shmem mTHP disabled\nuser-time    sys_time    faults_per_sec_per_cpu    \
+  \ faults_per_sec\n0.02s        3.14s         82936.359                  2630746.027\n\
+  \nmm-unstable + patchset, anon shmem 64K mTHP enabled\nuser-time    sys_time   \
+  \ faults_per_sec_per_cpu     faults_per_sec\n0.08s        0.31s         678630.231\
+  \                 17082522.495\n\nFrom the data above, it is observed that the patchset\
+  \ has a minimal impact\nwhen mTHP is not enabled (some fluctuations observed during\
+  \ testing). \nWhen enabling 64K mTHP, there is a significant improvement of the\
+  \ page\nfault latency.\n\n[1] https://lore.kernel.org/all/f1783ff0-65bd-4b2b-8952-52b6822a0835@redhat.com/\n\
+  \n\nThis patch (of 6):\n\nAdd large folio mapping establishment support for finish_fault()\
+  \ as a\npreparation, to support multi-size THP allocation of anonymous shmem pages\n\
+  in the following patches.\n\nKeep the same behavior (per-page fault) for non-anon\
+  \ shmem to avoid\ninflating the RSS unintentionally, and we can discuss what size\
+  \ of mapping\nto build when extending mTHP to control non-anon shmem in the future.\n\
+  \n[baolin.wang@linux.alibaba.com: avoid going beyond the PMD pagetable size]\n \
+  \ Link: https://lkml.kernel.org/r/b0e6a8b1-a32c-459e-ae67-fde5d28773e6@linux.alibaba.com\n\
+  [baolin.wang@linux.alibaba.com: use 'PTRS_PER_PTE' instead of 'PTRS_PER_PTE - 1']\n\
+  \  Link: https://lkml.kernel.org/r/e1f5767a-2c9b-4e37-afe6-1de26fe54e41@linux.alibaba.com\n\
+  Link: https://lkml.kernel.org/r/cover.1718090413.git.baolin.wang@linux.alibaba.com\n\
+  Link: https://lkml.kernel.org/r/3a190892355989d42f59cf9f2f98b94694b0d24d.1718090413.git.baolin.wang@linux.alibaba.com\n\
+  Signed-off-by: Baolin Wang <baolin.wang@linux.alibaba.com>\nReviewed-by: Zi Yan\
+  \ <ziy@nvidia.com>\nReviewed-by: Kefeng Wang <wangkefeng.wang@huawei.com>\nCc: Daniel\
+  \ Gomez <da.gomez@samsung.com>\nCc: David Hildenbrand <david@redhat.com>\nCc: \"\
+  Huang, Ying\" <ying.huang@intel.com>\nCc: Hugh Dickins <hughd@google.com>\nCc: Lance\
+  \ Yang <ioworker0@gmail.com>\nCc: Pankaj Raghav <p.raghav@samsung.com>\nCc: Ryan\
+  \ Roberts <ryan.roberts@arm.com>\nCc: Yang Shi <shy828301@gmail.com>\nCc: Barry\
+  \ Song <v-songbaohua@oppo.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 2
+covered_count: 0

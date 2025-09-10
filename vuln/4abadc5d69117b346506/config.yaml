@@ -1,0 +1,29 @@
+id: 4abadc5d69117b346506
+bug_link: https://syzkaller.appspot.com/bug?extid=4abadc5d69117b346506
+title: 'WARNING: kmalloc bug in xdp_umem_create'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1c9ca7e9836a4df1518568ea47461c5ef7c2cf8b
+fix_commit: a343993c518ce252b62ec00ac06bccfb1d17129d
+datetime: '2018-06-11T23:49:07+02:00'
+fix_commit_message: "xsk: silence warning on memory allocation failure\n\nsyzkaller\
+  \ reported a warning from xdp_umem_pin_pages():\n\n  WARNING: CPU: 1 PID: 4537 at\
+  \ mm/slab_common.c:996 kmalloc_slab+0x56/0x70 mm/slab_common.c:996\n  ...\n  __do_kmalloc\
+  \ mm/slab.c:3713 [inline]\n  __kmalloc+0x25/0x760 mm/slab.c:3727\n  kmalloc_array\
+  \ include/linux/slab.h:634 [inline]\n  kcalloc include/linux/slab.h:645 [inline]\n\
+  \  xdp_umem_pin_pages net/xdp/xdp_umem.c:205 [inline]\n  xdp_umem_reg net/xdp/xdp_umem.c:318\
+  \ [inline]\n  xdp_umem_create+0x5c9/0x10f0 net/xdp/xdp_umem.c:349\n  xsk_setsockopt+0x443/0x550\
+  \ net/xdp/xsk.c:531\n  __sys_setsockopt+0x1bd/0x390 net/socket.c:1935\n  __do_sys_setsockopt\
+  \ net/socket.c:1946 [inline]\n  __se_sys_setsockopt net/socket.c:1943 [inline]\n\
+  \  __x64_sys_setsockopt+0xbe/0x150 net/socket.c:1943\n  do_syscall_64+0x1b1/0x800\
+  \ arch/x86/entry/common.c:287\n  entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\nThis\
+  \ is a warning about attempting to allocate more than\nKMALLOC_MAX_SIZE memory.\
+  \ The request originates from userspace, and if\nthe request is too big, the kernel\
+  \ is free to deny its allocation. In\nthis patch, the failed allocation attempt\
+  \ is silenced with\n__GFP_NOWARN.\n\nFixes: c0c77d8fb787 (\"xsk: add user memory\
+  \ registration support sockopt\")\nReported-by: syzbot+4abadc5d69117b346506@syzkaller.appspotmail.com\n\
+  Signed-off-by: Björn Töpel <bjorn.topel@intel.com>\nSigned-off-by: Daniel Borkmann\
+  \ <daniel@iogearbox.net>\n"
+submodule:
+- net/xdp
+hunk_count: 1
+covered_count: 1

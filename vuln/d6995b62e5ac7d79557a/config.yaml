@@ -1,0 +1,58 @@
+id: d6995b62e5ac7d79557a
+bug_link: https://syzkaller.appspot.com/bug?extid=d6995b62e5ac7d79557a
+title: WARNING in comedi_unlocked_ioctl
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2aa4ad626ee7f817a8f4715a47b318cfdc1714c9
+fix_commit: 08ae4b20f5e82101d77326ecab9089e110f224cc
+datetime: '2025-07-16T14:58:54+02:00'
+fix_commit_message: 'comedi: Fail COMEDI_INSNLIST ioctl if n_insns is too large
+
+
+  The handling of the `COMEDI_INSNLIST` ioctl allocates a kernel buffer to
+
+  hold the array of `struct comedi_insn`, getting the length from the
+
+  `n_insns` member of the `struct comedi_insnlist` supplied by the user.
+
+  The allocation will fail with a WARNING and a stack dump if it is too
+
+  large.
+
+
+  Avoid that by failing with an `-EINVAL` error if the supplied `n_insns`
+
+  value is unreasonable.
+
+
+  Define the limit on the `n_insns` value in the `MAX_INSNS` macro.  Set
+
+  this to the same value as `MAX_SAMPLES` (65536), which is the maximum
+
+  allowed sum of the values of the member `n` in the array of `struct
+
+  comedi_insn`, and sensible comedi instructions will have an `n` of at
+
+  least 1.
+
+
+  Reported-by: syzbot+d6995b62e5ac7d79557a@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=d6995b62e5ac7d79557a
+
+  Fixes: ed9eccbe8970 ("Staging: add comedi core")
+
+  Tested-by: Ian Abbott <abbotti@mev.co.uk>
+
+  Cc: stable@vger.kernel.org # 5.13+
+
+  Signed-off-by: Ian Abbott <abbotti@mev.co.uk>
+
+  Link: https://lore.kernel.org/r/20250704120405.83028-1-abbotti@mev.co.uk
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/comedi
+hunk_count: 3
+covered_count: 1

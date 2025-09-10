@@ -1,0 +1,57 @@
+id: 7a9bbb158a7a1071eb27
+bug_link: https://syzkaller.appspot.com/bug?extid=7a9bbb158a7a1071eb27
+title: kernel BUG in __page_table_check_zero
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 77f587896757708780a7e8792efe62939f25a5ab
+fix_commit: 79a61cc3fc0466ad2b7b89618a6157785f0293b3
+datetime: '2024-09-12T12:10:00-07:00'
+fix_commit_message: 'mm: avoid leaving partial pfn mappings around in error case
+
+
+  As Jann points out, PFN mappings are special, because unlike normal
+
+  memory mappings, there is no lifetime information associated with the
+
+  mapping - it is just a raw mapping of PFNs with no reference counting of
+
+  a ''struct page''.
+
+
+  That''s all very much intentional, but it does mean that it''s easy to
+
+  mess up the cleanup in case of errors.  Yes, a failed mmap() will always
+
+  eventually clean up any partial mappings, but without any explicit
+
+  lifetime in the page table mapping itself, it''s very easy to do the
+
+  error handling in the wrong order.
+
+
+  In particular, it''s easy to mistakenly free the physical backing store
+
+  before the page tables are actually cleaned up and (temporarily) have
+
+  stale dangling PTE entries.
+
+
+  To make this situation less error-prone, just make sure that any partial
+
+  pfn mapping is torn down early, before any other error handling.
+
+
+  Reported-and-tested-by: Jann Horn <jannh@google.com>
+
+  Cc: Andrew Morton <akpm@linux-foundation.org>
+
+  Cc: Jason Gunthorpe <jgg@ziepe.ca>
+
+  Cc: Simona Vetter <simona.vetter@ffwll.ch>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 2
+covered_count: 0

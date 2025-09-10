@@ -1,0 +1,117 @@
+BTRFS info (device loop2): last unmount of filesystem 395ef67a-297e-477c-816d-cd80a5b93e5d
+INFO: trying to register non-static key.
+The code is fine but needs lockdep annotation, or maybe
+you didn't initialize this object before use?
+turning off the locking correctness validator.
+CPU: 0 PID: 9630 Comm: syz-executor.2 Not tainted 6.10.0-rc2-syzkaller-00007-gf06ce441457d #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ assign_lock_key kernel/locking/lockdep.c:976 [inline]
+ register_lock_class+0xc2a/0x1230 kernel/locking/lockdep.c:1289
+ __lock_acquire+0x111/0x3b30 kernel/locking/lockdep.c:5014
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+ __raw_spin_lock_irq include/linux/spinlock_api_smp.h:119 [inline]
+ _raw_spin_lock_irq+0x36/0x50 kernel/locking/spinlock.c:170
+ put_pwq_unlocked kernel/workqueue.c:1662 [inline]
+ put_pwq_unlocked kernel/workqueue.c:1655 [inline]
+ destroy_workqueue+0x5df/0xaa0 kernel/workqueue.c:5851
+ btrfs_stop_all_workers+0x29f/0x370 fs/btrfs/disk-io.c:1804
+ close_ctree+0x4e3/0xf90 fs/btrfs/disk-io.c:4365
+ generic_shutdown_super+0x159/0x3d0 fs/super.c:642
+ kill_anon_super+0x3a/0x60 fs/super.c:1226
+ btrfs_kill_super+0x3b/0x50 fs/btrfs/super.c:2096
+ deactivate_locked_super+0xbe/0x1a0 fs/super.c:473
+ deactivate_super+0xde/0x100 fs/super.c:506
+ cleanup_mnt+0x222/0x450 fs/namespace.c:1267
+ task_work_run+0x14e/0x250 kernel/task_work.c:180
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:114 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x278/0x2a0 kernel/entry/common.c:218
+ __do_fast_syscall_32+0x80/0x120 arch/x86/entry/common.c:389
+ do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+ entry_SYSENTER_compat_after_hwframe+0x84/0x8e
+RIP: 0023:0xf72e5579
+Code: b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
+RSP: 002b:00000000ffbeced8 EFLAGS: 00000292 ORIG_RAX: 0000000000000034
+RAX: 0000000000000000 RBX: 00000000ffbecf80 RCX: 0000000000000009
+RDX: 00000000f743bff4 RSI: 00000000f738c361 RDI: 00000000ffbee024
+RBP: 00000000ffbecf80 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000292 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+------------[ cut here ]------------
+UBSAN: array-index-out-of-bounds in kernel/locking/qspinlock.c:131:9
+index 855 is out of range for type 'long unsigned int [8]'
+CPU: 0 PID: 9630 Comm: syz-executor.2 Not tainted 6.10.0-rc2-syzkaller-00007-gf06ce441457d #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_out_of_bounds+0x110/0x150 lib/ubsan.c:429
+ decode_tail kernel/locking/qspinlock.c:131 [inline]
+ __pv_queued_spin_lock_slowpath+0xcb2/0xcc0 kernel/locking/qspinlock.c:468
+ pv_queued_spin_lock_slowpath arch/x86/include/asm/paravirt.h:584 [inline]
+ queued_spin_lock_slowpath arch/x86/include/asm/qspinlock.h:51 [inline]
+ queued_spin_lock include/asm-generic/qspinlock.h:114 [inline]
+ do_raw_spin_lock+0x210/0x2c0 kernel/locking/spinlock_debug.c:116
+ put_pwq_unlocked kernel/workqueue.c:1662 [inline]
+ put_pwq_unlocked kernel/workqueue.c:1655 [inline]
+ destroy_workqueue+0x5df/0xaa0 kernel/workqueue.c:5851
+ btrfs_stop_all_workers+0x29f/0x370 fs/btrfs/disk-io.c:1804
+ close_ctree+0x4e3/0xf90 fs/btrfs/disk-io.c:4365
+ generic_shutdown_super+0x159/0x3d0 fs/super.c:642
+ kill_anon_super+0x3a/0x60 fs/super.c:1226
+ btrfs_kill_super+0x3b/0x50 fs/btrfs/super.c:2096
+ deactivate_locked_super+0xbe/0x1a0 fs/super.c:473
+ deactivate_super+0xde/0x100 fs/super.c:506
+ cleanup_mnt+0x222/0x450 fs/namespace.c:1267
+ task_work_run+0x14e/0x250 kernel/task_work.c:180
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:114 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x278/0x2a0 kernel/entry/common.c:218
+ __do_fast_syscall_32+0x80/0x120 arch/x86/entry/common.c:389
+ do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+ entry_SYSENTER_compat_after_hwframe+0x84/0x8e
+RIP: 0023:0xf72e5579
+Code: b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
+RSP: 002b:00000000ffbeced8 EFLAGS: 00000292 ORIG_RAX: 0000000000000034
+RAX: 0000000000000000 RBX: 00000000ffbecf80 RCX: 0000000000000009
+RDX: 00000000f743bff4 RSI: 00000000f738c361 RDI: 00000000ffbee024
+RBP: 00000000ffbecf80 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000292 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+---[ end trace ]---
+----------------
+Code disassembly (best guess), 2 bytes skipped:
+   0:	10 06                	adc    %al,(%rsi)
+   2:	03 74 b4 01          	add    0x1(%rsp,%rsi,4),%esi
+   6:	10 07                	adc    %al,(%rdi)
+   8:	03 74 b0 01          	add    0x1(%rax,%rsi,4),%esi
+   c:	10 08                	adc    %cl,(%rax)
+   e:	03 74 d8 01          	add    0x1(%rax,%rbx,8),%esi
+  1e:	00 51 52             	add    %dl,0x52(%rcx)
+  21:	55                   	push   %rbp
+  22:	89 e5                	mov    %esp,%ebp
+  24:	0f 34                	sysenter
+  26:	cd 80                	int    $0x80
+* 28:	5d                   	pop    %rbp <-- trapping instruction
+  29:	5a                   	pop    %rdx
+  2a:	59                   	pop    %rcx
+  2b:	c3                   	ret
+  2c:	90                   	nop
+  2d:	90                   	nop
+  2e:	90                   	nop
+  2f:	90                   	nop
+  30:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi
+  37:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi

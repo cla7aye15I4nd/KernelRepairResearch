@@ -1,0 +1,35 @@
+id: 0fe7752e52337864d29b
+bug_link: https://syzkaller.appspot.com/bug?extid=0fe7752e52337864d29b
+title: 'INFO: task hung in del_gendisk'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fad7cd3310db3099f95dd34312c77740fbc455e5
+fix_commit: 68c9417b193d0d174b0ada013602272177e61303
+datetime: '2021-08-13T14:17:16-06:00'
+fix_commit_message: "nbd: do del_gendisk() asynchronously for NBD_DESTROY_ON_DISCONNECT\n\
+  \nNow open_mutex is used to synchronize partition operations (e.g,\nblk_drop_partitions()\
+  \ and blkdev_reread_part()), however it makes\nnbd driver broken, because nbd may\
+  \ call del_gendisk() in nbd_release()\nor nbd_genl_disconnect() if NBD_CFLAG_DESTROY_ON_DISCONNECT\
+  \ is enabled,\nand deadlock occurs, as shown below:\n\n// AB-BA dead-lock\nnbd_genl_disconnect\
+  \            blkdev_open\n  nbd_disconnect_and_put\n                           \
+  \      lock bd_mutex\n  // last ref\n  nbd_put\n    lock nbd_index_mutex\n     \
+  \ del_gendisk\n                                   nbd_open\n                   \
+  \                  try lock nbd_index_mutex\n        try lock bd_mutex\n\n or\n\n\
+  // AA dead-lock\nnbd_release\n  lock bd_mutex\n    nbd_put\n      try lock bd_mutex\n\
+  \nInstead of fixing block layer (e.g, introduce another lock), fixing\nthe nbd driver\
+  \ to call del_gendisk() in a kworker when\nNBD_DESTROY_ON_DISCONNECT is enabled.\
+  \ When NBD_DESTROY_ON_DISCONNECT\nis disabled, nbd device will always be destroy\
+  \ through module removal,\nand there is no risky of deadlock.\n\nTo ensure the reuse\
+  \ of nbd index succeeds, moving the calling of\nidr_remove() after del_gendisk(),\
+  \ so if the reused index is not found\nin nbd_index_idr, the old disk must have\
+  \ been deleted. And reusing\nthe existing destroy_complete mechanism to ensure nbd_genl_connect()\n\
+  will wait for the completion of del_gendisk().\n\nAlso adding a new workqueue for\
+  \ nbd removal, so nbd_cleanup()\ncan ensure all removals complete before exits.\n\
+  \nReported-by: syzbot+0fe7752e52337864d29b@syzkaller.appspotmail.com\nFixes: c76f48eb5c08\
+  \ (\"block: take bd_mutex around delete_partitions in del_gendisk\")\nSigned-off-by:\
+  \ Hou Tao <houtao1@huawei.com>\nSigned-off-by: Christoph Hellwig <hch@lst.de>\n\
+  Link: https://lore.kernel.org/r/20210811124428.2368491-2-hch@lst.de\nReviewed-by:\
+  \ Josef Bacik <josef@toxicpanda.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 8
+covered_count: 3

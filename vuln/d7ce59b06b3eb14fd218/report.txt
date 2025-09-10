@@ -1,0 +1,171 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.8.0-syzkaller-08951-gfe46a7dd189e #0 Not tainted
+------------------------------------------------------
+syz-executor386/5093 is trying to acquire lock:
+ffff88807c396258 (sk_lock-AF_BLUETOOTH-BTPROTO_RFCOMM){+.+.}-{0:0}, at: lock_sock include/net/sock.h:1671 [inline]
+ffff88807c396258 (sk_lock-AF_BLUETOOTH-BTPROTO_RFCOMM){+.+.}-{0:0}, at: rfcomm_sk_state_change+0x5b/0x310 net/bluetooth/rfcomm/sock.c:73
+
+but task is already holding lock:
+ffff88807badfd28 (&d->lock){+.+.}-{3:3}, at: __rfcomm_dlc_close+0x226/0x6a0 net/bluetooth/rfcomm/core.c:491
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #3 (&d->lock){+.+.}-{3:3}:
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+       __mutex_lock+0x136/0xd70 kernel/locking/mutex.c:752
+       __rfcomm_dlc_close+0x226/0x6a0 net/bluetooth/rfcomm/core.c:491
+       rfcomm_dlc_close+0xf1/0x190 net/bluetooth/rfcomm/core.c:524
+       __rfcomm_sock_close+0x121/0x250 net/bluetooth/rfcomm/sock.c:220
+       rfcomm_sock_shutdown+0xb8/0x240 net/bluetooth/rfcomm/sock.c:905
+       rfcomm_sock_release+0x59/0x120 net/bluetooth/rfcomm/sock.c:926
+       __sock_release net/socket.c:659 [inline]
+       sock_close+0xbc/0x240 net/socket.c:1421
+       __fput+0x429/0x8a0 fs/file_table.c:422
+       task_work_run+0x24f/0x310 kernel/task_work.c:180
+       exit_task_work include/linux/task_work.h:38 [inline]
+       do_exit+0xa1b/0x27e0 kernel/exit.c:878
+       do_group_exit+0x207/0x2c0 kernel/exit.c:1027
+       get_signal+0x176e/0x1850 kernel/signal.c:2907
+       arch_do_signal_or_restart+0x96/0x860 arch/x86/kernel/signal.c:310
+       exit_to_user_mode_loop kernel/entry/common.c:105 [inline]
+       exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+       __syscall_exit_to_user_mode_work kernel/entry/common.c:201 [inline]
+       syscall_exit_to_user_mode+0xc9/0x360 kernel/entry/common.c:212
+       do_syscall_64+0x10a/0x240 arch/x86/entry/common.c:89
+       entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+-> #2 (rfcomm_mutex){+.+.}-{3:3}:
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+       __mutex_lock+0x136/0xd70 kernel/locking/mutex.c:752
+       rfcomm_dlc_exists+0xa6/0x380 net/bluetooth/rfcomm/core.c:546
+       __rfcomm_create_dev net/bluetooth/rfcomm/tty.c:414 [inline]
+       rfcomm_create_dev net/bluetooth/rfcomm/tty.c:485 [inline]
+       rfcomm_dev_ioctl+0xb31/0x21b0 net/bluetooth/rfcomm/tty.c:587
+       rfcomm_sock_ioctl+0x86/0xd0 net/bluetooth/rfcomm/sock.c:873
+       sock_do_ioctl+0x158/0x460 net/socket.c:1222
+       sock_ioctl+0x629/0x8e0 net/socket.c:1341
+       vfs_ioctl fs/ioctl.c:51 [inline]
+       __do_sys_ioctl fs/ioctl.c:904 [inline]
+       __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:890
+       do_syscall_64+0xfb/0x240
+       entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+-> #1 (rfcomm_ioctl_mutex){+.+.}-{3:3}:
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+       __mutex_lock+0x136/0xd70 kernel/locking/mutex.c:752
+       rfcomm_create_dev net/bluetooth/rfcomm/tty.c:484 [inline]
+       rfcomm_dev_ioctl+0x237/0x21b0 net/bluetooth/rfcomm/tty.c:587
+       rfcomm_sock_ioctl+0x86/0xd0 net/bluetooth/rfcomm/sock.c:873
+       sock_do_ioctl+0x158/0x460 net/socket.c:1222
+       sock_ioctl+0x629/0x8e0 net/socket.c:1341
+       vfs_ioctl fs/ioctl.c:51 [inline]
+       __do_sys_ioctl fs/ioctl.c:904 [inline]
+       __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:890
+       do_syscall_64+0xfb/0x240
+       entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+-> #0 (sk_lock-AF_BLUETOOTH-BTPROTO_RFCOMM){+.+.}-{0:0}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+       __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+       lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+       lock_sock_nested+0x48/0x100 net/core/sock.c:3535
+       lock_sock include/net/sock.h:1671 [inline]
+       rfcomm_sk_state_change+0x5b/0x310 net/bluetooth/rfcomm/sock.c:73
+       __rfcomm_dlc_close+0x26f/0x6a0 net/bluetooth/rfcomm/core.c:493
+       rfcomm_dlc_close+0xf1/0x190 net/bluetooth/rfcomm/core.c:524
+       __rfcomm_sock_close+0x121/0x250 net/bluetooth/rfcomm/sock.c:220
+       rfcomm_sock_shutdown+0xb8/0x240 net/bluetooth/rfcomm/sock.c:905
+       rfcomm_sock_release+0x59/0x120 net/bluetooth/rfcomm/sock.c:926
+       __sock_release net/socket.c:659 [inline]
+       sock_close+0xbc/0x240 net/socket.c:1421
+       __fput+0x429/0x8a0 fs/file_table.c:422
+       task_work_run+0x24f/0x310 kernel/task_work.c:180
+       exit_task_work include/linux/task_work.h:38 [inline]
+       do_exit+0xa1b/0x27e0 kernel/exit.c:878
+       do_group_exit+0x207/0x2c0 kernel/exit.c:1027
+       get_signal+0x176e/0x1850 kernel/signal.c:2907
+       arch_do_signal_or_restart+0x96/0x860 arch/x86/kernel/signal.c:310
+       exit_to_user_mode_loop kernel/entry/common.c:105 [inline]
+       exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+       __syscall_exit_to_user_mode_work kernel/entry/common.c:201 [inline]
+       syscall_exit_to_user_mode+0xc9/0x360 kernel/entry/common.c:212
+       do_syscall_64+0x10a/0x240 arch/x86/entry/common.c:89
+       entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+other info that might help us debug this:
+
+Chain exists of:
+  sk_lock-AF_BLUETOOTH-BTPROTO_RFCOMM --> rfcomm_mutex --> &d->lock
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&d->lock);
+                               lock(rfcomm_mutex);
+                               lock(&d->lock);
+  lock(sk_lock-AF_BLUETOOTH-BTPROTO_RFCOMM);
+
+ *** DEADLOCK ***
+
+3 locks held by syz-executor386/5093:
+ #0: ffff88807aa61a10 (&sb->s_type->i_mutex_key#9){+.+.}-{3:3}, at: inode_lock include/linux/fs.h:793 [inline]
+ #0: ffff88807aa61a10 (&sb->s_type->i_mutex_key#9){+.+.}-{3:3}, at: __sock_release net/socket.c:658 [inline]
+ #0: ffff88807aa61a10 (&sb->s_type->i_mutex_key#9){+.+.}-{3:3}, at: sock_close+0x90/0x240 net/socket.c:1421
+ #1: ffffffff8f506228 (rfcomm_mutex){+.+.}-{3:3}, at: rfcomm_dlc_close+0x3b/0x190 net/bluetooth/rfcomm/core.c:511
+ #2: ffff88807badfd28 (&d->lock){+.+.}-{3:3}, at: __rfcomm_dlc_close+0x226/0x6a0 net/bluetooth/rfcomm/core.c:491
+
+stack backtrace:
+CPU: 0 PID: 5093 Comm: syz-executor386 Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ check_noncircular+0x36a/0x4a0 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+ __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+ lock_acquire+0x1e4/0x530 kernel/locking/lockdep.c:5754
+ lock_sock_nested+0x48/0x100 net/core/sock.c:3535
+ lock_sock include/net/sock.h:1671 [inline]
+ rfcomm_sk_state_change+0x5b/0x310 net/bluetooth/rfcomm/sock.c:73
+ __rfcomm_dlc_close+0x26f/0x6a0 net/bluetooth/rfcomm/core.c:493
+ rfcomm_dlc_close+0xf1/0x190 net/bluetooth/rfcomm/core.c:524
+ __rfcomm_sock_close+0x121/0x250 net/bluetooth/rfcomm/sock.c:220
+ rfcomm_sock_shutdown+0xb8/0x240 net/bluetooth/rfcomm/sock.c:905
+ rfcomm_sock_release+0x59/0x120 net/bluetooth/rfcomm/sock.c:926
+ __sock_release net/socket.c:659 [inline]
+ sock_close+0xbc/0x240 net/socket.c:1421
+ __fput+0x429/0x8a0 fs/file_table.c:422
+ task_work_run+0x24f/0x310 kernel/task_work.c:180
+ exit_task_work include/linux/task_work.h:38 [inline]
+ do_exit+0xa1b/0x27e0 kernel/exit.c:878
+ do_group_exit+0x207/0x2c0 kernel/exit.c:1027
+ get_signal+0x176e/0x1850 kernel/signal.c:2907
+ arch_do_signal_or_restart+0x96/0x860 arch/x86/kernel/signal.c:310
+ exit_to_user_mode_loop kernel/entry/common.c:105 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:201 [inline]
+ syscall_exit_to_user_mode+0xc9/0x360 kernel/entry/common.c:212
+ do_syscall_64+0x10a/0x240 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+RIP: 0033:0x7f63d8920f79
+Code: Unable to access opcode bytes at 0x7f63d8920f4f.
+RSP: 002b:00007ffd6b3a3158 EFLAGS: 00000246 ORIG_RAX: 000000000000002a
+RAX: fffffffffffffffc RBX: 0000000000000000 RCX: 00007f63d8920f79
+RDX: 000000000000000a RSI: 0000000020000200 RDI: 0000000000000004
+RBP: 00000000000f4240 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 000055555932c370
+R13: 0000000000000004 R14: 00007ffd6b3a31d0 R15: 00007ffd6b3a31c0
+ </TASK>

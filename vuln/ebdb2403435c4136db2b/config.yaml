@@ -1,0 +1,53 @@
+id: ebdb2403435c4136db2b
+bug_link: https://syzkaller.appspot.com/bug?extid=ebdb2403435c4136db2b
+title: WARNING in btrfs_run_delayed_refs
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9b2f20344d450137d015b380ff0c2e2a6a170135
+fix_commit: 8bb808c6ad91ec3d332f072ce8f8aa4b16e307e0
+datetime: '2022-11-07T14:34:57+01:00'
+fix_commit_message: 'btrfs: don''t print stack trace when transaction is aborted due
+  to ENOMEM
+
+
+  Add ENOMEM among the error codes that don''t print stack trace on
+
+  transaction abort. We''ve got several reports from syzbot that detects
+
+  stacks as errors but caused by limiting memory. As this is an artificial
+
+  condition we don''t need to know where exactly the error happens, the
+
+  abort and error cleanup will continue like e.g. for EIO.
+
+
+  As the transaction aborts code needs to be inline in a lot of code, the
+
+  implementation cases about minimal bloat. The error codes are in a
+
+  separate function and the WARN uses the condition directly. This
+
+  increases the code size by 571 bytes on release build.
+
+
+  Alternatives considered: add -ENOMEM among the errors, this increases
+
+  size by 2340 bytes, various attempts to combine the WARN and helper
+
+  calls, increase by 700 or more bytes.
+
+
+  Example syzbot reports (error -12):
+
+
+  - https://syzkaller.appspot.com/bug?extid=5244d35be7f589cf093e
+
+  - https://syzkaller.appspot.com/bug?extid=9c37714c07194d816417
+
+
+  Signed-off-by: David Sterba <dsterba@suse.com>
+
+  '
+submodule:
+- fs/btrfs
+hunk_count: 3
+covered_count: 0

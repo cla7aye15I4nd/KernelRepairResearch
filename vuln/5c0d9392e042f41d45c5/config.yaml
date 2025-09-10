@@ -1,0 +1,80 @@
+id: 5c0d9392e042f41d45c5
+bug_link: https://syzkaller.appspot.com/bug?extid=5c0d9392e042f41d45c5
+title: 'upstream-arm64 test error: WARNING in __apply_to_page_range'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5fdd05efa1cd3bb98060f409eca57dc0a6d171b4
+fix_commit: b81c688426a9785bcae93bab3705ed2cd5fab175
+datetime: '2025-05-14T13:27:55+01:00'
+fix_commit_message: 'arm64/mm: Disable barrier batching in interrupt contexts
+
+
+  Commit 5fdd05efa1cd ("arm64/mm: Batch barriers when updating kernel
+
+  mappings") enabled arm64 kernels to track "lazy mmu mode" using TIF
+
+  flags in order to defer barriers until exiting the mode. At the same
+
+  time, it added warnings to check that pte manipulations were never
+
+  performed in interrupt context, because the tracking implementation
+
+  could not deal with nesting.
+
+
+  But it turns out that some debug features (e.g. KFENCE, DEBUG_PAGEALLOC)
+
+  do manipulate ptes in softirq context, which triggered the warnings.
+
+
+  So let''s take the simplest and safest route and disable the batching
+
+  optimization in interrupt contexts. This makes these users no worse off
+
+  than prior to the optimization. Additionally the known offenders are
+
+  debug features that only manipulate a single PTE, so there is no
+
+  performance gain anyway.
+
+
+  There may be some obscure case of encrypted/decrypted DMA with the
+
+  dma_free_coherent called from an interrupt context, but again, this is
+
+  no worse off than prior to the commit.
+
+
+  Some options for supporting nesting were considered, but there is a
+
+  difficult to solve problem if any code manipulates ptes within interrupt
+
+  context but *outside of* a lazy mmu region. If this case exists, the
+
+  code would expect the updates to be immediate, but because the task
+
+  context may have already been in lazy mmu mode, the updates would be
+
+  deferred, which could cause incorrect behaviour. This problem is avoided
+
+  by always ensuring updates within interrupt context are immediate.
+
+
+  Fixes: 5fdd05efa1cd ("arm64/mm: Batch barriers when updating kernel mappings")
+
+  Reported-by: syzbot+5c0d9392e042f41d45c5@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/linux-arm-kernel/681f2a09.050a0220.f2294.0006.GAE@google.com/
+
+  Signed-off-by: Ryan Roberts <ryan.roberts@arm.com>
+
+  Reviewed-by: Catalin Marinas <catalin.marinas@arm.com>
+
+  Link: https://lore.kernel.org/r/20250512102242.4156463-1-ryan.roberts@arm.com
+
+  Signed-off-by: Will Deacon <will@kernel.org>
+
+  '
+submodule:
+- arch/arm64/include/asm
+hunk_count: 3
+covered_count: 3

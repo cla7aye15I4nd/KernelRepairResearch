@@ -1,0 +1,86 @@
+============================================
+WARNING: possible recursive locking detected
+6.16.0-rc3-next-20250625-syzkaller #0 Not tainted
+--------------------------------------------
+syz-executor385/5841 is trying to acquire lock:
+ffff88804822cd38 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: inode_lock include/linux/fs.h:869 [inline]
+ffff88804822cd38 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: bch2_symlink+0xf2/0x240 fs/bcachefs/fs.c:883
+
+but task is already holding lock:
+ffff88804822be08 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: inode_lock include/linux/fs.h:869 [inline]
+ffff88804822be08 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: ovl_copy_up_workdir fs/overlayfs/copy_up.c:782 [inline]
+ffff88804822be08 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: ovl_do_copy_up fs/overlayfs/copy_up.c:1001 [inline]
+ffff88804822be08 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: ovl_copy_up_one fs/overlayfs/copy_up.c:1202 [inline]
+ffff88804822be08 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: ovl_copy_up_flags+0x10bf/0x2ff0 fs/overlayfs/copy_up.c:1257
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&sb->s_type->i_mutex_key#17);
+  lock(&sb->s_type->i_mutex_key#17);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+6 locks held by syz-executor385/5841:
+ #0: ffff888034218428 (sb_writers#9){.+.+}-{0:0}, at: mnt_want_write+0x41/0x90 fs/namespace.c:557
+ #1: ffff888048231e50 (&ovl_i_mutex_dir_key[depth]/1){+.+.}-{4:4}, at: inode_lock_nested include/linux/fs.h:914 [inline]
+ #1: ffff888048231e50 (&ovl_i_mutex_dir_key[depth]/1){+.+.}-{4:4}, at: do_unlinkat+0x1c7/0x560 fs/namei.c:4637
+ #2: ffff888048232418 (&ovl_i_mutex_key[depth]){+.+.}-{4:4}, at: inode_lock include/linux/fs.h:869 [inline]
+ #2: ffff888048232418 (&ovl_i_mutex_key[depth]){+.+.}-{4:4}, at: vfs_unlink+0xf2/0x650 fs/namei.c:4575
+ #3: ffff8880482327d0 (&ovl_i_lock_key[depth]){+.+.}-{4:4}, at: ovl_inode_lock_interruptible fs/overlayfs/overlayfs.h:657 [inline]
+ #3: ffff8880482327d0 (&ovl_i_lock_key[depth]){+.+.}-{4:4}, at: ovl_copy_up_start+0x56/0x330 fs/overlayfs/util.c:737
+ #4: ffff88807cdca428 (sb_writers#8){.+.+}-{0:0}, at: ovl_copy_up_workdir fs/overlayfs/copy_up.c:781 [inline]
+ #4: ffff88807cdca428 (sb_writers#8){.+.+}-{0:0}, at: ovl_do_copy_up fs/overlayfs/copy_up.c:1001 [inline]
+ #4: ffff88807cdca428 (sb_writers#8){.+.+}-{0:0}, at: ovl_copy_up_one fs/overlayfs/copy_up.c:1202 [inline]
+ #4: ffff88807cdca428 (sb_writers#8){.+.+}-{0:0}, at: ovl_copy_up_flags+0x10b0/0x2ff0 fs/overlayfs/copy_up.c:1257
+ #5: ffff88804822be08 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: inode_lock include/linux/fs.h:869 [inline]
+ #5: ffff88804822be08 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: ovl_copy_up_workdir fs/overlayfs/copy_up.c:782 [inline]
+ #5: ffff88804822be08 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: ovl_do_copy_up fs/overlayfs/copy_up.c:1001 [inline]
+ #5: ffff88804822be08 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: ovl_copy_up_one fs/overlayfs/copy_up.c:1202 [inline]
+ #5: ffff88804822be08 (&sb->s_type->i_mutex_key#17){++++}-{4:4}, at: ovl_copy_up_flags+0x10bf/0x2ff0 fs/overlayfs/copy_up.c:1257
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 5841 Comm: syz-executor385 Not tainted 6.16.0-rc3-next-20250625-syzkaller #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_deadlock_bug+0x28b/0x2a0 kernel/locking/lockdep.c:3044
+ check_deadlock kernel/locking/lockdep.c:3096 [inline]
+ validate_chain+0x1a3f/0x2140 kernel/locking/lockdep.c:3898
+ __lock_acquire+0xab9/0xd20 kernel/locking/lockdep.c:5240
+ lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5871
+ down_write+0x96/0x1f0 kernel/locking/rwsem.c:1577
+ inode_lock include/linux/fs.h:869 [inline]
+ bch2_symlink+0xf2/0x240 fs/bcachefs/fs.c:883
+ vfs_symlink+0x140/0x2f0 fs/namei.c:4730
+ ovl_do_symlink+0x89/0xd0 fs/overlayfs/overlayfs.h:270
+ ovl_create_real+0x228/0x3f0 fs/overlayfs/dir.c:176
+ ovl_copy_up_workdir fs/overlayfs/copy_up.c:783 [inline]
+ ovl_do_copy_up fs/overlayfs/copy_up.c:1001 [inline]
+ ovl_copy_up_one fs/overlayfs/copy_up.c:1202 [inline]
+ ovl_copy_up_flags+0x10d9/0x2ff0 fs/overlayfs/copy_up.c:1257
+ ovl_nlink_start+0x9a/0x3e0 fs/overlayfs/util.c:1175
+ ovl_do_remove+0x267/0xeb0 fs/overlayfs/dir.c:892
+ vfs_unlink+0x394/0x650 fs/namei.c:4586
+ do_unlinkat+0x345/0x560 fs/namei.c:4650
+ __do_sys_unlink fs/namei.c:4696 [inline]
+ __se_sys_unlink fs/namei.c:4694 [inline]
+ __x64_sys_unlink+0x47/0x50 fs/namei.c:4694
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f797c5fab99
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffcbf2320b8 EFLAGS: 00000246 ORIG_RAX: 0000000000000057
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f797c5fab99
+RDX: 0000000000000000 RSI: ff8da56b5a8836f2 RDI: 0000200000000440
+RBP: 0000000000000000 R08: 0000000000000000 R09: 00007ffcbf2320f0
+R10: 00007ffcbf231f70 R11: 0000000000000246 R12: 00007ffcbf2320f0
+R13: 00007ffcbf232378 R14: 431bde82d7b634db R15: 00007f797c64303b
+ </TASK>
+syz-executor385 (5841) used greatest stack depth: 17400 bytes left

@@ -1,0 +1,170 @@
+  node offset 8/24 bset u64s 375 bset byte offset 184: keys out of order: u64s 11 type alloc_v4 0:32:0 len 0 ver 0 > u64s 11 type alloc_v4 0:2:0 len 0 ver 0, fixing
+bcachefs (loop0): btree_node_read_work: rewriting btree node at due to error
+  btree=alloc level=0 u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq ac62141f8dc7e261 written 24 min_key POS_MIN durability: 1 ptr: 0:26:0 gen 0
+BUG: sleeping function called from invalid context at ./include/linux/sched/mm.h:321
+in_atomic(): 0, irqs_disabled(): 0, non_block: 0, pid: 5828, name: syz-executor246
+preempt_count: 0, expected: 0
+RCU nest depth: 1, expected: 0
+3 locks held by syz-executor246/5828:
+ #0: ffff88807ad6a0e0 (&type->s_umount_key#42/1){+.+.}-{4:4}, at: alloc_super+0x221/0x9d0 fs/super.c:344
+ #1: ffff888075a84210 (&c->btree_trans_barrier){.+.+}-{0:0}, at: srcu_lock_acquire include/linux/srcu.h:161 [inline]
+ #1: ffff888075a84210 (&c->btree_trans_barrier){.+.+}-{0:0}, at: srcu_read_lock include/linux/srcu.h:253 [inline]
+ #1: ffff888075a84210 (&c->btree_trans_barrier){.+.+}-{0:0}, at: __bch2_trans_get+0x7ed/0xd40 fs/bcachefs/btree_iter.c:3386
+ #2: ffffffff8ed3b560 (rcu_read_lock){....}-{1:3}, at: rcu_lock_acquire include/linux/rcupdate.h:331 [inline]
+ #2: ffffffff8ed3b560 (rcu_read_lock){....}-{1:3}, at: rcu_read_lock include/linux/rcupdate.h:841 [inline]
+ #2: ffffffff8ed3b560 (rcu_read_lock){....}-{1:3}, at: bch2_bkey_pick_read_device+0x29c/0x19b0 fs/bcachefs/extents.c:144
+CPU: 0 UID: 0 PID: 5828 Comm: syz-executor246 Not tainted 6.14.0-syzkaller-11270-g08733088b566 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ __might_resched+0x558/0x6c0 kernel/sched/core.c:8818
+ might_alloc include/linux/sched/mm.h:321 [inline]
+ slab_pre_alloc_hook mm/slub.c:4089 [inline]
+ slab_alloc_node mm/slub.c:4167 [inline]
+ __do_kmalloc_node mm/slub.c:4317 [inline]
+ __kmalloc_node_track_caller_noprof+0xd3/0x4d0 mm/slub.c:4337
+ __do_krealloc mm/slub.c:4895 [inline]
+ krealloc_noprof+0x10f/0x300 mm/slub.c:4948
+ bch2_printbuf_make_room+0x1f1/0x350 fs/bcachefs/printbuf.c:59
+ bch2_prt_printf+0x269/0x6d0 fs/bcachefs/printbuf.c:186
+ bch2_log_msg_start fs/bcachefs/error.c:19 [inline]
+ bch2_fs_trans_inconsistent fs/bcachefs/error.c:63 [inline]
+ bch2_fs_inconsistent+0x143/0x220 fs/bcachefs/error.c:81
+ bch2_dev_rcu fs/bcachefs/sb-members.h:226 [inline]
+ bch2_bkey_pick_read_device+0x95e/0x19b0 fs/bcachefs/extents.c:165
+ bch2_btree_node_read+0x7ac/0x29e0 fs/bcachefs/btree_io.c:1706
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1796 [inline]
+ bch2_btree_root_read+0x656/0x7e0 fs/bcachefs/btree_io.c:1818
+ read_btree_roots+0x3d7/0xa80 fs/bcachefs/recovery.c:581
+ bch2_fs_recovery+0x28e4/0x3e20 fs/bcachefs/recovery.c:928
+ bch2_fs_start+0x2fb/0x610 fs/bcachefs/super.c:1060
+ bch2_fs_get_tree+0x113e/0x18f0 fs/bcachefs/fs.c:2253
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1759
+ do_new_mount+0x2cf/0xb70 fs/namespace.c:3878
+ do_mount fs/namespace.c:4218 [inline]
+ __do_sys_mount fs/namespace.c:4429 [inline]
+ __se_sys_mount+0x38c/0x400 fs/namespace.c:4406
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f8dd0844c3a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc3c4a4f58 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffc3c4a4f70 RCX: 00007f8dd0844c3a
+RDX: 0000200000000000 RSI: 0000200000000100 RDI: 00007ffc3c4a4f70
+RBP: 0000200000000100 R08: 00007ffc3c4a4fb0 R09: 000000000000596a
+R10: 0000000000800800 R11: 0000000000000282 R12: 0000200000000000
+R13: 00007ffc3c4a4fb0 R14: 0000000000000003 R15: 0000000000800800
+ </TASK>
+bcachefs (loop0): pointer to nonexistent device 8
+  inconsistency detected - emergency read only at journal seq 10
+  
+bcachefs (loop0): btree node read error: no device to read from
+ at backpointers level 0/0
+u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 4a8b0fa43a9980a6 written 24 min_key POS_MIN durability: 0 ptr: 8:9472 gen 0
+bcachefs (loop0): flagging btree backpointers lost data
+bcachefs (loop0): running explicit recovery pass check_topology (2), currently at recovery_pass_empty (0)
+bcachefs (loop0): error reading btree root btree=backpointers level=0: btree_node_read_error, fixing
+bcachefs (loop0): check_topology... done
+bcachefs (loop0): accounting_read... done
+bcachefs (loop0): alloc_read... done
+bcachefs (loop0): snapshots_read... done
+bcachefs (loop0): check_allocations...
+bcachefs (loop0): bucket 0:26 data type btree ptr gen 0 missing in alloc btree
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq ac62141f8dc7e261 written 24 min_key POS_MIN durability: 1 ptr: 0:26:0 gen 0, fixing
+bcachefs (loop0): bucket 0:38 data type btree ptr gen 0 missing in alloc btree
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 7589ab5e0c11cc7a written 24 min_key POS_MIN durability: 1 ptr: 0:38:0 gen 0, fixing
+bcachefs (loop0): bucket 0:41 data type btree ptr gen 0 missing in alloc btree
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 9aa2895aefce4bdf written 24 min_key POS_MIN durability: 1 ptr: 0:41:0 gen 0, fixing
+bcachefs (loop0): bucket 0:35 data type btree ptr gen 0 missing in alloc btree
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq c0bef60d07ceb940 written 16 min_key POS_MIN durability: 1 ptr: 0:35:0 gen 0, fixing
+bcachefs (loop0): bucket 0:29 data type btree ptr gen 0 missing in alloc btree
+  while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq e81e1ed936acf3df written 32 min_key POS_MIN durability: 1 ptr: 0:29:0 gen 0, fixing
+bcachefs (loop0): bucket 0:1 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:1 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:2 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:2 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:3 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:3 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:4 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:4 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:5 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:5 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:6 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:6 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:7 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:7 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:8 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:8 gen 0 data type sb has wrong dirty_sectors: got 0, should be 8, fixing
+bcachefs (loop0): bucket 0:9 gen 0 has wrong data_type: got free, should be journal, fixing
+bcachefs (loop0): bucket 0:9 gen 0 data type journal has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:10 gen 0 has wrong data_type: got free, should be journal, fixing
+bcachefs (loop0): bucket 0:10 gen 0 data type journal has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:11 gen 0 has wrong data_type: got free, should be journal, fixing
+bcachefs (loop0): bucket 0:11 gen 0 data type journal has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:12 gen 0 has wrong data_type: got free, should be journal, fixing
+bcachefs (loop0): bucket 0:12 gen 0 data type journal has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:13 gen 0 has wrong data_type: got free, should be journal, fixing
+bcachefs (loop0): bucket 0:13 gen 0 data type journal has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:14 gen 0 has wrong data_type: got free, should be journal, fixing
+bcachefs (loop0): bucket 0:14 gen 0 data type journal has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:15 gen 0 has wrong data_type: got free, should be journal, fixing
+bcachefs (loop0): bucket 0:15 gen 0 data type journal has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:16 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:16 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:17 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:17 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:18 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:18 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:19 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:19 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:20 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:20 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:21 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:21 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:22 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:22 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:23 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:23 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:24 gen 0 has wrong data_type: got free, should be journal, fixing
+bcachefs (loop0): bucket 0:24 gen 0 data type journal has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:26 gen 0 has wrong data_type: got free, should be btree, fixing
+bcachefs (loop0): bucket 0:26 gen 0 data type btree has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:29 gen 0 has wrong data_type: got free, should be btree, fixing
+bcachefs (loop0): bucket 0:29 gen 0 data type btree has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:32 gen 0 has wrong data_type: got sb, should be btree, fixing
+bcachefs (loop0): bucket 0:35 gen 0 has wrong data_type: got free, should be btree, fixing
+bcachefs (loop0): bucket 0:35 gen 0 data type btree has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:37 gen 0 has wrong data_type: got btree, should be need_discard, fixing
+bcachefs (loop0): bucket 0:37 gen 0 data type need_discard has wrong dirty_sectors: got 256, should be 0, fixing
+bcachefs (loop0): bucket 0:38 gen 0 has wrong data_type: got free, should be btree, fixing
+bcachefs (loop0): bucket 0:38 gen 0 data type btree has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:41 gen 0 has wrong data_type: got free, should be btree, fixing
+bcachefs (loop0): bucket 0:41 gen 0 data type btree has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:120 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:120 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:121 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:121 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:122 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:122 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:123 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:123 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:124 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:124 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:125 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:125 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:126 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:126 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+bcachefs (loop0): bucket 0:127 gen 0 has wrong data_type: got free, should be sb, fixing
+bcachefs (loop0): bucket 0:127 gen 0 data type sb has wrong dirty_sectors: got 0, should be 256, fixing
+ done
+bcachefs (loop0): going read-write
+bcachefs (loop0): journal_replay...
+bcachefs (loop0): bch2_journal_replay(): error journal_shutdown
+bcachefs (loop0): bch2_fs_recovery(): error journal_shutdown
+bcachefs (loop0): bch2_fs_start(): error starting filesystem journal_shutdown
+bcachefs (loop0): shutting down
+bcachefs (loop0): shutdown complete
+bcachefs: bch2_fs_get_tree() error: journal_shutdown

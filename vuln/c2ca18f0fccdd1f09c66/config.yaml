@@ -1,0 +1,39 @@
+id: c2ca18f0fccdd1f09c66
+bug_link: https://syzkaller.appspot.com/bug?extid=c2ca18f0fccdd1f09c66
+title: 'linux-next test error: WARNING in devl_port_unregister'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 79b0872b1075abd36b3c141f510ff7ec1878c22f
+fix_commit: 1fb22ed671950bbc0c402034d206fcb334d1fd3a
+datetime: '2022-11-10T13:15:04-08:00'
+fix_commit_message: "devlink: Fix warning when unregistering a port\n\nWhen a devlink\
+  \ port is unregistered, its type is expected to be unset or\notherwise a WARNING\
+  \ is generated [1]. This was supposed to be handled by\ncited commit by clearing\
+  \ the type upon 'NETDEV_PRE_UNINIT'.\n\nThe assumption was that no other events\
+  \ can be generated for the netdev\nafter this event, but this proved to be wrong.\
+  \ After the event is\ngenerated, netdev_wait_allrefs_any() will rebroadcast a\n\
+  'NETDEV_UNREGISTER' until the netdev's reference count drops to 1. This\ncauses\
+  \ devlink to set the port type back to Ethernet.\n\nFix by only setting and clearing\
+  \ the port type upon 'NETDEV_POST_INIT'\nand 'NETDEV_PRE_UNINIT', respectively.\
+  \ For all other events, preserve\nthe port type.\n\n[1]\nWARNING: CPU: 0 PID: 11\
+  \ at net/core/devlink.c:9998 devl_port_unregister+0x2f6/0x390 net/core/devlink.c:9998\n\
+  Modules linked in:\nCPU: 1 PID: 11 Comm: kworker/u4:1 Not tainted 6.1.0-rc3-next-20221107-syzkaller\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 10/26/2022\nWorkqueue: netns cleanup_net\nRIP: 0010:devl_port_unregister+0x2f6/0x390\
+  \ net/core/devlink.c:9998\n[...]\nCall Trace:\n <TASK>\n __nsim_dev_port_del+0x1bb/0x240\
+  \ drivers/net/netdevsim/dev.c:1433\n nsim_dev_port_del_all drivers/net/netdevsim/dev.c:1443\
+  \ [inline]\n nsim_dev_reload_destroy+0x171/0x510 drivers/net/netdevsim/dev.c:1660\n\
+  \ nsim_dev_reload_down+0x6b/0xd0 drivers/net/netdevsim/dev.c:968\n devlink_reload+0x1c2/0x6b0\
+  \ net/core/devlink.c:4501\n devlink_pernet_pre_exit+0x104/0x1c0 net/core/devlink.c:12609\n\
+  \ ops_pre_exit_list net/core/net_namespace.c:159 [inline]\n cleanup_net+0x451/0xb10\
+  \ net/core/net_namespace.c:594\n process_one_work+0x9bf/0x1710 kernel/workqueue.c:2289\n\
+  \ worker_thread+0x665/0x1080 kernel/workqueue.c:2436\n kthread+0x2e4/0x3a0 kernel/kthread.c:376\n\
+  \ ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308\n </TASK>\n\nFixes: 02a68a47eade\
+  \ (\"net: devlink: track netdev with devlink_port assigned\")\nReported-by: syzbot+85e47e1a08b3e159b159@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+c2ca18f0fccdd1f09c66@syzkaller.appspotmail.com\nReviewed-by:\
+  \ Jiri Pirko <jiri@nvidia.com>\nSigned-off-by: Ido Schimmel <idosch@nvidia.com>\n\
+  Link: https://lore.kernel.org/r/20221110085150.520800-1-idosch@nvidia.com\nSigned-off-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/core
+hunk_count: 2
+covered_count: 0

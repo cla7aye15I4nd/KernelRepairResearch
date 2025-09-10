@@ -1,0 +1,168 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in instrument_atomic_read_write include/linux/instrumented.h:96 [inline]
+BUG: KASAN: slab-use-after-free in atomic_fetch_add_relaxed include/linux/atomic/atomic-instrumented.h:252 [inline]
+BUG: KASAN: slab-use-after-free in __refcount_add include/linux/refcount.h:184 [inline]
+BUG: KASAN: slab-use-after-free in __refcount_inc include/linux/refcount.h:241 [inline]
+BUG: KASAN: slab-use-after-free in refcount_inc include/linux/refcount.h:258 [inline]
+BUG: KASAN: slab-use-after-free in sock_hold include/net/sock.h:774 [inline]
+BUG: KASAN: slab-use-after-free in sco_sock_timeout+0x67/0x240 net/bluetooth/sco.c:88
+Write of size 4 at addr ffff888079a86080 by task kworker/1:2/57
+
+CPU: 1 PID: 57 Comm: kworker/1:2 Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Workqueue: events sco_sock_timeout
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ kasan_check_range+0x282/0x290 mm/kasan/generic.c:189
+ instrument_atomic_read_write include/linux/instrumented.h:96 [inline]
+ atomic_fetch_add_relaxed include/linux/atomic/atomic-instrumented.h:252 [inline]
+ __refcount_add include/linux/refcount.h:184 [inline]
+ __refcount_inc include/linux/refcount.h:241 [inline]
+ refcount_inc include/linux/refcount.h:258 [inline]
+ sock_hold include/net/sock.h:774 [inline]
+ sco_sock_timeout+0x67/0x240 net/bluetooth/sco.c:88
+ process_one_work kernel/workqueue.c:3254 [inline]
+ process_scheduled_works+0xa02/0x1770 kernel/workqueue.c:3335
+ worker_thread+0x86d/0xd70 kernel/workqueue.c:3416
+ kthread+0x2f2/0x390 kernel/kthread.c:388
+ ret_from_fork+0x4d/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+ </TASK>
+
+Allocated by task 9592:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:370 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:387
+ kasan_kmalloc include/linux/kasan.h:211 [inline]
+ __do_kmalloc_node mm/slub.c:3966 [inline]
+ __kmalloc+0x233/0x4a0 mm/slub.c:3979
+ kmalloc include/linux/slab.h:632 [inline]
+ sk_prot_alloc+0xe0/0x210 net/core/sock.c:2080
+ sk_alloc+0x38/0x370 net/core/sock.c:2133
+ bt_sock_alloc+0x3c/0x340 net/bluetooth/af_bluetooth.c:148
+ sco_sock_alloc net/bluetooth/sco.c:496 [inline]
+ sco_sock_create+0xbb/0x390 net/bluetooth/sco.c:527
+ bt_sock_create+0x163/0x230 net/bluetooth/af_bluetooth.c:132
+ __sock_create+0x492/0x920 net/socket.c:1571
+ sock_create net/socket.c:1622 [inline]
+ __sys_socket_create net/socket.c:1659 [inline]
+ __sys_socket+0x150/0x3c0 net/socket.c:1706
+ __do_sys_socket net/socket.c:1720 [inline]
+ __se_sys_socket net/socket.c:1718 [inline]
+ __x64_sys_socket+0x7a/0x90 net/socket.c:1718
+ do_syscall_64+0xfd/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+Freed by task 9593:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:579
+ poison_slab_object+0xa6/0xe0 mm/kasan/common.c:240
+ __kasan_slab_free+0x37/0x60 mm/kasan/common.c:256
+ kasan_slab_free include/linux/kasan.h:184 [inline]
+ slab_free_hook mm/slub.c:2106 [inline]
+ slab_free mm/slub.c:4280 [inline]
+ kfree+0x14a/0x380 mm/slub.c:4390
+ sk_prot_free net/core/sock.c:2116 [inline]
+ __sk_destruct+0x476/0x5f0 net/core/sock.c:2208
+ sco_sock_release+0x25e/0x320 net/bluetooth/sco.c:1257
+ __sock_release net/socket.c:659 [inline]
+ sock_close+0xbe/0x240 net/socket.c:1421
+ __fput+0x42b/0x8a0 fs/file_table.c:422
+ task_work_run+0x251/0x310 kernel/task_work.c:180
+ get_signal+0x1673/0x1850 kernel/signal.c:2683
+ arch_do_signal_or_restart+0x96/0x860 arch/x86/kernel/signal.c:310
+ exit_to_user_mode_loop kernel/entry/common.c:105 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:201 [inline]
+ syscall_exit_to_user_mode+0xc9/0x360 kernel/entry/common.c:212
+ do_syscall_64+0x10a/0x240 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+The buggy address belongs to the object at ffff888079a86000
+ which belongs to the cache kmalloc-2k of size 2048
+The buggy address is located 128 bytes inside of
+ freed 2048-byte region [ffff888079a86000, ffff888079a86800)
+
+The buggy address belongs to the physical page:
+page:ffffea0001e6a000 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x79a80
+head:ffffea0001e6a000 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000000840(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000840 ffff888014c42000 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000080008 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0x52820(GFP_ATOMIC|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 9556, tgid 9555 (syz-executor606), ts 264261465550, free_ts 263649528809
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x1ea/0x210 mm/page_alloc.c:1533
+ prep_new_page mm/page_alloc.c:1540 [inline]
+ get_page_from_freelist+0x33ea/0x3580 mm/page_alloc.c:3311
+ __alloc_pages+0x256/0x680 mm/page_alloc.c:4569
+ __alloc_pages_node include/linux/gfp.h:238 [inline]
+ alloc_pages_node include/linux/gfp.h:261 [inline]
+ alloc_slab_page+0x5f/0x160 mm/slub.c:2175
+ allocate_slab mm/slub.c:2338 [inline]
+ new_slab+0x84/0x2f0 mm/slub.c:2391
+ ___slab_alloc+0xc73/0x1260 mm/slub.c:3525
+ __slab_alloc mm/slub.c:3610 [inline]
+ __slab_alloc_node mm/slub.c:3663 [inline]
+ slab_alloc_node mm/slub.c:3835 [inline]
+ __do_kmalloc_node mm/slub.c:3965 [inline]
+ __kmalloc+0x2e5/0x4a0 mm/slub.c:3979
+ kmalloc include/linux/slab.h:632 [inline]
+ sk_prot_alloc+0xe0/0x210 net/core/sock.c:2080
+ sk_alloc+0x38/0x370 net/core/sock.c:2133
+ bt_sock_alloc+0x3c/0x340 net/bluetooth/af_bluetooth.c:148
+ sco_sock_alloc net/bluetooth/sco.c:496 [inline]
+ sco_sock_create+0xbb/0x390 net/bluetooth/sco.c:527
+ bt_sock_create+0x163/0x230 net/bluetooth/af_bluetooth.c:132
+ __sock_create+0x492/0x920 net/socket.c:1571
+ sock_create net/socket.c:1622 [inline]
+ __sys_socket_create net/socket.c:1659 [inline]
+ __sys_socket+0x150/0x3c0 net/socket.c:1706
+ __do_sys_socket net/socket.c:1720 [inline]
+ __se_sys_socket net/socket.c:1718 [inline]
+ __x64_sys_socket+0x7a/0x90 net/socket.c:1718
+ do_syscall_64+0xfd/0x240
+page last free pid 5068 tgid 5068 stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1140 [inline]
+ free_unref_page_prepare+0x968/0xa90 mm/page_alloc.c:2346
+ free_unref_page+0x37/0x3f0 mm/page_alloc.c:2486
+ discard_slab mm/slub.c:2437 [inline]
+ __put_partials+0xeb/0x130 mm/slub.c:2906
+ put_cpu_partial+0x17c/0x250 mm/slub.c:2981
+ __slab_free+0x2ea/0x3d0 mm/slub.c:4151
+ qlink_free mm/kasan/quarantine.c:163 [inline]
+ qlist_free_all+0x5e/0xc0 mm/kasan/quarantine.c:179
+ kasan_quarantine_reduce+0x14f/0x170 mm/kasan/quarantine.c:286
+ __kasan_slab_alloc+0x23/0x80 mm/kasan/common.c:322
+ kasan_slab_alloc include/linux/kasan.h:201 [inline]
+ slab_post_alloc_hook mm/slub.c:3798 [inline]
+ slab_alloc_node mm/slub.c:3845 [inline]
+ kmem_cache_alloc_node+0x194/0x380 mm/slub.c:3888
+ alloc_task_struct_node kernel/fork.c:176 [inline]
+ dup_task_struct+0x57/0x7d0 kernel/fork.c:1106
+ copy_process+0x5d1/0x3df0 kernel/fork.c:2219
+ kernel_clone+0x21e/0x8d0 kernel/fork.c:2796
+ __do_sys_clone kernel/fork.c:2939 [inline]
+ __se_sys_clone kernel/fork.c:2923 [inline]
+ __x64_sys_clone+0x258/0x2a0 kernel/fork.c:2923
+ do_syscall_64+0xfd/0x240
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+Memory state around the buggy address:
+ ffff888079a85f80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff888079a86000: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888079a86080: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                   ^
+ ffff888079a86100: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888079a86180: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

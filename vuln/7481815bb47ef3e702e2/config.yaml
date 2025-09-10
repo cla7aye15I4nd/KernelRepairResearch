@@ -1,0 +1,80 @@
+id: 7481815bb47ef3e702e2
+bug_link: https://syzkaller.appspot.com/bug?extid=7481815bb47ef3e702e2
+title: general protection fault in relocate_file_extent_cluster
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b0c26f47992672661340dd6ea931240213016609
+fix_commit: 50fecb8cf069f0814642ce0bde965bdc1f35a79e
+datetime: '2025-04-17T11:56:36+02:00'
+fix_commit_message: "btrfs: fix invalid inode pointer after failure to create reloc\
+  \ inode\n\nIf we have a failure at create_reloc_inode(), under the 'out' label we\n\
+  assign an error pointer to the 'inode' variable and then return a weird\npointer\
+  \ because we return the expression \"&inode->vfs_inode\":\n\n   static noinline_for_stack\
+  \ struct inode *create_reloc_inode(\n                                    const struct\
+  \ btrfs_block_group *group)\n   {\n       (...)\n   out:\n       (...)\n       if\
+  \ (ret) {\n            if (inode)\n                  iput(&inode->vfs_inode);\n\
+  \            inode = ERR_PTR(ret);\n       }\n       return &inode->vfs_inode;\n\
+  \   }\n\nThis can make us return a pointer that is not an error pointer and make\n\
+  the caller proceed as if an error didn't happen and later result in an\ninvalid\
+  \ memory access when dereferencing the inode pointer.\nSyzbot reported reported\
+  \ such a case with the following stack trace:\n\n   R10: 0000000000000002 R11: 0000000000000246\
+  \ R12: 0000000000000000\n   R13: 0000000000000000 R14: 431bde82d7b634db R15: 00007ffc55de5790\n\
+  \    </TASK>\n   BTRFS info (device loop0): relocating block group 6881280 flags\
+  \ data|metadata\n   Oops: general protection fault, probably for non-canonical address\
+  \ 0xdffffc0000000045: 0000 [#1] SMP KASAN NOPTI\n   KASAN: null-ptr-deref in range\
+  \ [0x0000000000000228-0x000000000000022f]\n   CPU: 0 UID: 0 PID: 5332 Comm: syz-executor215\
+  \ Not tainted 6.14.0-syzkaller-13423-ga8662bcd2ff1 #0 PREEMPT(full)\n   Hardware\
+  \ name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1\
+  \ 04/01/2014\n   RIP: 0010:relocate_file_extent_cluster+0xe7/0x1750 fs/btrfs/relocation.c:2971\n\
+  \   Code: 00 74 08 (...)\n   RSP: 0018:ffffc9000d3375e0 EFLAGS: 00010203\n   RAX:\
+  \ 0000000000000045 RBX: 000000000000022c RCX: ffff888000562440\n   RDX: 0000000000000000\
+  \ RSI: 0000000000000000 RDI: ffff8880452db000\n   RBP: ffffc9000d337870 R08: ffffffff84089251\
+  \ R09: 0000000000000000\n   R10: 0000000000000000 R11: 0000000000000000 R12: dffffc0000000000\n\
+  \   R13: ffffffff9368a020 R14: 0000000000000394 R15: ffff8880452db000\n   FS:  000055558bc7b380(0000)\
+  \ GS:ffff88808c596000(0000) knlGS:0000000000000000\n   CS:  0010 DS: 0000 ES: 0000\
+  \ CR0: 0000000080050033\n   CR2: 000055a7a192e740 CR3: 0000000036e2e000 CR4: 0000000000352ef0\n\
+  \   DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n   DR3: 0000000000000000\
+  \ DR6: 00000000fffe0ff0 DR7: 0000000000000400\n   Call Trace:\n    <TASK>\n    relocate_block_group+0xa1e/0xd50\
+  \ fs/btrfs/relocation.c:3657\n    btrfs_relocate_block_group+0x777/0xd80 fs/btrfs/relocation.c:4011\n\
+  \    btrfs_relocate_chunk+0x12c/0x3b0 fs/btrfs/volumes.c:3511\n    __btrfs_balance+0x1a93/0x25e0\
+  \ fs/btrfs/volumes.c:4292\n    btrfs_balance+0xbde/0x10c0 fs/btrfs/volumes.c:4669\n\
+  \    btrfs_ioctl_balance+0x3f5/0x660 fs/btrfs/ioctl.c:3586\n    vfs_ioctl fs/ioctl.c:51\
+  \ [inline]\n    __do_sys_ioctl fs/ioctl.c:906 [inline]\n    __se_sys_ioctl+0xf1/0x160\
+  \ fs/ioctl.c:892\n    do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]\n \
+  \   do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94\n    entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \   RIP: 0033:0x7fb4ef537dd9\n   Code: 28 00 00 (...)\n   RSP: 002b:00007ffc55de5728\
+  \ EFLAGS: 00000246 ORIG_RAX: 0000000000000010\n   RAX: ffffffffffffffda RBX: 00007ffc55de5750\
+  \ RCX: 00007fb4ef537dd9\n   RDX: 0000200000000440 RSI: 00000000c4009420 RDI: 0000000000000003\n\
+  \   RBP: 0000000000000002 R08: 00007ffc55de54c6 R09: 00007ffc55de5770\n   R10: 0000000000000002\
+  \ R11: 0000000000000246 R12: 0000000000000000\n   R13: 0000000000000000 R14: 431bde82d7b634db\
+  \ R15: 00007ffc55de5790\n    </TASK>\n   Modules linked in:\n   ---[ end trace 0000000000000000\
+  \ ]---\n   RIP: 0010:relocate_file_extent_cluster+0xe7/0x1750 fs/btrfs/relocation.c:2971\n\
+  \   Code: 00 74 08 (...)\n   RSP: 0018:ffffc9000d3375e0 EFLAGS: 00010203\n   RAX:\
+  \ 0000000000000045 RBX: 000000000000022c RCX: ffff888000562440\n   RDX: 0000000000000000\
+  \ RSI: 0000000000000000 RDI: ffff8880452db000\n   RBP: ffffc9000d337870 R08: ffffffff84089251\
+  \ R09: 0000000000000000\n   R10: 0000000000000000 R11: 0000000000000000 R12: dffffc0000000000\n\
+  \   R13: ffffffff9368a020 R14: 0000000000000394 R15: ffff8880452db000\n   FS:  000055558bc7b380(0000)\
+  \ GS:ffff88808c596000(0000) knlGS:0000000000000000\n   CS:  0010 DS: 0000 ES: 0000\
+  \ CR0: 0000000080050033\n   CR2: 000055a7a192e740 CR3: 0000000036e2e000 CR4: 0000000000352ef0\n\
+  \   DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n   DR3: 0000000000000000\
+  \ DR6: 00000000fffe0ff0 DR7: 0000000000000400\n   ----------------\n   Code disassembly\
+  \ (best guess):\n      0:\t00 74 08 48          \tadd    %dh,0x48(%rax,%rcx,1)\n\
+  \      4:\t89 df                \tmov    %ebx,%edi\n      6:\te8 f8 36 24 fe   \
+  \    \tcall   0xfe243703\n      b:\t48 89 9c 24 30 01 00 \tmov    %rbx,0x130(%rsp)\n\
+  \     12:\t00\n     13:\t4c 89 74 24 28       \tmov    %r14,0x28(%rsp)\n     18:\t\
+  4d 8b 76 10          \tmov    0x10(%r14),%r14\n     1c:\t49 8d 9e 98 fe ff ff \t\
+  lea    -0x168(%r14),%rbx\n     23:\t48 89 d8             \tmov    %rbx,%rax\n  \
+  \   26:\t48 c1 e8 03          \tshr    $0x3,%rax\n   * 2a:\t42 80 3c 20 00     \
+  \  \tcmpb   $0x0,(%rax,%r12,1) <-- trapping instruction\n     2f:\t74 08       \
+  \         \tje     0x39\n     31:\t48 89 df             \tmov    %rbx,%rdi\n   \
+  \  34:\te8 ca 36 24 fe       \tcall   0xfe243703\n     39:\t4c 8b 3b           \
+  \  \tmov    (%rbx),%r15\n     3c:\t48                   \trex.W\n     3d:\t8b  \
+  \                 \t.byte 0x8b\n     3e:\t44                   \trex.R\n     3f:\t\
+  24                   \t.byte 0x24\n\nSo fix this by returning the error immediately.\n\
+  \nReported-by: syzbot+7481815bb47ef3e702e2@syzkaller.appspotmail.com\nLink: https://lore.kernel.org/linux-btrfs/67f14ee9.050a0220.0a13.023e.GAE@google.com/\n\
+  Fixes: b204e5c7d4dc (\"btrfs: make btrfs_iget() return a btrfs inode instead\")\n\
+  Reviewed-by: Qu Wenruo <wqu@suse.com>\nSigned-off-by: Filipe Manana <fdmanana@suse.com>\n\
+  Signed-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 0

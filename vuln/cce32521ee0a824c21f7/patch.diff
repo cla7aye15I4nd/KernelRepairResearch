@@ -1,0 +1,26 @@
+diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
+index b5a3f754a4f1..4f096685ed65 100644
+--- a/sound/usb/line6/driver.c
++++ b/sound/usb/line6/driver.c
+@@ -305,7 +305,7 @@ static void line6_data_received(struct urb *urb)
+ 				line6_midibuf_read(mb, line6->buffer_message,
+ 						LINE6_MIDI_MESSAGE_MAXLEN);
+ 
+-			if (done == 0)
++			if (done <= 0)
+ 				break;
+ 
+ 			line6->message_length = done;
+diff --git a/sound/usb/line6/midibuf.c b/sound/usb/line6/midibuf.c
+index 8d6eefa0d936..6a70463f82c4 100644
+--- a/sound/usb/line6/midibuf.c
++++ b/sound/usb/line6/midibuf.c
+@@ -159,7 +159,7 @@ int line6_midibuf_read(struct midi_buffer *this, unsigned char *data,
+ 			int midi_length_prev =
+ 			    midibuf_message_length(this->command_prev);
+ 
+-			if (midi_length_prev > 0) {
++			if (midi_length_prev > 1) {
+ 				midi_length = midi_length_prev - 1;
+ 				repeat = 1;
+ 			} else

@@ -1,0 +1,33 @@
+id: 19df89b6a1c1aa59be2b
+bug_link: https://syzkaller.appspot.com/bug?extid=19df89b6a1c1aa59be2b
+title: possible deadlock in open_rio (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 95e29e9bbe28e636d2f089a2fa1cba9d0a436fe3
+fix_commit: 9472aff16ca0fd9351eea7773facef364743088f
+datetime: '2019-09-03T20:18:18+02:00'
+fix_commit_message: "USB: rio500: Fix lockdep violation\n\nThe syzbot fuzzer found\
+  \ a lockdep violation in the rio500 driver:\n\n\t======================================================\n\
+  \tWARNING: possible circular locking dependency detected\n\t5.3.0-rc2+ #23 Not tainted\n\
+  \t------------------------------------------------------\n\tsyz-executor.2/20386\
+  \ is trying to acquire lock:\n\t00000000772249c6 (rio500_mutex){+.+.}, at: open_rio+0x16/0xc0\n\
+  \tdrivers/usb/misc/rio500.c:64\n\n\tbut task is already holding lock:\n\t00000000d3e8f4b9\
+  \ (minor_rwsem){++++}, at: usb_open+0x23/0x270\n\tdrivers/usb/core/file.c:39\n\n\
+  \twhich lock already depends on the new lock.\n\nThe problem is that the driver's\
+  \ open_rio() routine is called while\nthe usbcore's minor_rwsem is locked for reading,\
+  \ and it acquires the\nrio500_mutex; whereas conversely, probe_rio() and disconnect_rio()\n\
+  first acquire the rio500_mutex and then call usb_register_dev() or\nusb_deregister_dev(),\
+  \ which lock minor_rwsem for writing.\n\nThe correct ordering of acquisition should\
+  \ be: minor_rwsem first, then\nrio500_mutex (since the locking in open_rio() cannot\
+  \ be changed).\nThus, the probe and disconnect routines should avoid holding\nrio500_mutex\
+  \ while doing their registration and deregistration.\n\nThis patch adjusts the code\
+  \ in those two routines to do just that.  It\nalso relies on the fact that the probe\
+  \ and disconnect routines are\nprotected by the device mutex, so the initial test\
+  \ of rio->present\nneeds no extra locking.\n\nReported-by: syzbot+7bbcbe9c9ff0cd49592a@syzkaller.appspotmail.com\n\
+  Signed-off-by: Alan Stern <stern@rowland.harvard.edu>\nFixes: d710734b0677 (\"USB:\
+  \ rio500: simplify locking\")\nAcked-by: Oliver Neukum <oneukum@suse.com>\nCC: <stable@vger.kernel.org>\n\
+  \nLink: https://lore.kernel.org/r/Pine.LNX.4.44L0.1908081329240.1319-100000@iolanthe.rowland.org\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/misc
+hunk_count: 3
+covered_count: 3

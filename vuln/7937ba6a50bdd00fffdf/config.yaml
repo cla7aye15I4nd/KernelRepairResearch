@@ -1,0 +1,33 @@
+id: 7937ba6a50bdd00fffdf
+bug_link: https://syzkaller.appspot.com/bug?extid=7937ba6a50bdd00fffdf
+title: 'WARNING: ODEBUG bug in __mod_timer'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7877cb91f1081754a1487c144d85dc0d2e2e7fc4
+fix_commit: 8b64d420fe2450f82848178506d3e3a0bd195539
+datetime: '2023-06-07T14:16:12+02:00'
+fix_commit_message: "debugobjects: Recheck debug_objects_enabled before reporting\n\
+  \nsyzbot is reporting false a positive ODEBUG message immediately after\nODEBUG\
+  \ was disabled due to OOM.\n\n  [ 1062.309646][T22911] ODEBUG: Out of memory. ODEBUG\
+  \ disabled\n  [ 1062.886755][ T5171] ------------[ cut here ]------------\n  [ 1062.892770][\
+  \ T5171] ODEBUG: assert_init not available (active state 0) object: ffffc900056afb20\
+  \ object type: timer_list hint: process_timeout+0x0/0x40\n\n  CPU 0 [ T5171]   \
+  \             CPU 1 [T22911]\n  --------------                --------------\n \
+  \ debug_object_assert_init() {\n    if (!debug_objects_enabled)\n      return;\n\
+  \    db = get_bucket(addr);\n                                lookup_object_or_alloc()\
+  \ {\n                                  debug_objects_enabled = 0;\n            \
+  \                      return NULL;\n                                }\n       \
+  \                         debug_objects_oom() {\n                              \
+  \    pr_warn(\"Out of memory. ODEBUG disabled\\n\");\n                         \
+  \         // all buckets get emptied here, and\n                               \
+  \ }\n    lookup_object_or_alloc(addr, db, descr, false, true) {\n      // this bucket\
+  \ is already empty.\n      return ERR_PTR(-ENOENT);\n    }\n    // Emits false positive\
+  \ warning.\n    debug_print_object(&o, \"assert_init\");\n  }\n\nRecheck debug_object_enabled\
+  \ in debug_print_object() to avoid that.\n\nReported-by: syzbot <syzbot+7937ba6a50bdd00fffdf@syzkaller.appspotmail.com>\n\
+  Suggested-by: Thomas Gleixner <tglx@linutronix.de>\nSigned-off-by: Tetsuo Handa\
+  \ <penguin-kernel@I-love.SAKURA.ne.jp>\nSigned-off-by: Thomas Gleixner <tglx@linutronix.de>\n\
+  Link: https://lore.kernel.org/r/492fe2ae-5141-d548-ebd5-62f5fe2e57f7@I-love.SAKURA.ne.jp\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=7937ba6a50bdd00fffdf\n"
+submodule:
+- lib
+hunk_count: 1
+covered_count: 1

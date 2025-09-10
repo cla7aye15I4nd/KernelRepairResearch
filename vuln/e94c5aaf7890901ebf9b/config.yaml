@@ -1,0 +1,86 @@
+id: e94c5aaf7890901ebf9b
+bug_link: https://syzkaller.appspot.com/bug?extid=e94c5aaf7890901ebf9b
+title: WARNING in pagemap_scan_pmd_entry
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5f79489a73d77419d18952e0258efbd5ecb74770
+fix_commit: 0dff1b407def32452a0d80148172889862c64fe7
+datetime: '2023-12-06T16:12:44-08:00'
+fix_commit_message: 'mm/pagemap: fix ioctl(PAGEMAP_SCAN) on vma check
+
+
+  Patch series "mm/pagemap: A few fixes to the recent PAGEMAP_SCAN".
+
+
+  This series should fix two known reports from syzbot on the new
+
+  PAGEMAP_SCAN ioctl():
+
+
+  https://lore.kernel.org/all/000000000000b0e576060a30ee3b@google.com/
+
+  https://lore.kernel.org/all/000000000000773fa7060a31e2cc@google.com/
+
+
+  The 3rd patch is something I found when testing these patches.
+
+
+
+  This patch (of 3):
+
+
+  The new ioctl(PAGEMAP_SCAN) relies on vma wr-protect capability provided
+
+  by userfault, however in the vma test it didn''t explicitly require the vma
+
+  to have wr-protect function enabled, even if PM_SCAN_WP_MATCHING flag is
+
+  set.
+
+
+  It means the pagemap code can now apply uffd-wp bit to a page in the vma
+
+  even if not registered to userfaultfd at all.
+
+
+  Then in whatever way as long as the pte got written and page fault
+
+  resolved, we''ll apply the write bit even if uffd-wp bit is set.  We''ll see
+
+  a pte that has both UFFD_WP and WRITE bit set.  Anything later that looks
+
+  up the pte for uffd-wp bit will trigger the warning:
+
+
+  WARNING: CPU: 1 PID: 5071 at arch/x86/include/asm/pgtable.h:403 pte_uffd_wp arch/x86/include/asm/pgtable.h:403
+  [inline]
+
+
+  Fix it by doing proper check over the vma attributes when
+
+  PM_SCAN_WP_MATCHING is specified.
+
+
+  Link: https://lkml.kernel.org/r/20231116201547.536857-1-peterx@redhat.com
+
+  Link: https://lkml.kernel.org/r/20231116201547.536857-2-peterx@redhat.com
+
+  Fixes: 52526ca7fdb9 ("fs/proc/task_mmu: implement IOCTL to get and optionally clear
+  info about PTEs")
+
+  Signed-off-by: Peter Xu <peterx@redhat.com>
+
+  Reported-by: syzbot+e94c5aaf7890901ebf9b@syzkaller.appspotmail.com
+
+  Reviewed-by: David Hildenbrand <david@redhat.com>
+
+  Reviewed-by: Andrei Vagin <avagin@gmail.com>
+
+  Reviewed-by: Muhammad Usama Anjum <usama.anjum@collabora.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/proc
+hunk_count: 1
+covered_count: 0

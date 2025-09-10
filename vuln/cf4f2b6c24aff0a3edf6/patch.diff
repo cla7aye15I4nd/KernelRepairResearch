@@ -1,0 +1,24 @@
+diff --git a/drivers/staging/comedi/drivers/ni_usb6501.c b/drivers/staging/comedi/drivers/ni_usb6501.c
+index 808ed92ed66f..ed5e42655821 100644
+--- a/drivers/staging/comedi/drivers/ni_usb6501.c
++++ b/drivers/staging/comedi/drivers/ni_usb6501.c
+@@ -518,6 +518,9 @@ static int ni6501_auto_attach(struct comedi_device *dev,
+ 	if (!devpriv)
+ 		return -ENOMEM;
+ 
++	mutex_init(&devpriv->mut);
++	usb_set_intfdata(intf, devpriv);
++
+ 	ret = ni6501_find_endpoints(dev);
+ 	if (ret)
+ 		return ret;
+@@ -526,9 +529,6 @@ static int ni6501_auto_attach(struct comedi_device *dev,
+ 	if (ret)
+ 		return ret;
+ 
+-	mutex_init(&devpriv->mut);
+-	usb_set_intfdata(intf, devpriv);
+-
+ 	ret = comedi_alloc_subdevices(dev, 2);
+ 	if (ret)
+ 		return ret;

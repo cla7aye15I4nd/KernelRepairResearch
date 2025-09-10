@@ -1,0 +1,67 @@
+id: 96d5d14c47d97015c624
+bug_link: https://syzkaller.appspot.com/bug?extid=96d5d14c47d97015c624
+title: 'KASAN: use-after-free Read in nilfs_find_entry'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e30a0361b8515d424c73c67de1a43e45a13b8ba2
+fix_commit: 985ebec4ab0a28bb5910c3b1481a40fbf7f9e61d
+datetime: '2024-12-05T19:54:43-08:00'
+fix_commit_message: 'nilfs2: fix potential out-of-bounds memory access in nilfs_find_entry()
+
+
+  Syzbot reported that when searching for records in a directory where the
+
+  inode''s i_size is corrupted and has a large value, memory access outside
+
+  the folio/page range may occur, or a use-after-free bug may be detected if
+
+  KASAN is enabled.
+
+
+  This is because nilfs_last_byte(), which is called by nilfs_find_entry()
+
+  and others to calculate the number of valid bytes of directory data in a
+
+  page from i_size and the page index, loses the upper 32 bits of the 64-bit
+
+  size information due to an inappropriate type of local variable to which
+
+  the i_size value is assigned.
+
+
+  This caused a large byte offset value due to underflow in the end address
+
+  calculation in the calling nilfs_find_entry(), resulting in memory access
+
+  that exceeds the folio/page size.
+
+
+  Fix this issue by changing the type of the local variable causing the bit
+
+  loss from "unsigned int" to "u64".  The return value of nilfs_last_byte()
+
+  is also of type "unsigned int", but it is truncated so as not to exceed
+
+  PAGE_SIZE and no bit loss occurs, so no change is required.
+
+
+  Link: https://lkml.kernel.org/r/20241119172403.9292-1-konishi.ryusuke@gmail.com
+
+  Fixes: 2ba466d74ed7 ("nilfs2: directory entry operations")
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+96d5d14c47d97015c624@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=96d5d14c47d97015c624
+
+  Tested-by: syzbot+96d5d14c47d97015c624@syzkaller.appspotmail.com
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 1
+covered_count: 1

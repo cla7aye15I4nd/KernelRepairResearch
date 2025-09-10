@@ -1,0 +1,71 @@
+id: ece2915262061d6e0ac1
+bug_link: https://syzkaller.appspot.com/bug?extid=ece2915262061d6e0ac1
+title: possible deadlock in scheduler_tick (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9721fd82351d47a37ba982272e128101f24efd7c
+fix_commit: 726ccdba1521007fab4b2b7565d255fa0f2b770c
+datetime: '2023-06-23T16:59:26-07:00'
+fix_commit_message: 'kasan,kmsan: remove __GFP_KSWAPD_RECLAIM usage from kasan/kmsan
+
+
+  syzbot is reporting lockdep warning in __stack_depot_save(), for
+
+  the caller of __stack_depot_save() (i.e. __kasan_record_aux_stack() in
+
+  this report) is responsible for masking __GFP_KSWAPD_RECLAIM flag in
+
+  order not to wake kswapd which in turn wakes kcompactd.
+
+
+  Since kasan/kmsan functions might be called with arbitrary locks held,
+
+  mask __GFP_KSWAPD_RECLAIM flag from all GFP_NOWAIT/GFP_ATOMIC allocations
+
+  in kasan/kmsan.
+
+
+  Note that kmsan_save_stack_with_flags() is changed to mask both
+
+  __GFP_DIRECT_RECLAIM flag and __GFP_KSWAPD_RECLAIM flag, for
+
+  wakeup_kswapd() from wake_all_kswapds() from __alloc_pages_slowpath()
+
+  calls wakeup_kcompactd() if __GFP_KSWAPD_RECLAIM flag is set and
+
+  __GFP_DIRECT_RECLAIM flag is not set.
+
+
+  Link: https://lkml.kernel.org/r/656cb4f5-998b-c8d7-3c61-c2d37aa90f9a@I-love.SAKURA.ne.jp
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Reported-by: syzbot <syzbot+ece2915262061d6e0ac1@syzkaller.appspotmail.com>
+
+  Closes: https://syzkaller.appspot.com/bug?extid=ece2915262061d6e0ac1
+
+  Reviewed-by: "Huang, Ying" <ying.huang@intel.com>
+
+  Reviewed-by: Alexander Potapenko <glider@google.com>
+
+  Cc: Andrey Konovalov <andreyknvl@gmail.com>
+
+  Cc: Andrey Ryabinin <ryabinin.a.a@gmail.com>
+
+  Cc: Dmitry Vyukov <dvyukov@google.com>
+
+  Cc: Marco Elver <elver@google.com>
+
+  Cc: Mel Gorman <mgorman@techsingularity.net>
+
+  Cc: Vincenzo Frascino <vincenzo.frascino@arm.com>
+
+  Cc: Vlastimil Babka <vbabka@suse.cz>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- mm/kasan
+- mm/kmsan
+hunk_count: 7
+covered_count: 2

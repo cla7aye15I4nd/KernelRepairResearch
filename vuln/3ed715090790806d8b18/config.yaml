@@ -1,0 +1,28 @@
+id: 3ed715090790806d8b18
+bug_link: https://syzkaller.appspot.com/bug?extid=3ed715090790806d8b18
+title: possible deadlock in console_lock_spinning_enable
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f9f54983005cdd1060b85b16933677442139d88d
+fix_commit: c0070e1e60270f6a1e09442a9ab2335f3eaeaad2
+datetime: '2021-04-22T12:01:26+02:00'
+fix_commit_message: "ttyprintk: Add TTY hangup callback.\n\nsyzbot is reporting hung\
+  \ task due to flood of\n\n  tty_warn(tty, \"%s: tty->count = 1 port count = %d\\\
+  n\", __func__,\n           port->count);\n\nmessage [1], for ioctl(TIOCVHANGUP)\
+  \ prevents tty_port_close() from\ndecrementing port->count due to tty_hung_up_p()\
+  \ == true.\n\n----------\n#include <sys/types.h>\n#include <sys/stat.h>\n#include\
+  \ <fcntl.h>\n#include <sys/ioctl.h>\n#include <unistd.h>\n\nint main(int argc, char\
+  \ *argv[])\n{\n\tint i;\n\tint fd[10];\n\n\tfor (i = 0; i < 10; i++)\n\t\tfd[i]\
+  \ = open(\"/dev/ttyprintk\", O_WRONLY);\n\tioctl(fd[0], TIOCVHANGUP);\n\tfor (i\
+  \ = 0; i < 10; i++)\n\t\tclose(fd[i]);\n\tclose(open(\"/dev/ttyprintk\", O_WRONLY));\n\
+  \treturn 0;\n}\n----------\n\nWhen TTY hangup happens, port->count needs to be reset\
+  \ via\n\"struct tty_operations\"->hangup callback.\n\n[1] https://syzkaller.appspot.com/bug?id=39ea6caa479af471183997376dc7e90bc7d64a6a\n\
+  \nReported-by: syzbot <syzbot+43e93968b964e369db0b@syzkaller.appspotmail.com>\n\
+  Reported-by: syzbot <syzbot+3ed715090790806d8b18@syzkaller.appspotmail.com>\nTested-by:\
+  \ syzbot <syzbot+43e93968b964e369db0b@syzkaller.appspotmail.com>\nSigned-off-by:\
+  \ Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nFixes: 24b4b67d17c308aa (\"\
+  add ttyprintk driver\")\nLink: https://lore.kernel.org/r/17e0652d-89b7-c8c0-fb53-e7566ac9add4@i-love.sakura.ne.jp\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/char
+hunk_count: 1
+covered_count: 0

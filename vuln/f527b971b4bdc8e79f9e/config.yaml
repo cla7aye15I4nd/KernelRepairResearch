@@ -1,0 +1,44 @@
+id: f527b971b4bdc8e79f9e
+bug_link: https://syzkaller.appspot.com/bug?extid=f527b971b4bdc8e79f9e
+title: 'INFO: task hung in pipe_release (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a2d9831dab3ea9e2f45f37956d32fbdde6dc7053
+fix_commit: 0f71c9caf26726efea674646f566984e735cc3b9
+datetime: '2023-08-02T19:19:32-07:00'
+fix_commit_message: "udp: Fix __ip_append_data()'s handling of MSG_SPLICE_PAGES\n\n\
+  __ip_append_data() can get into an infinite loop when asked to splice into\na partially-built\
+  \ UDP message that has more than the frag-limit data and up\nto the MTU limit. \
+  \ Something like:\n\n        pipe(pfd);\n        sfd = socket(AF_INET, SOCK_DGRAM,\
+  \ 0);\n        connect(sfd, ...);\n        send(sfd, buffer, 8161, MSG_CONFIRM|MSG_MORE);\n\
+  \        write(pfd[1], buffer, 8);\n        splice(pfd[0], 0, sfd, 0, 0x4ffe0ul,\
+  \ 0);\n\nwhere the amount of data given to send() is dependent on the MTU size (in\n\
+  this instance an interface with an MTU of 8192).\n\nThe problem is that the calculation\
+  \ of the amount to copy in\n__ip_append_data() goes negative in two places, and,\
+  \ in the second place,\nthis gets subtracted from the length remaining, thereby\
+  \ increasing it.\n\nThis happens when pagedlen > 0 (which happens for MSG_ZEROCOPY\
+  \ and\nMSG_SPLICE_PAGES), because the terms in:\n\n        copy = datalen - transhdrlen\
+  \ - fraggap - pagedlen;\n\nthen mostly cancel when pagedlen is substituted for,\
+  \ leaving just -fraggap.\nThis causes:\n\n        length -= copy + transhdrlen;\n\
+  \nto increase the length to more than the amount of data in msg->msg_iter,\nwhich\
+  \ causes skb_splice_from_iter() to be unable to fill the request and it\nreturns\
+  \ less than 'copied' - which means that length never gets to 0 and we\nnever exit\
+  \ the loop.\n\nFix this by:\n\n (1) Insert a note about the dodgy calculation of\
+  \ 'copy'.\n\n (2) If MSG_SPLICE_PAGES, clear copy if it is negative from the above\n\
+  \     equation, so that 'offset' isn't regressed and 'length' isn't\n     increased,\
+  \ which will mean that length and thus copy should match the\n     amount left in\
+  \ the iterator.\n\n (3) When handling MSG_SPLICE_PAGES, give a warning and return\
+  \ -EIO if\n     we're asked to splice more than is in the iterator.  It might be\n\
+  \     better to not give the warning or even just give a 'short' write.\n\n[!] Note\
+  \ that this ought to also affect MSG_ZEROCOPY, but MSG_ZEROCOPY\navoids the problem\
+  \ by simply assuming that everything asked for got copied,\nnot just the amount\
+  \ that was in the iterator.  This is a potential bug for\nthe future.\n\nFixes:\
+  \ 7ac7c987850c (\"udp: Convert udp_sendpage() to use MSG_SPLICE_PAGES\")\nReported-by:\
+  \ syzbot+f527b971b4bdc8e79f9e@syzkaller.appspotmail.com\nLink: https://lore.kernel.org/r/000000000000881d0606004541d1@google.com/\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\ncc: David Ahern <dsahern@kernel.org>\n\
+  cc: Jens Axboe <axboe@kernel.dk>\nReviewed-by: Willem de Bruijn <willemb@google.com>\n\
+  Link: https://lore.kernel.org/r/1420063.1690904933@warthog.procyon.org.uk\nSigned-off-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/ipv4
+hunk_count: 2
+covered_count: 2

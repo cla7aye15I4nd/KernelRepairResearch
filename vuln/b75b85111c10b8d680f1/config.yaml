@@ -1,0 +1,52 @@
+id: b75b85111c10b8d680f1
+bug_link: https://syzkaller.appspot.com/bug?extid=b75b85111c10b8d680f1
+title: 'KASAN: stack-out-of-bounds Read in string'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 79a3aaa7b82e3106be97842dedfd8429248896e6
+fix_commit: c01c348ecdc66085e44912c97368809612231520
+datetime: '2019-04-16T12:23:01+02:00'
+fix_commit_message: 'USB: core: Fix unterminated string returned by usb_string()
+
+
+  Some drivers (such as the vub300 MMC driver) expect usb_string() to
+
+  return a properly NUL-terminated string, even when an error occurs.
+
+  (In fact, vub300''s probe routine doesn''t bother to check the return
+
+  code from usb_string().)  When the driver goes on to use an
+
+  unterminated string, it leads to kernel errors such as
+
+  stack-out-of-bounds, as found by the syzkaller USB fuzzer.
+
+
+  An out-of-range string index argument is not at all unlikely, given
+
+  that some devices don''t provide string descriptors and therefore list
+
+  0 as the value for their string indexes.  This patch makes
+
+  usb_string() return a properly terminated empty string along with the
+
+  -EINVAL error code when an out-of-range index is encountered.
+
+
+  And since a USB string index is a single-byte value, indexes >= 256
+
+  are just as invalid as values of 0 or below.
+
+
+  Signed-off-by: Alan Stern <stern@rowland.harvard.edu>
+
+  Reported-by: syzbot+b75b85111c10b8d680f1@syzkaller.appspotmail.com
+
+  CC: <stable@vger.kernel.org>
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/core
+hunk_count: 1
+covered_count: 0

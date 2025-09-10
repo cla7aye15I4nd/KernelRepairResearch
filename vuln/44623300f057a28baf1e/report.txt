@@ -1,0 +1,104 @@
+Oops: general protection fault, probably for non-canonical address 0xe0000be59afca404: 0000 [#1] PREEMPT SMP KASAN NOPTI
+KASAN: probably user-memory-access in range [0x00007f2cd7e52020-0x00007f2cd7e52027]
+CPU: 1 UID: 0 PID: 5370 Comm: syz-executor476 Not tainted 6.11.0-rc1-syzkaller #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:__dev_flush+0x49/0x1e0 kernel/bpf/devmap.c:424
+Code: 00 fc ff df 48 c1 ea 03 80 3c 02 00 0f 85 98 01 00 00 48 b8 00 00 00 00 00 fc ff df 49 8b 2f 48 8d 5d 80 48 89 ea 48 c1 ea 03 <80> 3c 02 00 0f 85 69 01 00 00 48 8b 45 00 49 39 ef 4c 8d 60 80 0f
+RSP: 0018:ffffc900008b0c80 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 00007f2cd7e51fa0 RCX: ffffffff88f94a1b
+RDX: 00000fe59afca404 RSI: ffffffff81afdbf6 RDI: ffffc900032d7570
+RBP: 00007f2cd7e52020 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000000 R12: ffffc900032d7560
+R13: ffff888023738fb0 R14: ffffc900032d7570 R15: ffffc900032d7570
+FS:  0000555575d1c380(0000) GS:ffff88806b100000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f2cd7ed3270 CR3: 00000000334be000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ xdp_do_check_flushed+0x40a/0x4e0 net/core/filter.c:4307
+ __napi_poll.constprop.0+0xd1/0x550 net/core/dev.c:6774
+ napi_poll net/core/dev.c:6840 [inline]
+ net_rx_action+0xa92/0x1010 net/core/dev.c:6962
+ handle_softirqs+0x216/0x8f0 kernel/softirq.c:554
+ __do_softirq kernel/softirq.c:588 [inline]
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu kernel/softirq.c:637 [inline]
+ irq_exit_rcu+0xbb/0x120 kernel/softirq.c:649
+ common_interrupt+0xb0/0xd0 arch/x86/kernel/irq.c:278
+ </IRQ>
+ <TASK>
+ asm_common_interrupt+0x26/0x40 arch/x86/include/asm/idtentry.h:693
+RIP: 0010:__orc_find+0x87/0x130 arch/x86/kernel/unwind_orc.c:100
+Code: 17 e8 ed bb 4d 00 49 8d 5f 04 4c 89 3c 24 e8 e0 bb 4d 00 48 39 dd 72 67 e8 d6 bb 4d 00 48 89 e8 48 29 d8 48 89 c2 48 c1 e8 3f <48> c1 fa 02 48 01 d0 48 d1 f8 4c 8d 3c 83 4c 89 fa 48 c1 ea 03 42
+RSP: 0018:ffffc900032d78d0 EFLAGS: 00000246
+RAX: 0000000000000000 RBX: ffffffff902c782c RCX: ffffffff813cd424
+RDX: 0000000000000010 RSI: ffffffff813cd3da RDI: 0000000000000006
+RBP: ffffffff902c783c R08: 0000000000000006 R09: ffffffff81f7bad6
+R10: ffffffff81f7bad9 R11: 0000000000000000 R12: ffffffff81f7bad6
+R13: ffffffff81f7bad9 R14: dffffc0000000000 R15: ffffffff902c7840
+ orc_find arch/x86/kernel/unwind_orc.c:227 [inline]
+ unwind_next_frame+0x335/0x23a0 arch/x86/kernel/unwind_orc.c:494
+ arch_stack_walk+0x100/0x170 arch/x86/kernel/stacktrace.c:25
+ stack_trace_save+0x95/0xd0 kernel/stacktrace.c:122
+ kasan_save_stack+0x33/0x60 mm/kasan/common.c:47
+ __kasan_record_aux_stack+0xba/0xd0 mm/kasan/generic.c:541
+ __call_rcu_common.constprop.0+0x9a/0x790 kernel/rcu/tree.c:3106
+ destroy_inode+0x12c/0x1b0 fs/inode.c:318
+ iput_final fs/inode.c:1803 [inline]
+ iput.part.0+0x5a8/0x7f0 fs/inode.c:1829
+ iput+0x5c/0x80 fs/inode.c:1819
+ dentry_unlink_inode+0x29c/0x480 fs/dcache.c:407
+ __dentry_kill+0x1d0/0x600 fs/dcache.c:610
+ dput.part.0+0x4b1/0x9b0 fs/dcache.c:852
+ dput+0x1f/0x30 fs/dcache.c:842
+ __fput+0x54e/0xbb0 fs/file_table.c:430
+ __fput_sync+0x47/0x50 fs/file_table.c:507
+ __do_sys_close fs/open.c:1566 [inline]
+ __se_sys_close fs/open.c:1551 [inline]
+ __x64_sys_close+0x86/0x100 fs/open.c:1551
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f2cd7e52020
+Code: ff f7 d8 64 89 02 48 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 80 3d 81 e0 07 00 00 74 17 b8 03 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 48 c3 0f 1f 80 00 00 00 00 48 83 ec 18 89 7c
+RSP: 002b:00007ffee1642498 EFLAGS: 00000202 ORIG_RAX: 0000000000000003
+RAX: ffffffffffffffda RBX: 0000000000000005 RCX: 00007f2cd7e52020
+RDX: 000000000000000e RSI: 0000000020000200 RDI: 0000000000000004
+RBP: 00007ffee16424e0 R08: 00007ffee16424c0 R09: 00007ffee16424c0
+R10: 00007ffee16424c0 R11: 0000000000000202 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__dev_flush+0x49/0x1e0 kernel/bpf/devmap.c:424
+Code: 00 fc ff df 48 c1 ea 03 80 3c 02 00 0f 85 98 01 00 00 48 b8 00 00 00 00 00 fc ff df 49 8b 2f 48 8d 5d 80 48 89 ea 48 c1 ea 03 <80> 3c 02 00 0f 85 69 01 00 00 48 8b 45 00 49 39 ef 4c 8d 60 80 0f
+RSP: 0018:ffffc900008b0c80 EFLAGS: 00010202
+RAX: dffffc0000000000 RBX: 00007f2cd7e51fa0 RCX: ffffffff88f94a1b
+RDX: 00000fe59afca404 RSI: ffffffff81afdbf6 RDI: ffffc900032d7570
+RBP: 00007f2cd7e52020 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000000 R12: ffffc900032d7560
+R13: ffff888023738fb0 R14: ffffc900032d7570 R15: ffffc900032d7570
+FS:  0000555575d1c380(0000) GS:ffff88806b100000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f2cd7ed3270 CR3: 00000000334be000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess), 4 bytes skipped:
+   0:	48 c1 ea 03          	shr    $0x3,%rdx
+   4:	80 3c 02 00          	cmpb   $0x0,(%rdx,%rax,1)
+   8:	0f 85 98 01 00 00    	jne    0x1a6
+   e:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  15:	fc ff df
+  18:	49 8b 2f             	mov    (%r15),%rbp
+  1b:	48 8d 5d 80          	lea    -0x80(%rbp),%rbx
+  1f:	48 89 ea             	mov    %rbp,%rdx
+  22:	48 c1 ea 03          	shr    $0x3,%rdx
+* 26:	80 3c 02 00          	cmpb   $0x0,(%rdx,%rax,1) <-- trapping instruction
+  2a:	0f 85 69 01 00 00    	jne    0x199
+  30:	48 8b 45 00          	mov    0x0(%rbp),%rax
+  34:	49 39 ef             	cmp    %rbp,%r15
+  37:	4c 8d 60 80          	lea    -0x80(%rax),%r12
+  3b:	0f                   	.byte 0xf

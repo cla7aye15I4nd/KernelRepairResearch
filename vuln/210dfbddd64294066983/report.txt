@@ -1,0 +1,64 @@
+bcachefs (loop0): bucket 0:32 gen 0 data type need_discard has wrong dirty_sectors: got 256, should be 0, fixing
+bcachefs (loop0): bucket 0:34 gen 0 has wrong data_type: got user, should be need_discard, fixing
+bcachefs (loop0): bucket 0:34 gen 0 data type need_discard has wrong dirty_sectors: got 16, should be 0, fixing
+ done
+bcachefs (loop0): going read-write
+bcachefs (loop0): journal_replay...
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/btree_update.c:375!
+Oops: invalid opcode: 0000 [#1] SMP KASAN PTI
+CPU: 0 UID: 0 PID: 5840 Comm: syz-executor359 Not tainted 6.16.0-rc5-syzkaller #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:bch2_trans_update_by_path+0x1efb/0x1f30 fs/bcachefs/btree_update.c:375
+Code: 80 e1 07 fe c1 38 c1 0f 8c 40 f7 ff ff 48 8b 7c 24 28 e8 a8 1b fa fd e9 31 f7 ff ff e8 1e c3 98 fd 90 0f 0b e8 16 c3 98 fd 90 <0f> 0b e8 0e c3 98 fd 90 0f 0b e8 06 c3 98 fd 90 0f 0b e8 fe c2 98
+RSP: 0018:ffffc90003ffea08 EFLAGS: 00010293
+RAX: ffffffff842761ca RBX: 0000000000008540 RCX: ffff888035a10000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 1ffff1100e411802 R08: ffffffff844b68d9 R09: 0000000000000002
+R10: 0000000000000003 R11: 0000000000000000 R12: 1ffff1100e41185e
+R13: ffff88807208c010 R14: 0000000000000088 R15: ffff88807208c2f0
+FS:  00005555906f3380(0000) GS:ffff888125c51000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffc288fc000 CR3: 0000000072d04000 CR4: 00000000003526f0
+Call Trace:
+ <TASK>
+ bch2_trans_update_ip+0x9a6/0x1db0 fs/bcachefs/btree_update.c:531
+ bch2_trans_update fs/bcachefs/btree_update.h:123 [inline]
+ bch2_journal_replay_key+0x4b0/0xb40 fs/bcachefs/recovery.c:311
+ bch2_journal_replay+0x171d/0x2630 fs/bcachefs/recovery.c:396
+ bch2_run_recovery_pass fs/bcachefs/recovery_passes.c:484 [inline]
+ __bch2_run_recovery_passes+0x395/0x1010 fs/bcachefs/recovery_passes.c:539
+ bch2_run_recovery_passes+0x184/0x210 fs/bcachefs/recovery_passes.c:610
+ bch2_fs_recovery+0x2690/0x3a50 fs/bcachefs/recovery.c:1005
+ bch2_fs_start+0xaaf/0xda0 fs/bcachefs/super.c:1213
+ bch2_fs_get_tree+0xb39/0x1520 fs/bcachefs/fs.c:2488
+ vfs_get_tree+0x8f/0x2b0 fs/super.c:1804
+ do_new_mount+0x24a/0xa40 fs/namespace.c:3902
+ do_mount fs/namespace.c:4239 [inline]
+ __do_sys_mount fs/namespace.c:4450 [inline]
+ __se_sys_mount+0x317/0x410 fs/namespace.c:4427
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fc7e44eae2a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc288fb1d8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffc288fb1f0 RCX: 00007fc7e44eae2a
+RDX: 0000200000000040 RSI: 0000200000005900 RDI: 00007ffc288fb1f0
+RBP: 0000200000005900 R08: 00007ffc288fb230 R09: 0000000000005928
+R10: 0000000002808040 R11: 0000000000000282 R12: 0000200000000040
+R13: 00007ffc288fb230 R14: 0000000000000003 R15: 0000000002808040
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_trans_update_by_path+0x1efb/0x1f30 fs/bcachefs/btree_update.c:375
+Code: 80 e1 07 fe c1 38 c1 0f 8c 40 f7 ff ff 48 8b 7c 24 28 e8 a8 1b fa fd e9 31 f7 ff ff e8 1e c3 98 fd 90 0f 0b e8 16 c3 98 fd 90 <0f> 0b e8 0e c3 98 fd 90 0f 0b e8 06 c3 98 fd 90 0f 0b e8 fe c2 98
+RSP: 0018:ffffc90003ffea08 EFLAGS: 00010293
+RAX: ffffffff842761ca RBX: 0000000000008540 RCX: ffff888035a10000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 1ffff1100e411802 R08: ffffffff844b68d9 R09: 0000000000000002
+R10: 0000000000000003 R11: 0000000000000000 R12: 1ffff1100e41185e
+R13: ffff88807208c010 R14: 0000000000000088 R15: ffff88807208c2f0
+FS:  00005555906f3380(0000) GS:ffff888125c51000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ffc288fc000 CR3: 0000000072d04000 CR4: 00000000003526f0

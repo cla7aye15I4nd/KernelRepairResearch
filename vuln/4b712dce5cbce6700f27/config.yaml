@@ -1,0 +1,48 @@
+id: 4b712dce5cbce6700f27
+bug_link: https://syzkaller.appspot.com/bug?extid=4b712dce5cbce6700f27
+title: 'BUG: bad usercopy in __check_heap_object (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4cdfffc8722e99be8d400d8fa1fcd615d078ad43
+fix_commit: 1f4aace60b0edc2d885aaa263abf4df42c8c65a8
+datetime: '2018-08-17T16:20:28-07:00'
+fix_commit_message: "fs/seq_file.c: simplify seq_file iteration code and interface\n\
+  \nThe documentation for seq_file suggests that it is necessary to be able\nto move\
+  \ the iterator to a given offset, however that is not the case.\nIf the iterator\
+  \ is stored in the private data and is stable from one\nread() syscall to the next,\
+  \ it is only necessary to support first/next\ninteractions.  Implementing this in\
+  \ a client is a little clumsy.\n\n - if ->start() is given a pos of zero, it should\
+  \ go to start of\n   sequence.\n\n - if ->start() is given the name pos that was\
+  \ given to the most recent\n   next() or start(), it should restore the iterator\
+  \ to state just\n   before that last call\n\n - if ->start is given another number,\
+  \ it should set the iterator one\n   beyond the start just before the last ->start\
+  \ or ->next call.\n\nAlso, the documentation says that the implementation can interpret\
+  \ the\npos however it likes (other than zero meaning start), but seq_file\nincrements\
+  \ the pos sometimes which does impose on the implementation.\n\nThis patch simplifies\
+  \ the interface for first/next iteration and\nsimplifies the code, while maintaining\
+  \ complete backward compatability.\nNow:\n\n - if ->start() is given a pos of zero,\
+  \ it should return an iterator\n   placed at the start of the sequence\n\n - if\
+  \ ->start() is given a non-zero pos, it should return the iterator\n   in the same\
+  \ state it was after the last ->start or ->next.\n\nThis is particularly useful\
+  \ for interators which walk the multiple\nchains in a hash table, e.g.  using rhashtable_walk*.\
+  \  See\nfs/gfs2/glock.c and drivers/staging/lustre/lustre/llite/vvp_dev.c\n\nA large\
+  \ part of achieving this is to *always* call ->next after ->show\nhas successfully\
+  \ stored all of an entry in the buffer.  Never just\nincrement the index instead.\
+  \  Also:\n\n - always pass &m->index to ->start() and ->next(), never a temp\n \
+  \  variable\n\n - don't clear ->from when ->count is zero, as ->from is dead when\n\
+  \   ->count is zero.\n\nSome ->next functions do not increment *pos when they return\
+  \ NULL.  To\nmaintain compatability with this, we still need to increment m->index\
+  \ in\none place, if ->next didn't increment it.  Note that such ->next\nfunctions\
+  \ are buggy and should be fixed.  A simple demonstration is\n\n   dd if=/proc/swaps\
+  \ bs=1000 skip=1\n\nChoose any block size larger than the size of /proc/swaps. \
+  \ This will\nalways show the whole last line of /proc/swaps.\n\nThis patch doesn't\
+  \ work around buggy next() functions for this case.\n\n[neilb@suse.com: ensure ->from\
+  \ is valid]\n  Link: http://lkml.kernel.org/r/87601ryb8a.fsf@notabene.neil.brown.name\n\
+  Signed-off-by: NeilBrown <neilb@suse.com>\nAcked-by: Jonathan Corbet <corbet@lwn.net>\t\
+  [docs]\nTested-by: Jann Horn <jannh@google.com>\nCc: Alexander Viro <viro@zeniv.linux.org.uk>\n\
+  Cc: Kees Cook <keescook@chromium.org>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- Documentation/filesystems
+- fs
+hunk_count: 10
+covered_count: 4

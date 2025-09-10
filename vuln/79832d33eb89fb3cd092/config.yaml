@@ -1,0 +1,44 @@
+id: 79832d33eb89fb3cd092
+bug_link: https://syzkaller.appspot.com/bug?extid=79832d33eb89fb3cd092
+title: 'KMSAN: uninit-value in idmouse_open'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 411c4597df7dcc60b7aae83761618c94a60ded3f
+fix_commit: bce2b0539933e485d22d6f6f076c0fcd6f185c4c
+datetime: '2022-09-27T10:37:09+02:00'
+fix_commit_message: 'usb: idmouse: fix an uninit-value in idmouse_open
+
+
+  In idmouse_create_image, if any ftip_command fails, it will
+
+  go to the reset label. However, this leads to the data in
+
+  bulk_in_buffer[HEADER..IMGSIZE] uninitialized. And the check
+
+  for valid image incurs an uninitialized dereference.
+
+
+  Fix this by moving the check before reset label since this
+
+  check only be valid if the data after bulk_in_buffer[HEADER]
+
+  has concrete data.
+
+
+  Note that this is found by KMSAN, so only kernel compilation
+
+  is tested.
+
+
+  Reported-by: syzbot+79832d33eb89fb3cd092@syzkaller.appspotmail.com
+
+  Signed-off-by: Dongliang Mu <mudongliangabcd@gmail.com>
+
+  Link: https://lore.kernel.org/r/20220922134847.1101921-1-dzm91@hust.edu.cn
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/misc
+hunk_count: 2
+covered_count: 2

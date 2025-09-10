@@ -1,0 +1,29 @@
+id: a32b546d58dde07875a1
+bug_link: https://syzkaller.appspot.com/bug?extid=a32b546d58dde07875a1
+title: WARNING in io_uring_flush
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6b393a1ff1746a1c91bd95cbb2d79b104d8f15ac
+fix_commit: 4325cb498cb743dacaa3edbec398c5255f476ef6
+datetime: '2021-01-16T12:14:02-07:00'
+fix_commit_message: "io_uring: fix uring_flush in exit_files() warning\n\nWARNING:\
+  \ CPU: 1 PID: 11100 at fs/io_uring.c:9096\n\tio_uring_flush+0x326/0x3a0 fs/io_uring.c:9096\n\
+  RIP: 0010:io_uring_flush+0x326/0x3a0 fs/io_uring.c:9096\nCall Trace:\n filp_close+0xb4/0x170\
+  \ fs/open.c:1280\n close_files fs/file.c:401 [inline]\n put_files_struct fs/file.c:416\
+  \ [inline]\n put_files_struct+0x1cc/0x350 fs/file.c:413\n exit_files+0x7e/0xa0 fs/file.c:433\n\
+  \ do_exit+0xc22/0x2ae0 kernel/exit.c:820\n do_group_exit+0x125/0x310 kernel/exit.c:922\n\
+  \ get_signal+0x3e9/0x20a0 kernel/signal.c:2770\n arch_do_signal_or_restart+0x2a8/0x1eb0\
+  \ arch/x86/kernel/signal.c:811\n handle_signal_work kernel/entry/common.c:147 [inline]\n\
+  \ exit_to_user_mode_loop kernel/entry/common.c:171 [inline]\n exit_to_user_mode_prepare+0x148/0x250\
+  \ kernel/entry/common.c:201\n __syscall_exit_to_user_mode_work kernel/entry/common.c:291\
+  \ [inline]\n syscall_exit_to_user_mode+0x19/0x50 kernel/entry/common.c:302\n entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  \nAn SQPOLL ring creator task may have gotten rid of its file note during\nexit\
+  \ and called io_disable_sqo_submit(), but the io_uring is still left\nreferenced\
+  \ through fdtable, which will be put during close_files() and\ncause a false positive\
+  \ warning.\n\nFirst split the warning into two for more clarity when is hit, and\
+  \ the\nadd sqo_dead check to handle the described case.\n\nReported-by: syzbot+a32b546d58dde07875a1@syzkaller.appspotmail.com\n\
+  Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>\nSigned-off-by: Jens Axboe\
+  \ <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

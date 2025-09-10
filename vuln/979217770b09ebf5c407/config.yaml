@@ -1,0 +1,45 @@
+id: 979217770b09ebf5c407
+bug_link: https://syzkaller.appspot.com/bug?extid=979217770b09ebf5c407
+title: 'KASAN: null-ptr-deref Write in xdp_umem_unaccount_pages'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a5a16e43529b5040760ebf9bd9b056dd34861f93
+fix_commit: c09290c5637692a9bfe7740e4c5e693efff12810
+datetime: '2018-06-07T15:32:28-07:00'
+fix_commit_message: "bpf, xdp: fix crash in xdp_umem_unaccount_pages\n\nsyzkaller\
+  \ was able to trigger the following panic for AF_XDP:\n\n  BUG: KASAN: null-ptr-deref\
+  \ in atomic64_sub include/asm-generic/atomic-instrumented.h:144 [inline]\n  BUG:\
+  \ KASAN: null-ptr-deref in atomic_long_sub include/asm-generic/atomic-long.h:199\
+  \ [inline]\n  BUG: KASAN: null-ptr-deref in xdp_umem_unaccount_pages.isra.4+0x3d/0x80\
+  \ net/xdp/xdp_umem.c:135\n  Write of size 8 at addr 0000000000000060 by task syz-executor246/4527\n\
+  \n  CPU: 1 PID: 4527 Comm: syz-executor246 Not tainted 4.17.0+ #89\n  Hardware name:\
+  \ Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n \
+  \ Call Trace:\n   __dump_stack lib/dump_stack.c:77 [inline]\n   dump_stack+0x1b9/0x294\
+  \ lib/dump_stack.c:113\n   kasan_report_error mm/kasan/report.c:352 [inline]\n \
+  \  kasan_report.cold.7+0x6d/0x2fe mm/kasan/report.c:412\n   check_memory_region_inline\
+  \ mm/kasan/kasan.c:260 [inline]\n   check_memory_region+0x13e/0x1b0 mm/kasan/kasan.c:267\n\
+  \   kasan_check_write+0x14/0x20 mm/kasan/kasan.c:278\n   atomic64_sub include/asm-generic/atomic-instrumented.h:144\
+  \ [inline]\n   atomic_long_sub include/asm-generic/atomic-long.h:199 [inline]\n\
+  \   xdp_umem_unaccount_pages.isra.4+0x3d/0x80 net/xdp/xdp_umem.c:135\n   xdp_umem_reg\
+  \ net/xdp/xdp_umem.c:334 [inline]\n   xdp_umem_create+0xd6c/0x10f0 net/xdp/xdp_umem.c:349\n\
+  \   xsk_setsockopt+0x443/0x550 net/xdp/xsk.c:531\n   __sys_setsockopt+0x1bd/0x390\
+  \ net/socket.c:1935\n   __do_sys_setsockopt net/socket.c:1946 [inline]\n   __se_sys_setsockopt\
+  \ net/socket.c:1943 [inline]\n   __x64_sys_setsockopt+0xbe/0x150 net/socket.c:1943\n\
+  \   do_syscall_64+0x1b1/0x800 arch/x86/entry/common.c:287\n   entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nIn xdp_umem_reg() the call to xdp_umem_account_pages() passed\nwith CAP_IPC_LOCK\
+  \ where we didn't need to end up charging rlimit\non memlock for the current user\
+  \ and therefore umem->user continues\nto be NULL. Later on through fault injection\
+  \ syzkaller triggered\na failure in either umem->pgs or umem->pages allocation such\
+  \ that\nwe bail out and undo accounting in xdp_umem_unaccount_pages()\nwhere we\
+  \ eventually hit the panic since it tries to deref the\numem->user.\n\nThe code\
+  \ is pretty close to mm_account_pinned_pages() and\nmm_unaccount_pinned_pages()\
+  \ pair and potentially could reuse\nit even in a later cleanup, and it appears that\
+  \ the initial\ncommit c0c77d8fb787 (\"xsk: add user memory registration support\n\
+  sockopt\") got this right while later follow-up introduced the\nbug via a49049ea2576\
+  \ (\"xsk: simplified umem setup\").\n\nFixes: a49049ea2576 (\"xsk: simplified umem\
+  \ setup\")\nReported-by: syzbot+979217770b09ebf5c407@syzkaller.appspotmail.com\n\
+  Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>\nSigned-off-by: Alexei Starovoitov\
+  \ <ast@kernel.org>\n"
+submodule:
+- net/xdp
+hunk_count: 1
+covered_count: 1

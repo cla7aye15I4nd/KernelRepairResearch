@@ -1,0 +1,80 @@
+id: c103d3808a0de5faaf80
+bug_link: https://syzkaller.appspot.com/bug?extid=c103d3808a0de5faaf80
+title: 'KASAN: slab-out-of-bounds Read in xfs_getbmap'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1f1397b7218d7f8e53e33c6b58cbf9601cd2d8e6
+fix_commit: 1bba82fe1afac69c85c1f5ea137c8e73de3c8032
+datetime: '2023-05-02T09:15:01+10:00'
+fix_commit_message: 'xfs: fix negative array access in xfs_getbmap
+
+
+  In commit 8ee81ed581ff, Ye Bin complained about an ASSERT in the bmapx
+
+  code that trips if we encounter a delalloc extent after flushing the
+
+  pagecache to disk.  The ioctl code does not hold MMAPLOCK so it''s
+
+  entirely possible that a racing write page fault can create a delalloc
+
+  extent after the file has been flushed.  The proposed solution was to
+
+  replace the assertion with an early return that avoids filling out the
+
+  bmap recordset with a delalloc entry if the caller didn''t ask for it.
+
+
+  At the time, I recall thinking that the forward logic sounded ok, but
+
+  felt hesitant because I suspected that changing this code would cause
+
+  something /else/ to burst loose due to some other subtlety.
+
+
+  syzbot of course found that subtlety.  If all the extent mappings found
+
+  after the flush are delalloc mappings, we''ll reach the end of the data
+
+  fork without ever incrementing bmv->bmv_entries.  This is new, since
+
+  before we''d have emitted the delalloc mappings even though the caller
+
+  didn''t ask for them.  Once we reach the end, we''ll try to set
+
+  BMV_OF_LAST on the -1st entry (because bmv_entries is zero) and go
+
+  corrupt something else in memory.  Yay.
+
+
+  I really dislike all these stupid patches that fiddle around with debug
+
+  code and break things that otherwise worked well enough.  Nobody was
+
+  complaining that calling XFS_IOC_BMAPX without BMV_IF_DELALLOC would
+
+  return BMV_OF_DELALLOC records, and now we''ve gone from "weird behavior
+
+  that nobody cared about" to "bad behavior that must be addressed
+
+  immediately".
+
+
+  Maybe I''ll just ignore anything from Huawei from now on for my own sake.
+
+
+  Reported-by: syzbot+c103d3808a0de5faaf80@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/linux-xfs/20230412024907.GP360889@frogsfrogsfrogs/
+
+  Fixes: 8ee81ed581ff ("xfs: fix BUG_ON in xfs_getbmap()")
+
+  Signed-off-by: Darrick J. Wong <djwong@kernel.org>
+
+  Reviewed-by: Dave Chinner <dchinner@redhat.com>
+
+  Signed-off-by: Dave Chinner <david@fromorbit.com>
+
+  '
+submodule:
+- fs/xfs
+hunk_count: 1
+covered_count: 1

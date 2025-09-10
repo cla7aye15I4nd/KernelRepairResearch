@@ -1,0 +1,85 @@
+On-disk corruption discovered. Please run fsck.ocfs2 once the filesystem is unmounted.
+OCFS2: File system is now read-only.
+(syz-executor159,5307,0):ocfs2_find_entry_dx:1029 ERROR: status = -30
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] SMP KASAN NOPTI
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 0 UID: 0 PID: 5307 Comm: syz-executor159 Not tainted 6.16.0-rc2-syzkaller-00378-gb67ec639010f #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:ocfs2_dx_dir_lookup_rec+0x3a9/0x790 fs/ocfs2/dir.c:812
+Code: 28 48 89 44 24 38 48 83 c3 40 48 89 d8 48 c1 e8 03 42 80 3c 20 00 74 08 48 89 df e8 e1 77 89 fe 4c 8b 33 4c 89 f8 48 c1 e8 03 <42> 0f b6 04 20 84 c0 0f 85 c3 02 00 00 41 8b 1f 48 8b 7c 24 20 48
+RSP: 0018:ffffc9000d47ece0 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: ffff8880433908b8 RCX: ffff888000ba2440
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffff8880433908a0
+RBP: ffffc9000d47edf0 R08: ffffc9000d47ee50 R09: ffffc9000d47ee5c
+R10: 23ec6d672c196c9a R11: 608b7c562adf3b03 R12: dffffc0000000000
+R13: ffffc9000d47ee58 R14: 0000000000000041 R15: 0000000000000000
+FS:  000055555dc2a380(0000) GS:ffff88808d251000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f88a4df5000 CR3: 000000004411c000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ ocfs2_dx_dir_lookup+0xdb/0x520 fs/ocfs2/dir.c:860
+ ocfs2_dx_dir_search fs/ocfs2/dir.c:920 [inline]
+ ocfs2_find_entry_dx fs/ocfs2/dir.c:1034 [inline]
+ ocfs2_find_entry+0x1004/0x2000 fs/ocfs2/dir.c:1071
+ ocfs2_check_dir_for_entry+0x14c/0x3f0 fs/ocfs2/dir.c:2040
+ ocfs2_mknod+0x697/0x2050 fs/ocfs2/namei.c:288
+ ocfs2_create+0x1a5/0x440 fs/ocfs2/namei.c:673
+ lookup_open fs/namei.c:3717 [inline]
+ open_last_lookups fs/namei.c:3816 [inline]
+ path_openat+0x14f4/0x3830 fs/namei.c:4052
+ do_filp_open+0x1fa/0x410 fs/namei.c:4082
+ do_sys_openat2+0x121/0x1c0 fs/open.c:1437
+ do_sys_open fs/open.c:1452 [inline]
+ __do_sys_openat fs/open.c:1468 [inline]
+ __se_sys_openat fs/open.c:1463 [inline]
+ __x64_sys_openat+0x138/0x170 fs/open.c:1463
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fb42a267e99
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffed8b6f118 EFLAGS: 00000246 ORIG_RAX: 0000000000000101
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fb42a267e99
+RDX: 0000000000105042 RSI: 0000200000000080 RDI: 00000000ffffff9c
+RBP: 0000200000000040 R08: 000055555dc2b4c0 R09: 000055555dc2b4c0
+R10: 00000000000001ff R11: 0000000000000246 R12: 00007ffed8b6f140
+R13: 0000200000004500 R14: 00007ffed8b6f140 R15: 00007fb42a2b103b
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:ocfs2_dx_dir_lookup_rec+0x3a9/0x790 fs/ocfs2/dir.c:812
+Code: 28 48 89 44 24 38 48 83 c3 40 48 89 d8 48 c1 e8 03 42 80 3c 20 00 74 08 48 89 df e8 e1 77 89 fe 4c 8b 33 4c 89 f8 48 c1 e8 03 <42> 0f b6 04 20 84 c0 0f 85 c3 02 00 00 41 8b 1f 48 8b 7c 24 20 48
+RSP: 0018:ffffc9000d47ece0 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: ffff8880433908b8 RCX: ffff888000ba2440
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffff8880433908a0
+RBP: ffffc9000d47edf0 R08: ffffc9000d47ee50 R09: ffffc9000d47ee5c
+R10: 23ec6d672c196c9a R11: 608b7c562adf3b03 R12: dffffc0000000000
+R13: ffffc9000d47ee58 R14: 0000000000000041 R15: 0000000000000000
+FS:  000055555dc2a380(0000) GS:ffff88808d251000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000559e2d231510 CR3: 000000004411c000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	28 48 89             	sub    %cl,-0x77(%rax)
+   3:	44 24 38             	rex.R and $0x38,%al
+   6:	48 83 c3 40          	add    $0x40,%rbx
+   a:	48 89 d8             	mov    %rbx,%rax
+   d:	48 c1 e8 03          	shr    $0x3,%rax
+  11:	42 80 3c 20 00       	cmpb   $0x0,(%rax,%r12,1)
+  16:	74 08                	je     0x20
+  18:	48 89 df             	mov    %rbx,%rdi
+  1b:	e8 e1 77 89 fe       	call   0xfe897801
+  20:	4c 8b 33             	mov    (%rbx),%r14
+  23:	4c 89 f8             	mov    %r15,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 0f b6 04 20       	movzbl (%rax,%r12,1),%eax <-- trapping instruction
+  2f:	84 c0                	test   %al,%al
+  31:	0f 85 c3 02 00 00    	jne    0x2fa
+  37:	41 8b 1f             	mov    (%r15),%ebx
+  3a:	48 8b 7c 24 20       	mov    0x20(%rsp),%rdi
+  3f:	48                   	rex.W

@@ -1,0 +1,74 @@
+loop0: detected capacity change from 0 to 32768
+Oops: divide error: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5857 Comm: syz-executor194 Not tainted 6.12.0-syzkaller-10689-g7af08b57bcb9 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:dbAllocAG+0x414/0xd30 fs/jfs/jfs_dmap.c:1399
+Code: 03 0f b6 0c 11 48 89 fa 83 e2 07 83 c2 03 38 ca 7c 08 84 c9 0f 85 a7 08 00 00 41 8b 4d 2c 49 8d 7d 30 99 48 89 fe 48 c1 ee 03 <f7> f9 48 ba 00 00 00 00 00 fc ff df 0f b6 14 16 84 d2 74 09 80 fa
+RSP: 0018:ffffc9000450fbc8 EFLAGS: 00010216
+RAX: 0000000000000400 RBX: 000000000000000a RCX: 0000000000000000
+RDX: 0000000000000000 RSI: 1ffff11004cce406 RDI: ffff888026672030
+RBP: 0000000000000000 R08: 0000000000000005 R09: 000000000000001f
+R10: 000000000000000a R11: 0000000000000002 R12: ffff88807650f000
+R13: ffff888026672000 R14: 0000000000000000 R15: 000000000000000c
+FS:  000055558401d380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000557f78216048 CR3: 00000000772e0000 CR4: 0000000000350ef0
+Call Trace:
+ <TASK>
+ dbDiscardAG+0x249/0x7c0 fs/jfs/jfs_dmap.c:1613
+ jfs_ioc_trim+0x3fb/0x5c0 fs/jfs/jfs_discard.c:105
+ jfs_ioctl+0x335/0x430 fs/jfs/ioctl.c:131
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl fs/ioctl.c:892 [inline]
+ __x64_sys_ioctl+0x193/0x200 fs/ioctl.c:892
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fc4a885b679
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc0fc54e38 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007ffc0fc55008 RCX: 00007fc4a885b679
+RDX: 0000000020000080 RSI: 00000000c0185879 RDI: 0000000000000004
+RBP: 00007fc4a88d4610 R08: 0000000000000000 R09: 00007ffc0fc55008
+R10: 0000000000005ea7 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffc0fc54ff8 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:dbAllocAG+0x414/0xd30 fs/jfs/jfs_dmap.c:1399
+Code: 03 0f b6 0c 11 48 89 fa 83 e2 07 83 c2 03 38 ca 7c 08 84 c9 0f 85 a7 08 00 00 41 8b 4d 2c 49 8d 7d 30 99 48 89 fe 48 c1 ee 03 <f7> f9 48 ba 00 00 00 00 00 fc ff df 0f b6 14 16 84 d2 74 09 80 fa
+RSP: 0018:ffffc9000450fbc8 EFLAGS: 00010216
+RAX: 0000000000000400 RBX: 000000000000000a RCX: 0000000000000000
+RDX: 0000000000000000 RSI: 1ffff11004cce406 RDI: ffff888026672030
+RBP: 0000000000000000 R08: 0000000000000005 R09: 000000000000001f
+R10: 000000000000000a R11: 0000000000000002 R12: ffff88807650f000
+R13: ffff888026672000 R14: 0000000000000000 R15: 000000000000000c
+FS:  000055558401d380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000557f78216048 CR3: 00000000772e0000 CR4: 0000000000350ef0
+----------------
+Code disassembly (best guess):
+   0:	03 0f                	add    (%rdi),%ecx
+   2:	b6 0c                	mov    $0xc,%dh
+   4:	11 48 89             	adc    %ecx,-0x77(%rax)
+   7:	fa                   	cli
+   8:	83 e2 07             	and    $0x7,%edx
+   b:	83 c2 03             	add    $0x3,%edx
+   e:	38 ca                	cmp    %cl,%dl
+  10:	7c 08                	jl     0x1a
+  12:	84 c9                	test   %cl,%cl
+  14:	0f 85 a7 08 00 00    	jne    0x8c1
+  1a:	41 8b 4d 2c          	mov    0x2c(%r13),%ecx
+  1e:	49 8d 7d 30          	lea    0x30(%r13),%rdi
+  22:	99                   	cltd
+  23:	48 89 fe             	mov    %rdi,%rsi
+  26:	48 c1 ee 03          	shr    $0x3,%rsi
+* 2a:	f7 f9                	idiv   %ecx <-- trapping instruction
+  2c:	48 ba 00 00 00 00 00 	movabs $0xdffffc0000000000,%rdx
+  33:	fc ff df
+  36:	0f b6 14 16          	movzbl (%rsi,%rdx,1),%edx
+  3a:	84 d2                	test   %dl,%dl
+  3c:	74 09                	je     0x47
+  3e:	80                   	.byte 0x80
+  3f:	fa                   	cli

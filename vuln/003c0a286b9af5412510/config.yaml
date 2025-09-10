@@ -1,0 +1,44 @@
+id: 003c0a286b9af5412510
+bug_link: https://syzkaller.appspot.com/bug?extid=003c0a286b9af5412510
+title: 'KMSAN: kernel-usb-infoleak in usbnet_write_cmd (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6f022c2ddbcefaee79502ce5386dfe351d457070
+fix_commit: d668769eb9c52b150753f1653f7f5a0aeb8239d2
+datetime: '2022-01-09T16:35:50-08:00'
+fix_commit_message: 'net: mcs7830: handle usb read errors properly
+
+
+  Syzbot reported uninit value in mcs7830_bind(). The problem was in
+
+  missing validation check for bytes read via usbnet_read_cmd().
+
+
+  usbnet_read_cmd() internally calls usb_control_msg(), that returns
+
+  number of bytes read. Code should validate that requested number of bytes
+
+  was actually read.
+
+
+  So, this patch adds missing size validation check inside
+
+  mcs7830_get_reg() to prevent uninit value bugs
+
+
+  Reported-and-tested-by: syzbot+003c0a286b9af5412510@syzkaller.appspotmail.com
+
+  Fixes: 2a36d7083438 ("USB: driver for mcs7830 (aka DeLOCK) USB ethernet adapter")
+
+  Signed-off-by: Pavel Skripkin <paskripkin@gmail.com>
+
+  Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+
+  Link: https://lore.kernel.org/r/20220106225716.7425-1-paskripkin@gmail.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- drivers/net/usb
+hunk_count: 1
+covered_count: 1

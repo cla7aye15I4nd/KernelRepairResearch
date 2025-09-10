@@ -1,0 +1,68 @@
+id: a1c17e56a8a62294c714
+bug_link: https://syzkaller.appspot.com/bug?extid=a1c17e56a8a62294c714
+title: WARNING in pskb_expand_head
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7cba18332e3635aaae60e4e7d4e52849de50d91b
+fix_commit: dbae2b062824fc2d35ae2d5df2f500626c758e80
+datetime: '2022-09-29T18:48:15-07:00'
+fix_commit_message: 'net: skb: introduce and use a single page frag cache
+
+
+  After commit 3226b158e67c ("net: avoid 32 x truesize under-estimation
+
+  for tiny skbs") we are observing 10-20% regressions in performance
+
+  tests with small packets. The perf trace points to high pressure on
+
+  the slab allocator.
+
+
+  This change tries to improve the allocation schema for small packets
+
+  using an idea originally suggested by Eric: a new per CPU page frag is
+
+  introduced and used in __napi_alloc_skb to cope with small allocation
+
+  requests.
+
+
+  To ensure that the above does not lead to excessive truesize
+
+  underestimation, the frag size for small allocation is inflated to 1K
+
+  and all the above is restricted to build with 4K page size.
+
+
+  Note that we need to update accordingly the run-time check introduced
+
+  with commit fd9ea57f4e95 ("net: add napi_get_frags_check() helper").
+
+
+  Alex suggested a smart page refcount schema to reduce the number
+
+  of atomic operations and deal properly with pfmemalloc pages.
+
+
+  Under small packet UDP flood, I measure a 15% peak tput increases.
+
+
+  Suggested-by: Eric Dumazet <eric.dumazet@gmail.com>
+
+  Suggested-by: Alexander H Duyck <alexanderduyck@fb.com>
+
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+
+  Reviewed-by: Eric Dumazet <edumazet@google.com>
+
+  Reviewed-by: Alexander Duyck <alexanderduyck@fb.com>
+
+  Link: https://lore.kernel.org/r/6b6f65957c59f86a353fc09a5127e83a32ab5999.1664350652.git.pabeni@redhat.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- include/linux
+- net/core
+hunk_count: 8
+covered_count: 2

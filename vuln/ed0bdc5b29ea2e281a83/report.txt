@@ -1,0 +1,51 @@
+bucket 0:29 gen 0 data type btree sector count overflow: 0 + -256 > U32_MAX
+while marking u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq b6c44d07df4e9bb7 written 48 min_key POS_MIN durability: 1 ptr: 0:29:0 gen 0, continuing
+=====================================================
+BUG: KMSAN: uninit-value in packed_to_bkey_c fs/bcachefs/bkey.h:251 [inline]
+BUG: KMSAN: uninit-value in __bch2_bkey_cmp_left_packed+0x256/0x770 fs/bcachefs/bkey.c:1046
+ packed_to_bkey_c fs/bcachefs/bkey.h:251 [inline]
+ __bch2_bkey_cmp_left_packed+0x256/0x770 fs/bcachefs/bkey.c:1046
+ bkey_cmp_left_packed fs/bcachefs/bkey.h:88 [inline]
+ bch2_btree_bset_insert_key+0xe48/0x2b60 fs/bcachefs/btree_trans_commit.c:169
+ bch2_btree_insert_key_leaf+0x276/0x1050 fs/bcachefs/btree_trans_commit.c:300
+ bch2_trans_commit_write_locked fs/bcachefs/btree_trans_commit.c:820 [inline]
+ do_bch2_trans_commit fs/bcachefs/btree_trans_commit.c:900 [inline]
+ __bch2_trans_commit+0xaf5e/0xd190 fs/bcachefs/btree_trans_commit.c:1121
+ bch2_trans_commit fs/bcachefs/btree_update.h:184 [inline]
+ btree_update_nodes_written fs/bcachefs/btree_update_interior.c:723 [inline]
+ btree_interior_update_work+0x2080/0x4870 fs/bcachefs/btree_update_interior.c:861
+ process_one_work kernel/workqueue.c:3236 [inline]
+ process_scheduled_works+0xae0/0x1c40 kernel/workqueue.c:3317
+ worker_thread+0xea7/0x14f0 kernel/workqueue.c:3398
+ kthread+0x3e2/0x540 kernel/kthread.c:389
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Uninit was created at:
+ ___kmalloc_large_node+0x22c/0x370 mm/slub.c:4253
+ __kmalloc_large_node_noprof+0x3f/0x1e0 mm/slub.c:4270
+ __do_kmalloc_node mm/slub.c:4286 [inline]
+ __kmalloc_node_noprof+0xc96/0x1250 mm/slub.c:4304
+ __kvmalloc_node_noprof+0xc0/0x2d0 mm/util.c:645
+ btree_node_data_alloc fs/bcachefs/btree_cache.c:153 [inline]
+ bch2_btree_node_mem_alloc+0xa72/0x2ee0 fs/bcachefs/btree_cache.c:832
+ __bch2_btree_node_alloc fs/bcachefs/btree_update_interior.c:321 [inline]
+ bch2_btree_reserve_get+0x37f/0x2290 fs/bcachefs/btree_update_interior.c:549
+ bch2_btree_update_start+0x1af9/0x2d60 fs/bcachefs/btree_update_interior.c:1247
+ bch2_btree_split_leaf+0x120/0xc00 fs/bcachefs/btree_update_interior.c:1856
+ bch2_trans_commit_error+0x1c0/0x1d60 fs/bcachefs/btree_trans_commit.c:942
+ __bch2_trans_commit+0x210f/0xd190 fs/bcachefs/btree_trans_commit.c:1140
+ bch2_trans_commit fs/bcachefs/btree_update.h:184 [inline]
+ btree_update_nodes_written fs/bcachefs/btree_update_interior.c:723 [inline]
+ btree_interior_update_work+0x2080/0x4870 fs/bcachefs/btree_update_interior.c:861
+ process_one_work kernel/workqueue.c:3236 [inline]
+ process_scheduled_works+0xae0/0x1c40 kernel/workqueue.c:3317
+ worker_thread+0xea7/0x14f0 kernel/workqueue.c:3398
+ kthread+0x3e2/0x540 kernel/kthread.c:389
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+CPU: 0 UID: 0 PID: 6207 Comm: kworker/u8:37 Not tainted 6.13.0-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+Workqueue: btree_update btree_interior_update_work
+=====================================================

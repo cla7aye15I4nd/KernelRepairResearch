@@ -1,0 +1,30 @@
+id: 2d7ecdf99f15689032b3
+bug_link: https://syzkaller.appspot.com/bug?extid=2d7ecdf99f15689032b3
+title: memory leak in sctp_get_port_local (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e0e4b8de10ad3affe83cc91a1cf6d1e48cca333e
+fix_commit: 29b99f54a8e63f871cf4060406d09fd8b0d744d8
+datetime: '2019-09-13T22:06:20+02:00'
+fix_commit_message: "sctp: destroy bucket if failed to bind addr\n\nThere is one memory\
+  \ leak bug report:\nBUG: memory leak\nunreferenced object 0xffff8881dc4c5ec0 (size\
+  \ 40):\n  comm \"syz-executor.0\", pid 5673, jiffies 4298198457 (age 27.578s)\n\
+  \  hex dump (first 32 bytes):\n    02 00 00 00 81 88 ff ff 00 00 00 00 00 00 00\
+  \ 00  ................\n    f8 63 3d c1 81 88 ff ff 00 00 00 00 00 00 00 00  .c=.............\n\
+  \  backtrace:\n    [<0000000072006339>] sctp_get_port_local+0x2a1/0xa00 [sctp]\n\
+  \    [<00000000c7b379ec>] sctp_do_bind+0x176/0x2c0 [sctp]\n    [<000000005be274a2>]\
+  \ sctp_bind+0x5a/0x80 [sctp]\n    [<00000000b66b4044>] inet6_bind+0x59/0xd0 [ipv6]\n\
+  \    [<00000000c68c7f42>] __sys_bind+0x120/0x1f0 net/socket.c:1647\n    [<000000004513635b>]\
+  \ __do_sys_bind net/socket.c:1658 [inline]\n    [<000000004513635b>] __se_sys_bind\
+  \ net/socket.c:1656 [inline]\n    [<000000004513635b>] __x64_sys_bind+0x3e/0x50\
+  \ net/socket.c:1656\n    [<0000000061f2501e>] do_syscall_64+0x72/0x2e0 arch/x86/entry/common.c:296\n\
+  \    [<0000000003d1e05e>] entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\nThis is because\
+  \ in sctp_do_bind, if sctp_get_port_local is to\ncreate hash bucket successfully,\
+  \ and sctp_add_bind_addr failed\nto bind address, e.g return -ENOMEM, so memory\
+  \ leak found, it\nneeds to destroy allocated bucket.\n\nReported-by: Hulk Robot\
+  \ <hulkci@huawei.com>\nSigned-off-by: Mao Wenan <maowenan@huawei.com>\nAcked-by:\
+  \ Neil Horman <nhorman@tuxdriver.com>\nAcked-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 1
+covered_count: 1

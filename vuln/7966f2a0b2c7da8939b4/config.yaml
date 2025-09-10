@@ -1,0 +1,47 @@
+id: 7966f2a0b2c7da8939b4
+bug_link: https://syzkaller.appspot.com/bug?extid=7966f2a0b2c7da8939b4
+title: general protection fault in rxrpc_connect_call
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f2f1717592d4790790bdcc73dbbe4958d2d33198
+fix_commit: e835ada07091f40dcfb1bc735082bd0a7c005e59
+datetime: '2019-07-02T12:15:21-07:00'
+fix_commit_message: "rxrpc: Fix send on a connected, but unbound socket\n\nIf sendmsg()\
+  \ or sendmmsg() is called on a connected socket that hasn't had\nbind() called on\
+  \ it, then an oops will occur when the kernel tries to\nconnect the call because\
+  \ no local endpoint has been allocated.\n\nFix this by implicitly binding the socket\
+  \ if it is in the\nRXRPC_CLIENT_UNBOUND state, just like it does for the RXRPC_UNBOUND\
+  \ state.\n\nFurther, the state should be transitioned to RXRPC_CLIENT_BOUND after\
+  \ this\nto prevent further attempts to bind it.\n\nThis can be tested with:\n\n\t\
+  #include <stdio.h>\n\t#include <stdlib.h>\n\t#include <string.h>\n\t#include <sys/socket.h>\n\
+  \t#include <arpa/inet.h>\n\t#include <linux/rxrpc.h>\n\tstatic const unsigned char\
+  \ inet6_addr[16] = {\n\t\t0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0xac, 0x14, 0x14,\
+  \ 0xaa\n\t};\n\tint main(void)\n\t{\n\t\tstruct sockaddr_rxrpc srx;\n\t\tstruct\
+  \ cmsghdr *cm;\n\t\tstruct msghdr msg;\n\t\tunsigned char control[16];\n\t\tint\
+  \ fd;\n\t\tmemset(&srx, 0, sizeof(srx));\n\t\tsrx.srx_family = 0x21;\n\t\tsrx.srx_service\
+  \ = 0;\n\t\tsrx.transport_type = AF_INET;\n\t\tsrx.transport_len = 0x1c;\n\t\tsrx.transport.sin6.sin6_family\
+  \ = AF_INET6;\n\t\tsrx.transport.sin6.sin6_port = htons(0x4e22);\n\t\tsrx.transport.sin6.sin6_flowinfo\
+  \ = htons(0x4e22);\n\t\tsrx.transport.sin6.sin6_scope_id = htons(0xaa3b);\n\t\t\
+  memcpy(&srx.transport.sin6.sin6_addr, inet6_addr, 16);\n\t\tcm = (struct cmsghdr\
+  \ *)control;\n\t\tcm->cmsg_len\t= CMSG_LEN(sizeof(unsigned long));\n\t\tcm->cmsg_level\t\
+  = SOL_RXRPC;\n\t\tcm->cmsg_type\t= RXRPC_USER_CALL_ID;\n\t\t*(unsigned long *)CMSG_DATA(cm)\
+  \ = 0;\n\t\tmsg.msg_name = NULL;\n\t\tmsg.msg_namelen = 0;\n\t\tmsg.msg_iov = NULL;\n\
+  \t\tmsg.msg_iovlen = 0;\n\t\tmsg.msg_control = control;\n\t\tmsg.msg_controllen\
+  \ = cm->cmsg_len;\n\t\tmsg.msg_flags = 0;\n\t\tfd = socket(AF_RXRPC, SOCK_DGRAM,\
+  \ AF_INET);\n\t\tconnect(fd, (struct sockaddr *)&srx, sizeof(srx));\n\t\tsendmsg(fd,\
+  \ &msg, 0);\n\t\treturn 0;\n\t}\n\nLeading to the following oops:\n\n\tBUG: kernel\
+  \ NULL pointer dereference, address: 0000000000000018\n\t#PF: supervisor read access\
+  \ in kernel mode\n\t#PF: error_code(0x0000) - not-present page\n\t...\n\tRIP: 0010:rxrpc_connect_call+0x42/0xa01\n\
+  \t...\n\tCall Trace:\n\t ? mark_held_locks+0x47/0x59\n\t ? __local_bh_enable_ip+0xb6/0xba\n\
+  \t rxrpc_new_client_call+0x3b1/0x762\n\t ? rxrpc_do_sendmsg+0x3c0/0x92e\n\t rxrpc_do_sendmsg+0x3c0/0x92e\n\
+  \t rxrpc_sendmsg+0x16b/0x1b5\n\t sock_sendmsg+0x2d/0x39\n\t ___sys_sendmsg+0x1a4/0x22a\n\
+  \t ? release_sock+0x19/0x9e\n\t ? reacquire_held_locks+0x136/0x160\n\t ? release_sock+0x19/0x9e\n\
+  \t ? find_held_lock+0x2b/0x6e\n\t ? __lock_acquire+0x268/0xf73\n\t ? rxrpc_connect+0xdd/0xe4\n\
+  \t ? __local_bh_enable_ip+0xb6/0xba\n\t __sys_sendmsg+0x5e/0x94\n\t do_syscall_64+0x7d/0x1bf\n\
+  \t entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\nFixes: 2341e0775747 (\"rxrpc: Simplify\
+  \ connect() implementation and simplify sendmsg() op\")\nReported-by: syzbot+7966f2a0b2c7da8939b4@syzkaller.appspotmail.com\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\nReviewed-by: Marc Dionne <marc.dionne@auristor.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/rxrpc
+hunk_count: 2
+covered_count: 2

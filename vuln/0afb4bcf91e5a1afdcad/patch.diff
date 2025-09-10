@@ -1,0 +1,86 @@
+diff --git a/Documentation/networking/netdevices.rst b/Documentation/networking/netdevices.rst
+index d235a7364893..ebb868f50ac2 100644
+--- a/Documentation/networking/netdevices.rst
++++ b/Documentation/networking/netdevices.rst
+@@ -290,6 +290,12 @@ ndo_set_rx_mode:
+ 	Synchronization: netif_addr_lock spinlock.
+ 	Context: BHs disabled
+ 
++ndo_setup_tc:
++	``TC_SETUP_BLOCK`` and ``TC_SETUP_FT`` are running under NFT locks
++	(i.e. no ``rtnl_lock`` and no device instance lock). The rest of
++	``tc_setup_type`` types run under netdev instance lock if the driver
++	implements queue management or shaper API.
++
+ Most ndo callbacks not specified in the list above are running
+ under ``rtnl_lock``. In addition, netdev instance lock is taken as well if
+ the driver implements queue management or shaper API.
+diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
+index 9a297757df7e..0dbfe069a6e3 100644
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -3316,8 +3316,6 @@ int dev_open(struct net_device *dev, struct netlink_ext_ack *extack);
+ void netif_close(struct net_device *dev);
+ void dev_close(struct net_device *dev);
+ void dev_close_many(struct list_head *head, bool unlink);
+-int dev_setup_tc(struct net_device *dev, enum tc_setup_type type,
+-		 void *type_data);
+ void netif_disable_lro(struct net_device *dev);
+ void dev_disable_lro(struct net_device *dev);
+ int dev_loopback_xmit(struct net *net, struct sock *sk, struct sk_buff *newskb);
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 1cb134ff7327..812134b71f05 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -1761,25 +1761,6 @@ void netif_close(struct net_device *dev)
+ 	}
+ }
+ 
+-int dev_setup_tc(struct net_device *dev, enum tc_setup_type type,
+-		 void *type_data)
+-{
+-	const struct net_device_ops *ops = dev->netdev_ops;
+-	int ret;
+-
+-	ASSERT_RTNL();
+-
+-	if (!ops->ndo_setup_tc)
+-		return -EOPNOTSUPP;
+-
+-	netdev_lock_ops(dev);
+-	ret = ops->ndo_setup_tc(dev, type, type_data);
+-	netdev_unlock_ops(dev);
+-
+-	return ret;
+-}
+-EXPORT_SYMBOL(dev_setup_tc);
+-
+ void netif_disable_lro(struct net_device *dev)
+ {
+ 	struct net_device *lower_dev;
+diff --git a/net/netfilter/nf_flow_table_offload.c b/net/netfilter/nf_flow_table_offload.c
+index 0ec4abded10d..e06bc36f49fe 100644
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -1175,7 +1175,7 @@ static int nf_flow_table_offload_cmd(struct flow_block_offload *bo,
+ 	nf_flow_table_block_offload_init(bo, dev_net(dev), cmd, flowtable,
+ 					 extack);
+ 	down_write(&flowtable->flow_block_lock);
+-	err = dev_setup_tc(dev, TC_SETUP_FT, bo);
++	err = dev->netdev_ops->ndo_setup_tc(dev, TC_SETUP_FT, bo);
+ 	up_write(&flowtable->flow_block_lock);
+ 	if (err < 0)
+ 		return err;
+diff --git a/net/netfilter/nf_tables_offload.c b/net/netfilter/nf_tables_offload.c
+index b761899c143c..64675f1c7f29 100644
+--- a/net/netfilter/nf_tables_offload.c
++++ b/net/netfilter/nf_tables_offload.c
+@@ -390,7 +390,7 @@ static int nft_block_offload_cmd(struct nft_base_chain *chain,
+ 
+ 	nft_flow_block_offload_init(&bo, dev_net(dev), cmd, chain, &extack);
+ 
+-	err = dev_setup_tc(dev, TC_SETUP_BLOCK, &bo);
++	err = dev->netdev_ops->ndo_setup_tc(dev, TC_SETUP_BLOCK, &bo);
+ 	if (err < 0)
+ 		return err;
+ 

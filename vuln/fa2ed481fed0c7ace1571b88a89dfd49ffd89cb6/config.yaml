@@ -1,0 +1,62 @@
+id: fa2ed481fed0c7ace1571b88a89dfd49ffd89cb6
+bug_link: https://syzkaller.appspot.com/bug?extid=fa2ed481fed0c7ace1571b88a89dfd49ffd89cb6
+title: general protection fault in crypto_chacha20_crypt
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 50c4c4e268a2d7a3e58ebb698ac74da0de40ae36
+fix_commit: 2b4f27c36bcd46e820ddb9a8e6fe6a63fa4250b8
+datetime: '2017-12-11T22:29:53+11:00'
+fix_commit_message: 'crypto: skcipher - set walk.iv for zero-length inputs
+
+
+  All the ChaCha20 algorithms as well as the ARM bit-sliced AES-XTS
+
+  algorithms call skcipher_walk_virt(), then access the IV (walk.iv)
+
+  before checking whether any bytes need to be processed (walk.nbytes).
+
+
+  But if the input is empty, then skcipher_walk_virt() doesn''t set the IV,
+
+  and the algorithms crash trying to use the uninitialized IV pointer.
+
+
+  Fix it by setting the IV earlier in skcipher_walk_virt().  Also fix it
+
+  for the AEAD walk functions.
+
+
+  This isn''t a perfect solution because we can''t actually align the IV to
+
+  ->cra_alignmask unless there are bytes to process, for one because the
+
+  temporary buffer for the aligned IV is freed by skcipher_walk_done(),
+
+  which is only called when there are bytes to process.  Thus, algorithms
+
+  that require aligned IVs will still need to avoid accessing the IV when
+
+  walk.nbytes == 0.  Still, many algorithms/architectures are fine with
+
+  IVs having any alignment, and even for those that aren''t, a misaligned
+
+  pointer bug is much less severe than an uninitialized pointer bug.
+
+
+  This change also matches the behavior of the older blkcipher_walk API.
+
+
+  Fixes: 0cabf2af6f5a ("crypto: skcipher - Fix crash on zero-length input")
+
+  Reported-by: syzbot <syzkaller@googlegroups.com>
+
+  Cc: <stable@vger.kernel.org> # v4.14+
+
+  Signed-off-by: Eric Biggers <ebiggers@google.com>
+
+  Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+
+  '
+submodule:
+- crypto
+hunk_count: 4
+covered_count: 0

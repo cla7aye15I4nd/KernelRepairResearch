@@ -1,0 +1,26 @@
+id: 291100dcb32190ec02a8
+bug_link: https://syzkaller.appspot.com/bug?extid=291100dcb32190ec02a8
+title: general protection fault in bpf_prog_offload_verifier_prep
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a34a9f1a19afe9c60ca0ea61dfeee63a1c2baac8
+fix_commit: 1a49f4195d3498fe458a7f5ff7ec5385da70d92e
+datetime: '2023-09-11T22:06:06-07:00'
+fix_commit_message: "bpf: Avoid dummy bpf_offload_netdev in __bpf_prog_dev_bound_init\n\
+  \nFix for a bug observable under the following sequence of events:\n1. Create a\
+  \ network device that does not support XDP offload.\n2. Load a device bound XDP\
+  \ program with BPF_F_XDP_DEV_BOUND_ONLY flag\n   (such programs are not offloaded).\n\
+  3. Load a device bound XDP program with zero flags\n   (such programs are offloaded).\n\
+  \nAt step (2) __bpf_prog_dev_bound_init() associates with device (1)\na dummy bpf_offload_netdev\
+  \ struct with .offdev field set to NULL.\nAt step (3) __bpf_prog_dev_bound_init()\
+  \ would reuse dummy struct\nallocated at step (2).\nHowever, downstream usage of\
+  \ the bpf_offload_netdev assumes that\n.offdev field can't be NULL, e.g. in bpf_prog_offload_verifier_prep().\n\
+  \nAdjust __bpf_prog_dev_bound_init() to require bpf_offload_netdev\nwith non-NULL\
+  \ .offdev for offloaded BPF programs.\n\nFixes: 2b3486bc2d23 (\"bpf: Introduce device-bound\
+  \ XDP programs\")\nReported-by: syzbot+291100dcb32190ec02a8@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/bpf/000000000000d97f3c060479c4f8@google.com/\nSigned-off-by:\
+  \ Eduard Zingerman <eddyz87@gmail.com>\nLink: https://lore.kernel.org/r/20230912005539.2248244-2-eddyz87@gmail.com\n\
+  Signed-off-by: Martin KaFai Lau <martin.lau@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 0

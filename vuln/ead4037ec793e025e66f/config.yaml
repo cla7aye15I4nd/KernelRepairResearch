@@ -1,0 +1,27 @@
+id: ead4037ec793e025e66f
+bug_link: https://syzkaller.appspot.com/bug?extid=ead4037ec793e025e66f
+title: general protection fault in ath6kl_usb_alloc_urb_from_pipe
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 355cf31912014e6ff1bb1019ae4858cad12c68cf
+fix_commit: 39d170b3cb62ba98567f5c4f40c27b5864b304e5
+datetime: '2019-09-04T09:23:26+03:00'
+fix_commit_message: "ath6kl: fix a NULL-ptr-deref bug in ath6kl_usb_alloc_urb_from_pipe()\n\
+  \nThe `ar_usb` field of `ath6kl_usb_pipe_usb_pipe` objects\nare initialized to point\
+  \ to the containing `ath6kl_usb` object\naccording to endpoint descriptors read\
+  \ from the device side, as shown\nbelow in `ath6kl_usb_setup_pipe_resources`:\n\n\
+  for (i = 0; i < iface_desc->desc.bNumEndpoints; ++i) {\n\tendpoint = &iface_desc->endpoint[i].desc;\n\
+  \n\t// get the address from endpoint descriptor\n\tpipe_num = ath6kl_usb_get_logical_pipe_num(ar_usb,\n\
+  \t\t\t\t\t\tendpoint->bEndpointAddress,\n\t\t\t\t\t\t&urbcount);\n\t......\n\t//\
+  \ select the pipe object\n\tpipe = &ar_usb->pipes[pipe_num];\n\n\t// initialize\
+  \ the ar_usb field\n\tpipe->ar_usb = ar_usb;\n}\n\nThe driver assumes that the addresses\
+  \ reported in endpoint\ndescriptors from device side  to be complete. If a device\
+  \ is\nmalicious and does not report complete addresses, it may trigger\nNULL-ptr-deref\
+  \ `ath6kl_usb_alloc_urb_from_pipe` and\n`ath6kl_usb_free_urb_to_pipe`.\n\nThis patch\
+  \ fixes the bug by preventing potential NULL-ptr-deref\n(CVE-2019-15098).\n\nSigned-off-by:\
+  \ Hui Peng <benquike@gmail.com>\nReported-by: Hui Peng <benquike@gmail.com>\nReported-by:\
+  \ Mathias Payer <mathias.payer@nebelwelt.net>\nReviewed-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n\
+  Signed-off-by: Kalle Valo <kvalo@codeaurora.org>\n"
+submodule:
+- drivers/net/wireless/ath/ath6kl
+hunk_count: 2
+covered_count: 2

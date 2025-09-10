@@ -1,0 +1,35 @@
+diff --git a/fs/jfs/jfs_dmap.c b/fs/jfs/jfs_dmap.c
+index ccdfa38d7a68..8847e8c5d5b4 100644
+--- a/fs/jfs/jfs_dmap.c
++++ b/fs/jfs/jfs_dmap.c
+@@ -187,7 +187,7 @@ int dbMount(struct inode *ipbmap)
+ 	}
+ 
+ 	bmp->db_numag = le32_to_cpu(dbmp_le->dn_numag);
+-	if (!bmp->db_numag) {
++	if (!bmp->db_numag || bmp->db_numag >= MAXAG) {
+ 		err = -EINVAL;
+ 		goto err_release_metapage;
+ 	}
+@@ -652,7 +652,7 @@ int dbNextAG(struct inode *ipbmap)
+ 	 * average free space.
+ 	 */
+ 	for (i = 0 ; i < bmp->db_numag; i++, agpref++) {
+-		if (agpref == bmp->db_numag)
++		if (agpref >= bmp->db_numag)
+ 			agpref = 0;
+ 
+ 		if (atomic_read(&bmp->db_active[agpref]))
+diff --git a/fs/jfs/jfs_imap.c b/fs/jfs/jfs_imap.c
+index 1407feccbc2d..a360b24ed320 100644
+--- a/fs/jfs/jfs_imap.c
++++ b/fs/jfs/jfs_imap.c
+@@ -1360,7 +1360,7 @@ int diAlloc(struct inode *pip, bool dir, struct inode *ip)
+ 	/* get the ag number of this iag */
+ 	agno = BLKTOAG(JFS_IP(pip)->agstart, JFS_SBI(pip->i_sb));
+ 	dn_numag = JFS_SBI(pip->i_sb)->bmap->db_numag;
+-	if (agno < 0 || agno > dn_numag)
++	if (agno < 0 || agno > dn_numag || agno >= MAXAG)
+ 		return -EIO;
+ 
+ 	if (atomic_read(&JFS_SBI(pip->i_sb)->bmap->db_active[agno])) {

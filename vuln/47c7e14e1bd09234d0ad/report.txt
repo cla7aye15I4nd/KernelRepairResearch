@@ -1,0 +1,185 @@
+ntfs3: loop0: Mark volume as dirty due to NTFS errors
+ntfs3: loop0: Failed to load $Extend (-22).
+ntfs3: loop0: Failed to initialize $Extend.
+======================================================
+WARNING: possible circular locking dependency detected
+6.11.0-syzkaller-11728-gad46e8f95e93 #0 Not tainted
+------------------------------------------------------
+syz-executor227/5222 is trying to acquire lock:
+ffff888075298538 (mapping.invalidate_lock#3){.+.+}-{3:3}, at: filemap_invalidate_lock_shared include/linux/fs.h:870 [inline]
+ffff888075298538 (mapping.invalidate_lock#3){.+.+}-{3:3}, at: page_cache_ra_unbounded+0x135/0x8a0 mm/readahead.c:226
+
+but task is already holding lock:
+ffff888075298100 (&ni->ni_lock/4){+.+.}-{3:3}, at: ni_lock fs/ntfs3/ntfs_fs.h:1109 [inline]
+ffff888075298100 (&ni->ni_lock/4){+.+.}-{3:3}, at: ntfs_fiemap+0xff/0x180 fs/ntfs3/file.c:1276
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&ni->ni_lock/4){+.+.}-{3:3}:
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5822
+       __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+       __mutex_lock+0x136/0xd70 kernel/locking/mutex.c:752
+       ni_lock fs/ntfs3/ntfs_fs.h:1109 [inline]
+       ntfs_read_folio+0xc0/0x210 fs/ntfs3/inode.c:718
+       filemap_read_folio+0x14b/0x630 mm/filemap.c:2367
+       filemap_fault+0x115b/0x1950 mm/filemap.c:3435
+       __do_fault+0x135/0x460 mm/memory.c:4876
+       do_shared_fault mm/memory.c:5346 [inline]
+       do_fault mm/memory.c:5420 [inline]
+       do_pte_missing mm/memory.c:3965 [inline]
+       handle_pte_fault+0x1105/0x6800 mm/memory.c:5751
+       __handle_mm_fault mm/memory.c:5894 [inline]
+       handle_mm_fault+0x1053/0x1ad0 mm/memory.c:6062
+       do_user_addr_fault arch/x86/mm/fault.c:1338 [inline]
+       handle_page_fault arch/x86/mm/fault.c:1481 [inline]
+       exc_page_fault+0x459/0x8c0 arch/x86/mm/fault.c:1539
+       asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+
+-> #0 (mapping.invalidate_lock#3){.+.+}-{3:3}:
+       check_prev_add kernel/locking/lockdep.c:3158 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3277 [inline]
+       validate_chain+0x18ef/0x5920 kernel/locking/lockdep.c:3901
+       __lock_acquire+0x1384/0x2050 kernel/locking/lockdep.c:5199
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5822
+       down_read+0xb1/0xa40 kernel/locking/rwsem.c:1526
+       filemap_invalidate_lock_shared include/linux/fs.h:870 [inline]
+       page_cache_ra_unbounded+0x135/0x8a0 mm/readahead.c:226
+       do_sync_mmap_readahead+0x499/0x970
+       filemap_fault+0x8c5/0x1950 mm/filemap.c:3343
+       __do_fault+0x135/0x460 mm/memory.c:4876
+       do_shared_fault mm/memory.c:5346 [inline]
+       do_fault mm/memory.c:5420 [inline]
+       do_pte_missing mm/memory.c:3965 [inline]
+       handle_pte_fault+0x1105/0x6800 mm/memory.c:5751
+       __handle_mm_fault mm/memory.c:5894 [inline]
+       handle_mm_fault+0x1053/0x1ad0 mm/memory.c:6062
+       do_user_addr_fault arch/x86/mm/fault.c:1389 [inline]
+       handle_page_fault arch/x86/mm/fault.c:1481 [inline]
+       exc_page_fault+0x2b9/0x8c0 arch/x86/mm/fault.c:1539
+       asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+       rep_movs_alternative+0x4a/0x70 arch/x86/lib/copy_user_64.S:65
+       copy_user_generic arch/x86/include/asm/uaccess_64.h:121 [inline]
+       raw_copy_to_user arch/x86/include/asm/uaccess_64.h:142 [inline]
+       _inline_copy_to_user include/linux/uaccess.h:188 [inline]
+       _copy_to_user+0x86/0xb0 lib/usercopy.c:26
+       copy_to_user include/linux/uaccess.h:216 [inline]
+       ni_fiemap+0x5b4/0x1910 fs/ntfs3/frecord.c:2140
+       ntfs_fiemap+0x132/0x180 fs/ntfs3/file.c:1278
+       ioctl_fiemap fs/ioctl.c:220 [inline]
+       do_vfs_ioctl+0x1bf8/0x2e40 fs/ioctl.c:841
+       __do_sys_ioctl fs/ioctl.c:905 [inline]
+       __se_sys_ioctl+0x81/0x170 fs/ioctl.c:893
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&ni->ni_lock/4);
+                               lock(mapping.invalidate_lock#3);
+                               lock(&ni->ni_lock/4);
+  rlock(mapping.invalidate_lock#3);
+
+ *** DEADLOCK ***
+
+1 lock held by syz-executor227/5222:
+ #0: ffff888075298100 (&ni->ni_lock/4){+.+.}-{3:3}, at: ni_lock fs/ntfs3/ntfs_fs.h:1109 [inline]
+ #0: ffff888075298100 (&ni->ni_lock/4){+.+.}-{3:3}, at: ntfs_fiemap+0xff/0x180 fs/ntfs3/file.c:1276
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 5222 Comm: syz-executor227 Not tainted 6.11.0-syzkaller-11728-gad46e8f95e93 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_circular_bug+0x13a/0x1b0 kernel/locking/lockdep.c:2074
+ check_noncircular+0x36a/0x4a0 kernel/locking/lockdep.c:2203
+ check_prev_add kernel/locking/lockdep.c:3158 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3277 [inline]
+ validate_chain+0x18ef/0x5920 kernel/locking/lockdep.c:3901
+ __lock_acquire+0x1384/0x2050 kernel/locking/lockdep.c:5199
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5822
+ down_read+0xb1/0xa40 kernel/locking/rwsem.c:1526
+ filemap_invalidate_lock_shared include/linux/fs.h:870 [inline]
+ page_cache_ra_unbounded+0x135/0x8a0 mm/readahead.c:226
+ do_sync_mmap_readahead+0x499/0x970
+ filemap_fault+0x8c5/0x1950 mm/filemap.c:3343
+ __do_fault+0x135/0x460 mm/memory.c:4876
+ do_shared_fault mm/memory.c:5346 [inline]
+ do_fault mm/memory.c:5420 [inline]
+ do_pte_missing mm/memory.c:3965 [inline]
+ handle_pte_fault+0x1105/0x6800 mm/memory.c:5751
+ __handle_mm_fault mm/memory.c:5894 [inline]
+ handle_mm_fault+0x1053/0x1ad0 mm/memory.c:6062
+ do_user_addr_fault arch/x86/mm/fault.c:1389 [inline]
+ handle_page_fault arch/x86/mm/fault.c:1481 [inline]
+ exc_page_fault+0x2b9/0x8c0 arch/x86/mm/fault.c:1539
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+RIP: 0010:rep_movs_alternative+0x4a/0x70 arch/x86/lib/copy_user_64.S:71
+Code: 75 f1 c3 cc cc cc cc 66 0f 1f 84 00 00 00 00 00 48 8b 06 48 89 07 48 83 c6 08 48 83 c7 08 83 e9 08 74 df 83 f9 08 73 e8 eb c9 <f3> a4 c3 cc cc cc cc 48 89 c8 48 c1 e9 03 83 e0 07 f3 48 a5 89 c1
+RSP: 0018:ffffc90003d0f6d0 EFLAGS: 00050206
+RAX: ffffffff84b32e01 RBX: 00000000200012d0 RCX: 00000000000002d0
+RDX: 0000000000000000 RSI: ffff888012984d60 RDI: 0000000020001000
+RBP: ffffc90003d0f8d0 R08: ffff88801298502f R09: 1ffff11002530a05
+R10: dffffc0000000000 R11: ffffed1002530a06 R12: 0000000000001030
+R13: 1ffff920007a1f00 R14: 00000000200002a0 R15: ffff888012984000
+ copy_user_generic arch/x86/include/asm/uaccess_64.h:121 [inline]
+ raw_copy_to_user arch/x86/include/asm/uaccess_64.h:142 [inline]
+ _inline_copy_to_user include/linux/uaccess.h:188 [inline]
+ _copy_to_user+0x86/0xb0 lib/usercopy.c:26
+ copy_to_user include/linux/uaccess.h:216 [inline]
+ ni_fiemap+0x5b4/0x1910 fs/ntfs3/frecord.c:2140
+ ntfs_fiemap+0x132/0x180 fs/ntfs3/file.c:1278
+ ioctl_fiemap fs/ioctl.c:220 [inline]
+ do_vfs_ioctl+0x1bf8/0x2e40 fs/ioctl.c:841
+ __do_sys_ioctl fs/ioctl.c:905 [inline]
+ __se_sys_ioctl+0x81/0x170 fs/ioctl.c:893
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f052ee927f9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffffe2fd5e8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007ffffe2fd7b8 RCX: 00007f052ee927f9
+RDX: 0000000020000280 RSI: 00000000c020660b RDI: 0000000000000005
+RBP: 00007f052ef24610 R08: 00007ffffe2fd7b8 R09: 00007ffffe2fd7b8
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffffe2fd7a8 R14: 0000000000000001 R15: 0000000000000001
+----------------
+Code disassembly (best guess):
+   0:	75 f1                	jne    0xfffffff3
+   2:	c3                   	ret
+   3:	cc                   	int3
+   4:	cc                   	int3
+   5:	cc                   	int3
+   6:	cc                   	int3
+   7:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+   e:	00 00
+  10:	48 8b 06             	mov    (%rsi),%rax
+  13:	48 89 07             	mov    %rax,(%rdi)
+  16:	48 83 c6 08          	add    $0x8,%rsi
+  1a:	48 83 c7 08          	add    $0x8,%rdi
+  1e:	83 e9 08             	sub    $0x8,%ecx
+  21:	74 df                	je     0x2
+  23:	83 f9 08             	cmp    $0x8,%ecx
+  26:	73 e8                	jae    0x10
+  28:	eb c9                	jmp    0xfffffff3
+* 2a:	f3 a4                	rep movsb %ds:(%rsi),%es:(%rdi) <-- trapping instruction
+  2c:	c3                   	ret
+  2d:	cc                   	int3
+  2e:	cc                   	int3
+  2f:	cc                   	int3
+  30:	cc                   	int3
+  31:	48 89 c8             	mov    %rcx,%rax
+  34:	48 c1 e9 03          	shr    $0x3,%rcx
+  38:	83 e0 07             	and    $0x7,%eax
+  3b:	f3 48 a5             	rep movsq %ds:(%rsi),%es:(%rdi)
+  3e:	89 c1                	mov    %eax,%ecx

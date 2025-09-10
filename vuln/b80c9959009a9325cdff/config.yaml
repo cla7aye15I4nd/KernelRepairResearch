@@ -1,0 +1,23 @@
+id: b80c9959009a9325cdff
+bug_link: https://syzkaller.appspot.com/bug?extid=b80c9959009a9325cdff
+title: memory leak in hwsim_add_one
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ab372c2293f5d0b279f31c8d768566ea37602dc9
+fix_commit: 28a5501c3383f0e6643012c187b7c2027ef42aea
+datetime: '2021-06-22T21:09:53+02:00'
+fix_commit_message: "ieee802154: hwsim: Fix memory leak in hwsim_add_one\n\nNo matter\
+  \ from hwsim_remove or hwsim_del_radio_nl, hwsim_del fails to\nremove the entry\
+  \ in the edges list. Take the example below, phy0, phy1\nand e0 will be deleted,\
+  \ resulting in e1 not freed and accessed in the\nfuture.\n\n              hwsim_phys\n\
+  \                  |\n    ------------------------------\n    |                \
+  \            |\nphy0 (edges)                 phy1 (edges)\n   ----> e1 (idx = 1)\
+  \             ----> e0 (idx = 0)\n\nFix this by deleting and freeing all the entries\
+  \ in the edges list\nbetween hwsim_edge_unsubscribe_me and list_del(&phy->list).\n\
+  \nReported-by: syzbot+b80c9959009a9325cdff@syzkaller.appspotmail.com\nFixes: 1c9f4a3fce77\
+  \ (\"ieee802154: hwsim: fix rcu handling\")\nSigned-off-by: Dongliang Mu <mudongliangabcd@gmail.com>\n\
+  Acked-by: Alexander Aring <aahringo@redhat.com>\nLink: https://lore.kernel.org/r/20210616020901.2759466-1-mudongliangabcd@gmail.com\n\
+  Signed-off-by: Stefan Schmidt <stefan@datenfreihafen.org>\n"
+submodule:
+- drivers/net/ieee802154
+hunk_count: 1
+covered_count: 1

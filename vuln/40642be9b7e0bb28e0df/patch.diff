@@ -1,0 +1,24 @@
+diff --git a/fs/f2fs/super.c b/fs/f2fs/super.c
+index a43d8a46a6e5..68a6c2eedcac 100644
+--- a/fs/f2fs/super.c
++++ b/fs/f2fs/super.c
+@@ -4196,6 +4196,9 @@ static int f2fs_fill_super(struct super_block *sb, void *data, int silent)
+ 	if (err)
+ 		goto free_bio_info;
+ 
++	spin_lock_init(&sbi->error_lock);
++	memcpy(sbi->errors, raw_super->s_errors, MAX_F2FS_ERRORS);
++
+ 	init_f2fs_rwsem(&sbi->cp_rwsem);
+ 	init_f2fs_rwsem(&sbi->quota_sem);
+ 	init_waitqueue_head(&sbi->cp_wait);
+@@ -4263,9 +4266,6 @@ static int f2fs_fill_super(struct super_block *sb, void *data, int silent)
+ 		goto free_devices;
+ 	}
+ 
+-	spin_lock_init(&sbi->error_lock);
+-	memcpy(sbi->errors, raw_super->s_errors, MAX_F2FS_ERRORS);
+-
+ 	sbi->total_valid_node_count =
+ 				le32_to_cpu(sbi->ckpt->valid_node_count);
+ 	percpu_counter_set(&sbi->total_valid_inode_count,

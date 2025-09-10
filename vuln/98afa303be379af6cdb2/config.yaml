@@ -1,0 +1,42 @@
+id: 98afa303be379af6cdb2
+bug_link: https://syzkaller.appspot.com/bug?extid=98afa303be379af6cdb2
+title: 'KMSAN: uninit-value in skb_trim (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6274df2530e35193ebac311d492d276a73162b57
+fix_commit: 94745807f3ebd379f23865e6dab196f220664179
+datetime: '2024-08-16T13:10:47+03:00'
+fix_commit_message: 'wifi: ath9k_htc: Use __skb_set_length() for resetting urb before
+  resubmit
+
+
+  Syzbot points out that skb_trim() has a sanity check on the existing length of
+
+  the skb, which can be uninitialised in some error paths. The intent here is
+
+  clearly just to reset the length to zero before resubmitting, so switch to
+
+  calling __skb_set_length(skb, 0) directly. In addition, __skb_set_length()
+
+  already contains a call to skb_reset_tail_pointer(), so remove the redundant
+
+  call.
+
+
+  The syzbot report came from ath9k_hif_usb_reg_in_cb(), but there''s a similar
+
+  usage of skb_trim() in ath9k_hif_usb_rx_cb(), change both while we''re at it.
+
+
+  Reported-by: syzbot+98afa303be379af6cdb2@syzkaller.appspotmail.com
+
+  Signed-off-by: Toke Høiland-Jørgensen <toke@redhat.com>
+
+  Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+
+  Link: https://patch.msgid.link/20240812142447.12328-1-toke@toke.dk
+
+  '
+submodule:
+- drivers/net/wireless/ath/ath9k
+hunk_count: 2
+covered_count: 2

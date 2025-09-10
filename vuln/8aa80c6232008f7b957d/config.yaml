@@ -1,0 +1,63 @@
+id: 8aa80c6232008f7b957d
+bug_link: https://syzkaller.appspot.com/bug?extid=8aa80c6232008f7b957d
+title: 'BUG: unable to handle kernel paging request in nsim_queue_free'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a58893aa173923fdc49c2d35d638d8133065e952
+fix_commit: b2cafefaf0473bafb0c3502a8530167d35e06113
+datetime: '2025-08-13T17:26:39-07:00'
+fix_commit_message: "netdevsim: Fix wild pointer access in nsim_queue_free().\n\n\
+  syzbot reported the splat below. [0]\n\nWhen nsim_queue_uninit() is called from\
+  \ nsim_init_netdevsim(),\nregister_netdevice() has not been called, thus dev->dstats\
+  \ has\nnot been allocated.\n\nLet's not call dev_dstats_rx_dropped_add() in such\
+  \ a case.\n\n[0]\nBUG: unable to handle page fault for address: ffff88809782c020\n\
+  \ PF: supervisor write access in kernel mode\n PF: error_code(0x0002) - not-present\
+  \ page\nPGD 1b401067 P4D 1b401067 PUD 0\nOops: Oops: 0002 [#1] SMP KASAN NOPTI\n\
+  CPU: 3 UID: 0 PID: 8476 Comm: syz.1.251 Not tainted 6.16.0-syzkaller-06699-ge8d780dcd957\
+  \ #0 PREEMPT(full)\nHardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1\
+  \ 04/01/2014\nRIP: 0010:local_add arch/x86/include/asm/local.h:33 [inline]\nRIP:\
+  \ 0010:u64_stats_add include/linux/u64_stats_sync.h:89 [inline]\nRIP: 0010:dev_dstats_rx_dropped_add\
+  \ include/linux/netdevice.h:3027 [inline]\nRIP: 0010:nsim_queue_free+0xba/0x120\
+  \ drivers/net/netdevsim/netdev.c:714\nCode: 07 77 6c 4a 8d 3c ed 20 7e f1 8d 48\
+  \ b8 00 00 00 00 00 fc ff df 48 89 fa 48 c1 ea 03 80 3c 02 00 75 46 4a 03 1c ed\
+  \ 20 7e f1 8d <4c> 01 63 20 be 00 02 00 00 48 8d 3d 00 00 00 00 e8 61 2f 58 fa 48\n\
+  RSP: 0018:ffffc900044af150 EFLAGS: 00010286\nRAX: dffffc0000000000 RBX: ffff88809782c000\
+  \ RCX: 00000000000079c3\nRDX: 1ffffffff1be2fc7 RSI: ffffffff8c15f380 RDI: ffffffff8df17e38\n\
+  RBP: ffff88805f59d000 R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000001\
+  \ R11: 0000000000000001 R12: 0000000000000000\nR13: 0000000000000003 R14: ffff88806ceb3d00\
+  \ R15: ffffed100dfd308e\nFS:  0000000000000000(0000) GS:ffff88809782c000(0063) knlGS:00000000f505db40\n\
+  CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033\nCR2: ffff88809782c020 CR3: 000000006fc6a000\
+  \ CR4: 0000000000352ef0\nCall Trace:\n <TASK>\n nsim_queue_uninit drivers/net/netdevsim/netdev.c:993\
+  \ [inline]\n nsim_init_netdevsim drivers/net/netdevsim/netdev.c:1049 [inline]\n\
+  \ nsim_create+0xd0a/0x1260 drivers/net/netdevsim/netdev.c:1101\n __nsim_dev_port_add+0x435/0x7d0\
+  \ drivers/net/netdevsim/dev.c:1438\n nsim_dev_port_add_all drivers/net/netdevsim/dev.c:1494\
+  \ [inline]\n nsim_dev_reload_create drivers/net/netdevsim/dev.c:1546 [inline]\n\
+  \ nsim_dev_reload_up+0x5b8/0x860 drivers/net/netdevsim/dev.c:1003\n devlink_reload+0x322/0x7c0\
+  \ net/devlink/dev.c:474\n devlink_nl_reload_doit+0xe31/0x1410 net/devlink/dev.c:584\n\
+  \ genl_family_rcv_msg_doit+0x206/0x2f0 net/netlink/genetlink.c:1115\n genl_family_rcv_msg\
+  \ net/netlink/genetlink.c:1195 [inline]\n genl_rcv_msg+0x55c/0x800 net/netlink/genetlink.c:1210\n\
+  \ netlink_rcv_skb+0x155/0x420 net/netlink/af_netlink.c:2552\n genl_rcv+0x28/0x40\
+  \ net/netlink/genetlink.c:1219\n netlink_unicast_kernel net/netlink/af_netlink.c:1320\
+  \ [inline]\n netlink_unicast+0x5aa/0x870 net/netlink/af_netlink.c:1346\n netlink_sendmsg+0x8d1/0xdd0\
+  \ net/netlink/af_netlink.c:1896\n sock_sendmsg_nosec net/socket.c:714 [inline]\n\
+  \ __sock_sendmsg net/socket.c:729 [inline]\n ____sys_sendmsg+0xa95/0xc70 net/socket.c:2614\n\
+  \ ___sys_sendmsg+0x134/0x1d0 net/socket.c:2668\n __sys_sendmsg+0x16d/0x220 net/socket.c:2700\n\
+  \ do_syscall_32_irqs_on arch/x86/entry/syscall_32.c:83 [inline]\n __do_fast_syscall_32+0x7c/0x3a0\
+  \ arch/x86/entry/syscall_32.c:306\n do_fast_syscall_32+0x32/0x80 arch/x86/entry/syscall_32.c:331\n\
+  \ entry_SYSENTER_compat_after_hwframe+0x84/0x8e\nRIP: 0023:0xf708e579\nCode: b8\
+  \ 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 00 00\
+  \ 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26\
+  \ 00 00 00 00 8d b4 26 00 00 00 00\nRSP: 002b:00000000f505d55c EFLAGS: 00000296\
+  \ ORIG_RAX: 0000000000000172\nRAX: ffffffffffffffda RBX: 0000000000000007 RCX: 0000000080000080\n\
+  RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000\nRBP: 0000000000000000\
+  \ R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000 R11: 0000000000000296\
+  \ R12: 0000000000000000\nR13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000\n\
+  \ </TASK>\nModules linked in:\nCR2: ffff88809782c020\n\nFixes: 2a68a22304f9 (\"\
+  netdevsim: account dropped packet length in stats on queue free\")\nReported-by:\
+  \ syzbot+8aa80c6232008f7b957d@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/netdev/688bb9ca.a00a0220.26d0e1.0050.GAE@google.com/\n\
+  Suggested-by: Jakub Kicinski <kuba@kernel.org>\nSigned-off-by: Kuniyuki Iwashima\
+  \ <kuniyu@google.com>\nLink: https://patch.msgid.link/20250812162130.4129322-1-kuniyu@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net/netdevsim
+hunk_count: 1
+covered_count: 1

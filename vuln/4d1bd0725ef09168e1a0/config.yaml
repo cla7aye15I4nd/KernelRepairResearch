@@ -1,0 +1,25 @@
+id: 4d1bd0725ef09168e1a0
+bug_link: https://syzkaller.appspot.com/bug?extid=4d1bd0725ef09168e1a0
+title: WARNING in futex_requeue
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a974b54036f79dd5e395e9f6c80c3decb4661a14
+fix_commit: 4f07ec0d76f242d4ca0f0c0c6f7293c28254a554
+datetime: '2021-09-02T22:07:18+02:00'
+fix_commit_message: "futex: Prevent inconsistent state and exit race\n\nThe recent\
+  \ rework of the requeue PI code introduced a possibility for\ngoing back to user\
+  \ space in inconsistent state:\n\nCPU 0\t\t\t\tCPU 1\n\nrequeue_futex()\n  if (lock_pifutex_user())\
+  \ {\n      dequeue_waiter();\n      wake_waiter(task);\n\t\t\t\tsched_in(task);\n\
+  \     \t\t\t\treturn_from_futex_syscall();\n\n  ---> Inconsistent state because\
+  \ PI state is not established\n\nIt becomes worse if the woken up task immediately\
+  \ exits:\n\n\t\t\t\tsys_exit();\n\t\t\t\t\n      attach_pistate(vpid);\t<--- FAIL\n\
+  \n\nAttach the pi state before dequeuing and waking the waiter. If the waiter\n\
+  gets a spurious wakeup before the dequeue operation it will wait in\nfutex_requeue_pi_wakeup_sync()\
+  \ and therefore cannot return and exit.\n\nFixes: 07d91ef510fb (\"futex: Prevent\
+  \ requeue_pi() lock nesting issue on RT\")\nReported-by: syzbot+4d1bd0725ef09168e1a0@syzkaller.appspotmail.com\n\
+  Signed-off-by: Thomas Gleixner <tglx@linutronix.de>\nAcked-by: Peter Zijlstra (Intel)\
+  \ <peterz@infradead.org>\nLink: https://lore.kernel.org/r/20210902094414.558914045@linutronix.de\n\
+  \n\n"
+submodule:
+- kernel
+hunk_count: 5
+covered_count: 2

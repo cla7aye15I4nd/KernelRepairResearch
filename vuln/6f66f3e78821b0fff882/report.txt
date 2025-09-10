@@ -1,0 +1,36 @@
+==================================================================
+BUG: KASAN: slab-out-of-bounds in bio_split_rw+0x7e7/0x8b0 block/blk-merge.c:286
+Read of size 8 at addr ffff88807a302100 by task syz-executor144/5006
+
+CPU: 1 PID: 5006 Comm: syz-executor144 Not tainted 6.4.0-rc7-syzkaller-01944-g3674fbf0451d #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/27/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x150 lib/dump_stack.c:106
+ print_address_description.constprop.0+0x2c/0x3c0 mm/kasan/report.c:351
+ print_report mm/kasan/report.c:462 [inline]
+ kasan_report+0x11c/0x130 mm/kasan/report.c:572
+ bio_split_rw+0x7e7/0x8b0 block/blk-merge.c:286
+ __bio_split_to_limits+0x235/0x9b0 block/blk-merge.c:370
+ blk_mq_submit_bio+0x235/0x1f50 block/blk-mq.c:2940
+ __submit_bio+0xfc/0x310 block/blk-core.c:594
+ __submit_bio_noacct_mq block/blk-core.c:673 [inline]
+ submit_bio_noacct_nocheck+0x7f9/0xb40 block/blk-core.c:702
+ submit_bio_noacct+0x945/0x19f0 block/blk-core.c:801
+ ext4_io_submit+0xa6/0x140 fs/ext4/page-io.c:378
+ ext4_do_writepages+0x141c/0x3290 fs/ext4/inode.c:2723
+ ext4_writepages+0x304/0x770 fs/ext4/inode.c:2792
+ do_writepages+0x1a8/0x640 mm/page-writeback.c:2551
+ filemap_fdatawrite_wbc mm/filemap.c:390 [inline]
+ filemap_fdatawrite_wbc+0x147/0x1b0 mm/filemap.c:380
+ __filemap_fdatawrite_range+0xb8/0xf0 mm/filemap.c:423
+ filemap_write_and_wait_range mm/filemap.c:678 [inline]
+ filemap_write_and_wait_range+0xa1/0x120 mm/filemap.c:669
+ __iomap_dio_rw+0x65f/0x1f90 fs/iomap/direct-io.c:569
+ iomap_dio_rw+0x40/0xa0 fs/iomap/direct-io.c:688
+ ext4_dio_read_iter fs/ext4/file.c:94 [inline]
+ ext4_file_read_iter+0x4be/0x690 fs/ext4/file.c:145
+ call_read_iter include/linux/fs.h:1862 [inline]
+ generic_file_splice_read+0x182/0x4b0 fs/splice.c:420
+ do_splice_to+0x1b9/0x240 fs/splice.c:1007

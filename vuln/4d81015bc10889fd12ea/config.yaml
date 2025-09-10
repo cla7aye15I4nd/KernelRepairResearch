@@ -1,0 +1,38 @@
+id: 4d81015bc10889fd12ea
+bug_link: https://syzkaller.appspot.com/bug?extid=4d81015bc10889fd12ea
+title: WARNING in create_pending_snapshot
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1645c283a87c61f84b2bffd81f50724df959b11a
+fix_commit: 8049ba5d0a28c7208285e94e71a8df5e41a2e889
+datetime: '2023-11-15T17:08:14+01:00'
+fix_commit_message: "btrfs: do not abort transaction if there is already an existing\
+  \ qgroup\n\n[BUG]\nSyzbot reported a regression that after commit 6ed05643ddb1 (\"\
+  btrfs:\ncreate qgroup earlier in snapshot creation\") we can trigger transaction\n\
+  abort during snapshot creation:\n\n  BTRFS: Transaction aborted (error -17)\n  WARNING:\
+  \ CPU: 0 PID: 5057 at fs/btrfs/transaction.c:1778 create_pending_snapshot+0x25f4/0x2b70\
+  \ fs/btrfs/transaction.c:1778\n  Modules linked in:\n  CPU: 0 PID: 5057 Comm: syz-executor225\
+  \ Not tainted 6.6.0-syzkaller-15365-g305230142ae0 #0\n  Hardware name: Google Google\
+  \ Compute Engine/Google Compute Engine, BIOS Google 10/09/2023\n  RIP: 0010:create_pending_snapshot+0x25f4/0x2b70\
+  \ fs/btrfs/transaction.c:1778\n  Call Trace:\n   <TASK>\n   create_pending_snapshots+0x195/0x1d0\
+  \ fs/btrfs/transaction.c:1967\n   btrfs_commit_transaction+0xf1c/0x3730 fs/btrfs/transaction.c:2440\n\
+  \   create_snapshot+0x4a5/0x7e0 fs/btrfs/ioctl.c:845\n   btrfs_mksubvol+0x5d0/0x750\
+  \ fs/btrfs/ioctl.c:995\n   btrfs_mksnapshot+0xb5/0xf0 fs/btrfs/ioctl.c:1041\n  \
+  \ __btrfs_ioctl_snap_create+0x344/0x460 fs/btrfs/ioctl.c:1294\n   btrfs_ioctl_snap_create+0x13c/0x190\
+  \ fs/btrfs/ioctl.c:1321\n   btrfs_ioctl+0xbbf/0xd40\n   vfs_ioctl fs/ioctl.c:51\
+  \ [inline]\n   __do_sys_ioctl fs/ioctl.c:871 [inline]\n   __se_sys_ioctl+0xf8/0x170\
+  \ fs/ioctl.c:857\n   do_syscall_x64 arch/x86/entry/common.c:51 [inline]\n   do_syscall_64+0x44/0x110\
+  \ arch/x86/entry/common.c:82\n   entry_SYSCALL_64_after_hwframe+0x63/0x6b\n  RIP:\
+  \ 0033:0x7f2f791127b9\n   </TASK>\n\n[CAUSE]\nThe error number is -EEXIST, which\
+  \ can happen for qgroup if there is\nalready an existing qgroup and then we're trying\
+  \ to create a snapshot\nfor it.\n\n[FIX]\nIn that case, we can continue creating\
+  \ the snapshot, although it may\nlead to qgroup inconsistency, it's not so critical\
+  \ to abort the current\ntransaction.\n\nSo in this case, we can just ignore the\
+  \ non-critical errors, mostly -EEXIST\n(there is already a qgroup).\n\nReported-by:\
+  \ syzbot+4d81015bc10889fd12ea@syzkaller.appspotmail.com\nFixes: 6ed05643ddb1 (\"\
+  btrfs: create qgroup earlier in snapshot creation\")\nReviewed-by: Filipe Manana\
+  \ <fdmanana@suse.com>\nSigned-off-by: Qu Wenruo <wqu@suse.com>\nSigned-off-by: David\
+  \ Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 1

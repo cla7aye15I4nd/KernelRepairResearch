@@ -1,0 +1,64 @@
+id: cf0adbb9c28c8866c788
+bug_link: https://syzkaller.appspot.com/bug?extid=cf0adbb9c28c8866c788
+title: 'INFO: task hung in addrconf_verify_work (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b790b5549bdf498ab0ecc5632610a9149532fa38
+fix_commit: 39f13ea2f61b439ebe0060393e9c39925c9ee28c
+datetime: '2019-10-15T20:20:22-07:00'
+fix_commit_message: "net: avoid potential infinite loop in tc_ctl_action()\n\ntc_ctl_action()\
+  \ has the ability to loop forever if tcf_action_add()\nreturns -EAGAIN.\n\nThis\
+  \ special case has been done in case a module needed to be loaded,\nbut it turns\
+  \ out that tcf_add_notify() could also return -EAGAIN\nif the socket sk_rcvbuf limit\
+  \ is hit.\n\nWe need to separate the two cases, and only loop for the module\nloading\
+  \ case.\n\nWhile we are at it, add a limit of 10 attempts since unbounded\nloops\
+  \ are always scary.\n\nsyzbot repro was something like :\n\nsocket(PF_NETLINK, SOCK_RAW|SOCK_NONBLOCK,\
+  \ NETLINK_ROUTE) = 3\nwrite(3, ..., 38) = 38\nsetsockopt(3, SOL_SOCKET, SO_RCVBUF,\
+  \ [0], 4) = 0\nsendmsg(3, {msg_name(0)=NULL, msg_iov(1)=[{..., 388}], msg_controllen=0,\
+  \ msg_flags=0x10}, ...)\n\nNMI backtrace for cpu 0\nCPU: 0 PID: 1054 Comm: khungtaskd\
+  \ Not tainted 5.4.0-rc1+ #0\nHardware name: Google Google Compute Engine/Google\
+  \ Compute Engine, BIOS Google 01/01/2011\nCall Trace:\n __dump_stack lib/dump_stack.c:77\
+  \ [inline]\n dump_stack+0x172/0x1f0 lib/dump_stack.c:113\n nmi_cpu_backtrace.cold+0x70/0xb2\
+  \ lib/nmi_backtrace.c:101\n nmi_trigger_cpumask_backtrace+0x23b/0x28b lib/nmi_backtrace.c:62\n\
+  \ arch_trigger_cpumask_backtrace+0x14/0x20 arch/x86/kernel/apic/hw_nmi.c:38\n trigger_all_cpu_backtrace\
+  \ include/linux/nmi.h:146 [inline]\n check_hung_uninterruptible_tasks kernel/hung_task.c:205\
+  \ [inline]\n watchdog+0x9d0/0xef0 kernel/hung_task.c:289\n kthread+0x361/0x430 kernel/kthread.c:255\n\
+  \ ret_from_fork+0x24/0x30 arch/x86/entry/entry_64.S:352\nSending NMI from CPU 0\
+  \ to CPUs 1:\nNMI backtrace for cpu 1\nCPU: 1 PID: 8859 Comm: syz-executor910 Not\
+  \ tainted 5.4.0-rc1+ #0\nHardware name: Google Google Compute Engine/Google Compute\
+  \ Engine, BIOS Google 01/01/2011\nRIP: 0010:arch_local_save_flags arch/x86/include/asm/paravirt.h:751\
+  \ [inline]\nRIP: 0010:lockdep_hardirqs_off+0x1df/0x2e0 kernel/locking/lockdep.c:3453\n\
+  Code: 5c 08 00 00 5b 41 5c 41 5d 5d c3 48 c7 c0 58 1d f3 88 48 ba 00 00 00 00 00\
+  \ fc ff df 48 c1 e8 03 80 3c 10 00 0f 85 d3 00 00 00 <48> 83 3d 21 9e 99 07 00 0f\
+  \ 84 b9 00 00 00 9c 58 0f 1f 44 00 00 f6\nRSP: 0018:ffff8880a6f3f1b8 EFLAGS: 00000046\n\
+  RAX: 1ffffffff11e63ab RBX: ffff88808c9c6080 RCX: 0000000000000000\nRDX: dffffc0000000000\
+  \ RSI: 0000000000000000 RDI: ffff88808c9c6914\nRBP: ffff8880a6f3f1d0 R08: ffff88808c9c6080\
+  \ R09: fffffbfff16be5d1\nR10: fffffbfff16be5d0 R11: 0000000000000003 R12: ffffffff8746591f\n\
+  R13: ffff88808c9c6080 R14: ffffffff8746591f R15: 0000000000000003\nFS:  00000000011e4880(0000)\
+  \ GS:ffff8880ae900000(0000) knlGS:0000000000000000\nCS:  0010 DS: 0000 ES: 0000\
+  \ CR0: 0000000080050033\nCR2: ffffffffff600400 CR3: 00000000a8920000 CR4: 00000000001406e0\n\
+  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\nDR3: 0000000000000000\
+  \ DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n trace_hardirqs_off+0x62/0x240\
+  \ kernel/trace/trace_preemptirq.c:45\n __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:108\
+  \ [inline]\n _raw_spin_lock_irqsave+0x6f/0xcd kernel/locking/spinlock.c:159\n __wake_up_common_lock+0xc8/0x150\
+  \ kernel/sched/wait.c:122\n __wake_up+0xe/0x10 kernel/sched/wait.c:142\n netlink_unlock_table\
+  \ net/netlink/af_netlink.c:466 [inline]\n netlink_unlock_table net/netlink/af_netlink.c:463\
+  \ [inline]\n netlink_broadcast_filtered+0x705/0xb80 net/netlink/af_netlink.c:1514\n\
+  \ netlink_broadcast+0x3a/0x50 net/netlink/af_netlink.c:1534\n rtnetlink_send+0xdd/0x110\
+  \ net/core/rtnetlink.c:714\n tcf_add_notify net/sched/act_api.c:1343 [inline]\n\
+  \ tcf_action_add+0x243/0x370 net/sched/act_api.c:1362\n tc_ctl_action+0x3b5/0x4bc\
+  \ net/sched/act_api.c:1410\n rtnetlink_rcv_msg+0x463/0xb00 net/core/rtnetlink.c:5386\n\
+  \ netlink_rcv_skb+0x177/0x450 net/netlink/af_netlink.c:2477\n rtnetlink_rcv+0x1d/0x30\
+  \ net/core/rtnetlink.c:5404\n netlink_unicast_kernel net/netlink/af_netlink.c:1302\
+  \ [inline]\n netlink_unicast+0x531/0x710 net/netlink/af_netlink.c:1328\n netlink_sendmsg+0x8a5/0xd60\
+  \ net/netlink/af_netlink.c:1917\n sock_sendmsg_nosec net/socket.c:637 [inline]\n\
+  \ sock_sendmsg+0xd7/0x130 net/socket.c:657\n ___sys_sendmsg+0x803/0x920 net/socket.c:2311\n\
+  \ __sys_sendmsg+0x105/0x1d0 net/socket.c:2356\n __do_sys_sendmsg net/socket.c:2365\
+  \ [inline]\n __se_sys_sendmsg net/socket.c:2363 [inline]\n __x64_sys_sendmsg+0x78/0xb0\
+  \ net/socket.c:2363\n do_syscall_64+0xfa/0x760 arch/x86/entry/common.c:290\n entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  RIP: 0033:0x440939\n\nFixes: 1da177e4c3f4 (\"Linux-2.6.12-rc2\")\nSigned-off-by:\
+  \ Eric Dumazet <edumazet@google.com>\nReported-by: syzbot+cf0adbb9c28c8866c788@syzkaller.appspotmail.com\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sched
+hunk_count: 2
+covered_count: 2

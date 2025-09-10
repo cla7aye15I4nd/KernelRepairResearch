@@ -1,0 +1,42 @@
+id: b54969381df354936d96
+bug_link: https://syzkaller.appspot.com/bug?extid=b54969381df354936d96
+title: kernel BUG at net/rxrpc/recvmsg.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 591eee6d0783d4a0d7f0e7c4effdba9cf6c1e2c5
+fix_commit: 65550098c1c4db528400c73acf3e46bfa78d9264
+datetime: '2020-07-30T16:50:20-07:00'
+fix_commit_message: "rxrpc: Fix race between recvmsg and sendmsg on immediate call\
+  \ failure\n\nThere's a race between rxrpc_sendmsg setting up a call, but then failing\
+  \ to\nsend anything on it due to an error, and recvmsg() seeing the call\ncompletion\
+  \ occur and trying to return the state to the user.\n\nAn assertion fails in rxrpc_recvmsg()\
+  \ because the call has already been\nreleased from the socket and is about to be\
+  \ released again as recvmsg deals\nwith it.  (The recvmsg_q queue on the socket\
+  \ holds a ref, so there's no\nproblem with use-after-free.)\n\nWe also have to be\
+  \ careful not to end up reporting an error twice, in such\na way that both returns\
+  \ indicate to userspace that the user ID supplied\nwith the call is no longer in\
+  \ use - which could cause the client to\nmalfunction if it recycles the user ID\
+  \ fast enough.\n\nFix this by the following means:\n\n (1) When sendmsg() creates\
+  \ a call after the point that the call has been\n     successfully added to the\
+  \ socket, don't return any errors through\n     sendmsg(), but rather complete the\
+  \ call and let recvmsg() retrieve\n     them.  Make sendmsg() return 0 at this point.\
+  \  Further calls to\n     sendmsg() for that call will fail with ESHUTDOWN.\n\n\
+  \     Note that at this point, we haven't send any packets yet, so the\n     server\
+  \ doesn't yet know about the call.\n\n (2) If sendmsg() returns an error when it\
+  \ was expected to create a new\n     call, it means that the user ID wasn't used.\n\
+  \n (3) Mark the call disconnected before marking it completed to prevent an\n  \
+  \   oops in rxrpc_release_call().\n\n (4) recvmsg() will then retrieve the error\
+  \ and set MSG_EOR to indicate\n     that the user ID is no longer known by the kernel.\n\
+  \nAn oops like the following is produced:\n\n\tkernel BUG at net/rxrpc/recvmsg.c:605!\n\
+  \t...\n\tRIP: 0010:rxrpc_recvmsg+0x256/0x5ae\n\t...\n\tCall Trace:\n\t ? __init_waitqueue_head+0x2f/0x2f\n\
+  \t ____sys_recvmsg+0x8a/0x148\n\t ? import_iovec+0x69/0x9c\n\t ? copy_msghdr_from_user+0x5c/0x86\n\
+  \t ___sys_recvmsg+0x72/0xaa\n\t ? __fget_files+0x22/0x57\n\t ? __fget_light+0x46/0x51\n\
+  \t ? fdget+0x9/0x1b\n\t do_recvmmsg+0x15e/0x232\n\t ? _raw_spin_unlock+0xa/0xb\n\
+  \t ? vtime_delta+0xf/0x25\n\t __x64_sys_recvmmsg+0x2c/0x2f\n\t do_syscall_64+0x4c/0x78\n\
+  \t entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nFixes: 357f5ef64628 (\"rxrpc: Call\
+  \ rxrpc_release_call() on error in rxrpc_new_client_call()\")\nReported-by: syzbot+b54969381df354936d96@syzkaller.appspotmail.com\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\nReviewed-by: Marc Dionne <marc.dionne@auristor.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/rxrpc
+hunk_count: 5
+covered_count: 1

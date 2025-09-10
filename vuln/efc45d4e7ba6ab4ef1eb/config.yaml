@@ -1,0 +1,50 @@
+id: efc45d4e7ba6ab4ef1eb
+bug_link: https://syzkaller.appspot.com/bug?extid=efc45d4e7ba6ab4ef1eb
+title: general protection fault in io_get_cqe_overflow
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f8024f1f36a30a082b0457d5779c8847cea57f57
+fix_commit: 1658633c04653578429ff5dfc62fdc159203a8f2
+datetime: '2023-10-03T08:12:54-06:00'
+fix_commit_message: 'io_uring: ensure io_lockdep_assert_cq_locked() handles disabled
+  rings
+
+
+  io_lockdep_assert_cq_locked() checks that locking is correctly done when
+
+  a CQE is posted. If the ring is setup in a disabled state with
+
+  IORING_SETUP_R_DISABLED, then ctx->submitter_task isn''t assigned until
+
+  the ring is later enabled. We generally don''t post CQEs in this state,
+
+  as no SQEs can be submitted. However it is possible to generate a CQE
+
+  if tagged resources are being updated. If this happens and PROVE_LOCKING
+
+  is enabled, then the locking check helper will dereference
+
+  ctx->submitter_task, which hasn''t been set yet.
+
+
+  Fixup io_lockdep_assert_cq_locked() to handle this case correctly. While
+
+  at it, convert it to a static inline as well, so that generated line
+
+  offsets will actually reflect which condition failed, rather than just
+
+  the line offset for io_lockdep_assert_cq_locked() itself.
+
+
+  Reported-and-tested-by: syzbot+efc45d4e7ba6ab4ef1eb@syzkaller.appspotmail.com
+
+  Fixes: f26cc9593581 ("io_uring: lockdep annotate CQ locking")
+
+  Cc: stable@vger.kernel.org
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 1
+covered_count: 1

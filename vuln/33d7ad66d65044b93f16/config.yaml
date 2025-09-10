@@ -1,0 +1,41 @@
+id: 33d7ad66d65044b93f16
+bug_link: https://syzkaller.appspot.com/bug?extid=33d7ad66d65044b93f16
+title: 'KASAN: use-after-free Write in gadgetfs_kill_sb'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1301c7b9f7efad2f11ef924e317c18ebd714fc9a
+fix_commit: d18dcfe9860e842f394e37ba01ca9440ab2178f4
+datetime: '2023-01-17T16:36:15+01:00'
+fix_commit_message: "USB: gadgetfs: Fix race between mounting and unmounting\n\nThe\
+  \ syzbot fuzzer and Gerald Lee have identified a use-after-free bug\nin the gadgetfs\
+  \ driver, involving processes concurrently mounting and\nunmounting the gadgetfs\
+  \ filesystem.  In particular, gadgetfs_fill_super()\ncan race with gadgetfs_kill_sb(),\
+  \ causing the latter to deallocate\nthe_device while the former is using it.  The\
+  \ output from KASAN says,\nin part:\n\nBUG: KASAN: use-after-free in instrument_atomic_read_write\
+  \ include/linux/instrumented.h:102 [inline]\nBUG: KASAN: use-after-free in atomic_fetch_sub_release\
+  \ include/linux/atomic/atomic-instrumented.h:176 [inline]\nBUG: KASAN: use-after-free\
+  \ in __refcount_sub_and_test include/linux/refcount.h:272 [inline]\nBUG: KASAN:\
+  \ use-after-free in __refcount_dec_and_test include/linux/refcount.h:315 [inline]\n\
+  BUG: KASAN: use-after-free in refcount_dec_and_test include/linux/refcount.h:333\
+  \ [inline]\nBUG: KASAN: use-after-free in put_dev drivers/usb/gadget/legacy/inode.c:159\
+  \ [inline]\nBUG: KASAN: use-after-free in gadgetfs_kill_sb+0x33/0x100 drivers/usb/gadget/legacy/inode.c:2086\n\
+  Write of size 4 at addr ffff8880276d7840 by task syz-executor126/18689\n\nCPU: 0\
+  \ PID: 18689 Comm: syz-executor126 Not tainted 6.1.0-syzkaller #0\nHardware name:\
+  \ Google Google Compute Engine/Google Compute Engine, BIOS Google 10/26/2022\nCall\
+  \ Trace:\n <TASK>\n...\n atomic_fetch_sub_release include/linux/atomic/atomic-instrumented.h:176\
+  \ [inline]\n __refcount_sub_and_test include/linux/refcount.h:272 [inline]\n __refcount_dec_and_test\
+  \ include/linux/refcount.h:315 [inline]\n refcount_dec_and_test include/linux/refcount.h:333\
+  \ [inline]\n put_dev drivers/usb/gadget/legacy/inode.c:159 [inline]\n gadgetfs_kill_sb+0x33/0x100\
+  \ drivers/usb/gadget/legacy/inode.c:2086\n deactivate_locked_super+0xa7/0xf0 fs/super.c:332\n\
+  \ vfs_get_super fs/super.c:1190 [inline]\n get_tree_single+0xd0/0x160 fs/super.c:1207\n\
+  \ vfs_get_tree+0x88/0x270 fs/super.c:1531\n vfs_fsconfig_locked fs/fsopen.c:232\
+  \ [inline]\n\nThe simplest solution is to ensure that gadgetfs_fill_super() and\n\
+  gadgetfs_kill_sb() are serialized by making them both acquire a new\nmutex.\n\n\
+  Signed-off-by: Alan Stern <stern@rowland.harvard.edu>\nReported-and-tested-by: syzbot+33d7ad66d65044b93f16@syzkaller.appspotmail.com\n\
+  Reported-and-tested-by: Gerald Lee <sundaywind2004@gmail.com>\nLink: https://lore.kernel.org/linux-usb/CAO3qeMVzXDP-JU6v1u5Ags6Q-bb35kg3=C6d04DjzA9ffa5x1g@mail.gmail.com/\n\
+  Fixes: e5d82a7360d1 (\"vfs: Convert gadgetfs to use the new mount API\")\nCC: <stable@vger.kernel.org>\n\
+  Link: https://lore.kernel.org/r/Y6XCPXBpn3tmjdCC@rowland.harvard.edu\nSigned-off-by:\
+  \ Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/gadget/legacy
+hunk_count: 5
+covered_count: 5

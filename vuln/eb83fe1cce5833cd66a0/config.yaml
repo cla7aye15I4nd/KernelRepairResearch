@@ -1,0 +1,41 @@
+id: eb83fe1cce5833cd66a0
+bug_link: https://syzkaller.appspot.com/bug?extid=eb83fe1cce5833cd66a0
+title: 'KMSAN: uninit-value in v9fs_evict_inode'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 10211b4a23cf4a3df5c11a10e5b3d371f16a906f
+fix_commit: 6630036b7c228f57c7893ee0403e92c2db2cd21d
+datetime: '2024-03-25T14:16:06+00:00'
+fix_commit_message: 'fs/9p: fix uninitialized values during inode evict
+
+
+  If an iget fails due to not being able to retrieve information
+
+  from the server then the inode structure is only partially
+
+  initialized.  When the inode gets evicted, references to
+
+  uninitialized structures (like fscache cookies) were being
+
+  made.
+
+
+  This patch checks for a bad_inode before doing anything other
+
+  than clearing the inode from the cache.  Since the inode is
+
+  bad, it shouldn''t have any state associated with it that needs
+
+  to be written back (and there really isn''t a way to complete
+
+  those anyways).
+
+
+  Reported-by: syzbot+eb83fe1cce5833cd66a0@syzkaller.appspotmail.com
+
+  Signed-off-by: Eric Van Hensbergen <ericvh@kernel.org>
+
+  '
+submodule:
+- fs/9p
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,44 @@
+id: ab99dc4c6e961eed8b8e
+bug_link: https://syzkaller.appspot.com/bug?extid=ab99dc4c6e961eed8b8e
+title: 'BUG: unable to handle kernel NULL pointer dereference in __rxe_do_task'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bfb3bde95479e7072839564ec90dbf5d00bfb9b1
+fix_commit: a625ca30eff806395175ebad3ac1399014bdb280
+datetime: '2022-08-31T09:53:12+03:00'
+fix_commit_message: 'RDMA/rxe: Fix "kernel NULL pointer dereference" error
+
+
+  When rxe_queue_init in the function rxe_qp_init_req fails,
+
+  both qp->req.task.func and qp->req.task.arg are not initialized.
+
+
+  Because of creation of qp fails, the function rxe_create_qp will
+
+  call rxe_qp_do_cleanup to handle allocated resource.
+
+
+  Before calling __rxe_do_task, both qp->req.task.func and
+
+  qp->req.task.arg should be checked.
+
+
+  Fixes: 8700e3e7c485 ("Soft RoCE driver")
+
+  Link: https://lore.kernel.org/r/20220822011615.805603-2-yanjun.zhu@linux.dev
+
+  Reported-by: syzbot+ab99dc4c6e961eed8b8e@syzkaller.appspotmail.com
+
+  Signed-off-by: Zhu Yanjun <yanjun.zhu@linux.dev>
+
+  Reviewed-by: Li Zhijian <lizhijian@fujitsu.com>
+
+  Reviewed-by: Bob Pearson <rpearsonhpe@gmail.com>
+
+  Signed-off-by: Leon Romanovsky <leon@kernel.org>
+
+  '
+submodule:
+- drivers/infiniband/sw/rxe
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,55 @@
+id: cecf5b7071a0dfb76530
+bug_link: https://syzkaller.appspot.com/bug?extid=cecf5b7071a0dfb76530
+title: 'WARNING: kmalloc bug in bpf'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 38f80f42147ff658aff218edb0a88c37e58bf44f
+fix_commit: 0708a0afe291bdfe1386d74d5ec1f0c27e8b9168
+datetime: '2022-03-04T10:00:37-08:00'
+fix_commit_message: "mm: Consider __GFP_NOWARN flag for oversized kvmalloc() calls\n\
+  \nsyzkaller was recently triggering an oversized kvmalloc() warning via\nxdp_umem_create().\n\
+  \nThe triggered warning was added back in 7661809d493b (\"mm: don't allow\noversized\
+  \ kvmalloc() calls\"). The rationale for the warning for huge\nkvmalloc sizes was\
+  \ as a reaction to a security bug where the size was\nmore than UINT_MAX but not\
+  \ everything was prepared to handle unsigned\nlong sizes.\n\nAnyway, the AF_XDP\
+  \ related call trace from this syzkaller report was:\n\n  kvmalloc include/linux/mm.h:806\
+  \ [inline]\n  kvmalloc_array include/linux/mm.h:824 [inline]\n  kvcalloc include/linux/mm.h:829\
+  \ [inline]\n  xdp_umem_pin_pages net/xdp/xdp_umem.c:102 [inline]\n  xdp_umem_reg\
+  \ net/xdp/xdp_umem.c:219 [inline]\n  xdp_umem_create+0x6a5/0xf00 net/xdp/xdp_umem.c:252\n\
+  \  xsk_setsockopt+0x604/0x790 net/xdp/xsk.c:1068\n  __sys_setsockopt+0x1fd/0x4e0\
+  \ net/socket.c:2176\n  __do_sys_setsockopt net/socket.c:2187 [inline]\n  __se_sys_setsockopt\
+  \ net/socket.c:2184 [inline]\n  __x64_sys_setsockopt+0xb5/0x150 net/socket.c:2184\n\
+  \  do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n  do_syscall_64+0x35/0xb0\
+  \ arch/x86/entry/common.c:80\n  entry_SYSCALL_64_after_hwframe+0x44/0xae\n\nBjörn\
+  \ mentioned that requests for >2GB allocation can still be valid:\n\n  The structure\
+  \ that is being allocated is the page-pinning accounting.\n  AF_XDP has an internal\
+  \ limit of U32_MAX pages, which is *a lot*, but\n  still fewer than what memcg allows\
+  \ (PAGE_COUNTER_MAX is a LONG_MAX/\n  PAGE_SIZE on 64 bit systems). [...]\n\n  I\
+  \ could just change from U32_MAX to INT_MAX, but as I stated earlier\n  that has\
+  \ a hacky feeling to it. [...] From my perspective, the code\n  isn't broken, with\
+  \ the memcg limits in consideration. [...]\n\nLinus says:\n\n  [...] Pretty much\
+  \ every time this has come up, the kernel warning has\n  shown that yes, the code\
+  \ was broken and there really wasn't a reason\n  for doing allocations that big.\n\
+  \n  Of course, some people would be perfectly fine with the allocation\n  failing,\
+  \ they just don't want the warning. I didn't want __GFP_NOWARN\n  to shut it up\
+  \ originally because I wanted people to see all those\n  cases, but these days I\
+  \ think we can just say \"yeah, people can shut\n  it up explicitly by saying 'go\
+  \ ahead and fail this allocation, don't\n  warn about it'\".\n\n  So enough time\
+  \ has passed that by now I'd certainly be ok with [it].\n\nThus allow call-sites\
+  \ to silence such userspace triggered splats if the\nallocation requests have __GFP_NOWARN.\
+  \ For xdp_umem_pin_pages()'s call\nto kvcalloc() this is already the case, so nothing\
+  \ else needed there.\n\nFixes: 7661809d493b (\"mm: don't allow oversized kvmalloc()\
+  \ calls\")\nReported-by: syzbot+11421fbbff99b989670e@syzkaller.appspotmail.com\n\
+  Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>\nSigned-off-by: Daniel\
+  \ Borkmann <daniel@iogearbox.net>\nTested-by: syzbot+11421fbbff99b989670e@syzkaller.appspotmail.com\n\
+  Cc: Björn Töpel <bjorn@kernel.org>\nCc: Magnus Karlsson <magnus.karlsson@intel.com>\n\
+  Cc: Willy Tarreau <w@1wt.eu>\nCc: Andrew Morton <akpm@linux-foundation.org>\nCc:\
+  \ Alexei Starovoitov <ast@kernel.org>\nCc: Andrii Nakryiko <andrii@kernel.org>\n\
+  Cc: Jakub Kicinski <kuba@kernel.org>\nCc: David S. Miller <davem@davemloft.net>\n\
+  Link: https://lore.kernel.org/bpf/CAJ+HfNhyfsT5cS_U9EC213ducHs9k9zNxX9+abqC0kTrPbQ0gg@mail.gmail.com\n\
+  Link: https://lore.kernel.org/bpf/20211201202905.b9892171e3f5b9a60f9da251@linux-foundation.org\n\
+  Reviewed-by: Leon Romanovsky <leonro@nvidia.com>\nAckd-by: Michal Hocko <mhocko@suse.com>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

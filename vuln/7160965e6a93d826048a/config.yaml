@@ -1,0 +1,53 @@
+id: 7160965e6a93d826048a
+bug_link: https://syzkaller.appspot.com/bug?extid=7160965e6a93d826048a
+title: kernel BUG in __skb_gso_segment
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 22296a5c0cd35aaf62e1af3266f82cdf6b0b9b78
+fix_commit: e9d3f80935b6607dcdc5682b00b1d4b28e0a0c5d
+datetime: '2022-06-02T10:15:05-07:00'
+fix_commit_message: "net/af_packet: make sure to pull mac header\n\nGSO assumes skb->head\
+  \ contains link layer headers.\n\ntun device in some case can provide base 14 bytes,\n\
+  regardless of VLAN being used or not.\n\nAfter blamed commit, we can end up setting\
+  \ a network\nheader offset of 18+, we better pull the missing\nbytes to avoid a\
+  \ posible crash in GSO.\n\nsyzbot report was:\nkernel BUG at include/linux/skbuff.h:2699!\n\
+  invalid opcode: 0000 [#1] PREEMPT SMP KASAN\nCPU: 1 PID: 3601 Comm: syz-executor210\
+  \ Not tainted 5.18.0-syzkaller-11338-g2c5ca23f7414 #0\nHardware name: Google Google\
+  \ Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\nRIP: 0010:__skb_pull\
+  \ include/linux/skbuff.h:2699 [inline]\nRIP: 0010:skb_mac_gso_segment+0x48f/0x530\
+  \ net/core/gro.c:136\nCode: 00 48 c7 c7 00 96 d4 8a c6 05 cb d3 45 06 01 e8 26 bb\
+  \ d0 01 e9 2f fd ff ff 49 c7 c4 ea ff ff ff e9 f1 fe ff ff e8 91 84 19 fa <0f> 0b\
+  \ 48 89 df e8 97 44 66 fa e9 7f fd ff ff e8 ad 44 66 fa e9 48\nRSP: 0018:ffffc90002e2f4b8\
+  \ EFLAGS: 00010293\nRAX: 0000000000000000 RBX: 0000000000000012 RCX: 0000000000000000\n\
+  RDX: ffff88805bb58000 RSI: ffffffff8760ed0f RDI: 0000000000000004\nRBP: 0000000000005dbc\
+  \ R08: 0000000000000004 R09: 0000000000000fe0\nR10: 0000000000000fe4 R11: 0000000000000000\
+  \ R12: 0000000000000fe0\nR13: ffff88807194d780 R14: 1ffff920005c5e9b R15: 0000000000000012\n\
+  FS:  000055555730f300(0000) GS:ffff8880b9d00000(0000) knlGS:0000000000000000\nCS:\
+  \  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 00000000200015c0 CR3: 0000000071ff8000\
+  \ CR4: 0000000000350ee0\nCall Trace:\n <TASK>\n __skb_gso_segment+0x327/0x6e0 net/core/dev.c:3411\n\
+  \ skb_gso_segment include/linux/netdevice.h:4749 [inline]\n validate_xmit_skb+0x6bc/0xf10\
+  \ net/core/dev.c:3669\n validate_xmit_skb_list+0xbc/0x120 net/core/dev.c:3719\n\
+  \ sch_direct_xmit+0x3d1/0xbe0 net/sched/sch_generic.c:327\n __dev_xmit_skb net/core/dev.c:3815\
+  \ [inline]\n __dev_queue_xmit+0x14a1/0x3a00 net/core/dev.c:4219\n packet_snd net/packet/af_packet.c:3071\
+  \ [inline]\n packet_sendmsg+0x21cb/0x5550 net/packet/af_packet.c:3102\n sock_sendmsg_nosec\
+  \ net/socket.c:714 [inline]\n sock_sendmsg+0xcf/0x120 net/socket.c:734\n ____sys_sendmsg+0x6eb/0x810\
+  \ net/socket.c:2492\n ___sys_sendmsg+0xf3/0x170 net/socket.c:2546\n __sys_sendmsg\
+  \ net/socket.c:2575 [inline]\n __do_sys_sendmsg net/socket.c:2584 [inline]\n __se_sys_sendmsg\
+  \ net/socket.c:2582 [inline]\n __x64_sys_sendmsg+0x132/0x220 net/socket.c:2582\n\
+  \ do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n\
+  \ entry_SYSCALL_64_after_hwframe+0x46/0xb0\nRIP: 0033:0x7f4b95da06c9\nCode: 28 c3\
+  \ e8 4a 15 00 00 66 2e 0f 1f 84 00 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89\
+  \ ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1\
+  \ c0 ff ff ff f7 d8 64 89 01 48\nRSP: 002b:00007ffd7defc4c8 EFLAGS: 00000246 ORIG_RAX:\
+  \ 000000000000002e\nRAX: ffffffffffffffda RBX: 00007ffd7defc4f0 RCX: 00007f4b95da06c9\n\
+  RDX: 0000000000000000 RSI: 0000000020000140 RDI: 0000000000000003\nRBP: 0000000000000003\
+  \ R08: bb1414ac00000050 R09: bb1414ac00000050\nR10: 0000000000000004 R11: 0000000000000246\
+  \ R12: 0000000000000000\nR13: 00007ffd7defc4e0 R14: 00007ffd7defc4d8 R15: 00007ffd7defc4d4\n\
+  \ </TASK>\n\nFixes: dfed913e8b55 (\"net/af_packet: add VLAN support for AF_PACKET\
+  \ SOCK_RAW GSO\")\nSigned-off-by: Eric Dumazet <edumazet@google.com>\nReported-by:\
+  \ syzbot <syzkaller@googlegroups.com>\nAcked-by: Hangbin Liu <liuhangbin@gmail.com>\n\
+  Acked-by: Willem de Bruijn <willemb@google.com>\nCc: Michael S. Tsirkin <mst@redhat.com>\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/packet
+hunk_count: 1
+covered_count: 0

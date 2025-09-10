@@ -1,0 +1,21 @@
+diff --git a/fs/ntfs3/namei.c b/fs/ntfs3/namei.c
+index 407fe92394e2..8d206770d8c6 100644
+--- a/fs/ntfs3/namei.c
++++ b/fs/ntfs3/namei.c
+@@ -88,6 +88,16 @@ static struct dentry *ntfs_lookup(struct inode *dir, struct dentry *dentry,
+ 		__putname(uni);
+ 	}
+ 
++	/*
++	 * Check for a null pointer
++	 * If the MFT record of ntfs inode is not a base record, inode->i_op can be NULL.
++	 * This causes null pointer dereference in d_splice_alias().
++	 */
++	if (!IS_ERR(inode) && inode->i_op == NULL) {
++		iput(inode);
++		inode = ERR_PTR(-EINVAL);
++	}
++
+ 	return d_splice_alias(inode, dentry);
+ }
+ 

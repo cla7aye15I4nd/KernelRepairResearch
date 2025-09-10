@@ -1,0 +1,37 @@
+id: aea12292cfdadf454c38
+bug_link: https://syzkaller.appspot.com/bug?extid=aea12292cfdadf454c38
+title: general protection fault in __delayacct_blkio_end
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cd3f77d74ac31b4627cdfa70812338076a1ea475
+fix_commit: b512719f771a82180211c9a315b8a7f628832b3d
+datetime: '2018-07-26T19:38:03-07:00'
+fix_commit_message: "delayacct: fix crash in delayacct_blkio_end() after delayacct\
+  \ init failure\n\nWhile forking, if delayacct init fails due to memory shortage,\
+  \ it\ncontinues expecting all delayacct users to check task->delays pointer\nagainst\
+  \ NULL before dereferencing it, which all of them used to do.\n\nCommit c96f5471ce7d\
+  \ (\"delayacct: Account blkio completion on the correct\ntask\"), while updating\
+  \ delayacct_blkio_end() to take the target task\ninstead of always using %current,\
+  \ made the function test NULL on\n%current->delays and then continue to operated\
+  \ on @p->delays.  If\n%current succeeded init while @p didn't, it leads to the following\n\
+  crash.\n\n BUG: unable to handle kernel NULL pointer dereference at 0000000000000004\n\
+  \ IP: __delayacct_blkio_end+0xc/0x40\n PGD 8000001fd07e1067 P4D 8000001fd07e1067\
+  \ PUD 1fcffbb067 PMD 0\n Oops: 0000 [#1] SMP PTI\n CPU: 4 PID: 25774 Comm: QIOThread0\
+  \ Not tainted 4.16.0-9_fbk1_rc2_1180_g6b593215b4d7 #9\n RIP: 0010:__delayacct_blkio_end+0xc/0x40\n\
+  \ Call Trace:\n  try_to_wake_up+0x2c0/0x600\n  autoremove_wake_function+0xe/0x30\n\
+  \  __wake_up_common+0x74/0x120\n  wake_up_page_bit+0x9c/0xe0\n  mpage_end_io+0x27/0x70\n\
+  \  blk_update_request+0x78/0x2c0\n  scsi_end_request+0x2c/0x1e0\n  scsi_io_completion+0x20b/0x5f0\n\
+  \  blk_mq_complete_request+0xa2/0x100\n  ata_scsi_qc_complete+0x79/0x400\n  ata_qc_complete_multiple+0x86/0xd0\n\
+  \  ahci_handle_port_interrupt+0xc9/0x5c0\n  ahci_handle_port_intr+0x54/0xb0\n  ahci_single_level_irq_intr+0x3b/0x60\n\
+  \  __handle_irq_event_percpu+0x43/0x190\n  handle_irq_event_percpu+0x20/0x50\n \
+  \ handle_irq_event+0x2a/0x50\n  handle_edge_irq+0x80/0x1c0\n  handle_irq+0xaf/0x120\n\
+  \  do_IRQ+0x41/0xc0\n  common_interrupt+0xf/0xf\n\nFix it by updating delayacct_blkio_end()\
+  \ check @p->delays instead.\n\nLink: http://lkml.kernel.org/r/20180724175542.GP1934745@devbig577.frc2.facebook.com\n\
+  Fixes: c96f5471ce7d (\"delayacct: Account blkio completion on the correct task\"\
+  )\nSigned-off-by: Tejun Heo <tj@kernel.org>\nReported-by: Dave Jones <dsj@fb.com>\n\
+  Debugged-by: Dave Jones <dsj@fb.com>\nReviewed-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Cc: Josh Snyder <joshs@netflix.com>\nCc: <stable@vger.kernel.org>\t[4.15+]\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- include/linux
+hunk_count: 1
+covered_count: 1

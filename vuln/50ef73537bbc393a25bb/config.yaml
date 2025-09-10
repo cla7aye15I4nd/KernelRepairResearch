@@ -1,0 +1,57 @@
+id: 50ef73537bbc393a25bb
+bug_link: https://syzkaller.appspot.com/bug?extid=50ef73537bbc393a25bb
+title: WARNING in __folio_rmap_sanity_checks
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 982ae058b2f08f576e4f3d4055f8916ba789f3d4
+fix_commit: 9c5938694cd0e9e00bdfb7e60900673263daf4d5
+datetime: '2024-01-05T10:17:43-08:00'
+fix_commit_message: 'mm/rmap: silence VM_WARN_ON_FOLIO() in __folio_rmap_sanity_checks()
+
+
+  Unfortunately, vm_insert_page() and friends and up passing
+
+  driver-allocated folios into folio_add_file_rmap_pte() using
+
+  insert_page_into_pte_locked().
+
+
+  While these driver-allocated folios can be compound pages (large folios),
+
+  they are not proper "rmappable" folios.
+
+
+  In these VM_MIXEDMAP VMAs, there isn''t really the concept of a reverse
+
+  mapping, so long-term, we should clean that up and not call into rmap
+
+  code.
+
+
+  For the time being, document how we can end up in rmap code with large
+
+  folios that are not marked rmappable.
+
+
+  Link: https://lkml.kernel.org/r/793c5cee-d5fc-4eb1-86a2-39e05686233d@redhat.com
+
+  Fixes: 68f0320824fa ("mm/rmap: convert folio_add_file_rmap_range() into folio_add_file_rmap_[pte|ptes|pmd]()")
+
+  Reported-by: syzbot+50ef73537bbc393a25bb@syzkaller.appspotmail.com
+
+  Closes: https://lkml.kernel.org/r/000000000000014174060e09316e@google.com
+
+  Signed-off-by: David Hildenbrand <david@redhat.com>
+
+  Cc: Matthew Wilcox (Oracle) <willy@infradead.org>
+
+  Cc: Ryan Roberts <ryan.roberts@arm.com>
+
+  Cc: Yin Fengwei <fengwei.yin@intel.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- include/linux
+hunk_count: 1
+covered_count: 1

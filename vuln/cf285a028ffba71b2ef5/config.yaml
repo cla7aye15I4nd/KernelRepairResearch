@@ -1,0 +1,27 @@
+id: cf285a028ffba71b2ef5
+bug_link: https://syzkaller.appspot.com/bug?extid=cf285a028ffba71b2ef5
+title: 'WARNING: refcount bug in io_send_zc_cleanup (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cc34d8330e036b6bffa88db9ea537bae6b03948f
+fix_commit: 67c007d6c12da3e456c005083696c20d4498ae72
+datetime: '2025-03-22T08:14:36-06:00'
+fix_commit_message: "io_uring/net: fix sendzc double notif flush\n\nrefcount_t: underflow;\
+  \ use-after-free.\nWARNING: CPU: 0 PID: 5823 at lib/refcount.c:28 refcount_warn_saturate+0x15a/0x1d0\
+  \ lib/refcount.c:28\nRIP: 0010:refcount_warn_saturate+0x15a/0x1d0 lib/refcount.c:28\n\
+  Call Trace:\n <TASK>\n io_notif_flush io_uring/notif.h:40 [inline]\n io_send_zc_cleanup+0x121/0x170\
+  \ io_uring/net.c:1222\n io_clean_op+0x58c/0x9a0 io_uring/io_uring.c:406\n io_free_batch_list\
+  \ io_uring/io_uring.c:1429 [inline]\n __io_submit_flush_completions+0xc16/0xd20\
+  \ io_uring/io_uring.c:1470\n io_submit_flush_completions io_uring/io_uring.h:159\
+  \ [inline]\n\nBefore the blamed commit, sendzc relied on io_req_msg_cleanup() to\
+  \ clear\nREQ_F_NEED_CLEANUP, so after the following snippet the request will\nnever\
+  \ hit the core io_uring cleanup path.\n\nio_notif_flush();\nio_req_msg_cleanup();\n\
+  \nThe easiest fix is to null the notification. io_send_zc_cleanup() can\nstill be\
+  \ called after, but it's tolerated.\n\nReported-by: syzbot+cf285a028ffba71b2ef5@syzkaller.appspotmail.com\n\
+  Tested-by: syzbot+cf285a028ffba71b2ef5@syzkaller.appspotmail.com\nFixes: cc34d8330e036\
+  \ (\"io_uring/net: don't clear REQ_F_NEED_CLEANUP unconditionally\")\nSigned-off-by:\
+  \ Pavel Begunkov <asml.silence@gmail.com>\nLink: https://lore.kernel.org/r/e1306007458b8891c88c4f20c966a17595f766b0.1742643795.git.asml.silence@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- io_uring
+hunk_count: 2
+covered_count: 0

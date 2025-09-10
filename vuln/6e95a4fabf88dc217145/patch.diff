@@ -1,0 +1,26 @@
+diff --git a/net/sched/sch_red.c b/net/sched/sch_red.c
+index 4cc0ad0b1189..deac82f3ad7b 100644
+--- a/net/sched/sch_red.c
++++ b/net/sched/sch_red.c
+@@ -333,6 +333,10 @@ static int red_init(struct Qdisc *sch, struct nlattr *opt,
+ 	struct nlattr *tb[TCA_RED_MAX + 1];
+ 	int err;
+ 
++	q->qdisc = &noop_qdisc;
++	q->sch = sch;
++	timer_setup(&q->adapt_timer, red_adaptative_timer, 0);
++
+ 	if (!opt)
+ 		return -EINVAL;
+ 
+@@ -341,10 +345,6 @@ static int red_init(struct Qdisc *sch, struct nlattr *opt,
+ 	if (err < 0)
+ 		return err;
+ 
+-	q->qdisc = &noop_qdisc;
+-	q->sch = sch;
+-	timer_setup(&q->adapt_timer, red_adaptative_timer, 0);
+-
+ 	err = __red_change(sch, tb, extack);
+ 	if (err)
+ 		return err;

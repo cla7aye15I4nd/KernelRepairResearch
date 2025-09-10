@@ -1,0 +1,26 @@
+id: 4ec99438ed7450da6272
+bug_link: https://syzkaller.appspot.com/bug?extid=4ec99438ed7450da6272
+title: 'WARNING: bad unlock balance in sch_direct_xmit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 44c23d71599f81a1c7fe8389e0319822dd50c37c
+fix_commit: 53d374979ef147ab51f5d632dfe20b14aebeccd0
+datetime: '2020-01-17T11:02:44+01:00'
+fix_commit_message: "net: avoid updating qdisc_xmit_lock_key in netdev_update_lockdep_key()\n\
+  \nsyzbot reported some bogus lockdep warnings, for example bad unlock\nbalance in\
+  \ sch_direct_xmit(). They are due to a race condition between\nslow path and fast\
+  \ path, that is qdisc_xmit_lock_key gets re-registered\nin netdev_update_lockdep_key()\
+  \ on slow path, while we could still\nacquire the queue->_xmit_lock on fast path\
+  \ in this small window:\n\nCPU A\t\t\t\t\t\tCPU B\n\t\t\t\t\t\t__netif_tx_lock();\n\
+  lockdep_unregister_key(qdisc_xmit_lock_key);\n\t\t\t\t\t\t__netif_tx_unlock();\n\
+  lockdep_register_key(qdisc_xmit_lock_key);\n\nIn fact, unlike the addr_list_lock\
+  \ which has to be reordered when\nthe master/slave device relationship changes,\
+  \ queue->_xmit_lock is\nonly acquired on fast path and only when NETIF_F_LLTX is\
+  \ not set,\nso there is likely no nested locking for it.\n\nTherefore, we can just\
+  \ get rid of re-registration of\nqdisc_xmit_lock_key.\n\nReported-by: syzbot+4ec99438ed7450da6272@syzkaller.appspotmail.com\n\
+  Fixes: ab92d68fc22f (\"net: core: add generic lockdep keys\")\nCc: Taehee Yoo <ap420073@gmail.com>\n\
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>\nAcked-by: Taehee Yoo <ap420073@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,14 @@
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index 38ff02d31402..e6cfaa680ef3 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -2274,6 +2274,9 @@ static int xfrm_add_acquire(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	xfrm_mark_get(attrs, &mark);
+ 
+ 	err = verify_newpolicy_info(&ua->policy);
++	if (err)
++		goto free_state;
++	err = verify_sec_ctx_len(attrs);
+ 	if (err)
+ 		goto free_state;
+ 

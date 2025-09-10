@@ -1,0 +1,23 @@
+id: 653090db2562495901dc
+bug_link: https://syzkaller.appspot.com/bug?extid=653090db2562495901dc
+title: 'KASAN: use-after-free Read in tcindex_dump'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 94b18a87efdd1626a1e6aef87271af4a7c616d36
+fix_commit: b1be2e8cd290f620777bfdb8aa00890cd2fa02b5
+datetime: '2020-03-14T20:41:17-07:00'
+fix_commit_message: "net_sched: hold rtnl lock in tcindex_partial_destroy_work()\n\
+  \nsyzbot reported a use-after-free in tcindex_dump(). This is due to\nthe lack of\
+  \ RTNL in the deferred rcu work. We queue this work with\nRTNL in tcindex_change(),\
+  \ later, tcindex_dump() is called:\n\n        fh = tp->ops->get(tp, t->tcm_handle);\n\
+  \t...\n        err = tp->ops->change(..., &fh, ...);\n        tfilter_notify(...,\
+  \ fh, ...);\n\nbut there is nothing to serialize the pending\ntcindex_partial_destroy_work()\
+  \ with tcindex_dump().\n\nFix this by simply holding RTNL in tcindex_partial_destroy_work(),\n\
+  so that it won't be called until RTNL is released after\ntc_new_tfilter() is completed.\n\
+  \nReported-and-tested-by: syzbot+653090db2562495901dc@syzkaller.appspotmail.com\n\
+  Fixes: 3d210534cc93 (\"net_sched: fix a race condition in tcindex_destroy()\")\n\
+  Cc: Jamal Hadi Salim <jhs@mojatatu.com>\nCc: Jiri Pirko <jiri@resnulli.us>\nSigned-off-by:\
+  \ Cong Wang <xiyou.wangcong@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sched
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,50 @@
+diff --git a/fs/bcachefs/ec.c b/fs/bcachefs/ec.c
+index 1587c6e1866a..b29838083f1f 100644
+--- a/fs/bcachefs/ec.c
++++ b/fs/bcachefs/ec.c
+@@ -124,6 +124,11 @@ int bch2_stripe_validate(struct bch_fs *c, struct bkey_s_c k,
+ 			 "incorrect value size (%zu < %u)",
+ 			 bkey_val_u64s(k.k), stripe_val_u64s(s));
+ 
++	bkey_fsck_err_on(s->csum_granularity_bits >= 64,
++			 c, stripe_csum_granularity_bad,
++			 "invalid csum granularity (%u >= 64)",
++			 s->csum_granularity_bits);
++
+ 	ret = bch2_bkey_ptrs_validate(c, k, flags);
+ fsck_err:
+ 	return ret;
+@@ -145,7 +150,11 @@ void bch2_stripe_to_text(struct printbuf *out, struct bch_fs *c,
+ 		   nr_data,
+ 		   s.nr_redundant);
+ 	bch2_prt_csum_type(out, s.csum_type);
+-	prt_printf(out, " gran %u", 1U << s.csum_granularity_bits);
++	prt_str(out, " gran ");
++	if (s.csum_granularity_bits < 64)
++		prt_printf(out, "%llu", 1ULL << s.csum_granularity_bits);
++	else
++		prt_printf(out, "(invalid shift %u)", s.csum_granularity_bits);
+ 
+ 	if (s.disk_label) {
+ 		prt_str(out, " label");
+diff --git a/fs/bcachefs/sb-errors_format.h b/fs/bcachefs/sb-errors_format.h
+index 62ad25f91b78..aab328ac6dfa 100644
+--- a/fs/bcachefs/sb-errors_format.h
++++ b/fs/bcachefs/sb-errors_format.h
+@@ -180,6 +180,7 @@ enum bch_fsck_flags {
+ 	x(reflink_p_to_missing_reflink_v,			166,	0)		\
+ 	x(stripe_pos_bad,					167,	0)		\
+ 	x(stripe_val_size_bad,					168,	0)		\
++	x(stripe_csum_granularity_bad,				290,	0)		\
+ 	x(stripe_sector_count_wrong,				169,	0)		\
+ 	x(snapshot_tree_pos_bad,				170,	0)		\
+ 	x(snapshot_tree_to_missing_snapshot,			171,	0)		\
+@@ -301,7 +302,7 @@ enum bch_fsck_flags {
+ 	x(accounting_key_replicas_devs_unsorted,		280,	FSCK_AUTOFIX)	\
+ 	x(accounting_key_version_0,				282,	FSCK_AUTOFIX)	\
+ 	x(logged_op_but_clean,					283,	FSCK_AUTOFIX)	\
+-	x(MAX,							290,	0)
++	x(MAX,							291,	0)
+ 
+ enum bch_sb_error_id {
+ #define x(t, n, ...) BCH_FSCK_ERR_##t = n,

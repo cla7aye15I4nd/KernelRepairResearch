@@ -1,0 +1,45 @@
+id: 93e495f6a4f748827c88
+bug_link: https://syzkaller.appspot.com/bug?extid=93e495f6a4f748827c88
+title: WARNING in fscrypt_destroy_keyring
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fe15c26ee26efa11741a7b632e9f23b01aca4cc6
+fix_commit: ccb820dc7d2236b1af0d54ae038a27b5b6d5ae5a
+datetime: '2023-03-14T10:30:30-07:00'
+fix_commit_message: 'fscrypt: destroy keyring after security_sb_delete()
+
+
+  fscrypt_destroy_keyring() must be called after all potentially-encrypted
+
+  inodes were evicted; otherwise it cannot safely destroy the keyring.
+
+  Since inodes that are in-use by the Landlock LSM don''t get evicted until
+
+  security_sb_delete(), this means that fscrypt_destroy_keyring() must be
+
+  called *after* security_sb_delete().
+
+
+  This fixes a WARN_ON followed by a NULL dereference, only possible if
+
+  Landlock was being used on encrypted files.
+
+
+  Fixes: d7e7b9af104c ("fscrypt: stop using keyrings subsystem for fscrypt_master_key")
+
+  Cc: stable@vger.kernel.org
+
+  Reported-by: syzbot+93e495f6a4f748827c88@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/00000000000044651705f6ca1e30@google.com
+
+  Reviewed-by: Christian Brauner <brauner@kernel.org>
+
+  Link: https://lore.kernel.org/r/20230313221231.272498-2-ebiggers@kernel.org
+
+  Signed-off-by: Eric Biggers <ebiggers@google.com>
+
+  '
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

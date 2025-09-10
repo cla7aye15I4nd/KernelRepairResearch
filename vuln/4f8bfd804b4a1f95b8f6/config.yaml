@@ -1,0 +1,37 @@
+id: 4f8bfd804b4a1f95b8f6
+bug_link: https://syzkaller.appspot.com/bug?extid=4f8bfd804b4a1f95b8f6
+title: 'KCSAN: data-race in sbitmap_queue_clear / sbitmap_queue_clear (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0c9d338c8443b06da8e8d3bfce824c5ea6d3488f
+fix_commit: 9f8b93a7df4d8e1e8715fb2a45a893cffad9da0b
+datetime: '2021-10-25T10:45:01-06:00'
+fix_commit_message: "sbitmap: silence data race warning\n\nKCSAN complaints about\
+  \ the sbitmap hint update:\n\n==================================================================\n\
+  BUG: KCSAN: data-race in sbitmap_queue_clear / sbitmap_queue_clear\n\nwrite to 0xffffe8ffffd145b8\
+  \ of 4 bytes by interrupt on cpu 1:\n sbitmap_queue_clear+0xca/0xf0 lib/sbitmap.c:606\n\
+  \ blk_mq_put_tag+0x82/0x90\n __blk_mq_free_request+0x114/0x180 block/blk-mq.c:507\n\
+  \ blk_mq_free_request+0x2c8/0x340 block/blk-mq.c:541\n __blk_mq_end_request+0x214/0x230\
+  \ block/blk-mq.c:565\n blk_mq_end_request+0x37/0x50 block/blk-mq.c:574\n lo_complete_rq+0xca/0x170\
+  \ drivers/block/loop.c:541\n blk_complete_reqs block/blk-mq.c:584 [inline]\n blk_done_softirq+0x69/0x90\
+  \ block/blk-mq.c:589\n __do_softirq+0x12c/0x26e kernel/softirq.c:558\n run_ksoftirqd+0x13/0x20\
+  \ kernel/softirq.c:920\n smpboot_thread_fn+0x22f/0x330 kernel/smpboot.c:164\n kthread+0x262/0x280\
+  \ kernel/kthread.c:319\n ret_from_fork+0x1f/0x30\n\nwrite to 0xffffe8ffffd145b8\
+  \ of 4 bytes by interrupt on cpu 0:\n sbitmap_queue_clear+0xca/0xf0 lib/sbitmap.c:606\n\
+  \ blk_mq_put_tag+0x82/0x90\n __blk_mq_free_request+0x114/0x180 block/blk-mq.c:507\n\
+  \ blk_mq_free_request+0x2c8/0x340 block/blk-mq.c:541\n __blk_mq_end_request+0x214/0x230\
+  \ block/blk-mq.c:565\n blk_mq_end_request+0x37/0x50 block/blk-mq.c:574\n lo_complete_rq+0xca/0x170\
+  \ drivers/block/loop.c:541\n blk_complete_reqs block/blk-mq.c:584 [inline]\n blk_done_softirq+0x69/0x90\
+  \ block/blk-mq.c:589\n __do_softirq+0x12c/0x26e kernel/softirq.c:558\n run_ksoftirqd+0x13/0x20\
+  \ kernel/softirq.c:920\n smpboot_thread_fn+0x22f/0x330 kernel/smpboot.c:164\n kthread+0x262/0x280\
+  \ kernel/kthread.c:319\n ret_from_fork+0x1f/0x30\n\nvalue changed: 0x00000035 ->\
+  \ 0x00000044\n\nReported by Kernel Concurrency Sanitizer on:\nCPU: 0 PID: 10 Comm:\
+  \ ksoftirqd/0 Not tainted 5.15.0-rc6-syzkaller #0\nHardware name: Google Google\
+  \ Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n==================================================================\n\
+  \nwhich is a data race, but not an important one. This is just updating the\npercpu\
+  \ alloc hint, and the reader of that hint doesn't ever require it to\nbe valid.\n\
+  \nJust annotate it with data_race() to silence this one.\n\nReported-by: syzbot+4f8bfd804b4a1f95b8f6@syzkaller.appspotmail.com\n\
+  Acked-by: Marco Elver <elver@google.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- lib
+hunk_count: 1
+covered_count: 1

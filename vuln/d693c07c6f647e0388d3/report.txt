@@ -1,0 +1,52 @@
+------------[ cut here ]------------
+usb 5-1: BOGUS urb xfer, pipe 3 != type 1
+WARNING: CPU: 2 PID: 1841 at drivers/usb/core/urb.c:503 usb_submit_urb+0xe4b/0x1730 drivers/usb/core/urb.c:503
+Modules linked in:
+CPU: 2 UID: 0 PID: 1841 Comm: kworker/2:2 Not tainted 6.12.0-syzkaller-07834-g06afb0f36106 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: mld mld_ifc_work
+RIP: 0010:usb_submit_urb+0xe4b/0x1730 drivers/usb/core/urb.c:503
+Code: 84 3c 02 00 00 e8 45 4a b9 fa 4c 89 ef e8 6d 2c da fe 45 89 e0 89 e9 4c 89 f2 48 89 c6 48 c7 c7 a0 f7 2c 8c e8 56 a5 79 fa 90 <0f> 0b 90 90 e9 e9 f8 ff ff e8 17 4a b9 fa 49 81 c4 c0 05 00 00 e9
+RSP: 0018:ffffc90007b2f440 EFLAGS: 00010082
+RAX: 0000000000000000 RBX: ffff8880286e1400 RCX: ffffffff814e9669
+RDX: ffff888029218000 RSI: ffffffff814e9676 RDI: 0000000000000001
+RBP: 0000000000000003 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000009 R12: 0000000000000001
+R13: ffff8880307130a8 R14: ffff888024fdfb00 R15: ffff8880286e147c
+FS:  0000000000000000(0000) GS:ffff88806a800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055990e378000 CR3: 0000000025768000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ usbnet_start_xmit+0x6be/0x2780 drivers/net/usb/usbnet.c:1467
+ __netdev_start_xmit include/linux/netdevice.h:5002 [inline]
+ netdev_start_xmit include/linux/netdevice.h:5011 [inline]
+ xmit_one net/core/dev.c:3590 [inline]
+ dev_hard_start_xmit+0x9a/0x7b0 net/core/dev.c:3606
+ sch_direct_xmit+0x1ae/0xc30 net/sched/sch_generic.c:343
+ __dev_xmit_skb net/core/dev.c:3827 [inline]
+ __dev_queue_xmit+0x13d4/0x43e0 net/core/dev.c:4400
+ dev_queue_xmit include/linux/netdevice.h:3168 [inline]
+ neigh_resolve_output net/core/neighbour.c:1514 [inline]
+ neigh_resolve_output+0x5bc/0x950 net/core/neighbour.c:1494
+ neigh_output include/net/neighbour.h:539 [inline]
+ ip6_finish_output2+0xb1b/0x2070 net/ipv6/ip6_output.c:141
+ __ip6_finish_output net/ipv6/ip6_output.c:215 [inline]
+ ip6_finish_output+0x3f9/0x1360 net/ipv6/ip6_output.c:226
+ NF_HOOK_COND include/linux/netfilter.h:303 [inline]
+ ip6_output+0x1f8/0x540 net/ipv6/ip6_output.c:247
+ dst_output include/net/dst.h:450 [inline]
+ NF_HOOK include/linux/netfilter.h:314 [inline]
+ NF_HOOK include/linux/netfilter.h:308 [inline]
+ mld_sendpack+0x9f0/0x11d0 net/ipv6/mcast.c:1819
+ mld_send_cr net/ipv6/mcast.c:2120 [inline]
+ mld_ifc_work+0x740/0xca0 net/ipv6/mcast.c:2651
+ process_one_work+0x9c5/0x1ba0 kernel/workqueue.c:3229
+ process_scheduled_works kernel/workqueue.c:3310 [inline]
+ worker_thread+0x6c8/0xf00 kernel/workqueue.c:3391
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

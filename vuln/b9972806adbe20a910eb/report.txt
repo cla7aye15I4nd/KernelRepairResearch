@@ -1,0 +1,63 @@
+loop0: detected capacity change from 0 to 262144
+F2FS-fs (loop0): invalid crc value
+F2FS-fs (loop0): Found nat_bits in checkpoint
+F2FS-fs (loop0): Start checkpoint disabled!
+F2FS-fs (loop0): Mounted with checkpoint version = 48b305e5
+------------[ cut here ]------------
+kernel BUG at fs/f2fs/gc.c:373!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5316 Comm: syz.0.0 Not tainted 6.13.0-rc3-syzkaller-00044-gaef25be35d23 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:get_cb_cost fs/f2fs/gc.c:373 [inline]
+RIP: 0010:get_gc_cost fs/f2fs/gc.c:406 [inline]
+RIP: 0010:f2fs_get_victim+0x68b1/0x6aa0 fs/f2fs/gc.c:912
+Code: f9 80 e1 07 80 c1 03 38 c1 0f 8c 4f f8 ff ff 4c 89 ff e8 22 3c 06 fe e9 42 f8 ff ff e8 98 d3 9f fd 90 0f 0b e8 90 d3 9f fd 90 <0f> 0b e8 88 d3 9f fd 90 0f 0b 89 d1 80 e1 07 80 c1 03 38 c1 0f 8c
+RSP: 0018:ffffc9000d44f2e0 EFLAGS: 00010287
+RAX: ffffffff83ffa060 RBX: ffffffffffffffff RCX: 0000000000100000
+RDX: ffffc9000eee2000 RSI: 00000000000003e0 RDI: 00000000000003e1
+RBP: ffffc9000d44f628 R08: ffffffff83ff60bf R09: ffffffff83ff6048
+R10: 0000000000000002 R11: ffff888000864880 R12: 0000000000000008
+R13: ffff888011a96c00 R14: 0000000000000008 R15: dffffc0000000000
+FS:  00007f10c73646c0(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f10c676c4c8 CR3: 0000000042e3e000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __get_victim fs/f2fs/gc.c:1707 [inline]
+ f2fs_gc+0xc89/0x2f60 fs/f2fs/gc.c:1915
+ f2fs_ioc_gc fs/f2fs/file.c:2624 [inline]
+ __f2fs_ioctl+0x4cc9/0xb8b0 fs/f2fs/file.c:4482
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl+0xf5/0x170 fs/ioctl.c:892
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f10c6585d29
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f10c7364038 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007f10c6775fa0 RCX: 00007f10c6585d29
+RDX: 0000000020000140 RSI: 000000004004f506 RDI: 0000000000000006
+RBP: 00007f10c6601a20 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007f10c6775fa0 R15: 00007ffd0da279e8
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:get_cb_cost fs/f2fs/gc.c:373 [inline]
+RIP: 0010:get_gc_cost fs/f2fs/gc.c:406 [inline]
+RIP: 0010:f2fs_get_victim+0x68b1/0x6aa0 fs/f2fs/gc.c:912
+Code: f9 80 e1 07 80 c1 03 38 c1 0f 8c 4f f8 ff ff 4c 89 ff e8 22 3c 06 fe e9 42 f8 ff ff e8 98 d3 9f fd 90 0f 0b e8 90 d3 9f fd 90 <0f> 0b e8 88 d3 9f fd 90 0f 0b 89 d1 80 e1 07 80 c1 03 38 c1 0f 8c
+RSP: 0018:ffffc9000d44f2e0 EFLAGS: 00010287
+RAX: ffffffff83ffa060 RBX: ffffffffffffffff RCX: 0000000000100000
+RDX: ffffc9000eee2000 RSI: 00000000000003e0 RDI: 00000000000003e1
+RBP: ffffc9000d44f628 R08: ffffffff83ff60bf R09: ffffffff83ff6048
+R10: 0000000000000002 R11: ffff888000864880 R12: 0000000000000008
+R13: ffff888011a96c00 R14: 0000000000000008 R15: dffffc0000000000
+FS:  00007f10c73646c0(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f10c676c4c8 CR3: 0000000042e3e000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

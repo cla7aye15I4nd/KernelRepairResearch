@@ -1,0 +1,38 @@
+id: 4ebb06d5f6e3597279c0
+bug_link: https://syzkaller.appspot.com/bug?extid=4ebb06d5f6e3597279c0
+title: possible deadlock in xsk_diag_dump
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8c941f14a694b40a91d381e77bcd334622aa7196
+fix_commit: f0433eea468810aebd61d0b9d095e9acd6bea2ed
+datetime: '2025-04-14T12:48:44-07:00'
+fix_commit_message: "net: don't mix device locking in dev_close_many() calls\n\nLockdep\
+  \ found the following dependency:\n\n  &dev_instance_lock_key#3 -->\n     &rdev->wiphy.mtx\
+  \ -->\n        &net->xdp.lock -->\n\t   &xs->mutex -->\n\t      &dev_instance_lock_key#3\n\
+  \nThe first dependency is the problem. wiphy mutex should be outside\nthe instance\
+  \ locks. The problem happens in notifiers (as always)\nfor CLOSE. We only hold the\
+  \ instance lock for ops locked devices\nduring CLOSE, and WiFi netdevs are not ops\
+  \ locked. Unfortunately,\nwhen we dev_close_many() during netns dismantle we may\
+  \ be holding\nthe instance lock of _another_ netdev when issuing a CLOSE for\na\
+  \ WiFi device.\n\nLockdep's \"Possible unsafe locking scenario\" only prints 3 locks\n\
+  and we have 4, plus I think we'd need 3 CPUs, like this:\n\n       CPU0        \
+  \         CPU1              CPU2\n       ----                 ----             \
+  \ ----\n  lock(&xs->mutex);\n                       lock(&dev_instance_lock_key#3);\n\
+  \                                         lock(&rdev->wiphy.mtx);\n            \
+  \                             lock(&net->xdp.lock);\n                          \
+  \               lock(&xs->mutex);\n                       lock(&rdev->wiphy.mtx);\n\
+  \  lock(&dev_instance_lock_key#3);\n\nTho, I don't think that's possible as CPU1\
+  \ and CPU2 would\nbe under rtnl_lock. Even if we have per-netns rtnl_lock and\n\
+  wiphy can span network namespaces - CPU0 and CPU1 must be\nin the same netns to\
+  \ see dev_instance_lock, so CPU0 can't\nbe installing a socket as CPU1 is tearing\
+  \ the netns down.\n\nRegardless, our expected lock ordering is that wiphy lock\n\
+  is taken before instance locks, so let's fix this.\n\nGo over the ops locked and\
+  \ non-locked devices separately.\nNote that calling dev_close_many() on an empty\
+  \ list is perfectly\nfine. All processing (including RCU syncs) are conditional\n\
+  on the list not being empty, already.\n\nFixes: 7e4d784f5810 (\"net: hold netdev\
+  \ instance lock during rtnetlink operations\")\nReported-by: syzbot+6f588c78bf765b62b450@syzkaller.appspotmail.com\n\
+  Acked-by: Stanislav Fomichev <sdf@fomichev.me>\nLink: https://patch.msgid.link/20250412233011.309762-1-kuba@kernel.org\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 1

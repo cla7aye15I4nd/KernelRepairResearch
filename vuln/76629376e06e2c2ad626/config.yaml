@@ -1,0 +1,42 @@
+id: 76629376e06e2c2ad626
+bug_link: https://syzkaller.appspot.com/bug?extid=76629376e06e2c2ad626
+title: 'INFO: task hung in hub_port_init (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5b67b315037250a61861119683e7fcb509deea25
+fix_commit: 26fbe9772b8c459687930511444ce443011f86bf
+datetime: '2022-01-25T18:43:19+01:00'
+fix_commit_message: "USB: core: Fix hang in usb_kill_urb by adding memory barriers\n\
+  \nThe syzbot fuzzer has identified a bug in which processes hang waiting\nfor usb_kill_urb()\
+  \ to return.  It turns out the issue is not unlinking\nthe URB; that works just\
+  \ fine.  Rather, the problem arises when the\nwakeup notification that the URB has\
+  \ completed is not received.\n\nThe reason is memory-access ordering on SMP systems.\
+  \  In outline form,\nusb_kill_urb() and __usb_hcd_giveback_urb() operating concurrently\
+  \ on\ndifferent CPUs perform the following actions:\n\nCPU 0\t\t\t\t\tCPU 1\n----------------------------\t\
+  \t---------------------------------\nusb_kill_urb():\t\t\t\t__usb_hcd_giveback_urb():\n\
+  \  ...\t\t\t\t\t  ...\n  atomic_inc(&urb->reject);\t\t  atomic_dec(&urb->use_count);\n\
+  \  ...\t\t\t\t\t  ...\n  wait_event(usb_kill_urb_queue,\n\tatomic_read(&urb->use_count)\
+  \ == 0);\n\t\t\t\t\t  if (atomic_read(&urb->reject))\n\t\t\t\t\t\twake_up(&usb_kill_urb_queue);\n\
+  \nConfining your attention to urb->reject and urb->use_count, you can\nsee that\
+  \ the overall pattern of accesses on CPU 0 is:\n\n\twrite urb->reject, then read\
+  \ urb->use_count;\n\nwhereas the overall pattern of accesses on CPU 1 is:\n\n\t\
+  write urb->use_count, then read urb->reject.\n\nThis pattern is referred to in memory-model\
+  \ circles as SB (for \"Store\nBuffering\"), and it is well known that without suitable\
+  \ enforcement of\nthe desired order of accesses -- in the form of memory barriers\
+  \ -- it\nis entirely possible for one or both CPUs to execute their reads ahead\n\
+  of their writes.  The end result will be that sometimes CPU 0 sees the\nold un-decremented\
+  \ value of urb->use_count while CPU 1 sees the old\nun-incremented value of urb->reject.\
+  \  Consequently CPU 0 ends up on\nthe wait queue and never gets woken up, leading\
+  \ to the observed hang\nin usb_kill_urb().\n\nThe same pattern of accesses occurs\
+  \ in usb_poison_urb() and the\nfailure pathway of usb_hcd_submit_urb().\n\nThe problem\
+  \ is fixed by adding suitable memory barriers.  To provide\nproper memory-access\
+  \ ordering in the SB pattern, a full barrier is\nrequired on both CPUs.  The atomic_inc()\
+  \ and atomic_dec() accesses\nthemselves don't provide any memory ordering, but since\
+  \ they are\npresent, we can use the optimized smp_mb__after_atomic() memory\nbarrier\
+  \ in the various routines to obtain the desired effect.\n\nThis patch adds the necessary\
+  \ memory barriers.\n\nCC: <stable@vger.kernel.org>\nReported-and-tested-by: syzbot+76629376e06e2c2ad626@syzkaller.appspotmail.com\n\
+  Signed-off-by: Alan Stern <stern@rowland.harvard.edu>\nLink: https://lore.kernel.org/r/Ye8K0QYee0Q0Nna2@rowland.harvard.edu\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/core
+hunk_count: 4
+covered_count: 2

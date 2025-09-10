@@ -1,0 +1,91 @@
+id: 3cc1054e15babd5f4cd2
+bug_link: https://syzkaller.appspot.com/bug?extid=3cc1054e15babd5f4cd2
+title: possible deadlock in console_lock_spinning_enable (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2bb2b7b57f81255c13f4395ea911d6bdc70c9fe2
+fix_commit: 09c5ba0aa2fcfdadb17d045c3ee6f86d69270df7
+datetime: '2022-04-22T21:30:58+02:00'
+fix_commit_message: 'printk: add kthread console printers
+
+
+  Create a kthread for each console to perform console printing. During
+
+  normal operation (@system_state == SYSTEM_RUNNING), the kthread
+
+  printers are responsible for all printing on their respective
+
+  consoles.
+
+
+  During non-normal operation, console printing is done as it has been:
+
+  within the context of the printk caller or within irqwork triggered
+
+  by the printk caller, referred to as direct printing.
+
+
+  Since threaded console printers are responsible for all printing
+
+  during normal operation, this also includes messages generated via
+
+  deferred printk calls. If direct printing is in effect during a
+
+  deferred printk call, the queued irqwork will perform the direct
+
+  printing. To make it clear that this is the only time that the
+
+  irqwork will perform direct printing, rename the flag
+
+  PRINTK_PENDING_OUTPUT to PRINTK_PENDING_DIRECT_OUTPUT.
+
+
+  Threaded console printers synchronize against each other and against
+
+  console lockers by taking the console lock for each message that is
+
+  printed.
+
+
+  Note that the kthread printers do not care about direct printing.
+
+  They will always try to print if new records are available. They can
+
+  be blocked by direct printing, but will be woken again once direct
+
+  printing is finished.
+
+
+  Console unregistration is a bit tricky because the associated
+
+  kthread printer cannot be stopped while the console lock is held.
+
+  A policy is implemented that states: whichever task clears
+
+  con->thread (under the console lock) is responsible for stopping
+
+  the kthread. unregister_console() will clear con->thread while
+
+  the console lock is held and then stop the kthread after releasing
+
+  the console lock.
+
+
+  For consoles that have implemented the exit() callback, the kthread
+
+  is stopped before exit() is called.
+
+
+  Signed-off-by: John Ogness <john.ogness@linutronix.de>
+
+  Reviewed-by: Petr Mladek <pmladek@suse.com>
+
+  Signed-off-by: Petr Mladek <pmladek@suse.com>
+
+  Link: https://lore.kernel.org/r/20220421212250.565456-14-john.ogness@linutronix.de
+
+  '
+submodule:
+- include/linux
+- kernel/printk
+hunk_count: 22
+covered_count: 8

@@ -1,0 +1,28 @@
+id: 1f29e126cf461c4de3b3
+bug_link: https://syzkaller.appspot.com/bug?extid=1f29e126cf461c4de3b3
+title: 'BUG: unable to handle kernel paging request in vga16fb_imageblit (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 25a1298726e97b9d25379986f5d54d9e62ad6e93
+fix_commit: ffb324e6f874121f7dce5bdae5e05d02baae7269
+datetime: '2021-05-15T08:12:12-07:00'
+fix_commit_message: "tty: vt: always invoke vc->vc_sw->con_resize callback\n\nsyzbot\
+  \ is reporting OOB write at vga16fb_imageblit() [1], for\nresize_screen() from ioctl(VT_RESIZE)\
+  \ returns 0 without checking whether\nrequested rows/columns fit the amount of memory\
+  \ reserved for the graphical\nscreen if current mode is KD_GRAPHICS.\n\n----------\n\
+  \  #include <sys/types.h>\n  #include <sys/stat.h>\n  #include <fcntl.h>\n  #include\
+  \ <sys/ioctl.h>\n  #include <linux/kd.h>\n  #include <linux/vt.h>\n\n  int main(int\
+  \ argc, char *argv[])\n  {\n        const int fd = open(\"/dev/char/4:1\", O_RDWR);\n\
+  \        struct vt_sizes vt = { 0x4100, 2 };\n\n        ioctl(fd, KDSETMODE, KD_GRAPHICS);\n\
+  \        ioctl(fd, VT_RESIZE, &vt);\n        ioctl(fd, KDSETMODE, KD_TEXT);\n  \
+  \      return 0;\n  }\n----------\n\nAllow framebuffer drivers to return -EINVAL,\
+  \ by moving vc->vc_mode !=\nKD_GRAPHICS check from resize_screen() to fbcon_resize().\n\
+  \nLink: https://syzkaller.appspot.com/bug?extid=1f29e126cf461c4de3b3 [1]\nReported-by:\
+  \ syzbot <syzbot+1f29e126cf461c4de3b3@syzkaller.appspotmail.com>\nSuggested-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\nSigned-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\n\
+  Tested-by: syzbot <syzbot+1f29e126cf461c4de3b3@syzkaller.appspotmail.com>\nSigned-off-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- drivers/tty/vt
+- drivers/video/fbdev/core
+hunk_count: 2
+covered_count: 0

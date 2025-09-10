@@ -1,0 +1,49 @@
+=====================================================
+BUG: KMSAN: uninit-value in mii_nway_restart+0xfe/0x220 drivers/net/mii.c:468
+ mii_nway_restart+0xfe/0x220 drivers/net/mii.c:468
+ ch9200_bind+0x21c/0xfe0 drivers/net/usb/ch9200.c:354
+ usbnet_probe+0xbe6/0x4390 drivers/net/usb/usbnet.c:1772
+ usb_probe_interface+0xd04/0x1310 drivers/usb/core/driver.c:396
+ call_driver_probe drivers/base/dd.c:-1 [inline]
+ really_probe+0x4d1/0xd90 drivers/base/dd.c:657
+ __driver_probe_device+0x268/0x380 drivers/base/dd.c:799
+ driver_probe_device+0x70/0x8b0 drivers/base/dd.c:829
+ __device_attach_driver+0x4ee/0x950 drivers/base/dd.c:957
+ bus_for_each_drv+0x3e3/0x680 drivers/base/bus.c:462
+ __device_attach+0x3c8/0x5c0 drivers/base/dd.c:1029
+ device_initial_probe+0x33/0x40 drivers/base/dd.c:1078
+ bus_probe_device+0x3ba/0x5e0 drivers/base/bus.c:537
+ device_add+0x12a9/0x1c10 drivers/base/core.c:3692
+ usb_set_configuration+0x3493/0x3b70 drivers/usb/core/message.c:2210
+ usb_generic_driver_probe+0xfc/0x290 drivers/usb/core/generic.c:250
+ usb_probe_device+0x38a/0x690 drivers/usb/core/driver.c:291
+ call_driver_probe drivers/base/dd.c:-1 [inline]
+ really_probe+0x4d1/0xd90 drivers/base/dd.c:657
+ __driver_probe_device+0x268/0x380 drivers/base/dd.c:799
+ driver_probe_device+0x70/0x8b0 drivers/base/dd.c:829
+ __device_attach_driver+0x4ee/0x950 drivers/base/dd.c:957
+ bus_for_each_drv+0x3e3/0x680 drivers/base/bus.c:462
+ __device_attach+0x3c8/0x5c0 drivers/base/dd.c:1029
+ device_initial_probe+0x33/0x40 drivers/base/dd.c:1078
+ bus_probe_device+0x3ba/0x5e0 drivers/base/bus.c:537
+ device_add+0x12a9/0x1c10 drivers/base/core.c:3692
+ usb_new_device+0x104b/0x20c0 drivers/usb/core/hub.c:2663
+ hub_port_connect drivers/usb/core/hub.c:5531 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5671 [inline]
+ port_event drivers/usb/core/hub.c:5831 [inline]
+ hub_event+0x5588/0x7580 drivers/usb/core/hub.c:5913
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xb9a/0x1d90 kernel/workqueue.c:3319
+ worker_thread+0xedf/0x1590 kernel/workqueue.c:3400
+ kthread+0xd5c/0xf00 kernel/kthread.c:464
+ ret_from_fork+0x71/0x90 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+Local variable buff created at:
+ ch9200_mdio_read+0x3d/0xd0 drivers/net/usb/ch9200.c:180
+ mii_nway_restart+0x8f/0x220 drivers/net/mii.c:466
+
+CPU: 0 UID: 0 PID: 9 Comm: kworker/0:0 Not tainted 6.15.0-syzkaller #0 PREEMPT(undef) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Workqueue: usb_hub_wq hub_event
+=====================================================

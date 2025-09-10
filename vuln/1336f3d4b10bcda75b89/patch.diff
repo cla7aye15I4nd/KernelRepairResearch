@@ -1,0 +1,29 @@
+diff --git a/kernel/bpf/bpf_struct_ops.c b/kernel/bpf/bpf_struct_ops.c
+index defc052e4622..0decd862dfe0 100644
+--- a/kernel/bpf/bpf_struct_ops.c
++++ b/kernel/bpf/bpf_struct_ops.c
+@@ -669,6 +669,8 @@ static struct bpf_map *bpf_struct_ops_map_alloc(union bpf_attr *attr)
+ 		btf = bpf_get_btf_vmlinux();
+ 		if (IS_ERR(btf))
+ 			return ERR_CAST(btf);
++		if (!btf)
++			return ERR_PTR(-ENOTSUPP);
+ 	}
+ 
+ 	st_ops_desc = bpf_struct_ops_find_value(btf, attr->btf_vmlinux_value_type_id);
+diff --git a/kernel/bpf/verifier.c b/kernel/bpf/verifier.c
+index fe833e831cb6..c5d68a9d8acc 100644
+--- a/kernel/bpf/verifier.c
++++ b/kernel/bpf/verifier.c
+@@ -20298,7 +20298,10 @@ static int check_struct_ops_btf_id(struct bpf_verifier_env *env)
+ 		return -EINVAL;
+ 	}
+ 
+-	btf = prog->aux->attach_btf ?: bpf_get_btf_vmlinux();
++	if (!prog->aux->attach_btf_id)
++		return -ENOTSUPP;
++
++	btf = prog->aux->attach_btf;
+ 	if (btf_is_module(btf)) {
+ 		/* Make sure st_ops is valid through the lifetime of env */
+ 		env->attach_btf_mod = btf_try_get_module(btf);

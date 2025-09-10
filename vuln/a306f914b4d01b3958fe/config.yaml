@@ -1,0 +1,51 @@
+id: a306f914b4d01b3958fe
+bug_link: https://syzkaller.appspot.com/bug?extid=a306f914b4d01b3958fe
+title: kernel BUG in btrfs_free_tree_block
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b7519157655bba3f885a856c1ec8b6560b51e214
+fix_commit: bb3868033a4cccff7be57e9145f2117cbdc91c11
+datetime: '2024-07-11T15:33:26+02:00'
+fix_commit_message: 'btrfs: do not BUG_ON() when freeing tree block after error
+
+
+  When freeing a tree block, at btrfs_free_tree_block(), if we fail to
+
+  create a delayed reference we don''t deal with the error and just do a
+
+  BUG_ON(). The error most likely to happen is -ENOMEM, and we have a
+
+  comment mentioning that only -ENOMEM can happen, but that is not true,
+
+  because in case qgroups are enabled any error returned from
+
+  btrfs_qgroup_trace_extent_post() (can be -EUCLEAN or anything returned
+
+  from btrfs_search_slot() for example) can be propagated back to
+
+  btrfs_free_tree_block().
+
+
+  So stop doing a BUG_ON() and return the error to the callers and make
+
+  them abort the transaction to prevent leaking space. Syzbot was
+
+  triggering this, likely due to memory allocation failure injection.
+
+
+  Reported-by: syzbot+a306f914b4d01b3958fe@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/linux-btrfs/000000000000fcba1e05e998263c@google.com/
+
+  Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+  Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+  Reviewed-by: David Sterba <dsterba@suse.com>
+
+  Signed-off-by: David Sterba <dsterba@suse.com>
+
+  '
+submodule:
+- fs/btrfs
+hunk_count: 17
+covered_count: 4

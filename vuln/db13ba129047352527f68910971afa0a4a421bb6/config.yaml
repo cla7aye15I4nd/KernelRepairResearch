@@ -1,0 +1,30 @@
+id: db13ba129047352527f68910971afa0a4a421bb6
+bug_link: https://syzkaller.appspot.com/bug?extid=db13ba129047352527f68910971afa0a4a421bb6
+title: 'KASAN: use-after-free Read in __lock_acquire'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5f479447d983111c039f1d6d958553c1ad1b2ff1
+fix_commit: 153fbd1226fb30b8630802aa5047b8af5ef53c9f
+datetime: '2017-11-01T09:05:00+01:00'
+fix_commit_message: "futex: Fix more put_pi_state() vs. exit_pi_state_list() races\n\
+  \nDmitry (through syzbot) reported being able to trigger the WARN in\nget_pi_state()\
+  \ and a use-after-free on:\n\n\traw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);\n\
+  \nBoth are due to this race:\n\n  exit_pi_state_list()\t\t\t\tput_pi_state()\n\n\
+  \  lock(&curr->pi_lock)\n  while() {\n\tpi_state = list_first_entry(head);\n\thb\
+  \ = hash_futex(&pi_state->key);\n\tunlock(&curr->pi_lock);\n\n\t\t\t\t\t\tdec_and_test(&pi_state->refcount);\n\
+  \n\tlock(&hb->lock)\n\tlock(&pi_state->pi_mutex.wait_lock)\t// uaf if pi_state free'd\n\
+  \tlock(&curr->pi_lock);\n\n\t....\n\n\tunlock(&curr->pi_lock);\n\tget_pi_state();\t\
+  \t\t\t// WARN; refcount==0\n\nThe problem is we take the reference count too late,\
+  \ and don't allow it\nbeing 0. Fix it by using inc_not_zero() and simply retrying\
+  \ the loop\nwhen we fail to get a refcount. In that case put_pi_state() should\n\
+  remove the entry from the list.\n\nReported-by: Dmitry Vyukov <dvyukov@google.com>\n\
+  Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>\nReviewed-by: Thomas\
+  \ Gleixner <tglx@linutronix.de>\nCc: Gratian Crisan <gratian.crisan@ni.com>\nCc:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\nCc: Peter Zijlstra <peterz@infradead.org>\n\
+  Cc: dvhart@infradead.org\nCc: syzbot <bot+2af19c9e1ffe4d4ee1d16c56ae7580feaee75765@syzkaller.appspotmail.com>\n\
+  Cc: syzkaller-bugs@googlegroups.com\nCc: <stable@vger.kernel.org>\nFixes: c74aef2d06a9\
+  \ (\"futex: Fix pi_state->owner serialization\")\nLink: http://lkml.kernel.org/r/20171031101853.xpfh72y643kdfhjs@hirez.programming.kicks-ass.net\n\
+  Signed-off-by: Ingo Molnar <mingo@kernel.org>\n"
+submodule:
+- kernel
+hunk_count: 3
+covered_count: 3

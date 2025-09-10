@@ -1,0 +1,58 @@
+id: c22650d2844392afdcfd
+bug_link: https://syzkaller.appspot.com/bug?extid=c22650d2844392afdcfd
+title: kernel BUG in rxrpc_put_peer
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0d6bf319bc5aba4535bb46e1b607973688a2248a
+fix_commit: 9d35d880e0e4a3ab32d8c12f9e4d76198aadd42d
+datetime: '2023-01-06T09:43:33+00:00'
+fix_commit_message: 'rxrpc: Move client call connection to the I/O thread
+
+
+  Move the connection setup of client calls to the I/O thread so that a whole
+
+  load of locking and barrierage can be eliminated.  This necessitates the
+
+  app thread waiting for connection to complete before it can begin
+
+  encrypting data.
+
+
+  This also completes the fix for a race that exists between call connection
+
+  and call disconnection whereby the data transmission code adds the call to
+
+  the peer error distribution list after the call has been disconnected (say
+
+  by the rxrpc socket getting closed).
+
+
+  The fix is to complete the process of moving call connection, data
+
+  transmission and call disconnection into the I/O thread and thus forcibly
+
+  serialising them.
+
+
+  Note that the issue may predate the overhaul to an I/O thread model that
+
+  were included in the merge window for v6.2, but the timing is very much
+
+  changed by the change given below.
+
+
+  Fixes: cf37b5987508 ("rxrpc: Move DATA transmission into call processor work item")
+
+  Reported-by: syzbot+c22650d2844392afdcfd@syzkaller.appspotmail.com
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  cc: Marc Dionne <marc.dionne@auristor.com>
+
+  cc: linux-afs@lists.infradead.org
+
+  '
+submodule:
+- include/trace/events
+- net/rxrpc
+hunk_count: 74
+covered_count: 8

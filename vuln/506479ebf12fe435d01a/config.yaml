@@ -1,0 +1,27 @@
+id: 506479ebf12fe435d01a
+bug_link: https://syzkaller.appspot.com/bug?extid=506479ebf12fe435d01a
+title: general protection fault in qt2_read_bulk_callback
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 138a99ca4e20fa1e17b4e59fa053981913702d6d
+fix_commit: 575a5adf48b06a2980c9eeffedf699ed5534fade
+datetime: '2025-01-14T10:32:38+01:00'
+fix_commit_message: "USB: serial: quatech2: fix null-ptr-deref in qt2_process_read_urb()\n\
+  \nThis patch addresses a null-ptr-deref in qt2_process_read_urb() due to\nan incorrect\
+  \ bounds check in the following:\n\n       if (newport > serial->num_ports) {\n\
+  \               dev_err(&port->dev,\n                       \"%s - port change to\
+  \ invalid port: %i\\n\",\n                       __func__, newport);\n         \
+  \      break;\n       }\n\nThe condition doesn't account for the valid range of\
+  \ the serial->port\nbuffer, which is from 0 to serial->num_ports - 1. When newport\
+  \ is equal\nto serial->num_ports, the assignment of \"port\" in the\nfollowing code\
+  \ is out-of-bounds and NULL:\n\n       serial_priv->current_port = newport;\n  \
+  \     port = serial->port[serial_priv->current_port];\n\nThe fix checks if newport\
+  \ is greater than or equal to serial->num_ports\nindicating it is out-of-bounds.\n\
+  \nReported-by: syzbot <syzbot+506479ebf12fe435d01a@syzkaller.appspotmail.com>\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=506479ebf12fe435d01a\nFixes: f7a33e608d9a\
+  \ (\"USB: serial: add quatech2 usb to serial driver\")\nCc: <stable@vger.kernel.org>\
+  \      # 3.5\nSigned-off-by: Qasim Ijaz <qasdev00@gmail.com>\nReviewed-by: Greg\
+  \ Kroah-Hartman <gregkh@linuxfoundation.org>\nSigned-off-by: Johan Hovold <johan@kernel.org>\n"
+submodule:
+- drivers/usb/serial
+hunk_count: 1
+covered_count: 1

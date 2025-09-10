@@ -1,0 +1,27 @@
+id: 6b40f58c6d280fa23b40
+bug_link: https://syzkaller.appspot.com/bug?extid=6b40f58c6d280fa23b40
+title: 'KASAN: slab-out-of-bounds Read in do_jit'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3415ec643e7bd644b03026efbe2f2b36cbe9b34b
+fix_commit: 7c2e988f400e83501e0a3568250780609b7c8263
+datetime: '2019-08-01T13:12:09-07:00'
+fix_commit_message: "bpf: fix x64 JIT code generation for jmp to 1st insn\n\nIntroduction\
+  \ of bounded loops exposed old bug in x64 JIT.\nJIT maintains the array of offsets\
+  \ to the end of all instructions to\ncompute jmp offsets.\naddrs[0] - offset of\
+  \ the end of the 1st insn (that includes prologue).\naddrs[1] - offset of the end\
+  \ of the 2nd insn.\nJIT didn't keep the offset of the beginning of the 1st insn,\n\
+  since classic BPF didn't have backward jumps and valid extended BPF\ncouldn't have\
+  \ a branch to 1st insn, because it didn't allow loops.\nWith bounded loops it's\
+  \ possible to construct a valid program that\njumps backwards to the 1st insn.\n\
+  Fix JIT by computing:\naddrs[0] - offset of the end of prologue == start of the\
+  \ 1st insn.\naddrs[1] - offset of the end of 1st insn.\n\nv1->v2:\n- Yonghong noticed\
+  \ a bug in jit linfo.\n  Fix it by passing 'addrs + 1' to bpf_prog_fill_jited_linfo(),\n\
+  \  since it expects insn_to_jit_off array to be offsets to last byte.\n\nReported-by:\
+  \ syzbot+35101610ff3e83119b1b@syzkaller.appspotmail.com\nFixes: 2589726d12a1 (\"\
+  bpf: introduce bounded loops\")\nFixes: 0a14842f5a3c (\"net: filter: Just In Time\
+  \ compiler for x86-64\")\nSigned-off-by: Alexei Starovoitov <ast@kernel.org>\nAcked-by:\
+  \ Song Liu <songliubraving@fb.com>\n"
+submodule:
+- arch/x86/net
+hunk_count: 4
+covered_count: 3

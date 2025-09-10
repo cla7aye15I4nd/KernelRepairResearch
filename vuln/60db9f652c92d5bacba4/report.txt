@@ -1,0 +1,115 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in pwq_release_workfn+0x339/0x380 kernel/workqueue.c:4124
+Read of size 4 at addr ffff8880197dd1c0 by task pool_workqueue_/3
+
+CPU: 0 PID: 3 Comm: pool_workqueue_ Not tainted 6.5.0-syzkaller-11275-gdb906f0ca6bb #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ pwq_release_workfn+0x339/0x380 kernel/workqueue.c:4124
+ kthread_worker_fn+0x2fc/0xa80 kernel/kthread.c:823
+ kthread+0x33a/0x430 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+ </TASK>
+
+Allocated by task 5056:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0xa2/0xb0 mm/kasan/common.c:383
+ kmalloc include/linux/slab.h:599 [inline]
+ kzalloc include/linux/slab.h:720 [inline]
+ alloc_workqueue+0x16f/0x1490 kernel/workqueue.c:4684
+ kvm_mmu_init_tdp_mmu+0x23/0x100 arch/x86/kvm/mmu/tdp_mmu.c:19
+ kvm_mmu_init_vm+0x14e/0x360 arch/x86/kvm/mmu/mmu.c:6220
+ kvm_arch_init_vm+0x67/0x740 arch/x86/kvm/x86.c:12305
+ kvm_create_vm arch/x86/kvm/../../../virt/kvm/kvm_main.c:1196 [inline]
+ kvm_dev_ioctl_create_vm arch/x86/kvm/../../../virt/kvm/kvm_main.c:5063 [inline]
+ kvm_dev_ioctl+0xa31/0x1c20 arch/x86/kvm/../../../virt/kvm/kvm_main.c:5105
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:871 [inline]
+ __se_sys_ioctl fs/ioctl.c:857 [inline]
+ __x64_sys_ioctl+0x18f/0x210 fs/ioctl.c:857
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 5056:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15b/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1800 [inline]
+ slab_free_freelist_hook+0x114/0x1e0 mm/slub.c:1826
+ slab_free mm/slub.c:3809 [inline]
+ __kmem_cache_free+0xb8/0x2f0 mm/slub.c:3822
+ alloc_workqueue+0xe76/0x1490 kernel/workqueue.c:4746
+ kvm_mmu_init_tdp_mmu+0x23/0x100 arch/x86/kvm/mmu/tdp_mmu.c:19
+ kvm_mmu_init_vm+0x14e/0x360 arch/x86/kvm/mmu/mmu.c:6220
+ kvm_arch_init_vm+0x67/0x740 arch/x86/kvm/x86.c:12305
+ kvm_create_vm arch/x86/kvm/../../../virt/kvm/kvm_main.c:1196 [inline]
+ kvm_dev_ioctl_create_vm arch/x86/kvm/../../../virt/kvm/kvm_main.c:5063 [inline]
+ kvm_dev_ioctl+0xa31/0x1c20 arch/x86/kvm/../../../virt/kvm/kvm_main.c:5105
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:871 [inline]
+ __se_sys_ioctl fs/ioctl.c:857 [inline]
+ __x64_sys_ioctl+0x18f/0x210 fs/ioctl.c:857
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+The buggy address belongs to the object at ffff8880197dd000
+ which belongs to the cache kmalloc-512 of size 512
+The buggy address is located 448 bytes inside of
+ freed 512-byte region [ffff8880197dd000, ffff8880197dd200)
+
+The buggy address belongs to the physical page:
+page:ffffea000065f700 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x197dc
+head:ffffea000065f700 order:2 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+anon flags: 0xfff00000000840(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000840 ffff888012c41c80 0000000000000000 dead000000000001
+raw: 0000000000000000 0000000080100010 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 2, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 408, tgid 408 (kworker/u4:2), ts 12877758758, free_ts 0
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2cf/0x340 mm/page_alloc.c:1536
+ prep_new_page mm/page_alloc.c:1543 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3183
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4439
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2298
+ alloc_slab_page mm/slub.c:1870 [inline]
+ allocate_slab+0x251/0x380 mm/slub.c:2017
+ new_slab mm/slub.c:2070 [inline]
+ ___slab_alloc+0x8be/0x1570 mm/slub.c:3223
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3322
+ __slab_alloc_node mm/slub.c:3375 [inline]
+ slab_alloc_node mm/slub.c:3468 [inline]
+ __kmem_cache_alloc_node+0x137/0x350 mm/slub.c:3517
+ kmalloc_trace+0x25/0xe0 mm/slab_common.c:1114
+ kmalloc include/linux/slab.h:599 [inline]
+ kzalloc include/linux/slab.h:720 [inline]
+ alloc_bprm+0x51/0xaf0 fs/exec.c:1514
+ kernel_execve+0xaf/0x4e0 fs/exec.c:1989
+ call_usermodehelper_exec_async+0x256/0x4c0 kernel/umh.c:110
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff8880197dd080: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff8880197dd100: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff8880197dd180: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                           ^
+ ffff8880197dd200: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff8880197dd280: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

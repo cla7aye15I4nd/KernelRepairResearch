@@ -1,0 +1,26 @@
+=====================================================
+BUG: KMSAN: uninit-value in assign_eip_near arch/x86/kvm/emulate.c:829 [inline]
+BUG: KMSAN: uninit-value in em_ret+0x128/0x130 arch/x86/kvm/emulate.c:2238
+ assign_eip_near arch/x86/kvm/emulate.c:829 [inline]
+ em_ret+0x128/0x130 arch/x86/kvm/emulate.c:2238
+ x86_emulate_insn+0x1dae/0x58f0 arch/x86/kvm/emulate.c:5292
+ x86_emulate_instruction+0x13c9/0x30b0 arch/x86/kvm/x86.c:9184
+ kvm_emulate_instruction arch/x86/kvm/x86.c:9264 [inline]
+ complete_emulated_io arch/x86/kvm/x86.c:11221 [inline]
+ complete_emulated_mmio+0x70b/0x8b0 arch/x86/kvm/x86.c:11281
+ kvm_arch_vcpu_ioctl_run+0x1851/0xb8d0 arch/x86/kvm/x86.c:11393
+ kvm_vcpu_ioctl+0xc04/0x1770 arch/x86/kvm/../../../virt/kvm/kvm_main.c:4447
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:904 [inline]
+ __se_sys_ioctl+0x261/0x450 fs/ioctl.c:890
+ __x64_sys_ioctl+0x96/0xe0 fs/ioctl.c:890
+ do_syscall_64+0xd5/0x1f0
+ entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+Local variable eip created at:
+ em_ret+0x37/0x130 arch/x86/kvm/emulate.c:2234
+ x86_emulate_insn+0x1dae/0x58f0 arch/x86/kvm/emulate.c:5292
+
+CPU: 1 PID: 7482 Comm: syz-executor.2 Not tainted 6.8.0-syzkaller-05562-g61387b8dcf1d #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/29/2024
+=====================================================

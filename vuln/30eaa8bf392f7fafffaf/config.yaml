@@ -1,0 +1,31 @@
+id: 30eaa8bf392f7fafffaf
+bug_link: https://syzkaller.appspot.com/bug?extid=30eaa8bf392f7fafffaf
+title: 'KMSAN: uninit-value in tipc_nl_compat_bearer_disable'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2bf4ecbcc7d837903c5967c9274f41b1ad29d530
+fix_commit: 4f07b80c973348a99b5d2a32476a2e7877e94a05
+datetime: '2019-06-24T10:03:59-07:00'
+fix_commit_message: "tipc: check msg->req data len in tipc_nl_compat_bearer_disable\n\
+  \nThis patch is to fix an uninit-value issue, reported by syzbot:\n\n  BUG: KMSAN:\
+  \ uninit-value in memchr+0xce/0x110 lib/string.c:981\n  Call Trace:\n    __dump_stack\
+  \ lib/dump_stack.c:77 [inline]\n    dump_stack+0x191/0x1f0 lib/dump_stack.c:113\n\
+  \    kmsan_report+0x130/0x2a0 mm/kmsan/kmsan.c:622\n    __msan_warning+0x75/0xe0\
+  \ mm/kmsan/kmsan_instr.c:310\n    memchr+0xce/0x110 lib/string.c:981\n    string_is_valid\
+  \ net/tipc/netlink_compat.c:176 [inline]\n    tipc_nl_compat_bearer_disable+0x2a1/0x480\
+  \ net/tipc/netlink_compat.c:449\n    __tipc_nl_compat_doit net/tipc/netlink_compat.c:327\
+  \ [inline]\n    tipc_nl_compat_doit+0x3ac/0xb00 net/tipc/netlink_compat.c:360\n\
+  \    tipc_nl_compat_handle net/tipc/netlink_compat.c:1178 [inline]\n    tipc_nl_compat_recv+0x1b1b/0x27b0\
+  \ net/tipc/netlink_compat.c:1281\n\nTLV_GET_DATA_LEN() may return a negtive int\
+  \ value, which will be\nused as size_t (becoming a big unsigned long) passed into\
+  \ memchr,\ncause this issue.\n\nSimilar to what it does in tipc_nl_compat_bearer_enable(),\
+  \ this\nfix is to return -EINVAL when TLV_GET_DATA_LEN() is negtive in\ntipc_nl_compat_bearer_disable(),\
+  \ as well as in\ntipc_nl_compat_link_stat_dump() and tipc_nl_compat_link_reset_stats().\n\
+  \nv1->v2:\n  - add the missing Fixes tags per Eric's request.\n\nFixes: 0762216c0ad2\
+  \ (\"tipc: fix uninit-value in tipc_nl_compat_bearer_enable\")\nFixes: 8b66fee7f8ee\
+  \ (\"tipc: fix uninit-value in tipc_nl_compat_link_reset_stats\")\nReported-by:\
+  \ syzbot+30eaa8bf392f7fafffaf@syzkaller.appspotmail.com\nSigned-off-by: Xin Long\
+  \ <lucien.xin@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 3
+covered_count: 1

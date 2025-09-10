@@ -1,0 +1,109 @@
+EXT4-fs (loop0): 1 truncate cleaned up
+EXT4-fs (loop0): mounted filesystem 00000000-0000-0000-0000-000000000000 without journal. Quota mode: writeback.
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 5931 at mm/slab_common.c:935 free_large_kmalloc+0x34/0x12c mm/slab_common.c:936
+Modules linked in:
+CPU: 1 PID: 5931 Comm: syz-executor235 Not tainted 6.3.0-rc7-syzkaller-g14f8db1c0f9a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/14/2023
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : free_large_kmalloc+0x34/0x12c mm/slab_common.c:936
+lr : kfree+0xf8/0x19c mm/slab_common.c:1013
+sp : ffff80001e5a74e0
+x29: ffff80001e5a74e0 x28: ffff0000deac34d8 x27: ffff0000e23195a4
+x26: dfff800000000000 x25: 0000000000000020 x24: ffff0000c7a3ad00
+x23: ffff0000c7a3a400 x22: 0000000000000000 x21: ffff800008809968
+x20: ffff0000e23195a4 x19: fffffc000388c640 x18: ffff80001e5a6e80
+x17: ffff800015d6d000 x16: ffff80001236e294 x15: ffff800008a6cf5c
+x14: ffff800008a6cb2c x13: ffff800008062fb8 x12: 0000000000000003
+x11: 0000000000000000 x10: 0000000000000000 x9 : 05ffc0000000202a
+x8 : ffff800018986000 x7 : ffff800008063224 x6 : ffff800008063434
+x5 : ffff0000d182bf38 x4 : ffff80001e5a72b0 x3 : 0000000000000000
+x2 : 0000000000000006 x1 : ffff0000e23195a4 x0 : fffffc000388c640
+Call trace:
+ free_large_kmalloc+0x34/0x12c mm/slab_common.c:936
+ kfree+0xf8/0x19c mm/slab_common.c:1013
+ kvfree+0x40/0x50 mm/util.c:649
+ ext4_xattr_move_to_block fs/ext4/xattr.c:2680 [inline]
+ ext4_xattr_make_inode_space fs/ext4/xattr.c:2743 [inline]
+ ext4_expand_extra_isize_ea+0xcec/0x16b4 fs/ext4/xattr.c:2835
+ __ext4_expand_extra_isize+0x290/0x348 fs/ext4/inode.c:5960
+ ext4_try_to_expand_extra_isize fs/ext4/inode.c:6003 [inline]
+ __ext4_mark_inode_dirty+0x448/0x848 fs/ext4/inode.c:6081
+ __ext4_unlink+0x768/0x998 fs/ext4/namei.c:3255
+ ext4_unlink+0x1b4/0x6a0 fs/ext4/namei.c:3298
+ vfs_unlink+0x2f0/0x508 fs/namei.c:4250
+ do_unlinkat+0x4c8/0x82c fs/namei.c:4316
+ __do_sys_unlinkat fs/namei.c:4359 [inline]
+ __se_sys_unlinkat fs/namei.c:4352 [inline]
+ __arm64_sys_unlinkat+0xcc/0xfc fs/namei.c:4352
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+ el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+irq event stamp: 16132
+hardirqs last  enabled at (16131): [<ffff80000896749c>] kasan_quarantine_put+0x1a0/0x1c8 mm/kasan/quarantine.c:242
+hardirqs last disabled at (16132): [<ffff800012369e90>] el1_dbg+0x24/0x80 arch/arm64/kernel/entry-common.c:405
+softirqs last  enabled at (15474): [<ffff800008033374>] local_bh_enable+0x10/0x34 include/linux/bottom_half.h:32
+softirqs last disabled at (15472): [<ffff800008033340>] local_bh_disable+0x10/0x34 include/linux/bottom_half.h:19
+---[ end trace 0000000000000000 ]---
+object pointer: 0x000000001bcaf4ec
+==================================================================
+BUG: KASAN: invalid-free in kfree+0xf8/0x19c mm/slab_common.c:1013
+Free of addr ffff0000e23195a4 by task syz-executor235/5931
+
+CPU: 1 PID: 5931 Comm: syz-executor235 Tainted: G        W          6.3.0-rc7-syzkaller-g14f8db1c0f9a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/14/2023
+Call trace:
+ dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:233
+ show_stack+0x2c/0x44 arch/arm64/kernel/stacktrace.c:240
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:319 [inline]
+ print_report+0x174/0x514 mm/kasan/report.c:430
+ kasan_report_invalid_free+0xc4/0x114 mm/kasan/report.c:501
+ __kasan_kfree_large+0xa4/0xc0 mm/kasan/common.c:272
+ kasan_kfree_large include/linux/kasan.h:170 [inline]
+ free_large_kmalloc+0x64/0x12c mm/slab_common.c:939
+ kfree+0xf8/0x19c mm/slab_common.c:1013
+ kvfree+0x40/0x50 mm/util.c:649
+ ext4_xattr_move_to_block fs/ext4/xattr.c:2680 [inline]
+ ext4_xattr_make_inode_space fs/ext4/xattr.c:2743 [inline]
+ ext4_expand_extra_isize_ea+0xcec/0x16b4 fs/ext4/xattr.c:2835
+ __ext4_expand_extra_isize+0x290/0x348 fs/ext4/inode.c:5960
+ ext4_try_to_expand_extra_isize fs/ext4/inode.c:6003 [inline]
+ __ext4_mark_inode_dirty+0x448/0x848 fs/ext4/inode.c:6081
+ __ext4_unlink+0x768/0x998 fs/ext4/namei.c:3255
+ ext4_unlink+0x1b4/0x6a0 fs/ext4/namei.c:3298
+ vfs_unlink+0x2f0/0x508 fs/namei.c:4250
+ do_unlinkat+0x4c8/0x82c fs/namei.c:4316
+ __do_sys_unlinkat fs/namei.c:4359 [inline]
+ __se_sys_unlinkat fs/namei.c:4352 [inline]
+ __arm64_sys_unlinkat+0xcc/0xfc fs/namei.c:4352
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+ el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+
+The buggy address belongs to the physical page:
+page:00000000c0a5c392 refcount:2 mapcount:0 mapping:0000000007c227a9 index:0x1 pfn:0x122319
+memcg:ffff0000c1964000
+aops:def_blk_aops ino:700000
+flags: 0x5ffc0000002203e(referenced|uptodate|dirty|lru|active|private|mappedtodisk|node=0|zone=2|lastcpupid=0x7ff)
+raw: 05ffc0000002203e fffffc00061e7788 ffff0000c0036030 ffff0000c149ca10
+raw: 0000000000000001 ffff0000e1554570 00000002ffffffff ffff0000c1964000
+page dumped because: kasan: bad access detected
+
+Memory state around the buggy address:
+ ffff0000e2319480: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff0000e2319500: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff0000e2319580: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+                               ^
+ ffff0000e2319600: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff0000e2319680: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+==================================================================

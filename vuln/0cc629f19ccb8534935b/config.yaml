@@ -1,0 +1,45 @@
+id: 0cc629f19ccb8534935b
+bug_link: https://syzkaller.appspot.com/bug?extid=0cc629f19ccb8534935b
+title: 'KASAN: use-after-free Read in batadv_iv_ogm_queue_add'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a8d23cbbf6c9f515ed678204ad2962be7c336344
+fix_commit: 40e220b4218bb3d278e5e8cc04ccdfd1c7ff8307
+datetime: '2019-10-13T21:00:07+02:00'
+fix_commit_message: 'batman-adv: Avoid free/alloc race when handling OGM buffer
+
+
+  Each slave interface of an B.A.T.M.A.N. IV virtual interface has an OGM
+
+  packet buffer which is initialized using data from netdevice notifier and
+
+  other rtnetlink related hooks. It is sent regularly via various slave
+
+  interfaces of the batadv virtual interface and in this process also
+
+  modified (realloced) to integrate additional state information via TVLV
+
+  containers.
+
+
+  It must be avoided that the worker item is executed without a common lock
+
+  with the netdevice notifier/rtnetlink helpers. Otherwise it can either
+
+  happen that half modified/freed data is sent out or functions modifying the
+
+  OGM buffer try to access already freed memory regions.
+
+
+  Reported-by: syzbot+0cc629f19ccb8534935b@syzkaller.appspotmail.com
+
+  Fixes: c6c8fea29769 ("net: Add batman-adv meshing protocol")
+
+  Signed-off-by: Sven Eckelmann <sven@narfation.org>
+
+  Signed-off-by: Simon Wunderlich <sw@simonwunderlich.de>
+
+  '
+submodule:
+- net/batman-adv
+hunk_count: 9
+covered_count: 7

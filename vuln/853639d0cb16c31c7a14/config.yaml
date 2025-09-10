@@ -1,0 +1,25 @@
+id: 853639d0cb16c31c7a14
+bug_link: https://syzkaller.appspot.com/bug?extid=853639d0cb16c31c7a14
+title: 'INFO: task hung in ubi_detach_mtd_dev'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 58f6e78a65f1fcbf732f60a7478ccc99873ff3ba
+fix_commit: d005f8c6588efcfbe88099b6edafc6f58c84a9c1
+datetime: '2020-09-17T22:55:59+02:00'
+fix_commit_message: "ubi: check kthread_should_stop() after the setting of task state\n\
+  \nA detach hung is possible when a race occurs between the detach process\nand the\
+  \ ubi background thread. The following sequences outline the race:\n\n  ubi thread:\
+  \ if (list_empty(&ubi->works)...\n\n  ubi detach: set_bit(KTHREAD_SHOULD_STOP, &kthread->flags)\n\
+  \              => by kthread_stop()\n              wake_up_process()\n         \
+  \     => ubi thread is still running, so 0 is returned\n\n  ubi thread: set_current_state(TASK_INTERRUPTIBLE)\n\
+  \              schedule()\n              => ubi thread will never be scheduled again\n\
+  \n  ubi detach: wait_for_completion()\n              => hung task!\n\nTo fix that,\
+  \ we need to check kthread_should_stop() after we set the\ntask state, so the ubi\
+  \ thread will either see the stop bit and exit or\nthe task state is reset to runnable\
+  \ such that it isn't scheduled out\nindefinitely.\n\nSigned-off-by: Zhihao Cheng\
+  \ <chengzhihao1@huawei.com>\nCc: <stable@vger.kernel.org>\nFixes: 801c135ce73d5df1ca\
+  \ (\"UBI: Unsorted Block Images\")\nReported-by: syzbot+853639d0cb16c31c7a14@syzkaller.appspotmail.com\n\
+  Signed-off-by: Richard Weinberger <richard@nod.at>\n"
+submodule:
+- drivers/mtd/ubi
+hunk_count: 1
+covered_count: 0

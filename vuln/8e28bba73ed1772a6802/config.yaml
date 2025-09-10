@@ -1,0 +1,40 @@
+id: 8e28bba73ed1772a6802
+bug_link: https://syzkaller.appspot.com/bug?extid=8e28bba73ed1772a6802
+title: 'KASAN: slab-out-of-bounds Read in squashfs_get_id'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e0756cfc7d7cd08c98a53b6009c091a3f6a50be6
+fix_commit: e812cbbbbbb15adbbbee176baa1e8bda53059bf0
+datetime: '2021-02-09T17:26:44-08:00'
+fix_commit_message: "squashfs: avoid out of bounds writes in decompressors\n\nPatch\
+  \ series \"Squashfs: fix BIO migration regression and add sanity checks\".\n\nPatch\
+  \ [1/4] fixes a regression introduced by the \"migrate from\nll_rw_block usage to\
+  \ BIO\" patch, which has produced a number of\nSysbot/Syzkaller reports.\n\nPatches\
+  \ [2/4], [3/4], and [4/4] fix a number of filesystem corruption\nissues which have\
+  \ produced Sysbot reports in the id, inode and xattr\nlookup code.\n\nEach patch\
+  \ has been tested against the Sysbot reproducers using the\ngiven kernel configuration.\
+  \  They have the appropriate \"Reported-by:\"\nlines added.\n\nAdditionally, all\
+  \ of the reproducer filesystems are indirectly fixed by\npatch [4/4] due to the\
+  \ fact they all have xattr corruption which is now\ndetected there.\n\nAdditional\
+  \ testing with other configurations and architectures (32bit,\nbig endian), and\
+  \ normal filesystems has also been done to trap any\ninadvertent regressions caused\
+  \ by the additional sanity checks.\n\nThis patch (of 4):\n\nThis is a regression\
+  \ introduced by the patch \"migrate from ll_rw_block\nusage to BIO\".\n\nSysbot/Syskaller\
+  \ has reported a number of \"out of bounds writes\" and\n\"unable to handle kernel\
+  \ paging request in squashfs_decompress\" errors\nwhich have been identified as\
+  \ a regression introduced by the above\npatch.\n\nSpecifically, the patch removed\
+  \ the following sanity check\n\n        if (length < 0 || length > output->length\
+  \ ||\n\t\t(index + length) > msblk->bytes_used)\n\nThis check did two things:\n\n\
+  1. It ensured any reads were not beyond the end of the filesystem\n\n2. It ensured\
+  \ that the \"length\" field read from the filesystem\n   was within the expected\
+  \ maximum length.  Without this any\n   corrupted values can over-run allocated\
+  \ buffers.\n\nLink: https://lkml.kernel.org/r/20210204130249.4495-1-phillip@squashfs.org.uk\n\
+  Link: https://lkml.kernel.org/r/20210204130249.4495-2-phillip@squashfs.org.uk\n\
+  Fixes: 93e72b3c612adc (\"squashfs: migrate from ll_rw_block usage to BIO\")\nReported-by:\
+  \ syzbot+6fba78f99b9afd4b5634@syzkaller.appspotmail.com\nSigned-off-by: Phillip\
+  \ Lougher <phillip@squashfs.org.uk>\nCc: Philippe Liard <pliard@google.com>\nCc:\
+  \ <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs/squashfs
+hunk_count: 1
+covered_count: 0

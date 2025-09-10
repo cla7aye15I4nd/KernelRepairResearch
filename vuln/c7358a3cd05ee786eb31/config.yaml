@@ -1,0 +1,55 @@
+id: c7358a3cd05ee786eb31
+bug_link: https://syzkaller.appspot.com/bug?extid=c7358a3cd05ee786eb31
+title: kernel BUG in ext4_es_cache_extent
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ef09ed5d37b84d18562b30cf7253e57062d0db05
+fix_commit: c878bea3c9d724ddfa05a813f30de3d25a0ba83f
+datetime: '2022-05-24T15:33:58-04:00'
+fix_commit_message: 'ext4: filter out EXT4_FC_REPLAY from on-disk superblock field
+  s_state
+
+
+  The EXT4_FC_REPLAY bit in sbi->s_mount_state is used to indicate that
+
+  we are in the middle of replay the fast commit journal.  This was
+
+  actually a mistake, since the sbi->s_mount_info is initialized from
+
+  es->s_state.  Arguably s_mount_state is misleadingly named, but the
+
+  name is historical --- s_mount_state and s_state dates back to ext2.
+
+
+  What should have been used is the ext4_{set,clear,test}_mount_flag()
+
+  inline functions, which sets EXT4_MF_* bits in sbi->s_mount_flags.
+
+
+  The problem with using EXT4_FC_REPLAY is that a maliciously corrupted
+
+  superblock could result in EXT4_FC_REPLAY getting set in
+
+  s_mount_state.  This bypasses some sanity checks, and this can trigger
+
+  a BUG() in ext4_es_cache_extent().  As a easy-to-backport-fix, filter
+
+  out the EXT4_FC_REPLAY bit for now.  We should eventually transition
+
+  away from EXT4_FC_REPLAY to something like EXT4_MF_REPLAY.
+
+
+  Cc: stable@kernel.org
+
+  Signed-off-by: Theodore Ts''o <tytso@mit.edu>
+
+  Link: https://lore.kernel.org/r/20220420192312.1655305-1-phind.uet@gmail.com
+
+  Link: https://lore.kernel.org/r/20220517174028.942119-1-tytso@mit.edu
+
+  Reported-by: syzbot+c7358a3cd05ee786eb31@syzkaller.appspotmail.com
+
+  '
+submodule:
+- fs/ext4
+hunk_count: 2
+covered_count: 0

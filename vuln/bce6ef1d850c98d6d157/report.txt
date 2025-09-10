@@ -1,0 +1,84 @@
+BTRFS info (device loop3): last unmount of filesystem a6a605fc-d5f1-4e66-8595-3726e2b761d6
+Oops: general protection fault, probably for non-canonical address 0xe01ffbf11002a143: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: maybe wild-memory-access in range [0x00ffff8880150a18-0x00ffff8880150a1f]
+CPU: 1 PID: 5112 Comm: syz-executor.3 Not tainted 6.10.0-rc2-syzkaller-00010-g2ab795141095 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+RIP: 0010:__lock_acquire+0x6a/0x1fd0 kernel/locking/lockdep.c:5005
+Code: df 0f b6 04 30 84 c0 0f 85 4b 16 00 00 83 3d 88 f1 39 0e 00 0f 84 1c 11 00 00 83 3d ff ad ad 0c 00 74 2c 4c 89 e0 48 c1 e8 03 <80> 3c 30 00 74 12 4c 89 e7 e8 68 31 86 00 48 be 00 00 00 00 00 fc
+RSP: 0018:ffffc90003eef790 EFLAGS: 00010002
+RAX: 001ffff11002a143 RBX: 0000000000000000 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: dffffc0000000000 RDI: 00ffff8880150a18
+RBP: 0000000000000000 R08: 0000000000000001 R09: 0000000000000001
+R10: dffffc0000000000 R11: fffffbfff1f5833e R12: 00ffff8880150a18
+R13: 0000000000000001 R14: ffff888061f9bc00 R15: 0000000000000000
+FS:  000055556937e480(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fffc1f63a5c CR3: 000000006276a000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+ __raw_spin_lock_irq include/linux/spinlock_api_smp.h:119 [inline]
+ _raw_spin_lock_irq+0xd3/0x120 kernel/locking/spinlock.c:170
+ put_pwq_unlocked+0x42/0x190 kernel/workqueue.c:1662
+ destroy_workqueue+0x99d/0xc40 kernel/workqueue.c:5851
+ btrfs_destroy_workqueue+0x45/0x260 fs/btrfs/async-thread.c:360
+ btrfs_stop_all_workers+0x218/0x2a0 fs/btrfs/disk-io.c:1802
+ close_ctree+0x67d/0xd20 fs/btrfs/disk-io.c:4365
+ generic_shutdown_super+0x136/0x2d0 fs/super.c:642
+ kill_anon_super+0x3b/0x70 fs/super.c:1226
+ btrfs_kill_super+0x41/0x50 fs/btrfs/super.c:2096
+ deactivate_locked_super+0xc4/0x130 fs/super.c:473
+ cleanup_mnt+0x41f/0x4b0 fs/namespace.c:1267
+ task_work_run+0x24f/0x310 kernel/task_work.c:180
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:114 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x168/0x370 kernel/entry/common.c:218
+ do_syscall_64+0x100/0x230 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f53c0a7e217
+Code: b0 ff ff ff f7 d8 64 89 01 48 83 c8 ff c3 0f 1f 44 00 00 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007fffc1f63a48 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f53c0a7e217
+RDX: 0000000000000000 RSI: 0000000000000009 RDI: 00007fffc1f63b00
+RBP: 00007fffc1f63b00 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000246 R12: 00007fffc1f64bb0
+R13: 00007f53c0ad9636 R14: 00007f53c0acad68 R15: 000000000000000a
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__lock_acquire+0x6a/0x1fd0 kernel/locking/lockdep.c:5005
+Code: df 0f b6 04 30 84 c0 0f 85 4b 16 00 00 83 3d 88 f1 39 0e 00 0f 84 1c 11 00 00 83 3d ff ad ad 0c 00 74 2c 4c 89 e0 48 c1 e8 03 <80> 3c 30 00 74 12 4c 89 e7 e8 68 31 86 00 48 be 00 00 00 00 00 fc
+RSP: 0018:ffffc90003eef790 EFLAGS: 00010002
+RAX: 001ffff11002a143 RBX: 0000000000000000 RCX: 0000000000000000
+RDX: 0000000000000000 RSI: dffffc0000000000 RDI: 00ffff8880150a18
+RBP: 0000000000000000 R08: 0000000000000001 R09: 0000000000000001
+R10: dffffc0000000000 R11: fffffbfff1f5833e R12: 00ffff8880150a18
+R13: 0000000000000001 R14: ffff888061f9bc00 R15: 0000000000000000
+FS:  000055556937e480(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fffc1f63a5c CR3: 000000006276a000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	df 0f                	fisttps (%rdi)
+   2:	b6 04                	mov    $0x4,%dh
+   4:	30 84 c0 0f 85 4b 16 	xor    %al,0x164b850f(%rax,%rax,8)
+   b:	00 00                	add    %al,(%rax)
+   d:	83 3d 88 f1 39 0e 00 	cmpl   $0x0,0xe39f188(%rip)        # 0xe39f19c
+  14:	0f 84 1c 11 00 00    	je     0x1136
+  1a:	83 3d ff ad ad 0c 00 	cmpl   $0x0,0xcadadff(%rip)        # 0xcadae20
+  21:	74 2c                	je     0x4f
+  23:	4c 89 e0             	mov    %r12,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	80 3c 30 00          	cmpb   $0x0,(%rax,%rsi,1) <-- trapping instruction
+  2e:	74 12                	je     0x42
+  30:	4c 89 e7             	mov    %r12,%rdi
+  33:	e8 68 31 86 00       	call   0x8631a0
+  38:	48                   	rex.W
+  39:	be 00 00 00 00       	mov    $0x0,%esi
+  3e:	00 fc                	add    %bh,%ah

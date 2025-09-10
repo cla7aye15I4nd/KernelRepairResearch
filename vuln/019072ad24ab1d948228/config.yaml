@@ -1,0 +1,34 @@
+id: 019072ad24ab1d948228
+bug_link: https://syzkaller.appspot.com/bug?extid=019072ad24ab1d948228
+title: possible deadlock in efivarfs_actor
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cb16dfed0093217a68c0faa9394fa5823927e04c
+fix_commit: dec1277875a5974413068bfb67df7e87e51a189b
+datetime: '2025-03-17T18:19:02+01:00'
+fix_commit_message: 'efivarfs: use I_MUTEX_CHILD nested lock to traverse variables
+  on resume
+
+
+  syzbot warns about a potential deadlock, but this is a false positive
+
+  resulting from a missing lockdep annotation: iterate_dir() locks the
+
+  parent whereas the inode_lock() it warns about locks the child, which is
+
+  guaranteed to be a different lock.
+
+
+  So use inode_lock_nested() instead with the appropriate lock class.
+
+
+  Reported-by: syzbot+019072ad24ab1d948228@syzkaller.appspotmail.com
+
+  Suggested-by: Al Viro <viro@zeniv.linux.org.uk>
+
+  Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
+
+  '
+submodule:
+- fs/efivarfs
+hunk_count: 1
+covered_count: 1

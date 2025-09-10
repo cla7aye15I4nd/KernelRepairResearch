@@ -1,0 +1,98 @@
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/alloc_foreground.c:489!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 3 PID: 5534 Comm: syz-executor.2 Not tainted 6.10.0-rc3-syzkaller-00044-g2ccbdf43d5e7 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+RIP: 0010:bch2_bucket_alloc_freelist+0xec0/0x1090 fs/bcachefs/alloc_foreground.c:489
+Code: ff ff 48 8b bd 18 fe ff ff e8 7c ba 0a fe e9 19 f9 ff ff 48 8b bd 88 fe ff ff e8 db b9 0a fe e9 55 f9 ff ff e8 91 87 ad fd 90 <0f> 0b 4c 89 ef e8 c6 b9 0a fe e9 25 f8 ff ff 48 89 cf e8 e9 b9 0a
+RSP: 0018:ffffc90007fde1a0 EFLAGS: 00010246
+RAX: 0000000000040000 RBX: 0000000000000019 RCX: ffffc90002f22000
+RDX: 0000000000040000 RSI: ffffffff83e1083f RDI: 0000000000000007
+RBP: ffffc90007fde3d0 R08: ffff8880217ce120 R09: 0000000000000000
+R10: 0000000000000019 R11: 0000000000000001 R12: ffff8880217ce000
+R13: ffff8880217ce2f8 R14: ffff88802bb94042 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff88802c300000(0063) knlGS:00000000f5f32b40
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 0000000031c3b000 CR3: 0000000053c02000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_bucket_alloc_trans+0x706/0xb20 fs/bcachefs/alloc_foreground.c:649
+ bch2_bucket_alloc_set_trans+0x466/0xd40 fs/bcachefs/alloc_foreground.c:810
+ __open_bucket_add_buckets+0x991/0x12f0 fs/bcachefs/alloc_foreground.c:1058
+ open_bucket_add_buckets+0x116/0x200 fs/bcachefs/alloc_foreground.c:1102
+ bch2_alloc_sectors_start_trans+0xa41/0x1ba0 fs/bcachefs/alloc_foreground.c:1457
+ __bch2_btree_node_alloc+0x718/0xdc0 fs/bcachefs/btree_update_interior.c:333
+ bch2_btree_reserve_get+0x21d/0x330 fs/bcachefs/btree_update_interior.c:547
+ bch2_btree_update_start+0x1235/0x1ed0 fs/bcachefs/btree_update_interior.c:1245
+ bch2_btree_split_leaf+0xc9/0x770 fs/bcachefs/btree_update_interior.c:1851
+ bch2_trans_commit_error+0x327/0xd00 fs/bcachefs/btree_trans_commit.c:918
+ __bch2_trans_commit+0x383b/0x7a40 fs/bcachefs/btree_trans_commit.c:1138
+ bch2_trans_commit fs/bcachefs/btree_update.h:170 [inline]
+ bch2_logged_op_start+0x122/0x1b0 fs/bcachefs/logged_ops.c:83
+ bch2_truncate+0x173/0x240 fs/bcachefs/io_misc.c:291
+ bchfs_truncate+0x90c/0xd70 fs/bcachefs/fs-io.c:476
+ bch2_setattr+0x1ab/0x250 fs/bcachefs/fs.c:918
+ notify_change+0x742/0x11f0 fs/attr.c:497
+ do_truncate+0x15c/0x220 fs/open.c:65
+ handle_truncate fs/namei.c:3308 [inline]
+ do_open fs/namei.c:3654 [inline]
+ path_openat+0x2505/0x29f0 fs/namei.c:3807
+ do_filp_open+0x1dc/0x430 fs/namei.c:3834
+ do_sys_openat2+0x17a/0x1e0 fs/open.c:1405
+ do_sys_open fs/open.c:1420 [inline]
+ __do_compat_sys_openat fs/open.c:1480 [inline]
+ __se_compat_sys_openat fs/open.c:1478 [inline]
+ __ia32_compat_sys_openat+0x16e/0x210 fs/open.c:1478
+ do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]
+ __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386
+ do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+ entry_SYSENTER_compat_after_hwframe+0x84/0x8e
+RIP: 0023:0xf7340579
+Code: b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 00 00 00 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
+RSP: 002b:00000000f5f325ac EFLAGS: 00000292 ORIG_RAX: 0000000000000127
+RAX: ffffffffffffffda RBX: 00000000ffffff9c RCX: 0000000020000080
+RDX: 0000000000183341 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000292 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_bucket_alloc_freelist+0xec0/0x1090 fs/bcachefs/alloc_foreground.c:489
+Code: ff ff 48 8b bd 18 fe ff ff e8 7c ba 0a fe e9 19 f9 ff ff 48 8b bd 88 fe ff ff e8 db b9 0a fe e9 55 f9 ff ff e8 91 87 ad fd 90 <0f> 0b 4c 89 ef e8 c6 b9 0a fe e9 25 f8 ff ff 48 89 cf e8 e9 b9 0a
+RSP: 0018:ffffc90007fde1a0 EFLAGS: 00010246
+RAX: 0000000000040000 RBX: 0000000000000019 RCX: ffffc90002f22000
+RDX: 0000000000040000 RSI: ffffffff83e1083f RDI: 0000000000000007
+RBP: ffffc90007fde3d0 R08: ffff8880217ce120 R09: 0000000000000000
+R10: 0000000000000019 R11: 0000000000000001 R12: ffff8880217ce000
+R13: ffff8880217ce2f8 R14: ffff88802bb94042 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff88802c200000(0063) knlGS:00000000f5f32b40
+CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+CR2: 0000560e79cc7088 CR3: 0000000053c02000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess), 2 bytes skipped:
+   0:	10 06                	adc    %al,(%rsi)
+   2:	03 74 b4 01          	add    0x1(%rsp,%rsi,4),%esi
+   6:	10 07                	adc    %al,(%rdi)
+   8:	03 74 b0 01          	add    0x1(%rax,%rsi,4),%esi
+   c:	10 08                	adc    %cl,(%rax)
+   e:	03 74 d8 01          	add    0x1(%rax,%rbx,8),%esi
+  1e:	00 51 52             	add    %dl,0x52(%rcx)
+  21:	55                   	push   %rbp
+  22:	89 e5                	mov    %esp,%ebp
+  24:	0f 34                	sysenter
+  26:	cd 80                	int    $0x80
+* 28:	5d                   	pop    %rbp <-- trapping instruction
+  29:	5a                   	pop    %rdx
+  2a:	59                   	pop    %rcx
+  2b:	c3                   	ret
+  2c:	90                   	nop
+  2d:	90                   	nop
+  2e:	90                   	nop
+  2f:	90                   	nop
+  30:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi
+  37:	8d b4 26 00 00 00 00 	lea    0x0(%rsi,%riz,1),%esi

@@ -1,0 +1,22 @@
+id: 7d6c5587ec9cff5be65c
+bug_link: https://syzkaller.appspot.com/bug?extid=7d6c5587ec9cff5be65c
+title: 'KASAN: use-after-free Read in delete_partition (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: efee99e68e69d8a1966f3d426cc0cea73e32c6d7
+fix_commit: b5cfbd35eccaa0b532dc0d8a31e4d59b5e314c93
+datetime: '2021-06-30T19:38:48-06:00'
+fix_commit_message: "block: check disk exist before trying to add partition\n\nIf\
+  \ disk have been deleted, we should return fail for ioctl\nBLKPG_DEL_PARTITION.\
+  \ Otherwise, the directory /sys/class/block\nmay remain invalid symlinks file. The\
+  \ race as following:\n\nblkdev_open\n\t\t\t\tdel_gendisk\n\t\t\t\t    disk->flags\
+  \ &= ~GENHD_FL_UP;\n\t\t\t\t    blk_drop_partitions\nblkpg_ioctl\n    bdev_add_partition\n\
+  \    add_partition\n        device_add\n\t    device_add_class_symlinks\n\nioctl\
+  \ may add_partition after del_gendisk() have tried to delete\npartitions. Then,\
+  \ symlinks file will be created.\n\nReviewed-by: Jan Kara <jack@suse.cz>\nReviewed-by:\
+  \ Christoph Hellwig <hch@lst.de>\nSigned-off-by: Yufen Yu <yuyufen@huawei.com>\n\
+  Link: https://lore.kernel.org/r/20210610023241.3646241-1-yuyufen@huawei.com\nSigned-off-by:\
+  \ Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- block/partitions
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,50 @@
+id: 88247ec7a18c953867d5
+bug_link: https://syzkaller.appspot.com/bug?extid=88247ec7a18c953867d5
+title: WARNING in do_chunk_alloc
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 84af994b85b89ae405b8ea930653543bc5b864d3
+fix_commit: cd361199ff23776481c37023a55d855d5ad5c0f5
+datetime: '2023-08-21T14:54:47+02:00'
+fix_commit_message: "btrfs: wait on uncached block groups on every allocation loop\n\
+  \nMy initial fix for the generic/475 hangs was related to metadata, but\nour CI\
+  \ testing uncovered another case where we hang for similar reasons.\nWe again have\
+  \ a task with a plug that is holding an outstanding request\nthat is keeping the\
+  \ dm device from finishing it's suspend, and that task\nis stuck in the allocator.\n\
+  \nThis time it is stuck trying to allocate data, but we do not have a\nblock group\
+  \ that matches the size class.  The larger loop in the\nallocator looks like this\
+  \ (simplified of course)\n\n  find_free_extent\n    for_each_block_group {\n   \
+  \   ffe_ctl->cached == btrfs_block_group_cache_done(bg)\n      if (!ffe_ctl->cached)\n\
+  \tffe_ctl->have_caching_bg = true;\n      do_allocation()\n\tbtrfs_wait_block_group_cache_progress();\n\
+  \    }\n\n    if (loop == LOOP_CACHING_WAIT && ffe_ctl->have_caching_bg)\n     \
+  \ go search again;\n\nIn my earlier fix we were trying to allocate from the block\
+  \ group, but\nwe weren't waiting for the progress because we were only waiting for\
+  \ the\nfree space to be >= the amount of free space we wanted.  My fix made it\n\
+  so we waited for forward progress to be made as well, so we would be\nsure to wait.\n\
+  \nThis time however we did not have a block group that matched our size\nclass,\
+  \ so what was happening was this\n\n  find_free_extent\n    for_each_block_group\
+  \ {\n      ffe_ctl->cached == btrfs_block_group_cache_done(bg)\n      if (!ffe_ctl->cached)\n\
+  \tffe_ctl->have_caching_bg = true;\n      if (size_class_doesn't_match())\n\tgoto\
+  \ loop;\n      do_allocation()\n\tbtrfs_wait_block_group_cache_progress();\n  loop:\n\
+  \      release_block_group(block_group);\n    }\n\n    if (loop == LOOP_CACHING_WAIT\
+  \ && ffe_ctl->have_caching_bg)\n      go search again;\n\nThe size_class_doesn't_match()\
+  \ part was true, so we'd just skip this\nblock group and never wait for caching,\
+  \ and then because we found a\ncaching block group we'd just go back and do the\
+  \ loop again.  We never\nsleep and thus never flush the plug and we have the same\
+  \ deadlock.\n\nFix the logic for waiting on the block group caching to instead do\
+  \ it\nunconditionally when we goto loop.  This takes the logic out of the\nallocation\
+  \ step, so now the loop looks more like this\n\n  find_free_extent\n    for_each_block_group\
+  \ {\n      ffe_ctl->cached == btrfs_block_group_cache_done(bg)\n      if (!ffe_ctl->cached)\n\
+  \tffe_ctl->have_caching_bg = true;\n      if (size_class_doesn't_match())\n\tgoto\
+  \ loop;\n      do_allocation()\n\tbtrfs_wait_block_group_cache_progress();\n  loop:\n\
+  \      if (loop > LOOP_CACHING_NOWAIT && !ffe_ctl->retry_uncached &&\n\t  !ffe_ctl->cached)\
+  \ {\n\t ffe_ctl->retry_uncached = true;\n\t btrfs_wait_block_group_cache_progress();\n\
+  \      }\n\n      release_block_group(block_group);\n    }\n\n    if (loop == LOOP_CACHING_WAIT\
+  \ && ffe_ctl->have_caching_bg)\n      go search again;\n\nThis simplifies the logic\
+  \ a lot, and makes sure that if we're hitting\nuncached block groups we're always\
+  \ waiting on them at some point.\n\nI ran this through 100 iterations of generic/475,\
+  \ as this particular\ncase was harder to hit than the previous one.\n\nSigned-off-by:\
+  \ Josef Bacik <josef@toxicpanda.com>\nSigned-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 10
+covered_count: 0

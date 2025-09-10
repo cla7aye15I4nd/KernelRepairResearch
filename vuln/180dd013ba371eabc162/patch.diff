@@ -1,0 +1,136 @@
+diff --git a/fs/ocfs2/journal.c b/fs/ocfs2/journal.c
+index 2987df396ad8..e5f58ff2175f 100644
+--- a/fs/ocfs2/journal.c
++++ b/fs/ocfs2/journal.c
+@@ -225,6 +225,11 @@ static void ocfs2_recovery_disable(struct ocfs2_super *osb,
+ 		flush_workqueue(osb->ocfs2_wq);
+ }
+ 
++void ocfs2_recovery_disable_quota(struct ocfs2_super *osb)
++{
++	ocfs2_recovery_disable(osb, OCFS2_REC_QUOTA_WANT_DISABLE);
++}
++
+ void ocfs2_recovery_exit(struct ocfs2_super *osb)
+ {
+ 	struct ocfs2_recovery_map *rm;
+@@ -1489,6 +1494,18 @@ static int __ocfs2_recovery_thread(void *arg)
+ 		}
+ 	}
+ restart:
++	if (quota_enabled) {
++		mutex_lock(&osb->recovery_lock);
++		/* Confirm that recovery thread will no longer recover quotas */
++		if (osb->recovery_state == OCFS2_REC_QUOTA_WANT_DISABLE) {
++			osb->recovery_state = OCFS2_REC_QUOTA_DISABLED;
++			wake_up(&osb->recovery_event);
++		}
++		if (osb->recovery_state >= OCFS2_REC_QUOTA_DISABLED)
++			quota_enabled = 0;
++		mutex_unlock(&osb->recovery_lock);
++	}
++
+ 	status = ocfs2_super_lock(osb, 1);
+ 	if (status < 0) {
+ 		mlog_errno(status);
+@@ -1592,8 +1609,7 @@ static int __ocfs2_recovery_thread(void *arg)
+ 
+ 	mutex_unlock(&osb->recovery_lock);
+ 
+-	if (quota_enabled)
+-		kfree(rm_quota);
++	kfree(rm_quota);
+ 
+ 	return status;
+ }
+diff --git a/fs/ocfs2/journal.h b/fs/ocfs2/journal.h
+index e3c3a35dc5e0..6397170f302f 100644
+--- a/fs/ocfs2/journal.h
++++ b/fs/ocfs2/journal.h
+@@ -148,6 +148,7 @@ void ocfs2_wait_for_recovery(struct ocfs2_super *osb);
+ 
+ int ocfs2_recovery_init(struct ocfs2_super *osb);
+ void ocfs2_recovery_exit(struct ocfs2_super *osb);
++void ocfs2_recovery_disable_quota(struct ocfs2_super *osb);
+ 
+ int ocfs2_compute_replay_slots(struct ocfs2_super *osb);
+ void ocfs2_free_replay_slots(struct ocfs2_super *osb);
+diff --git a/fs/ocfs2/ocfs2.h b/fs/ocfs2/ocfs2.h
+index 70b2d5c8c228..6aaa94c554c1 100644
+--- a/fs/ocfs2/ocfs2.h
++++ b/fs/ocfs2/ocfs2.h
+@@ -310,6 +310,12 @@ void ocfs2_initialize_journal_triggers(struct super_block *sb,
+ 
+ enum ocfs2_recovery_state {
+ 	OCFS2_REC_ENABLED = 0,
++	OCFS2_REC_QUOTA_WANT_DISABLE,
++	/*
++	 * Must be OCFS2_REC_QUOTA_WANT_DISABLE + 1 for
++	 * ocfs2_recovery_disable_quota() to work.
++	 */
++	OCFS2_REC_QUOTA_DISABLED,
+ 	OCFS2_REC_WANT_DISABLE,
+ 	/*
+ 	 * Must be OCFS2_REC_WANT_DISABLE + 1 for ocfs2_recovery_exit() to work
+diff --git a/fs/ocfs2/quota_local.c b/fs/ocfs2/quota_local.c
+index 2956d888c131..e272429da3db 100644
+--- a/fs/ocfs2/quota_local.c
++++ b/fs/ocfs2/quota_local.c
+@@ -453,8 +453,7 @@ struct ocfs2_quota_recovery *ocfs2_begin_quota_recovery(
+ 
+ /* Sync changes in local quota file into global quota file and
+  * reinitialize local quota file.
+- * The function expects local quota file to be already locked and
+- * s_umount locked in shared mode. */
++ * The function expects local quota file to be already locked. */
+ static int ocfs2_recover_local_quota_file(struct inode *lqinode,
+ 					  int type,
+ 					  struct ocfs2_quota_recovery *rec)
+@@ -588,7 +587,6 @@ int ocfs2_finish_quota_recovery(struct ocfs2_super *osb,
+ {
+ 	unsigned int ino[OCFS2_MAXQUOTAS] = { LOCAL_USER_QUOTA_SYSTEM_INODE,
+ 					      LOCAL_GROUP_QUOTA_SYSTEM_INODE };
+-	struct super_block *sb = osb->sb;
+ 	struct ocfs2_local_disk_dqinfo *ldinfo;
+ 	struct buffer_head *bh;
+ 	handle_t *handle;
+@@ -600,7 +598,6 @@ int ocfs2_finish_quota_recovery(struct ocfs2_super *osb,
+ 	printk(KERN_NOTICE "ocfs2: Finishing quota recovery on device (%s) for "
+ 	       "slot %u\n", osb->dev_str, slot_num);
+ 
+-	down_read(&sb->s_umount);
+ 	for (type = 0; type < OCFS2_MAXQUOTAS; type++) {
+ 		if (list_empty(&(rec->r_list[type])))
+ 			continue;
+@@ -677,7 +674,6 @@ int ocfs2_finish_quota_recovery(struct ocfs2_super *osb,
+ 			break;
+ 	}
+ out:
+-	up_read(&sb->s_umount);
+ 	kfree(rec);
+ 	return status;
+ }
+@@ -843,8 +839,7 @@ static int ocfs2_local_free_info(struct super_block *sb, int type)
+ 	ocfs2_release_local_quota_bitmaps(&oinfo->dqi_chunk);
+ 
+ 	/*
+-	 * s_umount held in exclusive mode protects us against racing with
+-	 * recovery thread...
++	 * ocfs2_dismount_volume() has already aborted quota recovery...
+ 	 */
+ 	if (oinfo->dqi_rec) {
+ 		ocfs2_free_quota_recovery(oinfo->dqi_rec);
+diff --git a/fs/ocfs2/super.c b/fs/ocfs2/super.c
+index 8bb5022f3082..3d2533950bae 100644
+--- a/fs/ocfs2/super.c
++++ b/fs/ocfs2/super.c
+@@ -1812,6 +1812,9 @@ static void ocfs2_dismount_volume(struct super_block *sb, int mnt_err)
+ 	/* Orphan scan should be stopped as early as possible */
+ 	ocfs2_orphan_scan_stop(osb);
+ 
++	/* Stop quota recovery so that we can disable quotas */
++	ocfs2_recovery_disable_quota(osb);
++
+ 	ocfs2_disable_quotas(osb);
+ 
+ 	/* All dquots should be freed by now */

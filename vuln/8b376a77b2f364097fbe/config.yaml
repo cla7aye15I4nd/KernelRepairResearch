@@ -1,0 +1,32 @@
+id: 8b376a77b2f364097fbe
+bug_link: https://syzkaller.appspot.com/bug?extid=8b376a77b2f364097fbe
+title: kernel BUG in dec_valid_block_count
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aa00c6d5d05a80ef5946984025c25ab231b722f9
+fix_commit: 05872a167c2cab80ef186ef23cc34a6776a1a30c
+datetime: '2025-04-12T17:06:57+00:00'
+fix_commit_message: "f2fs: fix to do sanity check on sbi->total_valid_block_count\n\
+  \nsyzbot reported a f2fs bug as below:\n\n------------[ cut here ]------------\n\
+  kernel BUG at fs/f2fs/f2fs.h:2521!\nRIP: 0010:dec_valid_block_count+0x3b2/0x3c0\
+  \ fs/f2fs/f2fs.h:2521\nCall Trace:\n f2fs_truncate_data_blocks_range+0xc8c/0x11a0\
+  \ fs/f2fs/file.c:695\n truncate_dnode+0x417/0x740 fs/f2fs/node.c:973\n truncate_nodes+0x3ec/0xf50\
+  \ fs/f2fs/node.c:1014\n f2fs_truncate_inode_blocks+0x8e3/0x1370 fs/f2fs/node.c:1197\n\
+  \ f2fs_do_truncate_blocks+0x840/0x12b0 fs/f2fs/file.c:810\n f2fs_truncate_blocks+0x10d/0x300\
+  \ fs/f2fs/file.c:838\n f2fs_truncate+0x417/0x720 fs/f2fs/file.c:888\n f2fs_setattr+0xc4f/0x12f0\
+  \ fs/f2fs/file.c:1112\n notify_change+0xbca/0xe90 fs/attr.c:552\n do_truncate+0x222/0x310\
+  \ fs/open.c:65\n handle_truncate fs/namei.c:3466 [inline]\n do_open fs/namei.c:3849\
+  \ [inline]\n path_openat+0x2e4f/0x35d0 fs/namei.c:4004\n do_filp_open+0x284/0x4e0\
+  \ fs/namei.c:4031\n do_sys_openat2+0x12b/0x1d0 fs/open.c:1429\n do_sys_open fs/open.c:1444\
+  \ [inline]\n __do_sys_creat fs/open.c:1522 [inline]\n __se_sys_creat fs/open.c:1516\
+  \ [inline]\n __x64_sys_creat+0x124/0x170 fs/open.c:1516\n do_syscall_x64 arch/x86/entry/syscall_64.c:63\
+  \ [inline]\n do_syscall_64+0xf3/0x230 arch/x86/entry/syscall_64.c:94\n\nThe reason\
+  \ is: in fuzzed image, sbi->total_valid_block_count is\ninconsistent w/ mapped blocks\
+  \ indexed by inode, so, we should\nnot trigger panic for such case, instead, let's\
+  \ print log and\nset fsck flag.\n\nFixes: 39a53e0ce0df (\"f2fs: add superblock and\
+  \ major in-memory structure\")\nReported-by: syzbot+8b376a77b2f364097fbe@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/linux-f2fs-devel/67f3c0b2.050a0220.396535.0547.GAE@google.com\n\
+  Signed-off-by: Chao Yu <chao@kernel.org>\nSigned-off-by: Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 1
+covered_count: 1

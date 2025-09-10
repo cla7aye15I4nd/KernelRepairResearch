@@ -1,0 +1,58 @@
+diff --git a/fs/f2fs/checkpoint.c b/fs/f2fs/checkpoint.c
+index 7f76460b721f..efda9a022981 100644
+--- a/fs/f2fs/checkpoint.c
++++ b/fs/f2fs/checkpoint.c
+@@ -32,7 +32,7 @@ void f2fs_stop_checkpoint(struct f2fs_sb_info *sbi, bool end_io,
+ 	f2fs_build_fault_attr(sbi, 0, 0);
+ 	if (!end_io)
+ 		f2fs_flush_merged_writes(sbi);
+-	f2fs_handle_critical_error(sbi, reason, end_io);
++	f2fs_handle_critical_error(sbi, reason);
+ }
+ 
+ /*
+diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
+index 3c6f3cce5779..0ac553627771 100644
+--- a/fs/f2fs/f2fs.h
++++ b/fs/f2fs/f2fs.h
+@@ -3637,8 +3637,7 @@ int f2fs_quota_sync(struct super_block *sb, int type);
+ loff_t max_file_blocks(struct inode *inode);
+ void f2fs_quota_off_umount(struct super_block *sb);
+ void f2fs_save_errors(struct f2fs_sb_info *sbi, unsigned char flag);
+-void f2fs_handle_critical_error(struct f2fs_sb_info *sbi, unsigned char reason,
+-							bool irq_context);
++void f2fs_handle_critical_error(struct f2fs_sb_info *sbi, unsigned char reason);
+ void f2fs_handle_error(struct f2fs_sb_info *sbi, unsigned char error);
+ void f2fs_handle_error_async(struct f2fs_sb_info *sbi, unsigned char error);
+ int f2fs_commit_super(struct f2fs_sb_info *sbi, bool recover);
+diff --git a/fs/f2fs/super.c b/fs/f2fs/super.c
+index 80a53dbf1c38..49519439b770 100644
+--- a/fs/f2fs/super.c
++++ b/fs/f2fs/super.c
+@@ -4159,8 +4159,7 @@ static bool system_going_down(void)
+ 		|| system_state == SYSTEM_RESTART;
+ }
+ 
+-void f2fs_handle_critical_error(struct f2fs_sb_info *sbi, unsigned char reason,
+-							bool irq_context)
++void f2fs_handle_critical_error(struct f2fs_sb_info *sbi, unsigned char reason)
+ {
+ 	struct super_block *sb = sbi->sb;
+ 	bool shutdown = reason == STOP_CP_REASON_SHUTDOWN;
+@@ -4172,10 +4171,12 @@ void f2fs_handle_critical_error(struct f2fs_sb_info *sbi, unsigned char reason,
+ 	if (!f2fs_hw_is_readonly(sbi)) {
+ 		save_stop_reason(sbi, reason);
+ 
+-		if (irq_context && !shutdown)
+-			schedule_work(&sbi->s_error_work);
+-		else
+-			f2fs_record_stop_reason(sbi);
++		/*
++		 * always create an asynchronous task to record stop_reason
++		 * in order to avoid potential deadlock when running into
++		 * f2fs_record_stop_reason() synchronously.
++		 */
++		schedule_work(&sbi->s_error_work);
+ 	}
+ 
+ 	/*

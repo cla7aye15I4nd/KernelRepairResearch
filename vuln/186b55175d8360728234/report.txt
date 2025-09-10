@@ -1,0 +1,276 @@
+------------[ cut here ]------------
+======================================================
+WARNING: possible circular locking dependency detected
+6.7.0-rc5-next-20231215-syzkaller #0 Not tainted
+------------------------------------------------------
+jbd2/sda1-8/4473 is trying to acquire lock:
+ffffffff8d199dd8 ((console_sem).lock){-.-.}-{2:2}, at: down_trylock+0x12/0x70 kernel/locking/semaphore.c:139
+
+but task is already holding lock:
+ffffffff8dc796b8 (pool_rwlock){----}-{2:2}, at: stack_depot_put lib/stackdepot.c:621 [inline]
+ffffffff8dc796b8 (pool_rwlock){----}-{2:2}, at: stack_depot_put+0x24/0x110 lib/stackdepot.c:613
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #3 (pool_rwlock){----}-{2:2}:
+       __raw_read_lock_irqsave include/linux/rwlock_api_smp.h:160 [inline]
+       _raw_read_lock_irqsave+0x46/0x90 kernel/locking/spinlock.c:236
+       stack_depot_save_flags+0x169/0x740 lib/stackdepot.c:508
+       kasan_save_stack+0x42/0x50 mm/kasan/common.c:48
+       __kasan_record_aux_stack+0xc2/0xd0 mm/kasan/generic.c:517
+       task_work_add+0x88/0x2a0 kernel/task_work.c:48
+       task_tick_numa kernel/sched/fair.c:3512 [inline]
+       task_tick_fair+0x5a5/0xc30 kernel/sched/fair.c:12599
+       scheduler_tick+0x210/0x650 kernel/sched/core.c:5674
+       update_process_times+0x19e/0x220 kernel/time/timer.c:2076
+       tick_sched_handle+0x8e/0x170 kernel/time/tick-sched.c:255
+       tick_nohz_highres_handler+0xe9/0x110 kernel/time/tick-sched.c:1516
+       __run_hrtimer kernel/time/hrtimer.c:1688 [inline]
+       __hrtimer_run_queues+0x654/0xc20 kernel/time/hrtimer.c:1752
+       hrtimer_interrupt+0x31b/0x800 kernel/time/hrtimer.c:1814
+       local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1065 [inline]
+       __sysvec_apic_timer_interrupt+0x10c/0x410 arch/x86/kernel/apic/apic.c:1082
+       sysvec_apic_timer_interrupt+0x90/0xb0 arch/x86/kernel/apic/apic.c:1076
+       asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:649
+       write_comp_data+0x7d/0x80 kernel/kcov.c:260
+       unwind_get_return_address+0x83/0xe0 arch/x86/kernel/unwind_orc.c:369
+       arch_stack_walk+0xbe/0x170 arch/x86/kernel/stacktrace.c:26
+       stack_trace_save+0x95/0xd0 kernel/stacktrace.c:122
+       save_stack+0x15e/0x1f0 mm/page_owner.c:130
+       __set_page_owner+0x1f/0x60 mm/page_owner.c:196
+       set_page_owner include/linux/page_owner.h:31 [inline]
+       post_alloc_hook+0x2d0/0x350 mm/page_alloc.c:1540
+       prep_new_page mm/page_alloc.c:1547 [inline]
+       get_page_from_freelist+0xa19/0x3740 mm/page_alloc.c:3355
+       __alloc_pages+0x22e/0x2410 mm/page_alloc.c:4611
+       alloc_pages_mpol+0x258/0x5f0 mm/mempolicy.c:2133
+       folio_alloc+0x1e/0xe0 mm/mempolicy.c:2211
+       filemap_alloc_folio+0x3b6/0x490 mm/filemap.c:974
+       page_cache_ra_unbounded+0x1aa/0x5e0 mm/readahead.c:247
+       do_page_cache_ra mm/readahead.c:299 [inline]
+       page_cache_ra_order+0x7d7/0xaa0 mm/readahead.c:544
+       ondemand_readahead+0x493/0x1130 mm/readahead.c:666
+       page_cache_async_ra mm/readahead.c:715 [inline]
+       page_cache_async_ra+0x123/0x150 mm/readahead.c:697
+       filemap_readahead mm/filemap.c:2472 [inline]
+       filemap_get_pages+0x359/0x1830 mm/filemap.c:2513
+       filemap_read+0x39b/0xcf0 mm/filemap.c:2593
+       generic_file_read_iter+0x346/0x450 mm/filemap.c:2781
+       ext4_file_read_iter+0x1dc/0x6c0 fs/ext4/file.c:147
+       __kernel_read+0x300/0x870 fs/read_write.c:434
+       integrity_kernel_read+0x7f/0xb0 security/integrity/iint.c:221
+       ima_calc_file_hash_tfm+0x2c5/0x3d0 security/integrity/ima/ima_crypto.c:485
+       ima_calc_file_shash security/integrity/ima/ima_crypto.c:516 [inline]
+       ima_calc_file_hash+0x1c6/0x4a0 security/integrity/ima/ima_crypto.c:573
+       ima_collect_measurement+0x85e/0xa20 security/integrity/ima/ima_api.c:290
+       process_measurement+0xe92/0x2260 security/integrity/ima/ima_main.c:359
+       ima_file_mmap+0x1ad/0x1d0 security/integrity/ima/ima_main.c:449
+       security_mmap_file+0x186/0x1d0 security/security.c:2782
+       vm_mmap_pgoff+0xdb/0x3c0 mm/util.c:569
+       vm_mmap+0x8e/0xc0 mm/util.c:592
+       elf_map fs/binfmt_elf.c:385 [inline]
+       elf_load+0x196/0x870 fs/binfmt_elf.c:408
+       load_elf_interp fs/binfmt_elf.c:675 [inline]
+       load_elf_binary+0x3436/0x4e10 fs/binfmt_elf.c:1200
+       search_binary_handler fs/exec.c:1736 [inline]
+       exec_binprm fs/exec.c:1778 [inline]
+       bprm_execve fs/exec.c:1853 [inline]
+       bprm_execve+0x7ef/0x1a80 fs/exec.c:1809
+       kernel_execve+0x3d7/0x4e0 fs/exec.c:2034
+       try_to_run_init_process init/main.c:1364 [inline]
+       kernel_init+0x137/0x2a0 init/main.c:1497
+       ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+
+-> #2 (&rq->__lock){-.-.}-{2:2}:
+       _raw_spin_lock_nested+0x31/0x40 kernel/locking/spinlock.c:378
+       raw_spin_rq_lock_nested+0x29/0x130 kernel/sched/core.c:558
+       raw_spin_rq_lock kernel/sched/sched.h:1385 [inline]
+       rq_lock kernel/sched/sched.h:1699 [inline]
+       task_fork_fair+0x70/0x240 kernel/sched/fair.c:12619
+       sched_cgroup_fork+0x3cf/0x510 kernel/sched/core.c:4835
+       copy_process+0x6a38/0x9770 kernel/fork.c:2601
+       kernel_clone+0xfd/0x940 kernel/fork.c:2899
+       user_mode_thread+0xb4/0xf0 kernel/fork.c:2977
+       rest_init+0x27/0x2b0 init/main.c:695
+       arch_call_rest_init+0x13/0x30 init/main.c:827
+       start_kernel+0x39e/0x480 init/main.c:1072
+       x86_64_start_reservations+0x18/0x30 arch/x86/kernel/head64.c:555
+       x86_64_start_kernel+0xb2/0xc0 arch/x86/kernel/head64.c:536
+       secondary_startup_64_no_verify+0x15e/0x16b
+
+-> #1 (&p->pi_lock){-.-.}-{2:2}:
+       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+       _raw_spin_lock_irqsave+0x3a/0x50 kernel/locking/spinlock.c:162
+       class_raw_spinlock_irqsave_constructor include/linux/spinlock.h:522 [inline]
+       try_to_wake_up+0x9a/0x13d0 kernel/sched/core.c:4252
+       up+0x79/0xb0 kernel/locking/semaphore.c:191
+       __up_console_sem kernel/printk/printk.c:340 [inline]
+       __console_unlock kernel/printk/printk.c:2706 [inline]
+       console_unlock+0x1cf/0x260 kernel/printk/printk.c:3038
+       vt_resizex drivers/tty/vt/vt_ioctl.c:726 [inline]
+       vt_ioctl+0x237d/0x2ff0 drivers/tty/vt/vt_ioctl.c:939
+       tty_ioctl+0x650/0x1570 drivers/tty/tty_io.c:2800
+       vfs_ioctl fs/ioctl.c:51 [inline]
+       __do_sys_ioctl fs/ioctl.c:871 [inline]
+       __se_sys_ioctl fs/ioctl.c:857 [inline]
+       __x64_sys_ioctl+0x18f/0x210 fs/ioctl.c:857
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0x40/0x110 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x62/0x6a
+
+-> #0 ((console_sem).lock){-.-.}-{2:2}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain kernel/locking/lockdep.c:3869 [inline]
+       __lock_acquire+0x246e/0x3b30 kernel/locking/lockdep.c:5137
+       lock_acquire kernel/locking/lockdep.c:5754 [inline]
+       lock_acquire+0x1b1/0x530 kernel/locking/lockdep.c:5719
+       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+       _raw_spin_lock_irqsave+0x3a/0x50 kernel/locking/spinlock.c:162
+       down_trylock+0x12/0x70 kernel/locking/semaphore.c:139
+       __down_trylock_console_sem+0x40/0x140 kernel/printk/printk.c:323
+       console_trylock+0x73/0x130 kernel/printk/printk.c:2659
+       console_trylock_spinning kernel/printk/printk.c:1923 [inline]
+       vprintk_emit+0x162/0x5f0 kernel/printk/printk.c:2302
+       vprintk+0x7b/0x90 kernel/printk/printk_safe.c:45
+       _printk+0xc8/0x100 kernel/printk/printk.c:2328
+       __warn_printk+0x158/0x350 kernel/panic.c:721
+       refcount_warn_saturate+0x149/0x210 lib/refcount.c:28
+       __refcount_sub_and_test include/linux/refcount.h:283 [inline]
+       __refcount_dec_and_test include/linux/refcount.h:315 [inline]
+       refcount_dec_and_test include/linux/refcount.h:333 [inline]
+       stack_depot_put lib/stackdepot.c:627 [inline]
+       stack_depot_put+0xe4/0x110 lib/stackdepot.c:613
+       qlink_free mm/kasan/quarantine.c:150 [inline]
+       qlist_free_all+0x5e/0x1e0 mm/kasan/quarantine.c:194
+       kasan_quarantine_reduce+0x18e/0x1d0 mm/kasan/quarantine.c:301
+       __kasan_slab_alloc+0x65/0x90 mm/kasan/common.c:306
+       kasan_slab_alloc include/linux/kasan.h:188 [inline]
+       slab_post_alloc_hook mm/slub.c:3817 [inline]
+       slab_alloc_node mm/slub.c:3864 [inline]
+       kmem_cache_alloc+0x136/0x320 mm/slub.c:3871
+       kmem_cache_zalloc include/linux/slab.h:701 [inline]
+       alloc_buffer_head+0x21/0x150 fs/buffer.c:2994
+       jbd2_journal_write_metadata_buffer+0xcf/0xfb0 fs/jbd2/journal.c:352
+       jbd2_journal_commit_transaction+0x1215/0x63d0 fs/jbd2/commit.c:664
+       kjournald2+0x1f8/0x8f0 fs/jbd2/journal.c:201
+       kthread+0x2c1/0x3a0 kernel/kthread.c:388
+       ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+
+other info that might help us debug this:
+
+Chain exists of:
+  (console_sem).lock --> &rq->__lock --> pool_rwlock
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(pool_rwlock);
+                               lock(&rq->__lock);
+                               lock(pool_rwlock);
+  lock((console_sem).lock);
+
+ *** DEADLOCK ***
+
+2 locks held by jbd2/sda1-8/4473:
+ #0: ffffffff8d347e30 (remove_cache_srcu){.+.+}-{0:0}, at: srcu_lock_acquire include/linux/srcu.h:116 [inline]
+ #0: ffffffff8d347e30 (remove_cache_srcu){.+.+}-{0:0}, at: srcu_read_lock include/linux/srcu.h:215 [inline]
+ #0: ffffffff8d347e30 (remove_cache_srcu){.+.+}-{0:0}, at: kasan_quarantine_reduce+0x81/0x1d0 mm/kasan/quarantine.c:274
+ #1: ffffffff8dc796b8 (pool_rwlock){----}-{2:2}, at: stack_depot_put lib/stackdepot.c:621 [inline]
+ #1: ffffffff8dc796b8 (pool_rwlock){----}-{2:2}, at: stack_depot_put+0x24/0x110 lib/stackdepot.c:613
+
+stack backtrace:
+CPU: 0 PID: 4473 Comm: jbd2/sda1-8 Not tainted 6.7.0-rc5-next-20231215-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ check_noncircular+0x316/0x400 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain kernel/locking/lockdep.c:3869 [inline]
+ __lock_acquire+0x246e/0x3b30 kernel/locking/lockdep.c:5137
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x530 kernel/locking/lockdep.c:5719
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+ _raw_spin_lock_irqsave+0x3a/0x50 kernel/locking/spinlock.c:162
+ down_trylock+0x12/0x70 kernel/locking/semaphore.c:139
+ __down_trylock_console_sem+0x40/0x140 kernel/printk/printk.c:323
+ console_trylock+0x73/0x130 kernel/printk/printk.c:2659
+ console_trylock_spinning kernel/printk/printk.c:1923 [inline]
+ vprintk_emit+0x162/0x5f0 kernel/printk/printk.c:2302
+ vprintk+0x7b/0x90 kernel/printk/printk_safe.c:45
+ _printk+0xc8/0x100 kernel/printk/printk.c:2328
+ __warn_printk+0x158/0x350 kernel/panic.c:721
+ refcount_warn_saturate+0x149/0x210 lib/refcount.c:28
+ __refcount_sub_and_test include/linux/refcount.h:283 [inline]
+ __refcount_dec_and_test include/linux/refcount.h:315 [inline]
+ refcount_dec_and_test include/linux/refcount.h:333 [inline]
+ stack_depot_put lib/stackdepot.c:627 [inline]
+ stack_depot_put+0xe4/0x110 lib/stackdepot.c:613
+ qlink_free mm/kasan/quarantine.c:150 [inline]
+ qlist_free_all+0x5e/0x1e0 mm/kasan/quarantine.c:194
+ kasan_quarantine_reduce+0x18e/0x1d0 mm/kasan/quarantine.c:301
+ __kasan_slab_alloc+0x65/0x90 mm/kasan/common.c:306
+ kasan_slab_alloc include/linux/kasan.h:188 [inline]
+ slab_post_alloc_hook mm/slub.c:3817 [inline]
+ slab_alloc_node mm/slub.c:3864 [inline]
+ kmem_cache_alloc+0x136/0x320 mm/slub.c:3871
+ kmem_cache_zalloc include/linux/slab.h:701 [inline]
+ alloc_buffer_head+0x21/0x150 fs/buffer.c:2994
+ jbd2_journal_write_metadata_buffer+0xcf/0xfb0 fs/jbd2/journal.c:352
+ jbd2_journal_commit_transaction+0x1215/0x63d0 fs/jbd2/commit.c:664
+ kjournald2+0x1f8/0x8f0 fs/jbd2/journal.c:201
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+ </TASK>
+refcount_t: underflow; use-after-free.
+WARNING: CPU: 0 PID: 4473 at lib/refcount.c:28 refcount_warn_saturate+0x14a/0x210 lib/refcount.c:28
+Modules linked in:
+CPU: 0 PID: 4473 Comm: jbd2/sda1-8 Not tainted 6.7.0-rc5-next-20231215-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/17/2023
+RIP: 0010:refcount_warn_saturate+0x14a/0x210 lib/refcount.c:28
+Code: ff 89 de e8 88 ec 1f fd 84 db 0f 85 66 ff ff ff e8 4b f1 1f fd c6 05 20 00 bc 0a 01 90 48 c7 c7 00 20 2f 8b e8 f7 e0 e5 fc 90 <0f> 0b 90 90 e9 43 ff ff ff e8 28 f1 1f fd 0f b6 1d fb ff bb 0a 31
+RSP: 0018:ffffc9000e46f830 EFLAGS: 00010082
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffffffff814e0129
+RDX: ffff88802b201dc0 RSI: ffffffff814e0136 RDI: 0000000000000001
+RBP: ffff88807c3a423c R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: fffffffffffcd730 R12: ffff88803c7d5588
+R13: ffff88808f44d2d8 R14: 0000000000000000 R15: ffff88803c7d5598
+FS:  0000000000000000(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fdaa88ffd80 CR3: 00000000362e2000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __refcount_sub_and_test include/linux/refcount.h:283 [inline]
+ __refcount_dec_and_test include/linux/refcount.h:315 [inline]
+ refcount_dec_and_test include/linux/refcount.h:333 [inline]
+ stack_depot_put lib/stackdepot.c:627 [inline]
+ stack_depot_put+0xe4/0x110 lib/stackdepot.c:613
+ qlink_free mm/kasan/quarantine.c:150 [inline]
+ qlist_free_all+0x5e/0x1e0 mm/kasan/quarantine.c:194
+ kasan_quarantine_reduce+0x18e/0x1d0 mm/kasan/quarantine.c:301
+ __kasan_slab_alloc+0x65/0x90 mm/kasan/common.c:306
+ kasan_slab_alloc include/linux/kasan.h:188 [inline]
+ slab_post_alloc_hook mm/slub.c:3817 [inline]
+ slab_alloc_node mm/slub.c:3864 [inline]
+ kmem_cache_alloc+0x136/0x320 mm/slub.c:3871
+ kmem_cache_zalloc include/linux/slab.h:701 [inline]
+ alloc_buffer_head+0x21/0x150 fs/buffer.c:2994
+ jbd2_journal_write_metadata_buffer+0xcf/0xfb0 fs/jbd2/journal.c:352
+ jbd2_journal_commit_transaction+0x1215/0x63d0 fs/jbd2/commit.c:664
+ kjournald2+0x1f8/0x8f0 fs/jbd2/journal.c:201
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+ </TASK>

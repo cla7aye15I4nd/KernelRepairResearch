@@ -1,0 +1,87 @@
+=====================================================
+BUG: KMSAN: uninit-value in skb_trim+0x13a/0x190 net/core/skbuff.c:2673
+ skb_trim+0x13a/0x190 net/core/skbuff.c:2673
+ ath9k_hif_usb_reg_in_cb+0x582/0x970 drivers/net/wireless/ath/ath9k/hif_usb.c:758
+ __usb_hcd_giveback_urb+0x572/0x840 drivers/usb/core/hcd.c:1650
+ usb_hcd_giveback_urb+0x157/0x720 drivers/usb/core/hcd.c:1734
+ dummy_timer+0xd3f/0x6aa0 drivers/usb/gadget/udc/dummy_hcd.c:1987
+ __run_hrtimer kernel/time/hrtimer.c:1689 [inline]
+ __hrtimer_run_queues+0x564/0xe40 kernel/time/hrtimer.c:1753
+ hrtimer_interrupt+0x3ab/0x1490 kernel/time/hrtimer.c:1815
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0xa6/0x3a0 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0x40/0x90 arch/x86/kernel/apic/apic.c:1043
+ asm_sysvec_apic_timer_interrupt+0x1f/0x30 arch/x86/include/asm/idtentry.h:702
+ __preempt_count_dec_and_test arch/x86/include/asm/preempt.h:94 [inline]
+ __raw_spin_unlock_irq include/linux/spinlock_api_smp.h:160 [inline]
+ _raw_spin_unlock_irq+0x25/0x50 kernel/locking/spinlock.c:202
+ expire_timers kernel/time/timer.c:1842 [inline]
+ __run_timers kernel/time/timer.c:2417 [inline]
+ __run_timer_base+0x813/0xe90 kernel/time/timer.c:2428
+ run_timer_base kernel/time/timer.c:2437 [inline]
+ run_timer_softirq+0x3a/0x70 kernel/time/timer.c:2447
+ handle_softirqs+0x1ce/0x800 kernel/softirq.c:554
+ __do_softirq kernel/softirq.c:588 [inline]
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu+0x68/0x120 kernel/softirq.c:637
+ irq_exit_rcu+0x12/0x20 kernel/softirq.c:649
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0x83/0x90 arch/x86/kernel/apic/apic.c:1043
+ asm_sysvec_apic_timer_interrupt+0x1f/0x30 arch/x86/include/asm/idtentry.h:702
+ __msan_poison_alloca+0x171/0x1b0 mm/kmsan/instrumentation.c:292
+ arch_local_save_flags arch/x86/include/asm/irqflags.h:87 [inline]
+ arch_local_irq_save arch/x86/include/asm/irqflags.h:123 [inline]
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:108 [inline]
+ _raw_spin_lock_irqsave+0x35/0xc0 kernel/locking/spinlock.c:162
+ get_partial_node+0x82/0x16a0 mm/slub.c:2736
+ get_partial mm/slub.c:2850 [inline]
+ ___slab_alloc+0x1095/0x35e0 mm/slub.c:3707
+ __slab_alloc mm/slub.c:3817 [inline]
+ __slab_alloc_node mm/slub.c:3870 [inline]
+ slab_alloc_node mm/slub.c:4029 [inline]
+ __kmalloc_cache_noprof+0x5db/0xb00 mm/slub.c:4188
+ kmalloc_noprof include/linux/slab.h:681 [inline]
+ kzalloc_noprof include/linux/slab.h:807 [inline]
+ ath9k_hif_usb_alloc_reg_in_urbs drivers/net/wireless/ath/ath9k/hif_usb.c:977 [inline]
+ ath9k_hif_usb_alloc_urbs+0x126f/0x1bd0 drivers/net/wireless/ath/ath9k/hif_usb.c:1050
+ ath9k_hif_usb_dev_init drivers/net/wireless/ath/ath9k/hif_usb.c:1136 [inline]
+ ath9k_hif_usb_firmware_cb+0x183/0x7e0 drivers/net/wireless/ath/ath9k/hif_usb.c:1269
+ request_firmware_work_func+0x128/0x220 drivers/base/firmware_loader/main.c:1167
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xae0/0x1c40 kernel/workqueue.c:3312
+ worker_thread+0xea7/0x14d0 kernel/workqueue.c:3389
+ kthread+0x3e2/0x540 kernel/kthread.c:389
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Uninit was created at:
+ __alloc_pages_noprof+0x9d6/0xe70 mm/page_alloc.c:4725
+ __alloc_pages_node_noprof include/linux/gfp.h:269 [inline]
+ alloc_pages_node_noprof include/linux/gfp.h:296 [inline]
+ alloc_slab_page mm/slub.c:2325 [inline]
+ allocate_slab+0x203/0x1220 mm/slub.c:2488
+ new_slab mm/slub.c:2541 [inline]
+ ___slab_alloc+0x12ef/0x35e0 mm/slub.c:3727
+ __slab_alloc mm/slub.c:3817 [inline]
+ __slab_alloc_node mm/slub.c:3870 [inline]
+ slab_alloc_node mm/slub.c:4029 [inline]
+ kmem_cache_alloc_node_noprof+0x5fd/0xb80 mm/slub.c:4084
+ __alloc_skb+0x1e9/0x7b0 net/core/skbuff.c:664
+ alloc_skb include/linux/skbuff.h:1320 [inline]
+ ath9k_hif_usb_alloc_rx_urbs drivers/net/wireless/ath/ath9k/hif_usb.c:916 [inline]
+ ath9k_hif_usb_alloc_urbs+0xa2c/0x1bd0 drivers/net/wireless/ath/ath9k/hif_usb.c:1046
+ ath9k_hif_usb_dev_init drivers/net/wireless/ath/ath9k/hif_usb.c:1136 [inline]
+ ath9k_hif_usb_firmware_cb+0x183/0x7e0 drivers/net/wireless/ath/ath9k/hif_usb.c:1269
+ request_firmware_work_func+0x128/0x220 drivers/base/firmware_loader/main.c:1167
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xae0/0x1c40 kernel/workqueue.c:3312
+ worker_thread+0xea7/0x14d0 kernel/workqueue.c:3389
+ kthread+0x3e2/0x540 kernel/kthread.c:389
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+CPU: 1 UID: 0 PID: 44 Comm: kworker/1:1 Not tainted 6.11.0-rc6-syzkaller-00183-gb831f83e40a2 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+Workqueue: events request_firmware_work_func
+=====================================================

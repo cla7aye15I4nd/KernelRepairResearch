@@ -1,0 +1,155 @@
+id: 23728c2df58b3bd175ad
+bug_link: https://syzkaller.appspot.com/bug?extid=23728c2df58b3bd175ad
+title: 'KMSAN: uninit-value in mptcp_incoming_options (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 19e65c45a1507a1a2926649d2db3583ed9d55fd9
+fix_commit: c86b000782daba926c627d2fa00c3f60a75e7472
+datetime: '2025-01-27T15:07:02-08:00'
+fix_commit_message: "mptcp: consolidate suboption status\n\nMPTCP maintains the received\
+  \ sub-options status is the bitmask carrying\nthe received suboptions and in several\
+  \ bitfields carrying per suboption\nadditional info.\n\nZeroing the bitmask before\
+  \ parsing is not enough to ensure a consistent\nstatus, and the MPTCP code has to\
+  \ additionally clear some bitfiled\ndepending on the actually parsed suboption.\n\
+  \nThe above schema is fragile, and syzbot managed to trigger a path where\na relevant\
+  \ bitfield is not cleared/initialized:\n\n  BUG: KMSAN: uninit-value in __mptcp_expand_seq\
+  \ net/mptcp/options.c:1030 [inline]\n  BUG: KMSAN: uninit-value in mptcp_expand_seq\
+  \ net/mptcp/protocol.h:864 [inline]\n  BUG: KMSAN: uninit-value in ack_update_msk\
+  \ net/mptcp/options.c:1060 [inline]\n  BUG: KMSAN: uninit-value in mptcp_incoming_options+0x2036/0x3d30\
+  \ net/mptcp/options.c:1209\n   __mptcp_expand_seq net/mptcp/options.c:1030 [inline]\n\
+  \   mptcp_expand_seq net/mptcp/protocol.h:864 [inline]\n   ack_update_msk net/mptcp/options.c:1060\
+  \ [inline]\n   mptcp_incoming_options+0x2036/0x3d30 net/mptcp/options.c:1209\n \
+  \  tcp_data_queue+0xb4/0x7be0 net/ipv4/tcp_input.c:5233\n   tcp_rcv_established+0x1061/0x2510\
+  \ net/ipv4/tcp_input.c:6264\n   tcp_v4_do_rcv+0x7f3/0x11a0 net/ipv4/tcp_ipv4.c:1916\n\
+  \   tcp_v4_rcv+0x51df/0x5750 net/ipv4/tcp_ipv4.c:2351\n   ip_protocol_deliver_rcu+0x2a3/0x13d0\
+  \ net/ipv4/ip_input.c:205\n   ip_local_deliver_finish+0x336/0x500 net/ipv4/ip_input.c:233\n\
+  \   NF_HOOK include/linux/netfilter.h:314 [inline]\n   ip_local_deliver+0x21f/0x490\
+  \ net/ipv4/ip_input.c:254\n   dst_input include/net/dst.h:460 [inline]\n   ip_rcv_finish+0x4a2/0x520\
+  \ net/ipv4/ip_input.c:447\n   NF_HOOK include/linux/netfilter.h:314 [inline]\n \
+  \  ip_rcv+0xcd/0x380 net/ipv4/ip_input.c:567\n   __netif_receive_skb_one_core net/core/dev.c:5704\
+  \ [inline]\n   __netif_receive_skb+0x319/0xa00 net/core/dev.c:5817\n   process_backlog+0x4ad/0xa50\
+  \ net/core/dev.c:6149\n   __napi_poll+0xe7/0x980 net/core/dev.c:6902\n   napi_poll\
+  \ net/core/dev.c:6971 [inline]\n   net_rx_action+0xa5a/0x19b0 net/core/dev.c:7093\n\
+  \   handle_softirqs+0x1a0/0x7c0 kernel/softirq.c:561\n   __do_softirq+0x14/0x1a\
+  \ kernel/softirq.c:595\n   do_softirq+0x9a/0x100 kernel/softirq.c:462\n   __local_bh_enable_ip+0x9f/0xb0\
+  \ kernel/softirq.c:389\n   local_bh_enable include/linux/bottom_half.h:33 [inline]\n\
+  \   rcu_read_unlock_bh include/linux/rcupdate.h:919 [inline]\n   __dev_queue_xmit+0x2758/0x57d0\
+  \ net/core/dev.c:4493\n   dev_queue_xmit include/linux/netdevice.h:3168 [inline]\n\
+  \   neigh_hh_output include/net/neighbour.h:523 [inline]\n   neigh_output include/net/neighbour.h:537\
+  \ [inline]\n   ip_finish_output2+0x187c/0x1b70 net/ipv4/ip_output.c:236\n   __ip_finish_output+0x287/0x810\n\
+  \   ip_finish_output+0x4b/0x600 net/ipv4/ip_output.c:324\n   NF_HOOK_COND include/linux/netfilter.h:303\
+  \ [inline]\n   ip_output+0x15f/0x3f0 net/ipv4/ip_output.c:434\n   dst_output include/net/dst.h:450\
+  \ [inline]\n   ip_local_out net/ipv4/ip_output.c:130 [inline]\n   __ip_queue_xmit+0x1f2a/0x20d0\
+  \ net/ipv4/ip_output.c:536\n   ip_queue_xmit+0x60/0x80 net/ipv4/ip_output.c:550\n\
+  \   __tcp_transmit_skb+0x3cea/0x4900 net/ipv4/tcp_output.c:1468\n   tcp_transmit_skb\
+  \ net/ipv4/tcp_output.c:1486 [inline]\n   tcp_write_xmit+0x3b90/0x9070 net/ipv4/tcp_output.c:2829\n\
+  \   __tcp_push_pending_frames+0xc4/0x380 net/ipv4/tcp_output.c:3012\n   tcp_send_fin+0x9f6/0xf50\
+  \ net/ipv4/tcp_output.c:3618\n   __tcp_close+0x140c/0x1550 net/ipv4/tcp.c:3130\n\
+  \   __mptcp_close_ssk+0x74e/0x16f0 net/mptcp/protocol.c:2496\n   mptcp_close_ssk+0x26b/0x2c0\
+  \ net/mptcp/protocol.c:2550\n   mptcp_pm_nl_rm_addr_or_subflow+0x635/0xd10 net/mptcp/pm_netlink.c:889\n\
+  \   mptcp_pm_nl_rm_subflow_received net/mptcp/pm_netlink.c:924 [inline]\n   mptcp_pm_flush_addrs_and_subflows\
+  \ net/mptcp/pm_netlink.c:1688 [inline]\n   mptcp_nl_flush_addrs_list net/mptcp/pm_netlink.c:1709\
+  \ [inline]\n   mptcp_pm_nl_flush_addrs_doit+0xe10/0x1630 net/mptcp/pm_netlink.c:1750\n\
+  \   genl_family_rcv_msg_doit net/netlink/genetlink.c:1115 [inline]\n   genl_family_rcv_msg\
+  \ net/netlink/genetlink.c:1195 [inline]\n   genl_rcv_msg+0x1214/0x12c0 net/netlink/genetlink.c:1210\n\
+  \   netlink_rcv_skb+0x375/0x650 net/netlink/af_netlink.c:2542\n   genl_rcv+0x40/0x60\
+  \ net/netlink/genetlink.c:1219\n   netlink_unicast_kernel net/netlink/af_netlink.c:1321\
+  \ [inline]\n   netlink_unicast+0xf52/0x1260 net/netlink/af_netlink.c:1347\n   netlink_sendmsg+0x10da/0x11e0\
+  \ net/netlink/af_netlink.c:1891\n   sock_sendmsg_nosec net/socket.c:711 [inline]\n\
+  \   __sock_sendmsg+0x30f/0x380 net/socket.c:726\n   ____sys_sendmsg+0x877/0xb60\
+  \ net/socket.c:2583\n   ___sys_sendmsg+0x28d/0x3c0 net/socket.c:2637\n   __sys_sendmsg\
+  \ net/socket.c:2669 [inline]\n   __do_sys_sendmsg net/socket.c:2674 [inline]\n \
+  \  __se_sys_sendmsg net/socket.c:2672 [inline]\n   __x64_sys_sendmsg+0x212/0x3c0\
+  \ net/socket.c:2672\n   x64_sys_call+0x2ed6/0x3c30 arch/x86/include/generated/asm/syscalls_64.h:47\n\
+  \   do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n   do_syscall_64+0xcd/0x1e0\
+  \ arch/x86/entry/common.c:83\n   entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\n  Uninit\
+  \ was stored to memory at:\n   mptcp_get_options+0x2c0f/0x2f20 net/mptcp/options.c:397\n\
+  \   mptcp_incoming_options+0x19a/0x3d30 net/mptcp/options.c:1150\n   tcp_data_queue+0xb4/0x7be0\
+  \ net/ipv4/tcp_input.c:5233\n   tcp_rcv_established+0x1061/0x2510 net/ipv4/tcp_input.c:6264\n\
+  \   tcp_v4_do_rcv+0x7f3/0x11a0 net/ipv4/tcp_ipv4.c:1916\n   tcp_v4_rcv+0x51df/0x5750\
+  \ net/ipv4/tcp_ipv4.c:2351\n   ip_protocol_deliver_rcu+0x2a3/0x13d0 net/ipv4/ip_input.c:205\n\
+  \   ip_local_deliver_finish+0x336/0x500 net/ipv4/ip_input.c:233\n   NF_HOOK include/linux/netfilter.h:314\
+  \ [inline]\n   ip_local_deliver+0x21f/0x490 net/ipv4/ip_input.c:254\n   dst_input\
+  \ include/net/dst.h:460 [inline]\n   ip_rcv_finish+0x4a2/0x520 net/ipv4/ip_input.c:447\n\
+  \   NF_HOOK include/linux/netfilter.h:314 [inline]\n   ip_rcv+0xcd/0x380 net/ipv4/ip_input.c:567\n\
+  \   __netif_receive_skb_one_core net/core/dev.c:5704 [inline]\n   __netif_receive_skb+0x319/0xa00\
+  \ net/core/dev.c:5817\n   process_backlog+0x4ad/0xa50 net/core/dev.c:6149\n   __napi_poll+0xe7/0x980\
+  \ net/core/dev.c:6902\n   napi_poll net/core/dev.c:6971 [inline]\n   net_rx_action+0xa5a/0x19b0\
+  \ net/core/dev.c:7093\n   handle_softirqs+0x1a0/0x7c0 kernel/softirq.c:561\n   __do_softirq+0x14/0x1a\
+  \ kernel/softirq.c:595\n\n  Uninit was stored to memory at:\n   put_unaligned_be32\
+  \ include/linux/unaligned.h:68 [inline]\n   mptcp_write_options+0x17f9/0x3100 net/mptcp/options.c:1417\n\
+  \   mptcp_options_write net/ipv4/tcp_output.c:465 [inline]\n   tcp_options_write+0x6d9/0xe90\
+  \ net/ipv4/tcp_output.c:759\n   __tcp_transmit_skb+0x294b/0x4900 net/ipv4/tcp_output.c:1414\n\
+  \   tcp_transmit_skb net/ipv4/tcp_output.c:1486 [inline]\n   tcp_write_xmit+0x3b90/0x9070\
+  \ net/ipv4/tcp_output.c:2829\n   __tcp_push_pending_frames+0xc4/0x380 net/ipv4/tcp_output.c:3012\n\
+  \   tcp_send_fin+0x9f6/0xf50 net/ipv4/tcp_output.c:3618\n   __tcp_close+0x140c/0x1550\
+  \ net/ipv4/tcp.c:3130\n   __mptcp_close_ssk+0x74e/0x16f0 net/mptcp/protocol.c:2496\n\
+  \   mptcp_close_ssk+0x26b/0x2c0 net/mptcp/protocol.c:2550\n   mptcp_pm_nl_rm_addr_or_subflow+0x635/0xd10\
+  \ net/mptcp/pm_netlink.c:889\n   mptcp_pm_nl_rm_subflow_received net/mptcp/pm_netlink.c:924\
+  \ [inline]\n   mptcp_pm_flush_addrs_and_subflows net/mptcp/pm_netlink.c:1688 [inline]\n\
+  \   mptcp_nl_flush_addrs_list net/mptcp/pm_netlink.c:1709 [inline]\n   mptcp_pm_nl_flush_addrs_doit+0xe10/0x1630\
+  \ net/mptcp/pm_netlink.c:1750\n   genl_family_rcv_msg_doit net/netlink/genetlink.c:1115\
+  \ [inline]\n   genl_family_rcv_msg net/netlink/genetlink.c:1195 [inline]\n   genl_rcv_msg+0x1214/0x12c0\
+  \ net/netlink/genetlink.c:1210\n   netlink_rcv_skb+0x375/0x650 net/netlink/af_netlink.c:2542\n\
+  \   genl_rcv+0x40/0x60 net/netlink/genetlink.c:1219\n   netlink_unicast_kernel net/netlink/af_netlink.c:1321\
+  \ [inline]\n   netlink_unicast+0xf52/0x1260 net/netlink/af_netlink.c:1347\n   netlink_sendmsg+0x10da/0x11e0\
+  \ net/netlink/af_netlink.c:1891\n   sock_sendmsg_nosec net/socket.c:711 [inline]\n\
+  \   __sock_sendmsg+0x30f/0x380 net/socket.c:726\n   ____sys_sendmsg+0x877/0xb60\
+  \ net/socket.c:2583\n   ___sys_sendmsg+0x28d/0x3c0 net/socket.c:2637\n   __sys_sendmsg\
+  \ net/socket.c:2669 [inline]\n   __do_sys_sendmsg net/socket.c:2674 [inline]\n \
+  \  __se_sys_sendmsg net/socket.c:2672 [inline]\n   __x64_sys_sendmsg+0x212/0x3c0\
+  \ net/socket.c:2672\n   x64_sys_call+0x2ed6/0x3c30 arch/x86/include/generated/asm/syscalls_64.h:47\n\
+  \   do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n   do_syscall_64+0xcd/0x1e0\
+  \ arch/x86/entry/common.c:83\n   entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\n  Uninit\
+  \ was stored to memory at:\n   mptcp_pm_add_addr_signal+0x3d7/0x4c0\n   mptcp_established_options_add_addr\
+  \ net/mptcp/options.c:666 [inline]\n   mptcp_established_options+0x1b9b/0x3a00 net/mptcp/options.c:884\n\
+  \   tcp_established_options+0x2c4/0x7d0 net/ipv4/tcp_output.c:1012\n   __tcp_transmit_skb+0x5b7/0x4900\
+  \ net/ipv4/tcp_output.c:1333\n   tcp_transmit_skb net/ipv4/tcp_output.c:1486 [inline]\n\
+  \   tcp_write_xmit+0x3b90/0x9070 net/ipv4/tcp_output.c:2829\n   __tcp_push_pending_frames+0xc4/0x380\
+  \ net/ipv4/tcp_output.c:3012\n   tcp_send_fin+0x9f6/0xf50 net/ipv4/tcp_output.c:3618\n\
+  \   __tcp_close+0x140c/0x1550 net/ipv4/tcp.c:3130\n   __mptcp_close_ssk+0x74e/0x16f0\
+  \ net/mptcp/protocol.c:2496\n   mptcp_close_ssk+0x26b/0x2c0 net/mptcp/protocol.c:2550\n\
+  \   mptcp_pm_nl_rm_addr_or_subflow+0x635/0xd10 net/mptcp/pm_netlink.c:889\n   mptcp_pm_nl_rm_subflow_received\
+  \ net/mptcp/pm_netlink.c:924 [inline]\n   mptcp_pm_flush_addrs_and_subflows net/mptcp/pm_netlink.c:1688\
+  \ [inline]\n   mptcp_nl_flush_addrs_list net/mptcp/pm_netlink.c:1709 [inline]\n\
+  \   mptcp_pm_nl_flush_addrs_doit+0xe10/0x1630 net/mptcp/pm_netlink.c:1750\n   genl_family_rcv_msg_doit\
+  \ net/netlink/genetlink.c:1115 [inline]\n   genl_family_rcv_msg net/netlink/genetlink.c:1195\
+  \ [inline]\n   genl_rcv_msg+0x1214/0x12c0 net/netlink/genetlink.c:1210\n   netlink_rcv_skb+0x375/0x650\
+  \ net/netlink/af_netlink.c:2542\n   genl_rcv+0x40/0x60 net/netlink/genetlink.c:1219\n\
+  \   netlink_unicast_kernel net/netlink/af_netlink.c:1321 [inline]\n   netlink_unicast+0xf52/0x1260\
+  \ net/netlink/af_netlink.c:1347\n   netlink_sendmsg+0x10da/0x11e0 net/netlink/af_netlink.c:1891\n\
+  \   sock_sendmsg_nosec net/socket.c:711 [inline]\n   __sock_sendmsg+0x30f/0x380\
+  \ net/socket.c:726\n   ____sys_sendmsg+0x877/0xb60 net/socket.c:2583\n   ___sys_sendmsg+0x28d/0x3c0\
+  \ net/socket.c:2637\n   __sys_sendmsg net/socket.c:2669 [inline]\n   __do_sys_sendmsg\
+  \ net/socket.c:2674 [inline]\n   __se_sys_sendmsg net/socket.c:2672 [inline]\n \
+  \  __x64_sys_sendmsg+0x212/0x3c0 net/socket.c:2672\n   x64_sys_call+0x2ed6/0x3c30\
+  \ arch/x86/include/generated/asm/syscalls_64.h:47\n   do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n   do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83\n   entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \n  Uninit was stored to memory at:\n   mptcp_pm_add_addr_received+0x95f/0xdd0 net/mptcp/pm.c:235\n\
+  \   mptcp_incoming_options+0x2983/0x3d30 net/mptcp/options.c:1169\n   tcp_data_queue+0xb4/0x7be0\
+  \ net/ipv4/tcp_input.c:5233\n   tcp_rcv_state_process+0x2a38/0x49d0 net/ipv4/tcp_input.c:6972\n\
+  \   tcp_v4_do_rcv+0xbf9/0x11a0 net/ipv4/tcp_ipv4.c:1939\n   tcp_v4_rcv+0x51df/0x5750\
+  \ net/ipv4/tcp_ipv4.c:2351\n   ip_protocol_deliver_rcu+0x2a3/0x13d0 net/ipv4/ip_input.c:205\n\
+  \   ip_local_deliver_finish+0x336/0x500 net/ipv4/ip_input.c:233\n   NF_HOOK include/linux/netfilter.h:314\
+  \ [inline]\n   ip_local_deliver+0x21f/0x490 net/ipv4/ip_input.c:254\n   dst_input\
+  \ include/net/dst.h:460 [inline]\n   ip_rcv_finish+0x4a2/0x520 net/ipv4/ip_input.c:447\n\
+  \   NF_HOOK include/linux/netfilter.h:314 [inline]\n   ip_rcv+0xcd/0x380 net/ipv4/ip_input.c:567\n\
+  \   __netif_receive_skb_one_core net/core/dev.c:5704 [inline]\n   __netif_receive_skb+0x319/0xa00\
+  \ net/core/dev.c:5817\n   process_backlog+0x4ad/0xa50 net/core/dev.c:6149\n   __napi_poll+0xe7/0x980\
+  \ net/core/dev.c:6902\n   napi_poll net/core/dev.c:6971 [inline]\n   net_rx_action+0xa5a/0x19b0\
+  \ net/core/dev.c:7093\n   handle_softirqs+0x1a0/0x7c0 kernel/softirq.c:561\n   __do_softirq+0x14/0x1a\
+  \ kernel/softirq.c:595\n\n  Local variable mp_opt created at:\n   mptcp_incoming_options+0x119/0x3d30\
+  \ net/mptcp/options.c:1127\n   tcp_data_queue+0xb4/0x7be0 net/ipv4/tcp_input.c:5233\n\
+  \nThe current schema is too fragile; address the issue grouping all the\nstate-related\
+  \ data together and clearing the whole group instead of\njust the bitmask. This\
+  \ also cleans-up the code a bit, as there is no\nneed to individually clear \"random\"\
+  \ bitfield in a couple of places\nany more.\n\nFixes: 84dfe3677a6f (\"mptcp: send\
+  \ out dedicated ADD_ADDR packet\")\nCc: stable@vger.kernel.org\nReported-by: syzbot+23728c2df58b3bd175ad@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/6786ac51.050a0220.216c54.00a7.GAE@google.com\nCloses:\
+  \ https://github.com/multipath-tcp/mptcp_net-next/issues/541\nSigned-off-by: Paolo\
+  \ Abeni <pabeni@redhat.com>\nReviewed-by: Matthieu Baerts (NGI0) <matttbe@kernel.org>\n\
+  Signed-off-by: Matthieu Baerts (NGI0) <matttbe@kernel.org>\nLink: https://patch.msgid.link/20250123-net-mptcp-syzbot-issues-v1-1-af73258a726f@kernel.org\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/mptcp
+hunk_count: 4
+covered_count: 3

@@ -1,0 +1,27 @@
+id: a8b4b0c60155e87e9484
+bug_link: https://syzkaller.appspot.com/bug?extid=a8b4b0c60155e87e9484
+title: 'UBSAN: shift-out-of-bounds in ext4_mb_init'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 163f0ec1df33cf468509ff38cbcbb5eb0d7fac60
+fix_commit: f91436d55a279f045987e8b8c1385585dca54be9
+datetime: '2021-03-06T11:56:11-05:00'
+fix_commit_message: "fs/ext4: fix integer overflow in s_log_groups_per_flex\n\nsyzbot\
+  \ found UBSAN: shift-out-of-bounds in ext4_mb_init [1], when\n1 << sbi->s_es->s_log_groups_per_flex\
+  \ is bigger than UINT_MAX,\nwhere sbi->s_mb_prefetch is unsigned integer type.\n\
+  \n32 is the maximum allowed power of s_log_groups_per_flex. Following if\ncheck\
+  \ will also trigger UBSAN shift-out-of-bound:\n\nif (1 << sbi->s_es->s_log_groups_per_flex\
+  \ >= UINT_MAX) {\n\nSo I'm checking it against the raw number, perhaps there is\
+  \ another way\nto calculate UINT_MAX max power. Also use min_t as to make sure it's\n\
+  uint type.\n\n[1] UBSAN: shift-out-of-bounds in fs/ext4/mballoc.c:2713:24\nshift\
+  \ exponent 60 is too large for 32-bit type 'int'\nCall Trace:\n __dump_stack lib/dump_stack.c:79\
+  \ [inline]\n dump_stack+0x137/0x1be lib/dump_stack.c:120\n ubsan_epilogue lib/ubsan.c:148\
+  \ [inline]\n __ubsan_handle_shift_out_of_bounds+0x432/0x4d0 lib/ubsan.c:395\n ext4_mb_init_backend\
+  \ fs/ext4/mballoc.c:2713 [inline]\n ext4_mb_init+0x19bc/0x19f0 fs/ext4/mballoc.c:2898\n\
+  \ ext4_fill_super+0xc2ec/0xfbe0 fs/ext4/super.c:4983\n\nReported-by: syzbot+a8b4b0c60155e87e9484@syzkaller.appspotmail.com\n\
+  Signed-off-by: Sabyrzhan Tasbolatov <snovitoll@gmail.com>\nReviewed-by: Jan Kara\
+  \ <jack@suse.cz>\nLink: https://lore.kernel.org/r/20210224095800.3350002-1-snovitoll@gmail.com\n\
+  Signed-off-by: Theodore Ts'o <tytso@mit.edu>\n"
+submodule:
+- fs/ext4
+hunk_count: 1
+covered_count: 1

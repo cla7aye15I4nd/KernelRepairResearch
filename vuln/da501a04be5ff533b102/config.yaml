@@ -1,0 +1,74 @@
+id: da501a04be5ff533b102
+bug_link: https://syzkaller.appspot.com/bug?extid=da501a04be5ff533b102
+title: inconsistent lock state in btrfs_run_delayed_iputs
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cbaee87f2ef628c10331b69a2f3def6bc32402d7
+fix_commit: 866e98a4d95d93de2d485f82c69ffeabd712e48b
+datetime: '2023-07-18T03:13:10+02:00'
+fix_commit_message: "btrfs: use irq safe locking when running and adding delayed iputs\n\
+  \nRunning delayed iputs, which never happens in an irq context, needs to\nlock the\
+  \ spinlock fs_info->delayed_iput_lock. When finishing bios for\ndata writes (irq\
+  \ context, bio.c) we call btrfs_put_ordered_extent() which\nneeds to add a delayed\
+  \ iput and for that it needs to acquire the spinlock\nfs_info->delayed_iput_lock.\
+  \ Without disabling irqs when running delayed\niputs we can therefore deadlock on\
+  \ that spinlock. The same deadlock can\nalso happen when adding an inode to the\
+  \ delayed iputs list, since this\ncan be done outside an irq context as well.\n\n\
+  Syzbot recently reported this, which results in the following trace:\n\n  ================================\n\
+  \  WARNING: inconsistent lock state\n  6.4.0-syzkaller-09904-ga507db1d8fdc #0 Not\
+  \ tainted\n  --------------------------------\n  inconsistent {IN-SOFTIRQ-W} ->\
+  \ {SOFTIRQ-ON-W} usage.\n  btrfs-cleaner/16079 [HC0[0]:SC0[0]:HE1:SE1] takes:\n\
+  \  ffff888107804d20 (&fs_info->delayed_iput_lock){+.?.}-{2:2}, at: spin_lock include/linux/spinlock.h:350\
+  \ [inline]\n  ffff888107804d20 (&fs_info->delayed_iput_lock){+.?.}-{2:2}, at: btrfs_run_delayed_iputs+0x28/0xe0\
+  \ fs/btrfs/inode.c:3523\n  {IN-SOFTIRQ-W} state was registered at:\n    lock_acquire\
+  \ kernel/locking/lockdep.c:5761 [inline]\n    lock_acquire+0x1b1/0x520 kernel/locking/lockdep.c:5726\n\
+  \    __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]\n    _raw_spin_lock+0x2e/0x40\
+  \ kernel/locking/spinlock.c:154\n    spin_lock include/linux/spinlock.h:350 [inline]\n\
+  \    btrfs_add_delayed_iput+0x128/0x390 fs/btrfs/inode.c:3490\n    btrfs_put_ordered_extent\
+  \ fs/btrfs/ordered-data.c:559 [inline]\n    btrfs_put_ordered_extent+0x2f6/0x610\
+  \ fs/btrfs/ordered-data.c:547\n    __btrfs_bio_end_io fs/btrfs/bio.c:118 [inline]\n\
+  \    __btrfs_bio_end_io+0x136/0x180 fs/btrfs/bio.c:112\n    btrfs_orig_bbio_end_io+0x86/0x2b0\
+  \ fs/btrfs/bio.c:163\n    btrfs_simple_end_io+0x105/0x380 fs/btrfs/bio.c:378\n \
+  \   bio_endio+0x589/0x690 block/bio.c:1617\n    req_bio_endio block/blk-mq.c:766\
+  \ [inline]\n    blk_update_request+0x5c5/0x1620 block/blk-mq.c:911\n    blk_mq_end_request+0x59/0x680\
+  \ block/blk-mq.c:1032\n    lo_complete_rq+0x1c6/0x280 drivers/block/loop.c:370\n\
+  \    blk_complete_reqs+0xb3/0xf0 block/blk-mq.c:1110\n    __do_softirq+0x1d4/0x905\
+  \ kernel/softirq.c:553\n    run_ksoftirqd kernel/softirq.c:921 [inline]\n    run_ksoftirqd+0x31/0x60\
+  \ kernel/softirq.c:913\n    smpboot_thread_fn+0x659/0x9e0 kernel/smpboot.c:164\n\
+  \    kthread+0x344/0x440 kernel/kthread.c:389\n    ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308\n\
+  \  irq event stamp: 39\n  hardirqs last  enabled at (39): [<ffffffff81d5ebc4>] __do_kmem_cache_free\
+  \ mm/slab.c:3558 [inline]\n  hardirqs last  enabled at (39): [<ffffffff81d5ebc4>]\
+  \ kmem_cache_free mm/slab.c:3582 [inline]\n  hardirqs last  enabled at (39): [<ffffffff81d5ebc4>]\
+  \ kmem_cache_free+0x244/0x370 mm/slab.c:3575\n  hardirqs last disabled at (38):\
+  \ [<ffffffff81d5eb5e>] __do_kmem_cache_free mm/slab.c:3553 [inline]\n  hardirqs\
+  \ last disabled at (38): [<ffffffff81d5eb5e>] kmem_cache_free mm/slab.c:3582 [inline]\n\
+  \  hardirqs last disabled at (38): [<ffffffff81d5eb5e>] kmem_cache_free+0x1de/0x370\
+  \ mm/slab.c:3575\n  softirqs last  enabled at (0): [<ffffffff814ac99f>] copy_process+0x227f/0x75c0\
+  \ kernel/fork.c:2448\n  softirqs last disabled at (0): [<0000000000000000>] 0x0\n\
+  \n  other info that might help us debug this:\n   Possible unsafe locking scenario:\n\
+  \n         CPU0\n         ----\n    lock(&fs_info->delayed_iput_lock);\n    <Interrupt>\n\
+  \      lock(&fs_info->delayed_iput_lock);\n\n   *** DEADLOCK ***\n\n  1 lock held\
+  \ by btrfs-cleaner/16079:\n   #0: ffff888107804860 (&fs_info->cleaner_mutex){+.+.}-{3:3},\
+  \ at: cleaner_kthread+0x103/0x4b0 fs/btrfs/disk-io.c:1463\n\n  stack backtrace:\n\
+  \  CPU: 3 PID: 16079 Comm: btrfs-cleaner Not tainted 6.4.0-syzkaller-09904-ga507db1d8fdc\
+  \ #0\n  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.14.0-2 04/01/2014\n\
+  \  Call Trace:\n   <TASK>\n   __dump_stack lib/dump_stack.c:88 [inline]\n   dump_stack_lvl+0xd9/0x150\
+  \ lib/dump_stack.c:106\n   print_usage_bug kernel/locking/lockdep.c:3978 [inline]\n\
+  \   valid_state kernel/locking/lockdep.c:4020 [inline]\n   mark_lock_irq kernel/locking/lockdep.c:4223\
+  \ [inline]\n   mark_lock.part.0+0x1102/0x1960 kernel/locking/lockdep.c:4685\n  \
+  \ mark_lock kernel/locking/lockdep.c:4649 [inline]\n   mark_usage kernel/locking/lockdep.c:4598\
+  \ [inline]\n   __lock_acquire+0x8e4/0x5e20 kernel/locking/lockdep.c:5098\n   lock_acquire\
+  \ kernel/locking/lockdep.c:5761 [inline]\n   lock_acquire+0x1b1/0x520 kernel/locking/lockdep.c:5726\n\
+  \   __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]\n   _raw_spin_lock+0x2e/0x40\
+  \ kernel/locking/spinlock.c:154\n   spin_lock include/linux/spinlock.h:350 [inline]\n\
+  \   btrfs_run_delayed_iputs+0x28/0xe0 fs/btrfs/inode.c:3523\n   cleaner_kthread+0x2e5/0x4b0\
+  \ fs/btrfs/disk-io.c:1478\n   kthread+0x344/0x440 kernel/kthread.c:389\n   ret_from_fork+0x1f/0x30\
+  \ arch/x86/entry/entry_64.S:308\n   </TASK>\n\nSo fix this by using spin_lock_irq()\
+  \ and spin_unlock_irq() when running\ndelayed iputs, and using spin_lock_irqsave()\
+  \ and spin_unlock_irqrestore()\nwhen adding a delayed iput().\n\nReported-by: syzbot+da501a04be5ff533b102@syzkaller.appspotmail.com\n\
+  Fixes: ec63b84d4611 (\"btrfs: add an ordered_extent pointer to struct btrfs_bio\"\
+  )\nLink: https://lore.kernel.org/linux-btrfs/000000000000d5c89a05ffbd39dd@google.com/\n\
+  Signed-off-by: Filipe Manana <fdmanana@suse.com>\nSigned-off-by: David Sterba <dsterba@suse.com>\n"
+submodule:
+- fs/btrfs
+hunk_count: 2
+covered_count: 2

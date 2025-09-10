@@ -1,0 +1,27 @@
+id: 0903f6d7f285e41cdf10
+bug_link: https://syzkaller.appspot.com/bug?extid=0903f6d7f285e41cdf10
+title: WARNING in __bpf_prog_ret0_warn
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1ae7a84ed85317b12a3395470f0cfcc900b2a61a
+fix_commit: 86bc9c742426a16b52a10ef61f5b721aecca2344
+datetime: '2025-05-27T10:43:10-07:00'
+fix_commit_message: "bpf: Avoid __bpf_prog_ret0_warn when jit fails\n\nsyzkaller reported\
+  \ an issue:\n\nWARNING: CPU: 3 PID: 217 at kernel/bpf/core.c:2357 __bpf_prog_ret0_warn+0xa/0x20\
+  \ kernel/bpf/core.c:2357\nModules linked in:\nCPU: 3 UID: 0 PID: 217 Comm: kworker/u32:6\
+  \ Not tainted 6.15.0-rc4-syzkaller-00040-g8bac8898fe39\nRIP: 0010:__bpf_prog_ret0_warn+0xa/0x20\
+  \ kernel/bpf/core.c:2357\nCall Trace:\n <TASK>\n bpf_dispatcher_nop_func include/linux/bpf.h:1316\
+  \ [inline]\n __bpf_prog_run include/linux/filter.h:718 [inline]\n bpf_prog_run include/linux/filter.h:725\
+  \ [inline]\n cls_bpf_classify+0x74a/0x1110 net/sched/cls_bpf.c:105\n ...\n\nWhen\
+  \ creating bpf program, 'fp->jit_requested' depends on bpf_jit_enable.\nThis issue\
+  \ is triggered because of CONFIG_BPF_JIT_ALWAYS_ON is not set\nand bpf_jit_enable\
+  \ is set to 1, causing the arch to attempt JIT the prog,\nbut jit failed due to\
+  \ FAULT_INJECTION. As a result, incorrectly\ntreats the program as valid, when the\
+  \ program runs it calls\n`__bpf_prog_ret0_warn` and triggers the WARN_ON_ONCE(1).\n\
+  \nReported-by: syzbot+0903f6d7f285e41cdf10@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/bpf/6816e34e.a70a0220.254cdc.002c.GAE@google.com\n\
+  Fixes: fa9dd599b4da (\"bpf: get rid of pure_initcall dependency to enable jits\"\
+  )\nSigned-off-by: KaFai Wan <mannkafai@gmail.com>\nLink: https://lore.kernel.org/r/20250526133358.2594176-1-mannkafai@gmail.com\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 0

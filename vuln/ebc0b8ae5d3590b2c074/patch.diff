@@ -1,0 +1,16 @@
+diff --git a/net/mptcp/protocol.c b/net/mptcp/protocol.c
+index c44c89ecaca6..6bd819047470 100644
+--- a/net/mptcp/protocol.c
++++ b/net/mptcp/protocol.c
+@@ -1767,8 +1767,10 @@ static int mptcp_sendmsg_fastopen(struct sock *sk, struct msghdr *msg,
+ 		 * see mptcp_disconnect().
+ 		 * Attempt it again outside the problematic scope.
+ 		 */
+-		if (!mptcp_disconnect(sk, 0))
++		if (!mptcp_disconnect(sk, 0)) {
++			sk->sk_disconnects++;
+ 			sk->sk_socket->state = SS_UNCONNECTED;
++		}
+ 	}
+ 	inet_clear_bit(DEFER_CONNECT, sk);
+ 

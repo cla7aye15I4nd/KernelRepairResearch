@@ -1,0 +1,31 @@
+id: 5c54bd3eb218bb595aa9
+bug_link: https://syzkaller.appspot.com/bug?extid=5c54bd3eb218bb595aa9
+title: 'KCSAN: data-race in do_timer_create / do_timer_create (8)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9d9e522010eb5685d8b53e8a24320653d9d4cbbf
+fix_commit: 8ce8849dd1e78dadcee0ec9acbd259d239b7069f
+datetime: '2023-06-18T22:41:48+02:00'
+fix_commit_message: "posix-timers: Ensure timer ID search-loop limit is valid\n\n\
+  posix_timer_add() tries to allocate a posix timer ID by starting from the\ncached\
+  \ ID which was stored by the last successful allocation.\n\nThis is done in a loop\
+  \ searching the ID space for a free slot one by\none. The loop has to terminate\
+  \ when the search wrapped around to the\nstarting point.\n\nBut that's racy vs.\
+  \ establishing the starting point. That is read out\nlockless, which leads to the\
+  \ following problem:\n\nCPU0\t  \t      \t     \t   CPU1\nposix_timer_add()\n  start\
+  \ = sig->posix_timer_id;\n  lock(hash_lock);\n  ...\t\t\t\t   posix_timer_add()\n\
+  \  if (++sig->posix_timer_id < 0)\n      \t\t\t             start = sig->posix_timer_id;\n\
+  \     sig->posix_timer_id = 0;\n\nSo CPU1 can observe a negative start value, i.e.\
+  \ -1, and the loop break\nnever happens because the condition can never be true:\n\
+  \n  if (sig->posix_timer_id == start)\n     break;\n\nWhile this is unlikely to\
+  \ ever turn into an endless loop as the ID space is\nhuge (INT_MAX), the racy read\
+  \ of the start value caught the attention of\nKCSAN and Dmitry unearthed that incorrectness.\n\
+  \nRewrite it so that all id operations are under the hash lock.\n\nReported-by:\
+  \ syzbot+5c54bd3eb218bb595aa9@syzkaller.appspotmail.com\nReported-by: Dmitry Vyukov\
+  \ <dvyukov@google.com>\nSigned-off-by: Thomas Gleixner <tglx@linutronix.de>\nReviewed-by:\
+  \ Frederic Weisbecker <frederic@kernel.org>\nLink: https://lore.kernel.org/r/87bkhzdn6g.ffs@tglx\n\
+  \n"
+submodule:
+- include/linux/sched
+- kernel/time
+hunk_count: 2
+covered_count: 1

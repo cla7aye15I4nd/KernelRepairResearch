@@ -1,0 +1,64 @@
+==================================================================
+BUG: KCSAN: data-race in __delete_from_swap_cache / __try_to_reclaim_swap
+
+write to 0xffffea0004c90328 of 8 bytes by task 5186 on cpu 0:
+ __delete_from_swap_cache+0x1f0/0x290 mm/swap_state.c:163
+ delete_from_swap_cache+0x72/0xe0 mm/swap_state.c:243
+ folio_free_swap+0x1d8/0x1f0 mm/swapfile.c:1850
+ free_swap_cache mm/swap_state.c:293 [inline]
+ free_pages_and_swap_cache+0x1fc/0x410 mm/swap_state.c:325
+ __tlb_batch_free_encoded_pages mm/mmu_gather.c:136 [inline]
+ tlb_batch_pages_flush mm/mmu_gather.c:149 [inline]
+ tlb_flush_mmu_free mm/mmu_gather.c:366 [inline]
+ tlb_flush_mmu+0x2cf/0x440 mm/mmu_gather.c:373
+ zap_pte_range mm/memory.c:1700 [inline]
+ zap_pmd_range mm/memory.c:1739 [inline]
+ zap_pud_range mm/memory.c:1768 [inline]
+ zap_p4d_range mm/memory.c:1789 [inline]
+ unmap_page_range+0x1f3c/0x22d0 mm/memory.c:1810
+ unmap_single_vma+0x142/0x1d0 mm/memory.c:1856
+ unmap_vmas+0x18d/0x2b0 mm/memory.c:1900
+ exit_mmap+0x18a/0x690 mm/mmap.c:1864
+ __mmput+0x28/0x1b0 kernel/fork.c:1347
+ mmput+0x4c/0x60 kernel/fork.c:1369
+ exit_mm+0xe4/0x190 kernel/exit.c:571
+ do_exit+0x55e/0x17f0 kernel/exit.c:926
+ do_group_exit+0x102/0x150 kernel/exit.c:1088
+ get_signal+0xf2a/0x1070 kernel/signal.c:2917
+ arch_do_signal_or_restart+0x95/0x4b0 arch/x86/kernel/signal.c:337
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:207 [inline]
+ syscall_exit_to_user_mode+0x59/0x130 kernel/entry/common.c:218
+ do_syscall_64+0xd6/0x1c0 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffffea0004c90328 of 8 bytes by task 5189 on cpu 1:
+ __try_to_reclaim_swap+0x9d/0x510 mm/swapfile.c:198
+ free_swap_and_cache_nr+0x45d/0x8a0 mm/swapfile.c:1915
+ zap_pte_range mm/memory.c:1656 [inline]
+ zap_pmd_range mm/memory.c:1739 [inline]
+ zap_pud_range mm/memory.c:1768 [inline]
+ zap_p4d_range mm/memory.c:1789 [inline]
+ unmap_page_range+0xcf8/0x22d0 mm/memory.c:1810
+ unmap_single_vma+0x142/0x1d0 mm/memory.c:1856
+ unmap_vmas+0x18d/0x2b0 mm/memory.c:1900
+ exit_mmap+0x18a/0x690 mm/mmap.c:1864
+ __mmput+0x28/0x1b0 kernel/fork.c:1347
+ mmput+0x4c/0x60 kernel/fork.c:1369
+ exit_mm+0xe4/0x190 kernel/exit.c:571
+ do_exit+0x55e/0x17f0 kernel/exit.c:926
+ __do_sys_exit kernel/exit.c:1055 [inline]
+ __se_sys_exit kernel/exit.c:1053 [inline]
+ __x64_sys_exit+0x1f/0x20 kernel/exit.c:1053
+ x64_sys_call+0x2d46/0x2d60 arch/x86/include/generated/asm/syscalls_64.h:61
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x0000000000000242 -> 0x0000000000000000
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 UID: 0 PID: 5189 Comm: syz.1.320 Not tainted 6.12.0-rc1-syzkaller-00031-ge32cde8d2bd7 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+==================================================================

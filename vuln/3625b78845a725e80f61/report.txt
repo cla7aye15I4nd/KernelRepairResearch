@@ -1,0 +1,57 @@
+loop0: detected capacity change from 0 to 4096
+ntfs: volume version 3.1.
+==================================================================
+BUG: KASAN: use-after-free in sle64_to_cpup fs/ntfs/endian.h:46 [inline]
+BUG: KASAN: use-after-free in ntfs_lookup_inode_by_name+0xb28/0x2824 fs/ntfs/dir.c:292
+Read of size 8 at addr ffff0000de9fc968 by task syz-executor318/6190
+
+CPU: 1 PID: 6190 Comm: syz-executor318 Not tainted 6.8.0-rc7-syzkaller-g707081b61156 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/25/2024
+Call trace:
+ dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:291
+ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:298
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x178/0x518 mm/kasan/report.c:488
+ kasan_report+0xd8/0x138 mm/kasan/report.c:601
+ __asan_report_load8_noabort+0x20/0x2c mm/kasan/report_generic.c:381
+ sle64_to_cpup fs/ntfs/endian.h:46 [inline]
+ ntfs_lookup_inode_by_name+0xb28/0x2824 fs/ntfs/dir.c:292
+ check_windows_hibernation_status+0xe4/0x630 fs/ntfs/super.c:1282
+ load_system_files+0x34a0/0x4740 fs/ntfs/super.c:1997
+ ntfs_fill_super+0x14e0/0x2314 fs/ntfs/super.c:2900
+ mount_bdev+0x1d4/0x2a0 fs/super.c:1658
+ ntfs_mount+0x44/0x58 fs/ntfs/super.c:3057
+ legacy_get_tree+0xd4/0x16c fs/fs_context.c:662
+ vfs_get_tree+0x90/0x288 fs/super.c:1779
+ do_new_mount+0x278/0x900 fs/namespace.c:3352
+ path_mount+0x590/0xe04 fs/namespace.c:3679
+ do_mount fs/namespace.c:3692 [inline]
+ __do_sys_mount fs/namespace.c:3898 [inline]
+ __se_sys_mount fs/namespace.c:3875 [inline]
+ __arm64_sys_mount+0x45c/0x594 fs/namespace.c:3875
+ __invoke_syscall arch/arm64/kernel/syscall.c:34 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:48
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:133
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:152
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:712
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:730
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:598
+
+The buggy address belongs to the physical page:
+page:000000002a6c09c4 refcount:0 mapcount:0 mapping:0000000000000000 index:0x1 pfn:0x11e9fc
+flags: 0x5ffc00000000000(node=0|zone=2|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 05ffc00000000000 fffffdffc37a7f48 fffffdffc37777c8 0000000000000000
+raw: 0000000000000001 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+
+Memory state around the buggy address:
+ ffff0000de9fc800: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff0000de9fc880: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+>ffff0000de9fc900: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+                                                          ^
+ ffff0000de9fc980: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff0000de9fca00: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+==================================================================

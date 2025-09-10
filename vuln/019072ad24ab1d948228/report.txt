@@ -1,0 +1,63 @@
+efivarfs: resyncing variable state
+============================================
+WARNING: possible recursive locking detected
+6.14.0-rc7-syzkaller-ga2392f333575 #0 Not tainted
+--------------------------------------------
+syz-executor372/6438 is trying to acquire lock:
+ffff0000c6c8e558 (&sb->s_type->i_mutex_key#16){++++}-{4:4}, at: inode_lock include/linux/fs.h:877 [inline]
+ffff0000c6c8e558 (&sb->s_type->i_mutex_key#16){++++}-{4:4}, at: efivarfs_actor+0x1b8/0x2b8 fs/efivarfs/super.c:424
+
+but task is already holding lock:
+ffff0000c70c6558 (&sb->s_type->i_mutex_key#16){++++}-{4:4}, at: iterate_dir+0x3b4/0x5f4 fs/readdir.c:101
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&sb->s_type->i_mutex_key#16);
+  lock(&sb->s_type->i_mutex_key#16);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+3 locks held by syz-executor372/6438:
+ #0: ffff80008fc57588 (system_transition_mutex){+.+.}-{4:4}, at: lock_system_sleep+0x68/0xc0 kernel/power/main.c:56
+ #1: ffff80008fc760f0 ((pm_chain_head).rwsem){++++}-{4:4}, at: blocking_notifier_call_chain+0x58/0xa0 kernel/notifier.c:379
+ #2: ffff0000c70c6558 (&sb->s_type->i_mutex_key#16){++++}-{4:4}, at: iterate_dir+0x3b4/0x5f4 fs/readdir.c:101
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 6438 Comm: syz-executor372 Not tainted 6.14.0-rc7-syzkaller-ga2392f333575 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call trace:
+ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:466 (C)
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0xe4/0x150 lib/dump_stack.c:120
+ dump_stack+0x1c/0x28 lib/dump_stack.c:129
+ print_deadlock_bug+0x4e8/0x668 kernel/locking/lockdep.c:3039
+ check_deadlock kernel/locking/lockdep.c:3091 [inline]
+ validate_chain kernel/locking/lockdep.c:3893 [inline]
+ __lock_acquire+0x6240/0x7904 kernel/locking/lockdep.c:5228
+ lock_acquire+0x23c/0x724 kernel/locking/lockdep.c:5851
+ down_write+0x50/0xc0 kernel/locking/rwsem.c:1577
+ inode_lock include/linux/fs.h:877 [inline]
+ efivarfs_actor+0x1b8/0x2b8 fs/efivarfs/super.c:424
+ dir_emit include/linux/fs.h:3851 [inline]
+ dcache_readdir+0x2dc/0x4e8 fs/libfs.c:209
+ iterate_dir+0x46c/0x5f4 fs/readdir.c:108
+ efivarfs_pm_notify+0x2f4/0x350 fs/efivarfs/super.c:519
+ notifier_call_chain+0x1c4/0x550 kernel/notifier.c:85
+ blocking_notifier_call_chain+0x70/0xa0 kernel/notifier.c:380
+ pm_notifier_call_chain+0x2c/0x3c kernel/power/main.c:109
+ snapshot_release+0x128/0x1b8 kernel/power/user.c:125
+ __fput+0x340/0x760 fs/file_table.c:464
+ ____fput+0x20/0x30 fs/file_table.c:492
+ task_work_run+0x230/0x2e0 kernel/task_work.c:227
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ do_notify_resume+0x178/0x1f4 arch/arm64/kernel/entry-common.c:151
+ exit_to_user_mode_prepare arch/arm64/kernel/entry-common.c:169 [inline]
+ exit_to_user_mode arch/arm64/kernel/entry-common.c:178 [inline]
+ el0_svc+0xac/0x168 arch/arm64/kernel/entry-common.c:745
+ el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600

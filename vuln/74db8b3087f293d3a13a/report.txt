@@ -1,0 +1,1925 @@
+NILFS (loop2): disposed unprocessed dirty file(s) when detaching log writer
+==================================================================
+BUG: KASAN: slab-use-after-free in nilfs_load_inode_block+0x2c1/0x300 fs/nilfs2/inode.c:1030
+Read of size 8 at addr ffff888021c2c430 by task syz-executor105/5024
+
+CPU: 0 PID: 5024 Comm: syz-executor105 Not tainted 6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ nilfs_load_inode_block+0x2c1/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0e780a6fa7
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0ea1c078 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f0e780a6fa7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffc0ea1c130
+RBP: 00007ffc0ea1c130 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffc0ea1d1f0
+R13: 00005555568c9700 R14: 431bde82d7b634db R15: 00007ffc0ea1d194
+ </TASK>
+
+Allocated by task 5076:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0xa2/0xb0 mm/kasan/common.c:383
+ kmalloc include/linux/slab.h:582 [inline]
+ kzalloc include/linux/slab.h:703 [inline]
+ nilfs_find_or_create_root+0x88/0x4c0 fs/nilfs2/the_nilfs.c:851
+ nilfs_attach_checkpoint+0xd8/0x4e0 fs/nilfs2/super.c:550
+ nilfs_fill_super fs/nilfs2/super.c:1095 [inline]
+ nilfs_mount+0xafd/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount fs/namespace.c:3861 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 5024:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15e/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1792 [inline]
+ slab_free_freelist_hook+0x10b/0x1e0 mm/slub.c:1818
+ slab_free mm/slub.c:3801 [inline]
+ __kmem_cache_free+0xb8/0x2f0 mm/slub.c:3814
+ nilfs_put_root+0xb6/0xe0 fs/nilfs2/the_nilfs.c:908
+ nilfs_segctor_destroy fs/nilfs2/segment.c:2782 [inline]
+ nilfs_detach_log_writer+0x5e0/0xa60 fs/nilfs2/segment.c:2845
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+The buggy address belongs to the object at ffff888021c2c400
+ which belongs to the cache kmalloc-256 of size 256
+The buggy address is located 48 bytes inside of
+ freed 256-byte region [ffff888021c2c400, ffff888021c2c500)
+
+The buggy address belongs to the physical page:
+page:ffffea0000870b00 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x21c2c
+head:ffffea0000870b00 order:1 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888012841b40 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000100010 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 1, migratetype Unmovable, gfp_mask 0xd2040(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 5076, tgid 5070 (syz-executor105), ts 46732362464, free_ts 46524357816
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2292
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ __kmem_cache_alloc_node+0x137/0x350 mm/slub.c:3509
+ __do_kmalloc_node mm/slab_common.c:984 [inline]
+ __kmalloc+0x4c/0x100 mm/slab_common.c:998
+ kmalloc include/linux/slab.h:586 [inline]
+ kzalloc include/linux/slab.h:703 [inline]
+ nilfs_mdt_init+0x2f/0x1e0 fs/nilfs2/mdt.c:451
+ nilfs_sufile_read+0x19e/0x5a0 fs/nilfs2/sufile.c:1200
+ nilfs_load_super_root fs/nilfs2/the_nilfs.c:130 [inline]
+ load_nilfs+0x669/0x12d0 fs/nilfs2/the_nilfs.c:301
+ nilfs_fill_super fs/nilfs2/super.c:1090 [inline]
+ nilfs_mount+0xa8c/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1161 [inline]
+ free_unref_page_prepare+0x508/0xb90 mm/page_alloc.c:2348
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2443
+ qlink_free mm/kasan/quarantine.c:166 [inline]
+ qlist_free_all+0x6a/0x170 mm/kasan/quarantine.c:185
+ kasan_quarantine_reduce+0x18b/0x1d0 mm/kasan/quarantine.c:292
+ __kasan_slab_alloc+0x65/0x90 mm/kasan/common.c:305
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:762 [inline]
+ slab_alloc_node mm/slub.c:3470 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc+0x172/0x3b0 mm/slub.c:3494
+ nilfs_btree_alloc_path+0x3b/0x180 fs/nilfs2/btree.c:28
+ nilfs_btree_assign+0x84/0xe30 fs/nilfs2/btree.c:2268
+ nilfs_bmap_assign+0x87/0x180 fs/nilfs2/bmap.c:390
+ nilfs_segctor_update_payload_blocknr fs/nilfs2/segment.c:1622 [inline]
+ nilfs_segctor_assign fs/nilfs2/segment.c:1656 [inline]
+ nilfs_segctor_do_construct+0x195f/0x8bf0 fs/nilfs2/segment.c:2088
+ nilfs_construct_dsync_segment+0x455/0x560 fs/nilfs2/segment.c:2342
+ nilfs_sync_file+0x1d4/0x2e0 fs/nilfs2/file.c:32
+ vfs_fsync_range+0x141/0x220 fs/sync.c:188
+ generic_write_sync include/linux/fs.h:2493 [inline]
+ generic_file_write_iter+0x2a8/0x350 mm/filemap.c:4048
+ call_write_iter include/linux/fs.h:1871 [inline]
+ do_iter_readv_writev+0x21e/0x3c0 fs/read_write.c:735
+ do_iter_write+0x17f/0x830 fs/read_write.c:860
+
+Memory state around the buggy address:
+ ffff888021c2c300: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff888021c2c380: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+>ffff888021c2c400: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                     ^
+ ffff888021c2c480: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888021c2c500: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================
+==================================================================
+BUG: KASAN: slab-use-after-free in nilfs_ifile_get_inode_block+0x180/0x190 fs/nilfs2/ifile.c:135
+Read of size 8 at addr ffff888075798e50 by task syz-executor105/5024
+
+CPU: 1 PID: 5024 Comm: syz-executor105 Tainted: G    B              6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ nilfs_ifile_get_inode_block+0x180/0x190 fs/nilfs2/ifile.c:135
+ nilfs_load_inode_block+0x179/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0e780a6fa7
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0ea1c078 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f0e780a6fa7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffc0ea1c130
+RBP: 00007ffc0ea1c130 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffc0ea1d1f0
+R13: 00005555568c9700 R14: 431bde82d7b634db R15: 00007ffc0ea1d194
+ </TASK>
+
+Allocated by task 5076:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ __kasan_slab_alloc+0x81/0x90 mm/kasan/common.c:328
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:762 [inline]
+ slab_alloc_node mm/slub.c:3470 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x21a/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_ifile_read+0x30/0x1b0 fs/nilfs2/ifile.c:187
+ nilfs_attach_checkpoint+0x26c/0x4e0 fs/nilfs2/super.c:572
+ nilfs_fill_super fs/nilfs2/super.c:1095 [inline]
+ nilfs_mount+0xafd/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount fs/namespace.c:3861 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 4668:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15e/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1792 [inline]
+ slab_free_freelist_hook+0x10b/0x1e0 mm/slub.c:1818
+ slab_free mm/slub.c:3801 [inline]
+ kmem_cache_free+0xf0/0x490 mm/slub.c:3823
+ i_callback+0x43/0x70 fs/inode.c:249
+ rcu_do_batch kernel/rcu/tree.c:2135 [inline]
+ rcu_core+0x7fb/0x1bb0 kernel/rcu/tree.c:2399
+ __do_softirq+0x218/0x965 kernel/softirq.c:553
+
+Last potentially related work creation:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ __kasan_record_aux_stack+0xbc/0xd0 mm/kasan/generic.c:492
+ __call_rcu_common.constprop.0+0x9a/0x790 kernel/rcu/tree.c:2649
+ destroy_inode+0x129/0x1b0 fs/inode.c:315
+ iput_final fs/inode.c:1791 [inline]
+ iput.part.0+0x55e/0x7a0 fs/inode.c:1817
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_put_root+0xae/0xe0 fs/nilfs2/the_nilfs.c:906
+ nilfs_segctor_destroy fs/nilfs2/segment.c:2782 [inline]
+ nilfs_detach_log_writer+0x5e0/0xa60 fs/nilfs2/segment.c:2845
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+The buggy address belongs to the object at ffff888075798cd0
+ which belongs to the cache nilfs2_inode_cache of size 1512
+The buggy address is located 384 bytes inside of
+ freed 1512-byte region [ffff888075798cd0, ffff8880757992b8)
+
+The buggy address belongs to the physical page:
+page:ffffea0001d5e600 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x75798
+head:ffffea0001d5e600 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888142283140 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000130013 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Reclaimable, gfp_mask 0xd2050(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC|__GFP_RECLAIMABLE), pid 5076, tgid 5070 (syz-executor105), ts 46732329284, free_ts 10351707866
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2292
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x4e4/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_sufile_read+0xd6/0x5a0 fs/nilfs2/sufile.c:1194
+ nilfs_load_super_root fs/nilfs2/the_nilfs.c:130 [inline]
+ load_nilfs+0x669/0x12d0 fs/nilfs2/the_nilfs.c:301
+ nilfs_fill_super fs/nilfs2/super.c:1090 [inline]
+ nilfs_mount+0xa8c/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1161 [inline]
+ free_unref_page_prepare+0x508/0xb90 mm/page_alloc.c:2348
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2443
+ free_contig_range+0xb6/0x190 mm/page_alloc.c:6395
+ destroy_args+0x686/0x940 mm/debug_vm_pgtable.c:1029
+ debug_vm_pgtable+0x2339/0x3ff0 mm/debug_vm_pgtable.c:1410
+ do_one_initcall+0x117/0x630 init/main.c:1232
+ do_initcall_level init/main.c:1294 [inline]
+ do_initcalls init/main.c:1310 [inline]
+ do_basic_setup init/main.c:1329 [inline]
+ kernel_init_freeable+0x5bd/0x8f0 init/main.c:1546
+ kernel_init+0x1c/0x2a0 init/main.c:1437
+ ret_from_fork+0x2c/0x70 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+
+Memory state around the buggy address:
+ ffff888075798d00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888075798d80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888075798e00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                                 ^
+ ffff888075798e80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888075798f00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+==================================================================
+BUG: KASAN: slab-use-after-free in NILFS_MDT fs/nilfs2/mdt.h:56 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_get_entry_block+0x193/0x1b0 fs/nilfs2/alloc.c:316
+Read of size 8 at addr ffff8880757992b0 by task syz-executor105/5024
+
+CPU: 0 PID: 5024 Comm: syz-executor105 Tainted: G    B              6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ NILFS_MDT fs/nilfs2/mdt.h:56 [inline]
+ nilfs_palloc_get_entry_block+0x193/0x1b0 fs/nilfs2/alloc.c:316
+ nilfs_ifile_get_inode_block+0xc5/0x190 fs/nilfs2/ifile.c:143
+ nilfs_load_inode_block+0x179/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0e780a6fa7
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0ea1c078 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f0e780a6fa7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffc0ea1c130
+RBP: 00007ffc0ea1c130 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffc0ea1d1f0
+R13: 00005555568c9700 R14: 431bde82d7b634db R15: 00007ffc0ea1d194
+ </TASK>
+
+Allocated by task 5076:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ __kasan_slab_alloc+0x81/0x90 mm/kasan/common.c:328
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:762 [inline]
+ slab_alloc_node mm/slub.c:3470 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x21a/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_ifile_read+0x30/0x1b0 fs/nilfs2/ifile.c:187
+ nilfs_attach_checkpoint+0x26c/0x4e0 fs/nilfs2/super.c:572
+ nilfs_fill_super fs/nilfs2/super.c:1095 [inline]
+ nilfs_mount+0xafd/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount fs/namespace.c:3861 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 4668:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15e/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1792 [inline]
+ slab_free_freelist_hook+0x10b/0x1e0 mm/slub.c:1818
+ slab_free mm/slub.c:3801 [inline]
+ kmem_cache_free+0xf0/0x490 mm/slub.c:3823
+ i_callback+0x43/0x70 fs/inode.c:249
+ rcu_do_batch kernel/rcu/tree.c:2135 [inline]
+ rcu_core+0x7fb/0x1bb0 kernel/rcu/tree.c:2399
+ __do_softirq+0x218/0x965 kernel/softirq.c:553
+
+Last potentially related work creation:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ __kasan_record_aux_stack+0xbc/0xd0 mm/kasan/generic.c:492
+ __call_rcu_common.constprop.0+0x9a/0x790 kernel/rcu/tree.c:2649
+ destroy_inode+0x129/0x1b0 fs/inode.c:315
+ iput_final fs/inode.c:1791 [inline]
+ iput.part.0+0x55e/0x7a0 fs/inode.c:1817
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_put_root+0xae/0xe0 fs/nilfs2/the_nilfs.c:906
+ nilfs_segctor_destroy fs/nilfs2/segment.c:2782 [inline]
+ nilfs_detach_log_writer+0x5e0/0xa60 fs/nilfs2/segment.c:2845
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+The buggy address belongs to the object at ffff888075798cd0
+ which belongs to the cache nilfs2_inode_cache of size 1512
+The buggy address is located 1504 bytes inside of
+ freed 1512-byte region [ffff888075798cd0, ffff8880757992b8)
+
+The buggy address belongs to the physical page:
+page:ffffea0001d5e600 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x75798
+head:ffffea0001d5e600 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888142283140 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000130013 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Reclaimable, gfp_mask 0xd2050(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC|__GFP_RECLAIMABLE), pid 5076, tgid 5070 (syz-executor105), ts 46732329284, free_ts 10351707866
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2292
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x4e4/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_sufile_read+0xd6/0x5a0 fs/nilfs2/sufile.c:1194
+ nilfs_load_super_root fs/nilfs2/the_nilfs.c:130 [inline]
+ load_nilfs+0x669/0x12d0 fs/nilfs2/the_nilfs.c:301
+ nilfs_fill_super fs/nilfs2/super.c:1090 [inline]
+ nilfs_mount+0xa8c/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1161 [inline]
+ free_unref_page_prepare+0x508/0xb90 mm/page_alloc.c:2348
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2443
+ free_contig_range+0xb6/0x190 mm/page_alloc.c:6395
+ destroy_args+0x686/0x940 mm/debug_vm_pgtable.c:1029
+ debug_vm_pgtable+0x2339/0x3ff0 mm/debug_vm_pgtable.c:1410
+ do_one_initcall+0x117/0x630 init/main.c:1232
+ do_initcall_level init/main.c:1294 [inline]
+ do_initcalls init/main.c:1310 [inline]
+ do_basic_setup init/main.c:1329 [inline]
+ kernel_init_freeable+0x5bd/0x8f0 init/main.c:1546
+ kernel_init+0x1c/0x2a0 init/main.c:1437
+ ret_from_fork+0x2c/0x70 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+
+Memory state around the buggy address:
+ ffff888075799180: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888075799200: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888075799280: fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc fc
+                                     ^
+ ffff888075799300: fc fc fc fc fc fc fc fa fb fb fb fb fb fb fb fb
+ ffff888075799380: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+==================================================================
+BUG: KASAN: slab-use-after-free in nilfs_palloc_get_entry_block+0x186/0x1b0 fs/nilfs2/alloc.c:316
+Read of size 8 at addr ffff88802b585cb0 by task syz-executor105/5024
+
+CPU: 1 PID: 5024 Comm: syz-executor105 Tainted: G    B              6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ nilfs_palloc_get_entry_block+0x186/0x1b0 fs/nilfs2/alloc.c:316
+ nilfs_ifile_get_inode_block+0xc5/0x190 fs/nilfs2/ifile.c:143
+ nilfs_load_inode_block+0x179/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0e780a6fa7
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0ea1c078 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f0e780a6fa7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffc0ea1c130
+RBP: 00007ffc0ea1c130 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffc0ea1d1f0
+R13: 00005555568c9700 R14: 431bde82d7b634db R15: 00007ffc0ea1d194
+ </TASK>
+
+Allocated by task 5076:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0xa2/0xb0 mm/kasan/common.c:383
+ kasan_kmalloc include/linux/kasan.h:196 [inline]
+ __do_kmalloc_node mm/slab_common.c:985 [inline]
+ __kmalloc+0x5d/0x100 mm/slab_common.c:998
+ kmalloc include/linux/slab.h:586 [inline]
+ kzalloc include/linux/slab.h:703 [inline]
+ nilfs_mdt_init+0x2f/0x1e0 fs/nilfs2/mdt.c:451
+ nilfs_ifile_read+0xc9/0x1b0 fs/nilfs2/ifile.c:193
+ nilfs_attach_checkpoint+0x26c/0x4e0 fs/nilfs2/super.c:572
+ nilfs_fill_super fs/nilfs2/super.c:1095 [inline]
+ nilfs_mount+0xafd/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount fs/namespace.c:3861 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 4668:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15e/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1792 [inline]
+ slab_free_freelist_hook+0x10b/0x1e0 mm/slub.c:1818
+ slab_free mm/slub.c:3801 [inline]
+ __kmem_cache_free+0xb8/0x2f0 mm/slub.c:3814
+ nilfs_free_inode+0x42/0x70 fs/nilfs2/super.c:168
+ i_callback+0x43/0x70 fs/inode.c:249
+ rcu_do_batch kernel/rcu/tree.c:2135 [inline]
+ rcu_core+0x7fb/0x1bb0 kernel/rcu/tree.c:2399
+ __do_softirq+0x218/0x965 kernel/softirq.c:553
+
+The buggy address belongs to the object at ffff88802b585c00
+ which belongs to the cache kmalloc-512 of size 512
+The buggy address is located 176 bytes inside of
+ freed 512-byte region [ffff88802b585c00, ffff88802b585e00)
+
+The buggy address belongs to the physical page:
+page:ffffea0000ad6100 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x2b584
+head:ffffea0000ad6100 order:2 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888012841c80 ffffea000060c900 dead000000000002
+raw: 0000000000000000 0000000000100010 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 2, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 4490, tgid 4490 (udevadm), ts 14413457908, free_ts 14394869291
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2292
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ __kmem_cache_alloc_node+0x137/0x350 mm/slub.c:3509
+ kmalloc_trace+0x25/0xe0 mm/slab_common.c:1076
+ kmalloc include/linux/slab.h:582 [inline]
+ kzalloc include/linux/slab.h:703 [inline]
+ kernfs_fop_open+0x318/0xe00 fs/kernfs/file.c:670
+ do_dentry_open+0x88b/0x1780 fs/open.c:914
+ do_open fs/namei.c:3636 [inline]
+ path_openat+0x19af/0x29c0 fs/namei.c:3793
+ do_filp_open+0x1de/0x430 fs/namei.c:3820
+ do_sys_openat2+0x176/0x1e0 fs/open.c:1407
+ do_sys_open fs/open.c:1422 [inline]
+ __do_sys_openat fs/open.c:1438 [inline]
+ __se_sys_openat fs/open.c:1433 [inline]
+ __x64_sys_openat+0x175/0x210 fs/open.c:1433
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1161 [inline]
+ free_unref_page_prepare+0x508/0xb90 mm/page_alloc.c:2348
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2443
+ __unfreeze_partials+0x21d/0x240 mm/slub.c:2647
+ qlink_free mm/kasan/quarantine.c:166 [inline]
+ qlist_free_all+0x6a/0x170 mm/kasan/quarantine.c:185
+ kasan_quarantine_reduce+0x18b/0x1d0 mm/kasan/quarantine.c:292
+ __kasan_slab_alloc+0x65/0x90 mm/kasan/common.c:305
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:762 [inline]
+ slab_alloc_node mm/slub.c:3470 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc+0x172/0x3b0 mm/slub.c:3494
+ vm_area_dup+0x21/0x2f0 kernel/fork.c:500
+ __split_vma+0x1a8/0x830 mm/mmap.c:2344
+ split_vma+0xc8/0x110 mm/mmap.c:2414
+ mprotect_fixup+0x784/0xbf0 mm/mprotect.c:649
+ do_mprotect_pkey+0x852/0xd60 mm/mprotect.c:817
+ __do_sys_mprotect mm/mprotect.c:838 [inline]
+ __se_sys_mprotect mm/mprotect.c:835 [inline]
+ __x64_sys_mprotect+0x78/0xb0 mm/mprotect.c:835
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Memory state around the buggy address:
+ ffff88802b585b80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88802b585c00: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff88802b585c80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                     ^
+ ffff88802b585d00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88802b585d80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+==================================================================
+BUG: KASAN: slab-use-after-free in nilfs_palloc_entries_per_group fs/nilfs2/alloc.h:28 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_group fs/nilfs2/alloc.c:87 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_entry_blkoff fs/nilfs2/alloc.c:170 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_get_entry_block+0x17c/0x1b0 fs/nilfs2/alloc.c:318
+Read of size 1 at addr ffff888075798ef2 by task syz-executor105/5024
+
+CPU: 1 PID: 5024 Comm: syz-executor105 Tainted: G    B              6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ nilfs_palloc_entries_per_group fs/nilfs2/alloc.h:28 [inline]
+ nilfs_palloc_group fs/nilfs2/alloc.c:87 [inline]
+ nilfs_palloc_entry_blkoff fs/nilfs2/alloc.c:170 [inline]
+ nilfs_palloc_get_entry_block+0x17c/0x1b0 fs/nilfs2/alloc.c:318
+ nilfs_ifile_get_inode_block+0xc5/0x190 fs/nilfs2/ifile.c:143
+ nilfs_load_inode_block+0x179/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0e780a6fa7
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0ea1c078 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f0e780a6fa7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffc0ea1c130
+RBP: 00007ffc0ea1c130 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffc0ea1d1f0
+R13: 00005555568c9700 R14: 431bde82d7b634db R15: 00007ffc0ea1d194
+ </TASK>
+
+Allocated by task 5076:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ __kasan_slab_alloc+0x81/0x90 mm/kasan/common.c:328
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:762 [inline]
+ slab_alloc_node mm/slub.c:3470 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x21a/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_ifile_read+0x30/0x1b0 fs/nilfs2/ifile.c:187
+ nilfs_attach_checkpoint+0x26c/0x4e0 fs/nilfs2/super.c:572
+ nilfs_fill_super fs/nilfs2/super.c:1095 [inline]
+ nilfs_mount+0xafd/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount fs/namespace.c:3861 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 4668:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15e/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1792 [inline]
+ slab_free_freelist_hook+0x10b/0x1e0 mm/slub.c:1818
+ slab_free mm/slub.c:3801 [inline]
+ kmem_cache_free+0xf0/0x490 mm/slub.c:3823
+ i_callback+0x43/0x70 fs/inode.c:249
+ rcu_do_batch kernel/rcu/tree.c:2135 [inline]
+ rcu_core+0x7fb/0x1bb0 kernel/rcu/tree.c:2399
+ __do_softirq+0x218/0x965 kernel/softirq.c:553
+
+Last potentially related work creation:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ __kasan_record_aux_stack+0xbc/0xd0 mm/kasan/generic.c:492
+ __call_rcu_common.constprop.0+0x9a/0x790 kernel/rcu/tree.c:2649
+ destroy_inode+0x129/0x1b0 fs/inode.c:315
+ iput_final fs/inode.c:1791 [inline]
+ iput.part.0+0x55e/0x7a0 fs/inode.c:1817
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_put_root+0xae/0xe0 fs/nilfs2/the_nilfs.c:906
+ nilfs_segctor_destroy fs/nilfs2/segment.c:2782 [inline]
+ nilfs_detach_log_writer+0x5e0/0xa60 fs/nilfs2/segment.c:2845
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+The buggy address belongs to the object at ffff888075798cd0
+ which belongs to the cache nilfs2_inode_cache of size 1512
+The buggy address is located 546 bytes inside of
+ freed 1512-byte region [ffff888075798cd0, ffff8880757992b8)
+
+The buggy address belongs to the physical page:
+page:ffffea0001d5e600 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x75798
+head:ffffea0001d5e600 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888142283140 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000130013 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Reclaimable, gfp_mask 0xd2050(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC|__GFP_RECLAIMABLE), pid 5076, tgid 5070 (syz-executor105), ts 46732329284, free_ts 10351707866
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2292
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x4e4/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_sufile_read+0xd6/0x5a0 fs/nilfs2/sufile.c:1194
+ nilfs_load_super_root fs/nilfs2/the_nilfs.c:130 [inline]
+ load_nilfs+0x669/0x12d0 fs/nilfs2/the_nilfs.c:301
+ nilfs_fill_super fs/nilfs2/super.c:1090 [inline]
+ nilfs_mount+0xa8c/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1161 [inline]
+ free_unref_page_prepare+0x508/0xb90 mm/page_alloc.c:2348
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2443
+ free_contig_range+0xb6/0x190 mm/page_alloc.c:6395
+ destroy_args+0x686/0x940 mm/debug_vm_pgtable.c:1029
+ debug_vm_pgtable+0x2339/0x3ff0 mm/debug_vm_pgtable.c:1410
+ do_one_initcall+0x117/0x630 init/main.c:1232
+ do_initcall_level init/main.c:1294 [inline]
+ do_initcalls init/main.c:1310 [inline]
+ do_basic_setup init/main.c:1329 [inline]
+ kernel_init_freeable+0x5bd/0x8f0 init/main.c:1546
+ kernel_init+0x1c/0x2a0 init/main.c:1437
+ ret_from_fork+0x2c/0x70 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+
+Memory state around the buggy address:
+ ffff888075798d80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888075798e00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888075798e80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                                             ^
+ ffff888075798f00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888075798f80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+==================================================================
+BUG: KASAN: slab-use-after-free in i_blocksize include/linux/fs.h:724 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_groups_per_desc_block fs/nilfs2/alloc.c:28 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_bitmap_blkoff+0x11c/0x140 fs/nilfs2/alloc.c:119
+Read of size 1 at addr ffff888075798ef2 by task syz-executor105/5024
+
+CPU: 0 PID: 5024 Comm: syz-executor105 Tainted: G    B              6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ i_blocksize include/linux/fs.h:724 [inline]
+ nilfs_palloc_groups_per_desc_block fs/nilfs2/alloc.c:28 [inline]
+ nilfs_palloc_bitmap_blkoff+0x11c/0x140 fs/nilfs2/alloc.c:119
+ nilfs_palloc_entry_blkoff fs/nilfs2/alloc.c:172 [inline]
+ nilfs_palloc_get_entry_block+0xf9/0x1b0 fs/nilfs2/alloc.c:318
+ nilfs_ifile_get_inode_block+0xc5/0x190 fs/nilfs2/ifile.c:143
+ nilfs_load_inode_block+0x179/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0e780a6fa7
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0ea1c078 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f0e780a6fa7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffc0ea1c130
+RBP: 00007ffc0ea1c130 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffc0ea1d1f0
+R13: 00005555568c9700 R14: 431bde82d7b634db R15: 00007ffc0ea1d194
+ </TASK>
+
+Allocated by task 5076:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ __kasan_slab_alloc+0x81/0x90 mm/kasan/common.c:328
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:762 [inline]
+ slab_alloc_node mm/slub.c:3470 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x21a/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_ifile_read+0x30/0x1b0 fs/nilfs2/ifile.c:187
+ nilfs_attach_checkpoint+0x26c/0x4e0 fs/nilfs2/super.c:572
+ nilfs_fill_super fs/nilfs2/super.c:1095 [inline]
+ nilfs_mount+0xafd/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount fs/namespace.c:3861 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 4668:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15e/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1792 [inline]
+ slab_free_freelist_hook+0x10b/0x1e0 mm/slub.c:1818
+ slab_free mm/slub.c:3801 [inline]
+ kmem_cache_free+0xf0/0x490 mm/slub.c:3823
+ i_callback+0x43/0x70 fs/inode.c:249
+ rcu_do_batch kernel/rcu/tree.c:2135 [inline]
+ rcu_core+0x7fb/0x1bb0 kernel/rcu/tree.c:2399
+ __do_softirq+0x218/0x965 kernel/softirq.c:553
+
+Last potentially related work creation:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ __kasan_record_aux_stack+0xbc/0xd0 mm/kasan/generic.c:492
+ __call_rcu_common.constprop.0+0x9a/0x790 kernel/rcu/tree.c:2649
+ destroy_inode+0x129/0x1b0 fs/inode.c:315
+ iput_final fs/inode.c:1791 [inline]
+ iput.part.0+0x55e/0x7a0 fs/inode.c:1817
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_put_root+0xae/0xe0 fs/nilfs2/the_nilfs.c:906
+ nilfs_segctor_destroy fs/nilfs2/segment.c:2782 [inline]
+ nilfs_detach_log_writer+0x5e0/0xa60 fs/nilfs2/segment.c:2845
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+The buggy address belongs to the object at ffff888075798cd0
+ which belongs to the cache nilfs2_inode_cache of size 1512
+The buggy address is located 546 bytes inside of
+ freed 1512-byte region [ffff888075798cd0, ffff8880757992b8)
+
+The buggy address belongs to the physical page:
+page:ffffea0001d5e600 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x75798
+head:ffffea0001d5e600 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888142283140 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000130013 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Reclaimable, gfp_mask 0xd2050(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC|__GFP_RECLAIMABLE), pid 5076, tgid 5070 (syz-executor105), ts 46732329284, free_ts 10351707866
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2292
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x4e4/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_sufile_read+0xd6/0x5a0 fs/nilfs2/sufile.c:1194
+ nilfs_load_super_root fs/nilfs2/the_nilfs.c:130 [inline]
+ load_nilfs+0x669/0x12d0 fs/nilfs2/the_nilfs.c:301
+ nilfs_fill_super fs/nilfs2/super.c:1090 [inline]
+ nilfs_mount+0xa8c/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1161 [inline]
+ free_unref_page_prepare+0x508/0xb90 mm/page_alloc.c:2348
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2443
+ free_contig_range+0xb6/0x190 mm/page_alloc.c:6395
+ destroy_args+0x686/0x940 mm/debug_vm_pgtable.c:1029
+ debug_vm_pgtable+0x2339/0x3ff0 mm/debug_vm_pgtable.c:1410
+ do_one_initcall+0x117/0x630 init/main.c:1232
+ do_initcall_level init/main.c:1294 [inline]
+ do_initcalls init/main.c:1310 [inline]
+ do_basic_setup init/main.c:1329 [inline]
+ kernel_init_freeable+0x5bd/0x8f0 init/main.c:1546
+ kernel_init+0x1c/0x2a0 init/main.c:1437
+ ret_from_fork+0x2c/0x70 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+
+Memory state around the buggy address:
+ ffff888075798d80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888075798e00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888075798e80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                                             ^
+ ffff888075798f00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888075798f80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+==================================================================
+BUG: KASAN: slab-use-after-free in NILFS_MDT fs/nilfs2/mdt.h:56 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_desc_blkoff fs/nilfs2/alloc.c:104 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_bitmap_blkoff+0x134/0x140 fs/nilfs2/alloc.c:120
+Read of size 8 at addr ffff8880757992b0 by task syz-executor105/5024
+
+CPU: 1 PID: 5024 Comm: syz-executor105 Tainted: G    B              6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ NILFS_MDT fs/nilfs2/mdt.h:56 [inline]
+ nilfs_palloc_desc_blkoff fs/nilfs2/alloc.c:104 [inline]
+ nilfs_palloc_bitmap_blkoff+0x134/0x140 fs/nilfs2/alloc.c:120
+ nilfs_palloc_entry_blkoff fs/nilfs2/alloc.c:172 [inline]
+ nilfs_palloc_get_entry_block+0xf9/0x1b0 fs/nilfs2/alloc.c:318
+ nilfs_ifile_get_inode_block+0xc5/0x190 fs/nilfs2/ifile.c:143
+ nilfs_load_inode_block+0x179/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0e780a6fa7
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0ea1c078 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f0e780a6fa7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffc0ea1c130
+RBP: 00007ffc0ea1c130 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffc0ea1d1f0
+R13: 00005555568c9700 R14: 431bde82d7b634db R15: 00007ffc0ea1d194
+ </TASK>
+
+Allocated by task 5076:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ __kasan_slab_alloc+0x81/0x90 mm/kasan/common.c:328
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:762 [inline]
+ slab_alloc_node mm/slub.c:3470 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x21a/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_ifile_read+0x30/0x1b0 fs/nilfs2/ifile.c:187
+ nilfs_attach_checkpoint+0x26c/0x4e0 fs/nilfs2/super.c:572
+ nilfs_fill_super fs/nilfs2/super.c:1095 [inline]
+ nilfs_mount+0xafd/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount fs/namespace.c:3861 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 4668:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15e/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1792 [inline]
+ slab_free_freelist_hook+0x10b/0x1e0 mm/slub.c:1818
+ slab_free mm/slub.c:3801 [inline]
+ kmem_cache_free+0xf0/0x490 mm/slub.c:3823
+ i_callback+0x43/0x70 fs/inode.c:249
+ rcu_do_batch kernel/rcu/tree.c:2135 [inline]
+ rcu_core+0x7fb/0x1bb0 kernel/rcu/tree.c:2399
+ __do_softirq+0x218/0x965 kernel/softirq.c:553
+
+Last potentially related work creation:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ __kasan_record_aux_stack+0xbc/0xd0 mm/kasan/generic.c:492
+ __call_rcu_common.constprop.0+0x9a/0x790 kernel/rcu/tree.c:2649
+ destroy_inode+0x129/0x1b0 fs/inode.c:315
+ iput_final fs/inode.c:1791 [inline]
+ iput.part.0+0x55e/0x7a0 fs/inode.c:1817
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_put_root+0xae/0xe0 fs/nilfs2/the_nilfs.c:906
+ nilfs_segctor_destroy fs/nilfs2/segment.c:2782 [inline]
+ nilfs_detach_log_writer+0x5e0/0xa60 fs/nilfs2/segment.c:2845
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+The buggy address belongs to the object at ffff888075798cd0
+ which belongs to the cache nilfs2_inode_cache of size 1512
+The buggy address is located 1504 bytes inside of
+ freed 1512-byte region [ffff888075798cd0, ffff8880757992b8)
+
+The buggy address belongs to the physical page:
+page:ffffea0001d5e600 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x75798
+head:ffffea0001d5e600 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888142283140 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000130013 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Reclaimable, gfp_mask 0xd2050(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC|__GFP_RECLAIMABLE), pid 5076, tgid 5070 (syz-executor105), ts 46732329284, free_ts 10351707866
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2292
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x4e4/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_sufile_read+0xd6/0x5a0 fs/nilfs2/sufile.c:1194
+ nilfs_load_super_root fs/nilfs2/the_nilfs.c:130 [inline]
+ load_nilfs+0x669/0x12d0 fs/nilfs2/the_nilfs.c:301
+ nilfs_fill_super fs/nilfs2/super.c:1090 [inline]
+ nilfs_mount+0xa8c/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1161 [inline]
+ free_unref_page_prepare+0x508/0xb90 mm/page_alloc.c:2348
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2443
+ free_contig_range+0xb6/0x190 mm/page_alloc.c:6395
+ destroy_args+0x686/0x940 mm/debug_vm_pgtable.c:1029
+ debug_vm_pgtable+0x2339/0x3ff0 mm/debug_vm_pgtable.c:1410
+ do_one_initcall+0x117/0x630 init/main.c:1232
+ do_initcall_level init/main.c:1294 [inline]
+ do_initcalls init/main.c:1310 [inline]
+ do_basic_setup init/main.c:1329 [inline]
+ kernel_init_freeable+0x5bd/0x8f0 init/main.c:1546
+ kernel_init+0x1c/0x2a0 init/main.c:1437
+ ret_from_fork+0x2c/0x70 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+
+Memory state around the buggy address:
+ ffff888075799180: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888075799200: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888075799280: fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc fc
+                                     ^
+ ffff888075799300: fc fc fc fc fc fc fc fa fb fb fb fb fb fb fb fb
+ ffff888075799380: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+==================================================================
+BUG: KASAN: slab-use-after-free in nilfs_palloc_desc_blkoff fs/nilfs2/alloc.c:104 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_bitmap_blkoff+0x12d/0x140 fs/nilfs2/alloc.c:120
+Read of size 8 at addr ffff88802b585cc8 by task syz-executor105/5024
+
+CPU: 1 PID: 5024 Comm: syz-executor105 Tainted: G    B              6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ nilfs_palloc_desc_blkoff fs/nilfs2/alloc.c:104 [inline]
+ nilfs_palloc_bitmap_blkoff+0x12d/0x140 fs/nilfs2/alloc.c:120
+ nilfs_palloc_entry_blkoff fs/nilfs2/alloc.c:172 [inline]
+ nilfs_palloc_get_entry_block+0xf9/0x1b0 fs/nilfs2/alloc.c:318
+ nilfs_ifile_get_inode_block+0xc5/0x190 fs/nilfs2/ifile.c:143
+ nilfs_load_inode_block+0x179/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0e780a6fa7
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0ea1c078 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f0e780a6fa7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffc0ea1c130
+RBP: 00007ffc0ea1c130 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffc0ea1d1f0
+R13: 00005555568c9700 R14: 431bde82d7b634db R15: 00007ffc0ea1d194
+ </TASK>
+
+Allocated by task 5076:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0xa2/0xb0 mm/kasan/common.c:383
+ kasan_kmalloc include/linux/kasan.h:196 [inline]
+ __do_kmalloc_node mm/slab_common.c:985 [inline]
+ __kmalloc+0x5d/0x100 mm/slab_common.c:998
+ kmalloc include/linux/slab.h:586 [inline]
+ kzalloc include/linux/slab.h:703 [inline]
+ nilfs_mdt_init+0x2f/0x1e0 fs/nilfs2/mdt.c:451
+ nilfs_ifile_read+0xc9/0x1b0 fs/nilfs2/ifile.c:193
+ nilfs_attach_checkpoint+0x26c/0x4e0 fs/nilfs2/super.c:572
+ nilfs_fill_super fs/nilfs2/super.c:1095 [inline]
+ nilfs_mount+0xafd/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount fs/namespace.c:3861 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 4668:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15e/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1792 [inline]
+ slab_free_freelist_hook+0x10b/0x1e0 mm/slub.c:1818
+ slab_free mm/slub.c:3801 [inline]
+ __kmem_cache_free+0xb8/0x2f0 mm/slub.c:3814
+ nilfs_free_inode+0x42/0x70 fs/nilfs2/super.c:168
+ i_callback+0x43/0x70 fs/inode.c:249
+ rcu_do_batch kernel/rcu/tree.c:2135 [inline]
+ rcu_core+0x7fb/0x1bb0 kernel/rcu/tree.c:2399
+ __do_softirq+0x218/0x965 kernel/softirq.c:553
+
+The buggy address belongs to the object at ffff88802b585c00
+ which belongs to the cache kmalloc-512 of size 512
+The buggy address is located 200 bytes inside of
+ freed 512-byte region [ffff88802b585c00, ffff88802b585e00)
+
+The buggy address belongs to the physical page:
+page:ffffea0000ad6100 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x2b584
+head:ffffea0000ad6100 order:2 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888012841c80 ffffea000060c900 dead000000000002
+raw: 0000000000000000 0000000000100010 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 2, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 4490, tgid 4490 (udevadm), ts 14413457908, free_ts 14394869291
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2292
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ __kmem_cache_alloc_node+0x137/0x350 mm/slub.c:3509
+ kmalloc_trace+0x25/0xe0 mm/slab_common.c:1076
+ kmalloc include/linux/slab.h:582 [inline]
+ kzalloc include/linux/slab.h:703 [inline]
+ kernfs_fop_open+0x318/0xe00 fs/kernfs/file.c:670
+ do_dentry_open+0x88b/0x1780 fs/open.c:914
+ do_open fs/namei.c:3636 [inline]
+ path_openat+0x19af/0x29c0 fs/namei.c:3793
+ do_filp_open+0x1de/0x430 fs/namei.c:3820
+ do_sys_openat2+0x176/0x1e0 fs/open.c:1407
+ do_sys_open fs/open.c:1422 [inline]
+ __do_sys_openat fs/open.c:1438 [inline]
+ __se_sys_openat fs/open.c:1433 [inline]
+ __x64_sys_openat+0x175/0x210 fs/open.c:1433
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1161 [inline]
+ free_unref_page_prepare+0x508/0xb90 mm/page_alloc.c:2348
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2443
+ __unfreeze_partials+0x21d/0x240 mm/slub.c:2647
+ qlink_free mm/kasan/quarantine.c:166 [inline]
+ qlist_free_all+0x6a/0x170 mm/kasan/quarantine.c:185
+ kasan_quarantine_reduce+0x18b/0x1d0 mm/kasan/quarantine.c:292
+ __kasan_slab_alloc+0x65/0x90 mm/kasan/common.c:305
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:762 [inline]
+ slab_alloc_node mm/slub.c:3470 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc+0x172/0x3b0 mm/slub.c:3494
+ vm_area_dup+0x21/0x2f0 kernel/fork.c:500
+ __split_vma+0x1a8/0x830 mm/mmap.c:2344
+ split_vma+0xc8/0x110 mm/mmap.c:2414
+ mprotect_fixup+0x784/0xbf0 mm/mprotect.c:649
+ do_mprotect_pkey+0x852/0xd60 mm/mprotect.c:817
+ __do_sys_mprotect mm/mprotect.c:838 [inline]
+ __se_sys_mprotect mm/mprotect.c:835 [inline]
+ __x64_sys_mprotect+0x78/0xb0 mm/mprotect.c:835
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Memory state around the buggy address:
+ ffff88802b585b80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88802b585c00: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff88802b585c80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                              ^
+ ffff88802b585d00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88802b585d80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+==================================================================
+BUG: KASAN: slab-use-after-free in nilfs_palloc_bitmap_blkoff+0x126/0x140 fs/nilfs2/alloc.c:121
+Read of size 8 at addr ffff88802b585cc0 by task syz-executor105/5024
+
+CPU: 1 PID: 5024 Comm: syz-executor105 Tainted: G    B              6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ nilfs_palloc_bitmap_blkoff+0x126/0x140 fs/nilfs2/alloc.c:121
+ nilfs_palloc_entry_blkoff fs/nilfs2/alloc.c:172 [inline]
+ nilfs_palloc_get_entry_block+0xf9/0x1b0 fs/nilfs2/alloc.c:318
+ nilfs_ifile_get_inode_block+0xc5/0x190 fs/nilfs2/ifile.c:143
+ nilfs_load_inode_block+0x179/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0e780a6fa7
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0ea1c078 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f0e780a6fa7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffc0ea1c130
+RBP: 00007ffc0ea1c130 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffc0ea1d1f0
+R13: 00005555568c9700 R14: 431bde82d7b634db R15: 00007ffc0ea1d194
+ </TASK>
+
+Allocated by task 5076:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ ____kasan_kmalloc mm/kasan/common.c:374 [inline]
+ __kasan_kmalloc+0xa2/0xb0 mm/kasan/common.c:383
+ kasan_kmalloc include/linux/kasan.h:196 [inline]
+ __do_kmalloc_node mm/slab_common.c:985 [inline]
+ __kmalloc+0x5d/0x100 mm/slab_common.c:998
+ kmalloc include/linux/slab.h:586 [inline]
+ kzalloc include/linux/slab.h:703 [inline]
+ nilfs_mdt_init+0x2f/0x1e0 fs/nilfs2/mdt.c:451
+ nilfs_ifile_read+0xc9/0x1b0 fs/nilfs2/ifile.c:193
+ nilfs_attach_checkpoint+0x26c/0x4e0 fs/nilfs2/super.c:572
+ nilfs_fill_super fs/nilfs2/super.c:1095 [inline]
+ nilfs_mount+0xafd/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount fs/namespace.c:3861 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 4668:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15e/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1792 [inline]
+ slab_free_freelist_hook+0x10b/0x1e0 mm/slub.c:1818
+ slab_free mm/slub.c:3801 [inline]
+ __kmem_cache_free+0xb8/0x2f0 mm/slub.c:3814
+ nilfs_free_inode+0x42/0x70 fs/nilfs2/super.c:168
+ i_callback+0x43/0x70 fs/inode.c:249
+ rcu_do_batch kernel/rcu/tree.c:2135 [inline]
+ rcu_core+0x7fb/0x1bb0 kernel/rcu/tree.c:2399
+ __do_softirq+0x218/0x965 kernel/softirq.c:553
+
+The buggy address belongs to the object at ffff88802b585c00
+ which belongs to the cache kmalloc-512 of size 512
+The buggy address is located 192 bytes inside of
+ freed 512-byte region [ffff88802b585c00, ffff88802b585e00)
+
+The buggy address belongs to the physical page:
+page:ffffea0000ad6100 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x2b584
+head:ffffea0000ad6100 order:2 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888012841c80 ffffea000060c900 dead000000000002
+raw: 0000000000000000 0000000000100010 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 2, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 4490, tgid 4490 (udevadm), ts 14413457908, free_ts 14394869291
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2292
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ __kmem_cache_alloc_node+0x137/0x350 mm/slub.c:3509
+ kmalloc_trace+0x25/0xe0 mm/slab_common.c:1076
+ kmalloc include/linux/slab.h:582 [inline]
+ kzalloc include/linux/slab.h:703 [inline]
+ kernfs_fop_open+0x318/0xe00 fs/kernfs/file.c:670
+ do_dentry_open+0x88b/0x1780 fs/open.c:914
+ do_open fs/namei.c:3636 [inline]
+ path_openat+0x19af/0x29c0 fs/namei.c:3793
+ do_filp_open+0x1de/0x430 fs/namei.c:3820
+ do_sys_openat2+0x176/0x1e0 fs/open.c:1407
+ do_sys_open fs/open.c:1422 [inline]
+ __do_sys_openat fs/open.c:1438 [inline]
+ __se_sys_openat fs/open.c:1433 [inline]
+ __x64_sys_openat+0x175/0x210 fs/open.c:1433
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1161 [inline]
+ free_unref_page_prepare+0x508/0xb90 mm/page_alloc.c:2348
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2443
+ __unfreeze_partials+0x21d/0x240 mm/slub.c:2647
+ qlink_free mm/kasan/quarantine.c:166 [inline]
+ qlist_free_all+0x6a/0x170 mm/kasan/quarantine.c:185
+ kasan_quarantine_reduce+0x18b/0x1d0 mm/kasan/quarantine.c:292
+ __kasan_slab_alloc+0x65/0x90 mm/kasan/common.c:305
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:762 [inline]
+ slab_alloc_node mm/slub.c:3470 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc+0x172/0x3b0 mm/slub.c:3494
+ vm_area_dup+0x21/0x2f0 kernel/fork.c:500
+ __split_vma+0x1a8/0x830 mm/mmap.c:2344
+ split_vma+0xc8/0x110 mm/mmap.c:2414
+ mprotect_fixup+0x784/0xbf0 mm/mprotect.c:649
+ do_mprotect_pkey+0x852/0xd60 mm/mprotect.c:817
+ __do_sys_mprotect mm/mprotect.c:838 [inline]
+ __se_sys_mprotect mm/mprotect.c:835 [inline]
+ __x64_sys_mprotect+0x78/0xb0 mm/mprotect.c:835
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Memory state around the buggy address:
+ ffff88802b585b80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88802b585c00: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff88802b585c80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                           ^
+ ffff88802b585d00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88802b585d80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+==================================================================
+BUG: KASAN: slab-use-after-free in NILFS_MDT fs/nilfs2/mdt.h:56 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_entry_blkoff fs/nilfs2/alloc.c:173 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_get_entry_block+0x1a7/0x1b0 fs/nilfs2/alloc.c:318
+Read of size 8 at addr ffff8880757992b0 by task syz-executor105/5024
+
+CPU: 1 PID: 5024 Comm: syz-executor105 Tainted: G    B              6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ NILFS_MDT fs/nilfs2/mdt.h:56 [inline]
+ nilfs_palloc_entry_blkoff fs/nilfs2/alloc.c:173 [inline]
+ nilfs_palloc_get_entry_block+0x1a7/0x1b0 fs/nilfs2/alloc.c:318
+ nilfs_ifile_get_inode_block+0xc5/0x190 fs/nilfs2/ifile.c:143
+ nilfs_load_inode_block+0x179/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f0e780a6fa7
+Code: 08 00 48 83 c4 08 5b 5d c3 66 2e 0f 1f 84 00 00 00 00 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 b0 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007ffc0ea1c078 EFLAGS: 00000206 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f0e780a6fa7
+RDX: 0000000000000000 RSI: 000000000000000a RDI: 00007ffc0ea1c130
+RBP: 00007ffc0ea1c130 R08: 0000000000000000 R09: 0000000000000000
+R10: 00000000ffffffff R11: 0000000000000206 R12: 00007ffc0ea1d1f0
+R13: 00005555568c9700 R14: 431bde82d7b634db R15: 00007ffc0ea1d194
+ </TASK>
+
+Allocated by task 5076:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ __kasan_slab_alloc+0x81/0x90 mm/kasan/common.c:328
+ kasan_slab_alloc include/linux/kasan.h:186 [inline]
+ slab_post_alloc_hook mm/slab.h:762 [inline]
+ slab_alloc_node mm/slub.c:3470 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x21a/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_ifile_read+0x30/0x1b0 fs/nilfs2/ifile.c:187
+ nilfs_attach_checkpoint+0x26c/0x4e0 fs/nilfs2/super.c:572
+ nilfs_fill_super fs/nilfs2/super.c:1095 [inline]
+ nilfs_mount+0xafd/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+ vfs_get_tree+0x88/0x350 fs/super.c:1519
+ do_new_mount fs/namespace.c:3335 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3662
+ do_mount fs/namespace.c:3675 [inline]
+ __do_sys_mount fs/namespace.c:3884 [inline]
+ __se_sys_mount fs/namespace.c:3861 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3861
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+Freed by task 4668:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ kasan_set_track+0x25/0x30 mm/kasan/common.c:52
+ kasan_save_free_info+0x2b/0x40 mm/kasan/generic.c:522
+ ____kasan_slab_free mm/kasan/common.c:236 [inline]
+ ____kasan_slab_free+0x15e/0x1b0 mm/kasan/common.c:200
+ kasan_slab_free include/linux/kasan.h:162 [inline]
+ slab_free_hook mm/slub.c:1792 [inline]
+ slab_free_freelist_hook+0x10b/0x1e0 mm/slub.c:1818
+ slab_free mm/slub.c:3801 [inline]
+ kmem_cache_free+0xf0/0x490 mm/slub.c:3823
+ i_callback+0x43/0x70 fs/inode.c:249
+ rcu_do_batch kernel/rcu/tree.c:2135 [inline]
+ rcu_core+0x7fb/0x1bb0 kernel/rcu/tree.c:2399
+ __do_softirq+0x218/0x965 kernel/softirq.c:553
+
+Last potentially related work creation:
+ kasan_save_stack+0x33/0x50 mm/kasan/common.c:45
+ __kasan_record_aux_stack+0xbc/0xd0 mm/kasan/generic.c:492
+ __call_rcu_common.constprop.0+0x9a/0x790 kernel/rcu/tree.c:2649
+ destroy_inode+0x129/0x1b0 fs/inode.c:315
+ iput_final fs/inode.c:1791 [inline]
+ iput.part.0+0x55e/0x7a0 fs/inode.c:1817
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_put_root+0xae/0xe0 fs/nilfs2/the_nilfs.c:906
+ nilfs_segctor_destroy fs/nilfs2/segment.c:2782 [inline]
+ nilfs_detach_log_writer+0x5e0/0xa60 fs/nilfs2/segment.c:2845
+ nilfs_put_super+0x43/0x1b0 fs/nilfs2/super.c:498
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x9a/0x170 fs/super.c:330
+ deactivate_super+0xde/0x100 fs/super.c:361
+ cleanup_mnt+0x222/0x3d0 fs/namespace.c:1254
+ task_work_run+0x14d/0x240 kernel/task_work.c:179
+ ptrace_notify+0x10c/0x130 kernel/signal.c:2376
+ ptrace_report_syscall include/linux/ptrace.h:411 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:473 [inline]
+ syscall_exit_work kernel/entry/common.c:252 [inline]
+ syscall_exit_to_user_mode_prepare+0x120/0x220 kernel/entry/common.c:279
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:284 [inline]
+ syscall_exit_to_user_mode+0xd/0x50 kernel/entry/common.c:297
+ do_syscall_64+0x44/0xb0 arch/x86/entry/common.c:86
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+
+The buggy address belongs to the object at ffff888075798cd0
+ which belongs to the cache nilfs2_inode_cache of size 1512
+The buggy address is located 1504 bytes inside of
+ freed 1512-byte region [ffff888075798cd0, ffff8880757992b8)
+
+The buggy address belongs to the physical page:
+page:ffffea0001d5e600 refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x75798
+head:ffffea0001d5e600 order:3 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff00000010200(slab|head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000010200 ffff888142283140 dead000000000122 0000000000000000
+raw: 0000000000000000 0000000000130013 00000001ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Reclaimable, gfp_mask 0xd2050(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC|__GFP_RECLAIMABLE), pid 5076, tgid 5070 (syz-executor105), ts 46732329284, free_ts 10351707866
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d2/0x350 mm/page_alloc.c:1570
+ prep_new_page mm/page_alloc.c:1577 [inline]
+ get_page_from_freelist+0x10a9/0x31e0 mm/page_alloc.c:3221
+ __alloc_pages+0x1d0/0x4a0 mm/page_alloc.c:4477
+ alloc_pages+0x1a9/0x270 mm/mempolicy.c:2292
+ alloc_slab_page mm/slub.c:1862 [inline]
+ allocate_slab+0x24e/0x380 mm/slub.c:2009
+ new_slab mm/slub.c:2062 [inline]
+ ___slab_alloc+0x8bc/0x1570 mm/slub.c:3215
+ __slab_alloc.constprop.0+0x56/0xa0 mm/slub.c:3314
+ __slab_alloc_node mm/slub.c:3367 [inline]
+ slab_alloc_node mm/slub.c:3460 [inline]
+ slab_alloc mm/slub.c:3478 [inline]
+ __kmem_cache_alloc_lru mm/slub.c:3485 [inline]
+ kmem_cache_alloc_lru+0x4e4/0x630 mm/slub.c:3501
+ alloc_inode_sb include/linux/fs.h:2729 [inline]
+ nilfs_alloc_inode+0x26/0x150 fs/nilfs2/super.c:154
+ alloc_inode+0x5d/0x220 fs/inode.c:260
+ iget5_locked fs/inode.c:1285 [inline]
+ iget5_locked+0x63/0xe0 fs/inode.c:1278
+ nilfs_iget_locked+0xa1/0xd0 fs/nilfs2/inode.c:605
+ nilfs_sufile_read+0xd6/0x5a0 fs/nilfs2/sufile.c:1194
+ nilfs_load_super_root fs/nilfs2/the_nilfs.c:130 [inline]
+ load_nilfs+0x669/0x12d0 fs/nilfs2/the_nilfs.c:301
+ nilfs_fill_super fs/nilfs2/super.c:1090 [inline]
+ nilfs_mount+0xa8c/0x1120 fs/nilfs2/super.c:1343
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:611
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1161 [inline]
+ free_unref_page_prepare+0x508/0xb90 mm/page_alloc.c:2348
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2443
+ free_contig_range+0xb6/0x190 mm/page_alloc.c:6395
+ destroy_args+0x686/0x940 mm/debug_vm_pgtable.c:1029
+ debug_vm_pgtable+0x2339/0x3ff0 mm/debug_vm_pgtable.c:1410
+ do_one_initcall+0x117/0x630 init/main.c:1232
+ do_initcall_level init/main.c:1294 [inline]
+ do_initcalls init/main.c:1310 [inline]
+ do_basic_setup init/main.c:1329 [inline]
+ kernel_init_freeable+0x5bd/0x8f0 init/main.c:1546
+ kernel_init+0x1c/0x2a0 init/main.c:1437
+ ret_from_fork+0x2c/0x70 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+
+Memory state around the buggy address:
+ ffff888075799180: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888075799200: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888075799280: fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc fc
+                                     ^
+ ffff888075799300: fc fc fc fc fc fc fc fa fb fb fb fb fb fb fb fb
+ ffff888075799380: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+==================================================================
+BUG: KASAN: slab-use-after-free in nilfs_palloc_entry_blkoff fs/nilfs2/alloc.c:173 [inline]
+BUG: KASAN: slab-use-after-free in nilfs_palloc_get_entry_block+0x19d/0x1b0 fs/nilfs2/alloc.c:318
+Read of size 8 at addr ffff88802b585ca8 by task syz-executor105/5024
+
+CPU: 1 PID: 5024 Comm: syz-executor105 Tainted: G    B              6.5.0-rc4-syzkaller-00245-gf6a691685962 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/12/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ nilfs_palloc_entry_blkoff fs/nilfs2/alloc.c:173 [inline]
+ nilfs_palloc_get_entry_block+0x19d/0x1b0 fs/nilfs2/alloc.c:318
+ nilfs_ifile_get_inode_block+0xc5/0x190 fs/nilfs2/ifile.c:143
+ nilfs_load_inode_block+0x179/0x300 fs/nilfs2/inode.c:1030
+ __nilfs_mark_inode_dirty+0x80/0x240 fs/nilfs2/inode.c:1107
+ nilfs_dirty_inode+0x1ab/0x270 fs/nilfs2/inode.c:1148
+ __mark_inode_dirty+0x1e0/0xd50 fs/fs-writeback.c:2430
+ mark_inode_dirty_sync include/linux/fs.h:2153 [inline]
+ iput.part.0+0x5b/0x7a0 fs/inode.c:1814
+ iput+0x5c/0x80 fs/inode.c:1807
+ nilfs_dispose_list+0x49b/0x6e0 fs/nilfs2/segment.c:816
+ nilfs_detach_log_writer+0x77c/0xa60 fs/nilfs2/segment.c:2859

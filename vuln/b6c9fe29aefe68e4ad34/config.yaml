@@ -1,0 +1,55 @@
+id: b6c9fe29aefe68e4ad34
+bug_link: https://syzkaller.appspot.com/bug?extid=b6c9fe29aefe68e4ad34
+title: WARNING in ieee80211_ibss_csa_beacon
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 62b03f45c6352410d13bf0710d24ef6290632eb1
+fix_commit: 15bc8966b6d3a5b9bfe4c9facfa02f2b69b1e5f0
+datetime: '2022-08-25T10:03:47+02:00'
+fix_commit_message: 'wifi: mac80211: Don''t finalize CSA in IBSS mode if state is
+  disconnected
+
+
+  When we are not connected to a channel, sending channel "switch"
+
+  announcement doesn''t make any sense.
+
+
+  The BSS list is empty in that case. This causes the for loop in
+
+  cfg80211_get_bss() to be bypassed, so the function returns NULL
+
+  (check line 1424 of net/wireless/scan.c), causing the WARN_ON()
+
+  in ieee80211_ibss_csa_beacon() to get triggered (check line 500
+
+  of net/mac80211/ibss.c), which was consequently reported on the
+
+  syzkaller dashboard.
+
+
+  Thus, check if we have an existing connection before generating
+
+  the CSA beacon in ieee80211_ibss_finish_csa().
+
+
+  Cc: stable@vger.kernel.org
+
+  Fixes: cd7760e62c2a ("mac80211: add support for CSA in IBSS mode")
+
+  Link: https://syzkaller.appspot.com/bug?id=05603ef4ae8926761b678d2939a3b2ad28ab9ca6
+
+  Reported-by: syzbot+b6c9fe29aefe68e4ad34@syzkaller.appspotmail.com
+
+  Signed-off-by: Siddh Raman Pant <code@siddh.me>
+
+  Tested-by: syzbot+b6c9fe29aefe68e4ad34@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/20220814151512.9985-1-code@siddh.me
+
+  Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+  '
+submodule:
+- net/mac80211
+hunk_count: 1
+covered_count: 1

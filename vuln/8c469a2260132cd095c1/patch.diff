@@ -1,0 +1,99 @@
+diff --git a/include/net/udp_tunnel.h b/include/net/udp_tunnel.h
+index 288f06f23a80..2df3b8344eb5 100644
+--- a/include/net/udp_tunnel.h
++++ b/include/net/udp_tunnel.h
+@@ -215,7 +215,6 @@ static inline void udp_tunnel_encap_enable(struct sock *sk)
+ 	if (READ_ONCE(sk->sk_family) == PF_INET6)
+ 		ipv6_stub->udpv6_encap_enable();
+ #endif
+-	udp_tunnel_update_gro_rcv(sk, true);
+ 	udp_encap_enable();
+ }
+ 
+diff --git a/net/ipv4/udp.c b/net/ipv4/udp.c
+index 8867fe687888..f9f5b92cf4b6 100644
+--- a/net/ipv4/udp.c
++++ b/net/ipv4/udp.c
+@@ -2904,15 +2904,33 @@ void udp_destroy_sock(struct sock *sk)
+ 	}
+ }
+ 
++typedef struct sk_buff *(*udp_gro_receive_t)(struct sock *sk,
++					     struct list_head *head,
++					     struct sk_buff *skb);
++
+ static void set_xfrm_gro_udp_encap_rcv(__u16 encap_type, unsigned short family,
+ 				       struct sock *sk)
+ {
+ #ifdef CONFIG_XFRM
++	udp_gro_receive_t new_gro_receive;
++
+ 	if (udp_test_bit(GRO_ENABLED, sk) && encap_type == UDP_ENCAP_ESPINUDP) {
+-		if (family == AF_INET)
+-			WRITE_ONCE(udp_sk(sk)->gro_receive, xfrm4_gro_udp_encap_rcv);
+-		else if (IS_ENABLED(CONFIG_IPV6) && family == AF_INET6)
+-			WRITE_ONCE(udp_sk(sk)->gro_receive, ipv6_stub->xfrm6_gro_udp_encap_rcv);
++		if (IS_ENABLED(CONFIG_IPV6) && family == AF_INET6)
++			new_gro_receive = ipv6_stub->xfrm6_gro_udp_encap_rcv;
++		else
++			new_gro_receive = xfrm4_gro_udp_encap_rcv;
++
++		if (udp_sk(sk)->gro_receive != new_gro_receive) {
++			/*
++			 * With IPV6_ADDRFORM the gro callback could change
++			 * after being set, unregister the old one, if valid.
++			 */
++			if (udp_sk(sk)->gro_receive)
++				udp_tunnel_update_gro_rcv(sk, false);
++
++			WRITE_ONCE(udp_sk(sk)->gro_receive, new_gro_receive);
++			udp_tunnel_update_gro_rcv(sk, true);
++		}
+ 	}
+ #endif
+ }
+@@ -2962,6 +2980,7 @@ int udp_lib_setsockopt(struct sock *sk, int level, int optname,
+ 		break;
+ 
+ 	case UDP_ENCAP:
++		sockopt_lock_sock(sk);
+ 		switch (val) {
+ 		case 0:
+ #ifdef CONFIG_XFRM
+@@ -2985,6 +3004,7 @@ int udp_lib_setsockopt(struct sock *sk, int level, int optname,
+ 			err = -ENOPROTOOPT;
+ 			break;
+ 		}
++		sockopt_release_sock(sk);
+ 		break;
+ 
+ 	case UDP_NO_CHECK6_TX:
+@@ -3002,13 +3022,14 @@ int udp_lib_setsockopt(struct sock *sk, int level, int optname,
+ 		break;
+ 
+ 	case UDP_GRO:
+-
++		sockopt_lock_sock(sk);
+ 		/* when enabling GRO, accept the related GSO packet type */
+ 		if (valbool)
+ 			udp_tunnel_encap_enable(sk);
+ 		udp_assign_bit(GRO_ENABLED, sk, valbool);
+ 		udp_assign_bit(ACCEPT_L4, sk, valbool);
+ 		set_xfrm_gro_udp_encap_rcv(up->encap_type, sk->sk_family, sk);
++		sockopt_release_sock(sk);
+ 		break;
+ 
+ 	/*
+diff --git a/net/ipv4/udp_tunnel_core.c b/net/ipv4/udp_tunnel_core.c
+index 3d1214e6df0e..2326548997d3 100644
+--- a/net/ipv4/udp_tunnel_core.c
++++ b/net/ipv4/udp_tunnel_core.c
+@@ -90,6 +90,8 @@ void setup_udp_tunnel_sock(struct net *net, struct socket *sock,
+ 
+ 	udp_tunnel_encap_enable(sk);
+ 
++	udp_tunnel_update_gro_rcv(sk, true);
++
+ 	if (!sk->sk_dport && !sk->sk_bound_dev_if && sk_saddr_any(sk) &&
+ 	    sk->sk_kern_sock)
+ 		udp_tunnel_update_gro_lookup(net, sk, true);

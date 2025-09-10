@@ -1,0 +1,20 @@
+id: 43fa87986bdd31df9de6
+bug_link: https://syzkaller.appspot.com/bug?extid=43fa87986bdd31df9de6
+title: general protection fault in gfs2_rgrp_dump
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2164f9b9186962ffb7c687e18ec6f5255525f09d
+fix_commit: 0e539ca1bbbe85a86549c97a30a765ada4a09df9
+datetime: '2020-10-14T23:54:43+02:00'
+fix_commit_message: "gfs2: Fix NULL pointer dereference in gfs2_rgrp_dump\n\nWhen\
+  \ an rindex entry is found to be corrupt, compute_bitstructs() calls\ngfs2_consist_rgrpd()\
+  \ which calls gfs2_rgrp_dump() like this:\n\n    gfs2_rgrp_dump(NULL, rgd->rd_gl,\
+  \ fs_id_buf);\n\ngfs2_rgrp_dump then dereferences the gl without checking it and\
+  \ we get\n\n    BUG: KASAN: null-ptr-deref in gfs2_rgrp_dump+0x28/0x280\n\nbecause\
+  \ there's no rgrp glock involved while reading the rindex on mount.\n\nFix this\
+  \ by changing gfs2_rgrp_dump to take an rgrp argument.\n\nReported-by: syzbot+43fa87986bdd31df9de6@syzkaller.appspotmail.com\n\
+  Signed-off-by: Andrew Price <anprice@redhat.com>\nSigned-off-by: Andreas Gruenbacher\
+  \ <agruenba@redhat.com>\n"
+submodule:
+- fs/gfs2
+hunk_count: 6
+covered_count: 3

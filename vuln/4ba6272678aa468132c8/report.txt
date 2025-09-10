@@ -1,0 +1,194 @@
+==================================================================
+BUG: KASAN: double-free in cfg80211_sinfo_release_content include/net/cfg80211.h:8614 [inline]
+BUG: KASAN: double-free in nl80211_dump_station+0x690/0x7f0 net/wireless/nl80211.c:7505
+Free of addr ffff88805301b000 by task syz.0.202/6628
+
+CPU: 1 UID: 0 PID: 6628 Comm: syz.0.202 Not tainted 6.16.0-rc4-syzkaller-00991-g6b9fd8857b9f #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0xd2/0x2b0 mm/kasan/report.c:521
+ kasan_report_invalid_free+0xea/0x110 mm/kasan/report.c:596
+ check_slab_allocation+0xe1/0x130 include/linux/page-flags.h:-1
+ kasan_slab_pre_free include/linux/kasan.h:198 [inline]
+ slab_free_hook mm/slub.c:2326 [inline]
+ slab_free mm/slub.c:4643 [inline]
+ kfree+0x13f/0x440 mm/slub.c:4842
+ cfg80211_sinfo_release_content include/net/cfg80211.h:8614 [inline]
+ nl80211_dump_station+0x690/0x7f0 net/wireless/nl80211.c:7505
+ genl_dumpit+0x108/0x1b0 net/netlink/genetlink.c:1027
+ netlink_dump+0x62d/0xe20 net/netlink/af_netlink.c:2309
+ __netlink_dump_start+0x5cb/0x7e0 net/netlink/af_netlink.c:2424
+ genl_family_rcv_msg_dumpit+0x1e7/0x2c0 net/netlink/genetlink.c:1076
+ genl_family_rcv_msg net/netlink/genetlink.c:1192 [inline]
+ genl_rcv_msg+0x5da/0x790 net/netlink/genetlink.c:1210
+ netlink_rcv_skb+0x205/0x470 net/netlink/af_netlink.c:2534
+ genl_rcv+0x28/0x40 net/netlink/genetlink.c:1219
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x758/0x8d0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x805/0xb30 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:714 [inline]
+ __sock_sendmsg+0x219/0x270 net/socket.c:729
+ ____sys_sendmsg+0x505/0x830 net/socket.c:2614
+ ___sys_sendmsg+0x21f/0x2a0 net/socket.c:2668
+ __sys_sendmsg net/socket.c:2700 [inline]
+ __do_sys_sendmsg net/socket.c:2705 [inline]
+ __se_sys_sendmsg net/socket.c:2703 [inline]
+ __x64_sys_sendmsg+0x19b/0x260 net/socket.c:2703
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f2aef58e929
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f2af0399038 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+RAX: ffffffffffffffda RBX: 00007f2aef7b6160 RCX: 00007f2aef58e929
+RDX: 0000000000000000 RSI: 0000200000000280 RDI: 0000000000000003
+RBP: 00007f2aef610b39 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007f2aef7b6160 R15: 00007ffce2c8f8a8
+ </TASK>
+
+Allocated by task 6628:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3e/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0x93/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __kmalloc_cache_noprof+0x230/0x3d0 mm/slub.c:4359
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kmalloc_array_noprof include/linux/slab.h:948 [inline]
+ cfg80211_sinfo_alloc_tid_stats+0x77/0x100 net/wireless/util.c:2667
+ sta_set_sinfo+0x1d6a/0x6990 net/mac80211/sta_info.c:3138
+ ieee80211_dump_station+0x111/0x1d0 net/mac80211/cfg.c:888
+ rdev_dump_station net/wireless/rdev-ops.h:245 [inline]
+ nl80211_dump_station+0x3a4/0x7f0 net/wireless/nl80211.c:7481
+ genl_dumpit+0x108/0x1b0 net/netlink/genetlink.c:1027
+ netlink_dump+0x62d/0xe20 net/netlink/af_netlink.c:2309
+ __netlink_dump_start+0x5cb/0x7e0 net/netlink/af_netlink.c:2424
+ genl_family_rcv_msg_dumpit+0x1e7/0x2c0 net/netlink/genetlink.c:1076
+ genl_family_rcv_msg net/netlink/genetlink.c:1192 [inline]
+ genl_rcv_msg+0x5da/0x790 net/netlink/genetlink.c:1210
+ netlink_rcv_skb+0x205/0x470 net/netlink/af_netlink.c:2534
+ genl_rcv+0x28/0x40 net/netlink/genetlink.c:1219
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x758/0x8d0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x805/0xb30 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:714 [inline]
+ __sock_sendmsg+0x219/0x270 net/socket.c:729
+ ____sys_sendmsg+0x505/0x830 net/socket.c:2614
+ ___sys_sendmsg+0x21f/0x2a0 net/socket.c:2668
+ __sys_sendmsg net/socket.c:2700 [inline]
+ __do_sys_sendmsg net/socket.c:2705 [inline]
+ __se_sys_sendmsg net/socket.c:2703 [inline]
+ __x64_sys_sendmsg+0x19b/0x260 net/socket.c:2703
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 6628:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3e/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x46/0x50 mm/kasan/generic.c:576
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x62/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2381 [inline]
+ slab_free mm/slub.c:4643 [inline]
+ kfree+0x18e/0x440 mm/slub.c:4842
+ cfg80211_sinfo_release_content include/net/cfg80211.h:8614 [inline]
+ nl80211_send_station+0xb2c/0x3d00 net/wireless/nl80211.c:7250
+ nl80211_dump_station+0x4bc/0x7f0 net/wireless/nl80211.c:7491
+ genl_dumpit+0x108/0x1b0 net/netlink/genetlink.c:1027
+ netlink_dump+0x62d/0xe20 net/netlink/af_netlink.c:2309
+ __netlink_dump_start+0x5cb/0x7e0 net/netlink/af_netlink.c:2424
+ genl_family_rcv_msg_dumpit+0x1e7/0x2c0 net/netlink/genetlink.c:1076
+ genl_family_rcv_msg net/netlink/genetlink.c:1192 [inline]
+ genl_rcv_msg+0x5da/0x790 net/netlink/genetlink.c:1210
+ netlink_rcv_skb+0x205/0x470 net/netlink/af_netlink.c:2534
+ genl_rcv+0x28/0x40 net/netlink/genetlink.c:1219
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0x758/0x8d0 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x805/0xb30 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:714 [inline]
+ __sock_sendmsg+0x219/0x270 net/socket.c:729
+ ____sys_sendmsg+0x505/0x830 net/socket.c:2614
+ ___sys_sendmsg+0x21f/0x2a0 net/socket.c:2668
+ __sys_sendmsg net/socket.c:2700 [inline]
+ __do_sys_sendmsg net/socket.c:2705 [inline]
+ __se_sys_sendmsg net/socket.c:2703 [inline]
+ __x64_sys_sendmsg+0x19b/0x260 net/socket.c:2703
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88805301b000
+ which belongs to the cache kmalloc-2k of size 2048
+The buggy address is located 0 bytes inside of
+ 2048-byte region [ffff88805301b000, ffff88805301b800)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x53018
+head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+anon flags: 0xfff00000000040(head|node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000040 ffff88801a442000 0000000000000000 0000000000000001
+raw: 0000000000000000 0000000080080008 00000000f5000000 0000000000000000
+head: 00fff00000000040 ffff88801a442000 0000000000000000 0000000000000001
+head: 0000000000000000 0000000080080008 00000000f5000000 0000000000000000
+head: 00fff00000000003 ffffea00014c0601 00000000ffffffff 00000000ffffffff
+head: ffffffffffffffff 0000000000000000 00000000ffffffff 0000000000000008
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 6033, tgid 6031 (syz.0.27), ts 60566498623, free_ts 12187646654
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x240/0x2a0 mm/page_alloc.c:1704
+ prep_new_page mm/page_alloc.c:1712 [inline]
+ get_page_from_freelist+0x21e4/0x22c0 mm/page_alloc.c:3669
+ __alloc_frozen_pages_noprof+0x181/0x370 mm/page_alloc.c:4959
+ alloc_pages_mpol+0x232/0x4a0 mm/mempolicy.c:2419
+ alloc_slab_page mm/slub.c:2451 [inline]
+ allocate_slab+0x8a/0x3b0 mm/slub.c:2619
+ new_slab mm/slub.c:2673 [inline]
+ ___slab_alloc+0xbfc/0x1480 mm/slub.c:3859
+ __slab_alloc mm/slub.c:3949 [inline]
+ __slab_alloc_node mm/slub.c:4024 [inline]
+ slab_alloc_node mm/slub.c:4185 [inline]
+ __do_kmalloc_node mm/slub.c:4327 [inline]
+ __kmalloc_node_noprof+0x2fd/0x4e0 mm/slub.c:4334
+ kmalloc_node_noprof include/linux/slab.h:932 [inline]
+ qdisc_alloc+0x97/0xaa0 net/sched/sch_generic.c:948
+ qdisc_create_dflt+0x8e/0x4e0 net/sched/sch_generic.c:1010
+ mq_init+0x2dc/0x660 net/sched/sch_mq.c:90
+ qdisc_create_dflt+0x138/0x4e0 net/sched/sch_generic.c:1017
+ attach_default_qdiscs net/sched/sch_generic.c:1199 [inline]
+ dev_activate+0x1ce/0x1150 net/sched/sch_generic.c:1253
+ __dev_open+0x69c/0x880 net/core/dev.c:1692
+ __dev_change_flags+0x1ea/0x6d0 net/core/dev.c:9495
+ netif_change_flags+0x88/0x1a0 net/core/dev.c:9558
+ dev_change_flags+0x130/0x260 net/core/dev_api.c:68
+page last free pid 1 tgid 1 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1248 [inline]
+ __free_frozen_pages+0xc71/0xe70 mm/page_alloc.c:2706
+ __free_pages mm/page_alloc.c:5071 [inline]
+ free_contig_range+0x1bd/0x4a0 mm/page_alloc.c:6927
+ destroy_args+0x7e/0x5d0 mm/debug_vm_pgtable.c:1009
+ debug_vm_pgtable+0x412/0x450 mm/debug_vm_pgtable.c:1389
+ do_one_initcall+0x233/0x820 init/main.c:1274
+ do_initcall_level+0x137/0x1f0 init/main.c:1336
+ do_initcalls+0x69/0xd0 init/main.c:1352
+ kernel_init_freeable+0x3d9/0x570 init/main.c:1584
+ kernel_init+0x1d/0x1d0 init/main.c:1474
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+Memory state around the buggy address:
+ ffff88805301af00: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88805301af80: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+>ffff88805301b000: fa fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                   ^
+ ffff88805301b080: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff88805301b100: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

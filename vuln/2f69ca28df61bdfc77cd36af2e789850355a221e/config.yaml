@@ -1,0 +1,28 @@
+id: 2f69ca28df61bdfc77cd36af2e789850355a221e
+bug_link: https://syzkaller.appspot.com/bug?extid=2f69ca28df61bdfc77cd36af2e789850355a221e
+title: WARNING in ata_bmdma_qc_issue
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9173e5e80729c8434b8d27531527c5245f4a5594
+fix_commit: 2c1ec6fda2d07044cda922ee25337cf5d4b429b3
+datetime: '2018-02-12T09:21:25-08:00'
+fix_commit_message: "libata: don't try to pass through NCQ commands to non-NCQ devices\n\
+  \nsyzkaller hit a WARN() in ata_bmdma_qc_issue() when writing to /dev/sg0.\nThis\
+  \ happened because it issued an ATA pass-through command (ATA_16)\nwhere the protocol\
+  \ field indicated that NCQ should be used -- but the\ndevice did not support NCQ.\n\
+  \nWe could just remove the WARN() from libata-sff.c, but the real problem\nseems\
+  \ to be that the SCSI -> ATA translation code passes through NCQ\ncommands without\
+  \ verifying that the device actually supports NCQ.\n\nFix this by adding the appropriate\
+  \ check to ata_scsi_pass_thru().\n\nHere's reproducer that works in QEMU when /dev/sg0\
+  \ refers to a disk of\nthe default type (\"82371SB PIIX3 IDE\"):\n\n    #include\
+  \ <fcntl.h>\n    #include <unistd.h>\n\n    int main()\n    {\n            char\
+  \ buf[53] = { 0 };\n\n\t    buf[36] = 0x85;\t\t/* ATA_16 */\n\t    buf[37] = (12\
+  \ << 1);\t/* FPDMA */\n\t    buf[38] = 0x1;\t\t/* Has data */\n\t    buf[51] = 0xC8;\t\
+  \t/* ATA_CMD_READ */\n            write(open(\"/dev/sg0\", O_RDWR), buf, sizeof(buf));\n\
+  \    }\n\nFixes: ee7fb331c3ac (\"libata: add support for NCQ commands for SG interface\"\
+  )\nReported-by: syzbot+2f69ca28df61bdfc77cd36af2e789850355a221e@syzkaller.appspotmail.com\n\
+  Cc: <stable@vger.kernel.org> # v4.4+\nSigned-off-by: Eric Biggers <ebiggers@google.com>\n\
+  Signed-off-by: Tejun Heo <tj@kernel.org>\n"
+submodule:
+- drivers/ata
+hunk_count: 1
+covered_count: 0

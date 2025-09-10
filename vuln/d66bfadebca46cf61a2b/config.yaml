@@ -1,0 +1,34 @@
+id: d66bfadebca46cf61a2b
+bug_link: https://syzkaller.appspot.com/bug?extid=d66bfadebca46cf61a2b
+title: 'UBSAN: shift-out-of-bounds in hash_mac_create'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2b33d6ffa9e38f344418976b06057e2fc2aa9e2a
+fix_commit: 5c8193f568ae16f3242abad6518dc2ca6c8eef86
+datetime: '2020-12-17T19:44:52+01:00'
+fix_commit_message: "netfilter: ipset: fix shift-out-of-bounds in htable_bits()\n\n\
+  htable_bits() can call jhash_size(32) and trigger shift-out-of-bounds\n\nUBSAN:\
+  \ shift-out-of-bounds in net/netfilter/ipset/ip_set_hash_gen.h:151:6\nshift exponent\
+  \ 32 is too large for 32-bit type 'unsigned int'\nCPU: 0 PID: 8498 Comm: syz-executor519\n\
+  \ Not tainted 5.10.0-rc7-next-20201208-syzkaller #0\nCall Trace:\n __dump_stack\
+  \ lib/dump_stack.c:79 [inline]\n dump_stack+0x107/0x163 lib/dump_stack.c:120\n ubsan_epilogue+0xb/0x5a\
+  \ lib/ubsan.c:148\n __ubsan_handle_shift_out_of_bounds.cold+0xb1/0x181 lib/ubsan.c:395\n\
+  \ htable_bits net/netfilter/ipset/ip_set_hash_gen.h:151 [inline]\n hash_mac_create.cold+0x58/0x9b\
+  \ net/netfilter/ipset/ip_set_hash_gen.h:1524\n ip_set_create+0x610/0x1380 net/netfilter/ipset/ip_set_core.c:1115\n\
+  \ nfnetlink_rcv_msg+0xecc/0x1180 net/netfilter/nfnetlink.c:252\n netlink_rcv_skb+0x153/0x420\
+  \ net/netlink/af_netlink.c:2494\n nfnetlink_rcv+0x1ac/0x420 net/netfilter/nfnetlink.c:600\n\
+  \ netlink_unicast_kernel net/netlink/af_netlink.c:1304 [inline]\n netlink_unicast+0x533/0x7d0\
+  \ net/netlink/af_netlink.c:1330\n netlink_sendmsg+0x907/0xe40 net/netlink/af_netlink.c:1919\n\
+  \ sock_sendmsg_nosec net/socket.c:652 [inline]\n sock_sendmsg+0xcf/0x120 net/socket.c:672\n\
+  \ ____sys_sendmsg+0x6e8/0x810 net/socket.c:2345\n ___sys_sendmsg+0xf3/0x170 net/socket.c:2399\n\
+  \ __sys_sendmsg+0xe5/0x1b0 net/socket.c:2432\n do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46\n\
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nThis patch replaces htable_bits()\
+  \ by simple fls(hashsize - 1) call:\nit alone returns valid nbits both for round\
+  \ and non-round hashsizes.\nIt is normal to set any nbits here because it is validated\
+  \ inside\nfollowing htable_size() call which returns 0 for nbits>31.\n\nFixes: 1feab10d7e6d(\"\
+  netfilter: ipset: Unified hash type generation\")\nReported-by: syzbot+d66bfadebca46cf61a2b@syzkaller.appspotmail.com\n\
+  Signed-off-by: Vasily Averin <vvs@virtuozzo.com>\nAcked-by: Jozsef Kadlecsik <kadlec@netfilter.org>\n\
+  Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,48 @@
+id: 9bbbacfbf1e04d5221f7
+bug_link: https://syzkaller.appspot.com/bug?extid=9bbbacfbf1e04d5221f7
+title: 'BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low! (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a5e2151ff9d5852d0ababbbcaeebd9646af9c8d9
+fix_commit: 39285e124edbc752331e98ace37cc141a6a3747a
+datetime: '2023-09-06T06:04:13+01:00'
+fix_commit_message: "net: team: do not use dynamic lockdep key\n\nteam interface has\
+  \ used a dynamic lockdep key to avoid false-positive\nlockdep deadlock detection.\
+  \ Virtual interfaces such as team usually\nhave their own lock for protecting private\
+  \ data.\nThese interfaces can be nested.\nteam0\n  |\nteam1\n\nEach interface's\
+  \ lock is actually different(team0->lock and team1->lock).\nSo,\nmutex_lock(&team0->lock);\n\
+  mutex_lock(&team1->lock);\nmutex_unlock(&team1->lock);\nmutex_unlock(&team0->lock);\n\
+  The above case is absolutely safe. But lockdep warns about deadlock.\nBecause the\
+  \ lockdep understands these two locks are same. This is a\nfalse-positive lockdep\
+  \ warning.\n\nSo, in order to avoid this problem, the team interfaces started to\
+  \ use\ndynamic lockdep key. The false-positive problem was fixed, but it\nintroduced\
+  \ a new problem.\n\nWhen the new team virtual interface is created, it registers\
+  \ a dynamic\nlockdep key(creates dynamic lockdep key) and uses it. But there is\
+  \ the\nlimitation of the number of lockdep keys.\nSo, If so many team interfaces\
+  \ are created, it consumes all lockdep keys.\nThen, the lockdep stops to work and\
+  \ warns about it.\n\nIn order to fix this problem, team interfaces use the subclass\
+  \ instead\nof the dynamic key. So, when a new team interface is created, it doesn't\n\
+  register(create) a new lockdep, but uses existed subclass key instead.\nIt is already\
+  \ used by the bonding interface for a similar case.\n\nAs the bonding interface\
+  \ does, the subclass variable is the same as\nthe 'dev->nested_level'. This variable\
+  \ indicates the depth in the stacked\ninterface graph.\n\nThe 'dev->nested_level'\
+  \ is protected by RTNL and RCU.\nSo, 'mutex_lock_nested()' for 'team->lock' requires\
+  \ RTNL or RCU.\nIn the current code, 'team->lock' is usually acquired under RTNL,\
+  \ there is\nno problem with using 'dev->nested_level'.\n\nThe 'team_nl_team_get()'\
+  \ and The 'lb_stats_refresh()' functions acquire\n'team->lock' without RTNL.\nBut\
+  \ these don't iterate their own ports nested so they don't need nested\nlock.\n\n\
+  Reproducer:\n   for i in {0..1000}\n   do\n           ip link add team$i type team\n\
+  \           ip link add dummy$i master team$i type dummy\n           ip link set\
+  \ dummy$i up\n           ip link set team$i up\n   done\n\nSplat looks like:\n \
+  \  BUG: MAX_LOCKDEP_ENTRIES too low!\n   turning off the locking correctness validator.\n\
+  \   Please attach the output of /proc/lock_stat to the bug report\n   CPU: 0 PID:\
+  \ 4104 Comm: ip Not tainted 6.5.0-rc7+ #45\n   Call Trace:\n    <TASK>\n   dump_stack_lvl+0x64/0xb0\n\
+  \   add_lock_to_list+0x30d/0x5e0\n   check_prev_add+0x73a/0x23a0\n   ...\n   sock_def_readable+0xfe/0x4f0\n\
+  \   netlink_broadcast+0x76b/0xac0\n   nlmsg_notify+0x69/0x1d0\n   dev_open+0xed/0x130\n\
+  \   ...\n\nReported-by: syzbot+9bbbacfbf1e04d5221f7@syzkaller.appspotmail.com\n\
+  Fixes: 369f61bee0f5 (\"team: fix nested locking lockdep warning\")\nSigned-off-by:\
+  \ Taehee Yoo <ap420073@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- drivers/net/team
+- include/linux
+hunk_count: 25
+covered_count: 0

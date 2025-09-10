@@ -1,0 +1,54 @@
+id: 7c26f5c5ca6a61056049
+bug_link: https://syzkaller.appspot.com/bug?extid=7c26f5c5ca6a61056049
+title: 'KASAN: slab-use-after-free Write in zswap_store'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4dff389c9f1dd787e8058930b3fbd3248a6238c5
+fix_commit: 12dcb0ef540629a281533f9dedc1b6b8e14cfb65
+datetime: '2025-01-12T19:03:36-08:00'
+fix_commit_message: "mm: zswap: properly synchronize freeing resources during CPU\
+  \ hotunplug\n\nIn zswap_compress() and zswap_decompress(), the per-CPU acomp_ctx\
+  \ of the\ncurrent CPU at the beginning of the operation is retrieved and used\n\
+  throughout.  However, since neither preemption nor migration are disabled,\nit is\
+  \ possible that the operation continues on a different CPU.\n\nIf the original CPU\
+  \ is hotunplugged while the acomp_ctx is still in use,\nwe run into a UAF bug as\
+  \ some of the resources attached to the acomp_ctx\nare freed during hotunplug in\
+  \ zswap_cpu_comp_dead() (i.e. \nacomp_ctx.buffer, acomp_ctx.req, or acomp_ctx.acomp).\n\
+  \nThe problem was introduced in commit 1ec3b5fe6eec (\"mm/zswap: move to use\ncrypto_acomp\
+  \ API for hardware acceleration\") when the switch to the\ncrypto_acomp API was\
+  \ made.  Prior to that, the per-CPU crypto_comp was\nretrieved using get_cpu_ptr()\
+  \ which disables preemption and makes sure the\nCPU cannot go away from under us.\
+  \  Preemption cannot be disabled with the\ncrypto_acomp API as a sleepable context\
+  \ is needed.\n\nUse the acomp_ctx.mutex to synchronize CPU hotplug callbacks allocating\n\
+  and freeing resources with compression/decompression paths.  Make sure\nthat acomp_ctx.req\
+  \ is NULL when the resources are freed.  In the\ncompression/decompression paths,\
+  \ check if acomp_ctx.req is NULL after\nacquiring the mutex (meaning the CPU was\
+  \ offlined) and retry on the new\nCPU.\n\nThe initialization of acomp_ctx.mutex\
+  \ is moved from the CPU hotplug\ncallback to the pool initialization where it belongs\
+  \ (where the mutex is\nallocated).  In addition to adding clarity, this makes sure\
+  \ that CPU\nhotplug cannot reinitialize a mutex that is already locked by\ncompression/decompression.\n\
+  \nPreviously a fix was attempted by holding cpus_read_lock() [1].  This\nwould have\
+  \ caused a potential deadlock as it is possible for code already\nholding the lock\
+  \ to fall into reclaim and enter zswap (causing a\ndeadlock).  A fix was also attempted\
+  \ using SRCU for synchronization, but\nJohannes pointed out that synchronize_srcu()\
+  \ cannot be used in CPU hotplug\nnotifiers [2].\n\nAlternative fixes that were considered/attempted\
+  \ and could have worked:\n- Refcounting the per-CPU acomp_ctx. This involves complexity\
+  \ in\n  handling the race between the refcount dropping to zero in\n  zswap_[de]compress()\
+  \ and the refcount being re-initialized when the\n  CPU is onlined.\n- Disabling\
+  \ migration before getting the per-CPU acomp_ctx [3], but\n  that's discouraged\
+  \ and is a much bigger hammer than needed, and could\n  result in subtle performance\
+  \ issues.\n\n[1]https://lkml.kernel.org/20241219212437.2714151-1-yosryahmed@google.com/\n\
+  [2]https://lkml.kernel.org/20250107074724.1756696-2-yosryahmed@google.com/\n[3]https://lkml.kernel.org/20250107222236.2715883-2-yosryahmed@google.com/\n\
+  \n[yosryahmed@google.com: remove comment]\n  Link: https://lkml.kernel.org/r/CAJD7tkaxS1wjn+swugt8QCvQ-rVF5RZnjxwPGX17k8x9zSManA@mail.gmail.com\n\
+  Link: https://lkml.kernel.org/r/20250108222441.3622031-1-yosryahmed@google.com\n\
+  Fixes: 1ec3b5fe6eec (\"mm/zswap: move to use crypto_acomp API for hardware acceleration\"\
+  )\nSigned-off-by: Yosry Ahmed <yosryahmed@google.com>\nReported-by: Johannes Weiner\
+  \ <hannes@cmpxchg.org>\nCloses: https://lore.kernel.org/lkml/20241113213007.GB1564047@cmpxchg.org/\n\
+  Reported-by: Sam Sun <samsun1006219@gmail.com>\nCloses: https://lore.kernel.org/lkml/CAEkJfYMtSdM5HceNsXUDf5haghD5+o2e7Qv4OcuruL4tPg6OaQ@mail.gmail.com/\n\
+  Cc: Barry Song <baohua@kernel.org>\nCc: Chengming Zhou <chengming.zhou@linux.dev>\n\
+  Cc: Kanchana P Sridhar <kanchana.p.sridhar@intel.com>\nCc: Nhat Pham <nphamcs@gmail.com>\n\
+  Cc: Vitaly Wool <vitalywool@gmail.com>\nCc: <stable@vger.kernel.org>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 9
+covered_count: 8

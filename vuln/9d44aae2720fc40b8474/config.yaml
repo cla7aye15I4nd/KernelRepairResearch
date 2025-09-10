@@ -1,0 +1,25 @@
+id: 9d44aae2720fc40b8474
+bug_link: https://syzkaller.appspot.com/bug?extid=9d44aae2720fc40b8474
+title: general protection fault in pause_prepare_data
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c96de136329b38172f21214021fc30d67f05c399
+fix_commit: f5be9caf7bf022ab550f62ea68f1c1bb8f5287ee
+datetime: '2023-01-25T09:57:41+00:00'
+fix_commit_message: "net: ethtool: fix NULL pointer dereference in pause_prepare_data()\n\
+  \nIn the following call path:\n\nethnl_default_dumpit\n-> ethnl_default_dump_one\n\
+  \   -> ctx->ops->prepare_data\n      -> pause_prepare_data\n\nstruct genl_info *info\
+  \ will be passed as NULL, and pause_prepare_data()\ndereferences it while getting\
+  \ the extended ack pointer.\n\nTo avoid that, just set the extack to NULL if \"\
+  info\" is NULL, since the\nnetlink extack handling messages know how to deal with\
+  \ that.\n\nThe pattern \"info ? info->extack : NULL\" is present in quite a few\
+  \ other\n\"prepare_data\" implementations, so it's clear that it's a more general\n\
+  problem to be dealt with at a higher level, but the code should have at\nleast adhered\
+  \ to the current conventions to avoid the NULL dereference.\n\nFixes: 04692c9020b7\
+  \ (\"net: ethtool: netlink: retrieve stats from multiple sources (eMAC, pMAC)\"\
+  )\nReported-by: Eric Dumazet <edumazet@google.com>\nSigned-off-by: Vladimir Oltean\
+  \ <vladimir.oltean@nxp.com>\nReported-by: syzbot+9d44aae2720fc40b8474@syzkaller.appspotmail.com\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ethtool
+hunk_count: 1
+covered_count: 1

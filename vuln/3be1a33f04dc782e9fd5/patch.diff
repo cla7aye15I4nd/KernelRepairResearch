@@ -1,0 +1,17 @@
+diff --git a/mm/gup.c b/mm/gup.c
+index afce0bc47e70..6076df8e04a4 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -1326,8 +1326,11 @@ static __always_inline long __get_user_pages_locked(struct task_struct *tsk,
+ 		 * start trying again otherwise it can loop forever.
+ 		 */
+ 
+-		if (fatal_signal_pending(current))
++		if (fatal_signal_pending(current)) {
++			if (!pages_done)
++				pages_done = -EINTR;
+ 			break;
++		}
+ 
+ 		ret = down_read_killable(&mm->mmap_sem);
+ 		if (ret) {

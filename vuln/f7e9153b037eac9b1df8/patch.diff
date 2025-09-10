@@ -1,0 +1,54 @@
+diff --git a/net/sctp/sm_make_chunk.c b/net/sctp/sm_make_chunk.c
+index 92331e1195c1..f17908f5c4f3 100644
+--- a/net/sctp/sm_make_chunk.c
++++ b/net/sctp/sm_make_chunk.c
+@@ -2312,7 +2312,6 @@ int sctp_process_init(struct sctp_association *asoc, struct sctp_chunk *chunk,
+ 	union sctp_addr addr;
+ 	struct sctp_af *af;
+ 	int src_match = 0;
+-	char *cookie;
+ 
+ 	/* We must include the address that the INIT packet came from.
+ 	 * This is the only address that matters for an INIT packet.
+@@ -2416,14 +2415,6 @@ int sctp_process_init(struct sctp_association *asoc, struct sctp_chunk *chunk,
+ 	/* Peer Rwnd   : Current calculated value of the peer's rwnd.  */
+ 	asoc->peer.rwnd = asoc->peer.i.a_rwnd;
+ 
+-	/* Copy cookie in case we need to resend COOKIE-ECHO. */
+-	cookie = asoc->peer.cookie;
+-	if (cookie) {
+-		asoc->peer.cookie = kmemdup(cookie, asoc->peer.cookie_len, gfp);
+-		if (!asoc->peer.cookie)
+-			goto clean_up;
+-	}
+-
+ 	/* RFC 2960 7.2.1 The initial value of ssthresh MAY be arbitrarily
+ 	 * high (for example, implementations MAY use the size of the receiver
+ 	 * advertised window).
+@@ -2592,7 +2583,9 @@ static int sctp_process_param(struct sctp_association *asoc,
+ 	case SCTP_PARAM_STATE_COOKIE:
+ 		asoc->peer.cookie_len =
+ 			ntohs(param.p->length) - sizeof(struct sctp_paramhdr);
+-		asoc->peer.cookie = param.cookie->body;
++		asoc->peer.cookie = kmemdup(param.cookie->body, asoc->peer.cookie_len, gfp);
++		if (!asoc->peer.cookie)
++			retval = 0;
+ 		break;
+ 
+ 	case SCTP_PARAM_HEARTBEAT_INFO:
+diff --git a/net/sctp/sm_sideeffect.c b/net/sctp/sm_sideeffect.c
+index 9b50da548db2..a554d6d15d1b 100644
+--- a/net/sctp/sm_sideeffect.c
++++ b/net/sctp/sm_sideeffect.c
+@@ -883,6 +883,11 @@ static void sctp_cmd_new_state(struct sctp_cmd_seq *cmds,
+ 						asoc->rto_initial;
+ 	}
+ 
++	if (sctp_state(asoc, ESTABLISHED)) {
++		kfree(asoc->peer.cookie);
++		asoc->peer.cookie = NULL;
++	}
++
+ 	if (sctp_state(asoc, ESTABLISHED) ||
+ 	    sctp_state(asoc, CLOSED) ||
+ 	    sctp_state(asoc, SHUTDOWN_RECEIVED)) {

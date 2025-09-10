@@ -1,0 +1,145 @@
+input: Wacom Intuos2 12x18 Pen as /devices/platform/dummy_hcd.3/usb4/4-1/4-1:0.0/0003:056A:0045.0001/input/input5
+==================================================================
+BUG: KASAN: slab-use-after-free in __list_del_entry_valid_or_report+0x2f/0x140 lib/list_debug.c:49
+Read of size 8 at addr ffff888032abf208 by task kworker/1:0/25
+
+CPU: 1 UID: 0 PID: 25 Comm: kworker/1:0 Not tainted 6.12.0-syzkaller-10553-gb86545e02e8c #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Workqueue: events binder_deferred_func
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:378 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:489
+ kasan_report+0x143/0x180 mm/kasan/report.c:602
+ __list_del_entry_valid_or_report+0x2f/0x140 lib/list_debug.c:49
+ __list_del_entry_valid include/linux/list.h:124 [inline]
+ __list_del_entry include/linux/list.h:215 [inline]
+ list_del_init include/linux/list.h:287 [inline]
+ binder_dequeue_work_head_ilocked drivers/android/binder.c:540 [inline]
+ binder_release_work+0xc7/0x480 drivers/android/binder.c:5110
+ binder_deferred_release drivers/android/binder.c:6261 [inline]
+ binder_deferred_func+0x1275/0x1460 drivers/android/binder.c:6296
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa63/0x1850 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+
+Allocated by task 5947:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ poison_kmalloc_redzone mm/kasan/common.c:377 [inline]
+ __kasan_kmalloc+0x98/0xb0 mm/kasan/common.c:394
+ kasan_kmalloc include/linux/kasan.h:260 [inline]
+ __kmalloc_cache_noprof+0x243/0x390 mm/slub.c:4314
+ kmalloc_noprof include/linux/slab.h:901 [inline]
+ kzalloc_noprof include/linux/slab.h:1037 [inline]
+ binder_request_freeze_notification drivers/android/binder.c:3855 [inline]
+ binder_thread_write drivers/android/binder.c:4485 [inline]
+ binder_ioctl_write_read+0xe7f/0xb560 drivers/android/binder.c:5387
+ binder_ioctl+0x436/0x1cc0 drivers/android/binder.c:5718
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl+0xf5/0x170 fs/ioctl.c:892
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 25:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:582
+ poison_slab_object mm/kasan/common.c:247 [inline]
+ __kasan_slab_free+0x59/0x70 mm/kasan/common.c:264
+ kasan_slab_free include/linux/kasan.h:233 [inline]
+ slab_free_hook mm/slub.c:2338 [inline]
+ slab_free mm/slub.c:4598 [inline]
+ kfree+0x196/0x420 mm/slub.c:4746
+ binder_free_ref drivers/android/binder.c:1355 [inline]
+ binder_deferred_release drivers/android/binder.c:6256 [inline]
+ binder_deferred_func+0x11df/0x1460 drivers/android/binder.c:6296
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa63/0x1850 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+The buggy address belongs to the object at ffff888032abf200
+ which belongs to the cache kmalloc-64 of size 64
+The buggy address is located 8 bytes inside of
+ freed 64-byte region [ffff888032abf200, ffff888032abf240)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x32abf
+anon flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 00fff00000000000 ffff88801ac418c0 ffffea0000b23b80 dead000000000005
+raw: 0000000000000000 0000000080200020 00000001f5000000 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 0, migratetype Unmovable, gfp_mask 0x52cc0(GFP_KERNEL|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP), pid 5183, tgid 5183 (mount), ts 16485496851, free_ts 15679365147
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1556
+ prep_new_page mm/page_alloc.c:1564 [inline]
+ get_page_from_freelist+0x363e/0x3790 mm/page_alloc.c:3474
+ __alloc_pages_noprof+0x292/0x710 mm/page_alloc.c:4751
+ alloc_pages_mpol_noprof+0x3e8/0x680 mm/mempolicy.c:2265
+ alloc_slab_page+0x6a/0x140 mm/slub.c:2408
+ allocate_slab+0x5a/0x2f0 mm/slub.c:2574
+ new_slab mm/slub.c:2627 [inline]
+ ___slab_alloc+0xcd1/0x14b0 mm/slub.c:3815
+ __slab_alloc+0x58/0xa0 mm/slub.c:3905
+ __slab_alloc_node mm/slub.c:3980 [inline]
+ slab_alloc_node mm/slub.c:4141 [inline]
+ __kmalloc_cache_noprof+0x27b/0x390 mm/slub.c:4309
+ kmalloc_noprof include/linux/slab.h:901 [inline]
+ __kthread_create_on_node+0xee/0x3c0 kernel/kthread.c:436
+ kthread_create_on_node+0xde/0x130 kernel/kthread.c:513
+ ext4_run_lazyinit_thread fs/ext4/super.c:3898 [inline]
+ ext4_register_li_request+0x5c5/0x970 fs/ext4/super.c:4033
+ __ext4_remount fs/ext4/super.c:6737 [inline]
+ ext4_reconfigure+0x2dee/0x3990 fs/ext4/super.c:6801
+ reconfigure_super+0x445/0x880 fs/super.c:1083
+ do_remount fs/namespace.c:3047 [inline]
+ path_mount+0xc22/0xfa0 fs/namespace.c:3826
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+page last free pid 1 tgid 1 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1127 [inline]
+ free_unref_page+0xded/0x1130 mm/page_alloc.c:2657
+ kasan_depopulate_vmalloc_pte+0x74/0x90 mm/kasan/shadow.c:408
+ apply_to_pte_range mm/memory.c:2831 [inline]
+ apply_to_pmd_range mm/memory.c:2875 [inline]
+ apply_to_pud_range mm/memory.c:2911 [inline]
+ apply_to_p4d_range mm/memory.c:2947 [inline]
+ __apply_to_page_range+0x806/0xde0 mm/memory.c:2981
+ kasan_release_vmalloc+0xa5/0xd0 mm/kasan/shadow.c:529
+ kasan_release_vmalloc_node mm/vmalloc.c:2196 [inline]
+ purge_vmap_node+0x22f/0x8d0 mm/vmalloc.c:2213
+ __purge_vmap_area_lazy+0x708/0xae0 mm/vmalloc.c:2304
+ _vm_unmap_aliases+0x79d/0x840 mm/vmalloc.c:2899
+ change_page_attr_set_clr+0x2fe/0xdb0 arch/x86/mm/pat/set_memory.c:1881
+ change_page_attr_set arch/x86/mm/pat/set_memory.c:1922 [inline]
+ set_memory_nx+0xf2/0x130 arch/x86/mm/pat/set_memory.c:2110
+ free_init_pages arch/x86/mm/init.c:929 [inline]
+ free_kernel_image_pages arch/x86/mm/init.c:948 [inline]
+ free_initmem+0x79/0x110 arch/x86/mm/init.c:975
+ kernel_init+0x31/0x2b0 init/main.c:1475
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Memory state around the buggy address:
+ ffff888032abf100: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+ ffff888032abf180: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+>ffff888032abf200: fa fb fb fb fb fb fb fb fc fc fc fc fc fc fc fc
+                      ^
+ ffff888032abf280: 00 00 00 00 00 00 00 fc fc fc fc fc fc fc fc fc
+ ffff888032abf300: 00 00 00 00 00 00 00 02 fc fc fc fc fc fc fc fc
+==================================================================

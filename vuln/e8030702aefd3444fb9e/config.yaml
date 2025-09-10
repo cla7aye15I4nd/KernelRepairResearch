@@ -1,0 +1,35 @@
+id: e8030702aefd3444fb9e
+bug_link: https://syzkaller.appspot.com/bug?extid=e8030702aefd3444fb9e
+title: 'KASAN: null-ptr-deref Write in unix_stream_bpf_update_proto'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e307b5a845c5951dabafc48d00b6424ee64716c4
+fix_commit: 8d6650646ce49e9a5b8c5c23eb94f74b1749f70f
+datetime: '2023-12-13T16:32:28-08:00'
+fix_commit_message: "bpf: syzkaller found null ptr deref in unix_bpf proto add\n\n\
+  I added logic to track the sock pair for stream_unix sockets so that we\nensure\
+  \ lifetime of the sock matches the time a sockmap could reference\nthe sock (see\
+  \ fixes tag). I forgot though that we allow af_unix unconnected\nsockets into a\
+  \ sock{map|hash} map.\n\nThis is problematic because previous fixed expected sk_pair()\
+  \ to exist\nand did not NULL check it. Because unconnected sockets have a NULL\n\
+  sk_pair this resulted in the NULL ptr dereference found by syzkaller.\n\nBUG: KASAN:\
+  \ null-ptr-deref in unix_stream_bpf_update_proto+0x72/0x430 net/unix/unix_bpf.c:171\n\
+  Write of size 4 at addr 0000000000000080 by task syz-executor360/5073\nCall Trace:\n\
+  \ <TASK>\n ...\n sock_hold include/net/sock.h:777 [inline]\n unix_stream_bpf_update_proto+0x72/0x430\
+  \ net/unix/unix_bpf.c:171\n sock_map_init_proto net/core/sock_map.c:190 [inline]\n\
+  \ sock_map_link+0xb87/0x1100 net/core/sock_map.c:294\n sock_map_update_common+0xf6/0x870\
+  \ net/core/sock_map.c:483\n sock_map_update_elem_sys+0x5b6/0x640 net/core/sock_map.c:577\n\
+  \ bpf_map_update_value+0x3af/0x820 kernel/bpf/syscall.c:167\n\nWe considered just\
+  \ checking for the null ptr and skipping taking a ref\non the NULL peer sock. But,\
+  \ if the socket is then connected() after\nbeing added to the sockmap we can cause\
+  \ the original issue again. So\ninstead this patch blocks adding af_unix sockets\
+  \ that are not in the\nESTABLISHED state.\n\nReported-by: Eric Dumazet <edumazet@google.com>\n\
+  Reported-by: syzbot+e8030702aefd3444fb9e@syzkaller.appspotmail.com\nFixes: 8866730aed51\
+  \ (\"bpf, sockmap: af_unix stream sockets need to hold ref for pair sock\")\nAcked-by:\
+  \ Jakub Sitnicki <jakub@cloudflare.com>\nSigned-off-by: John Fastabend <john.fastabend@gmail.com>\n\
+  Link: https://lore.kernel.org/r/20231201180139.328529-2-john.fastabend@gmail.com\n\
+  Signed-off-by: Martin KaFai Lau <martin.lau@kernel.org>\n"
+submodule:
+- include/net
+- net/core
+hunk_count: 2
+covered_count: 1

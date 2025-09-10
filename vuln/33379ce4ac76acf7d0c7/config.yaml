@@ -1,0 +1,30 @@
+id: 33379ce4ac76acf7d0c7
+bug_link: https://syzkaller.appspot.com/bug?extid=33379ce4ac76acf7d0c7
+title: kernel BUG in f2fs_invalidate_blocks
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1acd73edbbfef2c3c5b43cba4006a7797eca7050
+fix_commit: 6babe00ccd34fc65b78ef8b99754e32b4385f23d
+datetime: '2024-11-01T01:19:00+00:00'
+fix_commit_message: "f2fs: fix to do sanity check on node blkaddr in truncate_node()\n\
+  \nsyzbot reports a f2fs bug as below:\n\n------------[ cut here ]------------\n\
+  kernel BUG at fs/f2fs/segment.c:2534!\nRIP: 0010:f2fs_invalidate_blocks+0x35f/0x370\
+  \ fs/f2fs/segment.c:2534\nCall Trace:\n truncate_node+0x1ae/0x8c0 fs/f2fs/node.c:909\n\
+  \ f2fs_remove_inode_page+0x5c2/0x870 fs/f2fs/node.c:1288\n f2fs_evict_inode+0x879/0x15c0\
+  \ fs/f2fs/inode.c:856\n evict+0x4e8/0x9b0 fs/inode.c:723\n f2fs_handle_failed_inode+0x271/0x2e0\
+  \ fs/f2fs/inode.c:986\n f2fs_create+0x357/0x530 fs/f2fs/namei.c:394\n lookup_open\
+  \ fs/namei.c:3595 [inline]\n open_last_lookups fs/namei.c:3694 [inline]\n path_openat+0x1c03/0x3590\
+  \ fs/namei.c:3930\n do_filp_open+0x235/0x490 fs/namei.c:3960\n do_sys_openat2+0x13e/0x1d0\
+  \ fs/open.c:1415\n do_sys_open fs/open.c:1430 [inline]\n __do_sys_openat fs/open.c:1446\
+  \ [inline]\n __se_sys_openat fs/open.c:1441 [inline]\n __x64_sys_openat+0x247/0x2a0\
+  \ fs/open.c:1441\n do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n do_syscall_64+0xf3/0x230\
+  \ arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\nRIP: 0010:f2fs_invalidate_blocks+0x35f/0x370\
+  \ fs/f2fs/segment.c:2534\n\nThe root cause is: on a fuzzed image, blkaddr in nat\
+  \ entry may be\ncorrupted, then it will cause system panic when using it in\nf2fs_invalidate_blocks(),\
+  \ to avoid this, let's add sanity check on\nnat blkaddr in truncate_node().\n\n\
+  Reported-by: syzbot+33379ce4ac76acf7d0c7@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/linux-f2fs-devel/0000000000009a6cd706224ca720@google.com/\n\
+  Cc: stable@vger.kernel.org\nSigned-off-by: Chao Yu <chao@kernel.org>\nSigned-off-by:\
+  \ Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 1
+covered_count: 0

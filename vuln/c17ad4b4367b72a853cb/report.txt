@@ -1,0 +1,28 @@
+=====================================================
+BUG: KMSAN: uninit-value in bch2_write_inode+0x9fa/0xf80 fs/bcachefs/fs.c:109
+ bch2_write_inode+0x9fa/0xf80 fs/bcachefs/fs.c:109
+ bch2_vfs_write_inode+0x8a/0x150 fs/bcachefs/fs.c:1835
+ write_inode fs/fs-writeback.c:1525 [inline]
+ __writeback_single_inode+0x8da/0x1290 fs/fs-writeback.c:1745
+ writeback_sb_inodes+0xa34/0x1c20 fs/fs-writeback.c:1976
+ __writeback_inodes_wb+0x14c/0x440 fs/fs-writeback.c:2047
+ wb_writeback+0x50b/0xcb0 fs/fs-writeback.c:2158
+ wb_check_old_data_flush fs/fs-writeback.c:2262 [inline]
+ wb_do_writeback fs/fs-writeback.c:2315 [inline]
+ wb_workfn+0x110c/0x1940 fs/fs-writeback.c:2343
+ process_one_work kernel/workqueue.c:3236 [inline]
+ process_scheduled_works+0xae0/0x1c40 kernel/workqueue.c:3317
+ worker_thread+0xea7/0x14f0 kernel/workqueue.c:3398
+ kthread+0x3e2/0x540 kernel/kthread.c:389
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Local variable io_opts.i117 created at:
+ bch2_inode_rebalance_opts_get fs/bcachefs/inode.h:291 [inline]
+ bch2_write_inode+0x696/0xf80 fs/bcachefs/fs.c:107
+ bch2_vfs_write_inode+0x8a/0x150 fs/bcachefs/fs.c:1835
+
+CPU: 0 UID: 0 PID: 3918 Comm: kworker/u8:17 Not tainted 6.13.0-syzkaller-00918-g95ec54a420b8 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+Workqueue: writeback wb_workfn (flush-bcachefs-1)
+=====================================================

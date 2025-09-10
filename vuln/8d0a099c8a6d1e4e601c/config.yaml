@@ -1,0 +1,45 @@
+id: 8d0a099c8a6d1e4e601c
+bug_link: https://syzkaller.appspot.com/bug?extid=8d0a099c8a6d1e4e601c
+title: 'WARNING: refcount bug in put_gid_ndev'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 124011e6e933bead5852c3f69b32dec43919fe1a
+fix_commit: e42f9c2e6aad583986e91979bf2fce47aaced1c2
+datetime: '2022-12-11T10:11:10+02:00'
+fix_commit_message: "RDMA: Add missed netdev_put() for the netdevice_tracker\n\nThe\
+  \ netdev core will detect if any untracked puts are done on tracked\npointers and\
+  \ throw refcount warnings:\n\n  refcount_t: decrement hit 0; leaking memory.\n \
+  \ WARNING: CPU: 1 PID: 33 at lib/refcount.c:31 refcount_warn_saturate+0x1d7/0x1f0\
+  \ lib/refcount.c:31\n  Modules linked in:\n  CPU: 1 PID: 33 Comm: kworker/u4:2 Not\
+  \ tainted 6.1.0-rc8-next-20221207-syzkaller #0\n  Hardware name: Google Google Compute\
+  \ Engine/Google Compute Engine, BIOS Google 10/26/2022\n  Workqueue: ib-unreg-wq\
+  \ ib_unregister_work\n  RIP: 0010:refcount_warn_saturate+0x1d7/0x1f0 lib/refcount.c:31\n\
+  \  Code: 05 5a 60 51 0a 01 e8 35 0a b5 05 0f 0b e9 d3 fe ff ff e8 6c 9b 75 fd 48\
+  \ c7 c7 c0 6d a6 8a c6 05 37 60 51 0a 01 e8 16 0a b5 05 <0f> 0b e9 b4 fe\n  +ff\
+  \ ff 48 89 ef e8 5a b5 c3 fd e9 5c fe ff ff 0f 1f\n  RSP: 0018:ffffc90000aa7b30\
+  \ EFLAGS: 00010082\n  RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000000000\n\
+  \  RDX: ffff8880172f9d40 RSI: ffffffff8166b1dc RDI: fffff52000154f58\n  RBP: ffff88807906c600\
+  \ R08: 0000000000000005 R09: 0000000000000000\n  R10: 0000000080000001 R11: 0000000000000000\
+  \ R12: 1ffff92000154f6b\n  R13: 0000000000000000 R14: ffff88807906c600 R15: ffff888046894000\n\
+  \  FS:  0000000000000000(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000\n\
+  \  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n  CR2: 00007ffe350a8ff8 CR3:\
+  \ 000000007a9e7000 CR4: 00000000003526e0\n  DR0: 0000000000000000 DR1: 0000000000000000\
+  \ DR2: 0000000000000000\n  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\n\
+  \  Call Trace:\n   <TASK>\n   __refcount_dec include/linux/refcount.h:344 [inline]\n\
+  \   refcount_dec include/linux/refcount.h:359 [inline]\n   ref_tracker_free+0x539/0x6b0\
+  \ lib/ref_tracker.c:118\n   netdev_tracker_free include/linux/netdevice.h:4039 [inline]\n\
+  \   netdev_put include/linux/netdevice.h:4056 [inline]\n   dev_put include/linux/netdevice.h:4082\
+  \ [inline]\n   free_netdevs+0x1f8/0x470 drivers/infiniband/core/device.c:2204\n\
+  \   __ib_unregister_device+0xa0/0x1a0 drivers/infiniband/core/device.c:1478\n  \
+  \ ib_unregister_work+0x19/0x30 drivers/infiniband/core/device.c:1586\n   process_one_work+0x9bf/0x1710\
+  \ kernel/workqueue.c:2289\n   worker_thread+0x669/0x1090 kernel/workqueue.c:2436\n\
+  \   kthread+0x2e8/0x3a0 kernel/kthread.c:376\n   ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308\n\
+  \nSo change the missed dev_put for pdata->netdev to also follow the tracker.\n\n\
+  Fixes: 09f530f0c6d6 (\"RDMA: Add netdevice_tracker to ib_device_set_netdev()\")\n\
+  Reported-by: syzbot+3fd8326d9a0812d19218@syzkaller.appspotmail.com\nReported-by:\
+  \ syzbot+a1ed8ffe3121380cd5dd@syzkaller.appspotmail.com\nReported-by: syzbot+8d0a099c8a6d1e4e601c@syzkaller.appspotmail.com\n\
+  Signed-off-by: Jason Gunthorpe <jgg@nvidia.com>\nLink: https://lore.kernel.org/r/0-v1-e99919867b8d+1e2-netdev_tracker2_jgg@nvidia.com\n\
+  Signed-off-by: Leon Romanovsky <leon@kernel.org>\n"
+submodule:
+- drivers/infiniband/core
+hunk_count: 1
+covered_count: 0

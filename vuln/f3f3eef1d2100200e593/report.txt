@@ -1,0 +1,167 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in unix_edge_successor net/unix/garbage.c:109 [inline]
+BUG: KASAN: slab-use-after-free in unix_del_edge net/unix/garbage.c:165 [inline]
+BUG: KASAN: slab-use-after-free in unix_del_edges+0x148/0x630 net/unix/garbage.c:237
+Read of size 8 at addr ffff888079c6e640 by task kworker/u8:6/1099
+
+CPU: 0 PID: 1099 Comm: kworker/u8:6 Not tainted 6.9.0-rc4-next-20240418-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Workqueue: events_unbound __unix_gc
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ unix_edge_successor net/unix/garbage.c:109 [inline]
+ unix_del_edge net/unix/garbage.c:165 [inline]
+ unix_del_edges+0x148/0x630 net/unix/garbage.c:237
+ unix_destroy_fpl+0x59/0x210 net/unix/garbage.c:298
+ unix_detach_fds net/unix/af_unix.c:1811 [inline]
+ unix_destruct_scm+0x13e/0x210 net/unix/af_unix.c:1826
+ skb_release_head_state+0x100/0x250 net/core/skbuff.c:1127
+ skb_release_all net/core/skbuff.c:1138 [inline]
+ __kfree_skb net/core/skbuff.c:1154 [inline]
+ kfree_skb_reason+0x16d/0x3b0 net/core/skbuff.c:1190
+ __skb_queue_purge_reason include/linux/skbuff.h:3251 [inline]
+ __skb_queue_purge include/linux/skbuff.h:3256 [inline]
+ __unix_gc+0x1732/0x1830 net/unix/garbage.c:575
+ process_one_work kernel/workqueue.c:3218 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3299
+ worker_thread+0x86d/0xd70 kernel/workqueue.c:3380
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+
+Allocated by task 14427:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ unpoison_slab_object mm/kasan/common.c:312 [inline]
+ __kasan_slab_alloc+0x66/0x80 mm/kasan/common.c:338
+ kasan_slab_alloc include/linux/kasan.h:201 [inline]
+ slab_post_alloc_hook mm/slub.c:3897 [inline]
+ slab_alloc_node mm/slub.c:3957 [inline]
+ kmem_cache_alloc_noprof+0x135/0x290 mm/slub.c:3964
+ sk_prot_alloc+0x58/0x210 net/core/sock.c:2074
+ sk_alloc+0x38/0x370 net/core/sock.c:2133
+ unix_create1+0xb4/0x770
+ unix_create+0x14e/0x200 net/unix/af_unix.c:1034
+ __sock_create+0x490/0x920 net/socket.c:1571
+ sock_create net/socket.c:1622 [inline]
+ __sys_socketpair+0x33e/0x720 net/socket.c:1773
+ __do_sys_socketpair net/socket.c:1822 [inline]
+ __se_sys_socketpair net/socket.c:1819 [inline]
+ __x64_sys_socketpair+0x9b/0xb0 net/socket.c:1819
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Freed by task 1805:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:579
+ poison_slab_object+0xe0/0x150 mm/kasan/common.c:240
+ __kasan_slab_free+0x37/0x60 mm/kasan/common.c:256
+ kasan_slab_free include/linux/kasan.h:184 [inline]
+ slab_free_hook mm/slub.c:2190 [inline]
+ slab_free mm/slub.c:4393 [inline]
+ kmem_cache_free+0x145/0x340 mm/slub.c:4468
+ sk_prot_free net/core/sock.c:2114 [inline]
+ __sk_destruct+0x467/0x5f0 net/core/sock.c:2208
+ sock_put include/net/sock.h:1948 [inline]
+ unix_release_sock+0xa8b/0xd20 net/unix/af_unix.c:665
+ unix_release+0x91/0xc0 net/unix/af_unix.c:1049
+ __sock_release net/socket.c:659 [inline]
+ sock_close+0xbc/0x240 net/socket.c:1421
+ __fput+0x406/0x8b0 fs/file_table.c:422
+ delayed_fput+0x59/0x80 fs/file_table.c:445
+ process_one_work kernel/workqueue.c:3218 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3299
+ worker_thread+0x86d/0xd70 kernel/workqueue.c:3380
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+The buggy address belongs to the object at ffff888079c6e000
+ which belongs to the cache UNIX of size 1920
+The buggy address is located 1600 bytes inside of
+ freed 1920-byte region [ffff888079c6e000, ffff888079c6e780)
+
+The buggy address belongs to the physical page:
+page: refcount:1 mapcount:0 mapping:0000000000000000 index:0xffff888079c6c000 pfn:0x79c68
+head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0xfff80000000240(workingset|head|node=0|zone=1|lastcpupid=0xfff)
+page_type: 0xffffefff(slab)
+raw: 00fff80000000240 ffff888017395a00 ffff8880173357c8 ffffea0001f97410
+raw: ffff888079c6c000 0000000000100005 00000001ffffefff 0000000000000000
+head: 00fff80000000240 ffff888017395a00 ffff8880173357c8 ffffea0001f97410
+head: ffff888079c6c000 0000000000100005 00000001ffffefff 0000000000000000
+head: 00fff80000000003 ffffea0001e71a01 ffffffffffffffff 0000000000000000
+head: 0000000000000008 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd20c0(__GFP_IO|__GFP_FS|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 7008, tgid -583571348 (syz-executor297), ts 7008, free_ts 67977031729
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f3/0x230 mm/page_alloc.c:1476
+ prep_new_page mm/page_alloc.c:1484 [inline]
+ get_page_from_freelist+0x2ce2/0x2d90 mm/page_alloc.c:3446
+ __alloc_pages_noprof+0x256/0x6c0 mm/page_alloc.c:4704
+ __alloc_pages_node_noprof include/linux/gfp.h:244 [inline]
+ alloc_pages_node_noprof include/linux/gfp.h:271 [inline]
+ alloc_slab_page+0x5f/0x120 mm/slub.c:2259
+ allocate_slab+0x5a/0x2e0 mm/slub.c:2422
+ new_slab mm/slub.c:2475 [inline]
+ ___slab_alloc+0xcd1/0x14b0 mm/slub.c:3624
+ __slab_alloc+0x58/0xa0 mm/slub.c:3714
+ __slab_alloc_node mm/slub.c:3767 [inline]
+ slab_alloc_node mm/slub.c:3945 [inline]
+ kmem_cache_alloc_noprof+0x1c1/0x290 mm/slub.c:3964
+ sk_prot_alloc+0x58/0x210 net/core/sock.c:2074
+ sk_alloc+0x38/0x370 net/core/sock.c:2133
+ unix_create1+0xb4/0x770
+ unix_create+0x14e/0x200 net/unix/af_unix.c:1034
+ __sock_create+0x490/0x920 net/socket.c:1571
+ sock_create net/socket.c:1622 [inline]
+ __sys_socketpair+0x33e/0x720 net/socket.c:1773
+ __do_sys_socketpair net/socket.c:1822 [inline]
+ __se_sys_socketpair net/socket.c:1819 [inline]
+ __x64_sys_socketpair+0x9b/0xb0 net/socket.c:1819
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+page last free pid 5089 tgid 5089 stack trace:
+ reset_page_owner include/linux/page_owner.h:25 [inline]
+ free_pages_prepare mm/page_alloc.c:1096 [inline]
+ free_unref_page+0xd22/0xea0 mm/page_alloc.c:2609
+ __slab_free+0x31b/0x3d0 mm/slub.c:4304
+ qlink_free mm/kasan/quarantine.c:163 [inline]
+ qlist_free_all+0x9e/0x140 mm/kasan/quarantine.c:179
+ kasan_quarantine_reduce+0x14f/0x170 mm/kasan/quarantine.c:286
+ __kasan_slab_alloc+0x23/0x80 mm/kasan/common.c:322
+ kasan_slab_alloc include/linux/kasan.h:201 [inline]
+ slab_post_alloc_hook mm/slub.c:3897 [inline]
+ slab_alloc_node mm/slub.c:3957 [inline]
+ kmem_cache_alloc_noprof+0x135/0x290 mm/slub.c:3964
+ vma_lock_alloc kernel/fork.c:441 [inline]
+ vm_area_dup+0x61/0x290 kernel/fork.c:494
+ dup_mmap kernel/fork.c:697 [inline]
+ dup_mm kernel/fork.c:1688 [inline]
+ copy_mm+0xcf5/0x1fb0 kernel/fork.c:1737
+ copy_process+0x187a/0x3dc0 kernel/fork.c:2390
+ kernel_clone+0x226/0x8f0 kernel/fork.c:2797
+ __do_sys_clone kernel/fork.c:2940 [inline]
+ __se_sys_clone kernel/fork.c:2924 [inline]
+ __x64_sys_clone+0x258/0x2a0 kernel/fork.c:2924
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Memory state around the buggy address:
+ ffff888079c6e500: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888079c6e580: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888079c6e600: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                           ^
+ ffff888079c6e680: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888079c6e700: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================

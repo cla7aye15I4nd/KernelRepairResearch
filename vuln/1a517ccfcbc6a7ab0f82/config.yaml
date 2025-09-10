@@ -1,0 +1,42 @@
+id: 1a517ccfcbc6a7ab0f82
+bug_link: https://syzkaller.appspot.com/bug?extid=1a517ccfcbc6a7ab0f82
+title: possible deadlock in crypto_exit_scomp_ops_async
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1ca77ff1837249701053a7fcbdedabc41f4ae67c
+fix_commit: c11bcbc0a517acf69282c8225059b2a8ac5fe628
+datetime: '2025-04-01T15:14:43-07:00'
+fix_commit_message: "mm: zswap: fix crypto_free_acomp() deadlock in zswap_cpu_comp_dead()\n\
+  \nCurrently, zswap_cpu_comp_dead() calls crypto_free_acomp() while holding\nthe\
+  \ per-CPU acomp_ctx mutex.  crypto_free_acomp() then holds scomp_lock\n(through\
+  \ crypto_exit_scomp_ops_async()).\n\nOn the other hand, crypto_alloc_acomp_node()\
+  \ holds the scomp_lock (through\ncrypto_scomp_init_tfm()), and then allocates memory.\
+  \  If the allocation\nresults in reclaim, we may attempt to hold the per-CPU acomp_ctx\
+  \ mutex.\n\nThe above dependencies can cause an ABBA deadlock.  For example in the\n\
+  following scenario:\n\n(1) Task A running on CPU #1:\n    crypto_alloc_acomp_node()\n\
+  \      Holds scomp_lock\n      Enters reclaim\n      Reads per_cpu_ptr(pool->acomp_ctx,\
+  \ 1)\n\n(2) Task A is descheduled\n\n(3) CPU #1 goes offline\n    zswap_cpu_comp_dead(CPU\
+  \ #1)\n      Holds per_cpu_ptr(pool->acomp_ctx, 1))\n      Calls crypto_free_acomp()\n\
+  \      Waits for scomp_lock\n\n(4) Task A running on CPU #2:\n      Waits for per_cpu_ptr(pool->acomp_ctx,\
+  \ 1) // Read on CPU #1\n      DEADLOCK\n\nSince there is no requirement to call\
+  \ crypto_free_acomp() with the per-CPU\nacomp_ctx mutex held in zswap_cpu_comp_dead(),\
+  \ move it after the mutex is\nunlocked.  Also move the acomp_request_free() and\
+  \ kfree() calls for\nconsistency and to avoid any potential sublte locking dependencies\
+  \ in the\nfuture.\n\nWith this, only setting acomp_ctx fields to NULL occurs with\
+  \ the mutex\nheld.  This is similar to how zswap_cpu_comp_prepare() only initializes\n\
+  acomp_ctx fields with the mutex held, after performing all allocations\nbefore holding\
+  \ the mutex.\n\nOpportunistically, move the NULL check on acomp_ctx so that it takes\
+  \ place\nbefore the mutex dereference.\n\nLink: https://lkml.kernel.org/r/20250226185625.2672936-1-yosry.ahmed@linux.dev\n\
+  Fixes: 12dcb0ef5406 (\"mm: zswap: properly synchronize freeing resources during\
+  \ CPU hotunplug\")\nSigned-off-by: Herbert Xu <herbert@gondor.apana.org.au>\nCo-developed-by:\
+  \ Herbert Xu <herbert@gondor.apana.org.au>\nSigned-off-by: Yosry Ahmed <yosry.ahmed@linux.dev>\n\
+  Reported-by: syzbot+1a517ccfcbc6a7ab0f82@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/all/67bcea51.050a0220.bbfd1.0096.GAE@google.com/\n\
+  Acked-by: Herbert Xu <herbert@gondor.apana.org.au>\nReviewed-by: Chengming Zhou\
+  \ <chengming.zhou@linux.dev>\nReviewed-by: Nhat Pham <nphamcs@gmail.com>\nTested-by:\
+  \ Nhat Pham <nphamcs@gmail.com>\nCc: David S. Miller <davem@davemloft.net>\nCc:\
+  \ Eric Biggers <ebiggers@kernel.org>\nCc: Johannes Weiner <hannes@cmpxchg.org>\n\
+  Cc: Chris Murphy <lists@colorremedies.com>\nCc: <stable@vger.kernel.org>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,81 @@
+BUG: unable to handle page fault for address: ffffed101f01e33f
+#PF: supervisor read access in kernel mode
+#PF: error_code(0x0000) - not-present page
+PGD 23ffee067 P4D 23ffee067 PUD 13fff5067 PMD 0 
+Oops: 0000 [#1] PREEMPT SMP KASAN
+CPU: 0 PID: 5020 Comm: syz-executor619 Not tainted 6.4.0-syzkaller-12069-gc17414a273b8 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/27/2023
+RIP: 0010:udf_close_lvid.isra.0+0x104/0x550 fs/udf/super.c:2035
+Code: b2 82 9c fe 4c 8d b5 c0 00 00 00 31 f6 4c 89 f7 e8 f1 4d 3a 07 48 8d 7b 18 48 b8 00 00 00 00 00 fc ff df 48 89 fa 48 c1 ea 03 <0f> b6 04 02 48 89 fa 83 e2 07 38 d0 7f 08 84 c0 0f 85 88 03 00 00
+RSP: 0018:ffffc90003acfc38 EFLAGS: 00010216
+RAX: dffffc0000000000 RBX: ffff8880f80f19e0 RCX: 0000000000000000
+RDX: 1ffff1101f01e33f RSI: 0000000000000002 RDI: ffff8880f80f19f8
+RBP: ffff88801ebcd800 R08: 0000000000000000 R09: fffffbfff1d54d52
+R10: ffffffff8eaa6a97 R11: 0000000000000001 R12: ffff888075aded98
+R13: ffff88806b4a0000 R14: ffff88801ebcd8c0 R15: ffff8880778973c0
+FS:  0000000000000000(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffed101f01e33f CR3: 000000000c775000 CR4: 0000000000350ef0
+Call Trace:
+ <TASK>
+ udf_put_super+0x1bb/0x230 fs/udf/super.c:2322
+ generic_shutdown_super+0x158/0x480 fs/super.c:499
+ kill_block_super+0x64/0xb0 fs/super.c:1417
+ deactivate_locked_super+0x98/0x160 fs/super.c:330
+ deactivate_super+0xb1/0xd0 fs/super.c:361
+ cleanup_mnt+0x2ae/0x3d0 fs/namespace.c:1254
+ task_work_run+0x16f/0x270 kernel/task_work.c:179
+ exit_task_work include/linux/task_work.h:38 [inline]
+ do_exit+0xa9a/0x29a0 kernel/exit.c:874
+ do_group_exit+0xd4/0x2a0 kernel/exit.c:1024
+ __do_sys_exit_group kernel/exit.c:1035 [inline]
+ __se_sys_exit_group kernel/exit.c:1033 [inline]
+ __x64_sys_exit_group+0x3e/0x50 kernel/exit.c:1033
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x39/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f54ca40f559
+Code: Unable to access opcode bytes at 0x7f54ca40f52f.
+RSP: 002b:00007ffff4ab4748 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 00007f54ca4a7410 RCX: 00007f54ca40f559
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000001
+RBP: 0000000000000001 R08: ffffffffffffffc0 R09: 0000000000000050
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f54ca4a7410
+R13: 0000000000000001 R14: 0000000000000000 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+CR2: ffffed101f01e33f
+---[ end trace 0000000000000000 ]---
+RIP: 0010:udf_close_lvid.isra.0+0x104/0x550 fs/udf/super.c:2035
+Code: b2 82 9c fe 4c 8d b5 c0 00 00 00 31 f6 4c 89 f7 e8 f1 4d 3a 07 48 8d 7b 18 48 b8 00 00 00 00 00 fc ff df 48 89 fa 48 c1 ea 03 <0f> b6 04 02 48 89 fa 83 e2 07 38 d0 7f 08 84 c0 0f 85 88 03 00 00
+RSP: 0018:ffffc90003acfc38 EFLAGS: 00010216
+RAX: dffffc0000000000 RBX: ffff8880f80f19e0 RCX: 0000000000000000
+RDX: 1ffff1101f01e33f RSI: 0000000000000002 RDI: ffff8880f80f19f8
+RBP: ffff88801ebcd800 R08: 0000000000000000 R09: fffffbfff1d54d52
+R10: ffffffff8eaa6a97 R11: 0000000000000001 R12: ffff888075aded98
+R13: ffff88806b4a0000 R14: ffff88801ebcd8c0 R15: ffff8880778973c0
+FS:  0000000000000000(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffed101f01e33f CR3: 000000000c775000 CR4: 0000000000350ef0
+----------------
+Code disassembly (best guess):
+   0:	b2 82                	mov    $0x82,%dl
+   2:	9c                   	pushfq
+   3:	fe 4c 8d b5          	decb   -0x4b(%rbp,%rcx,4)
+   7:	c0 00 00             	rolb   $0x0,(%rax)
+   a:	00 31                	add    %dh,(%rcx)
+   c:	f6 4c 89 f7 e8       	testb  $0xe8,-0x9(%rcx,%rcx,4)
+  11:	f1                   	icebp
+  12:	4d 3a 07             	rex.WRB cmp (%r15),%r8b
+  15:	48 8d 7b 18          	lea    0x18(%rbx),%rdi
+  19:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  20:	fc ff df
+  23:	48 89 fa             	mov    %rdi,%rdx
+  26:	48 c1 ea 03          	shr    $0x3,%rdx
+* 2a:	0f b6 04 02          	movzbl (%rdx,%rax,1),%eax <-- trapping instruction
+  2e:	48 89 fa             	mov    %rdi,%rdx
+  31:	83 e2 07             	and    $0x7,%edx
+  34:	38 d0                	cmp    %dl,%al
+  36:	7f 08                	jg     0x40
+  38:	84 c0                	test   %al,%al
+  3a:	0f 85 88 03 00 00    	jne    0x3c8

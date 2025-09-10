@@ -1,0 +1,23 @@
+id: 0c3cb6dc05fbbdc3ad66
+bug_link: https://syzkaller.appspot.com/bug?extid=0c3cb6dc05fbbdc3ad66
+title: WARNING in send_packet/usb_submit_urb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a42f363e6b58d1fc642d6d082dc660be73656ba5
+fix_commit: 813ceef062b53d68f296aa3cb944b21a091fabdb
+datetime: '2022-11-25T08:00:45+00:00'
+fix_commit_message: "media: imon: fix a race condition in send_packet()\n\nThe function\
+  \ send_packet() has a race condition as follows:\n\nfunc send_packet()\n{\n    //\
+  \ do work\n    call usb_submit_urb()\n    mutex_unlock()\n    wait_for_event_interruptible()\
+  \  <-- lock gone\n    mutex_lock()\n}\n\nfunc vfd_write()\n{\n    mutex_lock()\n\
+  \    call send_packet()  <- prev call is not completed\n    mutex_unlock()\n}\n\n\
+  When the mutex is unlocked and the function send_packet() waits for the\ncall to\
+  \ complete, vfd_write() can start another call, which leads to the\n\"URB submitted\
+  \ while active\" warning in usb_submit_urb().\nFix this by removing the mutex_unlock()\
+  \ call in send_packet() and using\nmutex_lock_interruptible().\n\nLink: https://syzkaller.appspot.com/bug?id=e378e6a51fbe6c5cc43e34f131cc9a315ef0337e\n\
+  \nFixes: 21677cfc562a (\"V4L/DVB: ir-core: add imon driver\")\nReported-by: syzbot+0c3cb6dc05fbbdc3ad66@syzkaller.appspotmail.com\n\
+  Signed-off-by: Gautam Menghani <gautammenghani201@gmail.com>\nSigned-off-by: Sean\
+  \ Young <sean@mess.org>\nSigned-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>\n"
+submodule:
+- drivers/media/rc
+hunk_count: 2
+covered_count: 2

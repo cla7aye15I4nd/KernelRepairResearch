@@ -1,0 +1,63 @@
+F2FS-fs (loop0): Try to recover 1th superblock, ret: 0
+F2FS-fs (loop0): Mounted with checkpoint version = 48b305e5
+------------[ cut here ]------------
+kernel BUG at fs/f2fs/inline.c:258!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 PID: 5090 Comm: syz-executor430 Not tainted 6.10.0-rc1-next-20240531-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+RIP: 0010:f2fs_write_inline_data+0x781/0x790 fs/f2fs/inline.c:258
+Code: ff ff 89 d9 80 e1 07 80 c1 03 38 c1 0f 8c e3 fc ff ff 48 89 df e8 ff a4 09 fe e9 d6 fc ff ff e8 25 22 9a 07 e8 a0 b7 a3 fd 90 <0f> 0b e8 98 b7 a3 fd 90 0f 0b 0f 1f 44 00 00 90 90 90 90 90 90 90
+RSP: 0018:ffffc9000343eb00 EFLAGS: 00010293
+RAX: ffffffff83f2c450 RBX: 0000000000000001 RCX: ffff88807f750000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc9000343ec30 R08: ffffffff83f2bf15 R09: 1ffff1100f0ed1ad
+R10: dffffc0000000000 R11: ffffed100f0ed1ae R12: ffffc9000343eb88
+R13: 1ffff1100f0ed1ad R14: ffffc9000343eb80 R15: ffffc9000343eb90
+FS:  000055557674e380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000020002000 CR3: 000000001fb2e000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ f2fs_write_single_data_page+0xbb6/0x1e90 fs/f2fs/data.c:2858
+ f2fs_write_cache_pages fs/f2fs/data.c:3157 [inline]
+ __f2fs_write_data_pages fs/f2fs/data.c:3312 [inline]
+ f2fs_write_data_pages+0x1efe/0x3a90 fs/f2fs/data.c:3339
+ do_writepages+0x35d/0x870 mm/page-writeback.c:2657
+ filemap_fdatawrite_wbc+0x125/0x180 mm/filemap.c:397
+ __filemap_fdatawrite_range mm/filemap.c:430 [inline]
+ file_write_and_wait_range+0x1aa/0x290 mm/filemap.c:788
+ f2fs_do_sync_file+0x68a/0x1b10 fs/f2fs/file.c:276
+ generic_write_sync include/linux/fs.h:2810 [inline]
+ f2fs_file_write_iter+0x7bd/0x24e0 fs/f2fs/file.c:4935
+ new_sync_write fs/read_write.c:497 [inline]
+ vfs_write+0xa72/0xc90 fs/read_write.c:590
+ ksys_write+0x1a0/0x2c0 fs/read_write.c:643
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fd453a5f779
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc94e03488 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 00007ffc94e03658 RCX: 00007fd453a5f779
+RDX: 0000000000002000 RSI: 0000000020000040 RDI: 0000000000000006
+RBP: 00007fd453ad8610 R08: 00007ffc94e03658 R09: 00007ffc94e03658
+R10: 00007ffc94e03658 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffc94e03648 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:f2fs_write_inline_data+0x781/0x790 fs/f2fs/inline.c:258
+Code: ff ff 89 d9 80 e1 07 80 c1 03 38 c1 0f 8c e3 fc ff ff 48 89 df e8 ff a4 09 fe e9 d6 fc ff ff e8 25 22 9a 07 e8 a0 b7 a3 fd 90 <0f> 0b e8 98 b7 a3 fd 90 0f 0b 0f 1f 44 00 00 90 90 90 90 90 90 90
+RSP: 0018:ffffc9000343eb00 EFLAGS: 00010293
+RAX: ffffffff83f2c450 RBX: 0000000000000001 RCX: ffff88807f750000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc9000343ec30 R08: ffffffff83f2bf15 R09: 1ffff1100f0ed1ad
+R10: dffffc0000000000 R11: ffffed100f0ed1ae R12: ffffc9000343eb88
+R13: 1ffff1100f0ed1ad R14: ffffc9000343eb80 R15: ffffc9000343eb90
+FS:  000055557674e380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000056082271e438 CR3: 000000001fb2e000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

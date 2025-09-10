@@ -1,0 +1,29 @@
+id: 5013f86be1187ccf3800
+bug_link: https://syzkaller.appspot.com/bug?extid=5013f86be1187ccf3800
+title: 'KASAN: use-after-free Read in rdma_resolve_addr'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 67e3816842fe6414d629c7515b955952ec40c7d7
+fix_commit: 5fe23f262e0548ca7f19fb79f89059a60d087d22
+datetime: '2018-09-13T13:04:13-04:00'
+fix_commit_message: "ucma: fix a use-after-free in ucma_resolve_ip()\n\nThere is a\
+  \ race condition between ucma_close() and ucma_resolve_ip():\n\nCPU0\t\t\t\tCPU1\n\
+  ucma_resolve_ip():\t\tucma_close():\n\nctx = ucma_get_ctx(file, cmd.id);\n\n   \
+  \     list_for_each_entry_safe(ctx, tmp, &file->ctx_list, list) {\n            \
+  \    mutex_lock(&mut);\n                idr_remove(&ctx_idr, ctx->id);\n       \
+  \         mutex_unlock(&mut);\n\t\t...\n                mutex_lock(&mut);\n    \
+  \            if (!ctx->closing) {\n                        mutex_unlock(&mut);\n\
+  \                        rdma_destroy_id(ctx->cm_id);\n\t\t...\n               \
+  \ ucma_free_ctx(ctx);\n\nret = rdma_resolve_addr();\nucma_put_ctx(ctx);\n\nBefore\
+  \ idr_remove(), ucma_get_ctx() could still find the ctx\nand after rdma_destroy_id(),\
+  \ rdma_resolve_addr() may still\naccess id_priv pointer. Also, ucma_put_ctx() may\
+  \ use ctx after\nucma_free_ctx() too.\n\nucma_close() should call ucma_put_ctx()\
+  \ too which tests the\nrefcnt and waits for the last one releasing it. The similar\n\
+  pattern is already used by ucma_destroy_id().\n\nReported-and-tested-by: syzbot+da2591e115d57a9cbb8b@syzkaller.appspotmail.com\n\
+  Reported-by: syzbot+cfe3c1e8ef634ba8964b@syzkaller.appspotmail.com\nCc: Jason Gunthorpe\
+  \ <jgg@mellanox.com>\nCc: Doug Ledford <dledford@redhat.com>\nCc: Leon Romanovsky\
+  \ <leon@kernel.org>\nSigned-off-by: Cong Wang <xiyou.wangcong@gmail.com>\nReviewed-by:\
+  \ Leon Romanovsky <leonro@mellanox.com>\nSigned-off-by: Doug Ledford <dledford@redhat.com>\n"
+submodule:
+- drivers/infiniband/core
+hunk_count: 1
+covered_count: 1

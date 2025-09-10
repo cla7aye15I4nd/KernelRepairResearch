@@ -1,0 +1,29 @@
+id: 313d95e8a7a49263f88d
+bug_link: https://syzkaller.appspot.com/bug?extid=313d95e8a7a49263f88d
+title: 'KASAN: null-ptr-deref Write in blk_mq_map_swqueue'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6e66b49392419f3fe134e1be583323ef75da1e4b
+fix_commit: d0930bb8f46b8fb4a7d429c0bf1c91b3ed00a7cf
+datetime: '2020-03-10T07:09:59-06:00'
+fix_commit_message: "blk-mq: Fix a recently introduced regression in blk_mq_realloc_hw_ctxs()\n\
+  \nq->nr_hw_queues must only be updated once it is known that\nblk_mq_realloc_hw_ctxs()\
+  \ has succeeded. Otherwise it can happen that\nreallocation fails and that q->nr_hw_queues\
+  \ is larger than the number of\nallocated hardware queues. This patch fixes the\
+  \ following crash if\nincreasing the number of hardware queues fails:\n\nBUG: KASAN:\
+  \ null-ptr-deref in blk_mq_map_swqueue+0x775/0x810\nWrite of size 8 at addr 0000000000000118\
+  \ by task check/977\n\nCPU: 3 PID: 977 Comm: check Not tainted 5.6.0-rc1-dbg+ #8\n\
+  Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011\nCall Trace:\n dump_stack+0xa5/0xe6\n\
+  \ __kasan_report.cold+0x65/0x99\n kasan_report+0x16/0x20\n check_memory_region+0x140/0x1b0\n\
+  \ memset+0x28/0x40\n blk_mq_map_swqueue+0x775/0x810\n blk_mq_update_nr_hw_queues+0x468/0x710\n\
+  \ nullb_device_submit_queues_store+0xf7/0x1a0 [null_blk]\n configfs_write_file+0x1c4/0x250\
+  \ [configfs]\n __vfs_write+0x4c/0x90\n vfs_write+0x145/0x2c0\n ksys_write+0xd7/0x180\n\
+  \ __x64_sys_write+0x47/0x50\n do_syscall_64+0x6f/0x2f0\n entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nFixes: ac0d6b926e74 (\"block: Reduce the amount of memory required per request\
+  \ queue\")\nSigned-off-by: Bart Van Assche <bvanassche@acm.org>\nReviewed-by: Ming\
+  \ Lei <ming.lei@redhat.com>\nCc: Keith Busch <kbusch@kernel.org>\nCc: Johannes Thumshirn\
+  \ <jth@kernel.org>\nCc: Hannes Reinecke <hare@suse.com>\nCc: Christoph Hellwig <hch@infradead.org>\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- block
+hunk_count: 1
+covered_count: 0

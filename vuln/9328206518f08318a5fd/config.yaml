@@ -1,0 +1,39 @@
+id: 9328206518f08318a5fd
+bug_link: https://syzkaller.appspot.com/bug?extid=9328206518f08318a5fd
+title: 'KASAN: slab-out-of-bounds Read in hsr_debugfs_rename'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a5b72a083da197b493c7ed1e5730d62d3199f7d6
+fix_commit: 04b69426d846cd04ca9acefff1ea39e1c64d2714
+datetime: '2019-12-30T20:36:27-08:00'
+fix_commit_message: "hsr: fix slab-out-of-bounds Read in hsr_debugfs_rename()\n\n\
+  hsr slave interfaces don't have debugfs directory.\nSo, hsr_debugfs_rename() shouldn't\
+  \ be called when hsr slave interface name\nis changed.\n\nTest commands:\n    ip\
+  \ link add dummy0 type dummy\n    ip link add dummy1 type dummy\n    ip link add\
+  \ hsr0 type hsr slave1 dummy0 slave2 dummy1\n    ip link set dummy0 name ap\n\n\
+  Splat looks like:\n[21071.899367][T22666] ap: renamed from dummy0\n[21071.914005][T22666]\
+  \ ==================================================================\n[21071.919008][T22666]\
+  \ BUG: KASAN: slab-out-of-bounds in hsr_debugfs_rename+0xaa/0xb0 [hsr]\n[21071.923640][T22666]\
+  \ Read of size 8 at addr ffff88805febcd98 by task ip/22666\n[21071.926941][T22666]\n\
+  [21071.927750][T22666] CPU: 0 PID: 22666 Comm: ip Not tainted 5.5.0-rc2+ #240\n\
+  [21071.929919][T22666] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox\
+  \ 12/01/2006\n[21071.935094][T22666] Call Trace:\n[21071.935867][T22666]  dump_stack+0x96/0xdb\n\
+  [21071.936687][T22666]  ? hsr_debugfs_rename+0xaa/0xb0 [hsr]\n[21071.937774][T22666]\
+  \  print_address_description.constprop.5+0x1be/0x360\n[21071.939019][T22666]  ?\
+  \ hsr_debugfs_rename+0xaa/0xb0 [hsr]\n[21071.940081][T22666]  ? hsr_debugfs_rename+0xaa/0xb0\
+  \ [hsr]\n[21071.940949][T22666]  __kasan_report+0x12a/0x16f\n[21071.941758][T22666]\
+  \  ? hsr_debugfs_rename+0xaa/0xb0 [hsr]\n[21071.942674][T22666]  kasan_report+0xe/0x20\n\
+  [21071.943325][T22666]  hsr_debugfs_rename+0xaa/0xb0 [hsr]\n[21071.944187][T22666]\
+  \  hsr_netdev_notify+0x1fe/0x9b0 [hsr]\n[21071.945052][T22666]  ? __module_text_address+0x13/0x140\n\
+  [21071.945897][T22666]  notifier_call_chain+0x90/0x160\n[21071.946743][T22666] \
+  \ dev_change_name+0x419/0x840\n[21071.947496][T22666]  ? __read_once_size_nocheck.constprop.6+0x10/0x10\n\
+  [21071.948600][T22666]  ? netdev_adjacent_rename_links+0x280/0x280\n[21071.949577][T22666]\
+  \  ? __read_once_size_nocheck.constprop.6+0x10/0x10\n[21071.950672][T22666]  ? lock_downgrade+0x6e0/0x6e0\n\
+  [21071.951345][T22666]  ? do_setlink+0x811/0x2ef0\n[21071.951991][T22666]  do_setlink+0x811/0x2ef0\n\
+  [21071.952613][T22666]  ? is_bpf_text_address+0x81/0xe0\n[ ... ]\n\nReported-by:\
+  \ syzbot+9328206518f08318a5fd@syzkaller.appspotmail.com\nFixes: 4c2d5e33dcd3 (\"\
+  hsr: rename debugfs file when interface name is changed\")\nSigned-off-by: Taehee\
+  \ Yoo <ap420073@gmail.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/hsr
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,65 @@
+id: d56e0d33caf7d1a02821
+bug_link: https://syzkaller.appspot.com/bug?extid=d56e0d33caf7d1a02821
+title: kernel BUG in create_pending_snapshot
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6f3eb72a1f26ee84ed9de99ffa9edb1a3748c33b
+fix_commit: df9f278239046719c91aeb59ec0afb1a99ee8b2b
+datetime: '2023-06-19T13:59:39+02:00'
+fix_commit_message: 'btrfs: do not BUG_ON on failure to get dir index for new snapshot
+
+
+  During the transaction commit path, at create_pending_snapshot(), there
+
+  is no need to BUG_ON() in case we fail to get a dir index for the snapshot
+
+  in the parent directory. This should fail very rarely because the parent
+
+  inode should be loaded in memory already, with the respective delayed
+
+  inode created and the parent inode''s index_cnt field already initialized.
+
+
+  However if it fails, it may be -ENOMEM like the comment at
+
+  create_pending_snapshot() says or any error returned by
+
+  btrfs_search_slot() through btrfs_set_inode_index_count(), which can be
+
+  pretty much anything such as -EIO or -EUCLEAN for example. So the comment
+
+  is not correct when it says it can only be -ENOMEM.
+
+
+  However doing a BUG_ON() here is overkill, since we can instead abort
+
+  the transaction and return the error. Note that any error returned by
+
+  create_pending_snapshot() will eventually result in a transaction
+
+  abort at cleanup_transaction(), called from btrfs_commit_transaction(),
+
+  but we can explicitly abort the transaction at this point instead so that
+
+  we get a stack trace to tell us that the call to btrfs_set_inode_index()
+
+  failed.
+
+
+  So just abort the transaction and return in case btrfs_set_inode_index()
+
+  returned an error at create_pending_snapshot().
+
+
+  Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+
+  Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+  Reviewed-by: David Sterba <dsterba@suse.com>
+
+  Signed-off-by: David Sterba <dsterba@suse.com>
+
+  '
+submodule:
+- fs/btrfs
+hunk_count: 1
+covered_count: 1

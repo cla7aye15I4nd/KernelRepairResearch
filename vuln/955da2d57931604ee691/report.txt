@@ -1,0 +1,50 @@
+=====================================================
+BUG: KMSAN: kernel-infoleak in instrument_copy_to_user include/linux/instrumented.h:114 [inline]
+BUG: KMSAN: kernel-infoleak in _inline_copy_to_user include/linux/uaccess.h:187 [inline]
+BUG: KMSAN: kernel-infoleak in _copy_to_user+0xbc/0x110 lib/usercopy.c:26
+ instrument_copy_to_user include/linux/instrumented.h:114 [inline]
+ _inline_copy_to_user include/linux/uaccess.h:187 [inline]
+ _copy_to_user+0xbc/0x110 lib/usercopy.c:26
+ copy_to_user include/linux/uaccess.h:216 [inline]
+ con_font_get drivers/tty/vt/vt.c:4760 [inline]
+ con_font_op+0x14a2/0x1710 drivers/tty/vt/vt.c:4854
+ vt_k_ioctl drivers/tty/vt/vt_ioctl.c:474 [inline]
+ vt_ioctl+0x2b6e/0x2fe0 drivers/tty/vt/vt_ioctl.c:751
+ tty_ioctl+0xd0c/0x1990 drivers/tty/tty_io.c:2803
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl+0x25e/0x450 fs/ioctl.c:893
+ __x64_sys_ioctl+0x96/0xe0 fs/ioctl.c:893
+ x64_sys_call+0x18bf/0x3ba0 arch/x86/include/generated/asm/syscalls_64.h:17
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ ___kmalloc_large_node+0x22c/0x370 mm/slub.c:4219
+ __kmalloc_large_node_noprof+0x3f/0x1e0 mm/slub.c:4236
+ __do_kmalloc_node mm/slub.c:4252 [inline]
+ __kmalloc_node_noprof+0x9d6/0xf50 mm/slub.c:4270
+ __kvmalloc_node_noprof+0xc0/0x2d0 mm/util.c:658
+ con_font_get drivers/tty/vt/vt.c:4729 [inline]
+ con_font_op+0x659/0x1710 drivers/tty/vt/vt.c:4854
+ vt_k_ioctl drivers/tty/vt/vt_ioctl.c:474 [inline]
+ vt_ioctl+0x2b6e/0x2fe0 drivers/tty/vt/vt_ioctl.c:751
+ tty_ioctl+0xd0c/0x1990 drivers/tty/tty_io.c:2803
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:907 [inline]
+ __se_sys_ioctl+0x25e/0x450 fs/ioctl.c:893
+ __x64_sys_ioctl+0x96/0xe0 fs/ioctl.c:893
+ x64_sys_call+0x18bf/0x3ba0 arch/x86/include/generated/asm/syscalls_64.h:17
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Bytes 61440-76799 of 76800 are uninitialized
+Memory access of size 76800 starts at ffff8880b5c00000
+Data copied to user address 0000000020000880
+
+CPU: 0 UID: 0 PID: 7973 Comm: syz.2.4245 Tainted: G        W          6.12.0-rc1-syzkaller-00349-g8f602276d390 #0
+Tainted: [W]=WARN
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+=====================================================

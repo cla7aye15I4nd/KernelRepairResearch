@@ -1,0 +1,41 @@
+id: d411cff6ab29cc2c311b
+bug_link: https://syzkaller.appspot.com/bug?extid=d411cff6ab29cc2c311b
+title: memory leak in qdisc_create_dflt
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 13cf8aab7425a253070433b5a55b4209ceac8b19
+fix_commit: 306381aec7c2b5a658eebca008c8a1b666536cba
+datetime: '2020-07-09T12:31:28-07:00'
+fix_commit_message: 'net_sched: fix a memory leak in atm_tc_init()
+
+
+  When tcf_block_get() fails inside atm_tc_init(),
+
+  atm_tc_put() is called to release the qdisc p->link.q.
+
+  But the flow->ref prevents it to do so, as the flow->ref
+
+  is still zero.
+
+
+  Fix this by moving the p->link.ref initialization before
+
+  tcf_block_get().
+
+
+  Fixes: 6529eaba33f0 ("net: sched: introduce tcf block infractructure")
+
+  Reported-and-tested-by: syzbot+d411cff6ab29cc2c311b@syzkaller.appspotmail.com
+
+  Cc: Jamal Hadi Salim <jhs@mojatatu.com>
+
+  Cc: Jiri Pirko <jiri@resnulli.us>
+
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/sched
+hunk_count: 1
+covered_count: 1

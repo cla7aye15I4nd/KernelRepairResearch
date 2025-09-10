@@ -1,0 +1,62 @@
+raw-gadget.0 gadget.0: fail, usb_ep_enable returned -22
+============================================
+WARNING: possible recursive locking detected
+6.12.0-rc1-syzkaller-00027-g4a9fe2a8ac53 #0 Not tainted
+--------------------------------------------
+syz-executor363/2651 is trying to acquire lock:
+ffffffff89b120e8 (chaoskey_list_lock){+.+.}-{3:3}, at: chaoskey_release+0x15d/0x2c0 drivers/usb/misc/chaoskey.c:322
+
+but task is already holding lock:
+ffffffff89b120e8 (chaoskey_list_lock){+.+.}-{3:3}, at: chaoskey_release+0x7f/0x2c0 drivers/usb/misc/chaoskey.c:299
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(chaoskey_list_lock);
+  lock(chaoskey_list_lock);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+1 lock held by syz-executor363/2651:
+ #0: ffffffff89b120e8 (chaoskey_list_lock){+.+.}-{3:3}, at: chaoskey_release+0x7f/0x2c0 drivers/usb/misc/chaoskey.c:299
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 2651 Comm: syz-executor363 Not tainted 6.12.0-rc1-syzkaller-00027-g4a9fe2a8ac53 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_deadlock_bug+0x2e3/0x410 kernel/locking/lockdep.c:3037
+ check_deadlock kernel/locking/lockdep.c:3089 [inline]
+ validate_chain kernel/locking/lockdep.c:3891 [inline]
+ __lock_acquire+0x2185/0x3ce0 kernel/locking/lockdep.c:5202
+ lock_acquire.part.0+0x11b/0x380 kernel/locking/lockdep.c:5825
+ __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+ __mutex_lock+0x175/0x9c0 kernel/locking/mutex.c:752
+ chaoskey_release+0x15d/0x2c0 drivers/usb/misc/chaoskey.c:322
+ __fput+0x3f6/0xb60 fs/file_table.c:431
+ task_work_run+0x14e/0x250 kernel/task_work.c:228
+ exit_task_work include/linux/task_work.h:40 [inline]
+ do_exit+0xadd/0x2ce0 kernel/exit.c:939
+ do_group_exit+0xd3/0x2a0 kernel/exit.c:1088
+ __do_sys_exit_group kernel/exit.c:1099 [inline]
+ __se_sys_exit_group kernel/exit.c:1097 [inline]
+ __x64_sys_exit_group+0x3e/0x50 kernel/exit.c:1097
+ x64_sys_call+0x14a9/0x16a0 arch/x86/include/generated/asm/syscalls_64.h:232
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fd87e4bb409
+Code: Unable to access opcode bytes at 0x7fd87e4bb3df.
+RSP: 002b:00007ffcb70ccdd8 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007fd87e4bb409
+RDX: 000000000000003c RSI: 00000000000000e7 RDI: 0000000000000000
+RBP: 00007fd87e536370 R08: ffffffffffffffb8 R09: 00007ffcb70ccb47
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007fd87e536370
+R13: 0000000000000000 R14: 00007fd87e53a080 R15: 00007fd87e489670
+ </TASK>

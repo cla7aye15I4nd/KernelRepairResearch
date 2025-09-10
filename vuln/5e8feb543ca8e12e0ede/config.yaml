@@ -1,0 +1,108 @@
+id: 5e8feb543ca8e12e0ede
+bug_link: https://syzkaller.appspot.com/bug?extid=5e8feb543ca8e12e0ede
+title: WARNING in do_wp_page
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 274fe92de2c4e50dbfd1b30070b4f6d8a27b388a
+fix_commit: 8bdea2fce98033d392db16da246843cadeddef39
+datetime: '2025-04-17T20:10:08-07:00'
+fix_commit_message: 'mm/memory: move sanity checks in do_wp_page() after mapcount
+  vs. refcount stabilization
+
+
+  In __folio_remove_rmap() for RMAP_LEVEL_PMD/RMAP_LEVEL_PUD and with
+
+  CONFIG_PAGE_MAPCOUNT we first decrement the folio mapcount (and recompute
+
+  mapped shared vs.  mapped exclusively) to then adjust the entire mapcount.
+
+
+  This means that another process might stumble in do_wp_page() over a
+
+  PTE-mapped PMD folio that is indicated as "exclusively mapped", but still
+
+  has an entire mapcount (PMD mapping), because it is racing with the
+
+  process that is unmapping the folio (PMD mapping).  Note that do_wp_page()
+
+  will back off once it detects the remaining folio reference from the
+
+  process that is in the process of unmapping the folio.
+
+
+  This will trigger the early VM_WARN_ON_ONCE(folio_entire_mapcount(folio))
+
+  check in do_wp_page(), that can easily be reproduced by looping a couple
+
+  of times over allocating a PMD THP, forking a child where we immediately
+
+  unmap it again, and writing in the parent concurrently to the THP.
+
+
+  [  252.738129][T16470] ------------[ cut here ]------------
+
+  [  252.739267][T16470] WARNING: CPU: 3 PID: 16470 at mm/memory.c:3738 do_wp_page+0x2a75/0x2c00
+
+  [  252.740968][T16470] Modules linked in:
+
+  [  252.741958][T16470] CPU: 3 UID: 0 PID: 16470 Comm: ...
+
+  ...
+
+  [  252.765841][T16470]  <TASK>
+
+  [  252.766419][T16470]  ? srso_alias_return_thunk+0x5/0xfbef5
+
+  [  252.767558][T16470]  ? rcu_is_watching+0x12/0x60
+
+  [  252.768525][T16470]  ? srso_alias_return_thunk+0x5/0xfbef5
+
+  [  252.769645][T16470]  ? srso_alias_return_thunk+0x5/0xfbef5
+
+  [  252.770778][T16470]  ? lock_acquire+0x33/0x80
+
+  [  252.771697][T16470]  ? __handle_mm_fault+0x5e8/0x3e40
+
+  [  252.772735][T16470]  ? __handle_mm_fault+0x5e8/0x3e40
+
+  [  252.773781][T16470]  __handle_mm_fault+0x1869/0x3e40
+
+  [  252.774839][T16470]  handle_mm_fault+0x22a/0x640
+
+  [  252.775808][T16470]  do_user_addr_fault+0x618/0x1000
+
+  [  252.776847][T16470]  exc_page_fault+0x68/0xd0
+
+  [  252.777775][T16470]  asm_exc_page_fault+0x26/0x30
+
+
+  While we could adjust the sequence in __folio_remove_rmap(), let''s rater
+
+  move the mapcount sanity checks after the mapcount vs.  refcount
+
+  stabilization phase.  With this fix, a simple reproducer is happy.
+
+
+  While at it, convert the two VM_WARN_ON_ONCE() we are moving to
+
+  VM_WARN_ON_ONCE_FOLIO().
+
+
+  Link: https://lkml.kernel.org/r/20250415095007.569836-1-david@redhat.com
+
+  Fixes: 1da190f4d0a6 ("mm: Copy-on-Write (COW) reuse support for PTE-mapped THP")
+
+  Signed-off-by: David Hildenbrand <david@redhat.com>
+
+  Reported-by: syzbot+5e8feb543ca8e12e0ede@syzkaller.appspotmail.com
+
+  Closes: https://lkml.kernel.org/r/67fab4fe.050a0220.2c5fcf.0011.GAE@google.com
+
+  Reviewed-by: Oscar Salvador <osalvador@suse.de>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 2
+covered_count: 2

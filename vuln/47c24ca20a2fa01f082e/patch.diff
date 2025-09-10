@@ -1,0 +1,15 @@
+diff --git a/net/sctp/socket.c b/net/sctp/socket.c
+index b91616f819de..218e0982c370 100644
+--- a/net/sctp/socket.c
++++ b/net/sctp/socket.c
+@@ -1830,6 +1830,10 @@ static int sctp_sendmsg_to_asoc(struct sctp_association *asoc,
+ 		err = sctp_wait_for_sndbuf(asoc, &timeo, msg_len);
+ 		if (err)
+ 			goto err;
++		if (unlikely(sinfo->sinfo_stream >= asoc->stream.outcnt)) {
++			err = -EINVAL;
++			goto err;
++		}
+ 	}
+ 
+ 	if (sctp_state(asoc, CLOSED)) {

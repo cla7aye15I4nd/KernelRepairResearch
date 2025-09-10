@@ -1,0 +1,28 @@
+id: 695b03d82fa8e4901b06
+bug_link: https://syzkaller.appspot.com/bug?extid=695b03d82fa8e4901b06
+title: 'INFO: task hung in io_uring_cancel_task_requests'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 26bfa89e25f42d2b26fe951bbcf04bb13937fbba
+fix_commit: 34343786ecc5ff493ca4d1f873b4386759ba52ee
+datetime: '2021-02-10T13:28:41-07:00'
+fix_commit_message: "io_uring: unpark SQPOLL thread for cancelation\n\nWe park SQPOLL\
+  \ task before going into io_uring_cancel_files(), so the\ntask won't run task_works\
+  \ including those that might be important for\nthe cancellation passes. In this\
+  \ case it's io_poll_remove_one(), which\nfrees requests via io_put_req_deferred().\n\
+  \nUnpark it for while waiting, it's ok as we disable submissions\nbeforehand, so\
+  \ no new requests will be generated.\n\nINFO: task syz-executor893:8493 blocked\
+  \ for more than 143 seconds.\nCall Trace:\n context_switch kernel/sched/core.c:4327\
+  \ [inline]\n __schedule+0x90c/0x21a0 kernel/sched/core.c:5078\n schedule+0xcf/0x270\
+  \ kernel/sched/core.c:5157\n io_uring_cancel_files fs/io_uring.c:8912 [inline]\n\
+  \ io_uring_cancel_task_requests+0xe70/0x11a0 fs/io_uring.c:8979\n __io_uring_files_cancel+0x110/0x1b0\
+  \ fs/io_uring.c:9067\n io_uring_files_cancel include/linux/io_uring.h:51 [inline]\n\
+  \ do_exit+0x2fe/0x2ae0 kernel/exit.c:780\n do_group_exit+0x125/0x310 kernel/exit.c:922\n\
+  \ __do_sys_exit_group kernel/exit.c:933 [inline]\n __se_sys_exit_group kernel/exit.c:931\
+  \ [inline]\n __x64_sys_exit_group+0x3a/0x50 kernel/exit.c:931\n do_syscall_64+0x2d/0x70\
+  \ arch/x86/entry/common.c:46\n entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nCc: stable@vger.kernel.org\
+  \ # 5.5+\nReported-by: syzbot+695b03d82fa8e4901b06@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Pavel Begunkov <asml.silence@gmail.com>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

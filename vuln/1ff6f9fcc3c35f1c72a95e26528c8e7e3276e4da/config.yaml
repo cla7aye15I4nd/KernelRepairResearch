@@ -1,0 +1,54 @@
+id: 1ff6f9fcc3c35f1c72a95e26528c8e7e3276e4da
+bug_link: https://syzkaller.appspot.com/bug?extid=1ff6f9fcc3c35f1c72a95e26528c8e7e3276e4da
+title: 'BUG: unable to handle kernel paging request in ata_bmdma_qc_prep'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9f2b51db5b551085e26c8af5fbe484d62b891ec9
+fix_commit: 058f58e235cbe03e923b30ea7c49995a46a8725f
+datetime: '2018-02-12T09:19:44-08:00'
+fix_commit_message: "libata: fix length validation of ATAPI-relayed SCSI commands\n\
+  \nsyzkaller reported a crash in ata_bmdma_fill_sg() when writing to\n/dev/sg1. \
+  \ The immediate cause was that the ATA command's scatterlist\nwas not DMA-mapped,\
+  \ which causes 'pi - 1' to underflow, resulting in a\nwrite to 'qc->ap->bmdma_prd[0xffffffff]'.\n\
+  \nStrangely though, the flag ATA_QCFLAG_DMAMAP was set in qc->flags.  The\nroot\
+  \ cause is that when __ata_scsi_queuecmd() is preparing to relay a\nSCSI command\
+  \ to an ATAPI device, it doesn't correctly validate the CDB\nlength before copying\
+  \ it into the 16-byte buffer 'cdb' in 'struct\nata_queued_cmd'.  Namely, it validates\
+  \ the fixed CDB length expected\nbased on the SCSI opcode but not the actual CDB\
+  \ length, which can be\nlarger due to the use of the SG_NEXT_CMD_LEN ioctl.  Since\
+  \ 'flags' is\nthe next member in ata_queued_cmd, a buffer overflow corrupts it.\n\
+  \nFix it by requiring that the actual CDB length be <= 16 (ATAPI_CDB_LEN).\n\n[Really\
+  \ it seems the length should be required to be <= dev->cdb_len,\nbut the current\
+  \ behavior seems to have been intentionally introduced by\ncommit 607126c2a21c (\"\
+  libata-scsi: be tolerant of 12-byte ATAPI commands\nin 16-byte CDBs\") to work around\
+  \ a userspace bug in mplayer.  Probably\nthe workaround is no longer needed (mplayer\
+  \ was fixed in 2007), but\ncontinuing to allow lengths to up 16 appears harmless\
+  \ for now.]\n\nHere's a reproducer that works in QEMU when /dev/sg1 refers to the\n\
+  CD-ROM drive that qemu-system-x86_64 creates by default:\n\n    #include <fcntl.h>\n\
+  \    #include <sys/ioctl.h>\n    #include <unistd.h>\n\n    #define SG_NEXT_CMD_LEN\
+  \ 0x2283\n\n    int main()\n    {\n\t    char buf[53] = { [36] = 0x7e, [52] = 0x02\
+  \ };\n\t    int fd = open(\"/dev/sg1\", O_RDWR);\n\t    ioctl(fd, SG_NEXT_CMD_LEN,\
+  \ &(int){ 17 });\n\t    write(fd, buf, sizeof(buf));\n    }\n\nThe crash was:\n\n\
+  \    BUG: unable to handle kernel paging request at ffff8cb97db37ffc\n    IP: ata_bmdma_fill_sg\
+  \ drivers/ata/libata-sff.c:2623 [inline]\n    IP: ata_bmdma_qc_prep+0xa4/0xc0 drivers/ata/libata-sff.c:2727\n\
+  \    PGD fb6c067 P4D fb6c067 PUD 0\n    Oops: 0002 [#1] SMP\n    CPU: 1 PID: 150\
+  \ Comm: syz_ata_bmdma_q Not tainted 4.15.0-next-20180202 #99\n    Hardware name:\
+  \ QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.11.0-20171110_100015-anatol 04/01/2014\n\
+  \    [...]\n    Call Trace:\n     ata_qc_issue+0x100/0x1d0 drivers/ata/libata-core.c:5421\n\
+  \     ata_scsi_translate+0xc9/0x1a0 drivers/ata/libata-scsi.c:2024\n     __ata_scsi_queuecmd\
+  \ drivers/ata/libata-scsi.c:4326 [inline]\n     ata_scsi_queuecmd+0x8c/0x210 drivers/ata/libata-scsi.c:4375\n\
+  \     scsi_dispatch_cmd+0xa2/0xe0 drivers/scsi/scsi_lib.c:1727\n     scsi_request_fn+0x24c/0x530\
+  \ drivers/scsi/scsi_lib.c:1865\n     __blk_run_queue_uncond block/blk-core.c:412\
+  \ [inline]\n     __blk_run_queue+0x3a/0x60 block/blk-core.c:432\n     blk_execute_rq_nowait+0x93/0xc0\
+  \ block/blk-exec.c:78\n     sg_common_write.isra.7+0x272/0x5a0 drivers/scsi/sg.c:806\n\
+  \     sg_write+0x1ef/0x340 drivers/scsi/sg.c:677\n     __vfs_write+0x31/0x160 fs/read_write.c:480\n\
+  \     vfs_write+0xa7/0x160 fs/read_write.c:544\n     SYSC_write fs/read_write.c:589\
+  \ [inline]\n     SyS_write+0x4d/0xc0 fs/read_write.c:581\n     do_syscall_64+0x5e/0x110\
+  \ arch/x86/entry/common.c:287\n     entry_SYSCALL_64_after_hwframe+0x21/0x86\n\n\
+  Fixes: 607126c2a21c (\"libata-scsi: be tolerant of 12-byte ATAPI commands in 16-byte\
+  \ CDBs\")\nReported-by: syzbot+1ff6f9fcc3c35f1c72a95e26528c8e7e3276e4da@syzkaller.appspotmail.com\n\
+  Cc: <stable@vger.kernel.org> # v2.6.24+\nSigned-off-by: Eric Biggers <ebiggers@google.com>\n\
+  Signed-off-by: Tejun Heo <tj@kernel.org>\n"
+submodule:
+- drivers/ata
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,24 @@
+id: 8a9b1bd330476a4f3db6
+bug_link: https://syzkaller.appspot.com/bug?extid=8a9b1bd330476a4f3db6
+title: 'WARNING: ODEBUG bug in vsock_stream_connect'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a94cead71c4651da5649134e3cdc29b1f32327a2
+fix_commit: 455f05ecd2b219e9a216050796d30c830d9bc393
+datetime: '2018-08-07T12:39:13-07:00'
+fix_commit_message: "vsock: split dwork to avoid reinitializations\n\nsyzbot reported\
+  \ that we reinitialize an active delayed\nwork in vsock_stream_connect():\n\n\t\
+  ODEBUG: init active (active state 0) object type: timer_list hint:\n\tdelayed_work_timer_fn+0x0/0x90\
+  \ kernel/workqueue.c:1414\n\tWARNING: CPU: 1 PID: 11518 at lib/debugobjects.c:329\n\
+  \tdebug_print_object+0x16a/0x210 lib/debugobjects.c:326\n\nThe pattern is apparently\
+  \ wrong, we should only initialize\nthe dealyed work once and could repeatly schedule\
+  \ it. So we\nhave to move out the initializations to allocation side.\nAnd to avoid\
+  \ confusion, we can split the shared dwork\ninto two, instead of re-using the same\
+  \ one.\n\nFixes: d021c344051a (\"VSOCK: Introduce VM Sockets\")\nReported-by: <syzbot+8a9b1bd330476a4f3db6@syzkaller.appspotmail.com>\n\
+  Cc: Andy king <acking@vmware.com>\nCc: Stefan Hajnoczi <stefanha@redhat.com>\nCc:\
+  \ Jorgen Hansen <jhansen@vmware.com>\nSigned-off-by: Cong Wang <xiyou.wangcong@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- include/net
+- net/vmw_vsock
+hunk_count: 9
+covered_count: 2

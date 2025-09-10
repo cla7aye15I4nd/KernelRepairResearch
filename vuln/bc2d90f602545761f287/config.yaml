@@ -1,0 +1,29 @@
+id: bc2d90f602545761f287
+bug_link: https://syzkaller.appspot.com/bug?extid=bc2d90f602545761f287
+title: WARNING in io_wq_submit_work (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 626bf91a292e2035af5b9d9cce35c5c138dfe06d
+fix_commit: 713b9825a4c47897f66ad69409581e7734a8728e
+datetime: '2021-09-08T06:34:57-06:00'
+fix_commit_message: "io-wq: fix cancellation on create-worker failure\n\nWARNING:\
+  \ CPU: 0 PID: 10392 at fs/io_uring.c:1151 req_ref_put_and_test\nfs/io_uring.c:1151\
+  \ [inline]\nWARNING: CPU: 0 PID: 10392 at fs/io_uring.c:1151 req_ref_put_and_test\n\
+  fs/io_uring.c:1146 [inline]\nWARNING: CPU: 0 PID: 10392 at fs/io_uring.c:1151\n\
+  io_req_complete_post+0xf5b/0x1190 fs/io_uring.c:1794\nModules linked in:\nCall Trace:\n\
+  \ tctx_task_work+0x1e5/0x570 fs/io_uring.c:2158\n task_work_run+0xe0/0x1a0 kernel/task_work.c:164\n\
+  \ tracehook_notify_signal include/linux/tracehook.h:212 [inline]\n handle_signal_work\
+  \ kernel/entry/common.c:146 [inline]\n exit_to_user_mode_loop kernel/entry/common.c:172\
+  \ [inline]\n exit_to_user_mode_prepare+0x232/0x2a0 kernel/entry/common.c:209\n __syscall_exit_to_user_mode_work\
+  \ kernel/entry/common.c:291 [inline]\n syscall_exit_to_user_mode+0x19/0x60 kernel/entry/common.c:302\n\
+  \ do_syscall_64+0x42/0xb0 arch/x86/entry/common.c:86\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  \nWhen io_wqe_enqueue() -> io_wqe_create_worker() fails, we can't just\ncall io_run_cancel()\
+  \ to clean up the request, it's already enqueued via\nio_wqe_insert_work() and will\
+  \ be executed either by some other worker\nduring cancellation (e.g. in io_wq_put_and_exit()).\n\
+  \nReported-by: Hao Sun <sunhao.th@gmail.com>\nFixes: 3146cba99aa28 (\"io-wq: make\
+  \ worker creation resilient against signals\")\nSigned-off-by: Pavel Begunkov <asml.silence@gmail.com>\n\
+  Link: https://lore.kernel.org/r/93b9de0fcf657affab0acfd675d4abcd273ee863.1631092071.git.asml.silence@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 3
+covered_count: 2

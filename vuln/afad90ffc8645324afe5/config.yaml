@@ -1,0 +1,27 @@
+id: afad90ffc8645324afe5
+bug_link: https://syzkaller.appspot.com/bug?extid=afad90ffc8645324afe5
+title: 'KMSAN: uninit-value in pptp_xmit (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3b98c9352511db627b606477fc7944b2fa53a165
+fix_commit: de9c4861fb42f0cd72da844c3c34f692d5895b7b
+datetime: '2025-07-30T19:11:16-07:00'
+fix_commit_message: "pptp: ensure minimal skb length in pptp_xmit()\n\nCommit aabc6596ffb3\
+  \ (\"net: ppp: Add bound checking for skb data\non ppp_sync_txmung\") fixed ppp_sync_txmunge()\n\
+  \nWe need a similar fix in pptp_xmit(), otherwise we might\nread uninit data as\
+  \ reported by syzbot.\n\nBUG: KMSAN: uninit-value in pptp_xmit+0xc34/0x2720 drivers/net/ppp/pptp.c:193\n\
+  \  pptp_xmit+0xc34/0x2720 drivers/net/ppp/pptp.c:193\n  ppp_channel_bridge_input\
+  \ drivers/net/ppp/ppp_generic.c:2290 [inline]\n  ppp_input+0x1d6/0xe60 drivers/net/ppp/ppp_generic.c:2314\n\
+  \  pppoe_rcv_core+0x1e8/0x760 drivers/net/ppp/pppoe.c:379\n  sk_backlog_rcv+0x142/0x420\
+  \ include/net/sock.h:1148\n  __release_sock+0x1d3/0x330 net/core/sock.c:3213\n \
+  \ release_sock+0x6b/0x270 net/core/sock.c:3767\n  pppoe_sendmsg+0x15d/0xcb0 drivers/net/ppp/pppoe.c:904\n\
+  \  sock_sendmsg_nosec net/socket.c:712 [inline]\n  __sock_sendmsg+0x330/0x3d0 net/socket.c:727\n\
+  \  ____sys_sendmsg+0x893/0xd80 net/socket.c:2566\n  ___sys_sendmsg+0x271/0x3b0 net/socket.c:2620\n\
+  \  __sys_sendmmsg+0x2d9/0x7c0 net/socket.c:2709\n\nFixes: 1da177e4c3f4 (\"Linux-2.6.12-rc2\"\
+  )\nReported-by: syzbot+afad90ffc8645324afe5@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/netdev/68887d86.a00a0220.b12ec.00cd.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nReviewed-by: Dawid Osuchowski\
+  \ <dawid.osuchowski@linux.intel.com>\nLink: https://patch.msgid.link/20250729080207.1863408-1-edumazet@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net/ppp
+hunk_count: 3
+covered_count: 2

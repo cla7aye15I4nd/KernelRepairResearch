@@ -1,0 +1,20 @@
+id: 0a89a7b56db04c21a656
+bug_link: https://syzkaller.appspot.com/bug?extid=0a89a7b56db04c21a656
+title: 'BUG: unable to handle kernel paging request in diFree'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 492109333c29e1bb16d8732e1d597b02e8e0bf2e
+fix_commit: 9d574f985fe33efd6911f4d752de6f485a1ea732
+datetime: '2021-06-23T09:15:19-05:00'
+fix_commit_message: "jfs: fix GPF in diFree\n\nAvoid passing inode with\nJFS_SBI(inode->i_sb)->ipimap\
+  \ == NULL to\ndiFree()[1]. GFP will appear:\n\n\tstruct inode *ipimap = JFS_SBI(ip->i_sb)->ipimap;\n\
+  \tstruct inomap *imap = JFS_IP(ipimap)->i_imap;\n\nJFS_IP() will return invalid\
+  \ pointer when ipimap == NULL\n\nCall Trace:\n diFree+0x13d/0x2dc0 fs/jfs/jfs_imap.c:853\
+  \ [1]\n jfs_evict_inode+0x2c9/0x370 fs/jfs/inode.c:154\n evict+0x2ed/0x750 fs/inode.c:578\n\
+  \ iput_final fs/inode.c:1654 [inline]\n iput.part.0+0x3fe/0x820 fs/inode.c:1680\n\
+  \ iput+0x58/0x70 fs/inode.c:1670\n\nReported-and-tested-by: syzbot+0a89a7b56db04c21a656@syzkaller.appspotmail.com\n\
+  Signed-off-by: Pavel Skripkin <paskripkin@gmail.com>\nSigned-off-by: Dave Kleikamp\
+  \ <dave.kleikamp@oracle.com>\n"
+submodule:
+- fs/jfs
+hunk_count: 1
+covered_count: 1

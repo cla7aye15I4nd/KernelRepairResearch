@@ -1,0 +1,42 @@
+id: 833061116fa28df97f3b
+bug_link: https://syzkaller.appspot.com/bug?extid=833061116fa28df97f3b
+title: 'INFO: trying to register non-static key in rxe_cleanup_task'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c9776457bd5eaad4ce4ecb17af8d8f3cc6957c0b
+fix_commit: fd5382c5805c4bcb50fd25b7246247d3f7114733
+datetime: '2022-08-02T14:29:41-03:00'
+fix_commit_message: 'RDMA/rxe: Fix error unwind in rxe_create_qp()
+
+
+  In the function rxe_create_qp(), rxe_qp_from_init() is called to
+
+  initialize qp, internally things like the spin locks are not setup until
+
+  rxe_qp_init_req().
+
+
+  If an error occures before this point then the unwind will call
+
+  rxe_cleanup() and eventually to rxe_qp_do_cleanup()/rxe_cleanup_task()
+
+  which will oops when trying to access the uninitialized spinlock.
+
+
+  Move the spinlock initializations earlier before any failures.
+
+
+  Fixes: 8700e3e7c485 ("Soft RoCE driver")
+
+  Link: https://lore.kernel.org/r/20220731063621.298405-1-yanjun.zhu@linux.dev
+
+  Reported-by: syzbot+833061116fa28df97f3b@syzkaller.appspotmail.com
+
+  Signed-off-by: Zhu Yanjun <yanjun.zhu@linux.dev>
+
+  Signed-off-by: Jason Gunthorpe <jgg@nvidia.com>
+
+  '
+submodule:
+- drivers/infiniband/sw/rxe
+hunk_count: 3
+covered_count: 0

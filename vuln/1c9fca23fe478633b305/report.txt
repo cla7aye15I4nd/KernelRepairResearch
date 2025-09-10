@@ -1,0 +1,90 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000002: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000010-0x0000000000000017]
+CPU: 1 PID: 5094 Comm: syz-executor156 Not tainted 6.9.0-rc7-next-20240510-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+RIP: 0010:bch2_snapshot_has_children fs/bcachefs/snapshot.h:184 [inline]
+RIP: 0010:__bch2_insert_snapshot_whiteouts+0x306/0x15e0 fs/bcachefs/btree_update.c:135
+Code: fb 0f 86 c2 11 00 00 e8 28 d9 7c fd 49 6b c7 38 49 8d 5c 04 18 48 8d 7b 14 48 89 f8 48 c1 e8 03 49 bc 00 00 00 00 00 fc ff df <42> 0f b6 04 20 84 c0 0f 85 3d 12 00 00 44 8b 7b 14 48 83 c3 18 48
+RSP: 0018:ffffc900037be0c0 EFLAGS: 00010203
+RAX: 0000000000000002 RBX: 0000000000000000 RCX: ffff8880296b0000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000014
+RBP: ffffc900037be420 R08: ffffffff841942f8 R09: 1ffffffff25f64b0
+R10: dffffc0000000000 R11: fffffbfff25f64b1 R12: dffffc0000000000
+R13: ffffc900037be380 R14: ffffffff84194214 R15: 00000000ffffffff
+FS:  000055555dcea380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000559e8263e0b0 CR3: 000000006fca6000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_insert_snapshot_whiteouts fs/bcachefs/btree_update.h:95 [inline]
+ bch2_trans_update_extent_overwrite+0xfd6/0x3710 fs/bcachefs/btree_update.c:218
+ bch2_trans_update_extent fs/bcachefs/btree_update.c:318 [inline]
+ bch2_trans_update+0x186f/0x2550 fs/bcachefs/btree_update.c:514
+ bch2_extent_update+0x43c/0xbb0 fs/bcachefs/io_write.c:325
+ bch2_write_index_default fs/bcachefs/io_write.c:374 [inline]
+ __bch2_write_index+0xee9/0x2190 fs/bcachefs/io_write.c:527
+ bch2_write_data_inline fs/bcachefs/io_write.c:1551 [inline]
+ bch2_write+0xf4d/0x1670 fs/bcachefs/io_write.c:1619
+ closure_queue include/linux/closure.h:269 [inline]
+ closure_call include/linux/closure.h:402 [inline]
+ bch2_writepage_do_io fs/bcachefs/fs-io-buffered.c:460 [inline]
+ bch2_writepages+0x27d/0x380 fs/bcachefs/fs-io-buffered.c:652
+ do_writepages+0x359/0x870 mm/page-writeback.c:2634
+ filemap_fdatawrite_wbc+0x125/0x180 mm/filemap.c:397
+ __filemap_fdatawrite_range mm/filemap.c:430 [inline]
+ file_write_and_wait_range+0x1aa/0x290 mm/filemap.c:788
+ bch2_fsync+0x93/0x130 fs/bcachefs/fs-io.c:197
+ generic_write_sync include/linux/fs.h:2794 [inline]
+ bch2_buffered_write fs/bcachefs/fs-io-buffered.c:1128 [inline]
+ bch2_write_iter+0x262e/0x2840 fs/bcachefs/fs-io-buffered.c:1136
+ new_sync_write fs/read_write.c:497 [inline]
+ vfs_write+0xa72/0xc90 fs/read_write.c:590
+ ksys_write+0x1a0/0x2c0 fs/read_write.c:643
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fbe67e38979
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffd7ce752c8 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 00007fbe67e8104b RCX: 00007fbe67e38979
+RDX: 000000000000000b RSI: 0000000020000680 RDI: 0000000000000004
+RBP: 00007fbe67ebe610 R08: 00007ffd7ce75498 R09: 00007ffd7ce75498
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffd7ce75488 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_snapshot_has_children fs/bcachefs/snapshot.h:184 [inline]
+RIP: 0010:__bch2_insert_snapshot_whiteouts+0x306/0x15e0 fs/bcachefs/btree_update.c:135
+Code: fb 0f 86 c2 11 00 00 e8 28 d9 7c fd 49 6b c7 38 49 8d 5c 04 18 48 8d 7b 14 48 89 f8 48 c1 e8 03 49 bc 00 00 00 00 00 fc ff df <42> 0f b6 04 20 84 c0 0f 85 3d 12 00 00 44 8b 7b 14 48 83 c3 18 48
+RSP: 0018:ffffc900037be0c0 EFLAGS: 00010203
+RAX: 0000000000000002 RBX: 0000000000000000 RCX: ffff8880296b0000
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000014
+RBP: ffffc900037be420 R08: ffffffff841942f8 R09: 1ffffffff25f64b0
+R10: dffffc0000000000 R11: fffffbfff25f64b1 R12: dffffc0000000000
+R13: ffffc900037be380 R14: ffffffff84194214 R15: 00000000ffffffff
+FS:  000055555dcea380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000000002000193c CR3: 000000006fca6000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	fb                   	sti
+   1:	0f 86 c2 11 00 00    	jbe    0x11c9
+   7:	e8 28 d9 7c fd       	call   0xfd7cd934
+   c:	49 6b c7 38          	imul   $0x38,%r15,%rax
+  10:	49 8d 5c 04 18       	lea    0x18(%r12,%rax,1),%rbx
+  15:	48 8d 7b 14          	lea    0x14(%rbx),%rdi
+  19:	48 89 f8             	mov    %rdi,%rax
+  1c:	48 c1 e8 03          	shr    $0x3,%rax
+  20:	49 bc 00 00 00 00 00 	movabs $0xdffffc0000000000,%r12
+  27:	fc ff df
+* 2a:	42 0f b6 04 20       	movzbl (%rax,%r12,1),%eax <-- trapping instruction
+  2f:	84 c0                	test   %al,%al
+  31:	0f 85 3d 12 00 00    	jne    0x1274
+  37:	44 8b 7b 14          	mov    0x14(%rbx),%r15d
+  3b:	48 83 c3 18          	add    $0x18,%rbx
+  3f:	48                   	rex.W

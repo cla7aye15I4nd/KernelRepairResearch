@@ -1,0 +1,55 @@
+id: c8166c541d3971bf6c87
+bug_link: https://syzkaller.appspot.com/bug?extid=c8166c541d3971bf6c87
+title: 'INFO: task hung in nilfs_segctor_thread (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9415983599413f847ec9f081e9f9e5ed6cdeb342
+fix_commit: 7373a51e7998b508af7136530f3a997b286ce81c
+datetime: '2024-06-05T19:19:27-07:00'
+fix_commit_message: 'nilfs2: fix nilfs_empty_dir() misjudgment and long loop on I/O
+  errors
+
+
+  The error handling in nilfs_empty_dir() when a directory folio/page read
+
+  fails is incorrect, as in the old ext2 implementation, and if the
+
+  folio/page cannot be read or nilfs_check_folio() fails, it will falsely
+
+  determine the directory as empty and corrupt the file system.
+
+
+  In addition, since nilfs_empty_dir() does not immediately return on a
+
+  failed folio/page read, but continues to loop, this can cause a long loop
+
+  with I/O if i_size of the directory''s inode is also corrupted, causing the
+
+  log writer thread to wait and hang, as reported by syzbot.
+
+
+  Fix these issues by making nilfs_empty_dir() immediately return a false
+
+  value (0) if it fails to get a directory folio/page.
+
+
+  Link: https://lkml.kernel.org/r/20240604134255.7165-1-konishi.ryusuke@gmail.com
+
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Reported-by: syzbot+c8166c541d3971bf6c87@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=c8166c541d3971bf6c87
+
+  Fixes: 2ba466d74ed7 ("nilfs2: directory entry operations")
+
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/nilfs2
+hunk_count: 1
+covered_count: 1

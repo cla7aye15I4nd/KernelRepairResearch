@@ -1,0 +1,137 @@
+================================
+WARNING: inconsistent lock state
+6.4.0-syzkaller-01647-g6e2332e0ab53 #0 Not tainted
+--------------------------------
+inconsistent {SOFTIRQ-ON-W} -> {IN-SOFTIRQ-W} usage.
+swapper/0/0 [HC0[0]:SC1[1]:HE0:SE0] takes:
+ffff88817fffc728 (&pgdat->memcg_lru.lock){+.?.}-{2:2}, at: spin_lock include/linux/spinlock.h:350 [inline]
+ffff88817fffc728 (&pgdat->memcg_lru.lock){+.?.}-{2:2}, at: lru_gen_rotate_memcg+0x64/0xab0 mm/vmscan.c:4734
+{SOFTIRQ-ON-W} state was registered at:
+  lock_acquire kernel/locking/lockdep.c:5761 [inline]
+  lock_acquire+0x1b1/0x520 kernel/locking/lockdep.c:5726
+  __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]
+  _raw_spin_lock+0x2e/0x40 kernel/locking/spinlock.c:154
+  spin_lock include/linux/spinlock.h:350 [inline]
+  lru_gen_online_memcg+0x16b/0x5a0 mm/vmscan.c:4782
+  mem_cgroup_css_online+0x227/0x3b0 mm/memcontrol.c:5468
+  online_css+0xaf/0x2a0 kernel/cgroup/cgroup.c:5462
+  cgroup_init_subsys+0x46b/0x900 kernel/cgroup/cgroup.c:5993
+  cgroup_init+0xb83/0x1090 kernel/cgroup/cgroup.c:6077
+  start_kernel+0x398/0x490 init/main.c:1066
+  x86_64_start_reservations+0x18/0x30 arch/x86/kernel/head64.c:556
+  x86_64_start_kernel+0xb3/0xc0 arch/x86/kernel/head64.c:537
+  secondary_startup_64_no_verify+0x167/0x16b
+irq event stamp: 1657273
+hardirqs last  enabled at (1657272): [<ffffffff81dd067f>] mod_memcg_state include/linux/memcontrol.h:982 [inline]
+hardirqs last  enabled at (1657272): [<ffffffff81dd067f>] memcg_account_kmem+0x4f/0x80 mm/memcontrol.c:3094
+hardirqs last disabled at (1657273): [<ffffffff81dd3f07>] uncharge_batch+0x1c7/0x560 mm/memcontrol.c:7142
+softirqs last  enabled at (1657126): [<ffffffff814d0c87>] invoke_softirq kernel/softirq.c:427 [inline]
+softirqs last  enabled at (1657126): [<ffffffff814d0c87>] __irq_exit_rcu kernel/softirq.c:632 [inline]
+softirqs last  enabled at (1657126): [<ffffffff814d0c87>] irq_exit_rcu+0xb7/0x120 kernel/softirq.c:644
+softirqs last disabled at (1657151): [<ffffffff814d0c87>] invoke_softirq kernel/softirq.c:427 [inline]
+softirqs last disabled at (1657151): [<ffffffff814d0c87>] __irq_exit_rcu kernel/softirq.c:632 [inline]
+softirqs last disabled at (1657151): [<ffffffff814d0c87>] irq_exit_rcu+0xb7/0x120 kernel/softirq.c:644
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&pgdat->memcg_lru.lock);
+  <Interrupt>
+    lock(&pgdat->memcg_lru.lock);
+
+ *** DEADLOCK ***
+
+1 lock held by swapper/0/0:
+ #0: ffffffff8c7958e0 (rcu_callback){....}-{0:0}, at: rcu_do_batch kernel/rcu/tree.c:2124 [inline]
+ #0: ffffffff8c7958e0 (rcu_callback){....}-{0:0}, at: rcu_core+0x78d/0x1c10 kernel/rcu/tree.c:2399
+
+stack backtrace:
+CPU: 0 PID: 0 Comm: swapper/0 Not tainted 6.4.0-syzkaller-01647-g6e2332e0ab53 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.14.0-2 04/01/2014
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x150 lib/dump_stack.c:106
+ print_usage_bug kernel/locking/lockdep.c:3978 [inline]
+ valid_state kernel/locking/lockdep.c:4020 [inline]
+ mark_lock_irq kernel/locking/lockdep.c:4223 [inline]
+ mark_lock.part.0+0x1102/0x1960 kernel/locking/lockdep.c:4685
+ mark_lock kernel/locking/lockdep.c:4649 [inline]
+ mark_usage kernel/locking/lockdep.c:4574 [inline]
+ __lock_acquire+0x1231/0x5e20 kernel/locking/lockdep.c:5098
+ lock_acquire kernel/locking/lockdep.c:5761 [inline]
+ lock_acquire+0x1b1/0x520 kernel/locking/lockdep.c:5726
+ __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]
+ _raw_spin_lock+0x2e/0x40 kernel/locking/spinlock.c:154
+ spin_lock include/linux/spinlock.h:350 [inline]
+ lru_gen_rotate_memcg+0x64/0xab0 mm/vmscan.c:4734
+ lru_gen_soft_reclaim+0x62/0x70 mm/vmscan.c:4837
+ uncharge_batch+0x2be/0x560 mm/memcontrol.c:7145
+ __mem_cgroup_uncharge+0x11f/0x290 mm/memcontrol.c:7221
+ mem_cgroup_uncharge include/linux/memcontrol.h:698 [inline]
+ __folio_put_small mm/swap.c:105 [inline]
+ __folio_put+0xb6/0x140 mm/swap.c:129
+ folio_put include/linux/mm.h:1430 [inline]
+ put_page include/linux/mm.h:1499 [inline]
+ free_page_and_swap_cache+0x257/0x2c0 mm/swap_state.c:305
+ __tlb_remove_table arch/x86/include/asm/tlb.h:34 [inline]
+ __tlb_remove_table_free mm/mmu_gather.c:153 [inline]
+ tlb_remove_table_rcu+0x89/0xe0 mm/mmu_gather.c:208
+ rcu_do_batch kernel/rcu/tree.c:2135 [inline]
+ rcu_core+0x802/0x1c10 kernel/rcu/tree.c:2399
+ __do_softirq+0x1d4/0x905 kernel/softirq.c:553
+ invoke_softirq kernel/softirq.c:427 [inline]
+ __irq_exit_rcu kernel/softirq.c:632 [inline]
+ irq_exit_rcu+0xb7/0x120 kernel/softirq.c:644
+ sysvec_apic_timer_interrupt+0x97/0xc0 arch/x86/kernel/apic/apic.c:1109
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:645
+RIP: 0010:native_irq_disable arch/x86/include/asm/irqflags.h:37 [inline]
+RIP: 0010:arch_local_irq_disable arch/x86/include/asm/irqflags.h:72 [inline]
+RIP: 0010:__intel_idle_hlt drivers/idle/intel_idle.c:206 [inline]
+RIP: 0010:intel_idle_hlt+0x23/0x30 drivers/idle/intel_idle.c:224
+Code: 1f 84 00 00 00 00 00 f3 0f 1e fa 41 54 41 89 d4 0f 1f 44 00 00 66 90 0f 1f 44 00 00 0f 00 2d e4 bc 9c 00 0f 1f 44 00 00 fb f4 <fa> 44 89 e0 41 5c c3 66 0f 1f 44 00 00 f3 0f 1e fa 41 54 41 89 d4
+RSP: 0018:ffffffff8c407d78 EFLAGS: 00000242
+RAX: 000000000019493d RBX: ffffe8fefd655380 RCX: ffffffff8a10edf5
+RDX: 0000000000000002 RSI: ffffffff8d198e00 RDI: ffffe8fefd655380
+RBP: ffffffff8d198e00 R08: 0000000000000001 R09: ffff88806b636ceb
+R10: ffffed100d6c6d9d R11: 0000000000000001 R12: 0000000000000002
+R13: ffffffff8d198ee8 R14: 0000000000000002 R15: 0000000000000000
+ cpuidle_enter_state+0xd3/0x6f0 drivers/cpuidle/cpuidle.c:267
+ cpuidle_enter+0x4e/0xa0 drivers/cpuidle/cpuidle.c:388
+ cpuidle_idle_call kernel/sched/idle.c:215 [inline]
+ do_idle+0x2fe/0x3c0 kernel/sched/idle.c:282
+ cpu_startup_entry+0x18/0x20 kernel/sched/idle.c:379
+ rest_init+0x16f/0x2b0 init/main.c:733
+ arch_call_rest_init+0x13/0x30 init/main.c:830
+ start_kernel+0x3b1/0x490 init/main.c:1075
+ x86_64_start_reservations+0x18/0x30 arch/x86/kernel/head64.c:556
+ x86_64_start_kernel+0xb3/0xc0 arch/x86/kernel/head64.c:537
+ secondary_startup_64_no_verify+0x167/0x16b
+ </TASK>
+----------------
+Code disassembly (best guess), 1 bytes skipped:
+   0:	84 00                	test   %al,(%rax)
+   2:	00 00                	add    %al,(%rax)
+   4:	00 00                	add    %al,(%rax)
+   6:	f3 0f 1e fa          	endbr64
+   a:	41 54                	push   %r12
+   c:	41 89 d4             	mov    %edx,%r12d
+   f:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
+  14:	66 90                	xchg   %ax,%ax
+  16:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
+  1b:	0f 00 2d e4 bc 9c 00 	verw   0x9cbce4(%rip)        # 0x9cbd06
+  22:	0f 1f 44 00 00       	nopl   0x0(%rax,%rax,1)
+  27:	fb                   	sti
+  28:	f4                   	hlt
+* 29:	fa                   	cli <-- trapping instruction
+  2a:	44 89 e0             	mov    %r12d,%eax
+  2d:	41 5c                	pop    %r12
+  2f:	c3                   	retq
+  30:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
+  36:	f3 0f 1e fa          	endbr64
+  3a:	41 54                	push   %r12
+  3c:	41 89 d4             	mov    %edx,%r12d

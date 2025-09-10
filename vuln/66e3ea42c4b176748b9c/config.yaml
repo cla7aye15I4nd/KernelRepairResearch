@@ -1,0 +1,33 @@
+id: 66e3ea42c4b176748b9c
+bug_link: https://syzkaller.appspot.com/bug?extid=66e3ea42c4b176748b9c
+title: general protection fault in scatterwalk_copychunks (4)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5a124b1fd3e6cb15a943f0cdfe96aa8f6d3d2f39
+fix_commit: cfaa80c91f6f99b9342b6557f0f0e1143e434066
+datetime: '2023-09-12T09:51:49+02:00'
+fix_commit_message: "net/tls: do not free tls_rec on async operation in bpf_exec_tx_verdict()\n\
+  \nI got the below warning when do fuzzing test:\nBUG: KASAN: null-ptr-deref in scatterwalk_copychunks+0x320/0x470\n\
+  Read of size 4 at addr 0000000000000008 by task kworker/u8:1/9\n\nCPU: 0 PID: 9\
+  \ Comm: kworker/u8:1 Tainted: G           OE\nHardware name: linux,dummy-virt (DT)\n\
+  Workqueue: pencrypt_parallel padata_parallel_worker\nCall trace:\n dump_backtrace+0x0/0x420\n\
+  \ show_stack+0x34/0x44\n dump_stack+0x1d0/0x248\n __kasan_report+0x138/0x140\n kasan_report+0x44/0x6c\n\
+  \ __asan_load4+0x94/0xd0\n scatterwalk_copychunks+0x320/0x470\n skcipher_next_slow+0x14c/0x290\n\
+  \ skcipher_walk_next+0x2fc/0x480\n skcipher_walk_first+0x9c/0x110\n skcipher_walk_aead_common+0x380/0x440\n\
+  \ skcipher_walk_aead_encrypt+0x54/0x70\n ccm_encrypt+0x13c/0x4d0\n crypto_aead_encrypt+0x7c/0xfc\n\
+  \ pcrypt_aead_enc+0x28/0x84\n padata_parallel_worker+0xd0/0x2dc\n process_one_work+0x49c/0xbdc\n\
+  \ worker_thread+0x124/0x880\n kthread+0x210/0x260\n ret_from_fork+0x10/0x18\n\n\
+  This is because the value of rec_seq of tls_crypto_info configured by the\nuser\
+  \ program is too large, for example, 0xffffffffffffff. In addition, TLS\nis asynchronously\
+  \ accelerated. When tls_do_encryption() returns\n-EINPROGRESS and sk->sk_err is\
+  \ set to EBADMSG due to rec_seq overflow,\nskmsg is released before the asynchronous\
+  \ encryption process ends. As a\nresult, the UAF problem occurs during the asynchronous\
+  \ processing of the\nencryption module.\n\nIf the operation is asynchronous and\
+  \ the encryption module returns\nEINPROGRESS, do not free the record information.\n\
+  \nFixes: 635d93981786 (\"net/tls: free record only on encryption error\")\nSigned-off-by:\
+  \ Liu Jian <liujian56@huawei.com>\nReviewed-by: Sabrina Dubroca <sd@queasysnail.net>\n\
+  Link: https://lore.kernel.org/r/20230909081434.2324940-1-liujian56@huawei.com\n\
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>\n"
+submodule:
+- net/tls
+hunk_count: 2
+covered_count: 0

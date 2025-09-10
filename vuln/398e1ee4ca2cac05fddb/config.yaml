@@ -1,0 +1,62 @@
+id: 398e1ee4ca2cac05fddb
+bug_link: https://syzkaller.appspot.com/bug?extid=398e1ee4ca2cac05fddb
+title: WARNING in taprio_get_start_time (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d46e51f1c78b9ab9323610feb14238d06d46d519
+fix_commit: ae8508b25def57982493c48694ef135973bfabe0
+datetime: '2025-08-01T15:15:28-07:00'
+fix_commit_message: 'net/sched: taprio: enforce minimum value for picos_per_byte
+
+
+  Syzbot reported a WARNING in taprio_get_start_time().
+
+
+  When link speed is 470,589 or greater, q->picos_per_byte becomes too
+
+  small, causing length_to_duration(q, ETH_ZLEN) to return zero.
+
+
+  This zero value leads to validation failures in fill_sched_entry() and
+
+  parse_taprio_schedule(), allowing arbitrary values to be assigned to
+
+  entry->interval and cycle_time. As a result, sched->cycle can become zero.
+
+
+  Since SPEED_800000 is the largest defined speed in
+
+  include/uapi/linux/ethtool.h, this issue can occur in realistic scenarios.
+
+
+  To ensure length_to_duration() returns a non-zero value for minimum-sized
+
+  Ethernet frames (ETH_ZLEN = 60), picos_per_byte must be at least 17
+
+  (60 * 17 > PSEC_PER_NSEC which is 1000).
+
+
+  This patch enforces a minimum value of 17 for picos_per_byte when the
+
+  calculated value would be lower, and adds a warning message to inform
+
+  users that scheduling accuracy may be affected at very high link speeds.
+
+
+  Fixes: fb66df20a720 ("net/sched: taprio: extend minimum interval restriction to
+  entire cycle too")
+
+  Reported-by: syzbot+398e1ee4ca2cac05fddb@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=398e1ee4ca2cac05fddb
+
+  Signed-off-by: Takamitsu Iwai <takamitz@amazon.co.jp>
+
+  Link: https://patch.msgid.link/20250728173149.45585-1-takamitz@amazon.co.jp
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/sched
+hunk_count: 5
+covered_count: 1

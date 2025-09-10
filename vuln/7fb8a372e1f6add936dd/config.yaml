@@ -1,0 +1,46 @@
+id: 7fb8a372e1f6add936dd
+bug_link: https://syzkaller.appspot.com/bug?extid=7fb8a372e1f6add936dd
+title: general protection fault in lookup_or_create_module_kobject
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 92a09c47464d040866cf2b4cd052bc60555185fb
+fix_commit: a6aeb739974ec73e5217c75a7c008a688d3d5cf1
+datetime: '2025-05-07T20:24:59+02:00'
+fix_commit_message: 'module: ensure that kobject_put() is safe for module type kobjects
+
+
+  In ''lookup_or_create_module_kobject()'', an internal kobject is created
+
+  using ''module_ktype''. So call to ''kobject_put()'' on error handling
+
+  path causes an attempt to use an uninitialized completion pointer in
+
+  ''module_kobject_release()''. In this scenario, we just want to release
+
+  kobject without an extra synchronization required for a regular module
+
+  unloading process, so adding an extra check whether ''complete()'' is
+
+  actually required makes ''kobject_put()'' safe.
+
+
+  Reported-by: syzbot+7fb8a372e1f6add936dd@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=7fb8a372e1f6add936dd
+
+  Fixes: 942e443127e9 ("module: Fix mod->mkobj.kobj potentially freed too early")
+
+  Cc: stable@vger.kernel.org
+
+  Suggested-by: Petr Pavlu <petr.pavlu@suse.com>
+
+  Signed-off-by: Dmitry Antipov <dmantipov@yandex.ru>
+
+  Link: https://lore.kernel.org/r/20250507065044.86529-1-dmantipov@yandex.ru
+
+  Signed-off-by: Petr Pavlu <petr.pavlu@suse.com>
+
+  '
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 0

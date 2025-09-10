@@ -1,0 +1,217 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.15.0-rc3-syzkaller-00283-gf1a3944c860b #0 Not tainted
+------------------------------------------------------
+syz.3.1001/9022 is trying to acquire lock:
+ffff8880301a5c70 (&dat_lock_key){.+.+}-{4:4}, at: nilfs_get_block+0x1b1/0x8f0 fs/nilfs2/inode.c:83
+
+but task is already holding lock:
+ffff8880116532a0 (&nilfs->ns_segctor_sem){++++}-{4:4}, at: nilfs_transaction_begin+0x365/0x710 fs/nilfs2/segment.c:221
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #6 (&nilfs->ns_segctor_sem){++++}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       down_read+0x46/0x2e0 kernel/locking/rwsem.c:1524
+       nilfs_transaction_begin+0x365/0x710 fs/nilfs2/segment.c:221
+       nilfs_setattr+0x10f/0x2b0 fs/nilfs2/inode.c:912
+       notify_change+0xb33/0xe40 fs/attr.c:552
+       do_truncate+0x19a/0x220 fs/open.c:65
+       vfs_truncate+0x493/0x520 fs/open.c:115
+       do_sys_truncate+0xdb/0x190 fs/open.c:138
+       __do_sys_truncate fs/open.c:150 [inline]
+       __se_sys_truncate fs/open.c:148 [inline]
+       __x64_sys_truncate+0x5b/0x70 fs/open.c:148
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #5 (sb_internal#2){.+.+}-{0:0}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       percpu_down_read include/linux/percpu-rwsem.h:52 [inline]
+       __sb_start_write include/linux/fs.h:1783 [inline]
+       sb_start_intwrite include/linux/fs.h:1966 [inline]
+       nilfs_transaction_begin+0x268/0x710 fs/nilfs2/segment.c:218
+       nilfs_page_mkwrite+0x8b0/0xc20 fs/nilfs2/file.c:95
+       do_page_mkwrite+0x14a/0x310 mm/memory.c:3287
+       wp_page_shared mm/memory.c:3688 [inline]
+       do_wp_page+0x2626/0x5760 mm/memory.c:3907
+       handle_pte_fault mm/memory.c:6013 [inline]
+       __handle_mm_fault+0x1028/0x5380 mm/memory.c:6140
+       handle_mm_fault+0x2d5/0x7f0 mm/memory.c:6309
+       do_user_addr_fault+0xa81/0x1390 arch/x86/mm/fault.c:1337
+       handle_page_fault arch/x86/mm/fault.c:1480 [inline]
+       exc_page_fault+0x68/0x110 arch/x86/mm/fault.c:1538
+       asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+
+-> #4 (sb_pagefaults#2){.+.+}-{0:0}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       percpu_down_read include/linux/percpu-rwsem.h:52 [inline]
+       __sb_start_write include/linux/fs.h:1783 [inline]
+       sb_start_pagefault include/linux/fs.h:1948 [inline]
+       nilfs_page_mkwrite+0x21e/0xc20 fs/nilfs2/file.c:57
+       do_page_mkwrite+0x14a/0x310 mm/memory.c:3287
+       do_shared_fault mm/memory.c:5594 [inline]
+       do_fault mm/memory.c:5656 [inline]
+       do_pte_missing mm/memory.c:4160 [inline]
+       handle_pte_fault mm/memory.c:5997 [inline]
+       __handle_mm_fault+0x18d2/0x5380 mm/memory.c:6140
+       handle_mm_fault+0x2d5/0x7f0 mm/memory.c:6309
+       do_user_addr_fault+0x764/0x1390 arch/x86/mm/fault.c:1388
+       handle_page_fault arch/x86/mm/fault.c:1480 [inline]
+       exc_page_fault+0x68/0x110 arch/x86/mm/fault.c:1538
+       asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+
+-> #3 (&mm->mmap_lock){++++}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       __might_fault+0xcc/0x130 mm/memory.c:7151
+       _copy_to_iter+0xf3/0x15a0 lib/iov_iter.c:184
+       copy_page_to_iter+0xa7/0x150 lib/iov_iter.c:362
+       copy_folio_to_iter include/linux/uio.h:198 [inline]
+       filemap_read+0x78d/0x11d0 mm/filemap.c:2753
+       blkdev_read_iter+0x30a/0x440 block/fops.c:809
+       new_sync_read fs/read_write.c:489 [inline]
+       vfs_read+0x4cd/0x980 fs/read_write.c:570
+       ksys_read+0x145/0x250 fs/read_write.c:713
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #2 (&sb->s_type->i_mutex_key#7){++++}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       down_write+0x96/0x1f0 kernel/locking/rwsem.c:1577
+       inode_lock include/linux/fs.h:867 [inline]
+       set_blocksize+0x23b/0x500 block/bdev.c:203
+       sb_set_blocksize block/bdev.c:224 [inline]
+       sb_min_blocksize+0x119/0x210 block/bdev.c:239
+       init_nilfs+0x43/0x690 fs/nilfs2/the_nilfs.c:710
+       nilfs_fill_super+0x8f/0x650 fs/nilfs2/super.c:1060
+       nilfs_get_tree+0x4f4/0x870 fs/nilfs2/super.c:1228
+       vfs_get_tree+0x8f/0x2b0 fs/super.c:1759
+       do_new_mount+0x24a/0xa40 fs/namespace.c:3884
+       do_mount fs/namespace.c:4224 [inline]
+       __do_sys_mount fs/namespace.c:4435 [inline]
+       __se_sys_mount+0x317/0x410 fs/namespace.c:4412
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #1 (&nilfs->ns_sem){++++}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       down_write+0x96/0x1f0 kernel/locking/rwsem.c:1577
+       nilfs_set_error fs/nilfs2/super.c:92 [inline]
+       __nilfs_error+0x1ca/0x4b0 fs/nilfs2/super.c:141
+       nilfs_bmap_convert_error fs/nilfs2/bmap.c:35 [inline]
+       nilfs_bmap_lookup_contig+0x13e/0x160 fs/nilfs2/bmap.c:100
+       nilfs_get_block+0x1fb/0x8f0 fs/nilfs2/inode.c:84
+       do_mpage_readpage+0x86d/0x19a0 fs/mpage.c:222
+       mpage_readahead+0x398/0x650 fs/mpage.c:371
+       read_pages+0x177/0x590 mm/readahead.c:160
+       page_cache_ra_unbounded+0x6b0/0x7b0 mm/readahead.c:297
+       filemap_get_pages+0x43c/0x1eb0 mm/filemap.c:2591
+       filemap_read+0x3fa/0x11d0 mm/filemap.c:2702
+       __kernel_read+0x469/0x8c0 fs/read_write.c:528
+       integrity_kernel_read+0x89/0xd0 security/integrity/iint.c:28
+       ima_calc_file_hash_tfm security/integrity/ima/ima_crypto.c:480 [inline]
+       ima_calc_file_shash security/integrity/ima/ima_crypto.c:511 [inline]
+       ima_calc_file_hash+0x152c/0x18d0 security/integrity/ima/ima_crypto.c:568
+       ima_collect_measurement+0x42e/0x8e0 security/integrity/ima/ima_api.c:293
+       process_measurement+0x1121/0x1a40 security/integrity/ima/ima_main.c:385
+       ima_file_check+0xd7/0x120 security/integrity/ima/ima_main.c:613
+       security_file_post_open+0xbb/0x290 security/security.c:3130
+       do_open fs/namei.c:3882 [inline]
+       path_openat+0x2f26/0x3830 fs/namei.c:4039
+       do_filp_open+0x1fa/0x410 fs/namei.c:4066
+       do_sys_openat2+0x121/0x1c0 fs/open.c:1429
+       do_sys_open fs/open.c:1444 [inline]
+       __do_sys_openat fs/open.c:1460 [inline]
+       __se_sys_openat fs/open.c:1455 [inline]
+       __x64_sys_openat+0x138/0x170 fs/open.c:1455
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xf6/0x210 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&dat_lock_key){.+.+}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3166 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+       validate_chain+0xb9b/0x2140 kernel/locking/lockdep.c:3909
+       __lock_acquire+0xaac/0xd20 kernel/locking/lockdep.c:5235
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+       down_read+0x46/0x2e0 kernel/locking/rwsem.c:1524
+       nilfs_get_block+0x1b1/0x8f0 fs/nilfs2/inode.c:83
+       __block_write_begin_int+0x6b2/0x1900 fs/buffer.c:2151
+       block_page_mkwrite+0x34f/0x4d0 fs/buffer.c:2646
+       nilfs_page_mkwrite+0x8fd/0xc20 fs/nilfs2/file.c:101
+       do_page_mkwrite+0x14a/0x310 mm/memory.c:3287
+       wp_page_shared mm/memory.c:3688 [inline]
+       do_wp_page+0x2626/0x5760 mm/memory.c:3907
+       handle_pte_fault mm/memory.c:6013 [inline]
+       __handle_mm_fault+0x1028/0x5380 mm/memory.c:6140
+       handle_mm_fault+0x2d5/0x7f0 mm/memory.c:6309
+       do_user_addr_fault+0xa81/0x1390 arch/x86/mm/fault.c:1337
+       handle_page_fault arch/x86/mm/fault.c:1480 [inline]
+       exc_page_fault+0x68/0x110 arch/x86/mm/fault.c:1538
+       asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+
+other info that might help us debug this:
+
+Chain exists of:
+  &dat_lock_key --> sb_internal#2 --> &nilfs->ns_segctor_sem
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  rlock(&nilfs->ns_segctor_sem);
+                               lock(sb_internal#2);
+                               lock(&nilfs->ns_segctor_sem);
+  rlock(&dat_lock_key);
+
+ *** DEADLOCK ***
+
+4 locks held by syz.3.1001/9022:
+ #0: ffff88807c769948 (vm_lock){++++}-{0:0}, at: do_user_addr_fault+0x2d9/0x1390 arch/x86/mm/fault.c:1328
+ #1: ffff88807c3b0518 (sb_pagefaults#2){.+.+}-{0:0}, at: do_page_mkwrite+0x14a/0x310 mm/memory.c:3287
+ #2: ffff88807c3b0610 (sb_internal#2){.+.+}-{0:0}, at: nilfs_page_mkwrite+0x8b0/0xc20 fs/nilfs2/file.c:95
+ #3: ffff8880116532a0 (&nilfs->ns_segctor_sem){++++}-{4:4}, at: nilfs_transaction_begin+0x365/0x710 fs/nilfs2/segment.c:221
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 9022 Comm: syz.3.1001 Not tainted 6.15.0-rc3-syzkaller-00283-gf1a3944c860b #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/19/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_circular_bug+0x2ee/0x310 kernel/locking/lockdep.c:2079
+ check_noncircular+0x134/0x160 kernel/locking/lockdep.c:2211
+ check_prev_add kernel/locking/lockdep.c:3166 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3285 [inline]
+ validate_chain+0xb9b/0x2140 kernel/locking/lockdep.c:3909
+ __lock_acquire+0xaac/0xd20 kernel/locking/lockdep.c:5235
+ lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5866
+ down_read+0x46/0x2e0 kernel/locking/rwsem.c:1524
+ nilfs_get_block+0x1b1/0x8f0 fs/nilfs2/inode.c:83
+ __block_write_begin_int+0x6b2/0x1900 fs/buffer.c:2151
+ block_page_mkwrite+0x34f/0x4d0 fs/buffer.c:2646
+ nilfs_page_mkwrite+0x8fd/0xc20 fs/nilfs2/file.c:101
+ do_page_mkwrite+0x14a/0x310 mm/memory.c:3287
+ wp_page_shared mm/memory.c:3688 [inline]
+ do_wp_page+0x2626/0x5760 mm/memory.c:3907
+ handle_pte_fault mm/memory.c:6013 [inline]
+ __handle_mm_fault+0x1028/0x5380 mm/memory.c:6140
+ handle_mm_fault+0x2d5/0x7f0 mm/memory.c:6309
+ do_user_addr_fault+0xa81/0x1390 arch/x86/mm/fault.c:1337
+ handle_page_fault arch/x86/mm/fault.c:1480 [inline]
+ exc_page_fault+0x68/0x110 arch/x86/mm/fault.c:1538
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+RIP: 0033:0x7f5247b566d8
+Code: fc 89 37 c3 c5 fa 6f 06 c5 fa 6f 4c 16 f0 c5 fa 7f 07 c5 fa 7f 4c 17 f0 c3 66 0f 1f 84 00 00 00 00 00 48 8b 4c 16 f8 48 8b 36 <48> 89 37 48 89 4c 17 f8 c3 c5 fe 6f 54 16 e0 c5 fe 6f 5c 16 c0 c5
+RSP: 002b:00007fff67b42e28 EFLAGS: 00010246
+RAX: 0000200000000900 RBX: 0000000000000004 RCX: 0031656c69662f2e
+RDX: 0000000000000008 RSI: 0031656c69662f2e RDI: 0000200000000900
+RBP: 00007f5247db7ba0 R08: 00007f5247a00000 R09: 0000000000000001
+R10: 0000000000000001 R11: 0000000000000009 R12: 00007f5247db5fac
+R13: 00007f5247db5fa0 R14: fffffffffffffffe R15: 00007fff67b42f40
+ </TASK>

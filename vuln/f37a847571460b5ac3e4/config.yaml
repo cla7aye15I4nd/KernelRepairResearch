@@ -1,0 +1,27 @@
+id: f37a847571460b5ac3e4
+bug_link: https://syzkaller.appspot.com/bug?extid=f37a847571460b5ac3e4
+title: WARNING in bdev_count_inflight_rw
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5990b776fb79a444f91431d35d24b0bdc622984b
+fix_commit: c007062188d8e402c294117db53a24b2bed2b83f
+datetime: '2025-06-26T07:34:11-06:00'
+fix_commit_message: "block: fix false warning in bdev_count_inflight_rw()\n\nWhile\
+  \ bdev_count_inflight is interating all cpus, if some IOs are issued\nfrom traversed\
+  \ cpu and then completed from the cpu that is not traversed\nyet:\n\ncpu0\n\t\t\
+  cpu1\n\t\tbdev_count_inflight\n\t\t //for_each_possible_cpu\n\t\t // cpu0 is 0\n\
+  \t\t infliht += 0\n// issue a io\nblk_account_io_start\n// cpu0 inflight ++\n\n\t\
+  \t\t\tcpu2\n\t\t\t\t// the io is done\n\t\t\t\tblk_account_io_done\n\t\t\t\t// cpu2\
+  \ inflight --\n\t\t // cpu 1 is 0\n\t\t inflight += 0\n\t\t // cpu2 is -1\n\t\t\
+  \ inflight += -1\n\t\t ...\n\nIn this case, the total inflight will be -1, causing\
+  \ lots of false\nwarning. Fix the problem by removing the warning.\n\nNoted there\
+  \ is still a valid warning for nvme-mpath(From Yi) that is not\nfixed yet.\n\nFixes:\
+  \ f5482ee5edb9 (\"block: WARN if bdev inflight counter is negative\")\nReported-by:\
+  \ Yi Zhang <yi.zhang@redhat.com>\nCloses: https://lore.kernel.org/linux-block/aFtUXy-lct0WxY2w@mozart.vkv.me/T/#mae89155a5006463d0a21a4a2c35ae0034b26a339\n\
+  Reported-and-tested-by: Calvin Owens <calvin@wbinvd.org>\nCloses: https://lore.kernel.org/linux-block/aFtUXy-lct0WxY2w@mozart.vkv.me/T/#m1d935a00070bf95055d0ac84e6075158b08acaef\n\
+  Reported-by: Dave Chinner <david@fromorbit.com>\nCloses: https://lore.kernel.org/linux-block/aFuypjqCXo9-5_En@dread.disaster.area/\n\
+  Signed-off-by: Yu Kuai <yukuai3@huawei.com>\nLink: https://lore.kernel.org/r/20250626115743.1641443-1-yukuai3@huawei.com\n\
+  Reviewed-by: Christoph Hellwig <hch@lst.de>\nSigned-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- block
+hunk_count: 1
+covered_count: 1

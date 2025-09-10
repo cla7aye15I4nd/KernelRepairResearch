@@ -1,0 +1,44 @@
+id: 93d94a001cfbce9e60e1
+bug_link: https://syzkaller.appspot.com/bug?extid=93d94a001cfbce9e60e1
+title: possible deadlock in __wake_up_common_lock
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ddeaab32a89f04b7e2a2df8771583a719c4ac6b7
+fix_commit: 73444bc4d8f92e46a20cb6bd3342fc2ea75c6787
+datetime: '2019-01-08T17:15:11-08:00'
+fix_commit_message: "mm, page_alloc: do not wake kswapd with zone lock held\n\nsyzbot\
+  \ reported the following regression in the latest merge window and\nit was confirmed\
+  \ by Qian Cai that a similar bug was visible from a\ndifferent context.\n\n  ======================================================\n\
+  \  WARNING: possible circular locking dependency detected\n  4.20.0+ #297 Not tainted\n\
+  \  ------------------------------------------------------\n  syz-executor0/8529\
+  \ is trying to acquire lock:\n  000000005e7fb829 (&pgdat->kswapd_wait){....}, at:\n\
+  \  __wake_up_common_lock+0x19e/0x330 kernel/sched/wait.c:120\n\n  but task is already\
+  \ holding lock:\n  000000009bb7bae0 (&(&zone->lock)->rlock){-.-.}, at: spin_lock\n\
+  \  include/linux/spinlock.h:329 [inline]\n  000000009bb7bae0 (&(&zone->lock)->rlock){-.-.},\
+  \ at: rmqueue_bulk\n  mm/page_alloc.c:2548 [inline]\n  000000009bb7bae0 (&(&zone->lock)->rlock){-.-.},\
+  \ at: __rmqueue_pcplist\n  mm/page_alloc.c:3021 [inline]\n  000000009bb7bae0 (&(&zone->lock)->rlock){-.-.},\
+  \ at: rmqueue_pcplist\n  mm/page_alloc.c:3050 [inline]\n  000000009bb7bae0 (&(&zone->lock)->rlock){-.-.},\
+  \ at: rmqueue\n  mm/page_alloc.c:3072 [inline]\n  000000009bb7bae0 (&(&zone->lock)->rlock){-.-.},\
+  \ at:\n  get_page_from_freelist+0x1bae/0x52a0 mm/page_alloc.c:3491\n\nIt appears\
+  \ to be a false positive in that the only way the lock ordering\nshould be inverted\
+  \ is if kswapd is waking itself and the wakeup\nallocates debugging objects which\
+  \ should already be allocated if it's\nkswapd doing the waking.  Nevertheless, the\
+  \ possibility exists and so\nit's best to avoid the problem.\n\nThis patch flags\
+  \ a zone as needing a kswapd using the, surprisingly,\nunused zone flag field. \
+  \ The flag is read without the lock held to do\nthe wakeup.  It's possible that\
+  \ the flag setting context is not the same\nas the flag clearing context or for\
+  \ small races to occur.  However, each\nrace possibility is harmless and there is\
+  \ no visible degredation in\nfragmentation treatment.\n\nWhile zone->flag could\
+  \ have continued to be unused, there is potential\nfor moving some existing fields\
+  \ into the flags field instead.\nParticularly read-mostly ones like zone->initialized\
+  \ and\nzone->contiguous.\n\nLink: http://lkml.kernel.org/r/20190103225712.GJ31517@techsingularity.net\n\
+  Fixes: 1c30844d2dfe (\"mm: reclaim small amounts of memory when an external fragmentation\
+  \ event occurs\")\nReported-by: syzbot+93d94a001cfbce9e60e1@syzkaller.appspotmail.com\n\
+  Signed-off-by: Mel Gorman <mgorman@techsingularity.net>\nAcked-by: Vlastimil Babka\
+  \ <vbabka@suse.cz>\nTested-by: Qian Cai <cai@lca.pw>\nCc: Dmitry Vyukov <dvyukov@google.com>\n\
+  Cc: Vlastimil Babka <vbabka@suse.cz>\nCc: Michal Hocko <mhocko@suse.com>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- include/linux
+- mm
+hunk_count: 3
+covered_count: 2

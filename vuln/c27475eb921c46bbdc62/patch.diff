@@ -1,0 +1,92 @@
+diff --git a/fs/udf/file.c b/fs/udf/file.c
+index 2666234a5204..7a8dbad86e41 100644
+--- a/fs/udf/file.c
++++ b/fs/udf/file.c
+@@ -57,25 +57,6 @@ void udf_adinicb_readpage(struct page *page)
+ 	kunmap_atomic(kaddr);
+ }
+ 
+-static int udf_adinicb_writepage(struct page *page,
+-				 struct writeback_control *wbc)
+-{
+-	struct inode *inode = page->mapping->host;
+-	char *kaddr;
+-	struct udf_inode_info *iinfo = UDF_I(inode);
+-
+-	BUG_ON(!PageLocked(page));
+-
+-	kaddr = kmap_atomic(page);
+-	memcpy(iinfo->i_data + iinfo->i_lenEAttr, kaddr, i_size_read(inode));
+-	SetPageUptodate(page);
+-	kunmap_atomic(kaddr);
+-	mark_inode_dirty(inode);
+-	unlock_page(page);
+-
+-	return 0;
+-}
+-
+ static int udf_adinicb_write_begin(struct file *file,
+ 			struct address_space *mapping, loff_t pos,
+ 			unsigned len, struct page **pagep,
+@@ -119,7 +100,7 @@ const struct address_space_operations udf_adinicb_aops = {
+ 	.dirty_folio	= block_dirty_folio,
+ 	.invalidate_folio = block_invalidate_folio,
+ 	.read_folio	= udf_read_folio,
+-	.writepage	= udf_adinicb_writepage,
++	.writepages	= udf_writepages,
+ 	.write_begin	= udf_adinicb_write_begin,
+ 	.write_end	= udf_adinicb_write_end,
+ 	.direct_IO	= udf_adinicb_direct_IO,
+diff --git a/fs/udf/inode.c b/fs/udf/inode.c
+index a1816f067c14..f0ab4dd0d8ce 100644
+--- a/fs/udf/inode.c
++++ b/fs/udf/inode.c
+@@ -185,10 +185,33 @@ static void udf_write_failed(struct address_space *mapping, loff_t to)
+ 	}
+ }
+ 
+-static int udf_writepages(struct address_space *mapping,
+-			struct writeback_control *wbc)
++static int udf_adinicb_writepage(struct page *page,
++				 struct writeback_control *wbc, void *data)
+ {
+-	return mpage_writepages(mapping, wbc, udf_get_block_wb);
++	struct inode *inode = page->mapping->host;
++	char *kaddr;
++	struct udf_inode_info *iinfo = UDF_I(inode);
++
++	BUG_ON(!PageLocked(page));
++
++	kaddr = kmap_atomic(page);
++	memcpy(iinfo->i_data + iinfo->i_lenEAttr, kaddr, i_size_read(inode));
++	SetPageUptodate(page);
++	kunmap_atomic(kaddr);
++	unlock_page(page);
++	mark_inode_dirty(inode);
++
++	return 0;
++}
++
++int udf_writepages(struct address_space *mapping, struct writeback_control *wbc)
++{
++	struct inode *inode = mapping->host;
++	struct udf_inode_info *iinfo = UDF_I(inode);
++
++	if (iinfo->i_alloc_type != ICBTAG_FLAG_AD_IN_ICB)
++		return mpage_writepages(mapping, wbc, udf_get_block_wb);
++	return write_cache_pages(mapping, wbc, udf_adinicb_writepage, NULL);
+ }
+ 
+ int udf_read_folio(struct file *file, struct folio *folio)
+diff --git a/fs/udf/udfdecl.h b/fs/udf/udfdecl.h
+index 6b93b393cb46..48647eab26a6 100644
+--- a/fs/udf/udfdecl.h
++++ b/fs/udf/udfdecl.h
+@@ -160,6 +160,7 @@ extern int udf_setsize(struct inode *, loff_t);
+ extern void udf_evict_inode(struct inode *);
+ extern int udf_write_inode(struct inode *, struct writeback_control *wbc);
+ int udf_read_folio(struct file *file, struct folio *folio);
++int udf_writepages(struct address_space *mapping, struct writeback_control *wbc);
+ extern int8_t inode_bmap(struct inode *, sector_t, struct extent_position *,
+ 			 struct kernel_lb_addr *, uint32_t *, sector_t *);
+ int udf_get_block(struct inode *, sector_t, struct buffer_head *, int);

@@ -1,0 +1,119 @@
+diff --git a/mm/kasan/kasan_test_c.c b/mm/kasan/kasan_test_c.c
+index d8fb281e439d..fe132ce3c2b3 100644
+--- a/mm/kasan/kasan_test_c.c
++++ b/mm/kasan/kasan_test_c.c
+@@ -1928,6 +1928,41 @@ static void rust_uaf(struct kunit *test)
+ 	KUNIT_EXPECT_KASAN_FAIL(test, kasan_test_rust_uaf());
+ }
+ 
++static void copy_to_kernel_nofault_oob(struct kunit *test)
++{
++	char *ptr;
++	char buf[128];
++	size_t size = sizeof(buf);
++
++	/*
++	 * This test currently fails with the HW_TAGS mode. The reason is
++	 * unknown and needs to be investigated.
++	 */
++	KASAN_TEST_NEEDS_CONFIG_OFF(test, CONFIG_KASAN_HW_TAGS);
++
++	ptr = kmalloc(size - KASAN_GRANULE_SIZE, GFP_KERNEL);
++	KUNIT_ASSERT_NOT_ERR_OR_NULL(test, ptr);
++	OPTIMIZER_HIDE_VAR(ptr);
++
++	/*
++	 * We test copy_to_kernel_nofault() to detect corrupted memory that is
++	 * being written into the kernel. In contrast,
++	 * copy_from_kernel_nofault() is primarily used in kernel helper
++	 * functions where the source address might be random or uninitialized.
++	 * Applying KASAN instrumentation to copy_from_kernel_nofault() could
++	 * lead to false positives.  By focusing KASAN checks only on
++	 * copy_to_kernel_nofault(), we ensure that only valid memory is
++	 * written to the kernel, minimizing the risk of kernel corruption
++	 * while avoiding false positives in the reverse case.
++	 */
++	KUNIT_EXPECT_KASAN_FAIL(test,
++		copy_to_kernel_nofault(&buf[0], ptr, size));
++	KUNIT_EXPECT_KASAN_FAIL(test,
++		copy_to_kernel_nofault(ptr, &buf[0], size));
++
++	kfree(ptr);
++}
++
+ static struct kunit_case kasan_kunit_test_cases[] = {
+ 	KUNIT_CASE(kmalloc_oob_right),
+ 	KUNIT_CASE(kmalloc_oob_left),
+@@ -2000,6 +2035,7 @@ static struct kunit_case kasan_kunit_test_cases[] = {
+ 	KUNIT_CASE(match_all_not_assigned),
+ 	KUNIT_CASE(match_all_ptr_tag),
+ 	KUNIT_CASE(match_all_mem_tag),
++	KUNIT_CASE(copy_to_kernel_nofault_oob),
+ 	KUNIT_CASE(rust_uaf),
+ 	{}
+ };
+diff --git a/mm/kmsan/kmsan_test.c b/mm/kmsan/kmsan_test.c
+index 13236d579eba..9733a22c46c1 100644
+--- a/mm/kmsan/kmsan_test.c
++++ b/mm/kmsan/kmsan_test.c
+@@ -640,6 +640,22 @@ static void test_unpoison_memory(struct kunit *test)
+ 	KUNIT_EXPECT_TRUE(test, report_matches(&expect));
+ }
+ 
++static void test_copy_from_kernel_nofault(struct kunit *test)
++{
++	long ret;
++	char buf[4], src[4];
++	size_t size = sizeof(buf);
++
++	EXPECTATION_UNINIT_VALUE_FN(expect, "copy_from_kernel_nofault");
++	kunit_info(
++		test,
++		"testing copy_from_kernel_nofault with uninitialized memory\n");
++
++	ret = copy_from_kernel_nofault((char *)&buf[0], (char *)&src[0], size);
++	USE(ret);
++	KUNIT_EXPECT_TRUE(test, report_matches(&expect));
++}
++
+ static struct kunit_case kmsan_test_cases[] = {
+ 	KUNIT_CASE(test_uninit_kmalloc),
+ 	KUNIT_CASE(test_init_kmalloc),
+@@ -664,6 +680,7 @@ static struct kunit_case kmsan_test_cases[] = {
+ 	KUNIT_CASE(test_long_origin_chain),
+ 	KUNIT_CASE(test_stackdepot_roundtrip),
+ 	KUNIT_CASE(test_unpoison_memory),
++	KUNIT_CASE(test_copy_from_kernel_nofault),
+ 	{},
+ };
+ 
+diff --git a/mm/maccess.c b/mm/maccess.c
+index 518a25667323..3ca55ec63a6a 100644
+--- a/mm/maccess.c
++++ b/mm/maccess.c
+@@ -13,9 +13,14 @@ bool __weak copy_from_kernel_nofault_allowed(const void *unsafe_src,
+ 	return true;
+ }
+ 
++/*
++ * The below only uses kmsan_check_memory() to ensure uninitialized kernel
++ * memory isn't leaked.
++ */
+ #define copy_from_kernel_nofault_loop(dst, src, len, type, err_label)	\
+ 	while (len >= sizeof(type)) {					\
+-		__get_kernel_nofault(dst, src, type, err_label);		\
++		__get_kernel_nofault(dst, src, type, err_label);	\
++		kmsan_check_memory(src, sizeof(type));			\
+ 		dst += sizeof(type);					\
+ 		src += sizeof(type);					\
+ 		len -= sizeof(type);					\
+@@ -49,7 +54,8 @@ EXPORT_SYMBOL_GPL(copy_from_kernel_nofault);
+ 
+ #define copy_to_kernel_nofault_loop(dst, src, len, type, err_label)	\
+ 	while (len >= sizeof(type)) {					\
+-		__put_kernel_nofault(dst, src, type, err_label);		\
++		__put_kernel_nofault(dst, src, type, err_label);	\
++		instrument_write(dst, sizeof(type));			\
+ 		dst += sizeof(type);					\
+ 		src += sizeof(type);					\
+ 		len -= sizeof(type);					\

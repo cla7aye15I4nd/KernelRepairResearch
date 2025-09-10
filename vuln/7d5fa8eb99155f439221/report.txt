@@ -1,0 +1,57 @@
+general protection fault, probably for non-canonical address 0xdffffc0000000e71: 0000 [#1] PREEMPT SMP KASAN
+KASAN: probably user-memory-access in range [0x0000000000007388-0x000000000000738f]
+CPU: 0 PID: 4475 Comm: udevd Not tainted 6.5.0-rc1-syzkaller-00248-gb6e6cc1f78c7 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/03/2023
+RIP: 0010:i_user_ns include/linux/fs.h:1289 [inline]
+RIP: 0010:i_uid_into_vfsuid include/linux/fs.h:1328 [inline]
+RIP: 0010:common_perm_cond+0x102/0x850 security/apparmor/lsm.c:230
+Code: 89 fa 48 c1 ea 03 80 3c 02 00 0f 85 48 06 00 00 49 8b 4f 18 49 8d 7c 24 28 48 b8 00 00 00 00 00 fc ff df 48 89 fa 48 c1 ea 03 <80> 3c 02 00 0f 85 61 06 00 00 48 b8 00 00 00 00 00 fc ff df 4d 8b
+RSP: 0018:ffffc900031bfc18 EFLAGS: 00010217
+
+RAX: dffffc0000000000 RBX: ffffc900031bfd38 RCX: ffffffff8cb831e0
+RDX: 0000000000000e71 RSI: ffffffff83e1f79c RDI: 000000000000738d
+RBP: 1ffff92000637f85 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000094000 R12: 0000000000007365
+R13: ffffffff8ac134a0 R14: 0000000000000200 R15: ffff888016246920
+FS:  00007f1f780b3c80(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00000000209e3000 CR3: 000000001735c000 CR4: 0000000000350ef0
+Call Trace:
+ <TASK>
+ security_inode_getattr+0xf1/0x150 security/security.c:2114
+ vfs_getattr fs/stat.c:167 [inline]
+ vfs_statx+0x180/0x430 fs/stat.c:242
+ vfs_fstatat+0x90/0xb0 fs/stat.c:276
+ __do_sys_newfstatat+0x98/0x110 fs/stat.c:446
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x38/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f1f77d165f4
+Code: 64 c7 00 09 00 00 00 83 c8 ff c3 48 89 f2 b9 00 01 00 00 48 89 fe bf 9c ff ff ff e9 00 00 00 00 41 89 ca b8 06 01 00 00 0f 05 <45> 31 c0 3d 00 f0 ff ff 76 10 48 8b 15 03 a8 0d 00 f7 d8 41 83 c8
+RSP: 002b:00007ffd1a0d0c38 EFLAGS: 00000202
+ ORIG_RAX: 0000000000000106
+RAX: ffffffffffffffda RBX: 0000556e5d077650 RCX: 00007f1f77d165f4
+RDX: 00007ffd1a0d0c50 RSI: 00007f1f77db3130 RDI: 000000000000000d
+RBP: 0000556e5d080bf0 R08: 0000000000090800 R09: 0000556e5d05f360
+R10: 0000000000001000 R11: 0000000000000202 R12: 00007ffd1a0d0c50
+R13: 00000000000000ff R14: 0000556e5c4f71c4 R15: 0000000000000000
+ </TASK>
+Modules linked in:
+----------------
+Code disassembly (best guess):
+   0:	89 fa                	mov    %edi,%edx
+   2:	48 c1 ea 03          	shr    $0x3,%rdx
+   6:	80 3c 02 00          	cmpb   $0x0,(%rdx,%rax,1)
+   a:	0f 85 48 06 00 00    	jne    0x658
+  10:	49 8b 4f 18          	mov    0x18(%r15),%rcx
+  14:	49 8d 7c 24 28       	lea    0x28(%r12),%rdi
+  19:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  20:	fc ff df
+  23:	48 89 fa             	mov    %rdi,%rdx
+  26:	48 c1 ea 03          	shr    $0x3,%rdx
+* 2a:	80 3c 02 00          	cmpb   $0x0,(%rdx,%rax,1) <-- trapping instruction
+  2e:	0f 85 61 06 00 00    	jne    0x695
+  34:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  3b:	fc ff df
+  3e:	4d                   	rex.WRB
+  3f:	8b                   	.byte 0x8b

@@ -1,0 +1,50 @@
+id: 9a1bc632e78a1a98488b
+bug_link: https://syzkaller.appspot.com/bug?extid=9a1bc632e78a1a98488b
+title: general protection fault in sctp_stream_free (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: feed8a4fc9d46c3126fb9fcae0e9248270c6321a
+fix_commit: 61d5d4062876e21331c3d0ba4b02dbd50c06a658
+datetime: '2019-12-24T16:07:10-08:00'
+fix_commit_message: 'sctp: fix err handling of stream initialization
+
+
+  The fix on 951c6db954a1 fixed the issued reported there but introduced
+
+  another. When the allocation fails within sctp_stream_init() it is
+
+  okay/necessary to free the genradix. But it is also called when adding
+
+  new streams, from sctp_send_add_streams() and
+
+  sctp_process_strreset_addstrm_in() and in those situations it cannot
+
+  just free the genradix because by then it is a fully operational
+
+  association.
+
+
+  The fix here then is to only free the genradix in sctp_stream_init()
+
+  and on those other call sites  move on with what it already had and let
+
+  the subsequent error handling to handle it.
+
+
+  Tested with the reproducers from this report and the previous one,
+
+  with lksctp-tools and sctp-tests.
+
+
+  Reported-by: syzbot+9a1bc632e78a1a98488b@syzkaller.appspotmail.com
+
+  Fixes: 951c6db954a1 ("sctp: fix memleak on err handling of stream initialization")
+
+  Signed-off-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/sctp
+hunk_count: 4
+covered_count: 1

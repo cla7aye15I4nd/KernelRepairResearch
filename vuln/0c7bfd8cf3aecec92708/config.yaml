@@ -1,0 +1,28 @@
+id: 0c7bfd8cf3aecec92708
+bug_link: https://syzkaller.appspot.com/bug?extid=0c7bfd8cf3aecec92708
+title: general protection fault in bpf_map_offload_map_alloc
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 93b1e055174b0cce77f6b179e9ec7afd5fde0fd1
+fix_commit: 0a5c8b2c8ccbd5987f5d05c6ad6740cdb2e467e8
+datetime: '2025-03-07T19:09:39-08:00'
+fix_commit_message: "bpf: fix a possible NULL deref in bpf_map_offload_map_alloc()\n\
+  \nCall bpf_dev_offload_check() before netdev_lock_ops().\n\nThis is needed if attr->map_ifindex\
+  \ is not valid.\n\nOops: general protection fault, probably for non-canonical address\
+  \ 0xdffffc0000000197: 0000 [#1] PREEMPT SMP KASAN PTI\nKASAN: null-ptr-deref in\
+  \ range [0x0000000000000cb8-0x0000000000000cbf]\n RIP: 0010:netdev_need_ops_lock\
+  \ include/linux/netdevice.h:2792 [inline]\n RIP: 0010:netdev_lock_ops include/linux/netdevice.h:2803\
+  \ [inline]\n RIP: 0010:bpf_map_offload_map_alloc+0x19a/0x910 kernel/bpf/offload.c:533\n\
+  Call Trace:\n <TASK>\n  map_create+0x946/0x11c0 kernel/bpf/syscall.c:1455\n  __sys_bpf+0x6d3/0x820\
+  \ kernel/bpf/syscall.c:5777\n  __do_sys_bpf kernel/bpf/syscall.c:5902 [inline]\n\
+  \  __se_sys_bpf kernel/bpf/syscall.c:5900 [inline]\n  __x64_sys_bpf+0x7c/0x90 kernel/bpf/syscall.c:5900\n\
+  \  do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n  do_syscall_64+0xf3/0x230\
+  \ arch/x86/entry/common.c:83\n\nFixes: 97246d6d21c2 (\"net: hold netdev instance\
+  \ lock during ndo_bpf\")\nReported-by: syzbot+0c7bfd8cf3aecec92708@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/netdev/67caa2b1.050a0220.15b4b9.0077.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nAcked-by: Stanislav Fomichev\
+  \ <sdf@fomichev.me>\nLink: https://patch.msgid.link/20250307074303.1497911-1-edumazet@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 2
+covered_count: 2

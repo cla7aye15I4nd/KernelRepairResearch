@@ -1,0 +1,80 @@
+------------[ cut here ]------------
+UBSAN: array-index-out-of-bounds in ./kernel/bpf/devmap.c:385:28
+index 16 is out of range for type 'struct xdp_frame *[16]'
+CPU: 0 UID: 0 PID: 5225 Comm: syz-executor121 Not tainted 6.10.0-syzkaller-12708-g2f8c4f506285 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/27/2024
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:93 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:119
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_out_of_bounds+0x121/0x150 lib/ubsan.c:429
+ bq_xmit_all+0x157/0x11d0 kernel/bpf/devmap.c:385
+ __dev_flush+0x81/0x160 kernel/bpf/devmap.c:425
+ xdp_do_check_flushed+0x129/0x240 net/core/filter.c:4307
+ __napi_poll+0xe4/0x490 net/core/dev.c:6774
+ napi_poll net/core/dev.c:6840 [inline]
+ net_rx_action+0x89b/0x1240 net/core/dev.c:6962
+ handle_softirqs+0x2c4/0x970 kernel/softirq.c:554
+ __do_softirq kernel/softirq.c:588 [inline]
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu+0xf4/0x1c0 kernel/softirq.c:637
+ irq_exit_rcu+0x9/0x30 kernel/softirq.c:649
+ common_interrupt+0xaa/0xd0 arch/x86/kernel/irq.c:278
+ </IRQ>
+ <TASK>
+ asm_common_interrupt+0x26/0x40 arch/x86/include/asm/idtentry.h:693
+RIP: 0010:__raw_spin_unlock_irq include/linux/spinlock_api_smp.h:160 [inline]
+RIP: 0010:_raw_spin_unlock_irq+0x29/0x50 kernel/locking/spinlock.c:202
+Code: 90 f3 0f 1e fa 53 48 89 fb 48 83 c7 18 48 8b 74 24 08 e8 7a 26 b9 f5 48 89 df e8 52 69 ba f5 e8 0d 3c e4 f5 fb bf 01 00 00 00 <e8> 22 35 ac f5 65 8b 05 63 2b 4d 74 85 c0 74 06 5b c3 cc cc cc cc
+RSP: 0018:ffffc9000347fd48 EFLAGS: 00000286
+RAX: 5dae3de087a45100 RBX: ffff88801cb39bc0 RCX: ffffffff94ce1903
+RDX: dffffc0000000000 RSI: ffffffff8bead5a0 RDI: 0000000000000001
+RBP: ffff88807dd45f70 R08: ffffffff8ff66fef R09: 1ffffffff1fecdfd
+R10: dffffc0000000000 R11: fffffbfff1fecdfe R12: 1ffff1100fba8c63
+R13: ffff88807dd45a00 R14: ffff88807dd46318 R15: 1ffff1100fba8b46
+ spin_unlock_irq include/linux/spinlock.h:401 [inline]
+ ptrace_stop+0x414/0x930 kernel/signal.c:2306
+ ptrace_do_notify kernel/signal.c:2393 [inline]
+ ptrace_notify+0x255/0x380 kernel/signal.c:2405
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_entry include/linux/ptrace.h:452 [inline]
+ syscall_trace_enter+0x5d/0x150 kernel/entry/common.c:45
+ syscall_enter_from_user_mode_work include/linux/entry-common.h:168 [inline]
+ syscall_enter_from_user_mode include/linux/entry-common.h:198 [inline]
+ do_syscall_64+0xcc/0x230 arch/x86/entry/common.c:79
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f046182f020
+Code: ff f7 d8 64 89 02 48 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 80 3d 81 e0 07 00 00 74 17 b8 03 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 48 c3 0f 1f 80 00 00 00 00 48 83 ec 18 89 7c
+RSP: 002b:00007fff7440f158 EFLAGS: 00000202 ORIG_RAX: 0000000000000003
+RAX: ffffffffffffffda RBX: 000000000000001e RCX: 00007f046182f020
+RDX: ffffffffffffffb8 RSI: 0000000020000100 RDI: 000000000000001d
+RBP: 00007fff7440f1a0 R08: 00007fff7440f180 R09: 00007fff7440f180
+R10: 00007fff7440f180 R11: 0000000000000202 R12: 0000000000000000
+R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+ </TASK>
+---[ end trace ]---
+----------------
+Code disassembly (best guess):
+   0:	90                   	nop
+   1:	f3 0f 1e fa          	endbr64
+   5:	53                   	push   %rbx
+   6:	48 89 fb             	mov    %rdi,%rbx
+   9:	48 83 c7 18          	add    $0x18,%rdi
+   d:	48 8b 74 24 08       	mov    0x8(%rsp),%rsi
+  12:	e8 7a 26 b9 f5       	call   0xf5b92691
+  17:	48 89 df             	mov    %rbx,%rdi
+  1a:	e8 52 69 ba f5       	call   0xf5ba6971
+  1f:	e8 0d 3c e4 f5       	call   0xf5e43c31
+  24:	fb                   	sti
+  25:	bf 01 00 00 00       	mov    $0x1,%edi
+* 2a:	e8 22 35 ac f5       	call   0xf5ac3551 <-- trapping instruction
+  2f:	65 8b 05 63 2b 4d 74 	mov    %gs:0x744d2b63(%rip),%eax        # 0x744d2b99
+  36:	85 c0                	test   %eax,%eax
+  38:	74 06                	je     0x40
+  3a:	5b                   	pop    %rbx
+  3b:	c3                   	ret
+  3c:	cc                   	int3
+  3d:	cc                   	int3
+  3e:	cc                   	int3
+  3f:	cc                   	int3

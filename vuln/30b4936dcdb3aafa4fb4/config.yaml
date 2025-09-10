@@ -1,0 +1,30 @@
+id: 30b4936dcdb3aafa4fb4
+bug_link: https://syzkaller.appspot.com/bug?extid=30b4936dcdb3aafa4fb4
+title: 'KASAN: invalid-free in io_req_caches_free'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b6c23dd5a483174f386e4c2e1711d9532e090c00
+fix_commit: 8e5c66c485a8af3f39a8b0358e9e09f002016d92
+datetime: '2021-02-22T06:31:31-07:00'
+fix_commit_message: "io_uring: clear request count when freeing caches\n\nBUG: KASAN:\
+  \ double-free or invalid-free in io_req_caches_free.constprop.0+0x3ce/0x530 fs/io_uring.c:8709\n\
+  \nWorkqueue: events_unbound io_ring_exit_work\nCall Trace:\n [...]\n __cache_free\
+  \ mm/slab.c:3424 [inline]\n kmem_cache_free_bulk+0x4b/0x1b0 mm/slab.c:3744\n io_req_caches_free.constprop.0+0x3ce/0x530\
+  \ fs/io_uring.c:8709\n io_ring_ctx_free fs/io_uring.c:8764 [inline]\n io_ring_exit_work+0x518/0x6b0\
+  \ fs/io_uring.c:8846\n process_one_work+0x98d/0x1600 kernel/workqueue.c:2275\n worker_thread+0x64c/0x1120\
+  \ kernel/workqueue.c:2421\n kthread+0x3b1/0x4a0 kernel/kthread.c:292\n ret_from_fork+0x1f/0x30\
+  \ arch/x86/entry/entry_64.S:294\n\nFreed by task 11900:\n [...]\n kmem_cache_free_bulk+0x4b/0x1b0\
+  \ mm/slab.c:3744\n io_req_caches_free.constprop.0+0x3ce/0x530 fs/io_uring.c:8709\n\
+  \ io_uring_flush+0x483/0x6e0 fs/io_uring.c:9237\n filp_close+0xb4/0x170 fs/open.c:1286\n\
+  \ close_files fs/file.c:403 [inline]\n put_files_struct fs/file.c:418 [inline]\n\
+  \ put_files_struct+0x1d0/0x350 fs/file.c:415\n exit_files+0x7e/0xa0 fs/file.c:435\n\
+  \ do_exit+0xc27/0x2ae0 kernel/exit.c:820\n do_group_exit+0x125/0x310 kernel/exit.c:922\n\
+  \ [...]\n\nio_req_caches_free() doesn't zero submit_state->free_reqs, so io_uring\n\
+  considers just freed requests to be good and sound and will reuse or\ndouble free\
+  \ them. Zero the counter.\n\nReported-by: syzbot+30b4936dcdb3aafa4fb4@syzkaller.appspotmail.com\n\
+  Fixes: 41be53e94fb04 (\"io_uring: kill cached requests from exiting task closing\
+  \ the ring\")\nSigned-off-by: Pavel Begunkov <asml.silence@gmail.com>\nSigned-off-by:\
+  \ Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

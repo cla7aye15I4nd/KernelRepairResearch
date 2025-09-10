@@ -1,0 +1,22 @@
+id: eed305768ece6682bb7f
+bug_link: https://syzkaller.appspot.com/bug?extid=eed305768ece6682bb7f
+title: 'KASAN: use-after-free Read in rxrpc_release_call'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9ebeddef58c41bd700419cdcece24cf64ce32276
+fix_commit: 91fcfbe8852edb929ff8702534525031a15d0aa6
+datetime: '2019-10-07T11:05:05+01:00'
+fix_commit_message: "rxrpc: Fix call crypto state cleanup\n\nFix the cleanup of the\
+  \ crypto state on a call after the call has been\ndisconnected.  As the call has\
+  \ been disconnected, its connection ref has\nbeen discarded and so we can't go through\
+  \ that to get to the security ops\ntable.\n\nFix this by caching the security ops\
+  \ pointer in the rxrpc_call struct and\nusing that when freeing the call security\
+  \ state.  Also use this in other\nplaces we're dealing with call-specific security.\n\
+  \nThe symptoms look like:\n\n    BUG: KASAN: use-after-free in rxrpc_release_call+0xb2d/0xb60\n\
+  \    net/rxrpc/call_object.c:481\n    Read of size 8 at addr ffff888062ffeb50 by\
+  \ task syz-executor.5/4764\n\nFixes: 1db88c534371 (\"rxrpc: Fix -Wframe-larger-than=\
+  \ warnings from on-stack crypto\")\nReported-by: syzbot+eed305768ece6682bb7f@syzkaller.appspotmail.com\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\n"
+submodule:
+- net/rxrpc
+hunk_count: 9
+covered_count: 2

@@ -1,0 +1,15 @@
+diff --git a/drivers/infiniband/core/device.c b/drivers/infiniband/core/device.c
+index f6c255202d7f..d0b3d35ad3e4 100644
+--- a/drivers/infiniband/core/device.c
++++ b/drivers/infiniband/core/device.c
+@@ -896,7 +896,9 @@ static int add_one_compat_dev(struct ib_device *device,
+ 	cdev->dev.parent = device->dev.parent;
+ 	rdma_init_coredev(cdev, device, read_pnet(&rnet->net));
+ 	cdev->dev.release = compatdev_release;
+-	dev_set_name(&cdev->dev, "%s", dev_name(&device->dev));
++	ret = dev_set_name(&cdev->dev, "%s", dev_name(&device->dev));
++	if (ret)
++		goto add_err;
+ 
+ 	ret = device_add(&cdev->dev);
+ 	if (ret)

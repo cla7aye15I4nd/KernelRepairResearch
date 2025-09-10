@@ -1,0 +1,70 @@
+id: 2bcecf3c38cb3e8fdc8d
+bug_link: https://syzkaller.appspot.com/bug?extid=2bcecf3c38cb3e8fdc8d
+title: possible deadlock in bdev_release
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 00c9c9628b49e368d140cfa61d7df9b8922ec2a8
+fix_commit: 8b428f42f3edfd62422aa7ad87049ab232a2eaa9
+datetime: '2025-07-09T16:50:05-06:00'
+fix_commit_message: "nbd: fix lockdep deadlock warning\n\nnbd grabs device lock nbd->config_lock\
+  \ for updating nr_hw_queues, this\nways cause the following lock dependency:\n\n\
+  -> #2 (&disk->open_mutex){+.+.}-{4:4}:\n       lock_acquire kernel/locking/lockdep.c:5871\
+  \ [inline]\n       lock_acquire+0x1ac/0x448 kernel/locking/lockdep.c:5828\n    \
+  \   __mutex_lock_common kernel/locking/mutex.c:602 [inline]\n       __mutex_lock+0x166/0x1292\
+  \ kernel/locking/mutex.c:747\n       mutex_lock_nested+0x14/0x1c kernel/locking/mutex.c:799\n\
+  \       __del_gendisk+0x132/0xac6 block/genhd.c:706\n       del_gendisk+0xf6/0x19a\
+  \ block/genhd.c:819\n       nbd_dev_remove+0x3c/0xf2 drivers/block/nbd.c:268\n \
+  \      nbd_dev_remove_work+0x1c/0x26 drivers/block/nbd.c:284\n       process_one_work+0x96a/0x1f32\
+  \ kernel/workqueue.c:3238\n       process_scheduled_works kernel/workqueue.c:3321\
+  \ [inline]\n       worker_thread+0x5ce/0xde8 kernel/workqueue.c:3402\n       kthread+0x39c/0x7d4\
+  \ kernel/kthread.c:464\n       ret_from_fork_kernel+0x2a/0xbb2 arch/riscv/kernel/process.c:214\n\
+  \       ret_from_fork_kernel_asm+0x16/0x18 arch/riscv/kernel/entry.S:327\n\n-> #1\
+  \ (&set->update_nr_hwq_lock){++++}-{4:4}:\n       lock_acquire kernel/locking/lockdep.c:5871\
+  \ [inline]\n       lock_acquire+0x1ac/0x448 kernel/locking/lockdep.c:5828\n    \
+  \   down_write+0x9c/0x19a kernel/locking/rwsem.c:1577\n       blk_mq_update_nr_hw_queues+0x3e/0xb86\
+  \ block/blk-mq.c:5041\n       nbd_start_device+0x140/0xb2c drivers/block/nbd.c:1476\n\
+  \       nbd_genl_connect+0xae0/0x1b24 drivers/block/nbd.c:2201\n       genl_family_rcv_msg_doit+0x206/0x2e6\
+  \ net/netlink/genetlink.c:1115\n       genl_family_rcv_msg net/netlink/genetlink.c:1195\
+  \ [inline]\n       genl_rcv_msg+0x514/0x78e net/netlink/genetlink.c:1210\n     \
+  \  netlink_rcv_skb+0x206/0x3be net/netlink/af_netlink.c:2534\n       genl_rcv+0x36/0x4c\
+  \ net/netlink/genetlink.c:1219\n       netlink_unicast_kernel net/netlink/af_netlink.c:1313\
+  \ [inline]\n       netlink_unicast+0x4f0/0x82c net/netlink/af_netlink.c:1339\n \
+  \      netlink_sendmsg+0x85e/0xdd6 net/netlink/af_netlink.c:1883\n       sock_sendmsg_nosec\
+  \ net/socket.c:712 [inline]\n       __sock_sendmsg+0xcc/0x160 net/socket.c:727\n\
+  \       ____sys_sendmsg+0x63e/0x79c net/socket.c:2566\n       ___sys_sendmsg+0x144/0x1e6\
+  \ net/socket.c:2620\n       __sys_sendmsg+0x188/0x246 net/socket.c:2652\n      \
+  \ __do_sys_sendmsg net/socket.c:2657 [inline]\n       __se_sys_sendmsg net/socket.c:2655\
+  \ [inline]\n       __riscv_sys_sendmsg+0x70/0xa2 net/socket.c:2655\n       syscall_handler+0x94/0x118\
+  \ arch/riscv/include/asm/syscall.h:112\n       do_trap_ecall_u+0x396/0x530 arch/riscv/kernel/traps.c:341\n\
+  \       handle_exception+0x146/0x152 arch/riscv/kernel/entry.S:197\n\n-> #0 (&nbd->config_lock){+.+.}-{4:4}:\n\
+  \       check_noncircular+0x132/0x146 kernel/locking/lockdep.c:2178\n       check_prev_add\
+  \ kernel/locking/lockdep.c:3168 [inline]\n       check_prevs_add kernel/locking/lockdep.c:3287\
+  \ [inline]\n       validate_chain kernel/locking/lockdep.c:3911 [inline]\n     \
+  \  __lock_acquire+0x12b2/0x24ea kernel/locking/lockdep.c:5240\n       lock_acquire\
+  \ kernel/locking/lockdep.c:5871 [inline]\n       lock_acquire+0x1ac/0x448 kernel/locking/lockdep.c:5828\n\
+  \       __mutex_lock_common kernel/locking/mutex.c:602 [inline]\n       __mutex_lock+0x166/0x1292\
+  \ kernel/locking/mutex.c:747\n       mutex_lock_nested+0x14/0x1c kernel/locking/mutex.c:799\n\
+  \       refcount_dec_and_mutex_lock+0x60/0xd8 lib/refcount.c:118\n       nbd_config_put+0x3a/0x610\
+  \ drivers/block/nbd.c:1423\n       nbd_release+0x94/0x15c drivers/block/nbd.c:1735\n\
+  \       blkdev_put_whole+0xac/0xee block/bdev.c:721\n       bdev_release+0x3fe/0x600\
+  \ block/bdev.c:1144\n       blkdev_release+0x1a/0x26 block/fops.c:684\n       __fput+0x382/0xa8c\
+  \ fs/file_table.c:465\n       ____fput+0x1c/0x26 fs/file_table.c:493\n       task_work_run+0x16a/0x25e\
+  \ kernel/task_work.c:227\n       resume_user_mode_work include/linux/resume_user_mode.h:50\
+  \ [inline]\n       exit_to_user_mode_loop+0x118/0x134 kernel/entry/common.c:114\n\
+  \       exit_to_user_mode_prepare include/linux/entry-common.h:330 [inline]\n  \
+  \     syscall_exit_to_user_mode_work include/linux/entry-common.h:414 [inline]\n\
+  \       syscall_exit_to_user_mode include/linux/entry-common.h:449 [inline]\n  \
+  \     do_trap_ecall_u+0x3f0/0x530 arch/riscv/kernel/traps.c:355\n       handle_exception+0x146/0x152\
+  \ arch/riscv/kernel/entry.S:197\n\nAlso it isn't necessary to require nbd->config_lock,\
+  \ because\nblk_mq_update_nr_hw_queues() does grab tagset lock for sync everything.\n\
+  \nFixes the issue by releasing ->config_lock & retry in case of concurrent\nupdating\
+  \ nr_hw_queues.\n\nFixes: 98e68f67020c (\"block: prevent adding/deleting disk during\
+  \ updating nr_hw_queues\")\nReported-by: syzbot+2bcecf3c38cb3e8fdc8d@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/all/6855034f.a00a0220.137b3.0031.GAE@google.com\n\
+  Reviewed-by: Yu Kuai <yukuai3@huawei.com>\nCc: Nilay Shroff <nilay@linux.ibm.com>\n\
+  Signed-off-by: Ming Lei <ming.lei@redhat.com>\nReviewed-by: Nilay Shroff <nilay@linux.ibm.com>\n\
+  Link: https://lore.kernel.org/r/20250709111744.2353050-1-ming.lei@redhat.com\nSigned-off-by:\
+  \ Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- drivers/block
+hunk_count: 1
+covered_count: 1

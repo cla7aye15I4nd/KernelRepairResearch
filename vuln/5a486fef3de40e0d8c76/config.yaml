@@ -1,0 +1,29 @@
+id: 5a486fef3de40e0d8c76
+bug_link: https://syzkaller.appspot.com/bug?extid=5a486fef3de40e0d8c76
+title: 'KCSAN: data-race in __se_sys_io_uring_register / io_sqe_files_register (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c750629caeca01979da3403f4bebecda88713233
+fix_commit: e358e09a894dbcd51fdbbcf62bec1df249915834
+datetime: '2024-11-18T09:10:56-07:00'
+fix_commit_message: "io_uring: protect register tracing\n\nSyz reports:\n\nBUG: KCSAN:\
+  \ data-race in __se_sys_io_uring_register / io_sqe_files_register\n\nread-write\
+  \ to 0xffff8881021940b8 of 4 bytes by task 5923 on cpu 1:\n io_sqe_files_register+0x2c4/0x3b0\
+  \ io_uring/rsrc.c:713\n __io_uring_register io_uring/register.c:403 [inline]\n __do_sys_io_uring_register\
+  \ io_uring/register.c:611 [inline]\n __se_sys_io_uring_register+0x8d0/0x1280 io_uring/register.c:591\n\
+  \ __x64_sys_io_uring_register+0x55/0x70 io_uring/register.c:591\n x64_sys_call+0x202/0x2d60\
+  \ arch/x86/include/generated/asm/syscalls_64.h:428\n do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \nread to 0xffff8881021940b8 of 4 bytes by task 5924 on cpu 0:\n __do_sys_io_uring_register\
+  \ io_uring/register.c:613 [inline]\n __se_sys_io_uring_register+0xe4a/0x1280 io_uring/register.c:591\n\
+  \ __x64_sys_io_uring_register+0x55/0x70 io_uring/register.c:591\n x64_sys_call+0x202/0x2d60\
+  \ arch/x86/include/generated/asm/syscalls_64.h:428\n do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \nWhich should be due to reading the table size after unlock. We don't\ncare much\
+  \ as it's just to print it in trace, but we might as well do it\nunder the lock.\n\
+  \nReported-by: syzbot+5a486fef3de40e0d8c76@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Pavel Begunkov <asml.silence@gmail.com>\nLink: https://lore.kernel.org/r/8233af2886a37b57f79e444e3db88fcfda1817ac.1731942203.git.asml.silence@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- io_uring
+hunk_count: 1
+covered_count: 0

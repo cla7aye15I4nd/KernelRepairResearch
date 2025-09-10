@@ -1,0 +1,87 @@
+diff --git a/block/bdev.c b/block/bdev.c
+index e7adaaf1c219..7a5f611c3d2e 100644
+--- a/block/bdev.c
++++ b/block/bdev.c
+@@ -583,6 +583,9 @@ static void bd_finish_claiming(struct block_device *bdev, void *holder,
+ 	mutex_unlock(&bdev->bd_holder_lock);
+ 	bd_clear_claiming(whole, holder);
+ 	mutex_unlock(&bdev_lock);
++
++	if (hops && hops->get_holder)
++		hops->get_holder(holder);
+ }
+ 
+ /**
+@@ -605,6 +608,7 @@ EXPORT_SYMBOL(bd_abort_claiming);
+ static void bd_end_claim(struct block_device *bdev, void *holder)
+ {
+ 	struct block_device *whole = bdev_whole(bdev);
++	const struct blk_holder_ops *hops = bdev->bd_holder_ops;
+ 	bool unblock = false;
+ 
+ 	/*
+@@ -627,6 +631,9 @@ static void bd_end_claim(struct block_device *bdev, void *holder)
+ 		whole->bd_holder = NULL;
+ 	mutex_unlock(&bdev_lock);
+ 
++	if (hops && hops->put_holder)
++		hops->put_holder(holder);
++
+ 	/*
+ 	 * If this was the last claim, remove holder link and unblock evpoll if
+ 	 * it was a write holder.
+diff --git a/fs/super.c b/fs/super.c
+index ee05ab6b37e7..71d9779c42b1 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -1515,11 +1515,29 @@ static int fs_bdev_thaw(struct block_device *bdev)
+ 	return error;
+ }
+ 
++static void fs_bdev_super_get(void *data)
++{
++	struct super_block *sb = data;
++
++	spin_lock(&sb_lock);
++	sb->s_count++;
++	spin_unlock(&sb_lock);
++}
++
++static void fs_bdev_super_put(void *data)
++{
++	struct super_block *sb = data;
++
++	put_super(sb);
++}
++
+ const struct blk_holder_ops fs_holder_ops = {
+ 	.mark_dead		= fs_bdev_mark_dead,
+ 	.sync			= fs_bdev_sync,
+ 	.freeze			= fs_bdev_freeze,
+ 	.thaw			= fs_bdev_thaw,
++	.get_holder		= fs_bdev_super_get,
++	.put_holder		= fs_bdev_super_put,
+ };
+ EXPORT_SYMBOL_GPL(fs_holder_ops);
+ 
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index f9b87c39cab0..c3e8f7cf96be 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -1505,6 +1505,16 @@ struct blk_holder_ops {
+ 	 * Thaw the file system mounted on the block device.
+ 	 */
+ 	int (*thaw)(struct block_device *bdev);
++
++	/*
++	 * If needed, get a reference to the holder.
++	 */
++	void (*get_holder)(void *holder);
++
++	/*
++	 * Release the holder.
++	 */
++	void (*put_holder)(void *holder);
+ };
+ 
+ /*

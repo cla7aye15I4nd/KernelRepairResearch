@@ -1,0 +1,35 @@
+id: e36f41d207137b5d12f7
+bug_link: https://syzkaller.appspot.com/bug?extid=e36f41d207137b5d12f7
+title: 'INFO: task hung in nbd_ioctl (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 05d4487197b2b71d5363623c28924fd58c71c0b6
+fix_commit: 2a63866c8b51a3f72cea388dfac259d0e14c4ba6
+datetime: '2020-09-02T15:49:30-07:00'
+fix_commit_message: "tipc: fix shutdown() of connectionless socket\n\nsyzbot is reporting\
+  \ hung task at nbd_ioctl() [1], for there are two\nproblems regarding TIPC's connectionless\
+  \ socket's shutdown() operation.\n\n----------\n#include <fcntl.h>\n#include <sys/socket.h>\n\
+  #include <sys/ioctl.h>\n#include <linux/nbd.h>\n#include <unistd.h>\n\nint main(int\
+  \ argc, char *argv[])\n{\n        const int fd = open(\"/dev/nbd0\", 3);\n     \
+  \   alarm(5);\n        ioctl(fd, NBD_SET_SOCK, socket(PF_TIPC, SOCK_DGRAM, 0));\n\
+  \        ioctl(fd, NBD_DO_IT, 0); /* To be interrupted by SIGALRM. */\n        return\
+  \ 0;\n}\n----------\n\nOne problem is that wait_for_completion() from flush_workqueue()\
+  \ from\nnbd_start_device_ioctl() from nbd_ioctl() cannot be completed when\nnbd_start_device_ioctl()\
+  \ received a signal at wait_event_interruptible(),\nfor tipc_shutdown() from kernel_sock_shutdown(SHUT_RDWR)\
+  \ from\nnbd_mark_nsock_dead() from sock_shutdown() from nbd_start_device_ioctl()\n\
+  is failing to wake up a WQ thread sleeping at wait_woken() from\ntipc_wait_for_rcvmsg()\
+  \ from sock_recvmsg() from sock_xmit() from\nnbd_read_stat() from recv_work() scheduled\
+  \ by nbd_start_device() from\nnbd_start_device_ioctl(). Fix this problem by always\
+  \ invoking\nsk->sk_state_change() (like inet_shutdown() does) when tipc_shutdown()\
+  \ is\ncalled.\n\nThe other problem is that tipc_wait_for_rcvmsg() cannot return\
+  \ when\ntipc_shutdown() is called, for tipc_shutdown() sets sk->sk_shutdown to\n\
+  SEND_SHUTDOWN (despite \"how\" is SHUT_RDWR) while tipc_wait_for_rcvmsg()\nneeds\
+  \ sk->sk_shutdown set to RCV_SHUTDOWN or SHUTDOWN_MASK. Fix this\nproblem by setting\
+  \ sk->sk_shutdown to SHUTDOWN_MASK (like inet_shutdown()\ndoes) when the socket\
+  \ is connectionless.\n\n[1] https://syzkaller.appspot.com/bug?id=3fe51d307c1f0a845485cf1798aa059d12bf18b2\n\
+  \nReported-by: syzbot <syzbot+e36f41d207137b5d12f7@syzkaller.appspotmail.com>\n\
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nSigned-off-by:\
+  \ David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/tipc
+hunk_count: 1
+covered_count: 0

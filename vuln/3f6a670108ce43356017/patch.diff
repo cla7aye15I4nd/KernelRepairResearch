@@ -1,0 +1,66 @@
+diff --git a/fs/gfs2/super.c b/fs/gfs2/super.c
+index e0dceef3c9cc..119a5b20eb00 100644
+--- a/fs/gfs2/super.c
++++ b/fs/gfs2/super.c
+@@ -580,15 +580,8 @@ void gfs2_make_fs_ro(struct gfs2_sbd *sdp)
+ 				   gfs2_log_is_empty(sdp),
+ 				   HZ * 5);
+ 		gfs2_assert_warn(sdp, gfs2_log_is_empty(sdp));
+-	} else {
+-		wait_event_timeout(sdp->sd_log_waitq,
+-				   gfs2_log_is_empty(sdp),
+-				   HZ * 5);
+ 	}
+ 	gfs2_quota_cleanup(sdp);
+-
+-	if (!log_write_allowed)
+-		sdp->sd_vfs->s_flags |= SB_RDONLY;
+ }
+ 
+ /**
+@@ -622,6 +615,8 @@ static void gfs2_put_super(struct super_block *sb)
+ 	if (!sb_rdonly(sb)) {
+ 		gfs2_make_fs_ro(sdp);
+ 	}
++	if (gfs2_withdrawn(sdp))
++		gfs2_quota_cleanup(sdp);
+ 	WARN_ON(gfs2_withdrawing(sdp));
+ 
+ 	/*  At this point, we're through modifying the disk  */
+diff --git a/fs/gfs2/util.c b/fs/gfs2/util.c
+index dac22b1c1a2e..b3086a9baf00 100644
+--- a/fs/gfs2/util.c
++++ b/fs/gfs2/util.c
+@@ -9,6 +9,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/completion.h>
+ #include <linux/buffer_head.h>
++#include <linux/kthread.h>
+ #include <linux/crc32.h>
+ #include <linux/gfs2_ondisk.h>
+ #include <linux/delay.h>
+@@ -150,7 +151,23 @@ static void signal_our_withdraw(struct gfs2_sbd *sdp)
+ 	if (!sb_rdonly(sdp->sd_vfs)) {
+ 		bool locked = mutex_trylock(&sdp->sd_freeze_mutex);
+ 
+-		gfs2_make_fs_ro(sdp);
++		if (sdp->sd_quotad_process &&
++		    current != sdp->sd_quotad_process) {
++			kthread_stop(sdp->sd_quotad_process);
++			sdp->sd_quotad_process = NULL;
++		}
++
++		if (sdp->sd_logd_process &&
++		    current != sdp->sd_logd_process) {
++			kthread_stop(sdp->sd_logd_process);
++			sdp->sd_logd_process = NULL;
++		}
++
++		wait_event_timeout(sdp->sd_log_waitq,
++				   gfs2_log_is_empty(sdp),
++				   HZ * 5);
++
++		sdp->sd_vfs->s_flags |= SB_RDONLY;
+ 
+ 		if (locked)
+ 			mutex_unlock(&sdp->sd_freeze_mutex);

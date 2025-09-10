@@ -1,0 +1,30 @@
+id: c2fb6f9ddcea95ba49b5
+bug_link: https://syzkaller.appspot.com/bug?extid=c2fb6f9ddcea95ba49b5
+title: 'BUG: stack guard page was hit in update_stack_state'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7d14b0d2b9b317cfc14161143e2006b95a5da9b1
+fix_commit: dd912306ff008891c82cd9f63e8181e47a9cb2fb
+datetime: '2020-05-07T18:18:36-07:00'
+fix_commit_message: "net: fix a potential recursive NETDEV_FEAT_CHANGE\n\nsyzbot managed\
+  \ to trigger a recursive NETDEV_FEAT_CHANGE event\nbetween bonding master and slave.\
+  \ I managed to find a reproducer\nfor this:\n\n  ip li set bond0 up\n  ifenslave\
+  \ bond0 eth0\n  brctl addbr br0\n  ethtool -K eth0 lro off\n  brctl addif br0 bond0\n\
+  \  ip li set br0 up\n\nWhen a NETDEV_FEAT_CHANGE event is triggered on a bonding\
+  \ slave,\nit captures this and calls bond_compute_features() to fixup its\nmaster's\
+  \ and other slaves' features. However, when syncing with\nits lower devices by netdev_sync_lower_features()\
+  \ this event is\ntriggered again on slaves when the LRO feature fails to change,\n\
+  so it goes back and forth recursively until the kernel stack is\nexhausted.\n\n\
+  Commit 17b85d29e82c intentionally lets __netdev_update_features()\nreturn -1 for\
+  \ such a failure case, so we have to just rely on\nthe existing check inside netdev_sync_lower_features()\
+  \ and skip\nNETDEV_FEAT_CHANGE event only for this specific failure case.\n\nFixes:\
+  \ fd867d51f889 (\"net/core: generic support for disabling netdev features down stack\"\
+  )\nReported-by: syzbot+e73ceacfd8560cc8a3ca@syzkaller.appspotmail.com\nReported-by:\
+  \ syzbot+c2fb6f9ddcea95ba49b5@syzkaller.appspotmail.com\nCc: Jarod Wilson <jarod@redhat.com>\n\
+  Cc: Nikolay Aleksandrov <nikolay@cumulusnetworks.com>\nCc: Josh Poimboeuf <jpoimboe@redhat.com>\n\
+  Cc: Jann Horn <jannh@google.com>\nReviewed-by: Jay Vosburgh <jay.vosburgh@canonical.com>\n\
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>\nAcked-by: Nikolay Aleksandrov\
+  \ <nikolay@cumulusnetworks.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 0

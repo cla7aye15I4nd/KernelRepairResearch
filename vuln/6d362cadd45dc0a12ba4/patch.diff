@@ -1,0 +1,186 @@
+diff --git a/kernel/bpf/verifier.c b/kernel/bpf/verifier.c
+index eb062b0fbf27..13551e623501 100644
+--- a/kernel/bpf/verifier.c
++++ b/kernel/bpf/verifier.c
+@@ -1895,17 +1895,13 @@ static int adjust_ptr_min_max_vals(struct bpf_verifier_env *env,
+ 
+ 	dst_reg = &regs[dst];
+ 
+-	if (WARN_ON_ONCE(known && (smin_val != smax_val))) {
+-		print_verifier_state(env, env->cur_state);
+-		verbose(env,
+-			"verifier internal error: known but bad sbounds\n");
+-		return -EINVAL;
+-	}
+-	if (WARN_ON_ONCE(known && (umin_val != umax_val))) {
+-		print_verifier_state(env, env->cur_state);
+-		verbose(env,
+-			"verifier internal error: known but bad ubounds\n");
+-		return -EINVAL;
++	if ((known && (smin_val != smax_val || umin_val != umax_val)) ||
++	    smin_val > smax_val || umin_val > umax_val) {
++		/* Taint dst register if offset had invalid bounds derived from
++		 * e.g. dead branches.
++		 */
++		__mark_reg_unknown(dst_reg);
++		return 0;
+ 	}
+ 
+ 	if (BPF_CLASS(insn->code) != BPF_ALU64) {
+@@ -2097,6 +2093,15 @@ static int adjust_scalar_min_max_vals(struct bpf_verifier_env *env,
+ 	src_known = tnum_is_const(src_reg.var_off);
+ 	dst_known = tnum_is_const(dst_reg->var_off);
+ 
++	if ((src_known && (smin_val != smax_val || umin_val != umax_val)) ||
++	    smin_val > smax_val || umin_val > umax_val) {
++		/* Taint dst register if offset had invalid bounds derived from
++		 * e.g. dead branches.
++		 */
++		__mark_reg_unknown(dst_reg);
++		return 0;
++	}
++
+ 	if (!src_known &&
+ 	    opcode != BPF_ADD && opcode != BPF_SUB && opcode != BPF_AND) {
+ 		__mark_reg_unknown(dst_reg);
+diff --git a/tools/testing/selftests/bpf/test_verifier.c b/tools/testing/selftests/bpf/test_verifier.c
+index 67e7c41674d2..5ed4175c4ff8 100644
+--- a/tools/testing/selftests/bpf/test_verifier.c
++++ b/tools/testing/selftests/bpf/test_verifier.c
+@@ -6732,7 +6732,7 @@ static struct bpf_test tests[] = {
+ 			BPF_JMP_IMM(BPF_JA, 0, 0, -7),
+ 		},
+ 		.fixup_map1 = { 4 },
+-		.errstr = "unbounded min value",
++		.errstr = "R0 invalid mem access 'inv'",
+ 		.result = REJECT,
+ 	},
+ 	{
+@@ -8633,6 +8633,127 @@ static struct bpf_test tests[] = {
+ 		.prog_type = BPF_PROG_TYPE_XDP,
+ 		.flags = F_NEEDS_EFFICIENT_UNALIGNED_ACCESS,
+ 	},
++	{
++		"check deducing bounds from const, 1",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, 1),
++			BPF_JMP_IMM(BPF_JSGE, BPF_REG_0, 1, 0),
++			BPF_ALU64_REG(BPF_SUB, BPF_REG_0, BPF_REG_1),
++			BPF_EXIT_INSN(),
++		},
++		.result = REJECT,
++		.errstr = "R0 tried to subtract pointer from scalar",
++	},
++	{
++		"check deducing bounds from const, 2",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, 1),
++			BPF_JMP_IMM(BPF_JSGE, BPF_REG_0, 1, 1),
++			BPF_EXIT_INSN(),
++			BPF_JMP_IMM(BPF_JSLE, BPF_REG_0, 1, 1),
++			BPF_EXIT_INSN(),
++			BPF_ALU64_REG(BPF_SUB, BPF_REG_1, BPF_REG_0),
++			BPF_EXIT_INSN(),
++		},
++		.result = ACCEPT,
++	},
++	{
++		"check deducing bounds from const, 3",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, 0),
++			BPF_JMP_IMM(BPF_JSLE, BPF_REG_0, 0, 0),
++			BPF_ALU64_REG(BPF_SUB, BPF_REG_0, BPF_REG_1),
++			BPF_EXIT_INSN(),
++		},
++		.result = REJECT,
++		.errstr = "R0 tried to subtract pointer from scalar",
++	},
++	{
++		"check deducing bounds from const, 4",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, 0),
++			BPF_JMP_IMM(BPF_JSLE, BPF_REG_0, 0, 1),
++			BPF_EXIT_INSN(),
++			BPF_JMP_IMM(BPF_JSGE, BPF_REG_0, 0, 1),
++			BPF_EXIT_INSN(),
++			BPF_ALU64_REG(BPF_SUB, BPF_REG_1, BPF_REG_0),
++			BPF_EXIT_INSN(),
++		},
++		.result = ACCEPT,
++	},
++	{
++		"check deducing bounds from const, 5",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, 0),
++			BPF_JMP_IMM(BPF_JSGE, BPF_REG_0, 0, 1),
++			BPF_ALU64_REG(BPF_SUB, BPF_REG_0, BPF_REG_1),
++			BPF_EXIT_INSN(),
++		},
++		.result = REJECT,
++		.errstr = "R0 tried to subtract pointer from scalar",
++	},
++	{
++		"check deducing bounds from const, 6",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, 0),
++			BPF_JMP_IMM(BPF_JSGE, BPF_REG_0, 0, 1),
++			BPF_EXIT_INSN(),
++			BPF_ALU64_REG(BPF_SUB, BPF_REG_0, BPF_REG_1),
++			BPF_EXIT_INSN(),
++		},
++		.result = REJECT,
++		.errstr = "R0 tried to subtract pointer from scalar",
++	},
++	{
++		"check deducing bounds from const, 7",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, ~0),
++			BPF_JMP_IMM(BPF_JSGE, BPF_REG_0, 0, 0),
++			BPF_ALU64_REG(BPF_SUB, BPF_REG_1, BPF_REG_0),
++			BPF_LDX_MEM(BPF_W, BPF_REG_0, BPF_REG_1,
++				    offsetof(struct __sk_buff, mark)),
++			BPF_EXIT_INSN(),
++		},
++		.result = REJECT,
++		.errstr = "dereference of modified ctx ptr",
++	},
++	{
++		"check deducing bounds from const, 8",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, ~0),
++			BPF_JMP_IMM(BPF_JSGE, BPF_REG_0, 0, 1),
++			BPF_ALU64_REG(BPF_ADD, BPF_REG_1, BPF_REG_0),
++			BPF_LDX_MEM(BPF_W, BPF_REG_0, BPF_REG_1,
++				    offsetof(struct __sk_buff, mark)),
++			BPF_EXIT_INSN(),
++		},
++		.result = REJECT,
++		.errstr = "dereference of modified ctx ptr",
++	},
++	{
++		"check deducing bounds from const, 9",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, 0),
++			BPF_JMP_IMM(BPF_JSGE, BPF_REG_0, 0, 0),
++			BPF_ALU64_REG(BPF_SUB, BPF_REG_0, BPF_REG_1),
++			BPF_EXIT_INSN(),
++		},
++		.result = REJECT,
++		.errstr = "R0 tried to subtract pointer from scalar",
++	},
++	{
++		"check deducing bounds from const, 10",
++		.insns = {
++			BPF_MOV64_IMM(BPF_REG_0, 0),
++			BPF_JMP_IMM(BPF_JSLE, BPF_REG_0, 0, 0),
++			/* Marks reg as unknown. */
++			BPF_ALU64_IMM(BPF_NEG, BPF_REG_0, 0),
++			BPF_ALU64_REG(BPF_SUB, BPF_REG_0, BPF_REG_1),
++			BPF_EXIT_INSN(),
++		},
++		.result = REJECT,
++		.errstr = "math between ctx pointer and register with unbounded min value is not allowed",
++	},
+ 	{
+ 		"bpf_exit with invalid return code. test1",
+ 		.insns = {

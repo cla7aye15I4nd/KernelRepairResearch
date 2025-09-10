@@ -1,0 +1,26 @@
+id: 7f4a27091759e2fe7453
+bug_link: https://syzkaller.appspot.com/bug?extid=7f4a27091759e2fe7453
+title: 'KASAN: use-after-free Write in jbd2_log_do_checkpoint'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 182a79e0c17147d2c2d3990a9a7b6b58a1561c7a
+fix_commit: ccd3c4373eacb044eb3832966299d13d2631f66f
+datetime: '2018-10-05T18:44:40-04:00'
+fix_commit_message: "jbd2: fix use after free in jbd2_log_do_checkpoint()\n\nThe code\
+  \ cleaning transaction's lists of checkpoint buffers has a bug\nwhere it increases\
+  \ bh refcount only after releasing\njournal->j_list_lock. Thus the following race\
+  \ is possible:\n\nCPU0\t\t\t\t\tCPU1\njbd2_log_do_checkpoint()\n\t\t\t\t\tjbd2_journal_try_to_free_buffers()\n\
+  \t\t\t\t\t  __journal_try_to_free_buffer(bh)\n  ...\n  while (transaction->t_checkpoint_io_list)\n\
+  \  ...\n    if (buffer_locked(bh)) {\n\n<-- IO completes now, buffer gets unlocked\
+  \ -->\n\n      spin_unlock(&journal->j_list_lock);\n\t\t\t\t\t    spin_lock(&journal->j_list_lock);\n\
+  \t\t\t\t\t    __jbd2_journal_remove_checkpoint(jh);\n\t\t\t\t\t    spin_unlock(&journal->j_list_lock);\n\
+  \t\t\t\t\t  try_to_free_buffers(page);\n      get_bh(bh) <-- accesses freed bh\n\
+  \nFix the problem by grabbing bh reference before unlocking\njournal->j_list_lock.\n\
+  \nFixes: dc6e8d669cf5 (\"jbd2: don't call get_bh() before calling __jbd2_journal_remove_checkpoint()\"\
+  )\nFixes: be1158cc615f (\"jbd2: fold __process_buffer() into jbd2_log_do_checkpoint()\"\
+  )\nReported-by: syzbot+7f4a27091759e2fe7453@syzkaller.appspotmail.com\nCC: stable@vger.kernel.org\n\
+  Reviewed-by: Lukas Czerner <lczerner@redhat.com>\nSigned-off-by: Jan Kara <jack@suse.cz>\n\
+  Signed-off-by: Theodore Ts'o <tytso@mit.edu>\n"
+submodule:
+- fs/jbd2
+hunk_count: 2
+covered_count: 1

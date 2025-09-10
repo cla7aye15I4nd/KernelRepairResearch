@@ -1,0 +1,42 @@
+=====================================================
+BUG: KMSAN: uninit-value in vsock_assign_transport+0xb2a/0xb90 net/vmw_vsock/af_vsock.c:500
+ vsock_assign_transport+0xb2a/0xb90 net/vmw_vsock/af_vsock.c:500
+ vsock_connect+0x544/0x1560 net/vmw_vsock/af_vsock.c:1393
+ __sys_connect_file net/socket.c:2048 [inline]
+ __sys_connect+0x606/0x690 net/socket.c:2065
+ __do_sys_connect net/socket.c:2075 [inline]
+ __se_sys_connect net/socket.c:2072 [inline]
+ __x64_sys_connect+0x91/0xe0 net/socket.c:2072
+ x64_sys_call+0x3356/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:43
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ __kmalloc_large_node+0x231/0x370 mm/slub.c:3921
+ __do_kmalloc_node mm/slub.c:3954 [inline]
+ __kmalloc_node+0xb07/0x1060 mm/slub.c:3973
+ kmalloc_node include/linux/slab.h:648 [inline]
+ kvmalloc_node+0xc0/0x2d0 mm/util.c:634
+ kvmalloc include/linux/slab.h:766 [inline]
+ vhost_vsock_dev_open+0x44/0x510 drivers/vhost/vsock.c:659
+ misc_open+0x66b/0x760 drivers/char/misc.c:165
+ chrdev_open+0xa5f/0xb80 fs/char_dev.c:414
+ do_dentry_open+0x11f1/0x2120 fs/open.c:955
+ vfs_open+0x7e/0xa0 fs/open.c:1089
+ do_open fs/namei.c:3642 [inline]
+ path_openat+0x4a3c/0x5b00 fs/namei.c:3799
+ do_filp_open+0x20e/0x590 fs/namei.c:3826
+ do_sys_openat2+0x1bf/0x2f0 fs/open.c:1406
+ do_sys_open fs/open.c:1421 [inline]
+ __do_sys_openat fs/open.c:1437 [inline]
+ __se_sys_openat fs/open.c:1432 [inline]
+ __x64_sys_openat+0x2a1/0x310 fs/open.c:1432
+ x64_sys_call+0x3a64/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:258
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 1 PID: 5021 Comm: syz-executor390 Not tainted 6.9.0-rc4-syzkaller-00038-g8cd26fd90c1a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+=====================================================

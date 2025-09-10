@@ -1,0 +1,151 @@
+id: 7f4f9a43a9c78eaee04f
+bug_link: https://syzkaller.appspot.com/bug?extid=7f4f9a43a9c78eaee04f
+title: 'WARNING: locking bug in get_random_u8'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 773fc6ab7102c39da78b3f1fb2ad6f1a59850030
+fix_commit: d40797d6720e861196e848f3615bb09dae5be7ce
+datetime: '2025-01-13T22:40:36-08:00'
+fix_commit_message: 'kasan: make kasan_record_aux_stack_noalloc() the default behaviour
+
+
+  kasan_record_aux_stack_noalloc() was introduced to record a stack trace
+
+  without allocating memory in the process.  It has been added to callers
+
+  which were invoked while a raw_spinlock_t was held.  More and more callers
+
+  were identified and changed over time.  Is it a good thing to have this
+
+  while functions try their best to do a locklessly setup?  The only
+
+  downside of having kasan_record_aux_stack() not allocate any memory is
+
+  that we end up without a stacktrace if stackdepot runs out of memory and
+
+  at the same stacktrace was not recorded before To quote Marco Elver from
+
+  https://lore.kernel.org/all/CANpmjNPmQYJ7pv1N3cuU8cP18u7PP_uoZD8YxwZd4jtbof9nVQ@mail.gmail.com/
+
+
+  | I''d be in favor, it simplifies things. And stack depot should be
+
+  | able to replenish its pool sufficiently in the "non-aux" cases
+
+  | i.e. regular allocations. Worst case we fail to record some
+
+  | aux stacks, but I think that''s only really bad if there''s a bug
+
+  | around one of these allocations. In general the probabilities
+
+  | of this being a regression are extremely small [...]
+
+
+  Make the kasan_record_aux_stack_noalloc() behaviour default as
+
+  kasan_record_aux_stack().
+
+
+  [bigeasy@linutronix.de: dressed the diff as patch]
+
+  Link: https://lkml.kernel.org/r/20241122155451.Mb2pmeyJ@linutronix.de
+
+  Fixes: 7cb3007ce2da ("kasan: generic: introduce kasan_record_aux_stack_noalloc()")
+
+  Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+
+  Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+
+  Reported-by: syzbot+39f85d612b7c20d8db48@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/all/67275485.050a0220.3c8d68.0a37.GAE@google.com
+
+  Reviewed-by: Andrey Konovalov <andreyknvl@gmail.com>
+
+  Reviewed-by: Marco Elver <elver@google.com>
+
+  Reviewed-by: Waiman Long <longman@redhat.com>
+
+  Cc: Alexander Potapenko <glider@google.com>
+
+  Cc: Andrey Ryabinin <ryabinin.a.a@gmail.com>
+
+  Cc: Ben Segall <bsegall@google.com>
+
+  Cc: Boqun Feng <boqun.feng@gmail.com>
+
+  Cc: Christoph Lameter <cl@linux.com>
+
+  Cc: David Rientjes <rientjes@google.com>
+
+  Cc: Dietmar Eggemann <dietmar.eggemann@arm.com>
+
+  Cc: Dmitry Vyukov <dvyukov@google.com>
+
+  Cc: Frederic Weisbecker <frederic@kernel.org>
+
+  Cc: Hyeonggon Yoo <42.hyeyoo@gmail.com>
+
+  Cc: Ingo Molnar <mingo@redhat.com>
+
+  Cc: Jann Horn <jannh@google.com>
+
+  Cc: Joel Fernandes (Google) <joel@joelfernandes.org>
+
+  Cc: Joonsoo Kim <iamjoonsoo.kim@lge.com>
+
+  Cc: Josh Triplett <josh@joshtriplett.org>
+
+  Cc: Juri Lelli <juri.lelli@redhat.com>
+
+  Cc: <kasan-dev@googlegroups.com>
+
+  Cc: Lai Jiangshan <jiangshanlai@gmail.com>
+
+  Cc: Liam R. Howlett <Liam.Howlett@Oracle.com>
+
+  Cc: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
+
+  Cc: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+
+  Cc: Mel Gorman <mgorman@suse.de>
+
+  Cc: Neeraj Upadhyay <neeraj.upadhyay@kernel.org>
+
+  Cc: Paul E. McKenney <paulmck@kernel.org>
+
+  Cc: Pekka Enberg <penberg@kernel.org>
+
+  Cc: Roman Gushchin <roman.gushchin@linux.dev>
+
+  Cc: Steven Rostedt <rostedt@goodmis.org>
+
+  Cc: syzkaller-bugs@googlegroups.com
+
+  Cc: Tejun Heo <tj@kernel.org>
+
+  Cc: Thomas Gleixner <tglx@linutronix.de>
+
+  Cc: Uladzislau Rezki (Sony) <urezki@gmail.com>
+
+  Cc: Valentin Schneider <vschneid@redhat.com>
+
+  Cc: Vincent Guittot <vincent.guittot@linaro.org>
+
+  Cc: Vincenzo Frascino <vincenzo.frascino@arm.com>
+
+  Cc: Vlastimil Babka <vbabka@suse.cz>
+
+  Cc: Zqiang <qiang.zhang1211@gmail.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- include/linux
+- kernel
+- kernel/rcu
+- kernel/sched
+- mm
+- mm/kasan
+hunk_count: 13
+covered_count: 3

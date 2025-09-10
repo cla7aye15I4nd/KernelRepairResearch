@@ -1,0 +1,25 @@
+id: 70ab6a1f8151888c4ea0
+bug_link: https://syzkaller.appspot.com/bug?extid=70ab6a1f8151888c4ea0
+title: 'WARNING: ODEBUG bug in tls_sw_free_resources_tx'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ac78fc148d8249dbf382c2127456dd08ec5b161c
+fix_commit: f87e62d45e51b12d48d2cb46b5cde8f83b866bc4
+datetime: '2019-07-22T16:04:16+02:00'
+fix_commit_message: "net/tls: remove close callback sock unlock/lock around TX work\
+  \ flush\n\nThe tls close() callback currently drops the sock lock, makes a\ncancel_delayed_work_sync()\
+  \ call, and then relocks the sock.\n\nBy restructuring the code we can avoid droping\
+  \ lock and then\nreclaiming it. To simplify this we do the following,\n\n tls_sk_proto_close\n\
+  \ set_bit(CLOSING)\n set_bit(SCHEDULE)\n cancel_delay_work_sync() <- cancel workqueue\n\
+  \ lock_sock(sk)\n ...\n release_sock(sk)\n strp_done()\n\nSetting the CLOSING bit\
+  \ prevents the SCHEDULE bit from being\ncleared by any workqueue items e.g. if one\
+  \ happens to be\nscheduled and run between when we set SCHEDULE bit and cancel\n\
+  work. Then because SCHEDULE bit is set now no new work will\nbe scheduled.\n\nTested\
+  \ with net selftests and bpf selftests.\n\nSigned-off-by: John Fastabend <john.fastabend@gmail.com>\n\
+  Signed-off-by: Jakub Kicinski <jakub.kicinski@netronome.com>\nReviewed-by: Dirk\
+  \ van der Merwe <dirk.vandermerwe@netronome.com>\nSigned-off-by: Daniel Borkmann\
+  \ <daniel@iogearbox.net>\n"
+submodule:
+- include/net
+- net/tls
+hunk_count: 6
+covered_count: 1

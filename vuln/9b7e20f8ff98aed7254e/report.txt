@@ -1,0 +1,75 @@
+BUG: unable to handle page fault for address: ffffed110a92c204
+#PF: supervisor read access in kernel mode
+#PF: error_code(0x0000) - not-present page
+PGD 23ffee067 P4D 23ffee067 PUD 0 
+Oops: Oops: 0000 [#1] SMP KASAN PTI
+CPU: 1 UID: 0 PID: 6951 Comm: read_btree_node Not tainted 6.16.0-rc1-syzkaller-00005-g488ef3560196 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+RIP: 0010:unpack_state_init fs/bcachefs/bkey.c:151 [inline]
+RIP: 0010:__bch2_bkey_unpack_key+0x5b/0xe10 fs/bcachefs/bkey.c:269
+Code: 42 0f b6 04 38 84 c0 0f 85 b2 09 00 00 48 89 5c 24 18 0f b6 1b 8d 43 ff 4c 8d 34 c5 00 00 00 00 4d 01 ee 4c 89 f0 48 c1 e8 03 <42> 80 3c 38 00 74 08 4c 89 f7 e8 86 61 09 fe 4c 89 74 24 08 49 8b
+RSP: 0018:ffffc9000b9a69d8 EFLAGS: 00010a02
+RAX: 1ffff1110a92c204 RBX: 0000000000000000 RCX: ffff88802ee6da00
+RDX: 0000000000000000 RSI: ffff888053cb40c0 RDI: ffffc9000b9a6c50
+RBP: ffffc9000b9a6ce8 R08: ffff88802ee6da00 R09: 0000000000000005
+R10: 0000000000000004 R11: 0000000000000000 R12: ffffc9000b9a6c50
+R13: ffff888054961028 R14: ffff888854961020 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff888125d86000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffed110a92c204 CR3: 0000000032cf6000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __bch2_bkey_compat+0x4db/0xbd0 fs/bcachefs/bkey_methods.c:480
+ bch2_bkey_compat fs/bcachefs/bkey_methods.h:134 [inline]
+ validate_bset_keys+0x5b7/0x1480 fs/bcachefs/btree_io.c:983
+ bch2_btree_node_read_done+0x1d3c/0x5150 fs/bcachefs/btree_io.c:1211
+ btree_node_read_work+0x426/0xe30 fs/bcachefs/btree_io.c:1399
+ bch2_btree_node_read+0x887/0x2a00 fs/bcachefs/btree_io.c:-1
+ bch2_btree_node_fill+0xd12/0x14f0 fs/bcachefs/btree_cache.c:994
+ bch2_btree_node_get_noiter+0xa2c/0x1000 fs/bcachefs/btree_cache.c:1261
+ found_btree_node_is_readable fs/bcachefs/btree_node_scan.c:85 [inline]
+ try_read_btree_node fs/bcachefs/btree_node_scan.c:220 [inline]
+ read_btree_nodes_worker+0x1319/0x1e20 fs/bcachefs/btree_node_scan.c:269
+ kthread+0x70e/0x8a0 kernel/kthread.c:464
+ ret_from_fork+0x3fc/0x770 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+CR2: ffffed110a92c204
+---[ end trace 0000000000000000 ]---
+RIP: 0010:unpack_state_init fs/bcachefs/bkey.c:151 [inline]
+RIP: 0010:__bch2_bkey_unpack_key+0x5b/0xe10 fs/bcachefs/bkey.c:269
+Code: 42 0f b6 04 38 84 c0 0f 85 b2 09 00 00 48 89 5c 24 18 0f b6 1b 8d 43 ff 4c 8d 34 c5 00 00 00 00 4d 01 ee 4c 89 f0 48 c1 e8 03 <42> 80 3c 38 00 74 08 4c 89 f7 e8 86 61 09 fe 4c 89 74 24 08 49 8b
+RSP: 0018:ffffc9000b9a69d8 EFLAGS: 00010a02
+RAX: 1ffff1110a92c204 RBX: 0000000000000000 RCX: ffff88802ee6da00
+RDX: 0000000000000000 RSI: ffff888053cb40c0 RDI: ffffc9000b9a6c50
+RBP: ffffc9000b9a6ce8 R08: ffff88802ee6da00 R09: 0000000000000005
+R10: 0000000000000004 R11: 0000000000000000 R12: ffffc9000b9a6c50
+R13: ffff888054961028 R14: ffff888854961020 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff888125d86000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffed110a92c204 CR3: 0000000032cf6000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	42 0f b6 04 38       	movzbl (%rax,%r15,1),%eax
+   5:	84 c0                	test   %al,%al
+   7:	0f 85 b2 09 00 00    	jne    0x9bf
+   d:	48 89 5c 24 18       	mov    %rbx,0x18(%rsp)
+  12:	0f b6 1b             	movzbl (%rbx),%ebx
+  15:	8d 43 ff             	lea    -0x1(%rbx),%eax
+  18:	4c 8d 34 c5 00 00 00 	lea    0x0(,%rax,8),%r14
+  1f:	00
+  20:	4d 01 ee             	add    %r13,%r14
+  23:	4c 89 f0             	mov    %r14,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 80 3c 38 00       	cmpb   $0x0,(%rax,%r15,1) <-- trapping instruction
+  2f:	74 08                	je     0x39
+  31:	4c 89 f7             	mov    %r14,%rdi
+  34:	e8 86 61 09 fe       	call   0xfe0961bf
+  39:	4c 89 74 24 08       	mov    %r14,0x8(%rsp)
+  3e:	49                   	rex.WB
+  3f:	8b                   	.byte 0x8b

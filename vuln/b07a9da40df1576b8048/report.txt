@@ -1,0 +1,54 @@
+=====================================================
+BUG: KMSAN: uninit-value in validate_set+0x1a2/0x1640 net/openvswitch/flow_netlink.c:2879
+ validate_set+0x1a2/0x1640 net/openvswitch/flow_netlink.c:2879
+ __ovs_nla_copy_actions+0x2efc/0x61a0 net/openvswitch/flow_netlink.c:3383
+ ovs_nla_copy_actions+0x36b/0x550 net/openvswitch/flow_netlink.c:3543
+ get_flow_actions+0x99/0x1d0 net/openvswitch/datapath.c:1148
+ ovs_nla_init_match_and_action+0x221/0x420 net/openvswitch/datapath.c:1198
+ ovs_flow_cmd_set+0x320/0xec0 net/openvswitch/datapath.c:1236
+ genl_family_rcv_msg_doit net/netlink/genetlink.c:1115 [inline]
+ genl_family_rcv_msg net/netlink/genetlink.c:1195 [inline]
+ genl_rcv_msg+0x1214/0x12c0 net/netlink/genetlink.c:1210
+ netlink_rcv_skb+0x375/0x650 net/netlink/af_netlink.c:2534
+ genl_rcv+0x40/0x60 net/netlink/genetlink.c:1219
+ netlink_unicast_kernel net/netlink/af_netlink.c:1313 [inline]
+ netlink_unicast+0xf52/0x1260 net/netlink/af_netlink.c:1339
+ netlink_sendmsg+0x10da/0x11e0 net/netlink/af_netlink.c:1883
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg+0x30f/0x380 net/socket.c:727
+ ____sys_sendmsg+0x890/0xda0 net/socket.c:2566
+ ___sys_sendmsg+0x28d/0x3c0 net/socket.c:2620
+ __sys_sendmsg net/socket.c:2652 [inline]
+ __do_sys_sendmsg net/socket.c:2657 [inline]
+ __se_sys_sendmsg net/socket.c:2655 [inline]
+ __x64_sys_sendmsg+0x212/0x3c0 net/socket.c:2655
+ x64_sys_call+0x2e0f/0x3c80 arch/x86/include/generated/asm/syscalls_64.h:47
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ slab_post_alloc_hook mm/slub.c:4157 [inline]
+ slab_alloc_node mm/slub.c:4200 [inline]
+ kmem_cache_alloc_node_noprof+0x921/0xe10 mm/slub.c:4252
+ kmalloc_reserve+0x13d/0x4a0 net/core/skbuff.c:577
+ __alloc_skb+0x366/0x7b0 net/core/skbuff.c:668
+ alloc_skb include/linux/skbuff.h:1340 [inline]
+ netlink_alloc_large_skb+0x1b4/0x280 net/netlink/af_netlink.c:1187
+ netlink_sendmsg+0xa96/0x11e0 net/netlink/af_netlink.c:1858
+ sock_sendmsg_nosec net/socket.c:712 [inline]
+ __sock_sendmsg+0x30f/0x380 net/socket.c:727
+ ____sys_sendmsg+0x890/0xda0 net/socket.c:2566
+ ___sys_sendmsg+0x28d/0x3c0 net/socket.c:2620
+ __sys_sendmsg net/socket.c:2652 [inline]
+ __do_sys_sendmsg net/socket.c:2657 [inline]
+ __se_sys_sendmsg net/socket.c:2655 [inline]
+ __x64_sys_sendmsg+0x212/0x3c0 net/socket.c:2655
+ x64_sys_call+0x2e0f/0x3c80 arch/x86/include/generated/asm/syscalls_64.h:47
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 1 UID: 0 PID: 5787 Comm: syz-executor365 Not tainted 6.15.0-rc1-syzkaller #0 PREEMPT(undef) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+=====================================================

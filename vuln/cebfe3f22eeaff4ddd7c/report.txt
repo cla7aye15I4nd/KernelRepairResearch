@@ -1,0 +1,55 @@
+=====================================================
+BUG: KMSAN: uninit-value in rht_ptr_rcu include/linux/rhashtable.h:376 [inline]
+BUG: KMSAN: uninit-value in __rhashtable_lookup include/linux/rhashtable.h:607 [inline]
+BUG: KMSAN: uninit-value in rhashtable_lookup include/linux/rhashtable.h:646 [inline]
+BUG: KMSAN: uninit-value in rhashtable_lookup_fast include/linux/rhashtable.h:672 [inline]
+BUG: KMSAN: uninit-value in bucket_in_flight fs/bcachefs/movinggc.c:143 [inline]
+BUG: KMSAN: uninit-value in bch2_copygc_get_buckets fs/bcachefs/movinggc.c:169 [inline]
+BUG: KMSAN: uninit-value in bch2_copygc+0x1d5c/0x5e00 fs/bcachefs/movinggc.c:221
+ rht_ptr_rcu include/linux/rhashtable.h:376 [inline]
+ __rhashtable_lookup include/linux/rhashtable.h:607 [inline]
+ rhashtable_lookup include/linux/rhashtable.h:646 [inline]
+ rhashtable_lookup_fast include/linux/rhashtable.h:672 [inline]
+ bucket_in_flight fs/bcachefs/movinggc.c:143 [inline]
+ bch2_copygc_get_buckets fs/bcachefs/movinggc.c:169 [inline]
+ bch2_copygc+0x1d5c/0x5e00 fs/bcachefs/movinggc.c:221
+ bch2_copygc_thread+0x7d2/0xf80 fs/bcachefs/movinggc.c:383
+ kthread+0x6b9/0xef0 kernel/kthread.c:464
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+Local variable b214.i created at:
+ bucket_in_flight fs/bcachefs/movinggc.c:-1 [inline]
+ bch2_copygc_get_buckets fs/bcachefs/movinggc.c:169 [inline]
+ bch2_copygc+0x159e/0x5e00 fs/bcachefs/movinggc.c:221
+ bch2_copygc_thread+0x7d2/0xf80 fs/bcachefs/movinggc.c:383
+
+CPU: 1 UID: 0 PID: 5998 Comm: bch-copygc/loop Not tainted 6.14.0-syzkaller-03576-g1e1ba8d23dae #0 PREEMPT(undef) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+=====================================================
+Kernel panic - not syncing: kmsan.panic set ...
+CPU: 1 UID: 0 PID: 5998 Comm: bch-copygc/loop Tainted: G    B              6.14.0-syzkaller-03576-g1e1ba8d23dae #0 PREEMPT(undef) 
+Tainted: [B]=BAD_PAGE
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 02/12/2025
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x216/0x2d0 lib/dump_stack.c:120
+ dump_stack+0x1e/0x24 lib/dump_stack.c:129
+ panic+0x4e5/0xcf0 kernel/panic.c:354
+ kmsan_report+0x2ca/0x2d0 mm/kmsan/report.c:218
+ __msan_warning+0x95/0x120 mm/kmsan/instrumentation.c:318
+ rht_ptr_rcu include/linux/rhashtable.h:376 [inline]
+ __rhashtable_lookup include/linux/rhashtable.h:607 [inline]
+ rhashtable_lookup include/linux/rhashtable.h:646 [inline]
+ rhashtable_lookup_fast include/linux/rhashtable.h:672 [inline]
+ bucket_in_flight fs/bcachefs/movinggc.c:143 [inline]
+ bch2_copygc_get_buckets fs/bcachefs/movinggc.c:169 [inline]
+ bch2_copygc+0x1d5c/0x5e00 fs/bcachefs/movinggc.c:221
+ bch2_copygc_thread+0x7d2/0xf80 fs/bcachefs/movinggc.c:383
+ kthread+0x6b9/0xef0 kernel/kthread.c:464
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Kernel Offset: disabled
+Rebooting in 86400 seconds..

@@ -1,0 +1,15 @@
+diff --git a/fs/gfs2/rgrp.c b/fs/gfs2/rgrp.c
+index f7addc6197ed..5e8eef9990e3 100644
+--- a/fs/gfs2/rgrp.c
++++ b/fs/gfs2/rgrp.c
+@@ -985,6 +985,10 @@ static int gfs2_ri_update(struct gfs2_inode *ip)
+ 	if (error < 0)
+ 		return error;
+ 
++	if (RB_EMPTY_ROOT(&sdp->sd_rindex_tree)) {
++		fs_err(sdp, "no resource groups found in the file system.\n");
++		return -ENOENT;
++	}
+ 	set_rgrp_preferences(sdp);
+ 
+ 	sdp->sd_rindex_uptodate = 1;

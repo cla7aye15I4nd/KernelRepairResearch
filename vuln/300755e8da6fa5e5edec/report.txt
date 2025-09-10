@@ -1,0 +1,77 @@
+bcachefs (loop0): mounting version 1.7: mi_btree_bitmap opts=compression=lz4,nojournal_transaction_names
+bcachefs (loop0): recovering from clean shutdown, journal seq 7
+bcachefs (loop0): alloc_read... done
+bcachefs (loop0): stripes_read... done
+bcachefs (loop0): snapshots_read... done
+bcachefs (loop0): going read-write
+bcachefs (loop0): journal_replay...
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/bkey_sort.c:185!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 0 PID: 5093 Comm: syz-executor254 Not tainted 6.9.0-rc6-next-20240503-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+RIP: 0010:bch2_sort_keys+0x1a62/0x1a90 fs/bcachefs/bkey_sort.c:184
+Code: e1 07 80 c1 03 38 c1 0f 8c 47 ea ff ff 48 8b 7c 24 20 e8 a1 3d f0 fd e9 38 ea ff ff e8 d7 8e 8a fd 90 0f 0b e8 cf 8e 8a fd 90 <0f> 0b e8 c7 8e 8a fd 90 0f 0b e8 bf 8e 8a fd 90 0f 0b e8 b7 8e 8a
+RSP: 0018:ffffc9000375e8a0 EFLAGS: 00010293
+RAX: ffffffff840b8711 RBX: 0000000000000080 RCX: ffff88802889bc00
+RDX: 0000000000000000 RSI: 0000000000000080 RDI: 0000000000000000
+RBP: ffffc9000375ea30 R08: ffffffff840b768c R09: 0000000000000000
+R10: ffffc9000375e7a0 R11: fffff520006ebcf6 R12: ffffc9000375eb20
+R13: 0000000000000001 R14: ffff888079100901 R15: ffff8880791008b9
+FS:  00005555567cf380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055d90bd11f18 CR3: 0000000079808000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ btree_node_sort+0x6ad/0x1840 fs/bcachefs/btree_io.c:335
+ bch2_btree_post_write_cleanup+0x120/0xa70 fs/bcachefs/btree_io.c:2273
+ bch2_btree_node_write+0x169/0x1f0 fs/bcachefs/btree_io.c:2314
+ btree_node_write_if_need fs/bcachefs/btree_io.h:153 [inline]
+ __btree_node_flush+0x2ac/0x350 fs/bcachefs/btree_trans_commit.c:250
+ bch2_btree_node_flush0+0x27/0x40 fs/bcachefs/btree_trans_commit.c:259
+ journal_flush_pins+0x5f7/0xb20 fs/bcachefs/journal_reclaim.c:553
+ journal_flush_done+0xbc/0x260 fs/bcachefs/journal_reclaim.c:809
+ bch2_journal_flush_pins+0x102/0x3a0 fs/bcachefs/journal_reclaim.c:839
+ bch2_journal_flush_all_pins fs/bcachefs/journal_reclaim.h:76 [inline]
+ bch2_journal_replay+0x1094/0x1360 fs/bcachefs/recovery.c:301
+ bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:182
+ bch2_run_recovery_passes+0x19e/0x820 fs/bcachefs/recovery_passes.c:225
+ bch2_fs_recovery+0x235e/0x36e0 fs/bcachefs/recovery.c:804
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1030
+ bch2_fs_open+0xa8d/0xdf0 fs/bcachefs/super.c:2105
+ bch2_mount+0x71d/0x1320 fs/bcachefs/fs.c:1917
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2a0 fs/super.c:1780
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3352
+ do_mount fs/namespace.c:3692 [inline]
+ __do_sys_mount fs/namespace.c:3898 [inline]
+ __se_sys_mount+0x2d9/0x3c0 fs/namespace.c:3875
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f2bec06b8ba
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc4937aec8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffc4937aee0 RCX: 00007f2bec06b8ba
+RDX: 0000000020005d80 RSI: 0000000020000000 RDI: 00007ffc4937aee0
+RBP: 0000000000000004 R08: 00007ffc4937af20 R09: 0000000000005d7f
+R10: 0000000000000002 R11: 0000000000000282 R12: 0000000000000002
+R13: 00007ffc4937af20 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bch2_sort_keys+0x1a62/0x1a90 fs/bcachefs/bkey_sort.c:184
+Code: e1 07 80 c1 03 38 c1 0f 8c 47 ea ff ff 48 8b 7c 24 20 e8 a1 3d f0 fd e9 38 ea ff ff e8 d7 8e 8a fd 90 0f 0b e8 cf 8e 8a fd 90 <0f> 0b e8 c7 8e 8a fd 90 0f 0b e8 bf 8e 8a fd 90 0f 0b e8 b7 8e 8a
+RSP: 0018:ffffc9000375e8a0 EFLAGS: 00010293
+RAX: ffffffff840b8711 RBX: 0000000000000080 RCX: ffff88802889bc00
+RDX: 0000000000000000 RSI: 0000000000000080 RDI: 0000000000000000
+RBP: ffffc9000375ea30 R08: ffffffff840b768c R09: 0000000000000000
+R10: ffffc9000375e7a0 R11: fffff520006ebcf6 R12: ffffc9000375eb20
+R13: 0000000000000001 R14: ffff888079100901 R15: ffff8880791008b9
+FS:  00005555567cf380(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055d90bd11f18 CR3: 0000000079808000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

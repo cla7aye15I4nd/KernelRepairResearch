@@ -1,0 +1,37 @@
+id: cc6fc752b3819e082d0c
+bug_link: https://syzkaller.appspot.com/bug?extid=cc6fc752b3819e082d0c
+title: 'KASAN: use-after-free Read in ucma_close (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8383da3e4a610496c6790e46e48b2b26be0cc252
+fix_commit: f5449e74802c1112dea984aec8af7a33c4516af1
+datetime: '2020-09-18T20:54:01-03:00'
+fix_commit_message: "RDMA/ucma: Rework ucma_migrate_id() to avoid races with destroy\n\
+  \nucma_destroy_id() assumes that all things accessing the ctx will do so via\nthe\
+  \ xarray. This assumption violated only in the case the FD is being\nclosed, then\
+  \ the ctx is reached via the ctx_list. Normally this is OK\nsince ucma_destroy_id()\
+  \ cannot run concurrenty with release(), however\nwith ucma_migrate_id() is involved\
+  \ this can violated as the close of the\n2nd FD can run concurrently with destroy\
+  \ on the first:\n\n                CPU0                      CPU1\n        ucma_destroy_id(fda)\n\
+  \                                  ucma_migrate_id(fda -> fdb)\n               \
+  \                        ucma_get_ctx()\n        xa_lock()\n         _ucma_find_context()\n\
+  \         xa_erase()\n        xa_unlock()\n                                    \
+  \   xa_lock()\n                                        ctx->file = new_file\n  \
+  \                                      list_move()\n                           \
+  \            xa_unlock()\n                                      ucma_put_ctx()\n\
+  \n                                   ucma_close(fdb)\n                         \
+  \             _destroy_id()\n                                      kfree(ctx)\n\n\
+  \        _destroy_id()\n          wait_for_completion()\n          // boom, ctx\
+  \ was freed\n\nThe ctx->file must be modified under the handler and xa_lock, and\
+  \ prior to\nmodification the ID must be rechecked that it is still reachable from\n\
+  cur_file, ie there is no parallel destroy or migrate.\n\nTo make this work remove\
+  \ the double locking and streamline the control\nflow. The double locking was obsoleted\
+  \ by the handler lock now directly\npreventing new uevents from being created, and\
+  \ the ctx_list cannot be read\nwhile holding fgets on both files. Removing the double\
+  \ locking also\nremoves the need to check for the same file.\n\nFixes: 88314e4dda1e\
+  \ (\"RDMA/cma: add support for rdma_migrate_id()\")\nLink: https://lore.kernel.org/r/0-v1-05c5a4090305+3a872-ucma_syz_migrate_jgg@nvidia.com\n\
+  Reported-and-tested-by: syzbot+cc6fc752b3819e082d0c@syzkaller.appspotmail.com\n\
+  Signed-off-by: Jason Gunthorpe <jgg@nvidia.com>\n"
+submodule:
+- drivers/infiniband/core
+hunk_count: 2
+covered_count: 0

@@ -1,0 +1,80 @@
+rcu: INFO: rcu_preempt detected stalls on CPUs/tasks:
+rcu: 	(detected by 0, t=10506 jiffies, g=29461, q=491 ncpus=2)
+rcu: All QSes seen, last rcu_preempt kthread activity 10492 (4294974463-4294963971), jiffies_till_next_fqs=1, root ->qsmask 0x0
+rcu: rcu_preempt kthread starved for 10492 jiffies! g29461 f0x2 RCU_GP_WAIT_FQS(5) ->state=0x0 ->cpu=1
+rcu: 	Unless rcu_preempt kthread gets sufficient CPU time, OOM is now expected behavior.
+rcu: RCU grace-period kthread stack dump:
+task:rcu_preempt     state:R  running task     stack:25136 pid:17    tgid:17    ppid:2      flags:0x00004000
+Call Trace:
+ <TASK>
+ context_switch kernel/sched/core.c:5322 [inline]
+ __schedule+0x1895/0x4b30 kernel/sched/core.c:6682
+ __schedule_loop kernel/sched/core.c:6759 [inline]
+ schedule+0x14b/0x320 kernel/sched/core.c:6774
+ schedule_timeout+0x1be/0x310 kernel/time/timer.c:2615
+ rcu_gp_fqs_loop+0x2df/0x1330 kernel/rcu/tree.c:2045
+ rcu_gp_kthread+0xa7/0x3b0 kernel/rcu/tree.c:2247
+ kthread+0x2f2/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4d/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+rcu: Stack dump where RCU GP kthread last ran:
+Sending NMI from CPU 0 to CPUs 1:
+NMI backtrace for cpu 1
+CPU: 1 UID: 0 PID: 6498 Comm: syz.3.358 Not tainted 6.12.0-rc2-syzkaller-00100-geb952c47d154 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:__lock_acquire+0xd1d/0x2050 kernel/locking/lockdep.c:5185
+Code: 0f 85 8b 0e 00 00 83 3d 90 5f cc 18 00 41 bc 01 00 00 00 75 0a 49 83 fe ff 0f 85 fe 08 00 00 48 89 e8 48 c1 e8 03 80 3c 38 00 <74> 12 48 89 ef e8 29 2f 8e 00 48 bf 00 00 00 00 00 fc ff df 4c 89
+RSP: 0018:ffffc90000a18a30 EFLAGS: 00000046
+RAX: 1ffff110052be8dc RBX: ffff8880295f46d0 RCX: ffffffff9a3cc903
+RDX: 0000000000000000 RSI: 0000000000000008 RDI: dffffc0000000000
+RBP: ffff8880295f46e0 R08: ffffffff942c594f R09: 1ffffffff2858b29
+R10: dffffc0000000000 R11: fffffbfff2858b2a R12: 0000000000000001
+R13: ffff8880295f46d8 R14: ffffffffffffffff R15: ffff8880295f4700
+FS:  00007f447b2ee6c0(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f5275537a8c CR3: 0000000030688000 CR4: 0000000000350ef0
+Call Trace:
+ <NMI>
+ </NMI>
+ <IRQ>
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5825
+ __raw_spin_lock include/linux/spinlock_api_smp.h:133 [inline]
+ _raw_spin_lock+0x2e/0x40 kernel/locking/spinlock.c:154
+ spin_lock include/linux/spinlock.h:351 [inline]
+ advance_sched+0xab/0xca0 net/sched/sch_taprio.c:924
+ __run_hrtimer kernel/time/hrtimer.c:1691 [inline]
+ __hrtimer_run_queues+0x59d/0xd50 kernel/time/hrtimer.c:1755
+ hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1817
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1026 [inline]
+ __sysvec_apic_timer_interrupt+0x112/0x3f0 arch/x86/kernel/apic/apic.c:1043
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1037 [inline]
+ sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1037
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:lock_release+0x658/0xa30 kernel/locking/lockdep.c:5850
+Code: 3c 3b 00 74 08 4c 89 f7 e8 c5 14 8e 00 f6 84 24 91 00 00 00 02 75 77 41 f7 c5 00 02 00 00 74 01 fb 48 c7 44 24 60 0e 36 e0 45 <4b> c7 04 27 00 00 00 00 4b c7 44 27 08 00 00 00 00 65 48 8b 04 25
+RSP: 0018:ffffc9000325f940 EFLAGS: 00000206
+RAX: 0000000000000001 RBX: 1ffff9200064bf3a RCX: ffffc9000325f903
+RDX: 0000000000000000 RSI: ffffffff8c0adc40 RDI: ffffffff8c60fb20
+RBP: ffffc9000325fa70 R08: ffffffff901cee2f R09: 1ffffffff2039dc5
+R10: dffffc0000000000 R11: fffffbfff2039dc6 R12: 1ffff9200064bf34
+R13: 0000000000000246 R14: ffffc9000325f9d0 R15: dffffc0000000000
+ __mutex_unlock_slowpath+0xe2/0x750 kernel/locking/mutex.c:912
+ io_cqring_do_overflow_flush io_uring/io_uring.c:675 [inline]
+ io_cqring_wait io_uring/io_uring.c:2620 [inline]
+ __do_sys_io_uring_enter io_uring/io_uring.c:3387 [inline]
+ __se_sys_io_uring_enter+0x1fef/0x2bb0 io_uring/io_uring.c:3279
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f447a57dff9
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f447b2ee038 EFLAGS: 00000246 ORIG_RAX: 00000000000001aa
+RAX: ffffffffffffffda RBX: 00007f447a735f80 RCX: 00007f447a57dff9
+RDX: 0000000000000003 RSI: 0000000000000000 RDI: 0000000000000003
+RBP: 00007f447a5f0296 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000007 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007f447a735f80 R15: 00007fffe9eab398
+ </TASK>

@@ -1,0 +1,26 @@
+diff --git a/fs/overlayfs/export.c b/fs/overlayfs/export.c
+index e065a5b9a442..ac9c3ad04016 100644
+--- a/fs/overlayfs/export.c
++++ b/fs/overlayfs/export.c
+@@ -796,7 +796,7 @@ static struct ovl_fh *ovl_fid_to_fh(struct fid *fid, int buflen, int fh_type)
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	/* Copy unaligned inner fh into aligned buffer */
+-	memcpy(&fh->fb, fid, buflen - OVL_FH_WIRE_OFFSET);
++	memcpy(fh->buf, fid, buflen - OVL_FH_WIRE_OFFSET);
+ 	return fh;
+ }
+ 
+diff --git a/fs/overlayfs/overlayfs.h b/fs/overlayfs/overlayfs.h
+index eee8f08d32b6..e74a610a117e 100644
+--- a/fs/overlayfs/overlayfs.h
++++ b/fs/overlayfs/overlayfs.h
+@@ -108,7 +108,7 @@ struct ovl_fh {
+ 	u8 padding[3];	/* make sure fb.fid is 32bit aligned */
+ 	union {
+ 		struct ovl_fb fb;
+-		u8 buf[0];
++		DECLARE_FLEX_ARRAY(u8, buf);
+ 	};
+ } __packed;
+ 

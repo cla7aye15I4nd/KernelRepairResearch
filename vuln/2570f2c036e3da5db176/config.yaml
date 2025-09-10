@@ -1,0 +1,39 @@
+id: 2570f2c036e3da5db176
+bug_link: https://syzkaller.appspot.com/bug?extid=2570f2c036e3da5db176
+title: WARNING in __nf_unregister_net_hook (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1d61e21852d3161f234b9656797669fe185c251b
+fix_commit: 1e9451cbda456a170518b2bfd643e2cb980880bf
+datetime: '2020-07-15T20:02:28+02:00'
+fix_commit_message: "netfilter: nf_tables: fix nat hook table deletion\n\nsybot came\
+  \ up with following transaction:\n add table ip syz0\n add chain ip syz0 syz2 {\
+  \ type nat hook prerouting priority 0; policy accept; }\n add table ip syz0 { flags\
+  \ dormant; }\n delete chain ip syz0 syz2\n delete table ip syz0\n\nwhich yields:\n\
+  hook not found, pf 2 num 0\nWARNING: CPU: 0 PID: 6775 at net/netfilter/core.c:413\
+  \ __nf_unregister_net_hook+0x3e6/0x4a0 net/netfilter/core.c:413\n[..]\n nft_unregister_basechain_hooks\
+  \ net/netfilter/nf_tables_api.c:206 [inline]\n nft_table_disable net/netfilter/nf_tables_api.c:835\
+  \ [inline]\n nf_tables_table_disable net/netfilter/nf_tables_api.c:868 [inline]\n\
+  \ nf_tables_commit+0x32d3/0x4d70 net/netfilter/nf_tables_api.c:7550\n nfnetlink_rcv_batch\
+  \ net/netfilter/nfnetlink.c:486 [inline]\n nfnetlink_rcv_skb_batch net/netfilter/nfnetlink.c:544\
+  \ [inline]\n nfnetlink_rcv+0x14a5/0x1e50 net/netfilter/nfnetlink.c:562\n netlink_unicast_kernel\
+  \ net/netlink/af_netlink.c:1303 [inline]\n\nProblem is that when I added ability\
+  \ to override base hook registration\nto make nat basechains register with the nat\
+  \ core instead of netfilter\ncore, I forgot to update nft_table_disable() to use\
+  \ that instead of\nthe 'raw' hook register interface.\n\nIn syzbot transaction,\
+  \ the basechain is of 'nat' type. Its registered\nwith the nat core.  The switch\
+  \ to 'dormant mode' attempts to delete from\nnetfilter core instead.\n\nAfter updating\
+  \ nft_table_disable/enable to use the correct helper,\nnft_(un)register_basechain_hooks\
+  \ can be folded into the only remaining\ncaller.\n\nBecause nft_trans_table_enable()\
+  \ won't do anything when the DORMANT flag\nis set, remove the flag first, then re-add\
+  \ it in case re-enablement\nfails, else this patch breaks sequence:\n\nadd table\
+  \ ip x { flags dormant; }\n/* add base chains */\nadd table ip x\n\nThe last 'add'\
+  \ will remove the dormant flags, but won't have any other\neffect -- base chains\
+  \ are not registered.\nThen, next 'set dormant flag' will create another 'hook not\
+  \ found'\nsplat.\n\nReported-by: syzbot+2570f2c036e3da5db176@syzkaller.appspotmail.com\n\
+  Fixes: 4e25ceb80b58 (\"netfilter: nf_tables: allow chain type to override hook register\"\
+  )\nSigned-off-by: Florian Westphal <fw@strlen.de>\nSigned-off-by: Pablo Neira Ayuso\
+  \ <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 6
+covered_count: 6

@@ -1,0 +1,63 @@
+usb 3-1: New USB device found, idVendor=09fb, idProduct=ebbe, bcdDevice=ea.fe
+usb 3-1: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+usb 3-1: config 0 descriptor??
+------------[ cut here ]------------
+usb 3-1: BOGUS urb xfer, pipe 3 != type 1
+WARNING: CPU: 0 PID: 9 at drivers/usb/core/urb.c:503 usb_submit_urb+0xe4b/0x1730 drivers/usb/core/urb.c:503
+Modules linked in:
+CPU: 0 UID: 0 PID: 9 Comm: kworker/0:1 Not tainted 6.11.0-rc1-syzkaller-00033-g25f51b76f90f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/27/2024
+Workqueue: usb_hub_wq hub_event
+
+RIP: 0010:usb_submit_urb+0xe4b/0x1730 drivers/usb/core/urb.c:503
+Code: 84 3c 02 00 00 e8 15 eb fe fc 4c 89 ef e8 2d 21 d7 fe 45 89 e0 89 e9 4c 89 f2 48 89 c6 48 c7 c7 40 17 a0 87 e8 b6 d1 c4 fc 90 <0f> 0b 90 90 e9 e9 f8 ff ff e8 e7 ea fe fc 49 81 c4 c0 05 00 00 e9
+RSP: 0018:ffffc9000009f010 EFLAGS: 00010286
+RAX: 0000000000000000 RBX: ffff888119f18800 RCX: ffffc9000d702000
+RDX: 0000000000100000 RSI: ffffffff81194cf6 RDI: 0000000000000001
+RBP: 0000000000000003 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000001 R12: 0000000000000001
+R13: ffff88811c1200a8 R14: ffff88812cedae80 R15: ffff888119f1887c
+FS:  0000000000000000(0000) GS:ffff8881f6200000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000001b3181fffc CR3: 000000012e70c000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ try_queue_bulk_in+0x3d7/0x7f0 drivers/char/xillybus/xillyusb.c:741
+ xillyusb_setup_base_eps drivers/char/xillybus/xillyusb.c:1924 [inline]
+ xillyusb_probe+0x47b/0x830 drivers/char/xillybus/xillyusb.c:2161
+ usb_probe_interface+0x309/0x9d0 drivers/usb/core/driver.c:399
+ call_driver_probe drivers/base/dd.c:578 [inline]
+ really_probe+0x23e/0xa90 drivers/base/dd.c:657
+ __driver_probe_device+0x1de/0x440 drivers/base/dd.c:799
+ driver_probe_device+0x4c/0x1b0 drivers/base/dd.c:829
+ __device_attach_driver+0x1df/0x310 drivers/base/dd.c:957
+ bus_for_each_drv+0x157/0x1e0 drivers/base/bus.c:457
+ __device_attach+0x1e8/0x4b0 drivers/base/dd.c:1029
+ bus_probe_device+0x17f/0x1c0 drivers/base/bus.c:532
+ device_add+0x114b/0x1a70 drivers/base/core.c:3679
+ usb_set_configuration+0x10cb/0x1c50 drivers/usb/core/message.c:2210
+ usb_generic_driver_probe+0xb1/0x110 drivers/usb/core/generic.c:254
+ usb_probe_device+0xec/0x3e0 drivers/usb/core/driver.c:294
+ call_driver_probe drivers/base/dd.c:578 [inline]
+ really_probe+0x23e/0xa90 drivers/base/dd.c:657
+ __driver_probe_device+0x1de/0x440 drivers/base/dd.c:799
+ driver_probe_device+0x4c/0x1b0 drivers/base/dd.c:829
+ __device_attach_driver+0x1df/0x310 drivers/base/dd.c:957
+ bus_for_each_drv+0x157/0x1e0 drivers/base/bus.c:457
+ __device_attach+0x1e8/0x4b0 drivers/base/dd.c:1029
+ bus_probe_device+0x17f/0x1c0 drivers/base/bus.c:532
+ device_add+0x114b/0x1a70 drivers/base/core.c:3679
+ usb_new_device+0xd90/0x1a10 drivers/usb/core/hub.c:2651
+ hub_port_connect drivers/usb/core/hub.c:5521 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5661 [inline]
+ port_event drivers/usb/core/hub.c:5821 [inline]
+ hub_event+0x2e66/0x4f50 drivers/usb/core/hub.c:5903
+ process_one_work+0x9c5/0x1b40 kernel/workqueue.c:3231
+ process_scheduled_works kernel/workqueue.c:3312 [inline]
+ worker_thread+0x6c8/0xf20 kernel/workqueue.c:3390
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

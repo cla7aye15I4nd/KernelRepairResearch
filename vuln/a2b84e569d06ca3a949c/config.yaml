@@ -1,0 +1,61 @@
+id: a2b84e569d06ca3a949c
+bug_link: https://syzkaller.appspot.com/bug?extid=a2b84e569d06ca3a949c
+title: 'KASAN: slab-use-after-free Read in idr_for_each'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9c7b53b21fb1df20f85e3822160b4687f98ff7b3
+fix_commit: d66adabe91803ef34a8b90613c81267b5ded1472
+datetime: '2025-05-11T17:54:11-07:00'
+fix_commit_message: 'ipc: fix to protect IPCS lookups using RCU
+
+
+  syzbot reported that it discovered a use-after-free vulnerability, [0]
+
+
+  [0]: https://lore.kernel.org/all/67af13f8.050a0220.21dd3.0038.GAE@google.com/
+
+
+  idr_for_each() is protected by rwsem, but this is not enough.  If it is
+
+  not protected by RCU read-critical region, when idr_for_each() calls
+
+  radix_tree_node_free() through call_rcu() to free the radix_tree_node
+
+  structure, the node will be freed immediately, and when reading the next
+
+  node in radix_tree_for_each_slot(), the already freed memory may be read.
+
+
+  Therefore, we need to add code to make sure that idr_for_each() is
+
+  protected within the RCU read-critical region when we call it in
+
+  shm_destroy_orphaned().
+
+
+  Link: https://lkml.kernel.org/r/20250424143322.18830-1-aha310510@gmail.com
+
+  Fixes: b34a6b1da371 ("ipc: introduce shm_rmid_forced sysctl")
+
+  Signed-off-by: Jeongjun Park <aha310510@gmail.com>
+
+  Reported-by: syzbot+a2b84e569d06ca3a949c@syzkaller.appspotmail.com
+
+  Cc: Jeongjun Park <aha310510@gmail.com>
+
+  Cc: Liam Howlett <liam.howlett@oracle.com>
+
+  Cc: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
+
+  Cc: Matthew Wilcox (Oracle) <willy@infradead.org>
+
+  Cc: Vasiliy Kulikov <segoon@openwall.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- ipc
+hunk_count: 1
+covered_count: 1

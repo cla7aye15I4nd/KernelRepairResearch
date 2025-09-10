@@ -1,0 +1,30 @@
+id: 93a5839deb355537440f
+bug_link: https://syzkaller.appspot.com/bug?extid=93a5839deb355537440f
+title: 'KASAN: use-after-free Read in rds_find_bound'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 79a8a642bf05cd0dced20621f6fef9d884124abd
+fix_commit: ebeeb1ad9b8adcc37c2ec21a96f39e9d35199b46
+datetime: '2018-02-08T15:23:52-05:00'
+fix_commit_message: "rds: tcp: use rds_destroy_pending() to synchronize netns/module\
+  \ teardown and rds connection/workq management\n\nAn rds_connection can get added\
+  \ during netns deletion between lines 528\nand 529 of\n\n  506 static void rds_tcp_kill_sock(struct\
+  \ net *net)\n  :\n  /* code to pull out all the rds_connections that should be destroyed\
+  \ */\n  :\n  528         spin_unlock_irq(&rds_tcp_conn_lock);\n  529         list_for_each_entry_safe(tc,\
+  \ _tc, &tmp_list, t_tcp_node)\n  530                 rds_conn_destroy(tc->t_cpath->cp_conn);\n\
+  \nSuch an rds_connection would miss out the rds_conn_destroy()\nloop (that cancels\
+  \ all pending work) and (if it was scheduled\nafter netns deletion) could trigger\
+  \ the use-after-free.\n\nA similar race-window exists for the module unload path\n\
+  in rds_tcp_exit -> rds_tcp_destroy_conns\n\nConcurrency with netns deletion (rds_tcp_kill_sock())\
+  \ must be handled\nby checking check_net() before enqueuing new work or adding new\n\
+  connections.\n\nConcurrency with module-unload is handled by maintaining a module\n\
+  specific flag that is set at the start of the module exit function,\nand must be\
+  \ checked before enqueuing new work or adding new connections.\n\nThis commit refactors\
+  \ existing RDS_DESTROY_PENDING checks added by\ncommit 3db6e0d172c9 (\"rds: use\
+  \ RCU to synchronize work-enqueue with\nconnection teardown\") and consolidates\
+  \ all the concurrency checks\nlisted above into the function rds_destroy_pending().\n\
+  \nSigned-off-by: Sowmini Varadhan <sowmini.varadhan@oracle.com>\nAcked-by: Santosh\
+  \ Shilimkar <santosh.shilimkar@oracle.com>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/rds
+hunk_count: 34
+covered_count: 2

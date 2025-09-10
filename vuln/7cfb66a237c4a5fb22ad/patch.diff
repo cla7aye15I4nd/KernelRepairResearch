@@ -1,0 +1,41 @@
+diff --git a/drivers/ptp/ptp_private.h b/drivers/ptp/ptp_private.h
+index a6aad743c282..b352df4cd3f9 100644
+--- a/drivers/ptp/ptp_private.h
++++ b/drivers/ptp/ptp_private.h
+@@ -24,6 +24,11 @@
+ #define PTP_DEFAULT_MAX_VCLOCKS 20
+ #define PTP_MAX_CHANNELS 2048
+ 
++enum {
++	PTP_LOCK_PHYSICAL = 0,
++	PTP_LOCK_VIRTUAL,
++};
++
+ struct timestamp_event_queue {
+ 	struct ptp_extts_event buf[PTP_MAX_TIMESTAMPS];
+ 	int head;
+diff --git a/drivers/ptp/ptp_vclock.c b/drivers/ptp/ptp_vclock.c
+index 2fdeedd60e21..64c950456517 100644
+--- a/drivers/ptp/ptp_vclock.c
++++ b/drivers/ptp/ptp_vclock.c
+@@ -154,6 +154,11 @@ static long ptp_vclock_refresh(struct ptp_clock_info *ptp)
+ 	return PTP_VCLOCK_REFRESH_INTERVAL;
+ }
+ 
++static void ptp_vclock_set_subclass(struct ptp_clock *ptp)
++{
++	lockdep_set_subclass(&ptp->clock.rwsem, PTP_LOCK_VIRTUAL);
++}
++
+ static const struct ptp_clock_info ptp_vclock_info = {
+ 	.owner		= THIS_MODULE,
+ 	.name		= "ptp virtual clock",
+@@ -213,6 +218,8 @@ struct ptp_vclock *ptp_vclock_register(struct ptp_clock *pclock)
+ 		return NULL;
+ 	}
+ 
++	ptp_vclock_set_subclass(vclock->clock);
++
+ 	timecounter_init(&vclock->tc, &vclock->cc, 0);
+ 	ptp_schedule_worker(vclock->clock, PTP_VCLOCK_REFRESH_INTERVAL);
+ 

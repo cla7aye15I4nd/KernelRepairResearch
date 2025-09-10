@@ -1,0 +1,56 @@
+id: 4a0f7bc34e3997a6c7df
+bug_link: https://syzkaller.appspot.com/bug?extid=4a0f7bc34e3997a6c7df
+title: possible deadlock in dev_uc_sync
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bd7f14df9492e7d3772812a215fca66e6737e598
+fix_commit: 0e8b8d6a2d85344d80dda5beadd98f5f86e8d3d3
+datetime: '2020-10-18T14:50:25-07:00'
+fix_commit_message: "net: core: use list_del_init() instead of list_del() in netdev_run_todo()\n\
+  \ndev->unlink_list is reused unless dev is deleted.\nSo, list_del() should not be\
+  \ used.\nDue to using list_del(), dev->unlink_list can't be reused so that\ndev->nested_level\
+  \ update logic doesn't work.\nIn order to fix this bug, list_del_init() should be\
+  \ used instead\nof list_del().\n\nTest commands:\n    ip link add bond0 type bond\n\
+  \    ip link add bond1 type bond\n    ip link set bond0 master bond1\n    ip link\
+  \ set bond0 nomaster\n    ip link set bond1 master bond0\n    ip link set bond1\
+  \ nomaster\n\nSplat looks like:\n[  255.750458][ T1030] ============================================\n\
+  [  255.751967][ T1030] WARNING: possible recursive locking detected\n[  255.753435][\
+  \ T1030] 5.9.0-rc8+ #772 Not tainted\n[  255.754553][ T1030] --------------------------------------------\n\
+  [  255.756047][ T1030] ip/1030 is trying to acquire lock:\n[  255.757304][ T1030]\
+  \ ffff88811782a280 (&dev_addr_list_lock_key/1){+...}-{2:2}, at: dev_mc_sync_multiple+0xc2/0x150\n\
+  [  255.760056][ T1030]\n[  255.760056][ T1030] but task is already holding lock:\n\
+  [  255.761862][ T1030] ffff88811130a280 (&dev_addr_list_lock_key/1){+...}-{2:2},\
+  \ at: bond_enslave+0x3d4d/0x43e0 [bonding]\n[  255.764581][ T1030]\n[  255.764581][\
+  \ T1030] other info that might help us debug this:\n[  255.766645][ T1030]  Possible\
+  \ unsafe locking scenario:\n[  255.766645][ T1030]\n[  255.768566][ T1030]     \
+  \   CPU0\n[  255.769415][ T1030]        ----\n[  255.770259][ T1030]   lock(&dev_addr_list_lock_key/1);\n\
+  [  255.771629][ T1030]   lock(&dev_addr_list_lock_key/1);\n[  255.772994][ T1030]\n\
+  [  255.772994][ T1030]  *** DEADLOCK ***\n[  255.772994][ T1030]\n[  255.775091][\
+  \ T1030]  May be due to missing lock nesting notation\n[  255.775091][ T1030]\n\
+  [  255.777182][ T1030] 2 locks held by ip/1030:\n[  255.778299][ T1030]  #0: ffffffffb1f63250\
+  \ (rtnl_mutex){+.+.}-{3:3}, at: rtnetlink_rcv_msg+0x2e4/0x8b0\n[  255.780600][ T1030]\
+  \  #1: ffff88811130a280 (&dev_addr_list_lock_key/1){+...}-{2:2}, at: bond_enslave+0x3d4d/0x43e0\
+  \ [bonding]\n[  255.783411][ T1030]\n[  255.783411][ T1030] stack backtrace:\n[\
+  \  255.784874][ T1030] CPU: 7 PID: 1030 Comm: ip Not tainted 5.9.0-rc8+ #772\n[\
+  \  255.786595][ T1030] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS\
+  \ 1.10.2-1ubuntu1 04/01/2014\n[  255.789030][ T1030] Call Trace:\n[  255.789850][\
+  \ T1030]  dump_stack+0x99/0xd0\n[  255.790882][ T1030]  __lock_acquire.cold.71+0x166/0x3cc\n\
+  [  255.792285][ T1030]  ? register_lock_class+0x1a30/0x1a30\n[  255.793619][ T1030]\
+  \  ? rcu_read_lock_sched_held+0x91/0xc0\n[  255.794963][ T1030]  ? rcu_read_lock_bh_held+0xa0/0xa0\n\
+  [  255.796246][ T1030]  lock_acquire+0x1b8/0x850\n[  255.797332][ T1030]  ? dev_mc_sync_multiple+0xc2/0x150\n\
+  [  255.798624][ T1030]  ? bond_enslave+0x3d4d/0x43e0 [bonding]\n[  255.800039][\
+  \ T1030]  ? check_flags+0x50/0x50\n[  255.801143][ T1030]  ? lock_contended+0xd80/0xd80\n\
+  [  255.802341][ T1030]  _raw_spin_lock_nested+0x2e/0x70\n[  255.803592][ T1030]\
+  \  ? dev_mc_sync_multiple+0xc2/0x150\n[  255.804897][ T1030]  dev_mc_sync_multiple+0xc2/0x150\n\
+  [  255.806168][ T1030]  bond_enslave+0x3d58/0x43e0 [bonding]\n[  255.807542][ T1030]\
+  \  ? __lock_acquire+0xe53/0x51b0\n[  255.808824][ T1030]  ? bond_update_slave_arr+0xdc0/0xdc0\
+  \ [bonding]\n[  255.810451][ T1030]  ? check_chain_key+0x236/0x5e0\n[  255.811742][\
+  \ T1030]  ? mutex_is_locked+0x13/0x50\n[  255.812910][ T1030]  ? rtnl_is_locked+0x11/0x20\n\
+  [  255.814061][ T1030]  ? netdev_master_upper_dev_get+0xf/0x120\n[  255.815553][\
+  \ T1030]  do_setlink+0x94c/0x3040\n[ ... ]\n\nReported-by: syzbot+4a0f7bc34e3997a6c7df@syzkaller.appspotmail.com\n\
+  Fixes: 1fc70edb7d7b (\"net: core: add nested_level variable in net_device\")\nSigned-off-by:\
+  \ Taehee Yoo <ap420073@gmail.com>\nLink: https://lore.kernel.org/r/20201015162606.9377-1-ap420073@gmail.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 0

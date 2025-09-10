@@ -1,0 +1,84 @@
+loop0: detected capacity change from 0 to 2048
+loop0: detected capacity change from 2048 to 0
+syz.0.0: attempt to access beyond end of device
+loop0: rw=0, sector=84, nr_sectors = 2 limit=0
+NILFS (loop0): I/O error reading meta-data file (ino=3, block-offset=0)
+NILFS (loop0): error -5 truncating bmap (ino=16)
+syz.0.0: attempt to access beyond end of device
+loop0: rw=0, sector=100, nr_sectors = 2 limit=0
+NILFS (loop0): I/O error reading meta-data file (ino=3, block-offset=226)
+syz.0.0: attempt to access beyond end of device
+loop0: rw=0, sector=100, nr_sectors = 2 limit=0
+NILFS (loop0): I/O error reading meta-data file (ino=3, block-offset=226)
+syz.0.0: attempt to access beyond end of device
+loop0: rw=0, sector=100, nr_sectors = 2 limit=0
+NILFS (loop0): I/O error reading meta-data file (ino=3, block-offset=226)
+syz.0.0: attempt to access beyond end of device
+loop0: rw=0, sector=100, nr_sectors = 2 limit=0
+NILFS (loop0): I/O error reading meta-data file (ino=3, block-offset=226)
+syz.0.0: attempt to access beyond end of device
+loop0: rw=0, sector=100, nr_sectors = 2 limit=0
+NILFS (loop0): I/O error reading meta-data file (ino=3, block-offset=226)
+syz.0.0: attempt to access beyond end of device
+loop0: rw=0, sector=70, nr_sectors = 2 limit=0
+NILFS (loop0): I/O error reading meta-data file (ino=6, block-offset=0)
+syz.0.0: attempt to access beyond end of device
+loop0: rw=0, sector=70, nr_sectors = 2 limit=0
+NILFS (loop0): I/O error reading meta-data file (ino=6, block-offset=0)
+NILFS (loop0): mounting fs with errors
+Buffer I/O error on dev loop0, logical block 1, lost sync page write
+NILFS (loop0): unable to write superblock: err=-5
+NILFS (loop0): I/O error reading meta-data file (ino=3, block-offset=2)
+------------[ cut here ]------------
+kernel BUG at fs/nilfs2/dir.c:413!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5317 Comm: syz.0.0 Not tainted 6.13.0-rc6-syzkaller #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:nilfs_set_link+0x3ed/0x3f0 fs/nilfs2/dir.c:413
+Code: c6 60 af 46 8c e8 03 b8 6d fe 90 0f 0b e8 eb f7 23 fe 4c 89 ef 48 c7 c6 60 af 46 8c e8 ec b7 6d fe 90 0f 0b e8 d4 f7 23 fe 90 <0f> 0b 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 55 41 57
+RSP: 0018:ffffc9000d1ff8c0 EFLAGS: 00010283
+RAX: ffffffff837b8c4c RBX: 00000000fffffffb RCX: 0000000000100000
+RDX: ffffc9000e672000 RSI: 0000000000000edb RDI: 0000000000000edc
+RBP: ffff88804cb93050 R08: ffffffff837b8a9b R09: 1ffff11008674b79
+R10: dffffc0000000000 R11: ffffed1008674b7a R12: dffffc0000000000
+R13: ffffea000132e4c0 R14: 0000000000000050 R15: 0000000000000018
+FS:  00007f595bb756c0(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007ff7ccc87580 CR3: 00000000339c0000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ nilfs_rename+0x6a3/0xb60 fs/nilfs2/namei.c:409
+ vfs_rename+0xbdb/0xf00 fs/namei.c:5067
+ do_renameat2+0xd94/0x13f0 fs/namei.c:5224
+ __do_sys_rename fs/namei.c:5271 [inline]
+ __se_sys_rename fs/namei.c:5269 [inline]
+ __x64_sys_rename+0x82/0x90 fs/namei.c:5269
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f595ad85d29
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f595bb75038 EFLAGS: 00000246 ORIG_RAX: 0000000000000052
+RAX: ffffffffffffffda RBX: 00007f595af75fa0 RCX: 00007f595ad85d29
+RDX: 0000000000000000 RSI: 0000000020000040 RDI: 0000000020000000
+RBP: 00007f595ae01b08 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000000 R14: 00007f595af75fa0 R15: 00007ffd8f311a58
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:nilfs_set_link+0x3ed/0x3f0 fs/nilfs2/dir.c:413
+Code: c6 60 af 46 8c e8 03 b8 6d fe 90 0f 0b e8 eb f7 23 fe 4c 89 ef 48 c7 c6 60 af 46 8c e8 ec b7 6d fe 90 0f 0b e8 d4 f7 23 fe 90 <0f> 0b 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 55 41 57
+RSP: 0018:ffffc9000d1ff8c0 EFLAGS: 00010283
+RAX: ffffffff837b8c4c RBX: 00000000fffffffb RCX: 0000000000100000
+RDX: ffffc9000e672000 RSI: 0000000000000edb RDI: 0000000000000edc
+RBP: ffff88804cb93050 R08: ffffffff837b8a9b R09: 1ffff11008674b79
+R10: dffffc0000000000 R11: ffffed1008674b7a R12: dffffc0000000000
+R13: ffffea000132e4c0 R14: 0000000000000050 R15: 0000000000000018
+FS:  00007f595bb756c0(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f595bb53fe0 CR3: 00000000339c0000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

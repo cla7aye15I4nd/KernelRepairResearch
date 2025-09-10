@@ -1,0 +1,98 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.12.0-rc3-syzkaller-00389-g3d5ad2d4eca3 #0 Not tainted
+------------------------------------------------------
+syz-executor733/5115 is trying to acquire lock:
+ffff888038550128 (bcachefs_btree){+.+.}-{0:0}, at: trans_set_locked fs/bcachefs/btree_locking.h:194 [inline]
+ffff888038550128 (bcachefs_btree){+.+.}-{0:0}, at: __bch2_trans_relock+0x382/0x5f0 fs/bcachefs/btree_locking.c:785
+
+but task is already holding lock:
+ffff8880424e1548 (&c->fsck_error_msgs_lock){+.+.}-{3:3}, at: __bch2_fsck_err+0x3dc/0x15f0 fs/bcachefs/error.c:279
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&c->fsck_error_msgs_lock){+.+.}-{3:3}:
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5825
+       __mutex_lock_common kernel/locking/mutex.c:608 [inline]
+       __mutex_lock+0x136/0xd70 kernel/locking/mutex.c:752
+       __bch2_fsck_err+0x3dc/0x15f0 fs/bcachefs/error.c:279
+       bch2_check_alloc_hole_freespace+0x816/0x1180 fs/bcachefs/alloc_background.c:1278
+       bch2_check_alloc_info+0x20f8/0x5330 fs/bcachefs/alloc_background.c:1547
+       bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:185
+       bch2_run_online_recovery_passes+0x85/0x150 fs/bcachefs/recovery_passes.c:206
+       bch2_fsck_online_thread_fn+0x1da/0x410 fs/bcachefs/chardev.c:798
+       thread_with_stdio_fn+0x5f/0x130 fs/bcachefs/thread_with_file.c:298
+       kthread+0x2f0/0x390 kernel/kthread.c:389
+       ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+-> #0 (bcachefs_btree){+.+.}-{0:0}:
+       check_prev_add kernel/locking/lockdep.c:3161 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3280 [inline]
+       validate_chain+0x18ef/0x5920 kernel/locking/lockdep.c:3904
+       __lock_acquire+0x1384/0x2050 kernel/locking/lockdep.c:5202
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5825
+       trans_set_locked fs/bcachefs/btree_locking.h:194 [inline]
+       __bch2_trans_relock+0x397/0x5f0 fs/bcachefs/btree_locking.c:785
+       __bch2_fsck_err+0x131d/0x15f0 fs/bcachefs/error.c:360
+       bch2_check_alloc_hole_freespace+0x816/0x1180 fs/bcachefs/alloc_background.c:1278
+       bch2_check_alloc_info+0x20f8/0x5330 fs/bcachefs/alloc_background.c:1547
+       bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:185
+       bch2_run_online_recovery_passes+0x85/0x150 fs/bcachefs/recovery_passes.c:206
+       bch2_fsck_online_thread_fn+0x1da/0x410 fs/bcachefs/chardev.c:798
+       thread_with_stdio_fn+0x5f/0x130 fs/bcachefs/thread_with_file.c:298
+       kthread+0x2f0/0x390 kernel/kthread.c:389
+       ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&c->fsck_error_msgs_lock);
+                               lock(bcachefs_btree);
+                               lock(&c->fsck_error_msgs_lock);
+  lock(bcachefs_btree);
+
+ *** DEADLOCK ***
+
+3 locks held by syz-executor733/5115:
+ #0: ffff888042480278 (&c->state_lock){++++}-{3:3}, at: bch2_run_online_recovery_passes+0x32/0x150 fs/bcachefs/recovery_passes.c:198
+ #1: ffff888042484398 (&c->btree_trans_barrier){.+.+}-{0:0}, at: srcu_lock_acquire include/linux/srcu.h:151 [inline]
+ #1: ffff888042484398 (&c->btree_trans_barrier){.+.+}-{0:0}, at: srcu_read_lock include/linux/srcu.h:250 [inline]
+ #1: ffff888042484398 (&c->btree_trans_barrier){.+.+}-{0:0}, at: __bch2_trans_get+0x7de/0xd20 fs/bcachefs/btree_iter.c:3215
+ #2: ffff8880424e1548 (&c->fsck_error_msgs_lock){+.+.}-{3:3}, at: __bch2_fsck_err+0x3dc/0x15f0 fs/bcachefs/error.c:279
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 5115 Comm: syz-executor733 Not tainted 6.12.0-rc3-syzkaller-00389-g3d5ad2d4eca3 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_circular_bug+0x13a/0x1b0 kernel/locking/lockdep.c:2074
+ check_noncircular+0x36a/0x4a0 kernel/locking/lockdep.c:2206
+ check_prev_add kernel/locking/lockdep.c:3161 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3280 [inline]
+ validate_chain+0x18ef/0x5920 kernel/locking/lockdep.c:3904
+ __lock_acquire+0x1384/0x2050 kernel/locking/lockdep.c:5202
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5825
+ trans_set_locked fs/bcachefs/btree_locking.h:194 [inline]
+ __bch2_trans_relock+0x397/0x5f0 fs/bcachefs/btree_locking.c:785
+ __bch2_fsck_err+0x131d/0x15f0 fs/bcachefs/error.c:360
+ bch2_check_alloc_hole_freespace+0x816/0x1180 fs/bcachefs/alloc_background.c:1278
+ bch2_check_alloc_info+0x20f8/0x5330 fs/bcachefs/alloc_background.c:1547
+ bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:185
+ bch2_run_online_recovery_passes+0x85/0x150 fs/bcachefs/recovery_passes.c:206
+ bch2_fsck_online_thread_fn+0x1da/0x410 fs/bcachefs/chardev.c:798
+ thread_with_stdio_fn+0x5f/0x130 fs/bcachefs/thread_with_file.c:298
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+syz-executor733 (5115) used greatest stack depth: 11824 bytes left

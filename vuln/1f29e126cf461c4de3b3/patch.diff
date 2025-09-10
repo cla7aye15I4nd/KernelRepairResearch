@@ -1,0 +1,26 @@
+diff --git a/drivers/tty/vt/vt.c b/drivers/tty/vt/vt.c
+index 01645e87b3d5..fa1548d4f94b 100644
+--- a/drivers/tty/vt/vt.c
++++ b/drivers/tty/vt/vt.c
+@@ -1171,7 +1171,7 @@ static inline int resize_screen(struct vc_data *vc, int width, int height,
+ 	/* Resizes the resolution of the display adapater */
+ 	int err = 0;
+ 
+-	if (vc->vc_mode != KD_GRAPHICS && vc->vc_sw->con_resize)
++	if (vc->vc_sw->con_resize)
+ 		err = vc->vc_sw->con_resize(vc, width, height, user);
+ 
+ 	return err;
+diff --git a/drivers/video/fbdev/core/fbcon.c b/drivers/video/fbdev/core/fbcon.c
+index 3406067985b1..22bb3892f6bd 100644
+--- a/drivers/video/fbdev/core/fbcon.c
++++ b/drivers/video/fbdev/core/fbcon.c
+@@ -2019,7 +2019,7 @@ static int fbcon_resize(struct vc_data *vc, unsigned int width,
+ 			return -EINVAL;
+ 
+ 		pr_debug("resize now %ix%i\n", var.xres, var.yres);
+-		if (con_is_visible(vc)) {
++		if (con_is_visible(vc) && vc->vc_mode == KD_TEXT) {
+ 			var.activate = FB_ACTIVATE_NOW |
+ 				FB_ACTIVATE_FORCE;
+ 			fb_set_var(info, &var);

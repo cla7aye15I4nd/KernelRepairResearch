@@ -1,0 +1,129 @@
+------------[ cut here ]------------
+Looking for class "&ea_inode->i_rwsem" with key ext4_fs_type, but found a different class "&sb->s_type->i_mutex_key" with the same key
+WARNING: CPU: 1 PID: 13299 at kernel/locking/lockdep.c:941 look_up_lock_class+0xec/0x158 kernel/locking/lockdep.c:938
+Modules linked in:
+CPU: 1 PID: 13299 Comm: syz-executor369 Not tainted 6.3.0-rc7-syzkaller-g14f8db1c0f9a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/14/2023
+pstate: 604000c5 (nZCv daIF +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : look_up_lock_class+0xec/0x158 kernel/locking/lockdep.c:938
+lr : look_up_lock_class+0xec/0x158 kernel/locking/lockdep.c:938
+sp : ffff800022556920
+x29: ffff800022556920 x28: dfff800000000000 x27: ffff800008f50df0
+x26: ffff80001a0a7600 x25: ffff80001a0a7000 x24: 0000000000000000
+x23: 0000000000000000 x22: 0000000000000000 x21: ffff8000160dae58
+x20: ffff0000e6c5de48 x19: ffff800018ce3500 x18: 1ffff000044aad7c
+x17: 0000000000000000 x16: ffff80001236e294 x15: 0000000000000002
+x14: 0000000000000000 x13: 0000000000000001 x12: 0000000000000001
+x11: 0000000000000000 x10: 0000000000000000 x9 : 7a6e2744c5c8a300
+x8 : 7a6e2744c5c8a300 x7 : 0000000000000001 x6 : 0000000000000001
+x5 : ffff800022556218 x4 : ffff800015e4ccc0 x3 : ffff800008584230
+x2 : 0000000000000001 x1 : 0000000100000000 x0 : 0000000000000000
+Call trace:
+ look_up_lock_class+0xec/0x158 kernel/locking/lockdep.c:938
+ register_lock_class+0x8c/0x6a4 kernel/locking/lockdep.c:1290
+ __lock_acquire+0x184/0x764c kernel/locking/lockdep.c:4935
+ lock_acquire+0x238/0x718 kernel/locking/lockdep.c:5669
+ down_write+0x50/0xc0 kernel/locking/rwsem.c:1573
+ inode_lock include/linux/fs.h:758 [inline]
+ ext4_xattr_inode_update_ref+0xac/0x4e0 fs/ext4/xattr.c:1059
+ ext4_xattr_inode_inc_ref fs/ext4/xattr.c:1105 [inline]
+ ext4_xattr_inode_lookup_create fs/ext4/xattr.c:1597 [inline]
+ ext4_xattr_set_entry+0x243c/0x2c3c fs/ext4/xattr.c:1737
+ ext4_xattr_block_set+0x8e0/0x2cc4 fs/ext4/xattr.c:2043
+ ext4_xattr_set_handle+0xb2c/0x12d8 fs/ext4/xattr.c:2458
+ ext4_xattr_set+0x1e0/0x354 fs/ext4/xattr.c:2560
+ ext4_xattr_trusted_set+0x4c/0x64 fs/ext4/xattr_trusted.c:38
+ __vfs_setxattr+0x3d8/0x400 fs/xattr.c:203
+ __vfs_setxattr_noperm+0x110/0x528 fs/xattr.c:237
+ __vfs_setxattr_locked+0x1ec/0x218 fs/xattr.c:298
+ vfs_setxattr+0x1a8/0x344 fs/xattr.c:324
+ do_setxattr fs/xattr.c:609 [inline]
+ setxattr+0x208/0x29c fs/xattr.c:632
+ path_setxattr+0x17c/0x258 fs/xattr.c:651
+ __do_sys_setxattr fs/xattr.c:667 [inline]
+ __se_sys_setxattr fs/xattr.c:663 [inline]
+ __arm64_sys_setxattr+0xbc/0xd8 fs/xattr.c:663
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+ el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+irq event stamp: 287
+hardirqs last  enabled at (287): [<ffff80000896749c>] kasan_quarantine_put+0x1a0/0x1c8 mm/kasan/quarantine.c:242
+hardirqs last disabled at (286): [<ffff800008967334>] kasan_quarantine_put+0x38/0x1c8 mm/kasan/quarantine.c:215
+softirqs last  enabled at (210): [<ffff800008020c1c>] softirq_handle_end kernel/softirq.c:414 [inline]
+softirqs last  enabled at (210): [<ffff800008020c1c>] __do_softirq+0xac0/0xd54 kernel/softirq.c:600
+softirqs last disabled at (197): [<ffff80000802a658>] ____do_softirq+0x14/0x20 arch/arm64/kernel/irq.c:80
+---[ end trace 0000000000000000 ]---
+
+============================================
+WARNING: possible recursive locking detected
+6.3.0-rc7-syzkaller-g14f8db1c0f9a #0 Tainted: G        W         
+--------------------------------------------
+syz-executor369/13299 is trying to acquire lock:
+ffff0000e6c5de48 (&sb->s_type->i_mutex_key#8){++++}-{3:3}, at: inode_lock include/linux/fs.h:758 [inline]
+ffff0000e6c5de48 (&sb->s_type->i_mutex_key#8){++++}-{3:3}, at: ext4_xattr_inode_update_ref+0xac/0x4e0 fs/ext4/xattr.c:1059
+
+but task is already holding lock:
+ffff0000e6d00400 (&sb->s_type->i_mutex_key#8){++++}-{3:3}, at: inode_lock include/linux/fs.h:758 [inline]
+ffff0000e6d00400 (&sb->s_type->i_mutex_key#8){++++}-{3:3}, at: vfs_setxattr+0x17c/0x344 fs/xattr.c:323
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&sb->s_type->i_mutex_key#8);
+  lock(&sb->s_type->i_mutex_key#8);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+3 locks held by syz-executor369/13299:
+ #0: ffff0000d7938460 (sb_writers#3){.+.+}-{0:0}, at: mnt_want_write+0x44/0x9c fs/namespace.c:394
+ #1: ffff0000e6d00400 (&sb->s_type->i_mutex_key#8){++++}-{3:3}, at: inode_lock include/linux/fs.h:758 [inline]
+ #1: ffff0000e6d00400 (&sb->s_type->i_mutex_key#8){++++}-{3:3}, at: vfs_setxattr+0x17c/0x344 fs/xattr.c:323
+ #2: ffff0000e6d000c8 (&ei->xattr_sem){++++}-{3:3}, at: ext4_write_lock_xattr fs/ext4/xattr.h:155 [inline]
+ #2: ffff0000e6d000c8 (&ei->xattr_sem){++++}-{3:3}, at: ext4_xattr_set_handle+0x1e0/0x12d8 fs/ext4/xattr.c:2373
+
+stack backtrace:
+CPU: 1 PID: 13299 Comm: syz-executor369 Tainted: G        W          6.3.0-rc7-syzkaller-g14f8db1c0f9a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/14/2023
+Call trace:
+ dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:233
+ show_stack+0x2c/0x44 arch/arm64/kernel/stacktrace.c:240
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106
+ dump_stack+0x1c/0x28 lib/dump_stack.c:113
+ __lock_acquire+0x6310/0x764c kernel/locking/lockdep.c:5056
+ lock_acquire+0x238/0x718 kernel/locking/lockdep.c:5669
+ down_write+0x50/0xc0 kernel/locking/rwsem.c:1573
+ inode_lock include/linux/fs.h:758 [inline]
+ ext4_xattr_inode_update_ref+0xac/0x4e0 fs/ext4/xattr.c:1059
+ ext4_xattr_inode_inc_ref fs/ext4/xattr.c:1105 [inline]
+ ext4_xattr_inode_lookup_create fs/ext4/xattr.c:1597 [inline]
+ ext4_xattr_set_entry+0x243c/0x2c3c fs/ext4/xattr.c:1737
+ ext4_xattr_block_set+0x8e0/0x2cc4 fs/ext4/xattr.c:2043
+ ext4_xattr_set_handle+0xb2c/0x12d8 fs/ext4/xattr.c:2458
+ ext4_xattr_set+0x1e0/0x354 fs/ext4/xattr.c:2560
+ ext4_xattr_trusted_set+0x4c/0x64 fs/ext4/xattr_trusted.c:38
+ __vfs_setxattr+0x3d8/0x400 fs/xattr.c:203
+ __vfs_setxattr_noperm+0x110/0x528 fs/xattr.c:237
+ __vfs_setxattr_locked+0x1ec/0x218 fs/xattr.c:298
+ vfs_setxattr+0x1a8/0x344 fs/xattr.c:324
+ do_setxattr fs/xattr.c:609 [inline]
+ setxattr+0x208/0x29c fs/xattr.c:632
+ path_setxattr+0x17c/0x258 fs/xattr.c:651
+ __do_sys_setxattr fs/xattr.c:667 [inline]
+ __se_sys_setxattr fs/xattr.c:663 [inline]
+ __arm64_sys_setxattr+0xbc/0xd8 fs/xattr.c:663
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+ el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591

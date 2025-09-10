@@ -1,0 +1,60 @@
+id: 51177e4144d764827c45
+bug_link: https://syzkaller.appspot.com/bug?extid=51177e4144d764827c45
+title: WARNING in __kernel_read (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 39049b69ec9fc125fa1f314165dcc86f72cb72ec
+fix_commit: 04839139213cf60d4c5fc792214a08830e294ff8
+datetime: '2023-04-11T19:23:23-07:00'
+fix_commit_message: 'fsverity: reject FS_IOC_ENABLE_VERITY on mode 3 fds
+
+
+  Commit 56124d6c87fd ("fsverity: support enabling with tree block size <
+
+  PAGE_SIZE") changed FS_IOC_ENABLE_VERITY to use __kernel_read() to read
+
+  the file''s data, instead of direct pagecache accesses.
+
+
+  An unintended consequence of this is that the
+
+  ''WARN_ON_ONCE(!(file->f_mode & FMODE_READ))'' in __kernel_read() became
+
+  reachable by fuzz tests.  This happens if FS_IOC_ENABLE_VERITY is called
+
+  on a fd opened with access mode 3, which means "ioctl access only".
+
+
+  Arguably, FS_IOC_ENABLE_VERITY should work on ioctl-only fds.  But
+
+  ioctl-only fds are a weird Linux extension that is rarely used and that
+
+  few people even know about.  (The documentation for FS_IOC_ENABLE_VERITY
+
+  even specifically says it requires O_RDONLY.)  It''s probably not
+
+  worthwhile to make the ioctl internally open a new fd just to handle
+
+  this case.  Thus, just reject the ioctl on such fds for now.
+
+
+  Fixes: 56124d6c87fd ("fsverity: support enabling with tree block size < PAGE_SIZE")
+
+  Reported-by: syzbot+51177e4144d764827c45@syzkaller.appspotmail.com
+
+  Link: https://syzkaller.appspot.com/bug?id=2281afcbbfa8fdb92f9887479cc0e4180f1c6b28
+
+  Cc: stable@vger.kernel.org
+
+  Link: https://lore.kernel.org/r/20230406215106.235829-1-ebiggers@kernel.org
+
+  Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+  Reviewed-by: Christian Brauner <brauner@kernel.org>
+
+  Signed-off-by: Eric Biggers <ebiggers@google.com>
+
+  '
+submodule:
+- fs/verity
+hunk_count: 1
+covered_count: 1

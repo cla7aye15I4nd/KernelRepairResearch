@@ -1,0 +1,36 @@
+diff --git a/lib/radix-tree.c b/lib/radix-tree.c
+index 43e0cbedc3a0..a9e41aed6de4 100644
+--- a/lib/radix-tree.c
++++ b/lib/radix-tree.c
+@@ -2034,10 +2034,12 @@ void *radix_tree_delete_item(struct radix_tree_root *root,
+ 			     unsigned long index, void *item)
+ {
+ 	struct radix_tree_node *node = NULL;
+-	void __rcu **slot;
++	void __rcu **slot = NULL;
+ 	void *entry;
+ 
+ 	entry = __radix_tree_lookup(root, index, &node, &slot);
++	if (!slot)
++		return NULL;
+ 	if (!entry && (!is_idr(root) || node_tag_get(root, node, IDR_FREE,
+ 						get_slot_offset(node, slot))))
+ 		return NULL;
+diff --git a/tools/testing/radix-tree/idr-test.c b/tools/testing/radix-tree/idr-test.c
+index 6c645eb77d42..ee820fcc29b0 100644
+--- a/tools/testing/radix-tree/idr-test.c
++++ b/tools/testing/radix-tree/idr-test.c
+@@ -252,6 +252,13 @@ void idr_checks(void)
+ 	idr_remove(&idr, 3);
+ 	idr_remove(&idr, 0);
+ 
++	assert(idr_alloc(&idr, DUMMY_PTR, 0, 0, GFP_KERNEL) == 0);
++	idr_remove(&idr, 1);
++	for (i = 1; i < RADIX_TREE_MAP_SIZE; i++)
++		assert(idr_alloc(&idr, DUMMY_PTR, 0, 0, GFP_KERNEL) == i);
++	idr_remove(&idr, 1 << 30);
++	idr_destroy(&idr);
++
+ 	for (i = INT_MAX - 3UL; i < INT_MAX + 1UL; i++) {
+ 		struct item *item = item_create(i, 0);
+ 		assert(idr_alloc(&idr, item, i, i + 10, GFP_KERNEL) == i);

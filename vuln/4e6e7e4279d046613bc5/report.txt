@@ -1,0 +1,119 @@
+ffff88804478bfb0: e0 f5 38 8c ff ff ff ff 00 04 00 00 00 00 00 00  ..8.............
+ffff88804478bfc0: 00 00 00 00 00 00 00 00 c8 bf 78 44 80 88 ff ff  ..........xD....
+ffff88804478bfd0: c8 bf 78 44 80 88 ff ff 00 00 00 00 00 00 00 00  ..xD............
+ffff88804478bfe0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+ffff88804478bff0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+==================================================================
+BUG: KASAN: slab-out-of-bounds in hex_dump_to_buffer+0x731/0xba0 lib/hexdump.c:193
+Read of size 1 at addr ffff88804478c008 by task syz-executor121/5306
+
+CPU: 0 UID: 0 PID: 5306 Comm: syz-executor121 Not tainted 6.14.0-rc5-syzkaller-00137-g00a7d39898c8 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:408 [inline]
+ print_report+0x16e/0x5b0 mm/kasan/report.c:521
+ kasan_report+0x143/0x180 mm/kasan/report.c:634
+ hex_dump_to_buffer+0x731/0xba0 lib/hexdump.c:193
+ print_hex_dump+0x13f/0x250 lib/hexdump.c:276
+ ea_get+0xda2/0x1340 fs/jfs/xattr.c:565
+ jfs_listxattr+0xf2/0x8e0 fs/jfs/xattr.c:879
+ vfs_listxattr fs/xattr.c:493 [inline]
+ listxattr+0x107/0x290 fs/xattr.c:924
+ filename_listxattr fs/xattr.c:958 [inline]
+ path_listxattrat+0x1c6/0x410 fs/xattr.c:988
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f1fe222da99
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe5f6f2538 EFLAGS: 00000246 ORIG_RAX: 00000000000000c3
+RAX: ffffffffffffffda RBX: 0031656c69662f2e RCX: 00007f1fe222da99
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000400000000180
+RBP: 00007f1fe22a65f0 R08: 00000000000061b7 R09: 00005555935a94c0
+R10: 00007ffe5f6f2400 R11: 0000000000000246 R12: 00007ffe5f6f2560
+R13: 00007ffe5f6f2788 R14: 431bde82d7b634db R15: 00007f1fe227603b
+ </TASK>
+
+Allocated by task 5306:
+ kasan_save_stack mm/kasan/common.c:47 [inline]
+ kasan_save_track+0x3f/0x80 mm/kasan/common.c:68
+ unpoison_slab_object mm/kasan/common.c:319 [inline]
+ __kasan_slab_alloc+0x66/0x80 mm/kasan/common.c:345
+ kasan_slab_alloc include/linux/kasan.h:250 [inline]
+ slab_post_alloc_hook mm/slub.c:4115 [inline]
+ slab_alloc_node mm/slub.c:4164 [inline]
+ kmem_cache_alloc_lru_noprof+0x1dd/0x390 mm/slub.c:4183
+ jfs_alloc_inode+0x28/0x70 fs/jfs/super.c:105
+ alloc_inode+0x65/0x1a0 fs/inode.c:336
+ iget_locked+0xf1/0x5a0 fs/inode.c:1487
+ jfs_iget+0x23/0x3e0 fs/jfs/inode.c:29
+ jfs_lookup+0x226/0x410 fs/jfs/namei.c:1469
+ __lookup_slow+0x296/0x400 fs/namei.c:1793
+ lookup_slow+0x53/0x70 fs/namei.c:1810
+ walk_component+0x2e1/0x410 fs/namei.c:2114
+ lookup_last fs/namei.c:2612 [inline]
+ path_lookupat+0x16f/0x450 fs/namei.c:2636
+ filename_lookup+0x2a3/0x670 fs/namei.c:2665
+ filename_listxattr fs/xattr.c:955 [inline]
+ path_listxattrat+0x147/0x410 fs/xattr.c:988
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+The buggy address belongs to the object at ffff88804478b750
+ which belongs to the cache jfs_ip of size 2232
+The buggy address is located 0 bytes to the right of
+ allocated 2232-byte region [ffff88804478b750, ffff88804478c008)
+
+The buggy address belongs to the physical page:
+page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x44788
+head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+flags: 0x4fff00000000040(head|node=1|zone=1|lastcpupid=0x7ff)
+page_type: f5(slab)
+raw: 04fff00000000040 ffff888033597640 dead000000000122 0000000000000000
+raw: 0000000000000000 00000000800d000d 00000000f5000000 0000000000000000
+head: 04fff00000000040 ffff888033597640 dead000000000122 0000000000000000
+head: 0000000000000000 00000000800d000d 00000000f5000000 0000000000000000
+head: 04fff00000000003 ffffea000111e201 ffffffffffffffff 0000000000000000
+head: 0000000000000008 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as allocated
+page last allocated via order 3, migratetype Reclaimable, gfp_mask 0xd2050(__GFP_IO|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC|__GFP_RECLAIMABLE), pid 5306, tgid 5306 (syz-executor121), ts 68386408321, free_ts 0
+ set_page_owner include/linux/page_owner.h:32 [inline]
+ post_alloc_hook+0x1f4/0x240 mm/page_alloc.c:1551
+ prep_new_page mm/page_alloc.c:1559 [inline]
+ get_page_from_freelist+0x365c/0x37a0 mm/page_alloc.c:3477
+ __alloc_frozen_pages_noprof+0x292/0x710 mm/page_alloc.c:4739
+ alloc_pages_mpol+0x311/0x660 mm/mempolicy.c:2270
+ alloc_slab_page mm/slub.c:2423 [inline]
+ allocate_slab+0x8f/0x3a0 mm/slub.c:2587
+ new_slab mm/slub.c:2640 [inline]
+ ___slab_alloc+0xc27/0x14a0 mm/slub.c:3826
+ __slab_alloc+0x58/0xa0 mm/slub.c:3916
+ __slab_alloc_node mm/slub.c:3991 [inline]
+ slab_alloc_node mm/slub.c:4152 [inline]
+ kmem_cache_alloc_lru_noprof+0x26c/0x390 mm/slub.c:4183
+ jfs_alloc_inode+0x28/0x70 fs/jfs/super.c:105
+ alloc_inode+0x65/0x1a0 fs/inode.c:336
+ new_inode_pseudo fs/inode.c:1174 [inline]
+ new_inode+0x22/0x1d0 fs/inode.c:1193
+ jfs_fill_super+0x570/0xd90 fs/jfs/super.c:511
+ get_tree_bdev_flags+0x48c/0x5c0 fs/super.c:1636
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3560
+ do_mount fs/namespace.c:3900 [inline]
+ __do_sys_mount fs/namespace.c:4111 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4088
+page_owner free stack trace missing
+
+Memory state around the buggy address:
+ ffff88804478bf00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffff88804478bf80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffff88804478c000: 00 fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+                      ^
+ ffff88804478c080: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff88804478c100: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+==================================================================

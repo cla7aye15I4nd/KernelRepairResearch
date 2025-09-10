@@ -1,0 +1,56 @@
+id: a3422a19b05ea96bee18
+bug_link: https://syzkaller.appspot.com/bug?extid=a3422a19b05ea96bee18
+title: kernel BUG in skbprio_enqueue
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 078aabd567de3d63d37d7673f714e309d369e6e2
+fix_commit: ce8fe975fd99b49c29c42e50f2441ba53112b2e8
+datetime: '2025-04-02T16:03:32-07:00'
+fix_commit_message: 'net_sched: skbprio: Remove overly strict queue assertions
+
+
+  In the current implementation, skbprio enqueue/dequeue contains an assertion
+
+  that fails under certain conditions when SKBPRIO is used as a child qdisc under
+
+  TBF with specific parameters. The failure occurs because TBF sometimes peeks at
+
+  packets in the child qdisc without actually dequeuing them when tokens are
+
+  unavailable.
+
+
+  This peek operation creates a discrepancy between the parent and child qdisc
+
+  queue length counters. When TBF later receives a high-priority packet,
+
+  SKBPRIO''s queue length may show a different value than what''s reflected in its
+
+  internal priority queue tracking, triggering the assertion.
+
+
+  The fix removes this overly strict assertions in SKBPRIO, they are not
+
+  necessary at all.
+
+
+  Reported-by: syzbot+a3422a19b05ea96bee18@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=a3422a19b05ea96bee18
+
+  Fixes: aea5f654e6b7 ("net/sched: add skbprio scheduler")
+
+  Cc: Nishanth Devarajan <ndev2021@gmail.com>
+
+  Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+
+  Acked-by: Paolo Abeni <pabeni@redhat.com>
+
+  Link: https://patch.msgid.link/20250329222536.696204-2-xiyou.wangcong@gmail.com
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- net/sched
+hunk_count: 2
+covered_count: 2

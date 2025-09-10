@@ -1,0 +1,45 @@
+id: 16dc03452dee970a0c3e
+bug_link: https://syzkaller.appspot.com/bug?extid=16dc03452dee970a0c3e
+title: 'INFO: task hung in __io_uring_register'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3d6770fbd9353988839611bab107e4e891506aad
+fix_commit: b19062a567266ee1f10f6709325f766bbcc07d1c
+datetime: '2019-04-15T10:49:38-06:00'
+fix_commit_message: 'io_uring: fix possible deadlock between io_uring_{enter,register}
+
+
+  If we have multiple threads, one doing io_uring_enter() while the other
+
+  is doing io_uring_register(), we can run into a deadlock between the
+
+  two. io_uring_register() must wait for existing users of the io_uring
+
+  instance to exit. But it does so while holding the io_uring mutex.
+
+  Callers of io_uring_enter() may need this mutex to make progress (and
+
+  eventually exit). If we wait for users to exit in io_uring_register(),
+
+  we can''t do so with the io_uring mutex held without potentially risking
+
+  a deadlock.
+
+
+  Drop the io_uring mutex while waiting for existing callers to exit. This
+
+  is safe and guaranteed to make forward progress, since we already killed
+
+  the percpu ref before doing so. Hence later callers of io_uring_enter()
+
+  will be rejected.
+
+
+  Reported-by: syzbot+16dc03452dee970a0c3e@syzkaller.appspotmail.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

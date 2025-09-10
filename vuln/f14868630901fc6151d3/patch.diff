@@ -1,0 +1,27 @@
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 16b72f4f14df..8607b11ff936 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -2483,10 +2483,6 @@ bool get_signal(struct ksignal *ksig)
+ 		ksig->info.si_signo = signr = SIGKILL;
+ 		sigdelset(&current->pending.signal, SIGKILL);
+ 		recalc_sigpending();
+-		current->jobctl &= ~JOBCTL_TRAP_FREEZE;
+-		spin_unlock_irq(&sighand->siglock);
+-		if (unlikely(cgroup_task_frozen(current)))
+-			cgroup_leave_frozen(true);
+ 		goto fatal;
+ 	}
+ 
+@@ -2608,8 +2604,10 @@ bool get_signal(struct ksignal *ksig)
+ 			continue;
+ 		}
+ 
+-		spin_unlock_irq(&sighand->siglock);
+ 	fatal:
++		spin_unlock_irq(&sighand->siglock);
++		if (unlikely(cgroup_task_frozen(current)))
++			cgroup_leave_frozen(true);
+ 
+ 		/*
+ 		 * Anything else is fatal, maybe with a core dump.

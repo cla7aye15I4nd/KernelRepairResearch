@@ -1,0 +1,27 @@
+id: 3aa9784721dfb90e984d
+bug_link: https://syzkaller.appspot.com/bug?extid=3aa9784721dfb90e984d
+title: 'KASAN: user-memory-access Write in n_tty_set_termios'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 231f8fd0cca078bd4396dd7e380db813ac5736e2
+fix_commit: 83d817f41070c48bc3eb7ec18e43000a548fca5c
+datetime: '2018-12-05T12:16:33+01:00'
+fix_commit_message: "tty: Hold tty_ldisc_lock() during tty_reopen()\n\ntty_ldisc_reinit()\
+  \ doesn't race with neither tty_ldisc_hangup()\nnor set_ldisc() nor tty_ldisc_release()\
+  \ as they use tty lock.\nBut it races with anyone who expects line discipline to\
+  \ be the same\nafter hoding read semaphore in tty_ldisc_ref().\n\nWe've seen the\
+  \ following crash on v4.9.108 stable:\n\nBUG: unable to handle kernel paging request\
+  \ at 0000000000002260\nIP: [..] n_tty_receive_buf_common+0x5f/0x86d\nWorkqueue:\
+  \ events_unbound flush_to_ldisc\nCall Trace:\n [..] n_tty_receive_buf2\n [..] tty_ldisc_receive_buf\n\
+  \ [..] flush_to_ldisc\n [..] process_one_work\n [..] worker_thread\n [..] kthread\n\
+  \ [..] ret_from_fork\n\ntty_ldisc_reinit() should be called with ldisc_sem hold\
+  \ for writing,\nwhich will protect any reader against line discipline changes.\n\
+  \nCc: Jiri Slaby <jslaby@suse.com>\nCc: stable@vger.kernel.org # b027e2298bd5 (\"\
+  tty: fix data race between tty_init_dev and flush of buf\")\nReviewed-by: Jiri Slaby\
+  \ <jslaby@suse.cz>\nReported-by: syzbot+3aa9784721dfb90e984d@syzkaller.appspotmail.com\n\
+  Tested-by: Mark Rutland <mark.rutland@arm.com>\nTested-by: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>\n\
+  Signed-off-by: Dmitry Safonov <dima@arista.com>\nTested-by: Tycho Andersen <tycho@tycho.ws>\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty
+hunk_count: 1
+covered_count: 0

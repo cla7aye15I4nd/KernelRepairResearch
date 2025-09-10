@@ -1,0 +1,66 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc000000000c: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000060-0x0000000000000067]
+CPU: 1 UID: 0 PID: 58 Comm: kworker/1:2 Not tainted 6.13.0-rc6-syzkaller-00898-g25cc469d6d34 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Workqueue: vsock-loopback vsock_loopback_work
+RIP: 0010:vsock_stream_has_data+0x46/0x70 net/vmw_vsock/af_vsock.c:873
+Code: 8d 9e 50 05 00 00 48 89 d8 48 c1 e8 03 42 80 3c 38 00 74 08 48 89 df e8 58 82 5c f6 48 8b 1b 48 83 c3 60 48 89 d8 48 c1 e8 03 <42> 80 3c 38 00 74 08 48 89 df e8 3b 82 5c f6 4c 8b 1b 4c 89 f7 5b
+RSP: 0018:ffffc9000133f748 EFLAGS: 00010206
+RAX: 000000000000000c RBX: 0000000000000060 RCX: ffff88802329da00
+RDX: 0000000000000000 RSI: 0000000000000008 RDI: ffff888077e408c0
+RBP: ffff888077e408c0 R08: ffff888077e40927 R09: 1ffff1100efc8124
+R10: dffffc0000000000 R11: ffffed100efc8125 R12: dffffc0000000000
+R13: ffffffff8ffeb820 R14: ffff888077e408c0 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f22995266e5 CR3: 000000002f42c000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ virtio_transport_do_close+0x64/0x3d0 net/vmw_vsock/virtio_transport_common.c:1214
+ virtio_transport_recv_disconnecting net/vmw_vsock/virtio_transport_common.c:1452 [inline]
+ virtio_transport_recv_pkt+0x1755/0x2b10 net/vmw_vsock/virtio_transport_common.c:1661
+ vsock_loopback_work+0x3e9/0x530 net/vmw_vsock/vsock_loopback.c:133
+ process_one_work kernel/workqueue.c:3229 [inline]
+ process_scheduled_works+0xa66/0x1840 kernel/workqueue.c:3310
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3391
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:vsock_stream_has_data+0x46/0x70 net/vmw_vsock/af_vsock.c:873
+Code: 8d 9e 50 05 00 00 48 89 d8 48 c1 e8 03 42 80 3c 38 00 74 08 48 89 df e8 58 82 5c f6 48 8b 1b 48 83 c3 60 48 89 d8 48 c1 e8 03 <42> 80 3c 38 00 74 08 48 89 df e8 3b 82 5c f6 4c 8b 1b 4c 89 f7 5b
+RSP: 0018:ffffc9000133f748 EFLAGS: 00010206
+RAX: 000000000000000c RBX: 0000000000000060 RCX: ffff88802329da00
+RDX: 0000000000000000 RSI: 0000000000000008 RDI: ffff888077e408c0
+RBP: ffff888077e408c0 R08: ffff888077e40927 R09: 1ffff1100efc8124
+R10: dffffc0000000000 R11: ffffed100efc8125 R12: dffffc0000000000
+R13: ffffffff8ffeb820 R14: ffff888077e408c0 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f22995266e5 CR3: 0000000076cfa000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	8d 9e 50 05 00 00    	lea    0x550(%rsi),%ebx
+   6:	48 89 d8             	mov    %rbx,%rax
+   9:	48 c1 e8 03          	shr    $0x3,%rax
+   d:	42 80 3c 38 00       	cmpb   $0x0,(%rax,%r15,1)
+  12:	74 08                	je     0x1c
+  14:	48 89 df             	mov    %rbx,%rdi
+  17:	e8 58 82 5c f6       	call   0xf65c8274
+  1c:	48 8b 1b             	mov    (%rbx),%rbx
+  1f:	48 83 c3 60          	add    $0x60,%rbx
+  23:	48 89 d8             	mov    %rbx,%rax
+  26:	48 c1 e8 03          	shr    $0x3,%rax
+* 2a:	42 80 3c 38 00       	cmpb   $0x0,(%rax,%r15,1) <-- trapping instruction
+  2f:	74 08                	je     0x39
+  31:	48 89 df             	mov    %rbx,%rdi
+  34:	e8 3b 82 5c f6       	call   0xf65c8274
+  39:	4c 8b 1b             	mov    (%rbx),%r11
+  3c:	4c 89 f7             	mov    %r14,%rdi
+  3f:	5b                   	pop    %rbx

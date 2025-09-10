@@ -1,0 +1,30 @@
+id: adbefe6736a5b37af36f19ebfa8764fcdd9ddaed
+bug_link: https://syzkaller.appspot.com/bug?extid=adbefe6736a5b37af36f19ebfa8764fcdd9ddaed
+title: WARNING in do_debug
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f38a7b75267f1fb240a8178cbcb16d66dd37aac8
+fix_commit: efdab992813fb2ed825745625b83c05032e9cda2
+datetime: '2018-01-16T16:34:13+01:00'
+fix_commit_message: "KVM: x86: fix escape of guest dr6 to the host\n\nsyzkaller reported:\n\
+  \n   WARNING: CPU: 0 PID: 12927 at arch/x86/kernel/traps.c:780 do_debug+0x222/0x250\n\
+  \   CPU: 0 PID: 12927 Comm: syz-executor Tainted: G           OE    4.15.0-rc2+\
+  \ #16\n   RIP: 0010:do_debug+0x222/0x250\n   Call Trace:\n    <#DB>\n    debug+0x3e/0x70\n\
+  \   RIP: 0010:copy_user_enhanced_fast_string+0x10/0x20\n    </#DB>\n    _copy_from_user+0x5b/0x90\n\
+  \    SyS_timer_create+0x33/0x80\n    entry_SYSCALL_64_fastpath+0x23/0x9a\n\nThe\
+  \ testcase sets a watchpoint (with perf_event_open) on a buffer that is\npassed\
+  \ to timer_create() as the struct sigevent argument.  In timer_create(),\ncopy_from_user()'s\
+  \ rep movsb triggers the BP.  The testcase also sets\nthe debug registers for the\
+  \ guest.\n\nHowever, KVM only restores host debug registers when the host has active\n\
+  watchpoints, which triggers a race condition when running the testcase with\nmultiple\
+  \ threads.  The guest's DR6.BS bit can escape to the host before\nanother thread\
+  \ invokes timer_create(), and do_debug() complains.\n\nThe fix is to respect do_debug()'s\
+  \ dr6 invariant when leaving KVM.\n\nReported-by: Dmitry Vyukov <dvyukov@google.com>\n\
+  Cc: Paolo Bonzini <pbonzini@redhat.com>\nCc: Radim Krčmář <rkrcmar@redhat.com>\n\
+  Cc: David Hildenbrand <david@redhat.com>\nCc: Dmitry Vyukov <dvyukov@google.com>\n\
+  Reviewed-by: David Hildenbrand <david@redhat.com>\nSigned-off-by: Wanpeng Li <wanpeng.li@hotmail.com>\n\
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>\nSigned-off-by: Radim Krčmář\
+  \ <rkrcmar@redhat.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 1
+covered_count: 0

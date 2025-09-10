@@ -1,0 +1,43 @@
+id: 0f89bd13eaceccc0e126
+bug_link: https://syzkaller.appspot.com/bug?extid=0f89bd13eaceccc0e126
+title: 'BUG: unable to handle kernel NULL pointer dereference in smack_inode_permission'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 11c10956515b8ec44cf4f2a7b9d8bf8b9dc05ec4
+fix_commit: 578b565b240afdfe0596d183f473f333eb9d3008
+datetime: '2022-11-18T22:29:57+09:00'
+fix_commit_message: "9p/fd: Fix write overflow in p9_read_work\n\nThis error was reported\
+  \ while fuzzing:\n\nBUG: KASAN: slab-out-of-bounds in _copy_to_iter+0xd35/0x1190\n\
+  Write of size 4043 at addr ffff888008724eb1 by task kworker/1:1/24\n\nCPU: 1 PID:\
+  \ 24 Comm: kworker/1:1 Not tainted 6.1.0-rc5-00002-g1adf73218daa-dirty #223\nHardware\
+  \ name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.15.0-0-g2dd4b9b3f840-prebuilt.qemu.org\
+  \ 04/01/2014\nWorkqueue: events p9_read_work\nCall Trace:\n <TASK>\n dump_stack_lvl+0x4c/0x64\n\
+  \ print_report+0x178/0x4b0\n kasan_report+0xae/0x130\n kasan_check_range+0x179/0x1e0\n\
+  \ memcpy+0x38/0x60\n _copy_to_iter+0xd35/0x1190\n copy_page_to_iter+0x1d5/0xb00\n\
+  \ pipe_read+0x3a1/0xd90\n __kernel_read+0x2a5/0x760\n kernel_read+0x47/0x60\n p9_read_work+0x463/0x780\n\
+  \ process_one_work+0x91d/0x1300\n worker_thread+0x8c/0x1210\n kthread+0x280/0x330\n\
+  \ ret_from_fork+0x22/0x30\n </TASK>\n\nAllocated by task 457:\n kasan_save_stack+0x1c/0x40\n\
+  \ kasan_set_track+0x21/0x30\n __kasan_kmalloc+0x7e/0x90\n __kmalloc+0x59/0x140\n\
+  \ p9_fcall_init.isra.11+0x5d/0x1c0\n p9_tag_alloc+0x251/0x550\n p9_client_prepare_req+0x162/0x350\n\
+  \ p9_client_rpc+0x18d/0xa90\n p9_client_create+0x670/0x14e0\n v9fs_session_init+0x1fd/0x14f0\n\
+  \ v9fs_mount+0xd7/0xaf0\n legacy_get_tree+0xf3/0x1f0\n vfs_get_tree+0x86/0x2c0\n\
+  \ path_mount+0x885/0x1940\n do_mount+0xec/0x100\n __x64_sys_mount+0x1a0/0x1e0\n\
+  \ do_syscall_64+0x3a/0x90\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nThis BUG\
+  \ pops up when trying to reproduce\nhttps://syzkaller.appspot.com/bug?id=6c7cd46c7bdd0e86f95d26ec3153208ad186f9fa\n\
+  The callstack is different but the issue is valid and re-producable with\nthe same\
+  \ re-producer in the link.\n\nThe root cause of this issue is that we check the\
+  \ size of the message\nreceived against the msize of the client in p9_read_work.\
+  \ However, it\nturns out that capacity is no longer consistent with msize. Thus,\n\
+  the message size should be checked against sdata capacity.\n\nAs the msize is non-consistant\
+  \ with the capacity of the tag and as we\nare now checking message size against\
+  \ capacity directly, there is no\npoint checking message size against msize. So\
+  \ remove it.\n\nLink: https://lkml.kernel.org/r/20221117091159.31533-2-guozihua@huawei.com\n\
+  Link: https://lkml.kernel.org/r/20221117091159.31533-3-guozihua@huawei.com\nReported-by:\
+  \ syzbot+0f89bd13eaceccc0e126@syzkaller.appspotmail.com\nFixes: 60ece0833b6c (\"\
+  net/9p: allocate appropriate reduced message buffers\")\nSigned-off-by: GUO Zihua\
+  \ <guozihua@huawei.com>\nReviewed-by: Christian Schoenebeck <linux_oss@crudebyte.com>\n\
+  [Dominique: squash patches 1 & 2 and fix size including header part]\nSigned-off-by:\
+  \ Dominique Martinet <asmadeus@codewreck.org>\n"
+submodule:
+- net/9p
+hunk_count: 2
+covered_count: 0

@@ -1,0 +1,45 @@
+id: 6ca1abd0db68b5173a4f
+bug_link: https://syzkaller.appspot.com/bug?extid=6ca1abd0db68b5173a4f
+title: memory leak in ip_mc_add_src (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c09fedd6ad3f55fd298d1acfae6fb14d77a3a4d8
+fix_commit: e5b1c6c6277d5a283290a8c033c72544746f9b5b
+datetime: '2019-06-29T11:16:28-07:00'
+fix_commit_message: "igmp: fix memory leak in igmpv3_del_delrec()\n\nim->tomb and/or\
+  \ im->sources might not be NULL, but we\ncurrently overwrite their values blindly.\n\
+  \nUsing swap() will make sure the following call to kfree_pmc(pmc)\nwill properly\
+  \ free the psf structures.\n\nTested with the C repro provided by syzbot, which\
+  \ basically does :\n\n socket(PF_INET, SOCK_DGRAM, IPPROTO_IP) = 3\n setsockopt(3,\
+  \ SOL_IP, IP_ADD_MEMBERSHIP, \"\\340\\0\\0\\2\\177\\0\\0\\1\\0\\0\\0\\0\", 12) =\
+  \ 0\n ioctl(3, SIOCSIFFLAGS, {ifr_name=\"lo\", ifr_flags=0}) = 0\n setsockopt(3,\
+  \ SOL_IP, IP_MSFILTER, \"\\340\\0\\0\\2\\177\\0\\0\\1\\1\\0\\0\\0\\1\\0\\0\\0\\\
+  377\\377\\377\\377\", 20) = 0\n ioctl(3, SIOCSIFFLAGS, {ifr_name=\"lo\", ifr_flags=IFF_UP})\
+  \ = 0\n exit_group(0)                    = ?\n\nBUG: memory leak\nunreferenced object\
+  \ 0xffff88811450f140 (size 64):\n  comm \"softirq\", pid 0, jiffies 4294942448 (age\
+  \ 32.070s)\n  hex dump (first 32 bytes):\n    00 00 00 00 00 00 00 00 ff ff ff ff\
+  \ 00 00 00 00  ................\n    00 00 00 00 00 00 00 00 01 00 00 00 00 00 00\
+  \ 00  ................\n  backtrace:\n    [<00000000c7bad083>] kmemleak_alloc_recursive\
+  \ include/linux/kmemleak.h:43 [inline]\n    [<00000000c7bad083>] slab_post_alloc_hook\
+  \ mm/slab.h:439 [inline]\n    [<00000000c7bad083>] slab_alloc mm/slab.c:3326 [inline]\n\
+  \    [<00000000c7bad083>] kmem_cache_alloc_trace+0x13d/0x280 mm/slab.c:3553\n  \
+  \  [<000000009acc4151>] kmalloc include/linux/slab.h:547 [inline]\n    [<000000009acc4151>]\
+  \ kzalloc include/linux/slab.h:742 [inline]\n    [<000000009acc4151>] ip_mc_add1_src\
+  \ net/ipv4/igmp.c:1976 [inline]\n    [<000000009acc4151>] ip_mc_add_src+0x36b/0x400\
+  \ net/ipv4/igmp.c:2100\n    [<000000004ac14566>] ip_mc_msfilter+0x22d/0x310 net/ipv4/igmp.c:2484\n\
+  \    [<0000000052d8f995>] do_ip_setsockopt.isra.0+0x1795/0x1930 net/ipv4/ip_sockglue.c:959\n\
+  \    [<000000004ee1e21f>] ip_setsockopt+0x3b/0xb0 net/ipv4/ip_sockglue.c:1248\n\
+  \    [<0000000066cdfe74>] udp_setsockopt+0x4e/0x90 net/ipv4/udp.c:2618\n    [<000000009383a786>]\
+  \ sock_common_setsockopt+0x38/0x50 net/core/sock.c:3126\n    [<00000000d8ac0c94>]\
+  \ __sys_setsockopt+0x98/0x120 net/socket.c:2072\n    [<000000001b1e9666>] __do_sys_setsockopt\
+  \ net/socket.c:2083 [inline]\n    [<000000001b1e9666>] __se_sys_setsockopt net/socket.c:2080\
+  \ [inline]\n    [<000000001b1e9666>] __x64_sys_setsockopt+0x26/0x30 net/socket.c:2080\n\
+  \    [<00000000420d395e>] do_syscall_64+0x76/0x1a0 arch/x86/entry/common.c:301\n\
+  \    [<000000007fd83a4b>] entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nFixes: 24803f38a5c0\
+  \ (\"igmp: do not remove igmp souce list info when set link down\")\nSigned-off-by:\
+  \ Eric Dumazet <edumazet@google.com>\nCc: Hangbin Liu <liuhangbin@gmail.com>\nReported-by:\
+  \ syzbot+6ca1abd0db68b5173a4f@syzkaller.appspotmail.com\nSigned-off-by: David S.\
+  \ Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv4
+hunk_count: 1
+covered_count: 0

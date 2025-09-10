@@ -1,0 +1,47 @@
+id: bed15dbf10294aa4f2ae
+bug_link: https://syzkaller.appspot.com/bug?extid=bed15dbf10294aa4f2ae
+title: 'INFO: task hung in do_user_addr_fault (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 88603b6dc419445847923fcb7fe5080067a30f98
+fix_commit: 0226635c304cfd5c9db9b78c259cb713819b057e
+datetime: '2023-01-02T10:31:09-08:00'
+fix_commit_message: 'fs/ntfs3: don''t hold ni_lock when calling truncate_setsize()
+
+
+  syzbot is reporting hung task at do_user_addr_fault() [1], for there is
+
+  a silent deadlock between PG_locked bit and ni_lock lock.
+
+
+  Since filemap_update_page() calls filemap_read_folio() after calling
+
+  folio_trylock() which will set PG_locked bit, ntfs_truncate() must not
+
+  call truncate_setsize() which will wait for PG_locked bit to be cleared
+
+  when holding ni_lock lock.
+
+
+  Link: https://lore.kernel.org/all/00000000000060d41f05f139aa44@google.com/
+
+  Link: https://syzkaller.appspot.com/bug?extid=bed15dbf10294aa4f2ae [1]
+
+  Reported-by: syzbot <syzbot+bed15dbf10294aa4f2ae@syzkaller.appspotmail.com>
+
+  Debugged-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  Co-developed-by: Hillf Danton <hdanton@sina.com>
+
+  Signed-off-by: Hillf Danton <hdanton@sina.com>
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Fixes: 4342306f0f0d ("fs/ntfs3: Add file operations and implementation")
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- fs/ntfs3
+hunk_count: 1
+covered_count: 1

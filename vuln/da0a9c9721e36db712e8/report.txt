@@ -1,0 +1,55 @@
+============================================
+WARNING: possible recursive locking detected
+6.11.0-rc1-syzkaller-00272-g17712b7ea075 #0 Not tainted
+--------------------------------------------
+kworker/0:1H/59 is trying to acquire lock:
+ffff888025119548 ((wq_completion)xillyusb#2){+.+.}-{0:0}, at: touch_wq_lockdep_map kernel/workqueue.c:3876 [inline]
+ffff888025119548 ((wq_completion)xillyusb#2){+.+.}-{0:0}, at: __flush_workqueue+0x1b0/0x1710 kernel/workqueue.c:3918
+
+but task is already holding lock:
+ffff888025119548 ((wq_completion)xillyusb#2){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3206 [inline]
+ffff888025119548 ((wq_completion)xillyusb#2){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3312
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock((wq_completion)xillyusb#2);
+  lock((wq_completion)xillyusb#2);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+2 locks held by kworker/0:1H/59:
+ #0: ffff888025119548 ((wq_completion)xillyusb#2){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3206 [inline]
+ #0: ffff888025119548 ((wq_completion)xillyusb#2){+.+.}-{0:0}, at: process_scheduled_works+0x90a/0x1830 kernel/workqueue.c:3312
+ #1: ffffc9000134fd00 ((work_completion)(&xdev->wakeup_workitem)){+.+.}-{0:0}, at: process_one_work kernel/workqueue.c:3207 [inline]
+ #1: ffffc9000134fd00 ((work_completion)(&xdev->wakeup_workitem)){+.+.}-{0:0}, at: process_scheduled_works+0x945/0x1830 kernel/workqueue.c:3312
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 59 Comm: kworker/0:1H Not tainted 6.11.0-rc1-syzkaller-00272-g17712b7ea075 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/27/2024
+Workqueue: xillyusb wakeup_all
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:93 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:119
+ check_deadlock kernel/locking/lockdep.c:3061 [inline]
+ validate_chain+0x15d3/0x5900 kernel/locking/lockdep.c:3855
+ __lock_acquire+0x137a/0x2040 kernel/locking/lockdep.c:5142
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5759
+ touch_wq_lockdep_map kernel/workqueue.c:3876 [inline]
+ __flush_workqueue+0x1c9/0x1710 kernel/workqueue.c:3918
+ drain_workqueue+0xc9/0x3a0 kernel/workqueue.c:4082
+ destroy_workqueue+0xba/0xc40 kernel/workqueue.c:5781
+ cleanup_dev drivers/char/xillybus/xillyusb.c:558 [inline]
+ kref_put+0x104/0x180 include/linux/kref.h:65
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xa2e/0x1830 kernel/workqueue.c:3312
+ worker_thread+0x86d/0xd40 kernel/workqueue.c:3390
+ kthread+0x2f2/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4d/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

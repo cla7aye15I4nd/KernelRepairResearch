@@ -1,0 +1,58 @@
+id: d199b52665b6c3069b94
+bug_link: https://syzkaller.appspot.com/bug?extid=d199b52665b6c3069b94
+title: 'WARNING: ODEBUG bug in __sk_destruct (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1c756093cdc1fd9973e156f527a08731795d41a2
+fix_commit: 52565a935213cd6a8662ddb8efe5b4219343a25d
+datetime: '2025-08-13T18:18:33-07:00'
+fix_commit_message: 'net: kcm: Fix race condition in kcm_unattach()
+
+
+  syzbot found a race condition when kcm_unattach(psock)
+
+  and kcm_release(kcm) are executed at the same time.
+
+
+  kcm_unattach() is missing a check of the flag
+
+  kcm->tx_stopped before calling queue_work().
+
+
+  If the kcm has a reserved psock, kcm_unattach() might get executed
+
+  between cancel_work_sync() and unreserve_psock() in kcm_release(),
+
+  requeuing kcm->tx_work right before kcm gets freed in kcm_done().
+
+
+  Remove kcm->tx_stopped and replace it by the less
+
+  error-prone disable_work_sync().
+
+
+  Fixes: ab7ac4eb9832 ("kcm: Kernel Connection Multiplexor module")
+
+  Reported-by: syzbot+e62c9db591c30e174662@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=e62c9db591c30e174662
+
+  Reported-by: syzbot+d199b52665b6c3069b94@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=d199b52665b6c3069b94
+
+  Reported-by: syzbot+be6b1fdfeae512726b4e@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=be6b1fdfeae512726b4e
+
+  Signed-off-by: Sven Stegemann <sven@stegemann.de>
+
+  Link: https://patch.msgid.link/20250812191810.27777-1-sven@stegemann.de
+
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+  '
+submodule:
+- include/net
+- net/kcm
+hunk_count: 4
+covered_count: 2

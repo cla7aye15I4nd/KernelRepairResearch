@@ -1,0 +1,42 @@
+id: 23727438116feb13df15
+bug_link: https://syzkaller.appspot.com/bug?extid=23727438116feb13df15
+title: WARNING in __vmap_pages_range_noflush
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6f02527729bd31ca4e473bff19fda4ccd5889148
+fix_commit: 33503c083fda048c77903460ac0429e1e2c0e341
+datetime: '2025-08-08T06:35:14-06:00'
+fix_commit_message: 'io_uring/memmap: cast nr_pages to size_t before shifting
+
+
+  If the allocated size exceeds UINT_MAX, then it''s necessary to cast
+
+  the mr->nr_pages value to size_t to prevent it from overflowing. In
+
+  practice this isn''t much of a concern as the required memory size will
+
+  have been validated upfront, and accounted to the user. And > 4GB sizes
+
+  will be necessary to make the lack of a cast a problem, which greatly
+
+  exceeds normal user locked_vm settings that are generally in the kb to
+
+  mb range. However, if root is used, then accounting isn''t done, and
+
+  then it''s possible to hit this issue.
+
+
+  Link: https://lore.kernel.org/all/6895b298.050a0220.7f033.0059.GAE@google.com/
+
+  Cc: stable@vger.kernel.org
+
+  Reported-by: syzbot+23727438116feb13df15@syzkaller.appspotmail.com
+
+  Fixes: 087f997870a9 ("io_uring/memmap: implement mmap for regions")
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 1
+covered_count: 1

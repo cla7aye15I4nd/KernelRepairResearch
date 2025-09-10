@@ -1,0 +1,86 @@
+==================================================================
+BUG: KCSAN: data-race in __swap_writepage / scan_swap_map_slots
+
+read-write to 0xffff888102fca610 of 8 bytes by task 7106 on cpu 1:
+ scan_swap_map_slots+0xfee/0x10e0
+ get_swap_pages+0x30b/0x480 mm/swapfile.c:1115
+ folio_alloc_swap+0x3b7/0x490 mm/swap_slots.c:346
+ shmem_writepage+0x43e/0x970 mm/shmem.c:1493
+ pageout mm/vmscan.c:660 [inline]
+ shrink_folio_list+0x194f/0x2560 mm/vmscan.c:1341
+ shrink_inactive_list mm/vmscan.c:1944 [inline]
+ shrink_list mm/vmscan.c:2179 [inline]
+ shrink_lruvec+0xbd9/0x15f0 mm/vmscan.c:5703
+ shrink_node_memcgs mm/vmscan.c:5889 [inline]
+ shrink_node+0x9d1/0x13c0 mm/vmscan.c:5924
+ shrink_zones mm/vmscan.c:6168 [inline]
+ do_try_to_free_pages+0x3c6/0xc50 mm/vmscan.c:6230
+ try_to_free_mem_cgroup_pages+0x1eb/0x4e0 mm/vmscan.c:6545
+ try_charge_memcg+0x27a/0xcd0 mm/memcontrol.c:2944
+ try_charge mm/memcontrol.c:3092 [inline]
+ charge_memcg mm/memcontrol.c:7495 [inline]
+ __mem_cgroup_charge+0x63/0x100 mm/memcontrol.c:7510
+ mem_cgroup_charge include/linux/memcontrol.h:691 [inline]
+ shmem_alloc_and_add_folio mm/shmem.c:1677 [inline]
+ shmem_get_folio_gfp+0x480/0xb70 mm/shmem.c:2055
+ shmem_get_folio mm/shmem.c:2160 [inline]
+ shmem_write_begin+0xa0/0x1c0 mm/shmem.c:2743
+ generic_perform_write+0x1d5/0x410 mm/filemap.c:4015
+ shmem_file_write_iter+0xc8/0xf0 mm/shmem.c:2919
+ __kernel_write_iter+0x24f/0x4e0 fs/read_write.c:523
+ dump_emit_page fs/coredump.c:893 [inline]
+ dump_user_range+0x3a7/0x550 fs/coredump.c:954
+ elf_core_dump+0x1aeb/0x1c30 fs/binfmt_elf.c:2083
+ do_coredump+0xff6/0x1860 fs/coredump.c:767
+ get_signal+0xdc1/0x1080 kernel/signal.c:2894
+ arch_do_signal_or_restart+0x95/0x4b0 arch/x86/kernel/signal.c:310
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ irqentry_exit_to_user_mode+0x94/0x130 kernel/entry/common.c:231
+ irqentry_exit+0x12/0x50 kernel/entry/common.c:334
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+
+read to 0xffff888102fca610 of 8 bytes by task 7080 on cpu 0:
+ __swap_writepage+0x88/0xc50 mm/page_io.c:387
+ swap_writepage+0xa9/0x160 mm/page_io.c:209
+ shmem_writepage+0x7be/0x970 mm/shmem.c:1518
+ pageout mm/vmscan.c:660 [inline]
+ shrink_folio_list+0x194f/0x2560 mm/vmscan.c:1341
+ shrink_inactive_list mm/vmscan.c:1944 [inline]
+ shrink_list mm/vmscan.c:2179 [inline]
+ shrink_lruvec+0xbd9/0x15f0 mm/vmscan.c:5703
+ shrink_node_memcgs mm/vmscan.c:5889 [inline]
+ shrink_node+0x9d1/0x13c0 mm/vmscan.c:5924
+ shrink_zones mm/vmscan.c:6168 [inline]
+ do_try_to_free_pages+0x3c6/0xc50 mm/vmscan.c:6230
+ try_to_free_mem_cgroup_pages+0x1eb/0x4e0 mm/vmscan.c:6545
+ try_charge_memcg+0x27a/0xcd0 mm/memcontrol.c:2944
+ try_charge mm/memcontrol.c:3092 [inline]
+ charge_memcg mm/memcontrol.c:7495 [inline]
+ __mem_cgroup_charge+0x63/0x100 mm/memcontrol.c:7510
+ mem_cgroup_charge include/linux/memcontrol.h:691 [inline]
+ shmem_alloc_and_add_folio mm/shmem.c:1677 [inline]
+ shmem_get_folio_gfp+0x480/0xb70 mm/shmem.c:2055
+ shmem_get_folio mm/shmem.c:2160 [inline]
+ shmem_write_begin+0xa0/0x1c0 mm/shmem.c:2743
+ generic_perform_write+0x1d5/0x410 mm/filemap.c:4015
+ shmem_file_write_iter+0xc8/0xf0 mm/shmem.c:2919
+ __kernel_write_iter+0x24f/0x4e0 fs/read_write.c:523
+ dump_emit_page fs/coredump.c:893 [inline]
+ dump_user_range+0x3a7/0x550 fs/coredump.c:954
+ elf_core_dump+0x1aeb/0x1c30 fs/binfmt_elf.c:2083
+ do_coredump+0xff6/0x1860 fs/coredump.c:767
+ get_signal+0xdc1/0x1080 kernel/signal.c:2894
+ arch_do_signal_or_restart+0x95/0x4b0 arch/x86/kernel/signal.c:310
+ exit_to_user_mode_loop kernel/entry/common.c:111 [inline]
+ exit_to_user_mode_prepare include/linux/entry-common.h:328 [inline]
+ irqentry_exit_to_user_mode+0x94/0x130 kernel/entry/common.c:231
+ irqentry_exit+0x12/0x50 kernel/entry/common.c:334
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+
+value changed: 0x0000000000008083 -> 0x0000000000004083
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 PID: 7080 Comm: syz.3.1255 Not tainted 6.10.0-rc7-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+==================================================================

@@ -1,0 +1,28 @@
+id: 2faac0423fdc9692822b
+bug_link: https://syzkaller.appspot.com/bug?extid=2faac0423fdc9692822b
+title: 'KASAN: slab-use-after-free Read in test_bdev_super_fc'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a4f64a300a299f884a1da55d99c97a87061201cd
+fix_commit: aca740cecbe57b12bd9c1fc632092af5ebacda0c
+datetime: '2023-08-10T10:34:56+02:00'
+fix_commit_message: "fs: open block device after superblock creation\n\nCurrently\
+  \ get_tree_bdev and mount_bdev open the block device before\ncommitting to allocating\
+  \ a super block. That creates problems for\nrestricting the number of writers to\
+  \ a device, and also leads to a\nunusual and not very helpful holder (the fs_type).\n\
+  \nReorganize the super block code to first look whether the superblock for\na particular\
+  \ device does already exist and open the block device only if\nit doesn't.\n\n[hch:\
+  \ port to before the bdev_handle changes,\n      duplicate the bdev read-only check\
+  \ from blkdev_get_by_path,\n      extend the fsfree_mutex coverage to protect against\
+  \ freezes,\n      fix an open bdev leak when the bdev is frozen,\n      use the\
+  \ bdev local variable more,\n      rename the s variable to sb to be more descriptive]\n\
+  [brauner: remove references to mounts as they're mostly irrelevant]\n[brauner &\
+  \ hch: fold fixes for romfs and cramfs for\n                syzbot+2faac0423fdc9692822b@syzkaller.appspotmail.com]\n\
+  \nSigned-off-by: Jan Kara <jack@suse.cz>\nSigned-off-by: Christoph Hellwig <hch@lst.de>\n\
+  Message-Id: <20230724175145.201318-1-hch@lst.de>\nSigned-off-by: Christian Brauner\
+  \ <brauner@kernel.org>\n"
+submodule:
+- fs
+- fs/cramfs
+- fs/romfs
+hunk_count: 7
+covered_count: 5

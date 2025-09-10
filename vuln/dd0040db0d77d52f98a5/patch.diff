@@ -1,0 +1,32 @@
+diff --git a/net/core/devlink.c b/net/core/devlink.c
+index 20a83aace642..6335e1851088 100644
+--- a/net/core/devlink.c
++++ b/net/core/devlink.c
+@@ -5471,9 +5471,11 @@ __devlink_health_reporter_destroy(struct devlink_health_reporter *reporter)
+ void
+ devlink_health_reporter_destroy(struct devlink_health_reporter *reporter)
+ {
+-	mutex_lock(&reporter->devlink->reporters_lock);
++	struct mutex *lock = &reporter->devlink->reporters_lock;
++
++	mutex_lock(lock);
+ 	__devlink_health_reporter_destroy(reporter);
+-	mutex_unlock(&reporter->devlink->reporters_lock);
++	mutex_unlock(lock);
+ }
+ EXPORT_SYMBOL_GPL(devlink_health_reporter_destroy);
+ 
+@@ -5485,9 +5487,11 @@ EXPORT_SYMBOL_GPL(devlink_health_reporter_destroy);
+ void
+ devlink_port_health_reporter_destroy(struct devlink_health_reporter *reporter)
+ {
+-	mutex_lock(&reporter->devlink_port->reporters_lock);
++	struct mutex *lock = &reporter->devlink_port->reporters_lock;
++
++	mutex_lock(lock);
+ 	__devlink_health_reporter_destroy(reporter);
+-	mutex_unlock(&reporter->devlink_port->reporters_lock);
++	mutex_unlock(lock);
+ }
+ EXPORT_SYMBOL_GPL(devlink_port_health_reporter_destroy);
+ 

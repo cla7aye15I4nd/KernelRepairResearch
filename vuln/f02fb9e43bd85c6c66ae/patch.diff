@@ -1,0 +1,22 @@
+diff --git a/net/ipv4/ipmr.c b/net/ipv4/ipmr.c
+index f78c4e53dc8c..3a2044e6033d 100644
+--- a/net/ipv4/ipmr.c
++++ b/net/ipv4/ipmr.c
+@@ -2299,7 +2299,8 @@ int ip_mr_output(struct net *net, struct sock *sk, struct sk_buff *skb)
+ 	struct mr_table *mrt;
+ 	int vif;
+ 
+-	WARN_ON_ONCE(!rcu_read_lock_held());
++	guard(rcu)();
++
+ 	dev = rt->dst.dev;
+ 
+ 	if (IPCB(skb)->flags & IPSKB_FORWARDED)
+@@ -2313,7 +2314,6 @@ int ip_mr_output(struct net *net, struct sock *sk, struct sk_buff *skb)
+ 	if (IS_ERR(mrt))
+ 		goto mc_output;
+ 
+-	/* already under rcu_read_lock() */
+ 	cache = ipmr_cache_find(mrt, ip_hdr(skb)->saddr, ip_hdr(skb)->daddr);
+ 	if (!cache) {
+ 		vif = ipmr_find_vif(mrt, dev);

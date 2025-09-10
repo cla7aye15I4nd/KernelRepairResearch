@@ -1,0 +1,63 @@
+netdevsim netdevsim0 netdevsim1: set [1, 0] type 2 family 0 port 6081 - 0
+netdevsim netdevsim0 netdevsim2: set [1, 0] type 2 family 0 port 6081 - 0
+netdevsim netdevsim0 netdevsim3: set [1, 0] type 2 family 0 port 6081 - 0
+Unable to handle kernel paging request at virtual address dfff800000000003
+KASAN: null-ptr-deref in range [0x0000000000000018-0x000000000000001f]
+Mem abort info:
+  ESR = 0x0000000096000005
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x05: level 1 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000005, ISS2 = 0x00000000
+  CM = 0, WnR = 0, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+[dfff800000000003] address between user and kernel address ranges
+Internal error: Oops: 0000000096000005 [#1] PREEMPT SMP
+Modules linked in:
+CPU: 1 PID: 6083 Comm: syz-executor299 Not tainted 6.6.0-rc7-syzkaller-g8de1e7afcc1c #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/09/2023
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : nsim_setup_prog_hw_checks drivers/net/netdevsim/bpf.c:320 [inline]
+pc : nsim_bpf+0x1e0/0xae0 drivers/net/netdevsim/bpf.c:562
+lr : nsim_bpf+0x8c/0xae0 drivers/net/netdevsim/bpf.c:554
+sp : ffff800096b97790
+x29: ffff800096b977a0 x28: dfff800000000000 x27: ffff700012d72f00
+x26: dfff800000000000 x25: ffff800096b97a00 x24: 0000000000000008
+x23: ffff800096b97820 x22: 0000000000000018 x21: ffff800096b97820
+x20: ffff0000d5e38cc0 x19: ffff0000d5e38000 x18: ffff800096b97580
+x17: ffff8000805c1258 x16: ffff80008030c738 x15: 0000000000000000
+x14: 0000000000000000 x13: 0000000000000000 x12: 0000000000000003
+x11: ffff0000d55a3780 x10: 00000000000000bc x9 : ffff800085ce8bf0
+x8 : 0000000000000003 x7 : 0000000000000000 x6 : 0000000000000000
+x5 : ffff800092e2e000 x4 : 0000000000000000 x3 : ffff80008030c754
+x2 : 0000000000000000 x1 : ffff80009001ef50 x0 : 0000000000000001
+Call trace:
+ nsim_setup_prog_hw_checks drivers/net/netdevsim/bpf.c:320 [inline]
+ nsim_bpf+0x1e0/0xae0 drivers/net/netdevsim/bpf.c:562
+ dev_xdp_install+0x124/0x2f0 net/core/dev.c:9199
+ dev_xdp_attach+0xa4c/0xcc8 net/core/dev.c:9351
+ dev_xdp_attach_link net/core/dev.c:9370 [inline]
+ bpf_xdp_link_attach+0x300/0x710 net/core/dev.c:9540
+ link_create+0x2c0/0x68c kernel/bpf/syscall.c:4954
+ __sys_bpf+0x4d4/0x5dc kernel/bpf/syscall.c:5414
+ __do_sys_bpf kernel/bpf/syscall.c:5448 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5446 [inline]
+ __arm64_sys_bpf+0x80/0x98 kernel/bpf/syscall.c:5446
+ __invoke_syscall arch/arm64/kernel/syscall.c:37 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:51
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:136
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:155
+ el0_svc+0x54/0x158 arch/arm64/kernel/entry-common.c:678
+ el0t_64_sync_handler+0x84/0xfc arch/arm64/kernel/entry-common.c:696
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:595
+Code: 96b3720d f94002c8 91006116 d343fec8 (387a6908) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	96b3720d 	bl	0xfffffffffacdc834
+   4:	f94002c8 	ldr	x8, [x22]
+   8:	91006116 	add	x22, x8, #0x18
+   c:	d343fec8 	lsr	x8, x22, #3
+* 10:	387a6908 	ldrb	w8, [x8, x26] <-- trapping instruction

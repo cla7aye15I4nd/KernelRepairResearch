@@ -1,0 +1,37 @@
+id: 8a49fcfe5a4b42e081a6
+bug_link: https://syzkaller.appspot.com/bug?extid=8a49fcfe5a4b42e081a6
+title: 'KCSAN: data-race in copy_process / release_task'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 86f56395feb2b106b125c47e72192e37da5dd088
+fix_commit: c17d1a3a8ee4dac7539d5c976b45d9300f6f10bc
+datetime: '2020-06-26T01:05:29+02:00'
+fix_commit_message: "fork: annotate data race in copy_process()\n\nKCSAN reported\
+  \ data race reading and writing nr_threads and max_threads.\nThe data race is intentional\
+  \ and benign. This is obvious from the comment\nabove it and based on general consensus\
+  \ when discussing this issue. So\nthere's no need for any heavy atomic or *_ONCE()\
+  \ machinery here.\n\nIn accordance with the newly introduced data_race() annotation\
+  \ consensus,\nmark the offending line with data_race(). Here it's actually useful\
+  \ not\njust to silence KCSAN but to also clearly communicate that the race is\n\
+  intentional. This is especially helpful since nr_threads is otherwise\nprotected\
+  \ by tasklist_lock.\n\nBUG: KCSAN: data-race in copy_process / copy_process\n\n\
+  write to 0xffffffff86205cf8 of 4 bytes by task 14779 on cpu 1:\n  copy_process+0x2eba/0x3c40\
+  \ kernel/fork.c:2273\n  _do_fork+0xfe/0x7a0 kernel/fork.c:2421\n  __do_sys_clone\
+  \ kernel/fork.c:2576 [inline]\n  __se_sys_clone kernel/fork.c:2557 [inline]\n  __x64_sys_clone+0x130/0x170\
+  \ kernel/fork.c:2557\n  do_syscall_64+0xcc/0x3a0 arch/x86/entry/common.c:294\n \
+  \ entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\nread to 0xffffffff86205cf8 of 4 bytes\
+  \ by task 6944 on cpu 0:\n  copy_process+0x94d/0x3c40 kernel/fork.c:1954\n  _do_fork+0xfe/0x7a0\
+  \ kernel/fork.c:2421\n  __do_sys_clone kernel/fork.c:2576 [inline]\n  __se_sys_clone\
+  \ kernel/fork.c:2557 [inline]\n  __x64_sys_clone+0x130/0x170 kernel/fork.c:2557\n\
+  \  do_syscall_64+0xcc/0x3a0 arch/x86/entry/common.c:294\n  entry_SYSCALL_64_after_hwframe+0x44/0xa9\n\
+  Link: https://groups.google.com/forum/#!msg/syzkaller-upstream-mo\nderation/thvp7AHs5Ew/aPdYLXfYBQAJ\n\
+  \nReported-by: syzbot+52fced2d288f8ecd2b20@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Zefan Li <lizefan@huawei.com>\nSigned-off-by: Weilong Chen <chenweilong@huawei.com>\n\
+  Acked-by: Christian Brauner <christian.brauner@ubuntu.com>\nCc: Qian Cai <cai@lca.pw>\n\
+  Cc: Oleg Nesterov <oleg@redhat.com>\nCc: Christian Brauner <christian.brauner@ubuntu.com>\n\
+  Cc: Marco Elver <elver@google.com>\n[christian.brauner@ubuntu.com: rewrite commit\
+  \ message]\nLink: https://lore.kernel.org/r/20200623041240.154294-1-chenweilong@huawei.com\n\
+  Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,36 @@
+id: c9f0eb0d2a5576ece331a767528e6b52b4ff1815
+bug_link: https://syzkaller.appspot.com/bug?extid=c9f0eb0d2a5576ece331a767528e6b52b4ff1815
+title: WARNING in task_participate_group_stop
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ac25385089f673560867eb5179228a44ade0cfc1
+fix_commit: 426915796ccaf9c2bd9bb06dc5702225957bc2e5
+datetime: '2017-11-17T16:10:03-08:00'
+fix_commit_message: "kernel/signal.c: remove the no longer needed SIGNAL_UNKILLABLE\
+  \ check in complete_signal()\n\ncomplete_signal() checks SIGNAL_UNKILLABLE before\
+  \ it starts to destroy\nthe thread group, today this is wrong in many ways.\n\n\
+  If nothing else, fatal_signal_pending() should always imply that the\nwhole thread\
+  \ group (except ->group_exit_task if it is not NULL) is\nkilled, this check breaks\
+  \ the rule.\n\nAfter the previous changes we can rely on sig_task_ignored();\nsig_fatal(sig)\
+  \ && SIGNAL_UNKILLABLE can only be true if we actually want\nto kill this task and\
+  \ sig == SIGKILL OR it is traced and debugger can\nintercept the signal.\n\nThis\
+  \ should hopefully fix the problem reported by Dmitry.  This\ntest-case\n\n\tstatic\
+  \ int init(void *arg)\n\t{\n\t\tfor (;;)\n\t\t\tpause();\n\t}\n\n\tint main(void)\n\
+  \t{\n\t\tchar stack[16 * 1024];\n\n\t\tfor (;;) {\n\t\t\tint pid = clone(init, stack\
+  \ + sizeof(stack)/2,\n\t\t\t\t\tCLONE_NEWPID | SIGCHLD, NULL);\n\t\t\tassert(pid\
+  \ > 0);\n\n\t\t\tassert(ptrace(PTRACE_ATTACH, pid, 0, 0) == 0);\n\t\t\tassert(waitpid(-1,\
+  \ NULL, WSTOPPED) == pid);\n\n\t\t\tassert(ptrace(PTRACE_DETACH, pid, 0, SIGSTOP)\
+  \ == 0);\n\t\t\tassert(syscall(__NR_tkill, pid, SIGKILL) == 0);\n\t\t\tassert(pid\
+  \ == wait(NULL));\n\t\t}\n\t}\n\ntriggers the WARN_ON_ONCE(!(task->jobctl & JOBCTL_STOP_PENDING))\
+  \ in\ntask_participate_group_stop().  do_signal_stop()->signal_group_exit()\nchecks\
+  \ SIGNAL_GROUP_EXIT and return false, but task_set_jobctl_pending()\nchecks fatal_signal_pending()\
+  \ and does not set JOBCTL_STOP_PENDING.\n\nAnd his should fix the minor security\
+  \ problem reported by Kyle,\nSECCOMP_RET_TRACE can miss fatal_signal_pending() the\
+  \ same way if the\ntask is the root of a pid namespace.\n\nLink: http://lkml.kernel.org/r/20171103184246.GD21036@redhat.com\n\
+  Signed-off-by: Oleg Nesterov <oleg@redhat.com>\nReported-by: Dmitry Vyukov <dvyukov@google.com>\n\
+  Reported-by: Kyle Huey <me@kylehuey.com>\nReviewed-by: Kees Cook <keescook@chromium.org>\n\
+  Tested-by: Kyle Huey <me@kylehuey.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- kernel
+hunk_count: 1
+covered_count: 0

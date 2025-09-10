@@ -1,0 +1,48 @@
+=====================================================
+BUG: KMSAN: uninit-value in io_req_cqe_overflow io_uring/io_uring.c:810 [inline]
+BUG: KMSAN: uninit-value in io_req_complete_post io_uring/io_uring.c:937 [inline]
+BUG: KMSAN: uninit-value in io_issue_sqe+0x1f1b/0x22c0 io_uring/io_uring.c:1763
+ io_req_cqe_overflow io_uring/io_uring.c:810 [inline]
+ io_req_complete_post io_uring/io_uring.c:937 [inline]
+ io_issue_sqe+0x1f1b/0x22c0 io_uring/io_uring.c:1763
+ io_wq_submit_work+0xa17/0xeb0 io_uring/io_uring.c:1860
+ io_worker_handle_work+0xc04/0x2000 io_uring/io-wq.c:597
+ io_wq_worker+0x447/0x1410 io_uring/io-wq.c:651
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Uninit was stored to memory at:
+ io_req_set_res io_uring/io_uring.h:215 [inline]
+ io_recv_finish+0xf10/0x1560 io_uring/net.c:861
+ io_recv+0x12ec/0x1ea0 io_uring/net.c:1175
+ io_issue_sqe+0x429/0x22c0 io_uring/io_uring.c:1751
+ io_wq_submit_work+0xa17/0xeb0 io_uring/io_uring.c:1860
+ io_worker_handle_work+0xc04/0x2000 io_uring/io-wq.c:597
+ io_wq_worker+0x447/0x1410 io_uring/io-wq.c:651
+ ret_from_fork+0x6d/0x90 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+Uninit was created at:
+ slab_post_alloc_hook mm/slub.c:3877 [inline]
+ slab_alloc_node mm/slub.c:3918 [inline]
+ __do_kmalloc_node mm/slub.c:4038 [inline]
+ __kmalloc+0x6e4/0x1060 mm/slub.c:4052
+ kmalloc include/linux/slab.h:632 [inline]
+ io_alloc_async_data+0xc0/0x220 io_uring/io_uring.c:1662
+ io_msg_alloc_async io_uring/net.c:166 [inline]
+ io_recvmsg_prep_setup io_uring/net.c:725 [inline]
+ io_recvmsg_prep+0xbe8/0x1a20 io_uring/net.c:806
+ io_init_req io_uring/io_uring.c:2135 [inline]
+ io_submit_sqe io_uring/io_uring.c:2182 [inline]
+ io_submit_sqes+0x1135/0x2f10 io_uring/io_uring.c:2335
+ __do_sys_io_uring_enter io_uring/io_uring.c:3246 [inline]
+ __se_sys_io_uring_enter+0x40f/0x3c80 io_uring/io_uring.c:3183
+ __x64_sys_io_uring_enter+0x11f/0x1a0 io_uring/io_uring.c:3183
+ x64_sys_call+0x2c0/0x3b50 arch/x86/include/generated/asm/syscalls_64.h:427
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 1 PID: 12521 Comm: iou-wrk-12515 Tainted: G        W          6.9.0-syzkaller-02707-g614da38e2f7a #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+=====================================================

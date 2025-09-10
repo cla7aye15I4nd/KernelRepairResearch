@@ -1,0 +1,51 @@
+id: 16a19b06125a2963eaee
+bug_link: https://syzkaller.appspot.com/bug?extid=16a19b06125a2963eaee
+title: 'KCSAN: assert: race in srcu_gp_start_if_needed'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 821ca6fa15d864951da89233da8fd89e932d5215
+fix_commit: d31e31365b5b6c0cdfc74d71be87234ced564395
+datetime: '2025-02-05T07:12:05-08:00'
+fix_commit_message: 'srcu: Force synchronization for srcu_get_delay()
+
+
+  Currently, srcu_get_delay() can be called concurrently, for example,
+
+  by a CPU that is the first to request a new grace period and the CPU
+
+  processing the current grace period.  Although concurrent access is
+
+  harmless, it unnecessarily expands the state space.  Additionally,
+
+  all calls to srcu_get_delay() are from slow paths.
+
+
+  This commit therefore protects all calls to srcu_get_delay() with
+
+  ssp->srcu_sup->lock, which is already held on the invocation from the
+
+  srcu_funnel_gp_start() function.  While in the area, this commit also
+
+  adds a lockdep_assert_held() to srcu_get_delay() itself.
+
+
+  Reported-by: syzbot+16a19b06125a2963eaee@syzkaller.appspotmail.com
+
+  Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
+
+  Cc: Alexei Starovoitov <ast@kernel.org>
+
+  Cc: Andrii Nakryiko <andrii@kernel.org>
+
+  Cc: Peter Zijlstra <peterz@infradead.org>
+
+  Cc: Kent Overstreet <kent.overstreet@linux.dev>
+
+  Cc: <bpf@vger.kernel.org>
+
+  Signed-off-by: Boqun Feng <boqun.feng@gmail.com>
+
+  '
+submodule:
+- kernel/rcu
+hunk_count: 4
+covered_count: 3

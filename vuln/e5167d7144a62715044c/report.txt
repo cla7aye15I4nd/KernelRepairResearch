@@ -1,0 +1,32 @@
+==================================================================
+BUG: KASAN: slab-use-after-free in sk_fullsock include/net/sock.h:2823 [inline]
+BUG: KASAN: slab-use-after-free in ip_skb_dst_mtu+0x830/0x9b0 include/net/ip.h:499
+Read of size 1 at addr ffff88802dc5a012 by task swapper/1/0
+
+CPU: 1 PID: 0 Comm: swapper/1 Not tainted 6.8.0-rc6-syzkaller-00037-g805d849d7c3c #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/25/2024
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x1e7/0x2e0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x167/0x540 mm/kasan/report.c:488
+ kasan_report+0x142/0x180 mm/kasan/report.c:601
+ sk_fullsock include/net/sock.h:2823 [inline]
+ ip_skb_dst_mtu+0x830/0x9b0 include/net/ip.h:499
+ __ip_finish_output+0x12b/0x400 net/ipv4/ip_output.c:306
+ ipvlan_process_v4_outbound+0x3ef/0x700 drivers/net/ipvlan/ipvlan_core.c:442
+ ipvlan_process_outbound drivers/net/ipvlan/ipvlan_core.c:540 [inline]
+ ipvlan_xmit_mode_l3 drivers/net/ipvlan/ipvlan_core.c:602 [inline]
+ ipvlan_queue_xmit+0xaa2/0x11f0 drivers/net/ipvlan/ipvlan_core.c:668
+ ipvlan_start_xmit+0x4a/0x150 drivers/net/ipvlan/ipvlan_main.c:222
+ __netdev_start_xmit include/linux/netdevice.h:4989 [inline]
+ netdev_start_xmit include/linux/netdevice.h:5003 [inline]
+ xmit_one net/core/dev.c:3547 [inline]
+ dev_hard_start_xmit+0x242/0x770 net/core/dev.c:3563
+ sch_direct_xmit+0x2b6/0x5f0 net/sched/sch_generic.c:342
+ qdisc_restart net/sched/sch_generic.c:407 [inline]
+ __qdisc_run+0xbed/0x2150 net/sched/sch_generic.c:415
+ qdisc_run+0xda/0x270 include/net/pkt_sched.h:125
+ net_tx_action+0x877/0xa30 net/core/dev.c:5197
+ __do_softirq+0x2bb/0x942 kernel/softirq.c:553

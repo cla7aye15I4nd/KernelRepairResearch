@@ -1,0 +1,41 @@
+id: 453873f1588c2d75b447
+bug_link: https://syzkaller.appspot.com/bug?extid=453873f1588c2d75b447
+title: kernel BUG in ocfs2_set_new_buffer_uptodate
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8ce41b0f9d77cca074df25afd39b86e2ee3aa68e
+fix_commit: 737f34137844d6572ab7d473c998c7f977ff30eb
+datetime: '2024-11-14T22:43:48-08:00'
+fix_commit_message: "ocfs2: uncache inode which has failed entering the group\n\n\
+  Syzbot has reported the following BUG:\n\nkernel BUG at fs/ocfs2/uptodate.c:509!\n\
+  ...\nCall Trace:\n <TASK>\n ? __die_body+0x5f/0xb0\n ? die+0x9e/0xc0\n ? do_trap+0x15a/0x3a0\n\
+  \ ? ocfs2_set_new_buffer_uptodate+0x145/0x160\n ? do_error_trap+0x1dc/0x2c0\n ?\
+  \ ocfs2_set_new_buffer_uptodate+0x145/0x160\n ? __pfx_do_error_trap+0x10/0x10\n\
+  \ ? handle_invalid_op+0x34/0x40\n ? ocfs2_set_new_buffer_uptodate+0x145/0x160\n\
+  \ ? exc_invalid_op+0x38/0x50\n ? asm_exc_invalid_op+0x1a/0x20\n ? ocfs2_set_new_buffer_uptodate+0x2e/0x160\n\
+  \ ? ocfs2_set_new_buffer_uptodate+0x144/0x160\n ? ocfs2_set_new_buffer_uptodate+0x145/0x160\n\
+  \ ocfs2_group_add+0x39f/0x15a0\n ? __pfx_ocfs2_group_add+0x10/0x10\n ? __pfx_lock_acquire+0x10/0x10\n\
+  \ ? mnt_get_write_access+0x68/0x2b0\n ? __pfx_lock_release+0x10/0x10\n ? rcu_read_lock_any_held+0xb7/0x160\n\
+  \ ? __pfx_rcu_read_lock_any_held+0x10/0x10\n ? smack_log+0x123/0x540\n ? mnt_get_write_access+0x68/0x2b0\n\
+  \ ? mnt_get_write_access+0x68/0x2b0\n ? mnt_get_write_access+0x226/0x2b0\n ocfs2_ioctl+0x65e/0x7d0\n\
+  \ ? __pfx_ocfs2_ioctl+0x10/0x10\n ? smack_file_ioctl+0x29e/0x3a0\n ? __pfx_smack_file_ioctl+0x10/0x10\n\
+  \ ? lockdep_hardirqs_on_prepare+0x43d/0x780\n ? __pfx_lockdep_hardirqs_on_prepare+0x10/0x10\n\
+  \ ? __pfx_ocfs2_ioctl+0x10/0x10\n __se_sys_ioctl+0xfb/0x170\n do_syscall_64+0xf3/0x230\n\
+  \ entry_SYSCALL_64_after_hwframe+0x77/0x7f\n...\n </TASK>\n\nWhen 'ioctl(OCFS2_IOC_GROUP_ADD,\
+  \ ...)' has failed for the particular\ninode in 'ocfs2_verify_group_and_input()',\
+  \ corresponding buffer head\nremains cached and subsequent call to the same 'ioctl()'\
+  \ for the same\ninode issues the BUG() in 'ocfs2_set_new_buffer_uptodate()' (trying\n\
+  to cache the same buffer head of that inode). Fix this by uncaching\nthe buffer\
+  \ head with 'ocfs2_remove_from_cache()' on error path in\n'ocfs2_group_add()'.\n\
+  \nLink: https://lkml.kernel.org/r/20241114043844.111847-1-dmantipov@yandex.ru\n\
+  Fixes: 7909f2bf8353 (\"[PATCH 2/2] ocfs2: Implement group add for online resize\"\
+  )\nSigned-off-by: Dmitry Antipov <dmantipov@yandex.ru>\nReported-by: syzbot+453873f1588c2d75b447@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=453873f1588c2d75b447\nReviewed-by:\
+  \ Joseph Qi <joseph.qi@linux.alibaba.com>\nCc: Dmitry Antipov <dmantipov@yandex.ru>\n\
+  Cc: Joel Becker <jlbec@evilplan.org>\nCc: Mark Fasheh <mark@fasheh.com>\nCc: Junxiao\
+  \ Bi <junxiao.bi@oracle.com>\nCc: Changwei Ge <gechangwei@live.cn>\nCc: Jun Piao\
+  \ <piaojun@huawei.com>\nCc: <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton\
+  \ <akpm@linux-foundation.org>\n"
+submodule:
+- fs/ocfs2
+hunk_count: 1
+covered_count: 0

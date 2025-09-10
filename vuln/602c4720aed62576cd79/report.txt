@@ -1,0 +1,60 @@
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 6208 at ./include/linux/sched.h:2185 __clear_task_blocked_on include/linux/sched.h:2185 [inline]
+WARNING: CPU: 0 PID: 6208 at ./include/linux/sched.h:2185 __ww_mutex_wound+0x23b/0x3e0 kernel/locking/ww_mutex.h:346
+Modules linked in:
+CPU: 0 UID: 0 PID: 6208 Comm: syz.0.94 Not tainted 6.17.0-rc1-syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:__clear_task_blocked_on include/linux/sched.h:2185 [inline]
+RIP: 0010:__ww_mutex_wound+0x23b/0x3e0 kernel/locking/ww_mutex.h:346
+Code: 00 00 00 00 fc ff df 48 89 ea 48 c1 ea 03 80 3c 02 00 0f 85 85 01 00 00 48 8b 81 78 0a 00 00 48 85 c0 74 09 48 39 c3 74 04 90 <0f> 0b 90 48 b8 00 00 00 00 00 fc ff df 48 89 ea 48 c1 ea 03 80 3c
+RSP: 0018:ffffc90003bf7198 EFLAGS: 00010006
+RAX: ffff8881056b9048 RBX: ffff8881056ba048 RCX: ffff88802933c880
+RDX: 1ffff11005267a5f RSI: ffffffff8de29bf8 RDI: ffffffff8c162400
+RBP: ffff88802933d2f8 R08: 0000000000000000 R09: ffffed1020ad7409
+R10: ffff8881056ba04f R11: 0000000000000000 R12: ffffc90004017a30
+R13: 0000000000000001 R14: 0000000000000007 R15: ffffc90003bf7290
+FS:  000055555a966500(0000) GS:ffff8880d66bd000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000200000003000 CR3: 0000000050473000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ __ww_mutex_add_waiter kernel/locking/ww_mutex.h:574 [inline]
+ __mutex_lock_common kernel/locking/mutex.c:638 [inline]
+ __ww_mutex_lock.constprop.0+0x1a69/0x32c0 kernel/locking/mutex.c:767
+ ww_mutex_lock+0x37/0x160 kernel/locking/mutex.c:885
+ modeset_lock+0x4a0/0x6e0 drivers/gpu/drm/drm_modeset_lock.c:316
+ drm_modeset_lock drivers/gpu/drm/drm_modeset_lock.c:398 [inline]
+ drm_modeset_lock+0x59/0x90 drivers/gpu/drm/drm_modeset_lock.c:394
+ drm_atomic_get_plane_state+0x19d/0x590 drivers/gpu/drm/drm_atomic.c:541
+ drm_client_modeset_commit_atomic+0x237/0x7e0 drivers/gpu/drm/drm_client_modeset.c:1055
+ drm_client_modeset_commit_locked+0x14d/0x580 drivers/gpu/drm/drm_client_modeset.c:1206
+ pan_display_atomic drivers/gpu/drm/drm_fb_helper.c:1388 [inline]
+ drm_fb_helper_pan_display+0x32d/0xa40 drivers/gpu/drm/drm_fb_helper.c:1448
+ fb_pan_display+0x47c/0x7d0 drivers/video/fbdev/core/fbmem.c:193
+ bit_update_start+0x49/0x1f0 drivers/video/fbdev/core/bitblit.c:380
+ fbcon_switch+0xbf8/0x14c0 drivers/video/fbdev/core/fbcon.c:2206
+ flush_scrollback drivers/tty/vt/vt.c:909 [inline]
+ csi_J+0x866/0xad0 drivers/tty/vt/vt.c:1524
+ csi_ECMA drivers/tty/vt/vt.c:2495 [inline]
+ do_con_trol drivers/tty/vt/vt.c:2678 [inline]
+ do_con_write+0x41d7/0x8280 drivers/tty/vt/vt.c:3174
+ con_write+0x23/0xb0 drivers/tty/vt/vt.c:3516
+ process_output_block drivers/tty/n_tty.c:561 [inline]
+ n_tty_write+0x41f/0x11e0 drivers/tty/n_tty.c:2377
+ iterate_tty_write drivers/tty/tty_io.c:1006 [inline]
+ file_tty_write.constprop.0+0x501/0x9b0 drivers/tty/tty_io.c:1081
+ new_sync_write fs/read_write.c:593 [inline]
+ vfs_write+0x7d3/0x11d0 fs/read_write.c:686
+ ksys_write+0x12a/0x250 fs/read_write.c:738
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fbba078ebe9
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fffb55e4028 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
+RAX: ffffffffffffffda RBX: 00007fbba09b5fa0 RCX: 00007fbba078ebe9
+RDX: 0000000000001006 RSI: 0000200000002080 RDI: 0000000000000003
+RBP: 00007fbba0811e19 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007fbba09b5fa0 R14: 00007fbba09b5fa0 R15: 0000000000000003
+ </TASK>

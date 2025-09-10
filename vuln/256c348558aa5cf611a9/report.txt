@@ -1,0 +1,67 @@
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 11 at net/netfilter/xt_cluster.c:72 xt_cluster_is_multicast_addr net/netfilter/xt_cluster.c:72 [inline]
+WARNING: CPU: 0 PID: 11 at net/netfilter/xt_cluster.c:72 xt_cluster_mt+0x196/0x780 net/netfilter/xt_cluster.c:104
+Modules linked in:
+CPU: 0 UID: 0 PID: 11 Comm: kworker/u8:0 Not tainted 6.11.0-rc7-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+Workqueue: ipv6_addrconf addrconf_dad_work
+RIP: 0010:xt_cluster_is_multicast_addr net/netfilter/xt_cluster.c:72 [inline]
+RIP: 0010:xt_cluster_mt+0x196/0x780 net/netfilter/xt_cluster.c:104
+Code: f0 00 00 00 23 2b bf e0 00 00 00 89 ee e8 32 ee a1 f7 81 fd e0 00 00 00 75 1c e8 e5 e9 a1 f7 e9 83 00 00 00 e8 db e9 a1 f7 90 <0f> 0b 90 eb 0c e8 d0 e9 a1 f7 eb 05 e8 c9 e9 a1 f7 4d 8d af 80 00
+RSP: 0018:ffffc90000006c88 EFLAGS: 00010246
+RAX: ffffffff89f1a2d5 RBX: 0000000000000007 RCX: ffff88801ced3c00
+RDX: 0000000000000100 RSI: ffffffff8fd2a440 RDI: 0000000000000007
+RBP: ffffc90000006e68 R08: 0000000000000001 R09: ffffffff89f1a1c4
+R10: 0000000000000002 R11: ffff88801ced3c00 R12: dffffc0000000000
+R13: 1ffff92000159c18 R14: ffffc90000ace140 R15: ffff8880251bf280
+FS:  0000000000000000(0000) GS:ffff8880b8800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007efc6d6b6440 CR3: 000000000e734000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ ebt_do_match net/bridge/netfilter/ebtables.c:109 [inline]
+ ebt_do_table+0x174b/0x2a40 net/bridge/netfilter/ebtables.c:230
+ nf_hook_entry_hookfn include/linux/netfilter.h:154 [inline]
+ nf_hook_slow+0xc3/0x220 net/netfilter/core.c:626
+ nf_hook include/linux/netfilter.h:269 [inline]
+ NF_HOOK+0x2a7/0x460 include/linux/netfilter.h:312
+ __br_forward+0x489/0x660 net/bridge/br_forward.c:115
+ br_handle_frame_finish+0x18ba/0x1fe0 net/bridge/br_input.c:215
+ br_nf_hook_thresh+0x472/0x590
+ br_nf_pre_routing_finish_ipv6+0xaa0/0xdd0
+ NF_HOOK include/linux/netfilter.h:314 [inline]
+ br_nf_pre_routing_ipv6+0x379/0x770 net/bridge/br_netfilter_ipv6.c:184
+ nf_hook_entry_hookfn include/linux/netfilter.h:154 [inline]
+ nf_hook_bridge_pre net/bridge/br_input.c:277 [inline]
+ br_handle_frame+0x9fd/0x1530 net/bridge/br_input.c:424
+ __netif_receive_skb_core+0x13e8/0x4570 net/core/dev.c:5555
+ __netif_receive_skb_one_core net/core/dev.c:5659 [inline]
+ __netif_receive_skb+0x12f/0x650 net/core/dev.c:5775
+ process_backlog+0x662/0x15b0 net/core/dev.c:6108
+ __napi_poll+0xcb/0x490 net/core/dev.c:6772
+ napi_poll net/core/dev.c:6841 [inline]
+ net_rx_action+0x89b/0x1240 net/core/dev.c:6963
+ handle_softirqs+0x2c4/0x970 kernel/softirq.c:554
+ do_softirq+0x11b/0x1e0 kernel/softirq.c:455
+ </IRQ>
+ <TASK>
+ __local_bh_enable_ip+0x1bb/0x200 kernel/softirq.c:382
+ local_bh_enable include/linux/bottom_half.h:33 [inline]
+ rcu_read_unlock_bh include/linux/rcupdate.h:908 [inline]
+ __dev_queue_xmit+0x1763/0x3e90 net/core/dev.c:4450
+ neigh_output include/net/neighbour.h:542 [inline]
+ ip6_finish_output2+0x1001/0x1730 net/ipv6/ip6_output.c:141
+ ip6_finish_output+0x41e/0x810 net/ipv6/ip6_output.c:226
+ NF_HOOK include/linux/netfilter.h:314 [inline]
+ ndisc_send_skb+0xab2/0x1380 net/ipv6/ndisc.c:511
+ ndisc_send_ns+0xcc/0x160 net/ipv6/ndisc.c:669
+ addrconf_dad_work+0xb45/0x16f0 net/ipv6/addrconf.c:4282
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3312
+ worker_thread+0x86d/0xd10 kernel/workqueue.c:3389
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

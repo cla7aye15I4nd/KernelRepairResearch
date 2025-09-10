@@ -1,0 +1,34 @@
+id: 44908bb56d2bfe56b28e
+bug_link: https://syzkaller.appspot.com/bug?extid=44908bb56d2bfe56b28e
+title: memory leak in copy_process (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e75b513ec6e545ce54c2f50e99fbd77e38911630
+fix_commit: f60a85cad677c4f9bb4cadd764f1d106c38c7cf8
+datetime: '2021-03-19T22:23:19+01:00'
+fix_commit_message: "bpf: Fix umd memory leak in copy_process()\n\nThe syzbot reported\
+  \ a memleak as follows:\n\nBUG: memory leak\nunreferenced object 0xffff888101b41d00\
+  \ (size 120):\n  comm \"kworker/u4:0\", pid 8, jiffies 4294944270 (age 12.780s)\n\
+  \  backtrace:\n    [<ffffffff8125dc56>] alloc_pid+0x66/0x560\n    [<ffffffff81226405>]\
+  \ copy_process+0x1465/0x25e0\n    [<ffffffff81227943>] kernel_clone+0xf3/0x670\n\
+  \    [<ffffffff812281a1>] kernel_thread+0x61/0x80\n    [<ffffffff81253464>] call_usermodehelper_exec_work\n\
+  \    [<ffffffff81253464>] call_usermodehelper_exec_work+0xc4/0x120\n    [<ffffffff812591c9>]\
+  \ process_one_work+0x2c9/0x600\n    [<ffffffff81259ab9>] worker_thread+0x59/0x5d0\n\
+  \    [<ffffffff812611c8>] kthread+0x178/0x1b0\n    [<ffffffff8100227f>] ret_from_fork+0x1f/0x30\n\
+  \nunreferenced object 0xffff888110ef5c00 (size 232):\n  comm \"kworker/u4:0\", pid\
+  \ 8414, jiffies 4294944270 (age 12.780s)\n  backtrace:\n    [<ffffffff8154a0cf>]\
+  \ kmem_cache_zalloc\n    [<ffffffff8154a0cf>] __alloc_file+0x1f/0xf0\n    [<ffffffff8154a809>]\
+  \ alloc_empty_file+0x69/0x120\n    [<ffffffff8154a8f3>] alloc_file+0x33/0x1b0\n\
+  \    [<ffffffff8154ab22>] alloc_file_pseudo+0xb2/0x140\n    [<ffffffff81559218>]\
+  \ create_pipe_files+0x138/0x2e0\n    [<ffffffff8126c793>] umd_setup+0x33/0x220\n\
+  \    [<ffffffff81253574>] call_usermodehelper_exec_async+0xb4/0x1b0\n    [<ffffffff8100227f>]\
+  \ ret_from_fork+0x1f/0x30\n\nAfter the UMD process exits, the pipe_to_umh/pipe_from_umh\
+  \ and\ntgid need to be released.\n\nFixes: d71fa5c9763c (\"bpf: Add kernel module\
+  \ with user mode driver that populates bpffs.\")\nReported-by: syzbot+44908bb56d2bfe56b28e@syzkaller.appspotmail.com\n\
+  Signed-off-by: Zqiang <qiang.zhang@windriver.com>\nSigned-off-by: Daniel Borkmann\
+  \ <daniel@iogearbox.net>\nLink: https://lore.kernel.org/bpf/20210317030915.2865-1-qiang.zhang@windriver.com\n"
+submodule:
+- include/linux
+- kernel
+- kernel/bpf/preload
+hunk_count: 4
+covered_count: 1

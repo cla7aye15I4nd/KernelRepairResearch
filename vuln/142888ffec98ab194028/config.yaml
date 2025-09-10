@@ -1,0 +1,42 @@
+id: 142888ffec98ab194028
+bug_link: https://syzkaller.appspot.com/bug?extid=142888ffec98ab194028
+title: 'KMSAN: uninit-value in video_usercopy (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: caf231ac25bdde69d257366e2f8d13b37af5458e
+fix_commit: c344f07aa1b4ba38ca8fabe407a2afe2f436323c
+datetime: '2021-06-17T10:15:06+02:00'
+fix_commit_message: "media: v4l2-core: ignore native time32 ioctls on 64-bit\n\nSyzbot\
+  \ found that passing ioctl command 0xc0505609 into a 64-bit\nkernel from a 32-bit\
+  \ process causes uninitialized kernel memory to\nget passed to drivers instead of\
+  \ the user space data:\n\nBUG: KMSAN: uninit-value in check_array_args drivers/media/v4l2-core/v4l2-ioctl.c:3041\
+  \ [inline]\nBUG: KMSAN: uninit-value in video_usercopy+0x1631/0x3d30 drivers/media/v4l2-core/v4l2-ioctl.c:3315\n\
+  CPU: 0 PID: 19595 Comm: syz-executor.4 Not tainted 5.11.0-rc7-syzkaller #0\nHardware\
+  \ name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n\
+  Call Trace:\n __dump_stack lib/dump_stack.c:79 [inline]\n dump_stack+0x21c/0x280\
+  \ lib/dump_stack.c:120\n kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118\n __msan_warning+0x5f/0xa0\
+  \ mm/kmsan/kmsan_instr.c:197\n check_array_args drivers/media/v4l2-core/v4l2-ioctl.c:3041\
+  \ [inline]\n video_usercopy+0x1631/0x3d30 drivers/media/v4l2-core/v4l2-ioctl.c:3315\n\
+  \ video_ioctl2+0x9f/0xb0 drivers/media/v4l2-core/v4l2-ioctl.c:3391\n v4l2_ioctl+0x255/0x290\
+  \ drivers/media/v4l2-core/v4l2-dev.c:360\n v4l2_compat_ioctl32+0x2c6/0x370 drivers/media/v4l2-core/v4l2-compat-ioctl32.c:1248\n\
+  \ __do_compat_sys_ioctl fs/ioctl.c:842 [inline]\n __se_compat_sys_ioctl+0x53d/0x1100\
+  \ fs/ioctl.c:793\n __ia32_compat_sys_ioctl+0x4a/0x70 fs/ioctl.c:793\n do_syscall_32_irqs_on\
+  \ arch/x86/entry/common.c:79 [inline]\n __do_fast_syscall_32+0x102/0x160 arch/x86/entry/common.c:141\n\
+  \ do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:166\n do_SYSENTER_32+0x73/0x90\
+  \ arch/x86/entry/common.c:209\n entry_SYSENTER_compat_after_hwframe+0x4d/0x5c\n\n\
+  The time32 commands are defined but were never meant to be called on\n64-bit machines,\
+  \ as those have always used time64 interfaces.  I missed\nthis in my patch that\
+  \ introduced the time64 handling on 32-bit platforms.\n\nThe problem in this case\
+  \ is the mismatch of one function checking for\nthe numeric value of the command\
+  \ and another function checking for the\ntype of process (native vs compat) instead,\
+  \ with the result being that\nfor this combination, nothing gets copied into the\
+  \ buffer at all.\n\nAvoid this by only trying to convert the time32 commands when\
+  \ running\non a 32-bit kernel where these are defined in a meaningful way.\n\n[hverkuil:\
+  \ fix 3 warnings: switch with no cases]\n\nFixes: 577c89b0ce72 (\"media: v4l2-core:\
+  \ fix v4l2_buffer handling for time64 ABI\")\nReported-by: syzbot+142888ffec98ab194028@syzkaller.appspotmail.com\n\
+  Signed-off-by: Arnd Bergmann <arnd@arndb.de>\nReviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>\n\
+  Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>\nSigned-off-by: Mauro Carvalho\
+  \ Chehab <mchehab+huawei@kernel.org>\n"
+submodule:
+- drivers/media/v4l2-core
+hunk_count: 6
+covered_count: 1

@@ -1,0 +1,107 @@
+Bluetooth: hci0: unexpected event 0x06 length: 4 > 3
+==================================================================
+BUG: KASAN: null-ptr-deref in instrument_atomic_write include/linux/instrumented.h:82 [inline]
+BUG: KASAN: null-ptr-deref in clear_bit include/asm-generic/bitops/instrumented-atomic.h:41 [inline]
+BUG: KASAN: null-ptr-deref in l2cap_sock_resume_cb+0xb4/0x17c net/bluetooth/l2cap_sock.c:1711
+Write of size 8 at addr 0000000000000570 by task kworker/u9:0/52
+
+CPU: 1 UID: 0 PID: 52 Comm: kworker/u9:0 Not tainted 6.16.0-rc4-syzkaller-g7482bb149b9f #0 PREEMPT 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Workqueue: hci0 hci_rx_work
+Call trace:
+ show_stack+0x2c/0x3c arch/arm64/kernel/stacktrace.c:501 (C)
+ __dump_stack+0x30/0x40 lib/dump_stack.c:94
+ dump_stack_lvl+0xd8/0x12c lib/dump_stack.c:120
+ print_report+0x58/0x84 mm/kasan/report.c:524
+ kasan_report+0xb0/0x110 mm/kasan/report.c:634
+ check_region_inline mm/kasan/generic.c:-1 [inline]
+ kasan_check_range+0x264/0x2a4 mm/kasan/generic.c:189
+ __kasan_check_write+0x20/0x30 mm/kasan/shadow.c:37
+ instrument_atomic_write include/linux/instrumented.h:82 [inline]
+ clear_bit include/asm-generic/bitops/instrumented-atomic.h:41 [inline]
+ l2cap_sock_resume_cb+0xb4/0x17c net/bluetooth/l2cap_sock.c:1711
+ l2cap_security_cfm+0x524/0xea0 net/bluetooth/l2cap_core.c:7357
+ hci_auth_cfm include/net/bluetooth/hci_core.h:2092 [inline]
+ hci_auth_complete_evt+0x2e8/0xa4c net/bluetooth/hci_event.c:3514
+ hci_event_func net/bluetooth/hci_event.c:7511 [inline]
+ hci_event_packet+0x650/0xe9c net/bluetooth/hci_event.c:7565
+ hci_rx_work+0x320/0xb18 net/bluetooth/hci_core.c:4070
+ process_one_work+0x7e8/0x155c kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3321 [inline]
+ worker_thread+0x958/0xed8 kernel/workqueue.c:3402
+ kthread+0x5fc/0x75c kernel/kthread.c:464
+ ret_from_fork+0x10/0x20 arch/arm64/kernel/entry.S:847
+==================================================================
+Unable to handle kernel NULL pointer dereference at virtual address 0000000000000570
+Mem abort info:
+  ESR = 0x0000000096000006
+  EC = 0x25: DABT (current EL), IL = 32 bits
+  SET = 0, FnV = 0
+  EA = 0, S1PTW = 0
+  FSC = 0x06: level 2 translation fault
+Data abort info:
+  ISV = 0, ISS = 0x00000006, ISS2 = 0x00000000
+  CM = 0, WnR = 0, TnD = 0, TagAccess = 0
+  GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0
+user pgtable: 4k pages, 48-bit VAs, pgdp=0000000121d3b000
+[0000000000000570] pgd=0800000121d58403, p4d=0800000121d58403, pud=0800000121d81403, pmd=0000000000000000
+Internal error: Oops: 0000000096000006 [#1]  SMP
+Modules linked in:
+CPU: 1 UID: 0 PID: 52 Comm: kworker/u9:0 Tainted: G    B               6.16.0-rc4-syzkaller-g7482bb149b9f #0 PREEMPT 
+Tainted: [B]=BAD_PAGE
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Workqueue: hci0 hci_rx_work
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : __lse_atomic64_andnot arch/arm64/include/asm/atomic_lse.h:131 [inline]
+pc : arch_atomic64_andnot arch/arm64/include/asm/atomic.h:64 [inline]
+pc : raw_atomic64_andnot include/linux/atomic/atomic-arch-fallback.h:3675 [inline]
+pc : raw_atomic_long_andnot include/linux/atomic/atomic-long.h:964 [inline]
+pc : arch_clear_bit include/asm-generic/bitops/atomic.h:25 [inline]
+pc : clear_bit include/asm-generic/bitops/instrumented-atomic.h:42 [inline]
+pc : l2cap_sock_resume_cb+0xc0/0x17c net/bluetooth/l2cap_sock.c:1711
+lr : __lse_atomic64_andnot arch/arm64/include/asm/atomic_lse.h:131 [inline]
+lr : arch_atomic64_andnot arch/arm64/include/asm/atomic.h:64 [inline]
+lr : raw_atomic64_andnot include/linux/atomic/atomic-arch-fallback.h:3675 [inline]
+lr : raw_atomic_long_andnot include/linux/atomic/atomic-long.h:964 [inline]
+lr : arch_clear_bit include/asm-generic/bitops/atomic.h:25 [inline]
+lr : clear_bit include/asm-generic/bitops/instrumented-atomic.h:42 [inline]
+lr : l2cap_sock_resume_cb+0xbc/0x17c net/bluetooth/l2cap_sock.c:1711
+sp : ffff8000991975b0
+x29: ffff8000991975b0 x28: ffff0000d89f6000 x27: dfff800000000000
+x26: ffff700013232ec8 x25: 0000000000000001 x24: ffff80008db6f6c0
+x23: ffff0000d89f6480 x22: dfff800000000000 x21: 0000000000000002
+x20: 0000000000000570 x19: 0000000000000000 x18: 1fffe000337d8876
+x17: 0000000000000000 x16: ffff80008ae642c8 x15: 0000000000000001
+x14: 1ffff000125d90f8 x13: 0000000000000000 x12: 0000000000000000
+x11: ffff7000125d90f9 x10: 0000000000ff0100 x9 : 0000000000000000
+x8 : 0000000000000002 x7 : 0000000000000001 x6 : 0000000000000001
+x5 : ffff800099196e18 x4 : ffff80008f766c20 x3 : ffff8000803b80e0
+x2 : 0000000000000001 x1 : 0000000000000000 x0 : 0000000000000000
+Call trace:
+ __lse_atomic64_andnot arch/arm64/include/asm/atomic_lse.h:-1 [inline] (P)
+ arch_atomic64_andnot arch/arm64/include/asm/atomic.h:64 [inline] (P)
+ raw_atomic64_andnot include/linux/atomic/atomic-arch-fallback.h:3675 [inline] (P)
+ raw_atomic_long_andnot include/linux/atomic/atomic-long.h:964 [inline] (P)
+ arch_clear_bit include/asm-generic/bitops/atomic.h:25 [inline] (P)
+ clear_bit include/asm-generic/bitops/instrumented-atomic.h:42 [inline] (P)
+ l2cap_sock_resume_cb+0xc0/0x17c net/bluetooth/l2cap_sock.c:1711 (P)
+ l2cap_security_cfm+0x524/0xea0 net/bluetooth/l2cap_core.c:7357
+ hci_auth_cfm include/net/bluetooth/hci_core.h:2092 [inline]
+ hci_auth_complete_evt+0x2e8/0xa4c net/bluetooth/hci_event.c:3514
+ hci_event_func net/bluetooth/hci_event.c:7511 [inline]
+ hci_event_packet+0x650/0xe9c net/bluetooth/hci_event.c:7565
+ hci_rx_work+0x320/0xb18 net/bluetooth/hci_core.c:4070
+ process_one_work+0x7e8/0x155c kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3321 [inline]
+ worker_thread+0x958/0xed8 kernel/workqueue.c:3402
+ kthread+0x5fc/0x75c kernel/kthread.c:464
+ ret_from_fork+0x10/0x20 arch/arm64/kernel/entry.S:847
+Code: 977fc1f2 d503201f 977fc0f7 52800048 (f828129f) 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	977fc1f2 	bl	0xfffffffffdff07c8
+   4:	d503201f 	nop
+   8:	977fc0f7 	bl	0xfffffffffdff03e4
+   c:	52800048 	mov	w8, #0x2                   	// #2
+* 10:	f828129f 	stclr	x8, [x20] <-- trapping instruction

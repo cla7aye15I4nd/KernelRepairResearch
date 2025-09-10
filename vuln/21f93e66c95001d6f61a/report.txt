@@ -1,0 +1,165 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.9.0-rc5-syzkaller-00185-g3e9bc0472b91 #0 Not tainted
+------------------------------------------------------
+strace-static-x/5082 is trying to acquire lock:
+ffff8880172b4610 (&p->pi_lock){-.-.}-{2:2}, at: class_raw_spinlock_irqsave_constructor include/linux/spinlock.h:553 [inline]
+ffff8880172b4610 (&p->pi_lock){-.-.}-{2:2}, at: try_to_wake_up+0xb0/0x1470 kernel/sched/core.c:4262
+
+but task is already holding lock:
+ffff8880b94387e8 (lock#9){+.+.}-{2:2}, at: local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+ffff8880b94387e8 (lock#9){+.+.}-{2:2}, at: __mmap_lock_do_trace_acquire_returned+0x8f/0x630 mm/mmap_lock.c:237
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (lock#9){+.+.}-{2:2}:
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+       local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+       __mmap_lock_do_trace_acquire_returned+0xa8/0x630 mm/mmap_lock.c:237
+       __mmap_lock_trace_acquire_returned include/linux/mmap_lock.h:36 [inline]
+       mmap_read_trylock include/linux/mmap_lock.h:166 [inline]
+       stack_map_get_build_id_offset+0x9b2/0x9d0 kernel/bpf/stackmap.c:141
+       __bpf_get_stack+0x4ad/0x5a0 kernel/bpf/stackmap.c:449
+       ____bpf_get_stack_raw_tp kernel/trace/bpf_trace.c:1985 [inline]
+       bpf_get_stack_raw_tp+0x1a3/0x240 kernel/trace/bpf_trace.c:1975
+       0xffffffffa0003932
+       bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+       __bpf_prog_run include/linux/filter.h:657 [inline]
+       bpf_prog_run include/linux/filter.h:664 [inline]
+       __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+       bpf_trace_run2+0x204/0x420 kernel/trace/bpf_trace.c:2420
+       trace_tlb_flush+0x118/0x140 include/trace/events/tlb.h:38
+       switch_mm_irqs_off+0x7cb/0xae0
+       context_switch kernel/sched/core.c:5393 [inline]
+       __schedule+0x1066/0x4a50 kernel/sched/core.c:6746
+       __schedule_loop kernel/sched/core.c:6823 [inline]
+       schedule+0x14b/0x320 kernel/sched/core.c:6838
+       ptrace_stop+0x5b4/0x940 kernel/signal.c:2358
+       ptrace_do_notify kernel/signal.c:2395 [inline]
+       ptrace_notify+0x255/0x380 kernel/signal.c:2407
+       ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+       ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]
+       syscall_exit_work+0xc6/0x190 kernel/entry/common.c:173
+       syscall_exit_to_user_mode_prepare kernel/entry/common.c:200 [inline]
+       __syscall_exit_to_user_mode_work kernel/entry/common.c:205 [inline]
+       syscall_exit_to_user_mode+0x273/0x370 kernel/entry/common.c:218
+       do_syscall_64+0x102/0x240 arch/x86/entry/common.c:89
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #1 (&rq->__lock){-.-.}-{2:2}:
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+       _raw_spin_lock_nested+0x31/0x40 kernel/locking/spinlock.c:378
+       raw_spin_rq_lock_nested+0x2a/0x140 kernel/sched/core.c:559
+       raw_spin_rq_lock kernel/sched/sched.h:1387 [inline]
+       rq_lock kernel/sched/sched.h:1701 [inline]
+       task_fork_fair+0x61/0x1e0 kernel/sched/fair.c:12635
+       sched_cgroup_fork+0x37c/0x410 kernel/sched/core.c:4845
+       copy_process+0x2217/0x3df0 kernel/fork.c:2499
+       kernel_clone+0x226/0x8f0 kernel/fork.c:2797
+       user_mode_thread+0x132/0x1a0 kernel/fork.c:2875
+       rest_init+0x23/0x300 init/main.c:704
+       start_kernel+0x47a/0x500 init/main.c:1081
+       x86_64_start_reservations+0x2a/0x30 arch/x86/kernel/head64.c:507
+       x86_64_start_kernel+0x99/0xa0 arch/x86/kernel/head64.c:488
+       common_startup_64+0x13e/0x147
+
+-> #0 (&p->pi_lock){-.-.}-{2:2}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+       __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+       lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+       __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+       _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+       class_raw_spinlock_irqsave_constructor include/linux/spinlock.h:553 [inline]
+       try_to_wake_up+0xb0/0x1470 kernel/sched/core.c:4262
+       rcu_read_unlock_special+0x3db/0x550 kernel/rcu/tree_plugin.h:655
+       __rcu_read_unlock+0xa1/0x110 kernel/rcu/tree_plugin.h:426
+       rcu_read_unlock include/linux/rcupdate.h:813 [inline]
+       put_memcg_path_buf+0xde/0x110 mm/mmap_lock.c:153
+       __mmap_lock_do_trace_acquire_returned+0x1f9/0x630 mm/mmap_lock.c:237
+       __mmap_lock_trace_acquire_returned include/linux/mmap_lock.h:36 [inline]
+       mmap_read_lock include/linux/mmap_lock.h:147 [inline]
+       process_vm_rw_single_vec mm/process_vm_access.c:105 [inline]
+       process_vm_rw_core mm/process_vm_access.c:216 [inline]
+       process_vm_rw+0xa46/0xcf0 mm/process_vm_access.c:284
+       __do_sys_process_vm_readv mm/process_vm_access.c:296 [inline]
+       __se_sys_process_vm_readv mm/process_vm_access.c:292 [inline]
+       __x64_sys_process_vm_readv+0xe0/0x100 mm/process_vm_access.c:292
+       do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+       do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+Chain exists of:
+  &p->pi_lock --> &rq->__lock --> lock#9
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(lock#9);
+                               lock(&rq->__lock);
+                               lock(lock#9);
+  lock(&p->pi_lock);
+
+ *** DEADLOCK ***
+
+3 locks held by strace-static-x/5082:
+ #0: ffff88802c4594a0 (&mm->mmap_lock){++++}-{3:3}, at: mmap_read_lock include/linux/mmap_lock.h:146 [inline]
+ #0: ffff88802c4594a0 (&mm->mmap_lock){++++}-{3:3}, at: process_vm_rw_single_vec mm/process_vm_access.c:105 [inline]
+ #0: ffff88802c4594a0 (&mm->mmap_lock){++++}-{3:3}, at: process_vm_rw_core mm/process_vm_access.c:216 [inline]
+ #0: ffff88802c4594a0 (&mm->mmap_lock){++++}-{3:3}, at: process_vm_rw+0x6e9/0xcf0 mm/process_vm_access.c:284
+ #1: ffff8880b94387e8 (lock#9){+.+.}-{2:2}, at: local_lock_acquire include/linux/local_lock_internal.h:29 [inline]
+ #1: ffff8880b94387e8 (lock#9){+.+.}-{2:2}, at: __mmap_lock_do_trace_acquire_returned+0x8f/0x630 mm/mmap_lock.c:237
+ #2: ffffffff8e334d20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #2: ffffffff8e334d20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #2: ffffffff8e334d20 (rcu_read_lock){....}-{1:2}, at: get_memcg_path_buf mm/mmap_lock.c:139 [inline]
+ #2: ffffffff8e334d20 (rcu_read_lock){....}-{1:2}, at: get_mm_memcg_path+0xb1/0x600 mm/mmap_lock.c:209
+
+stack backtrace:
+CPU: 0 PID: 5082 Comm: strace-static-x Not tainted 6.9.0-rc5-syzkaller-00185-g3e9bc0472b91 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ check_noncircular+0x36a/0x4a0 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain+0x18cb/0x58e0 kernel/locking/lockdep.c:3869
+ __lock_acquire+0x1346/0x1fd0 kernel/locking/lockdep.c:5137
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+ _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+ class_raw_spinlock_irqsave_constructor include/linux/spinlock.h:553 [inline]
+ try_to_wake_up+0xb0/0x1470 kernel/sched/core.c:4262
+ rcu_read_unlock_special+0x3db/0x550 kernel/rcu/tree_plugin.h:655
+ __rcu_read_unlock+0xa1/0x110 kernel/rcu/tree_plugin.h:426
+ rcu_read_unlock include/linux/rcupdate.h:813 [inline]
+ put_memcg_path_buf+0xde/0x110 mm/mmap_lock.c:153
+ __mmap_lock_do_trace_acquire_returned+0x1f9/0x630 mm/mmap_lock.c:237
+ __mmap_lock_trace_acquire_returned include/linux/mmap_lock.h:36 [inline]
+ mmap_read_lock include/linux/mmap_lock.h:147 [inline]
+ process_vm_rw_single_vec mm/process_vm_access.c:105 [inline]
+ process_vm_rw_core mm/process_vm_access.c:216 [inline]
+ process_vm_rw+0xa46/0xcf0 mm/process_vm_access.c:284
+ __do_sys_process_vm_readv mm/process_vm_access.c:296 [inline]
+ __se_sys_process_vm_readv mm/process_vm_access.c:292 [inline]
+ __x64_sys_process_vm_readv+0xe0/0x100 mm/process_vm_access.c:292
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x4eacda
+Code: 48 c7 c2 a8 ff ff ff f7 d8 64 89 02 b8 ff ff ff ff eb d2 e8 38 12 00 00 0f 1f 84 00 00 00 00 00 49 89 ca b8 36 01 00 00 0f 05 <48> 3d 00 f0 ff ff 77 06 c3 0f 1f 44 00 00 48 c7 c2 a8 ff ff ff f7
+RSP: 002b:00007ffc2fa6b728 EFLAGS: 00000246 ORIG_RAX: 0000000000000136
+RAX: ffffffffffffffda RBX: 00007f348c1bb000 RCX: 00000000004eacda
+RDX: 0000000000000001 RSI: 00007ffc2fa6b750 RDI: 00000000000016c5
+RBP: 0000000000000000 R08: 0000000000000001 R09: 0000000000000000
+R10: 00007ffc2fa6b760 R11: 0000000000000246 R12: 00007f348c1bb022
+R13: 00007ffc2fa6b810 R14: 0000000000001000 R15: 0000000000000fde
+ </TASK>

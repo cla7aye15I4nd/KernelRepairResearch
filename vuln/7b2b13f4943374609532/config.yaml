@@ -1,0 +1,39 @@
+id: 7b2b13f4943374609532
+bug_link: https://syzkaller.appspot.com/bug?extid=7b2b13f4943374609532
+title: 'KASAN: use-after-free Read in check_all_holdout_tasks_trace'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 05bc276cf243d90b9f1eb6ae2962f41eeb53a741
+fix_commit: 1d10bf55d85d34eb73dd8263635f43fd72135d2d
+datetime: '2021-07-06T12:38:21-07:00'
+fix_commit_message: 'rcu-tasks: Don''t delete holdouts within trc_inspect_reader()
+
+
+  As Yanfei pointed out, although invoking trc_del_holdout() is safe
+
+  from the viewpoint of the integrity of the holdout list itself,
+
+  the put_task_struct() invoked by trc_del_holdout() can result in
+
+  use-after-free errors due to later accesses to this task_struct structure
+
+  by the RCU Tasks Trace grace-period kthread.
+
+
+  This commit therefore removes this call to trc_del_holdout() from
+
+  trc_inspect_reader() in favor of the grace-period thread''s existing call
+
+  to trc_del_holdout(), thus eliminating that particular class of
+
+  use-after-free errors.
+
+
+  Reported-by: "Xu, Yanfei" <yanfei.xu@windriver.com>
+
+  Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
+
+  '
+submodule:
+- kernel/rcu
+hunk_count: 1
+covered_count: 1

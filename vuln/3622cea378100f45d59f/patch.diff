@@ -1,0 +1,41 @@
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 3ebbe64a0106..0b2067b3c328 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1484,11 +1484,19 @@ void end_page_writeback(struct page *page)
+ 		rotate_reclaimable_page(page);
+ 	}
+ 
++	/*
++	 * Writeback does not hold a page reference of its own, relying
++	 * on truncation to wait for the clearing of PG_writeback.
++	 * But here we must make sure that the page is not freed and
++	 * reused before the wake_up_page().
++	 */
++	get_page(page);
+ 	if (!test_clear_page_writeback(page))
+ 		BUG();
+ 
+ 	smp_mb__after_atomic();
+ 	wake_up_page(page, PG_writeback);
++	put_page(page);
+ }
+ EXPORT_SYMBOL(end_page_writeback);
+ 
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index 7709f0e223f5..586042472ac9 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -2754,12 +2754,6 @@ int test_clear_page_writeback(struct page *page)
+ 	} else {
+ 		ret = TestClearPageWriteback(page);
+ 	}
+-	/*
+-	 * NOTE: Page might be free now! Writeback doesn't hold a page
+-	 * reference on its own, it relies on truncation to wait for
+-	 * the clearing of PG_writeback. The below can only access
+-	 * page state that is static across allocation cycles.
+-	 */
+ 	if (ret) {
+ 		dec_lruvec_state(lruvec, NR_WRITEBACK);
+ 		dec_zone_page_state(page, NR_ZONE_WRITE_PENDING);

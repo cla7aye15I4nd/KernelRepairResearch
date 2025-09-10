@@ -1,0 +1,123 @@
+diff --git a/net/tipc/core.c b/net/tipc/core.c
+index ddd2e0f67c07..ed536c05252a 100644
+--- a/net/tipc/core.c
++++ b/net/tipc/core.c
+@@ -77,9 +77,6 @@ static int __net_init tipc_init_net(struct net *net)
+ 		goto out_nametbl;
+ 
+ 	INIT_LIST_HEAD(&tn->dist_queue);
+-	err = tipc_topsrv_start(net);
+-	if (err)
+-		goto out_subscr;
+ 
+ 	err = tipc_bcast_init(net);
+ 	if (err)
+@@ -88,8 +85,6 @@ static int __net_init tipc_init_net(struct net *net)
+ 	return 0;
+ 
+ out_bclink:
+-	tipc_bcast_stop(net);
+-out_subscr:
+ 	tipc_nametbl_stop(net);
+ out_nametbl:
+ 	tipc_sk_rht_destroy(net);
+@@ -99,7 +94,6 @@ static int __net_init tipc_init_net(struct net *net)
+ 
+ static void __net_exit tipc_exit_net(struct net *net)
+ {
+-	tipc_topsrv_stop(net);
+ 	tipc_net_stop(net);
+ 	tipc_bcast_stop(net);
+ 	tipc_nametbl_stop(net);
+@@ -113,6 +107,11 @@ static struct pernet_operations tipc_net_ops = {
+ 	.size = sizeof(struct tipc_net),
+ };
+ 
++static struct pernet_operations tipc_topsrv_net_ops = {
++	.init = tipc_topsrv_init_net,
++	.exit = tipc_topsrv_exit_net,
++};
++
+ static int __init tipc_init(void)
+ {
+ 	int err;
+@@ -143,6 +142,10 @@ static int __init tipc_init(void)
+ 	if (err)
+ 		goto out_socket;
+ 
++	err = register_pernet_subsys(&tipc_topsrv_net_ops);
++	if (err)
++		goto out_pernet_topsrv;
++
+ 	err = tipc_bearer_setup();
+ 	if (err)
+ 		goto out_bearer;
+@@ -150,6 +153,8 @@ static int __init tipc_init(void)
+ 	pr_info("Started in single node mode\n");
+ 	return 0;
+ out_bearer:
++	unregister_pernet_subsys(&tipc_topsrv_net_ops);
++out_pernet_topsrv:
+ 	tipc_socket_stop();
+ out_socket:
+ 	unregister_pernet_subsys(&tipc_net_ops);
+@@ -167,6 +172,7 @@ static int __init tipc_init(void)
+ static void __exit tipc_exit(void)
+ {
+ 	tipc_bearer_cleanup();
++	unregister_pernet_subsys(&tipc_topsrv_net_ops);
+ 	tipc_socket_stop();
+ 	unregister_pernet_subsys(&tipc_net_ops);
+ 	tipc_netlink_stop();
+diff --git a/net/tipc/subscr.h b/net/tipc/subscr.h
+index d793b4343885..aa015c233898 100644
+--- a/net/tipc/subscr.h
++++ b/net/tipc/subscr.h
+@@ -77,8 +77,9 @@ void tipc_sub_report_overlap(struct tipc_subscription *sub,
+ 			     u32 found_lower, u32 found_upper,
+ 			     u32 event, u32 port, u32 node,
+ 			     u32 scope, int must);
+-int tipc_topsrv_start(struct net *net);
+-void tipc_topsrv_stop(struct net *net);
++
++int __net_init tipc_topsrv_init_net(struct net *net);
++void __net_exit tipc_topsrv_exit_net(struct net *net);
+ 
+ void tipc_sub_put(struct tipc_subscription *subscription);
+ void tipc_sub_get(struct tipc_subscription *subscription);
+diff --git a/net/tipc/topsrv.c b/net/tipc/topsrv.c
+index b45932d78004..f345662890a6 100644
+--- a/net/tipc/topsrv.c
++++ b/net/tipc/topsrv.c
+@@ -635,7 +635,7 @@ static void tipc_topsrv_work_stop(struct tipc_topsrv *s)
+ 	destroy_workqueue(s->send_wq);
+ }
+ 
+-int tipc_topsrv_start(struct net *net)
++static int tipc_topsrv_start(struct net *net)
+ {
+ 	struct tipc_net *tn = tipc_net(net);
+ 	const char name[] = "topology_server";
+@@ -668,7 +668,7 @@ int tipc_topsrv_start(struct net *net)
+ 	return ret;
+ }
+ 
+-void tipc_topsrv_stop(struct net *net)
++static void tipc_topsrv_stop(struct net *net)
+ {
+ 	struct tipc_topsrv *srv = tipc_topsrv(net);
+ 	struct socket *lsock = srv->listener;
+@@ -693,3 +693,13 @@ void tipc_topsrv_stop(struct net *net)
+ 	idr_destroy(&srv->conn_idr);
+ 	kfree(srv);
+ }
++
++int __net_init tipc_topsrv_init_net(struct net *net)
++{
++	return tipc_topsrv_start(net);
++}
++
++void __net_exit tipc_topsrv_exit_net(struct net *net)
++{
++	tipc_topsrv_stop(net);
++}

@@ -1,0 +1,24 @@
+id: 20dee719a2e090427b5f
+bug_link: https://syzkaller.appspot.com/bug?extid=20dee719a2e090427b5f
+title: 'KASAN: null-ptr-deref Write in rxrpc_unuse_local'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 59c84b9fcf42c99a945d5fdc49220d854e539690
+fix_commit: 68553f1a6f746bf860bce3eb42d78c26a717d9c0
+datetime: '2019-08-11T21:28:29-07:00'
+fix_commit_message: "rxrpc: Fix local refcounting\n\nFix rxrpc_unuse_local() to handle\
+  \ a NULL local pointer as it can be called\non an unbound socket on which rx->local\
+  \ is not yet set.\n\nThe following reproduced (includes omitted):\n\n\tint main(void)\n\
+  \t{\n\t\tsocket(AF_RXRPC, SOCK_DGRAM, AF_INET);\n\t\treturn 0;\n\t}\n\ncauses the\
+  \ following oops to occur:\n\n\tBUG: kernel NULL pointer dereference, address: 0000000000000010\n\
+  \t...\n\tRIP: 0010:rxrpc_unuse_local+0x8/0x1b\n\t...\n\tCall Trace:\n\t rxrpc_release+0x2b5/0x338\n\
+  \t __sock_release+0x37/0xa1\n\t sock_close+0x14/0x17\n\t __fput+0x115/0x1e9\n\t\
+  \ task_work_run+0x72/0x98\n\t do_exit+0x51b/0xa7a\n\t ? __context_tracking_exit+0x4e/0x10e\n\
+  \t do_group_exit+0xab/0xab\n\t __x64_sys_exit_group+0x14/0x17\n\t do_syscall_64+0x89/0x1d4\n\
+  \t entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\nReported-by: syzbot+20dee719a2e090427b5f@syzkaller.appspotmail.com\n\
+  Fixes: 730c5fd42c1e (\"rxrpc: Fix local endpoint refcounting\")\nSigned-off-by:\
+  \ David Howells <dhowells@redhat.com>\ncc: Jeffrey Altman <jaltman@auristor.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/rxrpc
+hunk_count: 1
+covered_count: 1

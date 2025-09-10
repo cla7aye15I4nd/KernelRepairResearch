@@ -1,0 +1,101 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.16.0-rc6-syzkaller #0 Not tainted
+------------------------------------------------------
+kworker/u8:7/3075 is trying to acquire lock:
+ffff88805fd85100 (&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#5){+.+.}-{4:4}, at: inode_lock include/linux/fs.h:869 [inline]
+ffff88805fd85100 (&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#5){+.+.}-{4:4}, at: __ocfs2_flush_truncate_log+0x31e/0x1160 fs/ocfs2/alloc.c:6054
+
+but task is already holding lock:
+ffff88805fd8b480 (&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#6){+.+.}-{4:4}, at: inode_lock include/linux/fs.h:869 [inline]
+ffff88805fd8b480 (&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#6){+.+.}-{4:4}, at: ocfs2_flush_truncate_log fs/ocfs2/alloc.c:6083 [inline]
+ffff88805fd8b480 (&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#6){+.+.}-{4:4}, at: ocfs2_truncate_log_worker+0x92/0x1a0 fs/ocfs2/alloc.c:6097
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#6){+.+.}-{4:4}:
+       down_write+0x92/0x200 kernel/locking/rwsem.c:1577
+       inode_lock include/linux/fs.h:869 [inline]
+       ocfs2_move_extent+0x6ea/0x17f0 fs/ocfs2/move_extents.c:640
+       __ocfs2_move_extents_range fs/ocfs2/move_extents.c:860 [inline]
+       ocfs2_move_extents+0xd69/0x1980 fs/ocfs2/move_extents.c:927
+       ocfs2_ioctl_move_extents+0x54d/0xb20 fs/ocfs2/move_extents.c:1053
+       ocfs2_ioctl+0x3c6/0x6f0 fs/ocfs2/ioctl.c:946
+       vfs_ioctl fs/ioctl.c:51 [inline]
+       __do_sys_ioctl fs/ioctl.c:907 [inline]
+       __se_sys_ioctl fs/ioctl.c:893 [inline]
+       __x64_sys_ioctl+0x18e/0x210 fs/ioctl.c:893
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xcd/0x4c0 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#5){+.+.}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3168 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3287 [inline]
+       validate_chain kernel/locking/lockdep.c:3911 [inline]
+       __lock_acquire+0x126f/0x1c90 kernel/locking/lockdep.c:5240
+       lock_acquire kernel/locking/lockdep.c:5871 [inline]
+       lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5828
+       down_write+0x92/0x200 kernel/locking/rwsem.c:1577
+       inode_lock include/linux/fs.h:869 [inline]
+       __ocfs2_flush_truncate_log+0x31e/0x1160 fs/ocfs2/alloc.c:6054
+       ocfs2_flush_truncate_log fs/ocfs2/alloc.c:6084 [inline]
+       ocfs2_truncate_log_worker+0x9a/0x1a0 fs/ocfs2/alloc.c:6097
+       process_one_work+0x9cf/0x1b70 kernel/workqueue.c:3238
+       process_scheduled_works kernel/workqueue.c:3321 [inline]
+       worker_thread+0x6c8/0xf10 kernel/workqueue.c:3402
+       kthread+0x3c5/0x780 kernel/kthread.c:464
+       ret_from_fork+0x5d7/0x6f0 arch/x86/kernel/process.c:148
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#6);
+                               lock(&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#5);
+                               lock(&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#6);
+  lock(&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#5);
+
+ *** DEADLOCK ***
+
+3 locks held by kworker/u8:7/3075:
+ #0: ffff88801c6f4948 ((wq_completion)ocfs2_wq){+.+.}-{0:0}, at: process_one_work+0x12a2/0x1b70 kernel/workqueue.c:3213
+ #1: ffffc9000b597d10 ((work_completion)(&(&osb->osb_truncate_log_wq)->work)){+.+.}-{0:0}, at: process_one_work+0x929/0x1b70 kernel/workqueue.c:3214
+ #2: ffff88805fd8b480 (&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#6){+.+.}-{4:4}, at: inode_lock include/linux/fs.h:869 [inline]
+ #2: ffff88805fd8b480 (&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#6){+.+.}-{4:4}, at: ocfs2_flush_truncate_log fs/ocfs2/alloc.c:6083 [inline]
+ #2: ffff88805fd8b480 (&ocfs2_sysfile_lock_key[args->fi_sysfile_type]#6){+.+.}-{4:4}, at: ocfs2_truncate_log_worker+0x92/0x1a0 fs/ocfs2/alloc.c:6097
+
+stack backtrace:
+CPU: 1 UID: 0 PID: 3075 Comm: kworker/u8:7 Not tainted 6.16.0-rc6-syzkaller #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Workqueue: ocfs2_wq ocfs2_truncate_log_worker
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ print_circular_bug+0x275/0x350 kernel/locking/lockdep.c:2046
+ check_noncircular+0x14c/0x170 kernel/locking/lockdep.c:2178
+ check_prev_add kernel/locking/lockdep.c:3168 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3287 [inline]
+ validate_chain kernel/locking/lockdep.c:3911 [inline]
+ __lock_acquire+0x126f/0x1c90 kernel/locking/lockdep.c:5240
+ lock_acquire kernel/locking/lockdep.c:5871 [inline]
+ lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5828
+ down_write+0x92/0x200 kernel/locking/rwsem.c:1577
+ inode_lock include/linux/fs.h:869 [inline]
+ __ocfs2_flush_truncate_log+0x31e/0x1160 fs/ocfs2/alloc.c:6054
+ ocfs2_flush_truncate_log fs/ocfs2/alloc.c:6084 [inline]
+ ocfs2_truncate_log_worker+0x9a/0x1a0 fs/ocfs2/alloc.c:6097
+ process_one_work+0x9cf/0x1b70 kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3321 [inline]
+ worker_thread+0x6c8/0xf10 kernel/workqueue.c:3402
+ kthread+0x3c5/0x780 kernel/kthread.c:464
+ ret_from_fork+0x5d7/0x6f0 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>

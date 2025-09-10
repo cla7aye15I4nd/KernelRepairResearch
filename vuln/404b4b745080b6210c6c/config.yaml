@@ -1,0 +1,58 @@
+id: 404b4b745080b6210c6c
+bug_link: https://syzkaller.appspot.com/bug?extid=404b4b745080b6210c6c
+title: kernel BUG in iov_iter_revert (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c8b90d40d5bba8e6fba457b8a7c10d3c0d467e37
+fix_commit: 105549d09a539a876b7c3330ab52d8aceedad358
+datetime: '2024-12-20T22:07:56+01:00'
+fix_commit_message: 'netfs: Fix enomem handling in buffered reads
+
+
+  If netfs_read_to_pagecache() gets an error from either ->prepare_read() or
+
+  from netfs_prepare_read_iterator(), it needs to decrement ->nr_outstanding,
+
+  cancel the subrequest and break out of the issuing loop.  Currently, it
+
+  only does this for two of the cases, but there are two more that aren''t
+
+  handled.
+
+
+  Fix this by moving the handling to a common place and jumping to it from
+
+  all four places.  This is in preference to inserting a wrapper around
+
+  netfs_prepare_read_iterator() as proposed by Dmitry Antipov[1].
+
+
+  Link: https://lore.kernel.org/r/20241202093943.227786-1-dmantipov@yandex.ru/ [1]
+
+
+  Fixes: ee4cdf7ba857 ("netfs: Speed up buffered reading")
+
+  Reported-by: syzbot+404b4b745080b6210c6c@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=404b4b745080b6210c6c
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  Link: https://lore.kernel.org/r/20241213135013.2964079-4-dhowells@redhat.com
+
+  Tested-by: syzbot+404b4b745080b6210c6c@syzkaller.appspotmail.com
+
+  cc: Dmitry Antipov <dmantipov@yandex.ru>
+
+  cc: Jeff Layton <jlayton@kernel.org>
+
+  cc: netfs@lists.linux.dev
+
+  cc: linux-fsdevel@vger.kernel.org
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs/netfs
+hunk_count: 4
+covered_count: 0

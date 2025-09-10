@@ -1,0 +1,60 @@
+id: a41dfef1d2e04910eb2e
+bug_link: https://syzkaller.appspot.com/bug?extid=a41dfef1d2e04910eb2e
+title: 'INFO: trying to register non-static key in l2cap_sock_teardown_cb'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 35191a0fe986bacf69bd842de81119dca7970f11
+fix_commit: 1bff51ea59a9afb67d2dd78518ab0582a54a472c
+datetime: '2021-09-01T07:36:08+02:00'
+fix_commit_message: "Bluetooth: fix use-after-free error in lock_sock_nested()\n\n\
+  use-after-free error in lock_sock_nested is reported:\n\n[  179.140137][ T3731]\
+  \ =====================================================\n[  179.142675][ T3731]\
+  \ BUG: KMSAN: use-after-free in lock_sock_nested+0x280/0x2c0\n[  179.145494][ T3731]\
+  \ CPU: 4 PID: 3731 Comm: kworker/4:2 Not tainted 5.12.0-rc6+ #54\n[  179.148432][\
+  \ T3731] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.13.0-1ubuntu1.1\
+  \ 04/01/2014\n[  179.151806][ T3731] Workqueue: events l2cap_chan_timeout\n[  179.152730][\
+  \ T3731] Call Trace:\n[  179.153301][ T3731]  dump_stack+0x24c/0x2e0\n[  179.154063][\
+  \ T3731]  kmsan_report+0xfb/0x1e0\n[  179.154855][ T3731]  __msan_warning+0x5c/0xa0\n\
+  [  179.155579][ T3731]  lock_sock_nested+0x280/0x2c0\n[  179.156436][ T3731]  ?\
+  \ kmsan_get_metadata+0x116/0x180\n[  179.157257][ T3731]  l2cap_sock_teardown_cb+0xb8/0x890\n\
+  [  179.158154][ T3731]  ? __msan_metadata_ptr_for_load_8+0x10/0x20\n[  179.159141][\
+  \ T3731]  ? kmsan_get_metadata+0x116/0x180\n[  179.159994][ T3731]  ? kmsan_get_shadow_origin_ptr+0x84/0xb0\n\
+  [  179.160959][ T3731]  ? l2cap_sock_recv_cb+0x420/0x420\n[  179.161834][ T3731]\
+  \  l2cap_chan_del+0x3e1/0x1d50\n[  179.162608][ T3731]  ? kmsan_get_metadata+0x116/0x180\n\
+  [  179.163435][ T3731]  ? kmsan_get_shadow_origin_ptr+0x84/0xb0\n[  179.164406][\
+  \ T3731]  l2cap_chan_close+0xeea/0x1050\n[  179.165189][ T3731]  ? kmsan_internal_unpoison_shadow+0x42/0x70\n\
+  [  179.166180][ T3731]  l2cap_chan_timeout+0x1da/0x590\n[  179.167066][ T3731] \
+  \ ? __msan_metadata_ptr_for_load_8+0x10/0x20\n[  179.168023][ T3731]  ? l2cap_chan_create+0x560/0x560\n\
+  [  179.168818][ T3731]  process_one_work+0x121d/0x1ff0\n[  179.169598][ T3731] \
+  \ worker_thread+0x121b/0x2370\n[  179.170346][ T3731]  kthread+0x4ef/0x610\n[  179.171010][\
+  \ T3731]  ? process_one_work+0x1ff0/0x1ff0\n[  179.171828][ T3731]  ? kthread_blkcg+0x110/0x110\n\
+  [  179.172587][ T3731]  ret_from_fork+0x1f/0x30\n[  179.173348][ T3731]\n[  179.173752][\
+  \ T3731] Uninit was created at:\n[  179.174409][ T3731]  kmsan_internal_poison_shadow+0x5c/0xf0\n\
+  [  179.175373][ T3731]  kmsan_slab_free+0x76/0xc0\n[  179.176060][ T3731]  kfree+0x3a5/0x1180\n\
+  [  179.176664][ T3731]  __sk_destruct+0x8af/0xb80\n[  179.177375][ T3731]  __sk_free+0x812/0x8c0\n\
+  [  179.178032][ T3731]  sk_free+0x97/0x130\n[  179.178686][ T3731]  l2cap_sock_release+0x3d5/0x4d0\n\
+  [  179.179457][ T3731]  sock_close+0x150/0x450\n[  179.180117][ T3731]  __fput+0x6bd/0xf00\n\
+  [  179.180787][ T3731]  ____fput+0x37/0x40\n[  179.181481][ T3731]  task_work_run+0x140/0x280\n\
+  [  179.182219][ T3731]  do_exit+0xe51/0x3e60\n[  179.182930][ T3731]  do_group_exit+0x20e/0x450\n\
+  [  179.183656][ T3731]  get_signal+0x2dfb/0x38f0\n[  179.184344][ T3731]  arch_do_signal_or_restart+0xaa/0xe10\n\
+  [  179.185266][ T3731]  exit_to_user_mode_prepare+0x2d2/0x560\n[  179.186136][ T3731]\
+  \  syscall_exit_to_user_mode+0x35/0x60\n[  179.186984][ T3731]  do_syscall_64+0xc5/0x140\n\
+  [  179.187681][ T3731]  entry_SYSCALL_64_after_hwframe+0x44/0xae\n[  179.188604][\
+  \ T3731] =====================================================\n\nIn our case, there\
+  \ are two Thread A and B:\n\nContext: Thread A:              Context: Thread B:\n\
+  \nl2cap_chan_timeout()            __se_sys_shutdown()\n  l2cap_chan_close()    \
+  \          l2cap_sock_shutdown()\n    l2cap_chan_del()                l2cap_chan_close()\n\
+  \      l2cap_sock_teardown_cb()        l2cap_sock_teardown_cb()\n\nOnce l2cap_sock_teardown_cb()\
+  \ excuted, this sock will be marked as SOCK_ZAPPED,\nand can be treated as killable\
+  \ in l2cap_sock_kill() if sock_orphan() has\nexcuted, at this time we close sock\
+  \ through sock_close() which end to call\nl2cap_sock_kill() like Thread C:\n\nContext:\
+  \ Thread C:\n\nsock_close()\n  l2cap_sock_release()\n    sock_orphan()\n    l2cap_sock_kill()\
+  \  #free sock if refcnt is 1\n\nIf C completed, Once A or B reaches l2cap_sock_teardown_cb()\
+  \ again,\nuse-after-free happened.\n\nWe should set chan->data to NULL if sock is\
+  \ destructed, for telling teardown\noperation is not allowed in l2cap_sock_teardown_cb(),\
+  \ and also we should\navoid killing an already killed socket in l2cap_sock_close_cb().\n\
+  \nSigned-off-by: Wang ShaoBo <bobo.shaobowang@huawei.com>\nSigned-off-by: Luiz Augusto\
+  \ von Dentz <luiz.von.dentz@intel.com>\nSigned-off-by: Marcel Holtmann <marcel@holtmann.org>\n"
+submodule:
+- net/bluetooth
+hunk_count: 3
+covered_count: 2

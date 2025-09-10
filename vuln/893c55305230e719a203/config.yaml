@@ -1,0 +1,26 @@
+id: 893c55305230e719a203
+bug_link: https://syzkaller.appspot.com/bug?extid=893c55305230e719a203
+title: 'KASAN: use-after-free Read in gsm_cleanup_mux'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a4a79e03bab57729bd8046d22bf3666912e586fb
+fix_commit: 3c4f8333b582487a2d1e02171f1465531cde53e3
+datetime: '2023-08-11T21:17:02+02:00'
+fix_commit_message: "tty: n_gsm: fix the UAF caused by race condition in gsm_cleanup_mux\n\
+  \nIn commit 9b9c8195f3f0 (\"tty: n_gsm: fix UAF in gsm_cleanup_mux\"), the UAF\n\
+  problem is not completely fixed. There is a race condition in\ngsm_cleanup_mux(),\
+  \ which caused this UAF.\n\nThe UAF problem is triggered by the following race:\n\
+  task[5046]                     task[5054]\n-----------------------        -----------------------\n\
+  gsm_cleanup_mux();\ndlci = gsm->dlci[0];\nmutex_lock(&gsm->mutex);\n           \
+  \                    gsm_cleanup_mux();\n\t\t\t       dlci = gsm->dlci[0]; //Didn't\
+  \ take the lock\ngsm_dlci_release(gsm->dlci[i]);\ngsm->dlci[i] = NULL;\nmutex_unlock(&gsm->mutex);\n\
+  \                               mutex_lock(&gsm->mutex);\n\t\t\t       dlci->dead\
+  \ = true; //UAF\n\nFix it by assigning values after mutex_lock().\n\nLink: https://syzkaller.appspot.com/text?tag=CrashReport&x=176188b5a80000\n\
+  Cc: stable <stable@kernel.org>\nFixes: 9b9c8195f3f0 (\"tty: n_gsm: fix UAF in gsm_cleanup_mux\"\
+  )\nFixes: aa371e96f05d (\"tty: n_gsm: fix restart handling via CLD command\")\n\
+  Signed-off-by: Yi Yang <yiyang13@huawei.com>\nCo-developed-by: Qiumiao Zhang <zhangqiumiao1@huawei.com>\n\
+  Signed-off-by: Qiumiao Zhang <zhangqiumiao1@huawei.com>\nLink: https://lore.kernel.org/r/20230811031121.153237-1-yiyang13@huawei.com\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty
+hunk_count: 1
+covered_count: 1

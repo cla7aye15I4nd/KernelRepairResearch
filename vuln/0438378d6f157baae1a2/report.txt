@@ -1,0 +1,79 @@
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 16 at kernel/kcov.c:870 kcov_remote_start+0x5a2/0x7e0 kernel/kcov.c:870
+Modules linked in:
+CPU: 0 PID: 16 Comm: ksoftirqd/0 Not tainted 6.10.0-rc2-syzkaller-00022-g32f88d65f01b #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+RIP: 0010:kcov_remote_start+0x5a2/0x7e0 kernel/kcov.c:870
+Code: 24 00 00 00 00 9c 8f 04 24 f7 04 24 00 02 00 00 0f 85 a6 01 00 00 41 f7 c6 00 02 00 00 0f 84 93 fa ff ff fb e9 8d fa ff ff 90 <0f> 0b 90 e8 b6 80 e7 09 89 c0 48 c7 c7 c8 d4 02 00 48 03 3c c5 e0
+RSP: 0018:ffffc900000079c0 EFLAGS: 00010002
+RAX: 0000000080010100 RBX: ffff8880172bda00 RCX: 0000000000000002
+RDX: dffffc0000000000 RSI: ffffffff8bcacc00 RDI: ffffffff8c1f1ec0
+RBP: 0100000000000003 R08: ffffffff92f725ef R09: 1ffffffff25ee4bd
+R10: dffffc0000000000 R11: fffffbfff25ee4be R12: ffffffff81961f3e
+R13: 00000000ffffffb9 R14: 0000000000000006 R15: ffff8880b942d4c8
+FS:  0000000000000000(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000001b32927000 CR3: 0000000060646000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ kcov_remote_start_usb include/linux/kcov.h:53 [inline]
+ kcov_remote_start_usb_softirq include/linux/kcov.h:66 [inline]
+ __usb_hcd_giveback_urb+0x34a/0x530 drivers/usb/core/hcd.c:1647
+ dummy_timer+0x830/0x45d0 drivers/usb/gadget/udc/dummy_hcd.c:1987
+ __run_hrtimer kernel/time/hrtimer.c:1687 [inline]
+ __hrtimer_run_queues+0x59b/0xd50 kernel/time/hrtimer.c:1751
+ hrtimer_interrupt+0x396/0x990 kernel/time/hrtimer.c:1813
+ local_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1032 [inline]
+ __sysvec_apic_timer_interrupt+0x110/0x3f0 arch/x86/kernel/apic/apic.c:1049
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0xa1/0xc0 arch/x86/kernel/apic/apic.c:1043
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:queue_work_on+0x269/0x380 kernel/workqueue.c:2415
+Code: 75 19 e8 ca 90 36 00 eb 18 e8 c3 90 36 00 e8 ee 02 1e 0a 48 83 7c 24 10 00 74 e7 e8 b1 90 36 00 fb 48 c7 44 24 20 0e 36 e0 45 <4b> c7 04 37 00 00 00 00 43 c7 44 37 09 00 00 00 00 66 43 c7 44 37
+RSP: 0018:ffffc90000157700 EFLAGS: 00000283
+RAX: ffffffff815f84df RBX: 0000000000000000 RCX: 0000000000040000
+RDX: ffffc900020f1000 RSI: 00000000000001c3 RDI: 00000000000001c4
+RBP: ffffc900001577e8 R08: ffffffff815f84af R09: 1ffffffff25ee4bd
+R10: dffffc0000000000 R11: fffffbfff25ee4be R12: 0000000000800001
+R13: 0000000000000046 R14: 1ffff9200002aee4 R15: dffffc0000000000
+ queue_work include/linux/workqueue.h:621 [inline]
+ kick_hub_wq+0x119/0x250 drivers/usb/core/hub.c:724
+ hub_irq+0x321/0x460 drivers/usb/core/hub.c:804
+ __usb_hcd_giveback_urb+0x373/0x530 drivers/usb/core/hcd.c:1648
+ usb_giveback_urb_bh+0x306/0x4e0 drivers/usb/core/hcd.c:1682
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3312
+ bh_worker+0x2a5/0x620 kernel/workqueue.c:3572
+ tasklet_hi_action+0xf/0x90 kernel/softirq.c:816
+ handle_softirqs+0x2c4/0x970 kernel/softirq.c:554
+ run_ksoftirqd+0xca/0x130 kernel/softirq.c:928
+ smpboot_thread_fn+0x544/0xa30 kernel/smpboot.c:164
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+----------------
+Code disassembly (best guess):
+   0:	75 19                	jne    0x1b
+   2:	e8 ca 90 36 00       	call   0x3690d1
+   7:	eb 18                	jmp    0x21
+   9:	e8 c3 90 36 00       	call   0x3690d1
+   e:	e8 ee 02 1e 0a       	call   0xa1e0301
+  13:	48 83 7c 24 10 00    	cmpq   $0x0,0x10(%rsp)
+  19:	74 e7                	je     0x2
+  1b:	e8 b1 90 36 00       	call   0x3690d1
+  20:	fb                   	sti
+  21:	48 c7 44 24 20 0e 36 	movq   $0x45e0360e,0x20(%rsp)
+  28:	e0 45
+* 2a:	4b c7 04 37 00 00 00 	movq   $0x0,(%r15,%r14,1) <-- trapping instruction
+  31:	00
+  32:	43 c7 44 37 09 00 00 	movl   $0x0,0x9(%r15,%r14,1)
+  39:	00 00
+  3b:	66                   	data16
+  3c:	43                   	rex.XB
+  3d:	c7                   	.byte 0xc7
+  3e:	44 37                	rex.R (bad)

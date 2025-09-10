@@ -1,0 +1,25 @@
+id: 4bb6356bb29d6299360e
+bug_link: https://syzkaller.appspot.com/bug?extid=4bb6356bb29d6299360e
+title: kernel BUG in rxrpc_put_call
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 80c825296134a8285d970a868187fef32e7c2b9f
+fix_commit: 01644a1f98ff45a4044395ce2bbfd534747e0676
+datetime: '2023-01-12T21:51:55-08:00'
+fix_commit_message: "rxrpc: Fix wrong error return in rxrpc_connect_call()\n\nFix\
+  \ rxrpc_connect_call() to return -ENOMEM rather than 0 if it fails to\nlook up a\
+  \ peer.\n\nThis generated a smatch warning:\n        net/rxrpc/call_object.c:303\
+  \ rxrpc_connect_call() warn: missing error code 'ret'\n\nI think this also fixes\
+  \ a syzbot-found bug:\n\n        rxrpc: Assertion failed - 1(0x1) == 11(0xb) is\
+  \ false\n        ------------[ cut here ]------------\n        kernel BUG at net/rxrpc/call_object.c:645!\n\
+  \nwhere the call being put is in the wrong state - as would be the case if we\n\
+  failed to clear up correctly after the error in rxrpc_connect_call().\n\nFixes:\
+  \ 9d35d880e0e4 (\"rxrpc: Move client call connection to the I/O thread\")\nReported-by:\
+  \ kernel test robot <lkp@intel.com>\nReported-by: Dan Carpenter <error27@gmail.com>\n\
+  Reported-and-tested-by: syzbot+4bb6356bb29d6299360e@syzkaller.appspotmail.com\n\
+  Signed-off-by: David Howells <dhowells@redhat.com>\nLink: https://lore.kernel.org/r/202301111153.9eZRYLf1-lkp@intel.com/\n\
+  Reviewed-by: Alexander Duyck <alexanderduyck@fb.com>\nLink: https://lore.kernel.org/r/2438405.1673460435@warthog.procyon.org.uk\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- net/rxrpc
+hunk_count: 1
+covered_count: 0

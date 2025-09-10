@@ -1,0 +1,49 @@
+id: f116bc1994efe725d51b
+bug_link: https://syzkaller.appspot.com/bug?extid=f116bc1994efe725d51b
+title: 'INFO: rcu detected stall in corrupted'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 819dd92b9c0bc7bce9097d8c1f14240f471bb386
+fix_commit: 1d88ba1ebb2763aa86172cd7ca05dedbeccc0d35
+datetime: '2018-06-05T10:22:45-04:00'
+fix_commit_message: 'sctp: not allow transport timeout value less than HZ/5 for hb_timer
+
+
+  syzbot reported a rcu_sched self-detected stall on CPU which is caused
+
+  by too small value set on rto_min with SCTP_RTOINFO sockopt. With this
+
+  value, hb_timer will get stuck there, as in its timer handler it starts
+
+  this timer again with this value, then goes to the timer handler again.
+
+
+  This problem is there since very beginning, and thanks to Eric for the
+
+  reproducer shared from a syzbot mail.
+
+
+  This patch fixes it by not allowing sctp_transport_timeout to return a
+
+  smaller value than HZ/5 for hb_timer, which is based on TCP''s min rto.
+
+
+  Note that it doesn''t fix this issue by limiting rto_min, as some users
+
+  are still using small rto and no proper value was found for it yet.
+
+
+  Reported-by: syzbot+3dcd59a1f907245f891f@syzkaller.appspotmail.com
+
+  Suggested-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>
+
+  Signed-off-by: Xin Long <lucien.xin@gmail.com>
+
+  Acked-by: Neil Horman <nhorman@tuxdriver.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/sctp
+hunk_count: 1
+covered_count: 0

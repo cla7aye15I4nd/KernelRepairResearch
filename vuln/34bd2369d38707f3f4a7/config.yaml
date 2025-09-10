@@ -1,0 +1,25 @@
+id: 34bd2369d38707f3f4a7
+bug_link: https://syzkaller.appspot.com/bug?extid=34bd2369d38707f3f4a7
+title: general protection fault in hash_ipportnet4_uadt
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1d9a7acd3d1e74c2d150d8934f7f55bed6d70858
+fix_commit: 22dad713b8a5ff488e07b821195270672f486eb2
+datetime: '2020-01-08T23:31:46+01:00'
+fix_commit_message: "netfilter: ipset: avoid null deref when IPSET_ATTR_LINENO is\
+  \ present\n\nThe set uadt functions assume lineno is never NULL, but it is in\n\
+  case of ip_set_utest().\n\nsyzkaller managed to generate a netlink message that\
+  \ calls this with\nLINENO attr present:\n\ngeneral protection fault: 0000 [#1] PREEMPT\
+  \ SMP KASAN\nRIP: 0010:hash_mac4_uadt+0x1bc/0x470 net/netfilter/ipset/ip_set_hash_mac.c:104\n\
+  Call Trace:\n ip_set_utest+0x55b/0x890 net/netfilter/ipset/ip_set_core.c:1867\n\
+  \ nfnetlink_rcv_msg+0xcf2/0xfb0 net/netfilter/nfnetlink.c:229\n netlink_rcv_skb+0x177/0x450\
+  \ net/netlink/af_netlink.c:2477\n nfnetlink_rcv+0x1ba/0x460 net/netfilter/nfnetlink.c:563\n\
+  \npass a dummy lineno storage, its easier than patching all set\nimplementations.\n\
+  \nThis seems to be a day-0 bug.\n\nCc: Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>\n\
+  Reported-by: syzbot+34bd2369d38707f3f4a7@syzkaller.appspotmail.com\nFixes: a7b4f989a6294\
+  \ (\"netfilter: ipset: IP set core support\")\nSigned-off-by: Florian Westphal <fw@strlen.de>\n\
+  Acked-by: Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>\nSigned-off-by: Pablo Neira\
+  \ Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 2
+covered_count: 2

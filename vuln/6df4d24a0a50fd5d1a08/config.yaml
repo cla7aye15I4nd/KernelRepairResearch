@@ -1,0 +1,25 @@
+id: 6df4d24a0a50fd5d1a08
+bug_link: https://syzkaller.appspot.com/bug?extid=6df4d24a0a50fd5d1a08
+title: 'WARNING: refcount bug in kvm_vm_ioctl'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8834f5600cf3c8db365e18a3d5cac2c2780c81e5
+fix_commit: cfa39381173d5f969daf43582c95ad679189cbc9
+datetime: '2019-02-07T19:02:38+01:00'
+fix_commit_message: "kvm: fix kvm_ioctl_create_device() reference counting (CVE-2019-6974)\n\
+  \nkvm_ioctl_create_device() does the following:\n\n1. creates a device that holds\
+  \ a reference to the VM object (with a borrowed\n   reference, the VM's refcount\
+  \ has not been bumped yet)\n2. initializes the device\n3. transfers the reference\
+  \ to the device to the caller's file descriptor table\n4. calls kvm_get_kvm() to\
+  \ turn the borrowed reference to the VM into a real\n   reference\n\nThe ownership\
+  \ transfer in step 3 must not happen before the reference to the VM\nbecomes a proper,\
+  \ non-borrowed reference, which only happens in step 4.\nAfter step 3, an attacker\
+  \ can close the file descriptor and drop the borrowed\nreference, which can cause\
+  \ the refcount of the kvm object to drop to zero.\n\nThis means that we need to\
+  \ grab a reference for the device before\nanon_inode_getfd(), otherwise the VM can\
+  \ disappear from under us.\n\nFixes: 852b6d57dc7f (\"kvm: add device control API\"\
+  )\nCc: stable@kernel.org\nSigned-off-by: Jann Horn <jannh@google.com>\nSigned-off-by:\
+  \ Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- virt/kvm
+hunk_count: 2
+covered_count: 2

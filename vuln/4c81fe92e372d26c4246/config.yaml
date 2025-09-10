@@ -1,0 +1,59 @@
+id: 4c81fe92e372d26c4246
+bug_link: https://syzkaller.appspot.com/bug?extid=4c81fe92e372d26c4246
+title: 'net-next test error: BUG: sleeping function called from invalid context in
+  sta_info_move_state'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b2911a84396f72149dce310a3b64d8948212c1b3
+fix_commit: 7bc40aedf24d31d8bea80e1161e996ef4299fb10
+datetime: '2020-11-13T09:48:32+01:00'
+fix_commit_message: 'mac80211: free sta in sta_info_insert_finish() on errors
+
+
+  If sta_info_insert_finish() fails, we currently keep the station
+
+  around and free it only in the caller, but there''s only one such
+
+  caller and it always frees it immediately.
+
+
+  As syzbot found, another consequence of this split is that we can
+
+  put things that sleep only into __cleanup_single_sta() and not in
+
+  sta_info_free(), but this is the only place that requires such of
+
+  sta_info_free() now.
+
+
+  Change this to free the station in sta_info_insert_finish(), in
+
+  which case we can still sleep. This will also let us unify the
+
+  cleanup code later.
+
+
+  Cc: stable@vger.kernel.org
+
+  Fixes: dcd479e10a05 ("mac80211: always wind down STA state")
+
+  Reported-by: syzbot+32c6c38c4812d22f2f0b@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+4c81fe92e372d26c4246@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+6a7fe9faf0d1d61bc24a@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+abed06851c5ffe010921@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+b7aeb9318541a1c709f1@syzkaller.appspotmail.com
+
+  Reported-by: syzbot+d5a9416c6cafe53b5dd0@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/r/20201112112201.ee6b397b9453.I9c31d667a0ea2151441cc64ed6613d36c18a48e0@changeid
+
+  Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+  '
+submodule:
+- net/mac80211
+hunk_count: 2
+covered_count: 2

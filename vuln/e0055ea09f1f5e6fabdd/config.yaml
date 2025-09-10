@@ -1,0 +1,29 @@
+id: e0055ea09f1f5e6fabdd
+bug_link: https://syzkaller.appspot.com/bug?extid=e0055ea09f1f5e6fabdd
+title: possible deadlock in ocfs2_get_system_file_inode
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5ca60b86f57a4d9648f68418a725b3a7de2816b0
+fix_commit: 7bf1823e010e8db2fb649c790bd1b449a75f52d8
+datetime: '2024-09-26T14:01:44-07:00'
+fix_commit_message: "ocfs2: fix deadlock in ocfs2_get_system_file_inode\n\nsyzbot\
+  \ has found a possible deadlock in ocfs2_get_system_file_inode [1].\n\nThe scenario\
+  \ is depicted here,\n\n\tCPU0\t\t\t\t\tCPU1\nlock(&ocfs2_file_ip_alloc_sem_key);\n\
+  \                               lock(&osb->system_file_mutex);\n               \
+  \                lock(&ocfs2_file_ip_alloc_sem_key);\nlock(&osb->system_file_mutex);\n\
+  \nThe function calls which could lead to this are:\n\nCPU0\nocfs2_mknod - lock(&ocfs2_file_ip_alloc_sem_key);\n\
+  .\n.\n.\nocfs2_get_system_file_inode - lock(&osb->system_file_mutex);\n\nCPU1 -\n\
+  ocfs2_fill_super - lock(&osb->system_file_mutex);\n.\n.\n.\nocfs2_read_virt_blocks\
+  \ - lock(&ocfs2_file_ip_alloc_sem_key);\n\nThis issue can be resolved by making\
+  \ the down_read -> down_read_try\nin the ocfs2_read_virt_blocks.\n\n[1] https://syzkaller.appspot.com/bug?extid=e0055ea09f1f5e6fabdd\n\
+  \nLink: https://lkml.kernel.org/r/20240924093257.7181-1-pvmohammedanees2003@gmail.com\n\
+  Signed-off-by: Mohammed Anees <pvmohammedanees2003@gmail.com>\nReviewed-by: Joseph\
+  \ Qi <joseph.qi@linux.alibaba.com>\nReported-by: <syzbot+e0055ea09f1f5e6fabdd@syzkaller.appspotmail.com>\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=e0055ea09f1f5e6fabdd\nTested-by:\
+  \ syzbot+e0055ea09f1f5e6fabdd@syzkaller.appspotmail.com\nCc: Mark Fasheh <mark@fasheh.com>\n\
+  Cc: Joel Becker <jlbec@evilplan.org>\nCc: Junxiao Bi <junxiao.bi@oracle.com>\nCc:\
+  \ Changwei Ge <gechangwei@live.cn>\nCc: Gang He <ghe@suse.com>\nCc: Jun Piao <piaojun@huawei.com>\n\
+  Cc:  <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- fs/ocfs2
+hunk_count: 1
+covered_count: 1

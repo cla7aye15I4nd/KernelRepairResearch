@@ -1,0 +1,61 @@
+XFS (loop0): Mounting V5 Filesystem bfdc47fc-10d8-4eed-a562-11a831b3f791
+XFS (loop0): Ending clean mount
+XFS (loop0): Quotacheck needed: Please wait.
+XFS (loop0): Quotacheck: Done.
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 6440 at ./include/linux/fsnotify.h:145 fsnotify_file_area_perm+0x20c/0x25c include/linux/fsnotify.h:145
+Modules linked in:
+CPU: 1 UID: 0 PID: 6440 Comm: syz-executor370 Not tainted 6.14.0-rc4-syzkaller-ge056da87c780 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+pstate: 80400005 (Nzcv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+pc : fsnotify_file_area_perm+0x20c/0x25c include/linux/fsnotify.h:145
+lr : fsnotify_file_area_perm+0x20c/0x25c include/linux/fsnotify.h:145
+sp : ffff8000a42569d0
+x29: ffff8000a42569d0 x28: ffff0000dcec1b48 x27: ffff0000d68a1708
+x26: ffff0000d68a16c0 x25: dfff800000000000 x24: 0000000000008000
+x23: 0000000000000001 x22: ffff8000a4256b00 x21: 0000000000001000
+x20: 0000000000000010 x19: ffff0000d68a16c0 x18: ffff8000a42566e0
+x17: 000000000000e388 x16: ffff800080466c24 x15: 0000000000000001
+x14: 1fffe0001b31513c x13: 0000000000000000 x12: 0000000000000000
+x11: 0000000000000001 x10: 0000000000ff0100 x9 : 0000000000000000
+x8 : ffff0000c6d98000 x7 : 0000000000000000 x6 : 0000000000000000
+x5 : 0000000000000020 x4 : 0000000000000000 x3 : 0000000000001000
+x2 : ffff8000a4256b00 x1 : 0000000000000001 x0 : 0000000000000000
+Call trace:
+ fsnotify_file_area_perm+0x20c/0x25c include/linux/fsnotify.h:145 (P)
+ filemap_fault+0x12b0/0x1518 mm/filemap.c:3509
+ xfs_filemap_fault+0xc4/0x194 fs/xfs/xfs_file.c:1543
+ __do_fault+0xf8/0x498 mm/memory.c:4988
+ do_read_fault mm/memory.c:5403 [inline]
+ do_fault mm/memory.c:5537 [inline]
+ do_pte_missing mm/memory.c:4058 [inline]
+ handle_pte_fault+0x3504/0x57b0 mm/memory.c:5900
+ __handle_mm_fault mm/memory.c:6043 [inline]
+ handle_mm_fault+0xfa8/0x188c mm/memory.c:6212
+ do_page_fault+0x570/0x10a8 arch/arm64/mm/fault.c:690
+ do_translation_fault+0xc4/0x114 arch/arm64/mm/fault.c:783
+ do_mem_abort+0x74/0x200 arch/arm64/mm/fault.c:919
+ el1_abort+0x3c/0x5c arch/arm64/kernel/entry-common.c:432
+ el1h_64_sync_handler+0x60/0xcc arch/arm64/kernel/entry-common.c:510
+ el1h_64_sync+0x6c/0x70 arch/arm64/kernel/entry.S:595
+ __uaccess_mask_ptr arch/arm64/include/asm/uaccess.h:169 [inline] (P)
+ fault_in_readable+0x168/0x310 mm/gup.c:2234 (P)
+ fault_in_iov_iter_readable+0x1dc/0x22c lib/iov_iter.c:94
+ iomap_write_iter fs/iomap/buffered-io.c:950 [inline]
+ iomap_file_buffered_write+0x490/0xd54 fs/iomap/buffered-io.c:1039
+ xfs_file_buffered_write+0x2dc/0xac8 fs/xfs/xfs_file.c:792
+ xfs_file_write_iter+0x2c4/0x6ac fs/xfs/xfs_file.c:881
+ new_sync_write fs/read_write.c:586 [inline]
+ vfs_write+0x704/0xa9c fs/read_write.c:679
+ ksys_pwrite64 fs/read_write.c:786 [inline]
+ __do_sys_pwrite64 fs/read_write.c:794 [inline]
+ __se_sys_pwrite64 fs/read_write.c:791 [inline]
+ __arm64_sys_pwrite64+0x188/0x220 fs/read_write.c:791
+ __invoke_syscall arch/arm64/kernel/syscall.c:35 [inline]
+ invoke_syscall+0x98/0x2b8 arch/arm64/kernel/syscall.c:49
+ el0_svc_common+0x130/0x23c arch/arm64/kernel/syscall.c:132
+ do_el0_svc+0x48/0x58 arch/arm64/kernel/syscall.c:151
+ el0_svc+0x54/0x168 arch/arm64/kernel/entry-common.c:744
+ el0t_64_sync_handler+0x84/0x108 arch/arm64/kernel/entry-common.c:762
+ el0t_64_sync+0x198/0x19c arch/arm64/kernel/entry.S:600
+irq event stamp:

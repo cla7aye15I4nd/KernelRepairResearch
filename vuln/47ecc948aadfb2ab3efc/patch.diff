@@ -1,0 +1,40 @@
+diff --git a/fs/bcachefs/journal_sb.c b/fs/bcachefs/journal_sb.c
+index db80e506e3ab..62b910f2fb27 100644
+--- a/fs/bcachefs/journal_sb.c
++++ b/fs/bcachefs/journal_sb.c
+@@ -104,6 +104,7 @@ static int bch2_sb_journal_v2_validate(struct bch_sb *sb, struct bch_sb_field *f
+ 	struct bch_sb_field_journal_v2 *journal = field_to_type(f, journal_v2);
+ 	struct bch_member m = bch2_sb_member_get(sb, sb->dev_idx);
+ 	int ret = -BCH_ERR_invalid_sb_journal;
++	u64 sum = 0;
+ 	unsigned nr;
+ 	unsigned i;
+ 	struct u64_range *b;
+@@ -119,6 +120,15 @@ static int bch2_sb_journal_v2_validate(struct bch_sb *sb, struct bch_sb_field *f
+ 	for (i = 0; i < nr; i++) {
+ 		b[i].start = le64_to_cpu(journal->d[i].start);
+ 		b[i].end = b[i].start + le64_to_cpu(journal->d[i].nr);
++
++		if (b[i].end <= b[i].start) {
++			prt_printf(err, "journal buckets entry with bad nr: %llu+%llu",
++				   le64_to_cpu(journal->d[i].start),
++				   le64_to_cpu(journal->d[i].nr));
++			goto err;
++		}
++
++		sum += le64_to_cpu(journal->d[i].nr);
+ 	}
+ 
+ 	sort(b, nr, sizeof(*b), u64_range_cmp, NULL);
+@@ -148,6 +158,11 @@ static int bch2_sb_journal_v2_validate(struct bch_sb *sb, struct bch_sb_field *f
+ 		}
+ 	}
+ 
++	if (sum > UINT_MAX) {
++		prt_printf(err, "too many journal buckets: %llu > %u", sum, UINT_MAX);
++		goto err;
++	}
++
+ 	ret = 0;
+ err:
+ 	kfree(b);

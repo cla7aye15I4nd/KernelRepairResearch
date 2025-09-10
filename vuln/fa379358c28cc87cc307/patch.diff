@@ -1,0 +1,27 @@
+diff --git a/include/net/af_unix.h b/include/net/af_unix.h
+index 627ea8e2d915..3dee0b2721aa 100644
+--- a/include/net/af_unix.h
++++ b/include/net/af_unix.h
+@@ -85,6 +85,9 @@ enum unix_socket_lock_class {
+ 	U_LOCK_NORMAL,
+ 	U_LOCK_SECOND,	/* for double locking, see unix_state_double_lock(). */
+ 	U_LOCK_DIAG, /* used while dumping icons, see sk_diag_dump_icons(). */
++	U_LOCK_GC_LISTENER, /* used for listening socket while determining gc
++			     * candidates to close a small race window.
++			     */
+ };
+ 
+ static inline void unix_state_lock_nested(struct sock *sk,
+diff --git a/net/unix/garbage.c b/net/unix/garbage.c
+index 6433a414acf8..0104be9d4704 100644
+--- a/net/unix/garbage.c
++++ b/net/unix/garbage.c
+@@ -299,7 +299,7 @@ static void __unix_gc(struct work_struct *work)
+ 			__set_bit(UNIX_GC_MAYBE_CYCLE, &u->gc_flags);
+ 
+ 			if (sk->sk_state == TCP_LISTEN) {
+-				unix_state_lock(sk);
++				unix_state_lock_nested(sk, U_LOCK_GC_LISTENER);
+ 				unix_state_unlock(sk);
+ 			}
+ 		}

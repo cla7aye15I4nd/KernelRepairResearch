@@ -1,0 +1,29 @@
+id: 47d8cb2f2cc1517e515a
+bug_link: https://syzkaller.appspot.com/bug?extid=47d8cb2f2cc1517e515a
+title: general protection fault in ocfs2_evict_inode (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5cc5e030bce2ec97ae5cdb2c1b94a98b1047b3fa
+fix_commit: f46e8ef8bb7b452584f2e75337b619ac51a7cadf
+datetime: '2025-08-27T22:45:41-07:00'
+fix_commit_message: "ocfs2: prevent release journal inode after journal shutdown\n\
+  \nBefore calling ocfs2_delete_osb(), ocfs2_journal_shutdown() has already\nbeen\
+  \ executed in ocfs2_dismount_volume(), so osb->journal must be NULL. \nTherefore,\
+  \ the following calltrace will inevitably fail when it reaches\njbd2_journal_release_jbd_inode().\n\
+  \nocfs2_dismount_volume()->\n  ocfs2_delete_osb()->\n    ocfs2_free_slot_info()->\n\
+  \      __ocfs2_free_slot_info()->\n        evict()->\n          ocfs2_evict_inode()->\n\
+  \            ocfs2_clear_inode()->\n\t      jbd2_journal_release_jbd_inode(osb->journal->j_journal,\n\
+  \nAdding osb->journal checks will prevent null-ptr-deref during the above\nexecution\
+  \ path.\n\nLink: https://lkml.kernel.org/r/tencent_357489BEAEE4AED74CBD67D246DBD2C4C606@qq.com\n\
+  Fixes: da5e7c87827e (\"ocfs2: cleanup journal init and shutdown\")\nSigned-off-by:\
+  \ Edward Adam Davis <eadavis@qq.com>\nReported-by: syzbot+47d8cb2f2cc1517e515a@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=47d8cb2f2cc1517e515a\nTested-by:\
+  \ syzbot+47d8cb2f2cc1517e515a@syzkaller.appspotmail.com\nReviewed-by: Mark Tinguely\
+  \ <mark.tinguely@oracle.com>\nReviewed-by: Joseph Qi <joseph.qi@linux.alibaba.com>\n\
+  Cc: Mark Fasheh <mark@fasheh.com>\nCc: Joel Becker <jlbec@evilplan.org>\nCc: Junxiao\
+  \ Bi <junxiao.bi@oracle.com>\nCc: Changwei Ge <gechangwei@live.cn>\nCc: Jun Piao\
+  \ <piaojun@huawei.com>\nCc: <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton\
+  \ <akpm@linux-foundation.org>\n"
+submodule:
+- fs/ocfs2
+hunk_count: 1
+covered_count: 1

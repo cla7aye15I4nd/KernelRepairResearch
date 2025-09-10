@@ -1,0 +1,29 @@
+id: d55372214aff0faa1f1f
+bug_link: https://syzkaller.appspot.com/bug?extid=d55372214aff0faa1f1f
+title: WARNING in dev_watchdog (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8d5855a5af9255e15da85388ce796052cd880113
+fix_commit: e316dd1cf1358ff9c44b37c7be273a7dc4349986
+datetime: '2023-11-15T10:25:12+00:00'
+fix_commit_message: "net: don't dump stack on queue timeout\n\nThe top syzbot report\
+  \ for networking (#14 for the entire kernel)\nis the queue timeout splat. We kept\
+  \ it around for a long time,\nbecause in real life it provides pretty strong signal\
+  \ that\nsomething is wrong with the driver or the device.\n\nRemoving it is also\
+  \ likely to break monitoring for those who\ntrack it as a kernel warning.\n\nNevertheless,\
+  \ WARN()ings are best suited for catching kernel\nprogramming bugs. If a Tx queue\
+  \ gets starved due to a pause\nstorm, priority configuration, or other weirdness\
+  \ - that's\nobviously a problem, but not a problem we can fix at\nthe kernel level.\n\
+  \nBite the bullet and convert the WARN() to a print.\n\nBefore:\n\n  NETDEV WATCHDOG:\
+  \ eni1np1 (netdevsim): transmit queue 0 timed out 1975 ms\n  WARNING: CPU: 0 PID:\
+  \ 0 at net/sched/sch_generic.c:525 dev_watchdog+0x39e/0x3b0\n  [... completely pointless\
+  \ stack trace of a timer follows ...]\n\nNow:\n\n  netdevsim netdevsim1 eni1np1:\
+  \ NETDEV WATCHDOG: CPU: 0: transmit queue 0 timed out 1769 ms\n\nAlternatively we\
+  \ could mark the drivers which syzbot has\nlearned to abuse as \"print-instead-of-WARN\"\
+  \ selectively.\n\nReported-by: syzbot+d55372214aff0faa1f1f@syzkaller.appspotmail.com\n\
+  Reviewed-by: Jiri Pirko <jiri@nvidia.com>\nReviewed-by: Eric Dumazet <edumazet@google.com>\n\
+  Reviewed-by: Jamal Hadi Salim <jhs@mojatatu.com>\nSigned-off-by: Jakub Kicinski\
+  \ <kuba@kernel.org>\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sched
+hunk_count: 1
+covered_count: 1

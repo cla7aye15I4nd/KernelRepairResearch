@@ -1,0 +1,65 @@
+loop0: detected capacity change from 0 to 32768
+bcachefs (loop0): mounting version 1.7: mi_btree_bitmap opts=metadata_checksum=none,data_checksum=none,nojournal_transaction_names
+bcachefs (loop0): recovering from clean shutdown, journal seq 10
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/replicas.c:28!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 PID: 5080 Comm: syz-executor136 Not tainted 6.9.0-syzkaller-08284-gea5f6ad9ad96 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+RIP: 0010:verify_replicas_entry fs/bcachefs/replicas.c:28 [inline]
+RIP: 0010:__replicas_entry_idx+0x331/0x350 fs/bcachefs/replicas.c:233
+Code: d9 80 e1 07 80 c1 03 38 c1 0f 8c d7 fe ff ff 48 89 df e8 a2 d5 be fd e9 ca fe ff ff e8 68 11 5d fd 90 0f 0b e8 60 11 5d fd 90 <0f> 0b e8 58 11 5d fd 90 0f 0b e8 50 11 5d fd 90 0f 0b 66 2e 0f 1f
+RSP: 0018:ffffc9000333ef70 EFLAGS: 00010293
+RAX: ffffffff84391de0 RBX: 0000000000000004 RCX: ffff8880295d3c00
+RDX: 0000000000000000 RSI: 000000000000007f RDI: 0000000000000009
+RBP: 000000000000007f R08: ffffffff84391b58 R09: ffffffff8438288d
+R10: 0000000000000007 R11: ffff8880295d3c00 R12: ffff888024a22088
+R13: ffff888024a22088 R14: 0000000000000001 R15: ffff888078a80000
+FS:  0000555570a13380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055d9915fa648 CR3: 0000000023958000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_replicas_entry_idx fs/bcachefs/replicas.c:248 [inline]
+ bch2_replicas_set_usage+0x2ff/0x710 fs/bcachefs/replicas.c:625
+ journal_replay_early+0xba/0x4f0 fs/bcachefs/recovery.c:411
+ bch2_fs_recovery+0x39c2/0x63b0 fs/bcachefs/recovery.c:747
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1043
+ bch2_fs_open+0xa8d/0xdf0 fs/bcachefs/super.c:2105
+ bch2_mount+0x71d/0x1320 fs/bcachefs/fs.c:1906
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2a0 fs/super.c:1779
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3352
+ do_mount fs/namespace.c:3692 [inline]
+ __do_sys_mount fs/namespace.c:3898 [inline]
+ __se_sys_mount+0x2d9/0x3c0 fs/namespace.c:3875
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f1f34ceddea
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffefbf78468 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffefbf78480 RCX: 00007f1f34ceddea
+RDX: 0000000020011a00 RSI: 0000000020000280 RDI: 00007ffefbf78480
+RBP: 0000000000000004 R08: 00007ffefbf784c0 R09: 00000000000119f8
+R10: 0000000001200014 R11: 0000000000000282 R12: 0000000001200014
+R13: 00007ffefbf784c0 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:verify_replicas_entry fs/bcachefs/replicas.c:28 [inline]
+RIP: 0010:__replicas_entry_idx+0x331/0x350 fs/bcachefs/replicas.c:233
+Code: d9 80 e1 07 80 c1 03 38 c1 0f 8c d7 fe ff ff 48 89 df e8 a2 d5 be fd e9 ca fe ff ff e8 68 11 5d fd 90 0f 0b e8 60 11 5d fd 90 <0f> 0b e8 58 11 5d fd 90 0f 0b e8 50 11 5d fd 90 0f 0b 66 2e 0f 1f
+RSP: 0018:ffffc9000333ef70 EFLAGS: 00010293
+RAX: ffffffff84391de0 RBX: 0000000000000004 RCX: ffff8880295d3c00
+RDX: 0000000000000000 RSI: 000000000000007f RDI: 0000000000000009
+RBP: 000000000000007f R08: ffffffff84391b58 R09: ffffffff8438288d
+R10: 0000000000000007 R11: ffff8880295d3c00 R12: ffff888024a22088
+R13: ffff888024a22088 R14: 0000000000000001 R15: ffff888078a80000
+FS:  0000555570a13380(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055d9915fa648 CR3: 0000000023958000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

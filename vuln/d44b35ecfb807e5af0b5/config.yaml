@@ -1,0 +1,59 @@
+id: d44b35ecfb807e5af0b5
+bug_link: https://syzkaller.appspot.com/bug?extid=d44b35ecfb807e5af0b5
+title: WARNING in scsi_alloc_sgtables
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a3435afba87dc6cd83f5595e7607f3c40f93ef01
+fix_commit: d9a434fa0c12ed5f7afe1e9dd30003ab5d059b85
+datetime: '2022-07-26T21:54:30-04:00'
+fix_commit_message: "scsi: core: Fix warning in scsi_alloc_sgtables()\n\nAs explained\
+  \ in SG_IO howto[1]:\n\n\"If iovec_count is non-zero then 'dxfer_len' should be\
+  \ equal to the sum of\niov_len lengths. If not, the minimum of the two is the transfer\
+  \ length.\"\n\nWhen iovec_count is non-zero and dxfer_len is zero, the sg_io() just\n\
+  genarated a null bio, and finally caused a warning below. To fix it, skip\ngenerating\
+  \ a bio for this request if dxfer_len is zero.\n\n[1] https://tldp.org/HOWTO/SCSI-Generic-HOWTO/x198.html\n\
+  \nWARNING: CPU: 2 PID: 3643 at drivers/scsi/scsi_lib.c:1032 scsi_alloc_sgtables+0xc7d/0xf70\
+  \ drivers/scsi/scsi_lib.c:1032\nModules linked in:\n\nCPU: 2 PID: 3643 Comm: syz-executor397\
+  \ Not tainted\n5.17.0-rc3-syzkaller-00316-gb81b1829e7e3 #0\nHardware name: QEMU\
+  \ Standard PC (Q35 + ICH9, 2009), BIOS 1.14.0-204/01/2014\nRIP: 0010:scsi_alloc_sgtables+0xc7d/0xf70\
+  \ drivers/scsi/scsi_lib.c:1032\nCode: e7 fc 31 ff 44 89 f6 e8 c1 4e e7 fc 45 85\
+  \ f6 0f 84 1a f5 ff ff e8\n93 4c e7 fc 83 c5 01 0f b7 ed e9 0f f5 ff ff e8 83 4c\
+  \ e7 fc <0f> 0b 41\n   bc 0a 00 00 00 e9 2b fb ff ff 41 bc 09 00 00 00 e9 20 fb\n\
+  RSP: 0018:ffffc90000d07558 EFLAGS: 00010293\nRAX: 0000000000000000 RBX: ffff88801bfc96a0\
+  \ RCX: 0000000000000000\nRDX: ffff88801c876000 RSI: ffffffff849060bd RDI: 0000000000000003\n\
+  RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000\nR10: ffffffff849055b9\
+  \ R11: 0000000000000000 R12: ffff888012b8c000\nR13: ffff88801bfc9580 R14: 0000000000000000\
+  \ R15: ffff88801432c000\nFS:  00007effdec8e700(0000) GS:ffff88802cc00000(0000)\n\
+  knlGS:0000000000000000\nCS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2:\
+  \ 00007effdec6d718 CR3: 00000000206d6000 CR4: 0000000000150ee0\nDR0: 0000000000000000\
+  \ DR1: 0000000000000000 DR2: 0000000000000000\nDR3: 0000000000000000 DR6: 00000000fffe0ff0\
+  \ DR7: 0000000000000400\nCall Trace:\n <TASK>\n scsi_setup_scsi_cmnd drivers/scsi/scsi_lib.c:1219\
+  \ [inline]\n scsi_prepare_cmd drivers/scsi/scsi_lib.c:1614 [inline]\n scsi_queue_rq+0x283e/0x3630\
+  \ drivers/scsi/scsi_lib.c:1730\n blk_mq_dispatch_rq_list+0x6ea/0x22e0 block/blk-mq.c:1851\n\
+  \ __blk_mq_sched_dispatch_requests+0x20b/0x410 block/blk-mq-sched.c:299\n blk_mq_sched_dispatch_requests+0xfb/0x180\
+  \ block/blk-mq-sched.c:332\n __blk_mq_run_hw_queue+0xf9/0x350 block/blk-mq.c:1968\n\
+  \ __blk_mq_delay_run_hw_queue+0x5b6/0x6c0 block/blk-mq.c:2045\n blk_mq_run_hw_queue+0x30f/0x480\
+  \ block/blk-mq.c:2096\n blk_mq_sched_insert_request+0x340/0x440 block/blk-mq-sched.c:451\n\
+  \ blk_execute_rq+0xcc/0x340 block/blk-mq.c:1231\n sg_io+0x67c/0x1210 drivers/scsi/scsi_ioctl.c:485\n\
+  \ scsi_ioctl_sg_io drivers/scsi/scsi_ioctl.c:866 [inline]\n scsi_ioctl+0xa66/0x1560\
+  \ drivers/scsi/scsi_ioctl.c:921\n sd_ioctl+0x199/0x2a0 drivers/scsi/sd.c:1576\n\
+  \ blkdev_ioctl+0x37a/0x800 block/ioctl.c:588\n vfs_ioctl fs/ioctl.c:51 [inline]\n\
+  \ __do_sys_ioctl fs/ioctl.c:874 [inline]\n __se_sys_ioctl fs/ioctl.c:860 [inline]\n\
+  \ __x64_sys_ioctl+0x193/0x200 fs/ioctl.c:860\n do_syscall_x64 arch/x86/entry/common.c:50\
+  \ [inline]\n do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x44/0xae\n\
+  RIP: 0033:0x7effdecdc5d9\nCode: 28 00 00 00 75 05 48 83 c4 28 c3 e8 81 14 00 00\
+  \ 90 48 89 f8 48 89\nf7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05\
+  \ <48> 3d 01\nf0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48\nRSP: 002b:00007effdec8e2f8\
+  \ EFLAGS: 00000246 ORIG_RAX: 0000000000000010\nRAX: ffffffffffffffda RBX: 00007effded664c0\
+  \ RCX: 00007effdecdc5d9\nRDX: 0000000020002300 RSI: 0000000000002285 RDI: 0000000000000004\n\
+  RBP: 00007effded34034 R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000\
+  \ R11: 0000000000000246 R12: 0000000000000003\nR13: 00007effded34054 R14: 2f30656c69662f2e\
+  \ R15: 00007effded664c8\n\nLink: https://lore.kernel.org/r/20220720025120.3226770-1-yanaijie@huawei.com\n\
+  Fixes: 25636e282fe9 (\"block: fix SG_IO vector request data length handling\")\n\
+  Reported-by: syzbot+d44b35ecfb807e5af0b5@syzkaller.appspotmail.com\nReviewed-by:\
+  \ Christoph Hellwig <hch@lst.de>\nReviewed-by: Bart Van Assche <bvanassche@acm.org>\n\
+  Signed-off-by: Jason Yan <yanaijie@huawei.com>\nSigned-off-by: Martin K. Petersen\
+  \ <martin.petersen@oracle.com>\n"
+submodule:
+- drivers/scsi
+hunk_count: 1
+covered_count: 1

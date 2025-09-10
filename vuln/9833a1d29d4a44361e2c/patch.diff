@@ -1,0 +1,97 @@
+diff --git a/fs/bcachefs/bkey.c b/fs/bcachefs/bkey.c
+index 76e79a15ba08..952299a2e416 100644
+--- a/fs/bcachefs/bkey.c
++++ b/fs/bcachefs/bkey.c
+@@ -656,20 +656,17 @@ int bch2_bkey_format_invalid(struct bch_fs *c,
+ 	 * unpacked format:
+ 	 */
+ 	for (i = 0; i < f->nr_fields; i++) {
+-		if (!c || c->sb.version_min >= bcachefs_metadata_version_snapshot) {
++		if ((!c || c->sb.version_min >= bcachefs_metadata_version_snapshot) &&
++		    bch2_bkey_format_field_overflows(f, i)) {
+ 			unsigned unpacked_bits = bch2_bkey_format_current.bits_per_field[i];
+ 			u64 unpacked_max = ~((~0ULL << 1) << (unpacked_bits - 1));
+ 			u64 packed_max = f->bits_per_field[i]
+ 				? ~((~0ULL << 1) << (f->bits_per_field[i] - 1))
+ 				: 0;
+-			u64 field_offset = le64_to_cpu(f->field_offset[i]);
+ 
+-			if (packed_max + field_offset < packed_max ||
+-			    packed_max + field_offset > unpacked_max) {
+-				prt_printf(err, "field %u too large: %llu + %llu > %llu",
+-					   i, packed_max, field_offset, unpacked_max);
+-				return -BCH_ERR_invalid;
+-			}
++			prt_printf(err, "field %u too large: %llu + %llu > %llu",
++				   i, packed_max, le64_to_cpu(f->field_offset[i]), unpacked_max);
++			return -BCH_ERR_invalid;
+ 		}
+ 
+ 		bits += f->bits_per_field[i];
+diff --git a/fs/bcachefs/bkey.h b/fs/bcachefs/bkey.h
+index 3a45d128f608..1bb0bd4371b0 100644
+--- a/fs/bcachefs/bkey.h
++++ b/fs/bcachefs/bkey.h
+@@ -574,6 +574,29 @@ static inline void bch2_bkey_format_add_key(struct bkey_format_state *s, const s
+ 
+ void bch2_bkey_format_add_pos(struct bkey_format_state *, struct bpos);
+ struct bkey_format bch2_bkey_format_done(struct bkey_format_state *);
++
++static inline bool bch2_bkey_format_field_overflows(struct bkey_format *f, unsigned i)
++{
++	unsigned f_bits = f->bits_per_field[i];
++	unsigned unpacked_bits = bch2_bkey_format_current.bits_per_field[i];
++	u64 unpacked_mask = ~((~0ULL << 1) << (unpacked_bits - 1));
++	u64 field_offset = le64_to_cpu(f->field_offset[i]);
++
++	if (f_bits > unpacked_bits)
++		return true;
++
++	if ((f_bits == unpacked_bits) && field_offset)
++		return true;
++
++	u64 f_mask = f_bits
++		? ~((~0ULL << (f_bits - 1)) << 1)
++		: 0;
++
++	if (((field_offset + f_mask) & unpacked_mask) < field_offset)
++		return true;
++	return false;
++}
++
+ int bch2_bkey_format_invalid(struct bch_fs *, struct bkey_format *,
+ 			     enum bkey_invalid_flags, struct printbuf *);
+ void bch2_bkey_format_to_text(struct printbuf *, const struct bkey_format *);
+diff --git a/fs/bcachefs/move.c b/fs/bcachefs/move.c
+index 4d94b7742dbb..45984a688e5b 100644
+--- a/fs/bcachefs/move.c
++++ b/fs/bcachefs/move.c
+@@ -975,26 +975,10 @@ static bool migrate_btree_pred(struct bch_fs *c, void *arg,
+  */
+ static bool bformat_needs_redo(struct bkey_format *f)
+ {
+-	for (unsigned i = 0; i < f->nr_fields; i++) {
+-		unsigned f_bits = f->bits_per_field[i];
+-		unsigned unpacked_bits = bch2_bkey_format_current.bits_per_field[i];
+-		u64 unpacked_mask = ~((~0ULL << 1) << (unpacked_bits - 1));
+-		u64 field_offset = le64_to_cpu(f->field_offset[i]);
+-
+-		if (f_bits > unpacked_bits)
+-			return true;
+-
+-		if ((f_bits == unpacked_bits) && field_offset)
++	for (unsigned i = 0; i < f->nr_fields; i++)
++		if (bch2_bkey_format_field_overflows(f, i))
+ 			return true;
+ 
+-		u64 f_mask = f_bits
+-			? ~((~0ULL << (f_bits - 1)) << 1)
+-			: 0;
+-
+-		if (((field_offset + f_mask) & unpacked_mask) < field_offset)
+-			return true;
+-	}
+-
+ 	return false;
+ }
+ 

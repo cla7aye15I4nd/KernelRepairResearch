@@ -1,0 +1,323 @@
+=====================================================
+WARNING: HARDIRQ-safe -> HARDIRQ-unsafe lock order detected
+6.8.0-syzkaller-08951-gfe46a7dd189e #0 Not tainted
+-----------------------------------------------------
+rcu_exp_gp_kthr/18 [HC0[0]:SC0[2]:HE0:SE0] is trying to acquire:
+ffff88802f1b4820 (&htab->buckets[i].lock){+...}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ffff88802f1b4820 (&htab->buckets[i].lock){+...}-{2:2}, at: sock_hash_delete_elem+0xcb/0x260 net/core/sock_map.c:939
+
+and this task is already holding:
+ffffffff8d7bc598 (&rcu_state.expedited_wq){-.-.}-{2:2}, at: finish_swait+0xc5/0x280 kernel/sched/swait.c:139
+which would create a new lock dependency:
+ (&rcu_state.expedited_wq){-.-.}-{2:2} -> (&htab->buckets[i].lock){+...}-{2:2}
+
+but this new dependency connects a HARDIRQ-irq-safe lock:
+ (&rcu_state.expedited_wq){-.-.}-{2:2}
+
+... which became HARDIRQ-irq-safe at:
+  lock_acquire kernel/locking/lockdep.c:5754 [inline]
+  lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+  __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+  _raw_spin_lock_irqsave+0x3a/0x60 kernel/locking/spinlock.c:162
+  swake_up_one+0x1a/0x1b0 kernel/sched/swait.c:51
+  csd_do_func kernel/smp.c:133 [inline]
+  __flush_smp_call_function_queue+0x41f/0x8c0 kernel/smp.c:542
+  __sysvec_call_function_single+0x8c/0x3a0 arch/x86/kernel/smp.c:271
+  instr_sysvec_call_function_single arch/x86/kernel/smp.c:266 [inline]
+  sysvec_call_function_single+0x90/0xb0 arch/x86/kernel/smp.c:266
+  asm_sysvec_call_function_single+0x1a/0x20 arch/x86/include/asm/idtentry.h:709
+  trace_event_eval_update+0x1de/0xfe0 kernel/trace/trace_events.c:2916
+  trace_insert_eval_map kernel/trace/trace.c:6294 [inline]
+  eval_map_work_func+0x3d/0x50 kernel/trace/trace.c:10069
+  process_one_work+0x9a9/0x1a60 kernel/workqueue.c:3254
+  process_scheduled_works kernel/workqueue.c:3335 [inline]
+  worker_thread+0x6c8/0xf70 kernel/workqueue.c:3416
+  kthread+0x2c1/0x3a0 kernel/kthread.c:388
+  ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+  ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+
+to a HARDIRQ-irq-unsafe lock:
+ (&htab->buckets[i].lock){+...}-{2:2}
+
+... which became HARDIRQ-irq-unsafe at:
+...
+  lock_acquire kernel/locking/lockdep.c:5754 [inline]
+  lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+  __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+  _raw_spin_lock_bh+0x33/0x40 kernel/locking/spinlock.c:178
+  spin_lock_bh include/linux/spinlock.h:356 [inline]
+  sock_hash_delete_elem+0xcb/0x260 net/core/sock_map.c:939
+  ___bpf_prog_run+0x3e51/0xae80 kernel/bpf/core.c:1997
+  __bpf_prog_run32+0xc1/0x100 kernel/bpf/core.c:2236
+  bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+  __bpf_prog_run include/linux/filter.h:657 [inline]
+  bpf_prog_run include/linux/filter.h:664 [inline]
+  __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+  bpf_trace_run2+0x151/0x420 kernel/trace/bpf_trace.c:2420
+  __bpf_trace_contention_end+0xca/0x110 include/trace/events/lock.h:122
+  trace_contention_end+0xce/0x120 include/trace/events/lock.h:122
+  __mutex_lock_common kernel/locking/mutex.c:617 [inline]
+  __mutex_lock+0x19c/0x9c0 kernel/locking/mutex.c:752
+  futex_cleanup_begin kernel/futex/core.c:1091 [inline]
+  futex_exit_release+0x2a/0x220 kernel/futex/core.c:1143
+  exit_mm_release+0x19/0x30 kernel/fork.c:1652
+  exit_mm kernel/exit.c:542 [inline]
+  do_exit+0x865/0x2be0 kernel/exit.c:865
+  do_group_exit+0xd3/0x2a0 kernel/exit.c:1027
+  __do_sys_exit_group kernel/exit.c:1038 [inline]
+  __se_sys_exit_group kernel/exit.c:1036 [inline]
+  __x64_sys_exit_group+0x3e/0x50 kernel/exit.c:1036
+  do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+  do_syscall_64+0xd2/0x260 arch/x86/entry/common.c:83
+  entry_SYSCALL_64_after_hwframe+0x6d/0x75
+
+other info that might help us debug this:
+
+ Possible interrupt unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&htab->buckets[i].lock);
+                               local_irq_disable();
+                               lock(&rcu_state.expedited_wq);
+                               lock(&htab->buckets[i].lock);
+  <Interrupt>
+    lock(&rcu_state.expedited_wq);
+
+ *** DEADLOCK ***
+
+2 locks held by rcu_exp_gp_kthr/18:
+ #0: ffffffff8d7bc598 (&rcu_state.expedited_wq){-.-.}-{2:2}, at: finish_swait+0xc5/0x280 kernel/sched/swait.c:139
+ #1: ffffffff8d7b08e0 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:298 [inline]
+ #1: ffffffff8d7b08e0 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:750 [inline]
+ #1: ffffffff8d7b08e0 (rcu_read_lock){....}-{1:2}, at: __bpf_trace_run kernel/trace/bpf_trace.c:2380 [inline]
+ #1: ffffffff8d7b08e0 (rcu_read_lock){....}-{1:2}, at: bpf_trace_run2+0xe4/0x420 kernel/trace/bpf_trace.c:2420
+
+the dependencies between HARDIRQ-irq-safe lock and the holding lock:
+-> (&rcu_state.expedited_wq){-.-.}-{2:2} {
+   IN-HARDIRQ-W at:
+                    lock_acquire kernel/locking/lockdep.c:5754 [inline]
+                    lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+                    __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+                    _raw_spin_lock_irqsave+0x3a/0x60 kernel/locking/spinlock.c:162
+                    swake_up_one+0x1a/0x1b0 kernel/sched/swait.c:51
+                    csd_do_func kernel/smp.c:133 [inline]
+                    __flush_smp_call_function_queue+0x41f/0x8c0 kernel/smp.c:542
+                    __sysvec_call_function_single+0x8c/0x3a0 arch/x86/kernel/smp.c:271
+                    instr_sysvec_call_function_single arch/x86/kernel/smp.c:266 [inline]
+                    sysvec_call_function_single+0x90/0xb0 arch/x86/kernel/smp.c:266
+                    asm_sysvec_call_function_single+0x1a/0x20 arch/x86/include/asm/idtentry.h:709
+                    trace_event_eval_update+0x1de/0xfe0 kernel/trace/trace_events.c:2916
+                    trace_insert_eval_map kernel/trace/trace.c:6294 [inline]
+                    eval_map_work_func+0x3d/0x50 kernel/trace/trace.c:10069
+                    process_one_work+0x9a9/0x1a60 kernel/workqueue.c:3254
+                    process_scheduled_works kernel/workqueue.c:3335 [inline]
+                    worker_thread+0x6c8/0xf70 kernel/workqueue.c:3416
+                    kthread+0x2c1/0x3a0 kernel/kthread.c:388
+                    ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+                    ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+   IN-SOFTIRQ-W at:
+                    lock_acquire kernel/locking/lockdep.c:5754 [inline]
+                    lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+                    __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+                    _raw_spin_lock_irqsave+0x3a/0x60 kernel/locking/spinlock.c:162
+                    swake_up_one+0x1a/0x1b0 kernel/sched/swait.c:51
+                    rcu_report_exp_rdp kernel/rcu/tree_exp.h:260 [inline]
+                    rcu_preempt_deferred_qs_irqrestore+0x592/0xb80 kernel/rcu/tree_plugin.h:506
+                    rcu_softirq_qs+0x1b/0x1c0 kernel/rcu/tree.c:246
+                    __do_softirq+0x71a/0x8de kernel/softirq.c:568
+                    run_ksoftirqd kernel/softirq.c:924 [inline]
+                    run_ksoftirqd+0x35/0x60 kernel/softirq.c:916
+                    smpboot_thread_fn+0x661/0xa10 kernel/smpboot.c:164
+                    kthread+0x2c1/0x3a0 kernel/kthread.c:388
+                    ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+                    ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+   INITIAL USE at:
+                   lock_acquire kernel/locking/lockdep.c:5754 [inline]
+                   lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+                   __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+                   _raw_spin_lock_irqsave+0x3a/0x60 kernel/locking/spinlock.c:162
+                   prepare_to_swait_event+0x1f/0x470 kernel/sched/swait.c:107
+                   synchronize_rcu_expedited_wait_once kernel/rcu/tree_exp.h:516 [inline]
+                   synchronize_rcu_expedited_wait kernel/rcu/tree_exp.h:570 [inline]
+                   rcu_exp_wait_wake+0x2a2/0x15e0 kernel/rcu/tree_exp.h:641
+                   kthread_worker_fn+0x305/0xab0 kernel/kthread.c:841
+                   kthread+0x2c1/0x3a0 kernel/kthread.c:388
+                   ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+                   ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+ }
+ ... key      at: [<ffffffff946869c0>] __key.3+0x0/0x40
+
+the dependencies between the lock to be acquired
+ and HARDIRQ-irq-unsafe lock:
+-> (&htab->buckets[i].lock){+...}-{2:2} {
+   HARDIRQ-ON-W at:
+                    lock_acquire kernel/locking/lockdep.c:5754 [inline]
+                    lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+                    __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+                    _raw_spin_lock_bh+0x33/0x40 kernel/locking/spinlock.c:178
+                    spin_lock_bh include/linux/spinlock.h:356 [inline]
+                    sock_hash_delete_elem+0xcb/0x260 net/core/sock_map.c:939
+                    ___bpf_prog_run+0x3e51/0xae80 kernel/bpf/core.c:1997
+                    __bpf_prog_run32+0xc1/0x100 kernel/bpf/core.c:2236
+                    bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+                    __bpf_prog_run include/linux/filter.h:657 [inline]
+                    bpf_prog_run include/linux/filter.h:664 [inline]
+                    __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+                    bpf_trace_run2+0x151/0x420 kernel/trace/bpf_trace.c:2420
+                    __bpf_trace_contention_end+0xca/0x110 include/trace/events/lock.h:122
+                    trace_contention_end+0xce/0x120 include/trace/events/lock.h:122
+                    __mutex_lock_common kernel/locking/mutex.c:617 [inline]
+                    __mutex_lock+0x19c/0x9c0 kernel/locking/mutex.c:752
+                    futex_cleanup_begin kernel/futex/core.c:1091 [inline]
+                    futex_exit_release+0x2a/0x220 kernel/futex/core.c:1143
+                    exit_mm_release+0x19/0x30 kernel/fork.c:1652
+                    exit_mm kernel/exit.c:542 [inline]
+                    do_exit+0x865/0x2be0 kernel/exit.c:865
+                    do_group_exit+0xd3/0x2a0 kernel/exit.c:1027
+                    __do_sys_exit_group kernel/exit.c:1038 [inline]
+                    __se_sys_exit_group kernel/exit.c:1036 [inline]
+                    __x64_sys_exit_group+0x3e/0x50 kernel/exit.c:1036
+                    do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+                    do_syscall_64+0xd2/0x260 arch/x86/entry/common.c:83
+                    entry_SYSCALL_64_after_hwframe+0x6d/0x75
+   INITIAL USE at:
+                   lock_acquire kernel/locking/lockdep.c:5754 [inline]
+                   lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+                   __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+                   _raw_spin_lock_bh+0x33/0x40 kernel/locking/spinlock.c:178
+                   spin_lock_bh include/linux/spinlock.h:356 [inline]
+                   sock_hash_delete_elem+0xcb/0x260 net/core/sock_map.c:939
+                   ___bpf_prog_run+0x3e51/0xae80 kernel/bpf/core.c:1997
+                   __bpf_prog_run32+0xc1/0x100 kernel/bpf/core.c:2236
+                   bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+                   __bpf_prog_run include/linux/filter.h:657 [inline]
+                   bpf_prog_run include/linux/filter.h:664 [inline]
+                   __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+                   bpf_trace_run2+0x151/0x420 kernel/trace/bpf_trace.c:2420
+                   __bpf_trace_contention_end+0xca/0x110 include/trace/events/lock.h:122
+                   trace_contention_end+0xce/0x120 include/trace/events/lock.h:122
+                   __mutex_lock_common kernel/locking/mutex.c:617 [inline]
+                   __mutex_lock+0x19c/0x9c0 kernel/locking/mutex.c:752
+                   futex_cleanup_begin kernel/futex/core.c:1091 [inline]
+                   futex_exit_release+0x2a/0x220 kernel/futex/core.c:1143
+                   exit_mm_release+0x19/0x30 kernel/fork.c:1652
+                   exit_mm kernel/exit.c:542 [inline]
+                   do_exit+0x865/0x2be0 kernel/exit.c:865
+                   do_group_exit+0xd3/0x2a0 kernel/exit.c:1027
+                   __do_sys_exit_group kernel/exit.c:1038 [inline]
+                   __se_sys_exit_group kernel/exit.c:1036 [inline]
+                   __x64_sys_exit_group+0x3e/0x50 kernel/exit.c:1036
+                   do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+                   do_syscall_64+0xd2/0x260 arch/x86/entry/common.c:83
+                   entry_SYSCALL_64_after_hwframe+0x6d/0x75
+ }
+ ... key      at: [<ffffffff949c67c0>] __key.0+0x0/0x40
+ ... acquired at:
+   lock_acquire kernel/locking/lockdep.c:5754 [inline]
+   lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+   __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+   _raw_spin_lock_bh+0x33/0x40 kernel/locking/spinlock.c:178
+   spin_lock_bh include/linux/spinlock.h:356 [inline]
+   sock_hash_delete_elem+0xcb/0x260 net/core/sock_map.c:939
+   ___bpf_prog_run+0x3e51/0xae80 kernel/bpf/core.c:1997
+   __bpf_prog_run32+0xc1/0x100 kernel/bpf/core.c:2236
+   bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+   __bpf_prog_run include/linux/filter.h:657 [inline]
+   bpf_prog_run include/linux/filter.h:664 [inline]
+   __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+   bpf_trace_run2+0x151/0x420 kernel/trace/bpf_trace.c:2420
+   __bpf_trace_contention_end+0xca/0x110 include/trace/events/lock.h:122
+   trace_contention_end.constprop.0+0xe2/0x140 include/trace/events/lock.h:122
+   __pv_queued_spin_lock_slowpath+0x266/0xc80 kernel/locking/qspinlock.c:560
+   pv_queued_spin_lock_slowpath arch/x86/include/asm/paravirt.h:584 [inline]
+   queued_spin_lock_slowpath arch/x86/include/asm/qspinlock.h:51 [inline]
+   queued_spin_lock include/asm-generic/qspinlock.h:114 [inline]
+   do_raw_spin_lock+0x210/0x2c0 kernel/locking/spinlock_debug.c:116
+   __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:111 [inline]
+   _raw_spin_lock_irqsave+0x42/0x60 kernel/locking/spinlock.c:162
+   finish_swait+0xc5/0x280 kernel/sched/swait.c:139
+   synchronize_rcu_expedited_wait_once kernel/rcu/tree_exp.h:516 [inline]
+   synchronize_rcu_expedited_wait kernel/rcu/tree_exp.h:570 [inline]
+   rcu_exp_wait_wake+0x2db/0x15e0 kernel/rcu/tree_exp.h:641
+   kthread_worker_fn+0x305/0xab0 kernel/kthread.c:841
+   kthread+0x2c1/0x3a0 kernel/kthread.c:388
+   ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+   ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+
+
+stack backtrace:
+CPU: 1 PID: 18 Comm: rcu_exp_gp_kthr Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ print_bad_irq_dependency kernel/locking/lockdep.c:2626 [inline]
+ check_irq_usage+0xe3c/0x1490 kernel/locking/lockdep.c:2865
+ check_prev_add kernel/locking/lockdep.c:3138 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain kernel/locking/lockdep.c:3869 [inline]
+ __lock_acquire+0x248e/0x3b30 kernel/locking/lockdep.c:5137
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x540 kernel/locking/lockdep.c:5719
+ __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+ _raw_spin_lock_bh+0x33/0x40 kernel/locking/spinlock.c:178
+ spin_lock_bh include/linux/spinlock.h:356 [inline]
+ sock_hash_delete_elem+0xcb/0x260 net/core/sock_map.c:939
+ ___bpf_prog_run+0x3e51/0xae80 kernel/bpf/core.c:1997
+ __bpf_prog_run32+0xc1/0x100 kernel/bpf/core.c:2236
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run2+0x151/0x420 kernel/trace/bpf_trace.c:2420
+ __bpf_trace_contention_end+0xca/0x110 include/trace/events/lock.h:122
+ trace_contention_end.constprop.0+0xe2/0x140 include/trace/events/lock.h:122
+ __pv_queued_spin_lock_slowpath+0x266/0xc80 kernel/locking/qspinlock.c:560
+ pv_queued_spin_lock_slowpath arch/x86/include/asm/paravirt.h:584 [inline]
+ queued_spin_lock_slowpath arch/x86/include/asm/qspinlock.h:51 [inline]
+ queued_spin_lock include/asm-generic/qspinlock.h:114 [inline]
+ do_raw_spin_lock+0x210/0x2c0 kernel/locking/spinlock_debug.c:116
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:111 [inline]
+ _raw_spin_lock_irqsave+0x42/0x60 kernel/locking/spinlock.c:162
+ finish_swait+0xc5/0x280 kernel/sched/swait.c:139
+ synchronize_rcu_expedited_wait_once kernel/rcu/tree_exp.h:516 [inline]
+ synchronize_rcu_expedited_wait kernel/rcu/tree_exp.h:570 [inline]
+ rcu_exp_wait_wake+0x2db/0x15e0 kernel/rcu/tree_exp.h:641
+ kthread_worker_fn+0x305/0xab0 kernel/kthread.c:841
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+ </TASK>
+------------[ cut here ]------------
+raw_local_irq_restore() called with IRQs enabled
+WARNING: CPU: 1 PID: 18 at kernel/locking/irqflag-debug.c:10 warn_bogus_irq_restore+0x29/0x30 kernel/locking/irqflag-debug.c:10
+Modules linked in:
+CPU: 1 PID: 18 Comm: rcu_exp_gp_kthr Not tainted 6.8.0-syzkaller-08951-gfe46a7dd189e #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+RIP: 0010:warn_bogus_irq_restore+0x29/0x30 kernel/locking/irqflag-debug.c:10
+Code: 90 f3 0f 1e fa 90 80 3d 72 d0 b5 04 00 74 06 90 c3 cc cc cc cc c6 05 63 d0 b5 04 01 90 48 c7 c7 c0 b1 0c 8b e8 78 6b 7d f6 90 <0f> 0b 90 90 eb df 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90
+RSP: 0018:ffffc90000177d38 EFLAGS: 00010286
+RAX: 0000000000000000 RBX: ffffffff8d7bc580 RCX: ffffffff814fafe9
+RDX: ffff888016ef9e00 RSI: ffffffff814faff6 RDI: 0000000000000001
+RBP: 0000000000000283 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000001 R12: 0000000000000a42
+R13: ffffffff8f9e7034 R14: 0000000000000000 R15: dffffc0000000000
+FS:  0000000000000000(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055558bbfdca8 CR3: 000000000d57a000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ __raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:151 [inline]
+ _raw_spin_unlock_irqrestore+0x74/0x80 kernel/locking/spinlock.c:194
+ synchronize_rcu_expedited_wait_once kernel/rcu/tree_exp.h:516 [inline]
+ synchronize_rcu_expedited_wait kernel/rcu/tree_exp.h:570 [inline]
+ rcu_exp_wait_wake+0x2db/0x15e0 kernel/rcu/tree_exp.h:641
+ kthread_worker_fn+0x305/0xab0 kernel/kthread.c:841
+ kthread+0x2c1/0x3a0 kernel/kthread.c:388
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:243
+ </TASK>

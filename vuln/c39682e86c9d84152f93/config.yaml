@@ -1,0 +1,36 @@
+id: c39682e86c9d84152f93
+bug_link: https://syzkaller.appspot.com/bug?extid=c39682e86c9d84152f93
+title: possible deadlock in static_key_slow_inc (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 292fd843de26c551856e66faf134512c52dd78b4
+fix_commit: 57dcd64c7e036299ef526b400a8d12b8a2352f26
+datetime: '2023-04-12T07:30:28-10:00'
+fix_commit_message: "cgroup,freezer: hold cpu_hotplug_lock before freezer_mutex\n\n\
+  syzbot is reporting circular locking dependency between cpu_hotplug_lock\nand freezer_mutex,\
+  \ for commit f5d39b020809 (\"freezer,sched: Rewrite core\nfreezer logic\") replaced\
+  \ atomic_inc() in freezer_apply_state() with\nstatic_branch_inc() which holds cpu_hotplug_lock.\n\
+  \ncpu_hotplug_lock => cgroup_threadgroup_rwsem => freezer_mutex\n\n  cgroup_file_write()\
+  \ {\n    cgroup_procs_write() {\n      __cgroup_procs_write() {\n        cgroup_procs_write_start()\
+  \ {\n          cgroup_attach_lock() {\n            cpus_read_lock() {\n        \
+  \      percpu_down_read(&cpu_hotplug_lock);\n            }\n            percpu_down_write(&cgroup_threadgroup_rwsem);\n\
+  \          }\n        }\n        cgroup_attach_task() {\n          cgroup_migrate()\
+  \ {\n            cgroup_migrate_execute() {\n              freezer_attach() {\n\
+  \                mutex_lock(&freezer_mutex);\n                (...snipped...)\n\
+  \              }\n            }\n          }\n        }\n        (...snipped...)\n\
+  \      }\n    }\n  }\n\nfreezer_mutex => cpu_hotplug_lock\n\n  cgroup_file_write()\
+  \ {\n    freezer_write() {\n      freezer_change_state() {\n        mutex_lock(&freezer_mutex);\n\
+  \        freezer_apply_state() {\n          static_branch_inc(&freezer_active) {\n\
+  \            static_key_slow_inc() {\n              cpus_read_lock();\n        \
+  \      static_key_slow_inc_cpuslocked();\n              cpus_read_unlock();\n  \
+  \          }\n          }\n        }\n        mutex_unlock(&freezer_mutex);\n  \
+  \    }\n    }\n  }\n\nSwap locking order by moving cpus_read_lock() in freezer_apply_state()\n\
+  to before mutex_lock(&freezer_mutex) in freezer_change_state().\n\nReported-by:\
+  \ syzbot <syzbot+c39682e86c9d84152f93@syzkaller.appspotmail.com>\nLink: https://syzkaller.appspot.com/bug?extid=c39682e86c9d84152f93\n\
+  Suggested-by: Hillf Danton <hdanton@sina.com>\nFixes: f5d39b020809 (\"freezer,sched:\
+  \ Rewrite core freezer logic\")\nSigned-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\n\
+  Acked-by: Peter Zijlstra (Intel) <peterz@infradead.org>\nReviewed-by: Mukesh Ojha\
+  \ <quic_mojha@quicinc.com>\nSigned-off-by: Tejun Heo <tj@kernel.org>\n"
+submodule:
+- kernel/cgroup
+hunk_count: 5
+covered_count: 5

@@ -1,0 +1,28 @@
+id: 5f47a8cea6a12b77a876
+bug_link: https://syzkaller.appspot.com/bug?extid=5f47a8cea6a12b77a876
+title: 'BUG: sleeping function called from invalid context in __might_resched'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0fcfb00b28c0b7884635dacf38e46d60bf3d4eb1
+fix_commit: 1ee33b1ca2b8dabfcc17198ffd049a6b55674a86
+datetime: '2021-12-15T21:50:39+01:00'
+fix_commit_message: "tty: n_hdlc: make n_hdlc_tty_wakeup() asynchronous\n\nsyzbot\
+  \ is reporting that an unprivileged user who logged in from tty\nconsole can crash\
+  \ the system using a reproducer shown below [1], for\nn_hdlc_tty_wakeup() is synchronously\
+  \ calling n_hdlc_send_frames().\n\n----------\n  #include <sys/ioctl.h>\n  #include\
+  \ <unistd.h>\n\n  int main(int argc, char *argv[])\n  {\n    const int disc = 0xd;\n\
+  \n    ioctl(1, TIOCSETD, &disc);\n    while (1) {\n      ioctl(1, TCXONC, 0);\n\
+  \      write(1, \"\", 1);\n      ioctl(1, TCXONC, 1); /* Kernel panic - not syncing:\
+  \ scheduling while atomic */\n    }\n  }\n----------\n\nLinus suspected that \"\
+  struct tty_ldisc\"->ops->write_wakeup() must not\nsleep, and Jiri confirmed it from\
+  \ include/linux/tty_ldisc.h. Thus, defer\nn_hdlc_send_frames() from n_hdlc_tty_wakeup()\
+  \ to a WQ context like\nnet/nfc/nci/uart.c does.\n\nLink: https://syzkaller.appspot.com/bug?extid=5f47a8cea6a12b77a876\
+  \ [1]\nReported-by: syzbot <syzbot+5f47a8cea6a12b77a876@syzkaller.appspotmail.com>\n\
+  Cc: stable <stable@vger.kernel.org>\nAnalyzed-by: Fabio M. De Francesco <fmdefrancesco@gmail.com>\n\
+  Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>\nConfirmed-by: Jiri\
+  \ Slaby <jirislaby@kernel.org>\nReviewed-by: Fabio M. De Francesco <fmdefrancesco@gmail.com>\n\
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nLink: https://lore.kernel.org/r/40de8b7e-a3be-4486-4e33-1b1d1da452f8@i-love.sakura.ne.jp\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty
+hunk_count: 6
+covered_count: 2

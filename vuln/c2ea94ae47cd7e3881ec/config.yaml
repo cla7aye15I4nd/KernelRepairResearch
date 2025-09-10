@@ -1,0 +1,52 @@
+id: c2ea94ae47cd7e3881ec
+bug_link: https://syzkaller.appspot.com/bug?extid=c2ea94ae47cd7e3881ec
+title: 'BUG: unable to handle kernel paging request in ocfs2_unlock_and_free_folios'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aa644c405291a419e92b112e2279c01c410e9a26
+fix_commit: 2ae826799932ff89409f56636ad3c25578fe7cf5
+datetime: '2025-07-09T22:57:53-07:00'
+fix_commit_message: 'ocfs2: reset folio to NULL when get folio fails
+
+
+  The reproducer uses FAULT_INJECTION to make memory allocation fail, which
+
+  causes __filemap_get_folio() to fail, when initializing w_folios[i] in
+
+  ocfs2_grab_folios_for_write(), it only returns an error code and the value
+
+  of w_folios[i] is the error code, which causes
+
+  ocfs2_unlock_and_free_folios() to recycle the invalid w_folios[i] when
+
+  releasing folios.
+
+
+  Link: https://lkml.kernel.org/r/20250616013140.3602219-1-lizhi.xu@windriver.com
+
+  Reported-by: syzbot+c2ea94ae47cd7e3881ec@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=c2ea94ae47cd7e3881ec
+
+  Signed-off-by: Lizhi Xu <lizhi.xu@windriver.com>
+
+  Reviewed-by: Joseph Qi <joseph.qi@linux.alibaba.com>
+
+  Cc: Mark Fasheh <mark@fasheh.com>
+
+  Cc: Joel Becker <jlbec@evilplan.org>
+
+  Cc: Junxiao Bi <junxiao.bi@oracle.com>
+
+  Cc: Changwei Ge <gechangwei@live.cn>
+
+  Cc: Jun Piao <piaojun@huawei.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/ocfs2
+hunk_count: 1
+covered_count: 0

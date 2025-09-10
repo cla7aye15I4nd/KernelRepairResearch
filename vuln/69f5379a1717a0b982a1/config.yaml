@@ -1,0 +1,63 @@
+id: 69f5379a1717a0b982a1
+bug_link: https://syzkaller.appspot.com/bug?extid=69f5379a1717a0b982a1
+title: 'UBSAN: array-index-out-of-bounds in read_inline_xattr'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4811fee8283f3f7416dd66e2303a55f6761187fc
+fix_commit: 5c1768b6725049e1fcfc841924d65f2872413000
+datetime: '2025-01-16T17:27:51+00:00'
+fix_commit_message: "f2fs: fix to do sanity check correctly on i_inline_xattr_size\n\
+  \nsyzbot reported an out-of-range access issue as below:\n\nUBSAN: array-index-out-of-bounds\
+  \ in fs/f2fs/f2fs.h:3292:19\nindex 18446744073709550491 is out of range for type\
+  \ '__le32[923]' (aka 'unsigned int[923]')\nCPU: 0 UID: 0 PID: 5338 Comm: syz.0.0\
+  \ Not tainted 6.12.0-syzkaller-10689-g7af08b57bcb9 #0\nHardware name: QEMU Standard\
+  \ PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014\nCall Trace:\n\
+  \ <TASK>\n __dump_stack lib/dump_stack.c:94 [inline]\n dump_stack_lvl+0x241/0x360\
+  \ lib/dump_stack.c:120\n ubsan_epilogue lib/ubsan.c:231 [inline]\n __ubsan_handle_out_of_bounds+0x121/0x150\
+  \ lib/ubsan.c:429\n read_inline_xattr+0x273/0x280\n lookup_all_xattrs fs/f2fs/xattr.c:341\
+  \ [inline]\n f2fs_getxattr+0x57b/0x13b0 fs/f2fs/xattr.c:533\n vfs_getxattr_alloc+0x472/0x5c0\
+  \ fs/xattr.c:393\n ima_read_xattr+0x38/0x60 security/integrity/ima/ima_appraise.c:229\n\
+  \ process_measurement+0x117a/0x1fb0 security/integrity/ima/ima_main.c:353\n ima_file_check+0xd9/0x120\
+  \ security/integrity/ima/ima_main.c:572\n security_file_post_open+0xb9/0x280 security/security.c:3121\n\
+  \ do_open fs/namei.c:3830 [inline]\n path_openat+0x2ccd/0x3590 fs/namei.c:3987\n\
+  \ do_file_open_root+0x3a7/0x720 fs/namei.c:4039\n file_open_root+0x247/0x2a0 fs/open.c:1382\n\
+  \ do_handle_open+0x85b/0x9d0 fs/fhandle.c:414\n do_syscall_x64 arch/x86/entry/common.c:52\
+  \ [inline]\n do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\
+  \nindex: 18446744073709550491 (decimal, unsigned long long)\n= 0xfffffffffffffb9b\
+  \ (hexadecimal) = -1125 (decimal, long long)\nUBSAN detects that inline_xattr_addr()\
+  \ tries to access .i_addr[-1125].\n\nw/ below testcase, it can reproduce this bug\
+  \ easily:\n- mkfs.f2fs -f -O extra_attr,flexible_inline_xattr /dev/sdb\n- mount\
+  \ -o inline_xattr_size=512 /dev/sdb /mnt/f2fs\n- touch /mnt/f2fs/file\n- umount\
+  \ /mnt/f2fs\n- inject.f2fs --node --mb i_inline --nid 4 --val 0x1 /dev/sdb\n- inject.f2fs\
+  \ --node --mb i_inline_xattr_size --nid 4 --val 2048 /dev/sdb\n- mount /dev/sdb\
+  \ /mnt/f2fs\n- getfattr /mnt/f2fs/file\n\nThe root cause is if metadata of filesystem\
+  \ and inode were fuzzed as below:\n- extra_attr feature is enabled\n- flexible_inline_xattr\
+  \ feature is enabled\n- ri.i_inline_xattr_size = 2048\n- F2FS_EXTRA_ATTR bit in\
+  \ ri.i_inline was not set\n\nsanity_check_inode() will skip doing sanity check on\
+  \ fi->i_inline_xattr_size,\nresult in using invalid inline_xattr_size later incorrectly,\
+  \ fix it.\n\nMeanwhile, let's fix to check lower boundary for .i_inline_xattr_size\
+  \ w/\nMIN_INLINE_XATTR_SIZE like we did in parse_options().\n\nThere is a related\
+  \ issue reported by syzbot, Qasim Ijaz has anlyzed and\nfixed it w/ very similar\
+  \ way [1], as discussed, we all agree that it will\nbe better to do sanity check\
+  \ in sanity_check_inode() for fix, so finally,\nlet's fix these two related bugs\
+  \ w/ current patch.\n\nIncluding commit message from Qasim's patch as below, thanks\
+  \ a lot for\nhis contribution.\n\n\"In f2fs_getxattr(), the function lookup_all_xattrs()\
+  \ allocates a 12-byte\n(base_size) buffer for an inline extended attribute. However,\
+  \ when\n__find_inline_xattr() calls __find_xattr(), it uses the macro\n\"list_for_each_xattr(entry,\
+  \ addr)\", which starts by calling\nXATTR_FIRST_ENTRY(addr). This skips a 24-byte\
+  \ struct f2fs_xattr_header\nat the beginning of the buffer, causing an immediate\
+  \ out-of-bounds read\nin a 12-byte allocation. The subsequent !IS_XATTR_LAST_ENTRY(entry)\n\
+  check then dereferences memory outside the allocated region, triggering\nthe slab-out-of\
+  \ bounds read.\n\nThis patch prevents the out-of-bounds read by adding a check to\
+  \ bail\nout early if inline_size is too small and does not account for the\nheader\
+  \ plus the 4-byte value that IS_XATTR_LAST_ENTRY reads.\"\n\n[1]: https://lore.kernel.org/linux-f2fs-devel/Z32y1rfBY9Qb5ZjM@qasdev.system/\n\
+  \nFixes: 6afc662e68b5 (\"f2fs: support flexible inline xattr size\")\nReported-by:\
+  \ syzbot+69f5379a1717a0b982a1@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/linux-f2fs-devel/674f4e7d.050a0220.17bd51.004f.GAE@google.com\n\
+  Reported-by: syzbot <syzbot+f5e74075e096e757bdbf@syzkaller.appspotmail.com>\nCloses:\
+  \ https://syzkaller.appspot.com/bug?extid=f5e74075e096e757bdbf\nTested-by: syzbot\
+  \ <syzbot+f5e74075e096e757bdbf@syzkaller.appspotmail.com>\nTested-by: Qasim Ijaz\
+  \ <qasdev00@gmail.com>\nSigned-off-by: Chao Yu <chao@kernel.org>\nSigned-off-by:\
+  \ Jaegeuk Kim <jaegeuk@kernel.org>\n"
+submodule:
+- fs/f2fs
+hunk_count: 2
+covered_count: 0

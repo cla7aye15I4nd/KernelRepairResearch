@@ -1,0 +1,49 @@
+id: cc36d44ec9f368e443d3
+bug_link: https://syzkaller.appspot.com/bug?extid=cc36d44ec9f368e443d3
+title: WARNING in __io_uring_free
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 43eef70e7e2ac74e7767731dd806720c7fb5e010
+fix_commit: 7eb75ce7527129d7f1fee6951566af409a37a1c4
+datetime: '2024-11-29T07:20:28-07:00'
+fix_commit_message: 'io_uring/tctx: work around xa_store() allocation error issue
+
+
+  syzbot triggered the following WARN_ON:
+
+
+  WARNING: CPU: 0 PID: 16 at io_uring/tctx.c:51 __io_uring_free+0xfa/0x140 io_uring/tctx.c:51
+
+
+  which is the
+
+
+  WARN_ON_ONCE(!xa_empty(&tctx->xa));
+
+
+  sanity check in __io_uring_free() when a io_uring_task is going through
+
+  its final put. The syzbot test case includes injecting memory allocation
+
+  failures, and it very much looks like xa_store() can fail one of its
+
+  memory allocations and end up with ->head being non-NULL even though no
+
+  entries exist in the xarray.
+
+
+  Until this issue gets sorted out, work around it by attempting to
+
+  iterate entries in our xarray, and WARN_ON_ONCE() if one is found.
+
+
+  Reported-by: syzbot+cc36d44ec9f368e443d3@syzkaller.appspotmail.com
+
+  Link: https://lore.kernel.org/io-uring/673c1643.050a0220.87769.0066.GAE@google.com/
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 1
+covered_count: 1

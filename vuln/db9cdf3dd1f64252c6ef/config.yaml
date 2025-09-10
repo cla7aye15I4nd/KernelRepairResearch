@@ -1,0 +1,37 @@
+id: db9cdf3dd1f64252c6ef
+bug_link: https://syzkaller.appspot.com/bug?extid=db9cdf3dd1f64252c6ef
+title: possible deadlock in proc_pid_syscall (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 31784cff7ee073b34d6eddabb95e3be2880a425c
+fix_commit: f7cfd871ae0c5008d94b6f66834e7845caa93c15
+datetime: '2020-12-10T13:13:32-06:00'
+fix_commit_message: "exec: Transform exec_update_mutex into a rw_semaphore\n\nRecently\
+  \ syzbot reported[0] that there is a deadlock amongst the users\nof exec_update_mutex.\
+  \  The problematic lock ordering found by lockdep\nwas:\n\n   perf_event_open  (exec_update_mutex\
+  \ -> ovl_i_mutex)\n   chown            (ovl_i_mutex       -> sb_writes)\n   sendfile\
+  \         (sb_writes         -> p->lock)\n     by reading from a proc file and writing\
+  \ to overlayfs\n   proc_pid_syscall (p->lock           -> exec_update_mutex)\n\n\
+  While looking at possible solutions it occured to me that all of the\nusers and\
+  \ possible users involved only wanted to state of the given\nprocess to remain the\
+  \ same.  They are all readers.  The only writer is\nexec.\n\nThere is no reason\
+  \ for readers to block on each other.  So fix\nthis deadlock by transforming exec_update_mutex\
+  \ into a rw_semaphore\nnamed exec_update_lock that only exec takes for writing.\n\
+  \nCc: Jann Horn <jannh@google.com>\nCc: Vasiliy Kulikov <segoon@openwall.com>\n\
+  Cc: Al Viro <viro@zeniv.linux.org.uk>\nCc: Bernd Edlinger <bernd.edlinger@hotmail.de>\n\
+  Cc: Oleg Nesterov <oleg@redhat.com>\nCc: Christopher Yeoh <cyeoh@au1.ibm.com>\n\
+  Cc: Cyrill Gorcunov <gorcunov@gmail.com>\nCc: Sargun Dhillon <sargun@sargun.me>\n\
+  Cc: Christian Brauner <christian.brauner@ubuntu.com>\nCc: Arnd Bergmann <arnd@arndb.de>\n\
+  Cc: Peter Zijlstra <peterz@infradead.org>\nCc: Ingo Molnar <mingo@redhat.com>\n\
+  Cc: Arnaldo Carvalho de Melo <acme@kernel.org>\nFixes: eea9673250db (\"exec: Add\
+  \ exec_update_mutex to replace cred_guard_mutex\")\n[0] https://lkml.kernel.org/r/00000000000063640c05ade8e3de@google.com\n\
+  Reported-by: syzbot+db9cdf3dd1f64252c6ef@syzkaller.appspotmail.com\nLink: https://lkml.kernel.org/r/87ft4mbqen.fsf@x220.int.ebiederm.org\n\
+  Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>\n"
+submodule:
+- fs
+- fs/proc
+- include/linux/sched
+- init
+- kernel
+- kernel/events
+hunk_count: 24
+covered_count: 3

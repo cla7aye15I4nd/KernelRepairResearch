@@ -1,0 +1,37 @@
+id: fda18eaa8c12534ccb3b
+bug_link: https://syzkaller.appspot.com/bug?extid=fda18eaa8c12534ccb3b
+title: 'KASAN: slab-out-of-bounds Write in __build_skb_around'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 28d39503e4e06c2caf09a89865c81cfd9e4eae7c
+fix_commit: ce098da1497c6dee9589fce2c61d1910f4fcf0e7
+datetime: '2022-12-09T19:47:41-08:00'
+fix_commit_message: "skbuff: Introduce slab_build_skb()\n\nsyzkaller reported:\n\n\
+  \  BUG: KASAN: slab-out-of-bounds in __build_skb_around+0x235/0x340 net/core/skbuff.c:294\n\
+  \  Write of size 32 at addr ffff88802aa172c0 by task syz-executor413/5295\n\nFor\
+  \ bpf_prog_test_run_skb(), which uses a kmalloc()ed buffer passed to\nbuild_skb().\n\
+  \nWhen build_skb() is passed a frag_size of 0, it means the buffer came\nfrom kmalloc.\
+  \ In these cases, ksize() is used to find its actual size,\nbut since the allocation\
+  \ may not have been made to that size, actually\nperform the krealloc() call so\
+  \ that all the associated buffer size\nchecking will be correctly notified (and\
+  \ use the \"new\" pointer so that\ncompiler hinting works correctly). Split this\
+  \ logic out into a new\ninterface, slab_build_skb(), but leave the original 0 checking\
+  \ for now\nto catch any stragglers.\n\nReported-by: syzbot+fda18eaa8c12534ccb3b@syzkaller.appspotmail.com\n\
+  Link: https://groups.google.com/g/syzkaller-bugs/c/UnIKxTtU5-0/m/-wbXinkgAQAJ\n\
+  Fixes: 38931d8989b5 (\"mm: Make ksize() a reporting-only function\")\nCc: Pavel\
+  \ Begunkov <asml.silence@gmail.com>\nCc: pepsipu <soopthegoop@gmail.com>\nCc: syzbot+fda18eaa8c12534ccb3b@syzkaller.appspotmail.com\n\
+  Cc: Vlastimil Babka <vbabka@suse.cz>\nCc: kasan-dev <kasan-dev@googlegroups.com>\n\
+  Cc: Andrii Nakryiko <andrii@kernel.org>\nCc: ast@kernel.org\nCc: Daniel Borkmann\
+  \ <daniel@iogearbox.net>\nCc: Hao Luo <haoluo@google.com>\nCc: Jesper Dangaard Brouer\
+  \ <hawk@kernel.org>\nCc: John Fastabend <john.fastabend@gmail.com>\nCc: jolsa@kernel.org\n\
+  Cc: KP Singh <kpsingh@kernel.org>\nCc: martin.lau@linux.dev\nCc: Stanislav Fomichev\
+  \ <sdf@google.com>\nCc: song@kernel.org\nCc: Yonghong Song <yhs@fb.com>\nSigned-off-by:\
+  \ Kees Cook <keescook@chromium.org>\nLink: https://lore.kernel.org/r/20221208060256.give.994-kees@kernel.org\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net/ethernet/broadcom
+- drivers/net/ethernet/qlogic/qed
+- include/linux
+- net/bpf
+- net/core
+hunk_count: 6
+covered_count: 3

@@ -1,0 +1,53 @@
+id: 4d4af685432dc0e56c91
+bug_link: https://syzkaller.appspot.com/bug?extid=4d4af685432dc0e56c91
+title: 'BUG: corrupted list in team_nl_cmd_options_set'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 982e05001c472066ab288e4269ad6cab48889f0d
+fix_commit: 4fb0534fb7bbc2346ba7d3a072b538007f4135a5
+datetime: '2018-04-16T11:03:05-04:00'
+fix_commit_message: "team: avoid adding twice the same option to the event list\n\n\
+  When parsing the options provided by the user space,\nteam_nl_cmd_options_set()\
+  \ insert them in a temporary list to send\nmultiple events with a single message.\n\
+  While each option's attribute is correctly validated, the code does\nnot check for\
+  \ duplicate entries before inserting into the event\nlist.\n\nExploiting the above,\
+  \ the syzbot was able to trigger the following\nsplat:\n\nkernel BUG at lib/list_debug.c:31!\n\
+  invalid opcode: 0000 [#1] SMP KASAN\nDumping ftrace buffer:\n    (ftrace buffer\
+  \ empty)\nModules linked in:\nCPU: 0 PID: 4466 Comm: syzkaller556835 Not tainted\
+  \ 4.16.0+ #17\nHardware name: Google Google Compute Engine/Google Compute Engine,\
+  \ BIOS\nGoogle 01/01/2011\nRIP: 0010:__list_add_valid+0xaa/0xb0 lib/list_debug.c:29\n\
+  RSP: 0018:ffff8801b04bf248 EFLAGS: 00010286\nRAX: 0000000000000058 RBX: ffff8801c8fc7a90\
+  \ RCX: 0000000000000000\nRDX: 0000000000000058 RSI: ffffffff815fbf41 RDI: ffffed0036097e3f\n\
+  RBP: ffff8801b04bf260 R08: ffff8801b0b2a700 R09: ffffed003b604f90\nR10: ffffed003b604f90\
+  \ R11: ffff8801db027c87 R12: ffff8801c8fc7a90\nR13: ffff8801c8fc7a90 R14: dffffc0000000000\
+  \ R15: 0000000000000000\nFS:  0000000000b98880(0000) GS:ffff8801db000000(0000) knlGS:0000000000000000\n\
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 000000000043fc30 CR3: 00000001afe8e000\
+  \ CR4: 00000000001406f0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \  __list_add include/linux/list.h:60 [inline]\n  list_add include/linux/list.h:79\
+  \ [inline]\n  team_nl_cmd_options_set+0x9ff/0x12b0 drivers/net/team/team.c:2571\n\
+  \  genl_family_rcv_msg+0x889/0x1120 net/netlink/genetlink.c:599\n  genl_rcv_msg+0xc6/0x170\
+  \ net/netlink/genetlink.c:624\n  netlink_rcv_skb+0x172/0x440 net/netlink/af_netlink.c:2448\n\
+  \  genl_rcv+0x28/0x40 net/netlink/genetlink.c:635\n  netlink_unicast_kernel net/netlink/af_netlink.c:1310\
+  \ [inline]\n  netlink_unicast+0x58b/0x740 net/netlink/af_netlink.c:1336\n  netlink_sendmsg+0x9f0/0xfa0\
+  \ net/netlink/af_netlink.c:1901\n  sock_sendmsg_nosec net/socket.c:629 [inline]\n\
+  \  sock_sendmsg+0xd5/0x120 net/socket.c:639\n  ___sys_sendmsg+0x805/0x940 net/socket.c:2117\n\
+  \  __sys_sendmsg+0x115/0x270 net/socket.c:2155\n  SYSC_sendmsg net/socket.c:2164\
+  \ [inline]\n  SyS_sendmsg+0x29/0x30 net/socket.c:2162\n  do_syscall_64+0x29e/0x9d0\
+  \ arch/x86/entry/common.c:287\n  entry_SYSCALL_64_after_hwframe+0x42/0xb7\nRIP:\
+  \ 0033:0x4458b9\nRSP: 002b:00007ffd1d4a7278 EFLAGS: 00000213 ORIG_RAX: 000000000000002e\n\
+  RAX: ffffffffffffffda RBX: 000000000000001b RCX: 00000000004458b9\nRDX: 0000000000000010\
+  \ RSI: 0000000020000d00 RDI: 0000000000000004\nRBP: 00000000004a74ed R08: 0000000000000000\
+  \ R09: 0000000000000000\nR10: 0000000000000000 R11: 0000000000000213 R12: 00007ffd1d4a7348\n\
+  R13: 0000000000402a60 R14: 0000000000000000 R15: 0000000000000000\nCode: 75 e8 eb\
+  \ a9 48 89 f7 48 89 75 e8 e8 d1 85 7b fe 48 8b 75 e8 eb bb 48\n89 f2 48 89 d9 4c\
+  \ 89 e6 48 c7 c7 a0 84 d8 87 e8 ea 67 28 fe <0f> 0b 0f 1f\n40 00 48 b8 00 00 00\
+  \ 00 00 fc ff df 55 48 89 e5 41\nRIP: __list_add_valid+0xaa/0xb0 lib/list_debug.c:29\
+  \ RSP: ffff8801b04bf248\n\nThis changeset addresses the avoiding list_add() if the\
+  \ current\noption is already present in the event list.\n\nReported-and-tested-by:\
+  \ syzbot+4d4af685432dc0e56c91@syzkaller.appspotmail.com\nSigned-off-by: Paolo Abeni\
+  \ <pabeni@redhat.com>\nFixes: 2fcdb2c9e659 (\"team: allow to send multiple set events\
+  \ in one message\")\nSigned-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- drivers/net/team
+hunk_count: 2
+covered_count: 2

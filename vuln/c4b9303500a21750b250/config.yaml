@@ -1,0 +1,43 @@
+id: c4b9303500a21750b250
+bug_link: https://syzkaller.appspot.com/bug?extid=c4b9303500a21750b250
+title: 'KASAN: null-ptr-deref Write in io_file_get_normal'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6bf9c47a398911e0ab920e362115153596c80432
+fix_commit: d5361233e9ab920e135819f73dd8466355f1fddd
+datetime: '2022-04-07T11:17:37-06:00'
+fix_commit_message: 'io_uring: drop the old style inflight file tracking
+
+
+  io_uring tracks requests that are referencing an io_uring descriptor to
+
+  be able to cancel without worrying about loops in the references. Since
+
+  we now assign the file at execution time, the easier approach is to drop
+
+  a potentially problematic reference before we punt the request. This
+
+  eliminates the need to special case these types of files beyond just
+
+  marking them as such, and simplifies cancelation quite a bit.
+
+
+  This also fixes a recent issue where an async punted tee operation would
+
+  with the io_uring descriptor as the output file would crash when
+
+  attempting to get a reference to the file from the io-wq worker. We
+
+  could have worked around that, but this is the much cleaner fix.
+
+
+  Fixes: 6bf9c47a3989 ("io_uring: defer file assignment")
+
+  Reported-by: syzbot+c4b9303500a21750b250@syzkaller.appspotmail.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- fs
+hunk_count: 13
+covered_count: 2

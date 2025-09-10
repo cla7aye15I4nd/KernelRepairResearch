@@ -1,0 +1,45 @@
+diff --git a/include/linux/if_vlan.h b/include/linux/if_vlan.h
+index d11f41d5269f..78a5a90b4267 100644
+--- a/include/linux/if_vlan.h
++++ b/include/linux/if_vlan.h
+@@ -663,7 +663,7 @@ static inline bool skb_vlan_tagged(const struct sk_buff *skb)
+  * Returns true if the skb is tagged with multiple vlan headers, regardless
+  * of whether it is hardware accelerated or not.
+  */
+-static inline bool skb_vlan_tagged_multi(const struct sk_buff *skb)
++static inline bool skb_vlan_tagged_multi(struct sk_buff *skb)
+ {
+ 	__be16 protocol = skb->protocol;
+ 
+@@ -673,6 +673,9 @@ static inline bool skb_vlan_tagged_multi(const struct sk_buff *skb)
+ 		if (likely(!eth_type_vlan(protocol)))
+ 			return false;
+ 
++		if (unlikely(!pskb_may_pull(skb, VLAN_ETH_HLEN)))
++			return false;
++
+ 		veh = (struct vlan_ethhdr *)skb->data;
+ 		protocol = veh->h_vlan_encapsulated_proto;
+ 	}
+@@ -690,7 +693,7 @@ static inline bool skb_vlan_tagged_multi(const struct sk_buff *skb)
+  *
+  * Returns features without unsafe ones if the skb has multiple tags.
+  */
+-static inline netdev_features_t vlan_features_check(const struct sk_buff *skb,
++static inline netdev_features_t vlan_features_check(struct sk_buff *skb,
+ 						    netdev_features_t features)
+ {
+ 	if (skb_vlan_tagged_multi(skb)) {
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 969462ebb296..af0558b00c6c 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -2969,7 +2969,7 @@ netdev_features_t passthru_features_check(struct sk_buff *skb,
+ }
+ EXPORT_SYMBOL(passthru_features_check);
+ 
+-static netdev_features_t dflt_features_check(const struct sk_buff *skb,
++static netdev_features_t dflt_features_check(struct sk_buff *skb,
+ 					     struct net_device *dev,
+ 					     netdev_features_t features)
+ {

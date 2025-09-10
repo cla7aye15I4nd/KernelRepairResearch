@@ -1,0 +1,78 @@
+id: a67fc5321ffb4b311c98
+bug_link: https://syzkaller.appspot.com/bug?extid=a67fc5321ffb4b311c98
+title: general protection fault in d_path
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b85ea95d086471afb4ad062012a4d73cd328fa86
+fix_commit: 8a924db2d7b5eb69ba08b1a0af46e9f1359a9bdf
+datetime: '2023-11-18T14:54:07+01:00'
+fix_commit_message: 'fs: Pass AT_GETATTR_NOSEC flag to getattr interface function
+
+
+  When vfs_getattr_nosec() calls a filesystem''s getattr interface function
+
+  then the ''nosec'' should propagate into this function so that
+
+  vfs_getattr_nosec() can again be called from the filesystem''s gettattr
+
+  rather than vfs_getattr(). The latter would add unnecessary security
+
+  checks that the initial vfs_getattr_nosec() call wanted to avoid.
+
+  Therefore, introduce the getattr flag GETATTR_NOSEC and allow to pass
+
+  with the new getattr_flags parameter to the getattr interface function.
+
+  In overlayfs and ecryptfs use this flag to determine which one of the
+
+  two functions to call.
+
+
+  In a recent code change introduced to IMA vfs_getattr_nosec() ended up
+
+  calling vfs_getattr() in overlayfs, which in turn called
+
+  security_inode_getattr() on an exiting process that did not have
+
+  current->fs set anymore, which then caused a kernel NULL pointer
+
+  dereference. With this change the call to security_inode_getattr() can
+
+  be avoided, thus avoiding the NULL pointer dereference.
+
+
+  Reported-by: <syzbot+a67fc5321ffb4b311c98@syzkaller.appspotmail.com>
+
+  Fixes: db1d1e8b9867 ("IMA: use vfs_getattr_nosec to get the i_version")
+
+  Cc: Alexander Viro <viro@zeniv.linux.org.uk>
+
+  Cc: <linux-fsdevel@vger.kernel.org>
+
+  Cc: Miklos Szeredi <miklos@szeredi.hu>
+
+  Cc: Amir Goldstein <amir73il@gmail.com>
+
+  Cc: Tyler Hicks <code@tyhicks.com>
+
+  Cc: Mimi Zohar <zohar@linux.ibm.com>
+
+  Suggested-by: Christian Brauner <brauner@kernel.org>
+
+  Co-developed-by: Amir Goldstein <amir73il@gmail.com>
+
+  Signed-off-by: Stefan Berger <stefanb@linux.ibm.com>
+
+  Link: https://lore.kernel.org/r/20231002125733.1251467-1-stefanb@linux.vnet.ibm.com
+
+  Reviewed-by: Amir Goldstein <amir73il@gmail.com>
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs
+- fs/ecryptfs
+- fs/overlayfs
+- include/uapi/linux
+hunk_count: 9
+covered_count: 3

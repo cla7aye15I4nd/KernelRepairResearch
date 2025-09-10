@@ -1,0 +1,23 @@
+id: c6fd14145e2f62ca0784
+bug_link: https://syzkaller.appspot.com/bug?extid=c6fd14145e2f62ca0784
+title: general protection fault in gfs2_dump_glock
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 754e0b0e35608ed5206d6a67a791563c631cec07
+fix_commit: 428f651cb80b227af47fc302e4931791f2fb4741
+datetime: '2022-02-15T15:01:10+01:00'
+fix_commit_message: "gfs2: assign rgrp glock before compute_bitstructs\n\nBefore this\
+  \ patch, function read_rindex_entry called compute_bitstructs\nbefore it allocated\
+  \ a glock for the rgrp. But if compute_bitstructs found\na problem with the rgrp,\
+  \ it called gfs2_consist_rgrpd, and that called\ngfs2_dump_glock for rgd->rd_gl\
+  \ which had not yet been assigned.\n\nread_rindex_entry\n   compute_bitstructs\n\
+  \      gfs2_consist_rgrpd\n         gfs2_dump_glock <---------rgd->rd_gl was not\
+  \ set.\n\nThis patch changes read_rindex_entry so it assigns an rgrp glock before\n\
+  calling compute_bitstructs so gfs2_dump_glock does not reference an\nunassigned\
+  \ pointer. If an error is discovered, the glock must also be\nput, so a new goto\
+  \ and label were added.\n\nReported-by: syzbot+c6fd14145e2f62ca0784@syzkaller.appspotmail.com\n\
+  Signed-off-by: Bob Peterson <rpeterso@redhat.com>\nSigned-off-by: Andreas Gruenbacher\
+  \ <agruenba@redhat.com>\n"
+submodule:
+- fs/gfs2
+hunk_count: 2
+covered_count: 0

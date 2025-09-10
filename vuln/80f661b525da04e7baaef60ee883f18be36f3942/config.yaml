@@ -1,0 +1,34 @@
+id: 80f661b525da04e7baaef60ee883f18be36f3942
+bug_link: https://syzkaller.appspot.com/bug?extid=80f661b525da04e7baaef60ee883f18be36f3942
+title: 'KASAN: slab-out-of-bounds Write in sha3_update (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a208fa8f33031b9e0aba44c7d1b7e68eb0cbd29e
+fix_commit: 9fa68f620041be04720d0cbfb1bd3ddfc6310b24
+datetime: '2018-01-12T23:03:37+11:00'
+fix_commit_message: "crypto: hash - prevent using keyed hashes without setting key\n\
+  \nCurrently, almost none of the keyed hash algorithms check whether a key\nhas been\
+  \ set before proceeding.  Some algorithms are okay with this and\nwill effectively\
+  \ just use a key of all 0's or some other bogus default.\nHowever, others will severely\
+  \ break, as demonstrated using\n\"hmac(sha3-512-generic)\", the unkeyed use of which\
+  \ causes a kernel crash\nvia a (potentially exploitable) stack buffer overflow.\n\
+  \nA while ago, this problem was solved for AF_ALG by pairing each hash\ntransform\
+  \ with a 'has_key' bool.  However, there are still other places\nin the kernel where\
+  \ userspace can specify an arbitrary hash algorithm by\nname, and the kernel uses\
+  \ it as unkeyed hash without checking whether it\nis really unkeyed.  Examples of\
+  \ this include:\n\n    - KEYCTL_DH_COMPUTE, via the KDF extension\n    - dm-verity\n\
+  \    - dm-crypt, via the ESSIV support\n    - dm-integrity, via the \"internal hash\"\
+  \ mode with no key given\n    - drbd (Distributed Replicated Block Device)\n\nThis\
+  \ bug is especially bad for KEYCTL_DH_COMPUTE as that requires no\nprivileges to\
+  \ call.\n\nFix the bug for all users by adding a flag CRYPTO_TFM_NEED_KEY to the\n\
+  ->crt_flags of each hash transform that indicates whether the transform\nstill needs\
+  \ to be keyed or not.  Then, make the hash init, import, and\ndigest functions return\
+  \ -ENOKEY if the key is still needed.\n\nThe new flag also replaces the 'has_key'\
+  \ bool which algif_hash was\npreviously using, thereby simplifying the algif_hash\
+  \ implementation.\n\nReported-by: syzbot <syzkaller@googlegroups.com>\nCc: stable@vger.kernel.org\n\
+  Signed-off-by: Eric Biggers <ebiggers@google.com>\nSigned-off-by: Herbert Xu <herbert@gondor.apana.org.au>\n"
+submodule:
+- crypto
+- include/crypto
+- include/linux
+hunk_count: 22
+covered_count: 1

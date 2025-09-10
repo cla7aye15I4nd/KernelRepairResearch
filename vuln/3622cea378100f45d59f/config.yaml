@@ -1,0 +1,57 @@
+id: 3622cea378100f45d59f
+bug_link: https://syzkaller.appspot.com/bug?extid=3622cea378100f45d59f
+title: kernel BUG at fs/ext4/inode.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 80145ac2f739558e66bd8789df3414bc0e111c58
+fix_commit: 073861ed77b6b957c3c8d54a11dc503f7d986ceb
+datetime: '2020-11-24T15:23:19-08:00'
+fix_commit_message: "mm: fix VM_BUG_ON(PageTail) and BUG_ON(PageWriteback)\n\nTwice\
+  \ now, when exercising ext4 looped on shmem huge pages, I have crashed\non the PF_ONLY_HEAD\
+  \ check inside PageWaiters(): ext4_finish_bio() calling\nend_page_writeback() calling\
+  \ wake_up_page() on tail of a shmem huge page,\nno longer an ext4 page at all.\n\
+  \nThe problem is that PageWriteback is not accompanied by a page reference\n(as\
+  \ the NOTE at the end of test_clear_page_writeback() acknowledges): as\nsoon as\
+  \ TestClearPageWriteback has been done, that page could be removed\nfrom page cache,\
+  \ freed, and reused for something else by the time that\nwake_up_page() is reached.\n\
+  \nhttps://lore.kernel.org/linux-mm/20200827122019.GC14765@casper.infradead.org/\n\
+  Matthew Wilcox suggested avoiding or weakening the PageWaiters() tail\ncheck; but\
+  \ I'm paranoid about even looking at an unreferenced struct page,\nlest its memory\
+  \ might itself have already been reused or hotremoved (and\nwake_up_page_bit() may\
+  \ modify that memory with its ClearPageWaiters()).\n\nThen on crashing a second\
+  \ time, realized there's a stronger reason against\nthat approach.  If my testing\
+  \ just occasionally crashes on that check,\nwhen the page is reused for part of\
+  \ a compound page, wouldn't it be much\nmore common for the page to get reused as\
+  \ an order-0 page before reaching\nwake_up_page()?  And on rare occasions, might\
+  \ that reused page already be\nmarked PageWriteback by its new user, and already\
+  \ be waited upon?  What\nwould that look like?\n\nIt would look like BUG_ON(PageWriteback)\
+  \ after wait_on_page_writeback()\nin write_cache_pages() (though I have never seen\
+  \ that crash myself).\n\nMatthew Wilcox explaining this to himself:\n \"page is\
+  \ allocated, added to page cache, dirtied, writeback starts,\n\n  --- thread A ---\n\
+  \  filesystem calls end_page_writeback()\n        test_clear_page_writeback()\n\
+  \  --- context switch to thread B ---\n  truncate_inode_pages_range() finds the\
+  \ page, it doesn't have writeback set,\n  we delete it from the page cache.  Page\
+  \ gets reallocated, dirtied, writeback\n  starts again.  Then we call write_cache_pages(),\
+  \ see\n  PageWriteback() set, call wait_on_page_writeback()\n  --- context switch\
+  \ back to thread A ---\n  wake_up_page(page, PG_writeback);\n  ... thread B is woken,\
+  \ but because the wakeup was for the old use of\n  the page, PageWriteback is still\
+  \ set.\n\n  Devious\"\n\nAnd prior to 2a9127fcf229 (\"mm: rewrite wait_on_page_bit_common()\
+  \ logic\")\nthis would have been much less likely: before that, wake_page_function()'s\n\
+  non-exclusive case would stop walking and not wake if it found Writeback\nalready\
+  \ set again; whereas now the non-exclusive case proceeds to wake.\n\nI have not\
+  \ thought of a fix that does not add a little overhead: the\nsimplest fix is for\
+  \ end_page_writeback() to get_page() before calling\ntest_clear_page_writeback(),\
+  \ then put_page() after wake_up_page().\n\nWas there a chance of missed wakeups\
+  \ before, since a page freed before\nreaching wake_up_page() would have PageWaiters\
+  \ cleared?  I think not,\nbecause each waiter does hold a reference on the page.\
+  \  This bug comes\nwhen the old use of the page, the one we do TestClearPageWriteback\
+  \ on,\nhad *no* waiters, so no additional page reference beyond the page cache\n\
+  (and whoever racily freed it).  The reuse of the page has a waiter\nholding a reference,\
+  \ and its own PageWriteback set; but the belated\nwake_up_page() has woken the reuse\
+  \ to hit that BUG_ON(PageWriteback).\n\nReported-by: syzbot+3622cea378100f45d59f@syzkaller.appspotmail.com\n\
+  Reported-by: Qian Cai <cai@lca.pw>\nFixes: 2a9127fcf229 (\"mm: rewrite wait_on_page_bit_common()\
+  \ logic\")\nSigned-off-by: Hugh Dickins <hughd@google.com>\nCc: stable@vger.kernel.org\
+  \ # v5.8+\nSigned-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 2
+covered_count: 0

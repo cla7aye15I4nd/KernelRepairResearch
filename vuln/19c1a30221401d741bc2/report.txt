@@ -1,0 +1,65 @@
+  parent: u64s 5 type btree_ptr SPOS_MAX len 0 ver 0
+  child: u64s 11 type btree_ptr_v2 U64_MAX:18374686479671623680:50331647 len 0 ver 0: seq 2285c34bed0abe32 written 16 min_key POS_MIN durability: 1 ptr: 0:31:0 gen 0, fixing
+bcachefs (loop0): bch2_get_scanned_nodes(): recovery btree=xattrs level=0 U64_MAX:18374686479671623680:50331648 - SPOS_MAX
+bcachefs (loop0): set_node_max(): u64s 11 type btree_ptr_v2 U64_MAX:18374686479671623680:50331647 len 0 ver 0: seq 2285c34bed0abe32 written 16 min_key POS_MIN durability: 1 ptr: 0:31:0 gen 0 -> SPOS_MAX
+------------[ cut here ]------------
+kernel BUG at fs/bcachefs/btree_cache.c:280!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
+CPU: 1 UID: 0 PID: 5854 Comm: syz-executor700 Not tainted 6.12.0-rc6-next-20241105-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:__bch2_btree_node_hash_insert+0x12ed/0x1310 fs/bcachefs/btree_cache.c:280
+Code: f6 fd e9 9d f5 ff ff 89 d9 80 e1 07 80 c1 03 38 c1 0f 8c f2 f7 ff ff 48 89 df e8 2e d5 f6 fd e9 e5 f7 ff ff e8 04 74 8c fd 90 <0f> 0b e8 fc 73 8c fd 90 0f 0b e8 f4 73 8c fd 90 0f 0b e8 1c 6c bc
+RSP: 0018:ffffc90003d36640 EFLAGS: 00010293
+RAX: ffffffff840963bc RBX: ffff8880282a0228 RCX: ffff888034390000
+RDX: 0000000000000000 RSI: ffff8880282a0000 RDI: ffff888075b81a90
+RBP: ffffc90003d36770 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 000000000001f001 R12: 1ffff11005054045
+R13: dffffc0000000000 R14: ffff888075b81a90 R15: ffff8880282a0000
+FS:  0000555559c71380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055792096e558 CR3: 00000000758cc000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ set_node_max+0x542/0x710 fs/bcachefs/btree_gc.c:188
+ btree_repair_node_end fs/bcachefs/btree_gc.c:301 [inline]
+ bch2_btree_repair_topology_recurse+0x5a7c/0x6c10 fs/bcachefs/btree_gc.c:427
+ bch2_check_topology+0x6d4/0xba0 fs/bcachefs/btree_gc.c:554
+ bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:216
+ bch2_run_recovery_passes+0x290/0x9f0 fs/bcachefs/recovery_passes.c:286
+ bch2_fs_recovery+0x25cc/0x39b0 fs/bcachefs/recovery.c:893
+ bch2_fs_start+0x37c/0x610 fs/bcachefs/super.c:1037
+ bch2_fs_get_tree+0xd68/0x1710 fs/bcachefs/fs.c:2186
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa63b34497a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff4e112dd8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007fff4e112df0 RCX: 00007fa63b34497a
+RDX: 0000000020000180 RSI: 0000000020000000 RDI: 00007fff4e112df0
+RBP: 0000000000000004 R08: 00007fff4e112e30 R09: 00000000000059b6
+R10: 0000000000800008 R11: 0000000000000282 R12: 0000000000800008
+R13: 00007fff4e112e30 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__bch2_btree_node_hash_insert+0x12ed/0x1310 fs/bcachefs/btree_cache.c:280
+Code: f6 fd e9 9d f5 ff ff 89 d9 80 e1 07 80 c1 03 38 c1 0f 8c f2 f7 ff ff 48 89 df e8 2e d5 f6 fd e9 e5 f7 ff ff e8 04 74 8c fd 90 <0f> 0b e8 fc 73 8c fd 90 0f 0b e8 f4 73 8c fd 90 0f 0b e8 1c 6c bc
+RSP: 0018:ffffc90003d36640 EFLAGS: 00010293
+RAX: ffffffff840963bc RBX: ffff8880282a0228 RCX: ffff888034390000
+RDX: 0000000000000000 RSI: ffff8880282a0000 RDI: ffff888075b81a90
+RBP: ffffc90003d36770 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 000000000001f001 R12: 1ffff11005054045
+R13: dffffc0000000000 R14: ffff888075b81a90 R15: ffff8880282a0000
+FS:  0000555559c71380(0000) GS:ffff8880b8700000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055792096e558 CR3: 00000000758cc000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

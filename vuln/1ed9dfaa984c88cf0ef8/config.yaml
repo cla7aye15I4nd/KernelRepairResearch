@@ -1,0 +1,55 @@
+id: 1ed9dfaa984c88cf0ef8
+bug_link: https://syzkaller.appspot.com/bug?extid=1ed9dfaa984c88cf0ef8
+title: WARNING in __put_task_struct (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ba4a41198324be2e6fbb06c270fdc8500c0e38de
+fix_commit: fe9bc1644918aa1d02a889b4ca788bfb67f90816
+datetime: '2018-10-16T08:24:36-06:00'
+fix_commit_message: "RDMA/restrack: Protect from reentry to resource return path\n\
+  \nNullify the resource task struct pointer to ensure that subsequent calls\nwon't\
+  \ try to release task_struct again.\n\n------------[ cut here ]------------\nODEBUG:\
+  \ free active (active state 1) object type: rcu_head hint:\n(null)\nWARNING: CPU:\
+  \ 0 PID: 6048 at lib/debugobjects.c:329\ndebug_print_object+0x16a/0x210 lib/debugobjects.c:326\n\
+  Kernel panic - not syncing: panic_on_warn set ...\n\nCPU: 0 PID: 6048 Comm: syz-executor022\
+  \ Not tainted\n4.19.0-rc7-next-20181008+ #89\nHardware name: Google Google Compute\
+  \ Engine/Google Compute Engine, BIOS\nGoogle 01/01/2011\nCall Trace:\n  __dump_stack\
+  \ lib/dump_stack.c:77 [inline]\n  dump_stack+0x244/0x3ab lib/dump_stack.c:113\n\
+  \  panic+0x238/0x4e7 kernel/panic.c:184\n  __warn.cold.8+0x163/0x1ba kernel/panic.c:536\n\
+  \  report_bug+0x254/0x2d0 lib/bug.c:186\n  fixup_bug arch/x86/kernel/traps.c:178\
+  \ [inline]\n  do_error_trap+0x11b/0x200 arch/x86/kernel/traps.c:271\n  do_invalid_op+0x36/0x40\
+  \ arch/x86/kernel/traps.c:290\n  invalid_op+0x14/0x20 arch/x86/entry/entry_64.S:969\n\
+  RIP: 0010:debug_print_object+0x16a/0x210 lib/debugobjects.c:326\nCode: 41 88 48\
+  \ 89 fa 48 c1 ea 03 80 3c 02 00 0f 85 92 00 00 00 48 8b 14\ndd\n60 02 41 88 4c 89\
+  \ fe 48 c7 c7 00 f8 40 88 e8 36 2f b4 fd <0f> 0b 83 05\na9\nf4 5e 06 01 48 83 c4\
+  \ 18 5b 41 5c 41 5d 41 5e 41 5f\nRSP: 0018:ffff8801d8c3eda8 EFLAGS: 00010086\nRAX:\
+  \ 0000000000000000 RBX: 0000000000000003 RCX: 0000000000000000\nRDX: 0000000000000000\
+  \ RSI: ffffffff8164d235 RDI: 0000000000000005\nRBP: ffff8801d8c3ede8 R08: ffff8801d70aa280\
+  \ R09: ffffed003b5c3eda\nR10: ffffed003b5c3eda R11: ffff8801dae1f6d7 R12: 0000000000000001\n\
+  R13: ffffffff8939a760 R14: 0000000000000000 R15: ffffffff8840fca0\n  __debug_check_no_obj_freed\
+  \ lib/debugobjects.c:786 [inline]\n  debug_check_no_obj_freed+0x3ae/0x58d lib/debugobjects.c:818\n\
+  \  kmem_cache_free+0x202/0x290 mm/slab.c:3759\n  free_task_struct kernel/fork.c:163\
+  \ [inline]\n  free_task+0x16e/0x1f0 kernel/fork.c:457\n  __put_task_struct+0x2e6/0x620\
+  \ kernel/fork.c:730\n  put_task_struct include/linux/sched/task.h:96 [inline]\n\
+  \  finish_task_switch+0x66c/0x900 kernel/sched/core.c:2715\n  context_switch kernel/sched/core.c:2834\
+  \ [inline]\n  __schedule+0x8d7/0x21d0 kernel/sched/core.c:3480\n  schedule+0xfe/0x460\
+  \ kernel/sched/core.c:3524\n  freezable_schedule include/linux/freezer.h:172 [inline]\n\
+  \  futex_wait_queue_me+0x3f9/0x840 kernel/futex.c:2530\n  futex_wait+0x45c/0xa50\
+  \ kernel/futex.c:2645\n  do_futex+0x31a/0x26d0 kernel/futex.c:3528\n  __do_sys_futex\
+  \ kernel/futex.c:3589 [inline]\n  __se_sys_futex kernel/futex.c:3557 [inline]\n\
+  \  __x64_sys_futex+0x472/0x6a0 kernel/futex.c:3557\n  do_syscall_64+0x1b9/0x820\
+  \ arch/x86/entry/common.c:290\n  entry_SYSCALL_64_after_hwframe+0x49/0xbe\nRIP:\
+  \ 0033:0x446549\nCode: e8 2c b3 02 00 48 83 c4 18 c3 0f 1f 80 00 00 00 00 48 89\
+  \ f8 48 89 f7\n48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d\
+  \ 01 f0 ff\nff 0f 83 2b 09 fc ff c3 66 2e 0f 1f 84 00 00 00 00\nRSP: 002b:00007f3a998f5da8\
+  \ EFLAGS: 00000246 ORIG_RAX: 00000000000000ca\nRAX: ffffffffffffffda RBX: 00000000006dbc38\
+  \ RCX: 0000000000446549\nRDX: 0000000000000000 RSI: 0000000000000080 RDI: 00000000006dbc38\n\
+  RBP: 00000000006dbc30 R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000\
+  \ R11: 0000000000000246 R12: 00000000006dbc3c\nR13: 2f646e6162696e69 R14: 666e692f7665642f\
+  \ R15: 00000000006dbd2c\nKernel Offset: disabled\n\nReported-by: syzbot+71aff6ea121ffefc280f@syzkaller.appspotmail.com\n\
+  Fixes: ed7a01fd3fd7 (\"RDMA/restrack: Release task struct which was hold by CM_ID\
+  \ object\")\nSigned-off-by: Leon Romanovsky <leonro@mellanox.com>\nSigned-off-by:\
+  \ Jason Gunthorpe <jgg@mellanox.com>\n"
+submodule:
+- drivers/infiniband/core
+hunk_count: 1
+covered_count: 1

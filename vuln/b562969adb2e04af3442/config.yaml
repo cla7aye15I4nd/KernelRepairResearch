@@ -1,0 +1,34 @@
+id: b562969adb2e04af3442
+bug_link: https://syzkaller.appspot.com/bug?extid=b562969adb2e04af3442
+title: 'KASAN: use-after-free Read in seccomp_notify_release (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4ee0776760af03f181e6b80baf5fb1cc1a980f50
+fix_commit: 7a0df7fbc14505e2e2be19ed08654a09e1ed5bf6
+datetime: '2019-04-25T15:55:58-07:00'
+fix_commit_message: "seccomp: Make NEW_LISTENER and TSYNC flags exclusive\n\nAs the\
+  \ comment notes, the return codes for TSYNC and NEW_LISTENER\nconflict, because\
+  \ they both return positive values, one in the case of\nsuccess and one in the case\
+  \ of error. So, let's disallow both of these\nflags together.\n\nWhile this is technically\
+  \ a userspace break, all the users I know\nof are still waiting on me to land this\
+  \ feature in libseccomp, so I\nthink it'll be safe. Also, at present my use case\
+  \ doesn't require\nTSYNC at all, so this isn't a big deal to disallow. If someone\n\
+  wanted to support this, a path forward would be to add a new flag like\nTSYNC_AND_LISTENER_YES_I_UNDERSTAND_THAT_TSYNC_WILL_JUST_RETURN_EAGAIN,\n\
+  but the use cases are so different I don't see it really happening.\n\nFinally,\
+  \ it's worth noting that this does actually fix a UAF issue: at the\nend of seccomp_set_mode_filter(),\
+  \ we have:\n\n        if (flags & SECCOMP_FILTER_FLAG_NEW_LISTENER) {\n        \
+  \        if (ret < 0) {\n                        listener_f->private_data = NULL;\n\
+  \                        fput(listener_f);\n                        put_unused_fd(listener);\n\
+  \                } else {\n                        fd_install(listener, listener_f);\n\
+  \                        ret = listener;\n                }\n        }\nout_free:\n\
+  \        seccomp_filter_free(prepared);\n\nBut if ret > 0 because TSYNC raced, we'll\
+  \ install the listener fd and then\nfree the filter out from underneath it, causing\
+  \ a UAF when the task closes\nit or dies. This patch also switches the condition\
+  \ to be simply if (ret),\nso that if someone does add the flag mentioned above,\
+  \ they won't have to\nremember to fix this too.\n\nReported-by: syzbot+b562969adb2e04af3442@syzkaller.appspotmail.com\n\
+  Fixes: 6a21cc50f0c7 (\"seccomp: add a return code to trap to userspace\")\nCC: stable@vger.kernel.org\
+  \ # v5.0+\nSigned-off-by: Tycho Andersen <tycho@tycho.ws>\nSigned-off-by: Kees Cook\
+  \ <keescook@chromium.org>\nAcked-by: James Morris <jamorris@linux.microsoft.com>\n"
+submodule:
+- kernel
+hunk_count: 3
+covered_count: 3

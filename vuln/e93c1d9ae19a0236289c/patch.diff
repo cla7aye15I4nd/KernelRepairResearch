@@ -1,0 +1,24 @@
+diff --git a/net/netfilter/nf_flow_table_offload.c b/net/netfilter/nf_flow_table_offload.c
+index 83e1db37c3b0..06f00cdc3891 100644
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -847,9 +847,6 @@ static int nf_flow_table_offload_cmd(struct flow_block_offload *bo,
+ {
+ 	int err;
+ 
+-	if (!nf_flowtable_hw_offload(flowtable))
+-		return 0;
+-
+ 	if (!dev->netdev_ops->ndo_setup_tc)
+ 		return -EOPNOTSUPP;
+ 
+@@ -876,6 +873,9 @@ int nf_flow_table_offload_setup(struct nf_flowtable *flowtable,
+ 	struct flow_block_offload bo;
+ 	int err;
+ 
++	if (!nf_flowtable_hw_offload(flowtable))
++		return 0;
++
+ 	err = nf_flow_table_offload_cmd(&bo, flowtable, dev, cmd, &extack);
+ 	if (err < 0)
+ 		return err;

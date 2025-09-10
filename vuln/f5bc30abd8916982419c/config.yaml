@@ -1,0 +1,32 @@
+id: f5bc30abd8916982419c
+bug_link: https://syzkaller.appspot.com/bug?extid=f5bc30abd8916982419c
+title: 'INFO: task hung in locks_remove_posix'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d7110a26e5905ec2fe3fc88bc6a538901accb72b
+fix_commit: 187b96db5ca79423618dfa29a05c438c34f9e1f0
+datetime: '2020-05-22T19:55:17+02:00'
+fix_commit_message: "x86/unwind/orc: Fix unwind_get_return_address_ptr() for inactive\
+  \ tasks\n\nNormally, show_trace_log_lvl() scans the stack, looking for text\naddresses\
+  \ to print.  In parallel, it unwinds the stack with\nunwind_next_frame().  If the\
+  \ stack address matches the pointer returned\nby unwind_get_return_address_ptr()\
+  \ for the current frame, the text\naddress is printed normally without a question\
+  \ mark.  Otherwise it's\nconsidered a breadcrumb (potentially from a previous call\
+  \ path) and it's\nprinted with a question mark to indicate that the address is unreliable\n\
+  and typically can be ignored.\n\nSince the following commit:\n\n  f1d9a2abff66 (\"\
+  x86/unwind/orc: Don't skip the first frame for inactive tasks\")\n\n... for inactive\
+  \ tasks, show_trace_log_lvl() prints *only* unreliable\naddresses (prepended with\
+  \ '?').\n\nThat happens because, for the first frame of an inactive task,\nunwind_get_return_address_ptr()\
+  \ returns the wrong return address\npointer: one word *below* the task stack pointer.\
+  \  show_trace_log_lvl()\nstarts scanning at the stack pointer itself, so it never\
+  \ finds the first\n'reliable' address, causing only guesses to being printed.\n\n\
+  The first frame of an inactive task isn't a normal stack frame.  It's\nactually\
+  \ just an instance of 'struct inactive_task_frame' which is left\nbehind by __switch_to_asm().\
+  \  Now that this inactive frame is actually\nexposed to callers, fix unwind_get_return_address_ptr()\
+  \ to interpret it\nproperly.\n\nFixes: f1d9a2abff66 (\"x86/unwind/orc: Don't skip\
+  \ the first frame for inactive tasks\")\nReported-by: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>\n\
+  Signed-off-by: Josh Poimboeuf <jpoimboe@redhat.com>\nSigned-off-by: Peter Zijlstra\
+  \ (Intel) <peterz@infradead.org>\nLink: https://lkml.kernel.org/r/20200522135435.vbxs7umku5pyrdbk@treble\n"
+submodule:
+- arch/x86/kernel
+hunk_count: 1
+covered_count: 0

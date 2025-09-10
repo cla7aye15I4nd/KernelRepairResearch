@@ -1,0 +1,13 @@
+diff --git a/net/kcm/kcmsock.c b/net/kcm/kcmsock.c
+index 4580f61426bb..740539a218b7 100644
+--- a/net/kcm/kcmsock.c
++++ b/net/kcm/kcmsock.c
+@@ -939,6 +939,8 @@ static int kcm_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
+ 
+ 	if (head != kcm->seq_skb)
+ 		kfree_skb(head);
++	else if (copied)
++		kcm_tx_msg(head)->last_skb = skb;
+ 
+ 	err = sk_stream_error(sk, msg->msg_flags, err);
+ 

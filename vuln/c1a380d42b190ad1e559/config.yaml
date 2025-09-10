@@ -1,0 +1,56 @@
+id: c1a380d42b190ad1e559
+bug_link: https://syzkaller.appspot.com/bug?extid=c1a380d42b190ad1e559
+title: general protection fault in sctp_sched_prio_sched
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c8c8218ec5af5d2598381883acbefbf604e56b5e
+fix_commit: 4d1415811e492d9a8238f8a92dd0d51612c788e9
+datetime: '2019-07-01T19:01:47-07:00'
+fix_commit_message: 'sctp: fix error handling on stream scheduler initialization
+
+
+  It allocates the extended area for outbound streams only on sendmsg
+
+  calls, if they are not yet allocated.  When using the priority
+
+  stream scheduler, this initialization may imply into a subsequent
+
+  allocation, which may fail.  In this case, it was aborting the stream
+
+  scheduler initialization but leaving the ->ext pointer (allocated) in
+
+  there, thus in a partially initialized state.  On a subsequent call to
+
+  sendmsg, it would notice the ->ext pointer in there, and trip on
+
+  uninitialized stuff when trying to schedule the data chunk.
+
+
+  The fix is undo the ->ext initialization if the stream scheduler
+
+  initialization fails and avoid the partially initialized state.
+
+
+  Although syzkaller bisected this to commit 4ff40b86262b ("sctp: set
+
+  chunk transport correctly when it''s a new asoc"), this bug was actually
+
+  introduced on the commit I marked below.
+
+
+  Reported-by: syzbot+c1a380d42b190ad1e559@syzkaller.appspotmail.com
+
+  Fixes: 5bbbbe32a431 ("sctp: introduce stream scheduler foundations")
+
+  Tested-by: Xin Long <lucien.xin@gmail.com>
+
+  Signed-off-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>
+
+  Acked-by: Neil Horman <nhorman@redhat.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/sctp
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,27 @@
+id: 412a392a2cd4a65e71db
+bug_link: https://syzkaller.appspot.com/bug?extid=412a392a2cd4a65e71db
+title: possible deadlock in exfat_evict_inode
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 224821766f4355cfa63f825660f5922e670d6fc6
+fix_commit: 89fc548767a2155231128cb98726d6d2ea1256c9
+datetime: '2024-07-15T21:44:28+09:00'
+fix_commit_message: "exfat: fix potential deadlock on __exfat_get_dentry_set\n\nWhen\
+  \ accessing a file with more entries than ES_MAX_ENTRY_NUM, the bh-array\nis allocated\
+  \ in __exfat_get_entry_set. The problem is that the bh-array is\nallocated with\
+  \ GFP_KERNEL. It does not make sense. In the following cases,\na deadlock for sbi->s_lock\
+  \ between the two processes may occur.\n\n       CPU0                CPU1\n    \
+  \   ----                ----\n  kswapd\n   balance_pgdat\n    lock(fs_reclaim)\n\
+  \                      exfat_iterate\n                       lock(&sbi->s_lock)\n\
+  \                       exfat_readdir\n                        exfat_get_uniname_from_ext_entry\n\
+  \                         exfat_get_dentry_set\n                          __exfat_get_dentry_set\n\
+  \                           kmalloc_array\n                            ...\n   \
+  \                         lock(fs_reclaim)\n    ...\n    evict\n     exfat_evict_inode\n\
+  \      lock(&sbi->s_lock)\n\nTo fix this, let's allocate bh-array with GFP_NOFS.\n\
+  \nFixes: a3ff29a95fde (\"exfat: support dynamic allocate bh for exfat_entry_set_cache\"\
+  )\nCc: stable@vger.kernel.org # v6.2+\nReported-by: syzbot+412a392a2cd4a65e71db@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/lkml/000000000000fef47e0618c0327f@google.com\nSigned-off-by:\
+  \ Sungjong Seo <sj1557.seo@samsung.com>\nSigned-off-by: Namjae Jeon <linkinjeon@kernel.org>\n"
+submodule:
+- fs/exfat
+hunk_count: 1
+covered_count: 1

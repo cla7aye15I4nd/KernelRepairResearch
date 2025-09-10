@@ -1,0 +1,45 @@
+id: e37dd1dfc814b10caa55
+bug_link: https://syzkaller.appspot.com/bug?extid=e37dd1dfc814b10caa55
+title: WARNING in ntfs_extend_initialized_size
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1d1a7e2525491f56901f5f63370a0775768044b8
+fix_commit: ff355926445897cc9fdea3b00611e514232c213c
+datetime: '2025-02-05T17:48:40+03:00'
+fix_commit_message: 'fs/ntfs3: Fix WARNING in ntfs_extend_initialized_size
+
+
+  Syzbot reported a WARNING in ntfs_extend_initialized_size.
+
+  The data type of in->i_valid and to is u64 in ntfs_file_mmap().
+
+  If their values are greater than LLONG_MAX, overflow will occur because
+
+  the data types of the parameters valid and new_valid corresponding to
+
+  the function ntfs_extend_initialized_size() are loff_t.
+
+
+  Before calling ntfs_extend_initialized_size() in the ntfs_file_mmap(),
+
+  the "ni->i_valid < to" has been determined, so the same WARN_ON determination
+
+  is not required in ntfs_extend_initialized_size().
+
+  Just execute the ntfs_extend_initialized_size() in ntfs_extend() to make
+
+  a WARN_ON check.
+
+
+  Reported-and-tested-by: syzbot+e37dd1dfc814b10caa55@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=e37dd1dfc814b10caa55
+
+  Signed-off-by: Edward Adam Davis <eadavis@qq.com>
+
+  Signed-off-by: Konstantin Komarov <almaz.alexandrovich@paragon-software.com>
+
+  '
+submodule:
+- fs/ntfs3
+hunk_count: 1
+covered_count: 1

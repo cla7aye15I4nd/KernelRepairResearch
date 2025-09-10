@@ -1,0 +1,31 @@
+id: 040b31ac96753fd7eb46
+bug_link: https://syzkaller.appspot.com/bug?extid=040b31ac96753fd7eb46
+title: 'KASAN: use-after-free Read in radix_tree_next_chunk'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1e2e547a93a00ebc21582c06ca3c6cfea2a309ee
+fix_commit: 79f546a696bff2590169fb5684e23d65f4d9f591
+datetime: '2018-05-11T15:37:57-04:00'
+fix_commit_message: "fs: don't scan the inode cache before SB_BORN is set\n\nWe recently\
+  \ had an oops reported on a 4.14 kernel in\nxfs_reclaim_inodes_count() where sb->s_fs_info\
+  \ pointed to garbage\nand so the m_perag_tree lookup walked into lala land.  It\
+  \ produces\nan oops down this path during the failed mount:\n\n  radix_tree_gang_lookup_tag+0xc4/0x130\n\
+  \  xfs_perag_get_tag+0x37/0xf0\n  xfs_reclaim_inodes_count+0x32/0x40\n  xfs_fs_nr_cached_objects+0x11/0x20\n\
+  \  super_cache_count+0x35/0xc0\n  shrink_slab.part.66+0xb1/0x370\n  shrink_node+0x7e/0x1a0\n\
+  \  try_to_free_pages+0x199/0x470\n  __alloc_pages_slowpath+0x3a1/0xd20\n  __alloc_pages_nodemask+0x1c3/0x200\n\
+  \  cache_grow_begin+0x20b/0x2e0\n  fallback_alloc+0x160/0x200\n  kmem_cache_alloc+0x111/0x4e0\n\
+  \nThe problem is that the superblock shrinker is running before the\nfilesystem\
+  \ structures it depends on have been fully set up. i.e.\nthe shrinker is registered\
+  \ in sget(), before ->fill_super() has been\ncalled, and the shrinker can call into\
+  \ the filesystem before\nfill_super() does it's setup work. Essentially we are exposed\
+  \ to\nboth use-after-free and use-before-initialisation bugs here.\n\nTo fix this,\
+  \ add a check for the SB_BORN flag in super_cache_count.\nIn general, this flag\
+  \ is not set until ->fs_mount() completes\nsuccessfully, so we know that it is set\
+  \ after the filesystem\nsetup has completed. This matches the trylock_super() behaviour\n\
+  which will not let super_cache_scan() run if SB_BORN is not set, and\nhence will\
+  \ not allow the superblock shrinker from entering the\nfilesystem while it is being\
+  \ set up or after it has failed setup\nand is being torn down.\n\nCc: stable@kernel.org\n\
+  Signed-Off-By: Dave Chinner <dchinner@redhat.com>\nSigned-off-by: Al Viro <viro@zeniv.linux.org.uk>\n"
+submodule:
+- fs
+hunk_count: 2
+covered_count: 2

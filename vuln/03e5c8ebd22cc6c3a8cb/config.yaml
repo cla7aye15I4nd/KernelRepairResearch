@@ -1,0 +1,31 @@
+id: 03e5c8ebd22cc6c3a8cb
+bug_link: https://syzkaller.appspot.com/bug?extid=03e5c8ebd22cc6c3a8cb
+title: memory leak in bio_copy_user_iov
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: daa400f5a1e581acc1f9a97100574e82a4590e87
+fix_commit: 3b7995a98ad76da5597b488fa84aa5a56d43b608
+datetime: '2019-12-20T11:52:01-07:00'
+fix_commit_message: "block: fix memleak when __blk_rq_map_user_iov() is failed\n\n\
+  When I doing fuzzy test, get the memleak report:\n\nBUG: memory leak\nunreferenced\
+  \ object 0xffff88837af80000 (size 4096):\n  comm \"memleak\", pid 3557, jiffies\
+  \ 4294817681 (age 112.499s)\n  hex dump (first 32 bytes):\n    00 00 00 00 00 00\
+  \ 00 00 00 00 00 00 00 00 00 00  ................\n    20 00 00 00 10 01 00 00 00\
+  \ 00 00 00 01 00 00 00   ...............\n  backtrace:\n    [<000000001c894df8>]\
+  \ bio_alloc_bioset+0x393/0x590\n    [<000000008b139a3c>] bio_copy_user_iov+0x300/0xcd0\n\
+  \    [<00000000a998bd8c>] blk_rq_map_user_iov+0x2f1/0x5f0\n    [<000000005ceb7f05>]\
+  \ blk_rq_map_user+0xf2/0x160\n    [<000000006454da92>] sg_common_write.isra.21+0x1094/0x1870\n\
+  \    [<00000000064bb208>] sg_write.part.25+0x5d9/0x950\n    [<000000004fc670f6>]\
+  \ sg_write+0x5f/0x8c\n    [<00000000b0d05c7b>] __vfs_write+0x7c/0x100\n    [<000000008e177714>]\
+  \ vfs_write+0x1c3/0x500\n    [<0000000087d23f34>] ksys_write+0xf9/0x200\n    [<000000002c8dbc9d>]\
+  \ do_syscall_64+0x9f/0x4f0\n    [<00000000678d8e9a>] entry_SYSCALL_64_after_hwframe+0x49/0xbe\n\
+  \nIf __blk_rq_map_user_iov() is failed in blk_rq_map_user_iov(),\nthe bio(s) which\
+  \ is allocated before this failing will leak. The\nrefcount of the bio(s) is init\
+  \ to 1 and increased to 2 by calling\nbio_get(), but __blk_rq_unmap_user() only\
+  \ decrease it to 1, so\nthe bio cannot be freed. Fix it by calling blk_rq_unmap_user().\n\
+  \nReviewed-by: Bob Liu <bob.liu@oracle.com>\nReported-by: Hulk Robot <hulkci@huawei.com>\n\
+  Signed-off-by: Yang Yingliang <yangyingliang@huawei.com>\nSigned-off-by: Jens Axboe\
+  \ <axboe@kernel.dk>\n"
+submodule:
+- block
+hunk_count: 1
+covered_count: 1

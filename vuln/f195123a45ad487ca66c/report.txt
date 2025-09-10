@@ -1,0 +1,99 @@
+------------[ cut here ]------------
+kernel BUG at fs/f2fs/file.c:105!
+Oops: invalid opcode: 0000 [#1] PREEMPT SMP KASAN NOPTI
+CPU: 1 PID: 5199 Comm: syz-executor154 Not tainted 6.10.0-rc1-syzkaller-00304-g83814698cf48 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+RIP: 0010:f2fs_vm_page_mkwrite+0x1679/0x1bb0 fs/f2fs/file.c:105
+Code: e7 41 83 e7 01 4c 89 fe e8 84 39 c8 fd 4d 85 ff 0f 84 f6 f8 ff ff e8 46 3e c8 fd 49 83 ec 01 e9 eb f8 ff ff e8 38 3e c8 fd 90 <0f> 0b e8 30 3e c8 fd e8 5b 0a 3b fd e9 f0 f1 ff ff 48 89 4c 24 08
+RSP: 0018:ffffc90003277838 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: ffff8880329008d0 RCX: ffffffff83c58900
+RDX: ffff888025b14880 RSI: ffffffff83c596b8 RDI: 0000000000000007
+RBP: ffffc90003277b78 R08: 0000000000000007 R09: 0000000000000000
+R10: 0000000000000001 R11: ffffffff939349f0 R12: ffffc900032778b8
+R13: 0000000000000001 R14: ffffea0000a9c1c0 R15: ffff888032900d78
+FS:  0000555584d97380(0000) GS:ffff88806b100000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000020000280 CR3: 000000002ce7e000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ do_page_mkwrite+0x17d/0x390 mm/memory.c:3099
+ wp_page_shared mm/memory.c:3501 [inline]
+ do_wp_page+0xc89/0x3380 mm/memory.c:3651
+ handle_pte_fault mm/memory.c:5396 [inline]
+ __handle_mm_fault+0x2311/0x53f0 mm/memory.c:5523
+ handle_mm_fault+0x476/0xa00 mm/memory.c:5688
+ do_user_addr_fault+0x2e5/0xe50 arch/x86/mm/fault.c:1389
+ handle_page_fault arch/x86/mm/fault.c:1481 [inline]
+ exc_page_fault+0x5c/0xc0 arch/x86/mm/fault.c:1539
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+RIP: 0010:copy_user_generic arch/x86/include/asm/uaccess_64.h:110 [inline]
+RIP: 0010:raw_copy_to_user arch/x86/include/asm/uaccess_64.h:131 [inline]
+RIP: 0010:_copy_to_user lib/usercopy.c:46 [inline]
+RIP: 0010:_copy_to_user+0xa7/0xc0 lib/usercopy.c:39
+Code: 89 ee 48 89 ef e8 89 a4 0a fd 4d 85 f6 75 b5 e8 0f aa 0a fd 89 de 4c 89 e7 e8 35 84 66 fd 0f 01 cb 48 89 d9 48 89 ef 4c 89 e6 <f3> a4 0f 1f 00 0f 01 ca 48 89 cb eb 8d 66 66 2e 0f 1f 84 00 00 00
+RSP: 0018:ffffc90003277de0 EFLAGS: 00050246
+RAX: 0000000000000001 RBX: 0000000000000010 RCX: 0000000000000010
+RDX: fffff5200064efc8 RSI: ffffc90003277e30 RDI: 0000000020000280
+RBP: 0000000020000280 R08: 0000000000000000 R09: fffff5200064efc7
+R10: ffffc90003277e3f R11: 0000000000000000 R12: ffffc90003277e30
+R13: 0000000020000290 R14: 0000000000000000 R15: 0000000000000000
+ copy_to_user include/linux/uaccess.h:191 [inline]
+ put_timespec64+0xb6/0x120 kernel/time/time.c:910
+ __do_sys_clock_gettime kernel/time/posix-timers.c:1144 [inline]
+ __se_sys_clock_gettime kernel/time/posix-timers.c:1132 [inline]
+ __x64_sys_clock_gettime+0x1d5/0x270 kernel/time/posix-timers.c:1132
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fd22d32a7b9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff7015eea8 EFLAGS: 00000246 ORIG_RAX: 00000000000000e4
+RAX: ffffffffffffffda RBX: 00007fff7015f088 RCX: 00007fd22d32a7b9
+RDX: 00007fd22d32a7b9 RSI: 0000000020000280 RDI: 0000000000000000
+RBP: 00007fd22d3a2610 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000004 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007fff7015f078 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:f2fs_vm_page_mkwrite+0x1679/0x1bb0 fs/f2fs/file.c:105
+Code: e7 41 83 e7 01 4c 89 fe e8 84 39 c8 fd 4d 85 ff 0f 84 f6 f8 ff ff e8 46 3e c8 fd 49 83 ec 01 e9 eb f8 ff ff e8 38 3e c8 fd 90 <0f> 0b e8 30 3e c8 fd e8 5b 0a 3b fd e9 f0 f1 ff ff 48 89 4c 24 08
+RSP: 0018:ffffc90003277838 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: ffff8880329008d0 RCX: ffffffff83c58900
+RDX: ffff888025b14880 RSI: ffffffff83c596b8 RDI: 0000000000000007
+RBP: ffffc90003277b78 R08: 0000000000000007 R09: 0000000000000000
+R10: 0000000000000001 R11: ffffffff939349f0 R12: ffffc900032778b8
+R13: 0000000000000001 R14: ffffea0000a9c1c0 R15: ffff888032900d78
+FS:  0000555584d97380(0000) GS:ffff88806b000000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000561842eb5560 CR3: 000000002ce7e000 CR4: 0000000000350ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	89 ee                	mov    %ebp,%esi
+   2:	48 89 ef             	mov    %rbp,%rdi
+   5:	e8 89 a4 0a fd       	call   0xfd0aa493
+   a:	4d 85 f6             	test   %r14,%r14
+   d:	75 b5                	jne    0xffffffc4
+   f:	e8 0f aa 0a fd       	call   0xfd0aaa23
+  14:	89 de                	mov    %ebx,%esi
+  16:	4c 89 e7             	mov    %r12,%rdi
+  19:	e8 35 84 66 fd       	call   0xfd668453
+  1e:	0f 01 cb             	stac
+  21:	48 89 d9             	mov    %rbx,%rcx
+  24:	48 89 ef             	mov    %rbp,%rdi
+  27:	4c 89 e6             	mov    %r12,%rsi
+* 2a:	f3 a4                	rep movsb %ds:(%rsi),%es:(%rdi) <-- trapping instruction
+  2c:	0f 1f 00             	nopl   (%rax)
+  2f:	0f 01 ca             	clac
+  32:	48 89 cb             	mov    %rcx,%rbx
+  35:	eb 8d                	jmp    0xffffffc4
+  37:	66                   	data16
+  38:	66                   	data16
+  39:	2e                   	cs
+  3a:	0f                   	.byte 0xf
+  3b:	1f                   	(bad)
+  3c:	84 00                	test   %al,(%rax)

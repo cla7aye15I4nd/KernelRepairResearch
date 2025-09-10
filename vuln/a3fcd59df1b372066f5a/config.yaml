@@ -1,0 +1,47 @@
+id: a3fcd59df1b372066f5a
+bug_link: https://syzkaller.appspot.com/bug?extid=a3fcd59df1b372066f5a
+title: general protection fault in try_grab_compound_head
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b3b2177a2d795e35dc11597b2609eb1e7e57e570
+fix_commit: d08af0a59684e18a51aa4bfd24c658994ea3fc5b
+datetime: '2021-07-15T10:13:49-07:00'
+fix_commit_message: 'mm/hugetlb: fix refs calculation from unaligned @vaddr
+
+
+  Commit 82e5d378b0e47 ("mm/hugetlb: refactor subpage recording")
+
+  refactored the count of subpages but missed an edge case when @vaddr is
+
+  not aligned to PAGE_SIZE e.g.  when close to vma->vm_end.  It would then
+
+  errousnly set @refs to 0 and record_subpages_vmas() wouldn''t set the
+
+  @pages array element to its value, consequently causing the reported
+
+  null-deref by syzbot.
+
+
+  Fix it by aligning down @vaddr by PAGE_SIZE in @refs calculation.
+
+
+  Link: https://lkml.kernel.org/r/20210713152440.28650-1-joao.m.martins@oracle.com
+
+  Fixes: 82e5d378b0e47 ("mm/hugetlb: refactor subpage recording")
+
+  Reported-by: syzbot+a3fcd59df1b372066f5a@syzkaller.appspotmail.com
+
+  Signed-off-by: Joao Martins <joao.m.martins@oracle.com>
+
+  Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
+
+  Cc: <stable@vger.kernel.org>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 1
+covered_count: 0

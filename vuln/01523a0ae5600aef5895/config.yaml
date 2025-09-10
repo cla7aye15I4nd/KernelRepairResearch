@@ -1,0 +1,86 @@
+id: 01523a0ae5600aef5895
+bug_link: https://syzkaller.appspot.com/bug?extid=01523a0ae5600aef5895
+title: 'KASAN: slab-use-after-free Read in io_poll_remove_entries'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 631ae0c01010ba20a42889fb8b6d902fa02d76c1
+fix_commit: 35b6fc51c666fc96355be5cd633ed0fe4ccf68b2
+datetime: '2025-07-22T18:47:30+02:00'
+fix_commit_message: 'comedi: fix race between polling and detaching
+
+
+  syzbot reports a use-after-free in comedi in the below link, which is
+
+  due to comedi gladly removing the allocated async area even though poll
+
+  requests are still active on the wait_queue_head inside of it. This can
+
+  cause a use-after-free when the poll entries are later triggered or
+
+  removed, as the memory for the wait_queue_head has been freed.  We need
+
+  to check there are no tasks queued on any of the subdevices'' wait queues
+
+  before allowing the device to be detached by the `COMEDI_DEVCONFIG`
+
+  ioctl.
+
+
+  Tasks will read-lock `dev->attach_lock` before adding themselves to the
+
+  subdevice wait queue, so fix the problem in the `COMEDI_DEVCONFIG` ioctl
+
+  handler by write-locking `dev->attach_lock` before checking that all of
+
+  the subdevices are safe to be deleted.  This includes testing for any
+
+  sleepers on the subdevices'' wait queues.  It remains locked until the
+
+  device has been detached.  This requires the `comedi_device_detach()`
+
+  function to be refactored slightly, moving the bulk of it into new
+
+  function `comedi_device_detach_locked()`.
+
+
+  Note that the refactor of `comedi_device_detach()` results in
+
+  `comedi_device_cancel_all()` now being called while `dev->attach_lock`
+
+  is write-locked, which wasn''t the case previously, but that does not
+
+  matter.
+
+
+  Thanks to Jens Axboe for diagnosing the problem and co-developing this
+
+  patch.
+
+
+  Cc: stable <stable@kernel.org>
+
+  Fixes: 2f3fdcd7ce93 ("staging: comedi: add rw_semaphore to protect against device
+  detachment")
+
+  Link: https://lore.kernel.org/all/687bd5fe.a70a0220.693ce.0091.GAE@google.com/
+
+  Reported-by: syzbot+01523a0ae5600aef5895@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=01523a0ae5600aef5895
+
+  Co-developed-by: Jens Axboe <axboe@kernel.dk>
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  Signed-off-by: Ian Abbott <abbotti@mev.co.uk>
+
+  Tested-by: Jens Axboe <axboe@kernel.dk>
+
+  Link: https://lore.kernel.org/r/20250722155316.27432-1-abbotti@mev.co.uk
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/comedi
+hunk_count: 6
+covered_count: 5

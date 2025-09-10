@@ -1,0 +1,13 @@
+diff --git a/drivers/hid/hidraw.c b/drivers/hid/hidraw.c
+index 681614a8302a..197b1e7bf029 100644
+--- a/drivers/hid/hidraw.c
++++ b/drivers/hid/hidraw.c
+@@ -350,6 +350,8 @@ static int hidraw_release(struct inode * inode, struct file * file)
+ 	down_write(&minors_rwsem);
+ 
+ 	spin_lock_irqsave(&hidraw_table[minor]->list_lock, flags);
++	for (int i = list->tail; i < list->head; i++)
++		kfree(list->buffer[i].value);
+ 	list_del(&list->node);
+ 	spin_unlock_irqrestore(&hidraw_table[minor]->list_lock, flags);
+ 	kfree(list);

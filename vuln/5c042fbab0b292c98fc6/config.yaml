@@ -1,0 +1,34 @@
+id: 5c042fbab0b292c98fc6
+bug_link: https://syzkaller.appspot.com/bug?extid=5c042fbab0b292c98fc6
+title: 'BUG: unable to handle kernel paging request in afs_put_vlserverlist'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9aa64182952db7d931201ab4fcdf767c11fb4ab0
+fix_commit: 8b3c655fa2406b9853138142746a39b7615c54a2
+datetime: '2025-07-23T13:54:34+02:00'
+fix_commit_message: "afs: Set vllist to NULL if addr parsing fails\n\nsyzbot reported\
+  \ a bug in in afs_put_vlserverlist.\n\n  kAFS: bad VL server IP address\n  BUG:\
+  \ unable to handle page fault for address: fffffffffffffffa\n  ...\n  Oops: Oops:\
+  \ 0002 [#1] SMP KASAN PTI\n  ...\n  RIP: 0010:refcount_dec_and_test include/linux/refcount.h:450\
+  \ [inline]\n  RIP: 0010:afs_put_vlserverlist+0x3a/0x220 fs/afs/vl_list.c:67\n  ...\n\
+  \  Call Trace:\n   <TASK>\n   afs_alloc_cell fs/afs/cell.c:218 [inline]\n   afs_lookup_cell+0x12a5/0x1680\
+  \ fs/afs/cell.c:264\n   afs_cell_init+0x17a/0x380 fs/afs/cell.c:386\n   afs_proc_rootcell_write+0x21f/0x290\
+  \ fs/afs/proc.c:247\n   proc_simple_write+0x114/0x1b0 fs/proc/generic.c:825\n  \
+  \ pde_write fs/proc/inode.c:330 [inline]\n   proc_reg_write+0x23d/0x330 fs/proc/inode.c:342\n\
+  \   vfs_write+0x25c/0x1180 fs/read_write.c:682\n   ksys_write+0x12a/0x240 fs/read_write.c:736\n\
+  \   do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]\n   do_syscall_64+0xcd/0x260\
+  \ arch/x86/entry/syscall_64.c:94\n   entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\n\
+  Because afs_parse_text_addrs() parses incorrectly, its return value -EINVAL\nis\
+  \ assigned to vllist, which results in -EINVAL being used as the vllist\naddress\
+  \ when afs_put_vlserverlist() is executed.\n\nSet the vllist value to NULL when\
+  \ a parsing error occurs to avoid this\nissue.\n\nFixes: e2c2cb8ef07a (\"afs: Simplify\
+  \ cell record handling\")\nReported-by: syzbot+5c042fbab0b292c98fc6@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=5c042fbab0b292c98fc6\nTested-by:\
+  \ syzbot+5c042fbab0b292c98fc6@syzkaller.appspotmail.com\nSigned-off-by: Edward Adam\
+  \ Davis <eadavis@qq.com>\nSigned-off-by: David Howells <dhowells@redhat.com>\nLink:\
+  \ https://lore.kernel.org/4119365.1753108011@warthog.procyon.org.uk\ncc: Marc Dionne\
+  \ <marc.dionne@auristor.com>\ncc: linux-afs@lists.infradead.org\ncc: linux-fsdevel@vger.kernel.org\n\
+  Signed-off-by: Christian Brauner <brauner@kernel.org>\n"
+submodule:
+- fs/afs
+hunk_count: 1
+covered_count: 1

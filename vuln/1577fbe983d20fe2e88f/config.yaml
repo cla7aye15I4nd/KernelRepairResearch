@@ -1,0 +1,25 @@
+id: 1577fbe983d20fe2e88f
+bug_link: https://syzkaller.appspot.com/bug?extid=1577fbe983d20fe2e88f
+title: general protection fault in __handle_mm_fault
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cc4b8c794f476076c9ce19f43eb4d98dc4b5e155
+fix_commit: ff09d7ec9786be4ad7589aa987d7dc66e2dd9160
+datetime: '2018-10-26T16:26:35-07:00'
+fix_commit_message: "mm/memory.c: recheck page table entry with page table lock held\n\
+  \nWe clear the pte temporarily during read/modify/write update of the pte.\nIf we\
+  \ take a page fault while the pte is cleared, the application can get\nSIGBUS. \
+  \ One such case is with remap_pfn_range without a backing\nvm_ops->fault callback.\
+  \  do_fault will return SIGBUS in that case.\n\ncpu 0\t\t \t\t\t\tcpu1\nmprotect()\n\
+  ptep_modify_prot_start()/pte cleared.\n.\n.\t\t\t\t\t\tpage fault.\n.\n.\nprep_modify_prot_commit()\n\
+  \nFix this by taking page table lock and rechecking for pte_none.\n\n[aneesh.kumar@linux.ibm.com:\
+  \ fix crash observed with syzkaller run]\n  Link: http://lkml.kernel.org/r/87va6bwlfg.fsf@linux.ibm.com\n\
+  Link: http://lkml.kernel.org/r/20180926031858.9692-1-aneesh.kumar@linux.ibm.com\n\
+  Signed-off-by: Aneesh Kumar K.V <aneesh.kumar@linux.ibm.com>\nAcked-by: Kirill A.\
+  \ Shutemov <kirill.shutemov@linux.intel.com>\nCc: Willem de Bruijn <willemdebruijn.kernel@gmail.com>\n\
+  Cc: Eric Dumazet <eric.dumazet@gmail.com>\nCc: Ido Schimmel <idosch@idosch.org>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\nSigned-off-by: Linus Torvalds\
+  \ <torvalds@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

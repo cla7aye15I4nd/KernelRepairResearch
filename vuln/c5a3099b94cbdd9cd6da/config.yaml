@@ -1,0 +1,52 @@
+id: c5a3099b94cbdd9cd6da
+bug_link: https://syzkaller.appspot.com/bug?extid=c5a3099b94cbdd9cd6da
+title: WARNING in tcp_enter_loss (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: cc2180a5880d0fd8491182cdc65e8df9696a7c9e
+fix_commit: 16ae6aa1705299789f71fdea59bfb119c1fbd9c0
+datetime: '2018-04-27T11:49:31-04:00'
+fix_commit_message: 'tcp: ignore Fast Open on repair mode
+
+
+  The TCP repair sequence of operation is to first set the socket in
+
+  repair mode, then inject the TCP stats into the socket with repair
+
+  socket options, then call connect() to re-activate the socket. The
+
+  connect syscall simply returns and set state to ESTABLISHED
+
+  mode. As a result Fast Open is meaningless for TCP repair.
+
+
+  However allowing sendto() system call with MSG_FASTOPEN flag half-way
+
+  during the repair operation could unexpectedly cause data to be
+
+  sent, before the operation finishes changing the internal TCP stats
+
+  (e.g. MSS).  This in turn triggers TCP warnings on inconsistent
+
+  packet accounting.
+
+
+  The fix is to simply disallow Fast Open operation once the socket
+
+  is in the repair mode.
+
+
+  Reported-by: syzbot <syzkaller@googlegroups.com>
+
+  Signed-off-by: Yuchung Cheng <ycheng@google.com>
+
+  Reviewed-by: Neal Cardwell <ncardwell@google.com>
+
+  Reviewed-by: Eric Dumazet <edumazet@google.com>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- net/ipv4
+hunk_count: 1
+covered_count: 0

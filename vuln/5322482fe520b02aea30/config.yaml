@@ -1,0 +1,52 @@
+id: 5322482fe520b02aea30
+bug_link: https://syzkaller.appspot.com/bug?extid=5322482fe520b02aea30
+title: 'KASAN: use-after-free Read in j1939_tp_txtimer'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b43e3a82bc432c1caaed8950e7662c143470c54c
+fix_commit: cd3b3636c99fcac52c598b64061f3fe4413c6a12
+datetime: '2020-08-14T12:38:47+02:00'
+fix_commit_message: 'can: j1939: transport: j1939_session_tx_dat(): fix use-after-free
+  read in j1939_tp_txtimer()
+
+
+  The current stack implementation do not support ECTS requests of not
+
+  aligned TP sized blocks.
+
+
+  If ECTS will request a block with size and offset spanning two TP
+
+  blocks, this will cause memcpy() to read beyond the queued skb (which
+
+  does only contain one TP sized block).
+
+
+  Sometimes KASAN will detect this read if the memory region beyond the
+
+  skb was previously allocated and freed. In other situations it will stay
+
+  undetected. The ETP transfer in any case will be corrupted.
+
+
+  This patch adds a sanity check to avoid this kind of read and abort the
+
+  session with error J1939_XTP_ABORT_ECTS_TOO_BIG.
+
+
+  Reported-by: syzbot+5322482fe520b02aea30@syzkaller.appspotmail.com
+
+  Fixes: 9d71dd0c7009 ("can: add support of SAE J1939 protocol")
+
+  Cc: linux-stable <stable@vger.kernel.org> # >= v5.4
+
+  Signed-off-by: Oleksij Rempel <o.rempel@pengutronix.de>
+
+  Link: https://lore.kernel.org/r/20200807105200.26441-3-o.rempel@pengutronix.de
+
+  Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+
+  '
+submodule:
+- net/can
+hunk_count: 2
+covered_count: 2

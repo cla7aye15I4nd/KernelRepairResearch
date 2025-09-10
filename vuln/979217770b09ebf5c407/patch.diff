@@ -1,0 +1,17 @@
+diff --git a/net/xdp/xdp_umem.c b/net/xdp/xdp_umem.c
+index 7eb4948a38d2..b9ef487c4618 100644
+--- a/net/xdp/xdp_umem.c
++++ b/net/xdp/xdp_umem.c
+@@ -132,8 +132,10 @@ static void xdp_umem_unpin_pages(struct xdp_umem *umem)
+ 
+ static void xdp_umem_unaccount_pages(struct xdp_umem *umem)
+ {
+-	atomic_long_sub(umem->npgs, &umem->user->locked_vm);
+-	free_uid(umem->user);
++	if (umem->user) {
++		atomic_long_sub(umem->npgs, &umem->user->locked_vm);
++		free_uid(umem->user);
++	}
+ }
+ 
+ static void xdp_umem_release(struct xdp_umem *umem)

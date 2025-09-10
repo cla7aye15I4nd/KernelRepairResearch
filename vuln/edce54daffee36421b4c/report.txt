@@ -1,0 +1,132 @@
+loop0: detected capacity change from 0 to 512
+EXT4-fs (loop0): mounted filesystem 00000000-0000-0000-0000-000000000000 r/w without journal. Quota mode: writeback.
+======================================================
+WARNING: possible circular locking dependency detected
+6.4.0-rc3-syzkaller-geb0f1697d729 #0 Not tainted
+------------------------------------------------------
+syz-executor262/5971 is trying to acquire lock:
+ffff0000dfa414c8 (&ei->xattr_sem){++++}-{3:3}, at: ext4_write_lock_xattr fs/ext4/xattr.h:155 [inline]
+ffff0000dfa414c8 (&ei->xattr_sem){++++}-{3:3}, at: ext4_xattr_set_handle+0x1e0/0x12d8 fs/ext4/xattr.c:2372
+
+but task is already holding lock:
+ffff0000dfa41800 (&ea_inode->i_rwsem#8/1){+.+.}-{3:3}, at: inode_lock include/linux/fs.h:775 [inline]
+ffff0000dfa41800 (&ea_inode->i_rwsem#8/1){+.+.}-{3:3}, at: vfs_setxattr+0x17c/0x344 fs/xattr.c:321
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&ea_inode->i_rwsem#8/1){+.+.}-{3:3}:
+       down_write+0x50/0xc0 kernel/locking/rwsem.c:1573
+       inode_lock include/linux/fs.h:775 [inline]
+       ext4_xattr_inode_create fs/ext4/xattr.c:1524 [inline]
+       ext4_xattr_inode_lookup_create fs/ext4/xattr.c:1607 [inline]
+       ext4_xattr_set_entry+0x2394/0x2c3c fs/ext4/xattr.c:1736
+       ext4_xattr_block_set+0x8e0/0x2cc4 fs/ext4/xattr.c:2042
+       ext4_xattr_set_handle+0xb2c/0x12d8 fs/ext4/xattr.c:2457
+       ext4_xattr_set+0x1e0/0x354 fs/ext4/xattr.c:2559
+       ext4_xattr_trusted_set+0x4c/0x64 fs/ext4/xattr_trusted.c:38
+       __vfs_setxattr+0x3d8/0x400 fs/xattr.c:201
+       __vfs_setxattr_noperm+0x110/0x528 fs/xattr.c:235
+       __vfs_setxattr_locked+0x1ec/0x218 fs/xattr.c:296
+       vfs_setxattr+0x1a8/0x344 fs/xattr.c:322
+       do_setxattr fs/xattr.c:630 [inline]
+       setxattr+0x208/0x29c fs/xattr.c:653
+       path_setxattr+0x17c/0x258 fs/xattr.c:672
+       __do_sys_setxattr fs/xattr.c:688 [inline]
+       __se_sys_setxattr fs/xattr.c:684 [inline]
+       __arm64_sys_setxattr+0xbc/0xd8 fs/xattr.c:684
+       __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+       invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+       el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+       do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+       el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+       el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+       el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+
+-> #0 (&ei->xattr_sem){++++}-{3:3}:
+       check_prev_add kernel/locking/lockdep.c:3108 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3227 [inline]
+       validate_chain kernel/locking/lockdep.c:3842 [inline]
+       __lock_acquire+0x3310/0x75f0 kernel/locking/lockdep.c:5074
+       lock_acquire+0x23c/0x71c kernel/locking/lockdep.c:5691
+       down_write+0x50/0xc0 kernel/locking/rwsem.c:1573
+       ext4_write_lock_xattr fs/ext4/xattr.h:155 [inline]
+       ext4_xattr_set_handle+0x1e0/0x12d8 fs/ext4/xattr.c:2372
+       ext4_xattr_set+0x1e0/0x354 fs/ext4/xattr.c:2559
+       ext4_xattr_user_set+0xd4/0xfc fs/ext4/xattr_user.c:41
+       __vfs_setxattr+0x3d8/0x400 fs/xattr.c:201
+       __vfs_setxattr_noperm+0x110/0x528 fs/xattr.c:235
+       __vfs_setxattr_locked+0x1ec/0x218 fs/xattr.c:296
+       vfs_setxattr+0x1a8/0x344 fs/xattr.c:322
+       do_setxattr fs/xattr.c:630 [inline]
+       setxattr+0x208/0x29c fs/xattr.c:653
+       path_setxattr+0x17c/0x258 fs/xattr.c:672
+       __do_sys_setxattr fs/xattr.c:688 [inline]
+       __se_sys_setxattr fs/xattr.c:684 [inline]
+       __arm64_sys_setxattr+0xbc/0xd8 fs/xattr.c:684
+       __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+       invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+       el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+       do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+       el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+       el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+       el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&ea_inode->i_rwsem#8/1);
+                               lock(&ei->xattr_sem);
+                               lock(&ea_inode->i_rwsem#8/1);
+  lock(&ei->xattr_sem);
+
+ *** DEADLOCK ***
+
+2 locks held by syz-executor262/5971:
+ #0: ffff0000c5df6460 (sb_writers#3){.+.+}-{0:0}, at: mnt_want_write+0x44/0x9c fs/namespace.c:394
+ #1: ffff0000dfa41800 (&ea_inode->i_rwsem#8/1){+.+.}-{3:3}, at: inode_lock include/linux/fs.h:775 [inline]
+ #1: ffff0000dfa41800 (&ea_inode->i_rwsem#8/1){+.+.}-{3:3}, at: vfs_setxattr+0x17c/0x344 fs/xattr.c:321
+
+stack backtrace:
+CPU: 0 PID: 5971 Comm: syz-executor262 Not tainted 6.4.0-rc3-syzkaller-geb0f1697d729 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/28/2023
+Call trace:
+ dump_backtrace+0x1b8/0x1e4 arch/arm64/kernel/stacktrace.c:233
+ show_stack+0x2c/0x44 arch/arm64/kernel/stacktrace.c:240
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd0/0x124 lib/dump_stack.c:106
+ dump_stack+0x1c/0x28 lib/dump_stack.c:113
+ print_circular_bug+0x150/0x1b8 kernel/locking/lockdep.c:2066
+ check_noncircular+0x2cc/0x378 kernel/locking/lockdep.c:2188
+ check_prev_add kernel/locking/lockdep.c:3108 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3227 [inline]
+ validate_chain kernel/locking/lockdep.c:3842 [inline]
+ __lock_acquire+0x3310/0x75f0 kernel/locking/lockdep.c:5074
+ lock_acquire+0x23c/0x71c kernel/locking/lockdep.c:5691
+ down_write+0x50/0xc0 kernel/locking/rwsem.c:1573
+ ext4_write_lock_xattr fs/ext4/xattr.h:155 [inline]
+ ext4_xattr_set_handle+0x1e0/0x12d8 fs/ext4/xattr.c:2372
+ ext4_xattr_set+0x1e0/0x354 fs/ext4/xattr.c:2559
+ ext4_xattr_user_set+0xd4/0xfc fs/ext4/xattr_user.c:41
+ __vfs_setxattr+0x3d8/0x400 fs/xattr.c:201
+ __vfs_setxattr_noperm+0x110/0x528 fs/xattr.c:235
+ __vfs_setxattr_locked+0x1ec/0x218 fs/xattr.c:296
+ vfs_setxattr+0x1a8/0x344 fs/xattr.c:322
+ do_setxattr fs/xattr.c:630 [inline]
+ setxattr+0x208/0x29c fs/xattr.c:653
+ path_setxattr+0x17c/0x258 fs/xattr.c:672
+ __do_sys_setxattr fs/xattr.c:688 [inline]
+ __se_sys_setxattr fs/xattr.c:684 [inline]
+ __arm64_sys_setxattr+0xbc/0xd8 fs/xattr.c:684
+ __invoke_syscall arch/arm64/kernel/syscall.c:38 [inline]
+ invoke_syscall+0x98/0x2c0 arch/arm64/kernel/syscall.c:52
+ el0_svc_common+0x138/0x258 arch/arm64/kernel/syscall.c:142
+ do_el0_svc+0x64/0x198 arch/arm64/kernel/syscall.c:193
+ el0_svc+0x4c/0x15c arch/arm64/kernel/entry-common.c:637
+ el0t_64_sync_handler+0x84/0xf0 arch/arm64/kernel/entry-common.c:655
+ el0t_64_sync+0x190/0x194 arch/arm64/kernel/entry.S:591

@@ -1,0 +1,31 @@
+id: 5c550b7ec6a56f70c32d
+bug_link: https://syzkaller.appspot.com/bug?extid=5c550b7ec6a56f70c32d
+title: general protection fault in __dentry_path (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2031f2876896d82aca7e82f84accd9181b9587fb
+fix_commit: 5c697c367a66307a5d943c3449421aff2aa3ca4a
+datetime: '2022-04-21T13:16:11-04:00'
+fix_commit_message: "KVM: Initialize debugfs_dentry when a VM is created to avoid\
+  \ NULL deref\n\nInitialize debugfs_entry to its semi-magical -ENOENT value when\
+  \ the VM\nis created.  KVM's teardown when VM creation fails is kludgy and calls\n\
+  kvm_uevent_notify_change() and kvm_destroy_vm_debugfs() even if KVM never\nattempted\
+  \ kvm_create_vm_debugfs().  Because debugfs_entry is zero\ninitialized, the IS_ERR()\
+  \ checks pass and KVM derefs a NULL pointer.\n\n  BUG: kernel NULL pointer dereference,\
+  \ address: 0000000000000018\n  #PF: supervisor read access in kernel mode\n  #PF:\
+  \ error_code(0x0000) - not-present page\n  PGD 1068b1067 P4D 1068b1067 PUD 1068b0067\
+  \ PMD 0\n  Oops: 0000 [#1] SMP\n  CPU: 0 PID: 871 Comm: repro Not tainted 5.18.0-rc1+\
+  \ #825\n  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015\n\
+  \  RIP: 0010:__dentry_path+0x7b/0x130\n  Call Trace:\n   <TASK>\n   dentry_path_raw+0x42/0x70\n\
+  \   kvm_uevent_notify_change.part.0+0x10c/0x200 [kvm]\n   kvm_put_kvm+0x63/0x2b0\
+  \ [kvm]\n   kvm_dev_ioctl+0x43a/0x920 [kvm]\n   __x64_sys_ioctl+0x83/0xb0\n   do_syscall_64+0x31/0x50\n\
+  \   entry_SYSCALL_64_after_hwframe+0x44/0xae\n   </TASK>\n  Modules linked in: kvm_intel\
+  \ kvm irqbypass\n\nFixes: a44a4cc1c969 (\"KVM: Don't create VM debugfs files outside\
+  \ of the VM directory\")\nCc: stable@vger.kernel.org\nCc: Marc Zyngier <maz@kernel.org>\n\
+  Cc: Oliver Upton <oupton@google.com>\nReported-by: syzbot+df6fbbd2ee39f21289ef@syzkaller.appspotmail.com\n\
+  Signed-off-by: Sean Christopherson <seanjc@google.com>\nReviewed-by: Oliver Upton\
+  \ <oupton@google.com>\nMessage-Id: <20220415004622.2207751-1-seanjc@google.com>\n\
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- virt/kvm
+hunk_count: 2
+covered_count: 0

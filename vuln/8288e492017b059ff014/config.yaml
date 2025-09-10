@@ -1,0 +1,61 @@
+id: 8288e492017b059ff014
+bug_link: https://syzkaller.appspot.com/bug?extid=8288e492017b059ff014
+title: 'WARNING: ODEBUG bug in __queue_work'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: de526f401284e1638d4c97cb5a4c292ac3f37655
+fix_commit: cfc2c740533368b96e2be5e0a4e8c3cace7d9814
+datetime: '2018-02-19T18:28:59+01:00'
+fix_commit_message: "netfilter: IDLETIMER: be syzkaller friendly\n\nWe had one report\
+  \ from syzkaller [1]\n\nFirst issue is that INIT_WORK() should be done before mod_timer()\n\
+  or we risk timer being fired too soon, even with a 1 second timer.\n\nSecond issue\
+  \ is that we need to reject too big info->timeout\nto avoid overflows in msecs_to_jiffies(info->timeout\
+  \ * 1000), or\nrisk looping, if result after overflow is 0.\n\n[1]\nWARNING: CPU:\
+  \ 1 PID: 5129 at kernel/workqueue.c:1444 __queue_work+0xdf4/0x1230 kernel/workqueue.c:1444\n\
+  Kernel panic - not syncing: panic_on_warn set ...\n\nCPU: 1 PID: 5129 Comm: syzkaller159866\
+  \ Not tainted 4.16.0-rc1+ #230\nHardware name: Google Google Compute Engine/Google\
+  \ Compute Engine, BIOS Google 01/01/2011\nCall Trace:\n <IRQ>\n __dump_stack lib/dump_stack.c:17\
+  \ [inline]\n dump_stack+0x194/0x257 lib/dump_stack.c:53\n panic+0x1e4/0x41c kernel/panic.c:183\n\
+  \ __warn+0x1dc/0x200 kernel/panic.c:547\n report_bug+0x211/0x2d0 lib/bug.c:184\n\
+  \ fixup_bug.part.11+0x37/0x80 arch/x86/kernel/traps.c:178\n fixup_bug arch/x86/kernel/traps.c:247\
+  \ [inline]\n do_error_trap+0x2d7/0x3e0 arch/x86/kernel/traps.c:296\n do_invalid_op+0x1b/0x20\
+  \ arch/x86/kernel/traps.c:315\n invalid_op+0x22/0x40 arch/x86/entry/entry_64.S:988\n\
+  RIP: 0010:__queue_work+0xdf4/0x1230 kernel/workqueue.c:1444\nRSP: 0018:ffff8801db507538\
+  \ EFLAGS: 00010006\nRAX: ffff8801aeb46080 RBX: ffff8801db530200 RCX: ffffffff81481404\n\
+  RDX: 0000000000000100 RSI: ffffffff86b42640 RDI: 0000000000000082\nRBP: ffff8801db507758\
+  \ R08: 1ffff1003b6a0de5 R09: 000000000000000c\nR10: ffff8801db5073f0 R11: 0000000000000020\
+  \ R12: 1ffff1003b6a0eb6\nR13: ffff8801b1067ae0 R14: 00000000000001f8 R15: dffffc0000000000\n\
+  \ queue_work_on+0x16a/0x1c0 kernel/workqueue.c:1488\n queue_work include/linux/workqueue.h:488\
+  \ [inline]\n schedule_work include/linux/workqueue.h:546 [inline]\n idletimer_tg_expired+0x44/0x60\
+  \ net/netfilter/xt_IDLETIMER.c:116\n call_timer_fn+0x228/0x820 kernel/time/timer.c:1326\n\
+  \ expire_timers kernel/time/timer.c:1363 [inline]\n __run_timers+0x7ee/0xb70 kernel/time/timer.c:1666\n\
+  \ run_timer_softirq+0x4c/0x70 kernel/time/timer.c:1692\n __do_softirq+0x2d7/0xb85\
+  \ kernel/softirq.c:285\n invoke_softirq kernel/softirq.c:365 [inline]\n irq_exit+0x1cc/0x200\
+  \ kernel/softirq.c:405\n exiting_irq arch/x86/include/asm/apic.h:541 [inline]\n\
+  \ smp_apic_timer_interrupt+0x16b/0x700 arch/x86/kernel/apic/apic.c:1052\n apic_timer_interrupt+0xa9/0xb0\
+  \ arch/x86/entry/entry_64.S:829\n </IRQ>\nRIP: 0010:arch_local_irq_restore arch/x86/include/asm/paravirt.h:777\
+  \ [inline]\nRIP: 0010:__raw_spin_unlock_irqrestore include/linux/spinlock_api_smp.h:160\
+  \ [inline]\nRIP: 0010:_raw_spin_unlock_irqrestore+0x5e/0xba kernel/locking/spinlock.c:184\n\
+  RSP: 0018:ffff8801c20173c8 EFLAGS: 00000282 ORIG_RAX: ffffffffffffff12\nRAX: dffffc0000000000\
+  \ RBX: 0000000000000282 RCX: 0000000000000006\nRDX: 1ffffffff0d592cd RSI: 1ffff10035d68d23\
+  \ RDI: 0000000000000282\nRBP: ffff8801c20173d8 R08: 1ffff10038402e47 R09: 0000000000000000\n\
+  R10: 0000000000000000 R11: 0000000000000000 R12: ffffffff8820e5c8\nR13: ffff8801b1067ad8\
+  \ R14: ffff8801aea7c268 R15: ffff8801aea7c278\n __debug_object_init+0x235/0x1040\
+  \ lib/debugobjects.c:378\n debug_object_init+0x17/0x20 lib/debugobjects.c:391\n\
+  \ __init_work+0x2b/0x60 kernel/workqueue.c:506\n idletimer_tg_create net/netfilter/xt_IDLETIMER.c:152\
+  \ [inline]\n idletimer_tg_checkentry+0x691/0xb00 net/netfilter/xt_IDLETIMER.c:213\n\
+  \ xt_check_target+0x22c/0x7d0 net/netfilter/x_tables.c:850\n check_target net/ipv6/netfilter/ip6_tables.c:533\
+  \ [inline]\n find_check_entry.isra.7+0x935/0xcf0 net/ipv6/netfilter/ip6_tables.c:575\n\
+  \ translate_table+0xf52/0x1690 net/ipv6/netfilter/ip6_tables.c:744\n do_replace\
+  \ net/ipv6/netfilter/ip6_tables.c:1160 [inline]\n do_ip6t_set_ctl+0x370/0x5f0 net/ipv6/netfilter/ip6_tables.c:1686\n\
+  \ nf_sockopt net/netfilter/nf_sockopt.c:106 [inline]\n nf_setsockopt+0x67/0xc0 net/netfilter/nf_sockopt.c:115\n\
+  \ ipv6_setsockopt+0x10b/0x130 net/ipv6/ipv6_sockglue.c:927\n udpv6_setsockopt+0x45/0x80\
+  \ net/ipv6/udp.c:1422\n sock_common_setsockopt+0x95/0xd0 net/core/sock.c:2976\n\
+  \ SYSC_setsockopt net/socket.c:1850 [inline]\n SyS_setsockopt+0x189/0x360 net/socket.c:1829\n\
+  \ do_syscall_64+0x282/0x940 arch/x86/entry/common.c:287\n\nFixes: 0902b469bd25 (\"\
+  netfilter: xtables: idletimer target implementation\")\nSigned-off-by: Eric Dumazet\
+  \ <edumazet@google.com>\nReported-by: syzkaller <syzkaller@googlegroups.com>\nSigned-off-by:\
+  \ Pablo Neira Ayuso <pablo@netfilter.org>\n"
+submodule:
+- net/netfilter
+hunk_count: 2
+covered_count: 2

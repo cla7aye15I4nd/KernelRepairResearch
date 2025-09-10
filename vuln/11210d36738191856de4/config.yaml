@@ -1,0 +1,86 @@
+id: 11210d36738191856de4
+bug_link: https://syzkaller.appspot.com/bug?extid=11210d36738191856de4
+title: 'KASAN: use-after-free Read in unmap_page_range (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: eac96c3efdb593df1a57bb5b95dbe037bfa9a522
+fix_commit: 337546e83fc7e50917f44846beee936abb9c9f1f
+datetime: '2021-10-28T17:18:55-07:00'
+fix_commit_message: 'mm/oom_kill.c: prevent a race between process_mrelease and exit_mmap
+
+
+  Race between process_mrelease and exit_mmap, where free_pgtables is
+
+  called while __oom_reap_task_mm is in progress, leads to kernel crash
+
+  during pte_offset_map_lock call.  oom-reaper avoids this race by setting
+
+  MMF_OOM_VICTIM flag and causing exit_mmap to take and release
+
+  mmap_write_lock, blocking it until oom-reaper releases mmap_read_lock.
+
+
+  Reusing MMF_OOM_VICTIM for process_mrelease would be the simplest way to
+
+  fix this race, however that would be considered a hack.  Fix this race
+
+  by elevating mm->mm_users and preventing exit_mmap from executing until
+
+  process_mrelease is finished.  Patch slightly refactors the code to
+
+  adapt for a possible mmget_not_zero failure.
+
+
+  This fix has considerable negative impact on process_mrelease
+
+  performance and will likely need later optimization.
+
+
+  Link: https://lkml.kernel.org/r/20211022014658.263508-1-surenb@google.com
+
+  Fixes: 884a7e5964e0 ("mm: introduce process_mrelease system call")
+
+  Signed-off-by: Suren Baghdasaryan <surenb@google.com>
+
+  Acked-by: Michal Hocko <mhocko@suse.com>
+
+  Cc: David Rientjes <rientjes@google.com>
+
+  Cc: Matthew Wilcox (Oracle) <willy@infradead.org>
+
+  Cc: Johannes Weiner <hannes@cmpxchg.org>
+
+  Cc: Roman Gushchin <guro@fb.com>
+
+  Cc: Rik van Riel <riel@surriel.com>
+
+  Cc: Minchan Kim <minchan@kernel.org>
+
+  Cc: Christian Brauner <christian@brauner.io>
+
+  Cc: Christoph Hellwig <hch@infradead.org>
+
+  Cc: Oleg Nesterov <oleg@redhat.com>
+
+  Cc: David Hildenbrand <david@redhat.com>
+
+  Cc: Jann Horn <jannh@google.com>
+
+  Cc: Shakeel Butt <shakeelb@google.com>
+
+  Cc: Andy Lutomirski <luto@kernel.org>
+
+  Cc: Christian Brauner <christian.brauner@ubuntu.com>
+
+  Cc: Florian Weimer <fweimer@redhat.com>
+
+  Cc: Jan Engelhardt <jengelh@inai.de>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- mm
+hunk_count: 3
+covered_count: 3

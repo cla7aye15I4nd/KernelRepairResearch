@@ -1,0 +1,50 @@
+id: b7f57261c521087d89bb
+bug_link: https://syzkaller.appspot.com/bug?extid=b7f57261c521087d89bb
+title: WARNING in em28xx_usb_disconnect
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f1409116835a8ae7cd924e2829772c470eb6cba4
+fix_commit: 46e4a26615cc7854340e4b69ca59ee78d6f20c8b
+datetime: '2019-08-14T05:06:44-03:00'
+fix_commit_message: "media: em28xx: modules workqueue not inited for 2nd device\n\n\
+  syzbot reports an error on flush_request_modules() for the second device.\nThis\
+  \ workqueue was never initialised so simply remove the offending line.\n\nusb 1-1:\
+  \ USB disconnect, device number 2\nem28xx 1-1:1.153: Disconnecting em28xx #1\n------------[\
+  \ cut here ]------------\nWARNING: CPU: 0 PID: 12 at kernel/workqueue.c:3031\n__flush_work.cold+0x2c/0x36\
+  \ kernel/workqueue.c:3031\nKernel panic - not syncing: panic_on_warn set ...\nCPU:\
+  \ 0 PID: 12 Comm: kworker/0:1 Not tainted 5.3.0-rc2+ #25\nHardware name: Google\
+  \ Google Compute Engine/Google Compute Engine, BIOS\nGoogle 01/01/2011\nWorkqueue:\
+  \ usb_hub_wq hub_event\nCall Trace:\n  __dump_stack lib/dump_stack.c:77 [inline]\n\
+  \  dump_stack+0xca/0x13e lib/dump_stack.c:113\n  panic+0x2a3/0x6da kernel/panic.c:219\n\
+  \  __warn.cold+0x20/0x4a kernel/panic.c:576\n  report_bug+0x262/0x2a0 lib/bug.c:186\n\
+  \  fixup_bug arch/x86/kernel/traps.c:179 [inline]\n  fixup_bug arch/x86/kernel/traps.c:174\
+  \ [inline]\n  do_error_trap+0x12b/0x1e0 arch/x86/kernel/traps.c:272\n  do_invalid_op+0x32/0x40\
+  \ arch/x86/kernel/traps.c:291\n  invalid_op+0x23/0x30 arch/x86/entry/entry_64.S:1026\n\
+  RIP: 0010:__flush_work.cold+0x2c/0x36 kernel/workqueue.c:3031\nCode: 9a 22 00 48\
+  \ c7 c7 20 e4 c5 85 e8 d9 3a 0d 00 0f 0b 45 31 e4 e9 98 86\nff ff e8 51 9a 22 00\
+  \ 48 c7 c7 20 e4 c5 85 e8 be 3a 0d 00 <0f> 0b 45 31 e4\ne9 7d 86 ff ff e8 36 9a\
+  \ 22 00 48 c7 c7 20 e4 c5 85\nRSP: 0018:ffff8881da20f720 EFLAGS: 00010286\nRAX:\
+  \ 0000000000000024 RBX: dffffc0000000000 RCX: 0000000000000000\nRDX: 0000000000000000\
+  \ RSI: ffffffff8128a0fd RDI: ffffed103b441ed6\nRBP: ffff8881da20f888 R08: 0000000000000024\
+  \ R09: fffffbfff11acd9a\nR10: fffffbfff11acd99 R11: ffffffff88d66ccf R12: 0000000000000000\n\
+  R13: 0000000000000001 R14: ffff8881c6685df8 R15: ffff8881d2a85b78\n  flush_request_modules\
+  \ drivers/media/usb/em28xx/em28xx-cards.c:3325 [inline]\n  em28xx_usb_disconnect.cold+0x280/0x2a6\n\
+  drivers/media/usb/em28xx/em28xx-cards.c:4023\n  usb_unbind_interface+0x1bd/0x8a0\
+  \ drivers/usb/core/driver.c:423\n  __device_release_driver drivers/base/dd.c:1120\
+  \ [inline]\n  device_release_driver_internal+0x404/0x4c0 drivers/base/dd.c:1151\n\
+  \  bus_remove_device+0x2dc/0x4a0 drivers/base/bus.c:556\n  device_del+0x420/0xb10\
+  \ drivers/base/core.c:2288\n  usb_disable_device+0x211/0x690 drivers/usb/core/message.c:1237\n\
+  \  usb_disconnect+0x284/0x8d0 drivers/usb/core/hub.c:2199\n  hub_port_connect drivers/usb/core/hub.c:4949\
+  \ [inline]\n  hub_port_connect_change drivers/usb/core/hub.c:5213 [inline]\n  port_event\
+  \ drivers/usb/core/hub.c:5359 [inline]\n  hub_event+0x1454/0x3640 drivers/usb/core/hub.c:5441\n\
+  \  process_one_work+0x92b/0x1530 kernel/workqueue.c:2269\n  process_scheduled_works\
+  \ kernel/workqueue.c:2331 [inline]\n  worker_thread+0x7ab/0xe20 kernel/workqueue.c:2417\n\
+  \  kthread+0x318/0x420 kernel/kthread.c:255\n  ret_from_fork+0x24/0x30 arch/x86/entry/entry_64.S:352\n\
+  Kernel Offset: disabled\nRebooting in 86400 seconds..\n\nFixes: be7fd3c3a8c5e (\"\
+  media: em28xx: Hauppauge DualHD second tuner functionality)\nReviewed-by: Ezequiel\
+  \ Garcia <ezequiel@collabora.com>\nReviewed-by: Brad Love <brad@nextdimension.cc>\n\
+  Reported-by: syzbot+b7f57261c521087d89bb@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Sean Young <sean@mess.org>\nSigned-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>\n"
+submodule:
+- drivers/media/usb/em28xx
+hunk_count: 1
+covered_count: 1

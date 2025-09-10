@@ -1,0 +1,37 @@
+id: e91619dd4c11c4960706
+bug_link: https://syzkaller.appspot.com/bug?extid=e91619dd4c11c4960706
+title: 'UBSAN: shift-out-of-bounds in nilfs_load_super_block'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: dc3f4dee81cd85b039d07b8d75cfbae4668a15d2
+fix_commit: 610a2a3d7d8be3537458a378ec69396a76c385b6
+datetime: '2022-11-18T13:55:08-08:00'
+fix_commit_message: "nilfs2: fix shift-out-of-bounds/overflow in nilfs_sb2_bad_offset()\n\
+  \nPatch series \"nilfs2: fix UBSAN shift-out-of-bounds warnings on mount\ntime\"\
+  .\n\nThe first patch fixes a bug reported by syzbot, and the second one fixes\n\
+  the remaining bug of the same kind.  Although they are triggered by the\nsame super\
+  \ block data anomaly, I divided it into the above two because the\ndetails of the\
+  \ issues and how to fix it are different.\n\nBoth are required to eliminate the\
+  \ shift-out-of-bounds issues at mount\ntime.\n\n\nThis patch (of 2):\n\nIf the block\
+  \ size exponent information written in an on-disk superblock is\ncorrupted, nilfs_sb2_bad_offset\
+  \ helper function can trigger\nshift-out-of-bounds warning followed by a kernel\
+  \ panic (if panic_on_warn\nis set):\n\n shift exponent 38983 is too large for 64-bit\
+  \ type 'unsigned long long'\n Call Trace:\n  <TASK>\n  __dump_stack lib/dump_stack.c:88\
+  \ [inline]\n  dump_stack_lvl+0x1b1/0x28e lib/dump_stack.c:106\n  ubsan_epilogue\
+  \ lib/ubsan.c:151 [inline]\n  __ubsan_handle_shift_out_of_bounds+0x33d/0x3b0 lib/ubsan.c:322\n\
+  \  nilfs_sb2_bad_offset fs/nilfs2/the_nilfs.c:449 [inline]\n  nilfs_load_super_block+0xdf5/0xe00\
+  \ fs/nilfs2/the_nilfs.c:523\n  init_nilfs+0xb7/0x7d0 fs/nilfs2/the_nilfs.c:577\n\
+  \  nilfs_fill_super+0xb1/0x5d0 fs/nilfs2/super.c:1047\n  nilfs_mount+0x613/0x9b0\
+  \ fs/nilfs2/super.c:1317\n  ...\n\nIn addition, since nilfs_sb2_bad_offset() performs\
+  \ multiplication without\nconsidering the upper bound, the computation may overflow\
+  \ if the disk\nlayout parameters are not normal.\n\nThis fixes these issues by inserting\
+  \ preliminary sanity checks for those\nparameters and by converting the comparison\
+  \ from one involving\nmultiplication and left bit-shifting to one using division\
+  \ and right\nbit-shifting.\n\nLink: https://lkml.kernel.org/r/20221027044306.42774-1-konishi.ryusuke@gmail.com\n\
+  Link: https://lkml.kernel.org/r/20221027044306.42774-2-konishi.ryusuke@gmail.com\n\
+  Signed-off-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>\nReported-by: syzbot+e91619dd4c11c4960706@syzkaller.appspotmail.com\n\
+  Tested-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>\nSigned-off-by: Andrew Morton\
+  \ <akpm@linux-foundation.org>\n"
+submodule:
+- fs/nilfs2
+hunk_count: 2
+covered_count: 2

@@ -1,0 +1,14 @@
+diff --git a/fs/bcachefs/fs.c b/fs/bcachefs/fs.c
+index 9b41c6e9deef..96040a95cf46 100644
+--- a/fs/bcachefs/fs.c
++++ b/fs/bcachefs/fs.c
+@@ -188,8 +188,7 @@ static struct bch_inode_info *bch2_inode_insert(struct bch_fs *c, struct bch_ino
+ 	BUG_ON(!old);
+ 
+ 	if (unlikely(old != inode)) {
+-		__destroy_inode(&inode->v);
+-		kmem_cache_free(bch2_inode_cache, inode);
++		discard_new_inode(&inode->v);
+ 		inode = old;
+ 	} else {
+ 		mutex_lock(&c->vfs_inodes_lock);

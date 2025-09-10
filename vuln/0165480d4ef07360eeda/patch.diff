@@ -1,0 +1,79 @@
+diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
+index 7eefdc9be2a7..c411662141ae 100644
+--- a/net/xfrm/xfrm_policy.c
++++ b/net/xfrm/xfrm_policy.c
+@@ -1276,13 +1276,17 @@ static void xfrm_hash_rebuild(struct work_struct *work)
+ 
+ 		hlist_for_each_entry_safe(policy, n,
+ 					  &net->xfrm.policy_inexact[dir],
+-					  bydst_inexact_list)
++					  bydst_inexact_list) {
++			hlist_del_rcu(&policy->bydst);
+ 			hlist_del_init(&policy->bydst_inexact_list);
++		}
+ 
+ 		hmask = net->xfrm.policy_bydst[dir].hmask;
+ 		odst = net->xfrm.policy_bydst[dir].table;
+-		for (i = hmask; i >= 0; i--)
+-			INIT_HLIST_HEAD(odst + i);
++		for (i = hmask; i >= 0; i--) {
++			hlist_for_each_entry_safe(policy, n, odst + i, bydst)
++				hlist_del_rcu(&policy->bydst);
++		}
+ 		if ((dir & XFRM_POLICY_MASK) == XFRM_POLICY_OUT) {
+ 			/* dir out => dst = remote, src = local */
+ 			net->xfrm.policy_bydst[dir].dbits4 = rbits4;
+@@ -1311,8 +1315,6 @@ static void xfrm_hash_rebuild(struct work_struct *work)
+ 		chain = policy_hash_bysel(net, &policy->selector,
+ 					  policy->family, dir);
+ 
+-		hlist_del_rcu(&policy->bydst);
+-
+ 		if (!chain) {
+ 			void *p = xfrm_policy_inexact_insert(policy, dir, 0);
+ 
+diff --git a/tools/testing/selftests/net/xfrm_policy.sh b/tools/testing/selftests/net/xfrm_policy.sh
+index 71d7fdc513c1..5445943bf07f 100755
+--- a/tools/testing/selftests/net/xfrm_policy.sh
++++ b/tools/testing/selftests/net/xfrm_policy.sh
+@@ -257,6 +257,29 @@ check_exceptions()
+ 	return $lret
+ }
+ 
++check_hthresh_repeat()
++{
++	local log=$1
++	i=0
++
++	for i in $(seq 1 10);do
++		ip -net ns1 xfrm policy update src e000:0001::0000 dst ff01::0014:0000:0001 dir in tmpl src :: dst :: proto esp mode tunnel priority 100 action allow || break
++		ip -net ns1 xfrm policy set hthresh6 0 28 || break
++
++		ip -net ns1 xfrm policy update src e000:0001::0000 dst ff01::01 dir in tmpl src :: dst :: proto esp mode tunnel priority 100 action allow || break
++		ip -net ns1 xfrm policy set hthresh6 0 28 || break
++	done
++
++	if [ $i -ne 10 ] ;then
++		echo "FAIL: $log" 1>&2
++		ret=1
++		return 1
++	fi
++
++	echo "PASS: $log"
++	return 0
++}
++
+ #check for needed privileges
+ if [ "$(id -u)" -ne 0 ];then
+ 	echo "SKIP: Need root privileges"
+@@ -404,7 +427,9 @@ for n in ns3 ns4;do
+ 	ip -net $n xfrm policy set hthresh4 32 32 hthresh6 128 128
+ 	sleep $((RANDOM%5))
+ done
+-check_exceptions "exceptions and block policies after hresh change to normal"
++check_exceptions "exceptions and block policies after htresh change to normal"
++
++check_hthresh_repeat "policies with repeated htresh change"
+ 
+ for i in 1 2 3 4;do ip netns del ns$i;done
+ 

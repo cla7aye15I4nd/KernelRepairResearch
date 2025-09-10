@@ -1,0 +1,71 @@
+=============================
+WARNING: suspicious RCU usage
+6.10.0-rc4-syzkaller-00052-ge5b3efbe1ab1 #0 Not tainted
+-----------------------------
+net/netfilter/ipset/ip_set_core.c:1200 suspicious rcu_dereference_protected() usage!
+
+other info that might help us debug this:
+
+
+rcu_scheduler_active = 2, debug_locks = 1
+3 locks held by kworker/u8:0/11:
+ #0: ffff8880162d3148 ((wq_completion)netns){+.+.}-{0:0}, at: process_one_work+0x12bf/0x1b60 kernel/workqueue.c:3206
+ #1: ffffc90000107d80 (net_cleanup_work){+.+.}-{0:0}, at: process_one_work+0x957/0x1b60 kernel/workqueue.c:3207
+ #2: ffffffff8f733210 (pernet_ops_rwsem){++++}-{3:3}, at: cleanup_net+0xbb/0xbf0 net/core/net_namespace.c:594
+
+stack backtrace:
+CPU: 0 PID: 11 Comm: kworker/u8:0 Not tainted 6.10.0-rc4-syzkaller-00052-ge5b3efbe1ab1 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Workqueue: netns cleanup_net
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x16c/0x1f0 lib/dump_stack.c:114
+ lockdep_rcu_suspicious+0x20b/0x3b0 kernel/locking/lockdep.c:6712
+ _destroy_all_sets+0x261/0x6d0 net/netfilter/ipset/ip_set_core.c:1200
+ ip_set_net_exit+0x26/0x60 net/netfilter/ipset/ip_set_core.c:2396
+ ops_exit_list+0xb0/0x180 net/core/net_namespace.c:173
+ cleanup_net+0x5b7/0xbf0 net/core/net_namespace.c:640
+ process_one_work+0x9fb/0x1b60 kernel/workqueue.c:3231
+ process_scheduled_works kernel/workqueue.c:3312 [inline]
+ worker_thread+0x6c8/0xf70 kernel/workqueue.c:3393
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+
+=============================
+WARNING: suspicious RCU usage
+6.10.0-rc4-syzkaller-00052-ge5b3efbe1ab1 #0 Not tainted
+-----------------------------
+net/netfilter/ipset/ip_set_core.c:1211 suspicious rcu_dereference_protected() usage!
+
+other info that might help us debug this:
+
+
+rcu_scheduler_active = 2, debug_locks = 1
+3 locks held by kworker/u8:0/11:
+ #0: ffff8880162d3148 ((wq_completion)netns){+.+.}-{0:0}, at: process_one_work+0x12bf/0x1b60 kernel/workqueue.c:3206
+ #1: ffffc90000107d80 (net_cleanup_work){+.+.}-{0:0}, at: process_one_work+0x957/0x1b60 kernel/workqueue.c:3207
+ #2: ffffffff8f733210 (pernet_ops_rwsem){++++}-{3:3}, at: cleanup_net+0xbb/0xbf0 net/core/net_namespace.c:594
+
+stack backtrace:
+CPU: 0 PID: 11 Comm: kworker/u8:0 Not tainted 6.10.0-rc4-syzkaller-00052-ge5b3efbe1ab1 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Workqueue: netns cleanup_net
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x16c/0x1f0 lib/dump_stack.c:114
+ lockdep_rcu_suspicious+0x20b/0x3b0 kernel/locking/lockdep.c:6712
+ _destroy_all_sets+0x4e6/0x6d0 net/netfilter/ipset/ip_set_core.c:1211
+ ip_set_net_exit+0x26/0x60 net/netfilter/ipset/ip_set_core.c:2396
+ ops_exit_list+0xb0/0x180 net/core/net_namespace.c:173
+ cleanup_net+0x5b7/0xbf0 net/core/net_namespace.c:640
+ process_one_work+0x9fb/0x1b60 kernel/workqueue.c:3231
+ process_scheduled_works kernel/workqueue.c:3312 [inline]
+ worker_thread+0x6c8/0xf70 kernel/workqueue.c:3393
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

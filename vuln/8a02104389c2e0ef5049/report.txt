@@ -1,0 +1,91 @@
+==================================================================
+BUG: KCSAN: data-race in virtqueue_disable_cb / vring_interrupt
+
+write to 0xffff88810285ef52 of 1 bytes by interrupt on cpu 0:
+ vring_interrupt+0x12b/0x180 drivers/virtio/virtio_ring.c:2591
+ __handle_irq_event_percpu+0x95/0x490 kernel/irq/handle.c:158
+ handle_irq_event_percpu kernel/irq/handle.c:193 [inline]
+ handle_irq_event+0x64/0xf0 kernel/irq/handle.c:210
+ handle_edge_irq+0x16d/0x5b0 kernel/irq/chip.c:831
+ generic_handle_irq_desc include/linux/irqdesc.h:173 [inline]
+ handle_irq arch/x86/kernel/irq.c:247 [inline]
+ call_irq_handler arch/x86/kernel/irq.c:259 [inline]
+ __common_interrupt+0x58/0xe0 arch/x86/kernel/irq.c:285
+ common_interrupt+0x7c/0x90 arch/x86/kernel/irq.c:278
+ asm_common_interrupt+0x26/0x40 arch/x86/include/asm/idtentry.h:693
+ __preempt_count_dec_and_test arch/x86/include/asm/preempt.h:94 [inline]
+ __raw_spin_unlock_irq include/linux/spinlock_api_smp.h:160 [inline]
+ _raw_spin_unlock_irq+0x2f/0x50 kernel/locking/spinlock.c:202
+ process_one_work kernel/workqueue.c:3200 [inline]
+ process_scheduled_works+0x43b/0x9a0 kernel/workqueue.c:3312
+ worker_thread+0x526/0x6e0 kernel/workqueue.c:3389
+ kthread+0x1d1/0x210 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x60 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+read to 0xffff88810285ef52 of 1 bytes by interrupt on cpu 1:
+ virtqueue_disable_cb_split drivers/virtio/virtio_ring.c:892 [inline]
+ virtqueue_disable_cb+0x92/0x180 drivers/virtio/virtio_ring.c:2446
+ start_xmit+0x14b/0x1260 drivers/net/virtio_net.c:3034
+ __netdev_start_xmit include/linux/netdevice.h:4913 [inline]
+ netdev_start_xmit include/linux/netdevice.h:4922 [inline]
+ xmit_one net/core/dev.c:3580 [inline]
+ dev_hard_start_xmit+0x119/0x3f0 net/core/dev.c:3596
+ sch_direct_xmit+0x1b0/0x580 net/sched/sch_generic.c:343
+ __dev_xmit_skb net/core/dev.c:3809 [inline]
+ __dev_queue_xmit+0xf3d/0x1fe0 net/core/dev.c:4389
+ dev_queue_xmit include/linux/netdevice.h:3105 [inline]
+ neigh_hh_output include/net/neighbour.h:526 [inline]
+ neigh_output include/net/neighbour.h:540 [inline]
+ ip_finish_output2+0x73d/0x8b0 net/ipv4/ip_output.c:235
+ ip_finish_output+0x11a/0x2a0 net/ipv4/ip_output.c:323
+ NF_HOOK_COND include/linux/netfilter.h:303 [inline]
+ ip_output+0xab/0x170 net/ipv4/ip_output.c:433
+ dst_output include/net/dst.h:450 [inline]
+ ip_local_out net/ipv4/ip_output.c:129 [inline]
+ __ip_queue_xmit+0xbcc/0xbf0 net/ipv4/ip_output.c:535
+ ip_queue_xmit+0x38/0x50 net/ipv4/ip_output.c:549
+ __tcp_transmit_skb+0x15b0/0x1970 net/ipv4/tcp_output.c:1466
+ tcp_transmit_skb net/ipv4/tcp_output.c:1484 [inline]
+ tcp_write_xmit+0x1273/0x31c0 net/ipv4/tcp_output.c:2829
+ __tcp_push_pending_frames+0x6a/0x1a0 net/ipv4/tcp_output.c:3014
+ tcp_push_pending_frames include/net/tcp.h:2106 [inline]
+ tcp_data_snd_check net/ipv4/tcp_input.c:5707 [inline]
+ tcp_rcv_established+0xa12/0xef0 net/ipv4/tcp_input.c:6141
+ tcp_v4_do_rcv+0x662/0x740 net/ipv4/tcp_ipv4.c:1911
+ tcp_v4_rcv+0x1b25/0x1ee0 net/ipv4/tcp_ipv4.c:2346
+ ip_protocol_deliver_rcu+0x370/0x720 net/ipv4/ip_input.c:205
+ ip_local_deliver_finish+0x17d/0x210 net/ipv4/ip_input.c:233
+ NF_HOOK include/linux/netfilter.h:314 [inline]
+ ip_local_deliver+0xec/0x1d0 net/ipv4/ip_input.c:254
+ dst_input include/net/dst.h:460 [inline]
+ ip_sublist_rcv_finish net/ipv4/ip_input.c:580 [inline]
+ ip_list_rcv_finish net/ipv4/ip_input.c:631 [inline]
+ ip_sublist_rcv+0x55a/0x640 net/ipv4/ip_input.c:639
+ ip_list_rcv+0x25e/0x290 net/ipv4/ip_input.c:674
+ __netif_receive_skb_list_ptype net/core/dev.c:5704 [inline]
+ __netif_receive_skb_list_core+0x4f0/0x520 net/core/dev.c:5752
+ __netif_receive_skb_list net/core/dev.c:5804 [inline]
+ netif_receive_skb_list_internal+0x4e4/0x660 net/core/dev.c:5896
+ gro_normal_list include/net/gro.h:515 [inline]
+ napi_complete_done+0x1cb/0x450 net/core/dev.c:6247
+ virtqueue_napi_complete drivers/net/virtio_net.c:694 [inline]
+ virtnet_poll+0x1b73/0x1fd0 drivers/net/virtio_net.c:2826
+ __napi_poll+0x63/0x3c0 net/core/dev.c:6772
+ napi_poll net/core/dev.c:6841 [inline]
+ net_rx_action+0x3a1/0x7f0 net/core/dev.c:6963
+ handle_softirqs+0xc3/0x280 kernel/softirq.c:554
+ __do_softirq kernel/softirq.c:588 [inline]
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu kernel/softirq.c:637 [inline]
+ irq_exit_rcu+0x3e/0x90 kernel/softirq.c:649
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]
+ sysvec_apic_timer_interrupt+0x37/0x80 arch/x86/kernel/apic/apic.c:1043
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+
+value changed: 0x00 -> 0x01
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 UID: 0 PID: 31238 Comm: syz.2.3839 Not tainted 6.11.0-rc7-syzkaller-00021-g7c6a3a65ace7 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+==================================================================

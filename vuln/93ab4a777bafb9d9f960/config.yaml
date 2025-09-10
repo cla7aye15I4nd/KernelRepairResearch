@@ -1,0 +1,42 @@
+id: 93ab4a777bafb9d9f960
+bug_link: https://syzkaller.appspot.com/bug?extid=93ab4a777bafb9d9f960
+title: 'KMSAN: uninit-value in __ipv6_addr_type'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c180188ec02281126045414e90d08422a80f75b4
+fix_commit: 27843ce6ba3d3122b65066550fe33fb8839f8aef
+datetime: '2025-02-21T16:29:50-08:00'
+fix_commit_message: "ipvlan: ensure network headers are in skb linear part\n\nsyzbot\
+  \ found that ipvlan_process_v6_outbound() was assuming\nthe IPv6 network header\
+  \ isis present in skb->head [1]\n\nAdd the needed pskb_network_may_pull() calls\
+  \ for both\nIPv4 and IPv6 handlers.\n\n[1]\nBUG: KMSAN: uninit-value in __ipv6_addr_type+0xa2/0x490\
+  \ net/ipv6/addrconf_core.c:47\n  __ipv6_addr_type+0xa2/0x490 net/ipv6/addrconf_core.c:47\n\
+  \  ipv6_addr_type include/net/ipv6.h:555 [inline]\n  ip6_route_output_flags_noref\
+  \ net/ipv6/route.c:2616 [inline]\n  ip6_route_output_flags+0x51/0x720 net/ipv6/route.c:2651\n\
+  \  ip6_route_output include/net/ip6_route.h:93 [inline]\n  ipvlan_route_v6_outbound+0x24e/0x520\
+  \ drivers/net/ipvlan/ipvlan_core.c:476\n  ipvlan_process_v6_outbound drivers/net/ipvlan/ipvlan_core.c:491\
+  \ [inline]\n  ipvlan_process_outbound drivers/net/ipvlan/ipvlan_core.c:541 [inline]\n\
+  \  ipvlan_xmit_mode_l3 drivers/net/ipvlan/ipvlan_core.c:605 [inline]\n  ipvlan_queue_xmit+0xd72/0x1780\
+  \ drivers/net/ipvlan/ipvlan_core.c:671\n  ipvlan_start_xmit+0x5b/0x210 drivers/net/ipvlan/ipvlan_main.c:223\n\
+  \  __netdev_start_xmit include/linux/netdevice.h:5150 [inline]\n  netdev_start_xmit\
+  \ include/linux/netdevice.h:5159 [inline]\n  xmit_one net/core/dev.c:3735 [inline]\n\
+  \  dev_hard_start_xmit+0x247/0xa20 net/core/dev.c:3751\n  sch_direct_xmit+0x399/0xd40\
+  \ net/sched/sch_generic.c:343\n  qdisc_restart net/sched/sch_generic.c:408 [inline]\n\
+  \  __qdisc_run+0x14da/0x35d0 net/sched/sch_generic.c:416\n  qdisc_run+0x141/0x4d0\
+  \ include/net/pkt_sched.h:127\n  net_tx_action+0x78b/0x940 net/core/dev.c:5484\n\
+  \  handle_softirqs+0x1a0/0x7c0 kernel/softirq.c:561\n  __do_softirq+0x14/0x1a kernel/softirq.c:595\n\
+  \  do_softirq+0x9a/0x100 kernel/softirq.c:462\n  __local_bh_enable_ip+0x9f/0xb0\
+  \ kernel/softirq.c:389\n  local_bh_enable include/linux/bottom_half.h:33 [inline]\n\
+  \  rcu_read_unlock_bh include/linux/rcupdate.h:919 [inline]\n  __dev_queue_xmit+0x2758/0x57d0\
+  \ net/core/dev.c:4611\n  dev_queue_xmit include/linux/netdevice.h:3311 [inline]\n\
+  \  packet_xmit+0x9c/0x6c0 net/packet/af_packet.c:276\n  packet_snd net/packet/af_packet.c:3132\
+  \ [inline]\n  packet_sendmsg+0x93e0/0xa7e0 net/packet/af_packet.c:3164\n  sock_sendmsg_nosec\
+  \ net/socket.c:718 [inline]\n\nFixes: 2ad7bf363841 (\"ipvlan: Initial check-in of\
+  \ the IPVLAN driver.\")\nReported-by: syzbot+93ab4a777bafb9d9f960@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/netdev/67b74f01.050a0220.14d86d.02d8.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nCc: Mahesh Bandewar <maheshb@google.com>\n\
+  Link: https://patch.msgid.link/20250220155336.61884-1-edumazet@google.com\nSigned-off-by:\
+  \ Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net/ipvlan
+hunk_count: 2
+covered_count: 2

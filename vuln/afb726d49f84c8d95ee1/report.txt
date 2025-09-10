@@ -1,0 +1,40 @@
+------------[ cut here ]------------
+kernel BUG at arch/riscv/mm/physaddr.c:31!
+Kernel BUG [#1]
+Modules linked in:
+CPU: 0 PID: 1 Comm: swapper/0 Not tainted 6.7.0-rc1-syzkaller-geb46a0076501 #0
+Hardware name: riscv-virtio,qemu (DT)
+epc : __phys_addr_symbol+0x144/0x150 arch/riscv/mm/physaddr.c:31
+ ra : __phys_addr_symbol+0x144/0x150 arch/riscv/mm/physaddr.c:31
+epc : ffffffff800200b4 ra : ffffffff800200b4 sp : ff20000000013d10
+ gp : ffffffff861f60a0 tp : ff6000000b260000 t0 : 26747970652d3e69
+ t1 : fffffffef0a8ad5d t2 : 0000000000000000 s0 : ff20000000013d40
+ s1 : ff60000003a00000 a0 : 0000000000000006 a1 : ffffffff80000000
+ a2 : 0000000000000002 a3 : ffffffff800200b4 a4 : 0000000000000000
+ a5 : ff6000000b261000 a6 : 0000000000000003 a7 : ffffffff85456aef
+ s2 : ffffffff8816d000 s3 : ffffffff80000000 s4 : ffffffff84e6f2b0
+ s5 : ff60000003a00000 s6 : 0000000000000000 s7 : 0000000000000000
+ s8 : ffffffff861f5c40 s9 : 0000000000000000 s10: 0000000000000000
+ s11: 0000000000000000 t3 : ffffffffffffffff t4 : fffffffef0a8ad5d
+ t5 : fffffffef0a8ad5e t6 : ff60000013d0ef30
+status: 0000000200000120 badaddr: 0000000000000000 cause: 0000000000000003
+[<ffffffff800200b4>] __phys_addr_symbol+0x144/0x150 arch/riscv/mm/physaddr.c:31
+[<ffffffff80019ede>] __set_memory+0x1c0/0x762 arch/riscv/mm/pageattr.c:308
+[<ffffffff8001a4a4>] set_memory_rw_nx+0x24/0x30 arch/riscv/mm/pageattr.c:346
+[<ffffffff80008778>] set_kernel_memory arch/riscv/include/asm/set_memory.h:27 [inline]
+[<ffffffff80008778>] free_initmem+0x52/0x8c arch/riscv/kernel/setup.c:323
+[<ffffffff837334e6>] kernel_init+0x44/0x21e init/main.c:1450
+[<ffffffff83745cb2>] ret_from_fork+0xe/0x1c arch/riscv/kernel/entry.S:221
+Code: 84b3 4124 b745 4985 1996 bf65 7097 0025 80e7 ecc0 (9002) 7097 
+---[ end trace 0000000000000000 ]---
+----------------
+Code disassembly (best guess):
+   0:	412484b3          	sub	s1,s1,s2
+   4:	b745                	j	0xffffffffffffffa4
+   6:	4985                	li	s3,1
+   8:	1996                	sll	s3,s3,0x25
+   a:	bf65                	j	0xffffffffffffffc2
+   c:	00257097          	auipc	ra,0x257
+  10:	ecc080e7          	jalr	-308(ra) # 0x256ed8
+* 14:	9002                	ebreak <-- trapping instruction
+  16:	97 70             	Address 0x16 is out of bounds.

@@ -1,0 +1,47 @@
+bcachefs (loop0): mounting version 1.7: mi_btree_bitmap opts=metadata_checksum=none,data_checksum=none,nojournal_transaction_names
+bcachefs (loop0): recovering from clean shutdown, journal seq 10
+bcachefs (loop0): error validating btree node on loop0 at btree (unknown) level 3/3
+  u64s 11 type btree_ptr_v2 SPOS_MAX len 0 ver 0: seq 27c2ec7b8e70cb08 written 16 min_key POS_MIN durability: 1 ptr: 0:31:0 gen 0
+  node offset 0/16 bset u64s 0: incorrect btree id
+bcachefs (loop0): inconsistency detected - emergency read only at journal seq 10
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in fs/bcachefs/recovery.c:38:10
+shift exponent 255 is too large for 64-bit type 'unsigned long long'
+CPU: 1 PID: 5082 Comm: syz-executor184 Not tainted 6.9.0-syzkaller-07387-g8c06da67d0bd #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x3c8/0x420 lib/ubsan.c:468
+ bch2_btree_lost_data+0x143/0x150 fs/bcachefs/recovery.c:38
+ bch2_btree_node_read_done+0x50f9/0x5a40 fs/bcachefs/btree_io.c:1272
+ btree_node_read_work+0x665/0x1300 fs/bcachefs/btree_io.c:1324
+ bch2_btree_node_read+0x2b64/0x32c0
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1748 [inline]
+ bch2_btree_root_read+0x61e/0x970 fs/bcachefs/btree_io.c:1772
+ read_btree_roots+0x22d/0x7b0 fs/bcachefs/recovery.c:457
+ bch2_fs_recovery+0x4334/0x63b0 fs/bcachefs/recovery.c:785
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1043
+ bch2_fs_open+0xa8d/0xdf0 fs/bcachefs/super.c:2105
+ bch2_mount+0x71d/0x1320 fs/bcachefs/fs.c:1906
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2a0 fs/super.c:1779
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3352
+ do_mount fs/namespace.c:3692 [inline]
+ __do_sys_mount fs/namespace.c:3898 [inline]
+ __se_sys_mount+0x2d9/0x3c0 fs/namespace.c:3875
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa695417daa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffc4c8ca6b8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffc4c8ca6d0 RCX: 00007fa695417daa
+RDX: 0000000020011a00 RSI: 0000000020000080 RDI: 00007ffc4c8ca6d0
+RBP: 0000000000000004 R08: 00007ffc4c8ca710 R09: 00000000000119fd
+R10: 0000000001200014 R11: 0000000000000282 R12: 0000000001200014
+R13: 00007ffc4c8ca710 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+---[ end trace ]---

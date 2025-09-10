@@ -1,0 +1,97 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc000000021b: 0000 [#1] PREEMPT SMP KASAN NOPTI
+KASAN: probably user-memory-access in range [0x00000000000010d8-0x00000000000010df]
+CPU: 0 UID: 0 PID: 1092 Comm: kworker/u8:6 Not tainted 6.12.0-rc7-syzkaller-00212-g4a5df3796467 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/30/2024
+Workqueue: events_unbound toggle_allocation_gate
+RIP: 0010:ir_raw_event_store_with_filter+0x442/0x590 drivers/media/rc/rc-ir-raw.c:184
+Code: 80 3c 02 00 0f 85 4e 01 00 00 4c 8b a3 b8 05 00 00 48 b8 00 00 00 00 00 fc ff df 49 8d bc 24 d8 10 00 00 48 89 fa 48 c1 ea 03 <80> 3c 02 00 0f 85 0d 01 00 00 48 ba 00 00 00 00 00 fc ff df 48 89
+RSP: 0018:ffffc90000007a20 EFLAGS: 00010006
+RAX: dffffc0000000000 RBX: ffff88801250e000 RCX: ffffffff816d3e69
+RDX: 000000000000021b RSI: ffffffff877ff9b1 RDI: 00000000000010d8
+RBP: ffffc90000007a90 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000080000101 R11: 0000000000000001 R12: 0000000000000000
+R13: ffffc90000007a95 R14: 0000000000000080 R15: ffff88801250e5b8
+FS:  0000000000000000(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000556e9faa3010 CR3: 000000000df7c000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <IRQ>
+ sz_push+0x97/0x1d0 drivers/media/rc/streamzap.c:104
+ sz_push_full_pulse drivers/media/rc/streamzap.c:115 [inline]
+ sz_push_half_pulse drivers/media/rc/streamzap.c:121 [inline]
+ streamzap_callback+0x536/0x7e0 drivers/media/rc/streamzap.c:189
+ __usb_hcd_giveback_urb+0x389/0x6e0 drivers/usb/core/hcd.c:1650
+ usb_hcd_giveback_urb+0x396/0x450 drivers/usb/core/hcd.c:1734
+ dummy_timer+0x17f0/0x3930 drivers/usb/gadget/udc/dummy_hcd.c:1993
+ __run_hrtimer kernel/time/hrtimer.c:1691 [inline]
+ __hrtimer_run_queues+0x20a/0xae0 kernel/time/hrtimer.c:1755
+ hrtimer_run_softirq+0x17d/0x350 kernel/time/hrtimer.c:1772
+ handle_softirqs+0x213/0x8f0 kernel/softirq.c:554
+ __do_softirq kernel/softirq.c:588 [inline]
+ invoke_softirq kernel/softirq.c:428 [inline]
+ __irq_exit_rcu kernel/softirq.c:637 [inline]
+ irq_exit_rcu+0xbb/0x120 kernel/softirq.c:649
+ instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1049 [inline]
+ sysvec_apic_timer_interrupt+0xa4/0xc0 arch/x86/kernel/apic/apic.c:1049
+ </IRQ>
+ <TASK>
+ asm_sysvec_apic_timer_interrupt+0x1a/0x20 arch/x86/include/asm/idtentry.h:702
+RIP: 0010:__text_poke+0x609/0xca0 arch/x86/kernel/alternative.c:1960
+Code: 00 48 85 db 0f 85 e2 02 00 00 e8 12 4c 5b 00 9c 5b 81 e3 00 02 00 00 31 ff 48 89 de e8 70 4e 5b 00 48 85 db 0f 85 b7 05 00 00 <e8> f2 4b 5b 00 48 8b 7c 24 78 e8 38 09 f4 09 e8 73 87 f1 09 31 ff
+RSP: 0018:ffffc90004567980 EFLAGS: 00000293
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffffffff81323247
+RDX: ffff888027da8000 RSI: ffffffff81323255 RDI: 0000000000000007
+RBP: ffffffff81e4aeda R08: 0000000000000007 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000ede
+R13: 0000000000000003 R14: ffffffff8e34e340 R15: 0000000000000000
+ text_poke_bp_batch+0x3e0/0x760 arch/x86/kernel/alternative.c:2317
+ text_poke_flush arch/x86/kernel/alternative.c:2486 [inline]
+ text_poke_flush arch/x86/kernel/alternative.c:2483 [inline]
+ text_poke_finish+0x30/0x40 arch/x86/kernel/alternative.c:2493
+ arch_jump_label_transform_apply+0x1c/0x30 arch/x86/kernel/jump_label.c:146
+ jump_label_update+0x1d7/0x400 kernel/jump_label.c:920
+ static_key_disable_cpuslocked+0x158/0x1c0 kernel/jump_label.c:240
+ static_key_disable+0x1a/0x20 kernel/jump_label.c:248
+ toggle_allocation_gate mm/kfence/core.c:854 [inline]
+ toggle_allocation_gate+0x147/0x260 mm/kfence/core.c:841
+ process_one_work+0x9c5/0x1ba0 kernel/workqueue.c:3229
+ process_scheduled_works kernel/workqueue.c:3310 [inline]
+ worker_thread+0x6c8/0xf00 kernel/workqueue.c:3391
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:ir_raw_event_store_with_filter+0x442/0x590 drivers/media/rc/rc-ir-raw.c:184
+Code: 80 3c 02 00 0f 85 4e 01 00 00 4c 8b a3 b8 05 00 00 48 b8 00 00 00 00 00 fc ff df 49 8d bc 24 d8 10 00 00 48 89 fa 48 c1 ea 03 <80> 3c 02 00 0f 85 0d 01 00 00 48 ba 00 00 00 00 00 fc ff df 48 89
+RSP: 0018:ffffc90000007a20 EFLAGS: 00010006
+RAX: dffffc0000000000 RBX: ffff88801250e000 RCX: ffffffff816d3e69
+RDX: 000000000000021b RSI: ffffffff877ff9b1 RDI: 00000000000010d8
+RBP: ffffc90000007a90 R08: 0000000000000005 R09: 0000000000000000
+R10: 0000000080000101 R11: 0000000000000001 R12: 0000000000000000
+R13: ffffc90000007a95 R14: 0000000000000080 R15: ffff88801250e5b8
+FS:  0000000000000000(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000556e9faa3010 CR3: 000000000df7c000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	80 3c 02 00          	cmpb   $0x0,(%rdx,%rax,1)
+   4:	0f 85 4e 01 00 00    	jne    0x158
+   a:	4c 8b a3 b8 05 00 00 	mov    0x5b8(%rbx),%r12
+  11:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  18:	fc ff df
+  1b:	49 8d bc 24 d8 10 00 	lea    0x10d8(%r12),%rdi
+  22:	00
+  23:	48 89 fa             	mov    %rdi,%rdx
+  26:	48 c1 ea 03          	shr    $0x3,%rdx
+* 2a:	80 3c 02 00          	cmpb   $0x0,(%rdx,%rax,1) <-- trapping instruction
+  2e:	0f 85 0d 01 00 00    	jne    0x141
+  34:	48 ba 00 00 00 00 00 	movabs $0xdffffc0000000000,%rdx
+  3b:	fc ff df
+  3e:	48                   	rex.W
+  3f:	89                   	.byte 0x89

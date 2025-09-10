@@ -1,0 +1,140 @@
+WARNING: possible circular locking dependency detected
+6.10.0-rc2-syzkaller-00315-gdc772f8237f9 #0 Not tainted
+------------------------------------------------------
+kswapd0/108 is trying to acquire lock:
+ffff888000b2ddf8 (mapping.invalidate_lock#4){++++}-{3:3}, at: filemap_invalidate_lock include/linux/fs.h:836 [inline]
+ffff888000b2ddf8 (mapping.invalidate_lock#4){++++}-{3:3}, at: udf_setsize+0x256/0x1180 fs/udf/inode.c:1253
+
+but task is already holding lock:
+ffffffff8dd3aac0 (fs_reclaim){+.+.}-{0:0}, at: balance_pgdat+0x166/0x1970 mm/vmscan.c:6798
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (fs_reclaim){+.+.}-{0:0}:
+       __fs_reclaim_acquire mm/page_alloc.c:3801 [inline]
+       fs_reclaim_acquire+0x102/0x160 mm/page_alloc.c:3815
+       might_alloc include/linux/sched/mm.h:334 [inline]
+       prepare_alloc_pages.constprop.0+0x155/0x560 mm/page_alloc.c:4449
+       __alloc_pages_noprof+0x194/0x2460 mm/page_alloc.c:4667
+       alloc_pages_mpol_noprof+0x275/0x610 mm/mempolicy.c:2265
+       folio_alloc_noprof+0x1e/0xc0 mm/mempolicy.c:2343
+       filemap_alloc_folio_noprof+0x3ba/0x490 mm/filemap.c:1008
+       __filemap_get_folio+0x51e/0xa80 mm/filemap.c:1950
+       filemap_fault+0x607/0x2610 mm/filemap.c:3323
+       __do_fault+0x10a/0x490 mm/memory.c:4562
+       do_read_fault mm/memory.c:4926 [inline]
+       do_fault mm/memory.c:5056 [inline]
+       do_pte_missing mm/memory.c:3903 [inline]
+       handle_pte_fault mm/memory.c:5380 [inline]
+       __handle_mm_fault+0x39e2/0x53f0 mm/memory.c:5523
+       handle_mm_fault+0x476/0xa00 mm/memory.c:5688
+       faultin_page mm/gup.c:1290 [inline]
+       __get_user_pages+0x473/0x1490 mm/gup.c:1589
+       populate_vma_page_range+0x27f/0x3a0 mm/gup.c:2029
+       __mm_populate+0x1d6/0x380 mm/gup.c:2132
+       mm_populate include/linux/mm.h:3464 [inline]
+       vm_mmap_pgoff+0x293/0x360 mm/util.c:578
+       ksys_mmap_pgoff+0x332/0x5d0 mm/mmap.c:1443
+       do_syscall_32_irqs_on arch/x86/entry/common.c:165 [inline]
+       __do_fast_syscall_32+0x73/0x120 arch/x86/entry/common.c:386
+       do_fast_syscall_32+0x32/0x80 arch/x86/entry/common.c:411
+       entry_SYSENTER_compat_after_hwframe+0x84/0x8e
+
+-> #0 (mapping.invalidate_lock#4){++++}-{3:3}:
+       check_prev_add kernel/locking/lockdep.c:3134 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+       validate_chain kernel/locking/lockdep.c:3869 [inline]
+       __lock_acquire+0x2478/0x3b30 kernel/locking/lockdep.c:5137
+       lock_acquire kernel/locking/lockdep.c:5754 [inline]
+       lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+       down_write+0x3a/0x50 kernel/locking/rwsem.c:1579
+       filemap_invalidate_lock include/linux/fs.h:836 [inline]
+       udf_setsize+0x256/0x1180 fs/udf/inode.c:1253
+       udf_evict_inode+0x361/0x590 fs/udf/inode.c:144
+       evict+0x2ed/0x6c0 fs/inode.c:667
+       iput_final fs/inode.c:1741 [inline]
+       iput.part.0+0x5a8/0x7f0 fs/inode.c:1767
+       iput+0x5c/0x80 fs/inode.c:1757
+       dentry_unlink_inode+0x295/0x480 fs/dcache.c:400
+       __dentry_kill+0x1d0/0x600 fs/dcache.c:603
+       shrink_kill fs/dcache.c:1048 [inline]
+       shrink_dentry_list+0x140/0x5d0 fs/dcache.c:1075
+       prune_dcache_sb+0xeb/0x150 fs/dcache.c:1156
+       super_cache_scan+0x32a/0x550 fs/super.c:221
+       do_shrink_slab+0x44f/0x11c0 mm/shrinker.c:435
+       shrink_slab_memcg mm/shrinker.c:548 [inline]
+       shrink_slab+0xa87/0x1310 mm/shrinker.c:626
+       shrink_one+0x493/0x7c0 mm/vmscan.c:4790
+       shrink_many mm/vmscan.c:4851 [inline]
+       lru_gen_shrink_node+0x89f/0x1750 mm/vmscan.c:4951
+       shrink_node mm/vmscan.c:5910 [inline]
+       kswapd_shrink_node mm/vmscan.c:6720 [inline]
+       balance_pgdat+0x1105/0x1970 mm/vmscan.c:6911
+       kswapd+0x5ea/0xbf0 mm/vmscan.c:7180
+       kthread+0x2c1/0x3a0 kernel/kthread.c:389
+       ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+       ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(fs_reclaim);
+                               lock(mapping.invalidate_lock#4);
+                               lock(fs_reclaim);
+  lock(mapping.invalidate_lock#4);
+
+ *** DEADLOCK ***
+
+2 locks held by kswapd0/108:
+ #0: ffffffff8dd3aac0 (fs_reclaim){+.+.}-{0:0}, at: balance_pgdat+0x166/0x1970 mm/vmscan.c:6798
+ #1: ffff888026f8a0e0 (&type->s_umount_key#73){++++}-{3:3}, at: super_trylock_shared fs/super.c:562 [inline]
+ #1: ffff888026f8a0e0 (&type->s_umount_key#73){++++}-{3:3}, at: super_cache_scan+0x96/0x550 fs/super.c:196
+
+stack backtrace:
+CPU: 2 PID: 108 Comm: kswapd0 Not tainted 6.10.0-rc2-syzkaller-00315-gdc772f8237f9 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ check_noncircular+0x31a/0x400 kernel/locking/lockdep.c:2187
+ check_prev_add kernel/locking/lockdep.c:3134 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3253 [inline]
+ validate_chain kernel/locking/lockdep.c:3869 [inline]
+ __lock_acquire+0x2478/0x3b30 kernel/locking/lockdep.c:5137
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+ down_write+0x3a/0x50 kernel/locking/rwsem.c:1579
+ filemap_invalidate_lock include/linux/fs.h:836 [inline]
+ udf_setsize+0x256/0x1180 fs/udf/inode.c:1253
+ udf_evict_inode+0x361/0x590 fs/udf/inode.c:144
+ evict+0x2ed/0x6c0 fs/inode.c:667
+ iput_final fs/inode.c:1741 [inline]
+ iput.part.0+0x5a8/0x7f0 fs/inode.c:1767
+ iput+0x5c/0x80 fs/inode.c:1757
+ dentry_unlink_inode+0x295/0x480 fs/dcache.c:400
+ __dentry_kill+0x1d0/0x600 fs/dcache.c:603
+ shrink_kill fs/dcache.c:1048 [inline]
+ shrink_dentry_list+0x140/0x5d0 fs/dcache.c:1075
+ prune_dcache_sb+0xeb/0x150 fs/dcache.c:1156
+ super_cache_scan+0x32a/0x550 fs/super.c:221
+ do_shrink_slab+0x44f/0x11c0 mm/shrinker.c:435
+ shrink_slab_memcg mm/shrinker.c:548 [inline]
+ shrink_slab+0xa87/0x1310 mm/shrinker.c:626
+ shrink_one+0x493/0x7c0 mm/vmscan.c:4790
+ shrink_many mm/vmscan.c:4851 [inline]
+ lru_gen_shrink_node+0x89f/0x1750 mm/vmscan.c:4951
+ shrink_node mm/vmscan.c:5910 [inline]
+ kswapd_shrink_node mm/vmscan.c:6720 [inline]
+ balance_pgdat+0x1105/0x1970 mm/vmscan.c:6911
+ kswapd+0x5ea/0xbf0 mm/vmscan.c:7180
+ kthread+0x2c1/0x3a0 kernel/kthread.c:389
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

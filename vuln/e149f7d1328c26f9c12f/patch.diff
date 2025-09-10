@@ -1,0 +1,22 @@
+diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
+index 2ef6db98e9ba..bc5eae12fb09 100644
+--- a/net/xfrm/xfrm_policy.c
++++ b/net/xfrm/xfrm_policy.c
+@@ -975,8 +975,6 @@ int xfrm_policy_flush(struct net *net, u8 type, bool task_valid)
+ 	}
+ 	if (!cnt)
+ 		err = -ESRCH;
+-	else
+-		xfrm_policy_cache_flush();
+ out:
+ 	spin_unlock_bh(&net->xfrm.xfrm_policy_lock);
+ 	return err;
+@@ -1744,6 +1742,8 @@ void xfrm_policy_cache_flush(void)
+ 	bool found = 0;
+ 	int cpu;
+ 
++	might_sleep();
++
+ 	local_bh_disable();
+ 	rcu_read_lock();
+ 	for_each_possible_cpu(cpu) {

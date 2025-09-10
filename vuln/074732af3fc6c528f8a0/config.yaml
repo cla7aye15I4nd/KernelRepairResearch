@@ -1,0 +1,45 @@
+id: 074732af3fc6c528f8a0
+bug_link: https://syzkaller.appspot.com/bug?extid=074732af3fc6c528f8a0
+title: WARNING in release_mtd_partition
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2aee30bb10d7bad0a60255059c9ce1b84cf0130e
+fix_commit: 6697dae1e2da89f8f9fa775132f8eac77cea5f7e
+datetime: '2025-03-04T12:07:08+01:00'
+fix_commit_message: "mtd: capture device name setting failure when adding mtd\n\n\
+  syzbot reported a WARNING in release_mtd_partition. [1]\n\nThe reproducer uses \"\
+  /proc/thread-self/fail-nth\" to trigger the failure\nof memory allocation when executing\
+  \ dev_set_name() in add_mtd_device(),\nwhich eventually causes device_register()\
+  \ to fail because the device name\nis not set, and finally triggers a warning in\
+  \ put_device().\n\n[1]\nWARNING: CPU: 0 PID: 5826 at drivers/mtd/mtdpart.c:37 release_mtd_partition+0x71/0x90\
+  \ drivers/mtd/mtdpart.c:37\nModules linked in:\nCPU: 0 UID: 0 PID: 5826 Comm: syz-executor397\
+  \ Not tainted 6.13.0-syzkaller-09734-g2a9f04bde07a #0\nHardware name: Google Google\
+  \ Compute Engine/Google Compute Engine, BIOS Google 12/27/2024\nRIP: 0010:release_mtd_partition+0x71/0x90\
+  \ drivers/mtd/mtdpart.c:37\nCode: 00 fc ff df 48 89 fa 48 c1 ea 03 80 3c 02 00 75\
+  \ 1e 48 8b 7b 38 e8 ef 84 cd fb 48 89 df 5b 5d e9 e5 84 cd fb e8 70 4a 75 fb 90\
+  \ <0f> 0b 90 eb c2 e8 a5 29 d8 fb eb db 48 89 ef e8 9b 29 d8 fb eb a5\nRSP: 0018:ffffc90003e1f828\
+  \ EFLAGS: 00010293\nRAX: 0000000000000000 RBX: ffff88802c1d1000 RCX: ffffffff8b417995\n\
+  RDX: ffff8880310c3c00 RSI: ffffffff86439150 RDI: ffff88802c1d1000\nRBP: ffff88802c1d1648\
+  \ R08: 0000000000000005 R09: 0000000000000000\nR10: 0000000000000004 R11: ffffffff81000130\
+  \ R12: 0000000000000000\nR13: dffffc0000000000 R14: 0000000000000000 R15: 0000000000000000\n\
+  FS:  000055558b9cd480(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000\nCS:\
+  \  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 0000000000000008 CR3: 0000000034aca000\
+  \ CR4: 00000000003526f0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \ <TASK>\n mtd_release+0xa0/0xd0 drivers/mtd/mtdcore.c:101\n device_release+0xa1/0x240\
+  \ drivers/base/core.c:2567\n kobject_cleanup lib/kobject.c:689 [inline]\n kobject_release\
+  \ lib/kobject.c:720 [inline]\n kref_put include/linux/kref.h:65 [inline]\n kobject_put+0x1e4/0x5a0\
+  \ lib/kobject.c:737\n put_device+0x1f/0x30 drivers/base/core.c:3773\n add_mtd_device+0xbb3/0x1700\
+  \ drivers/mtd/mtdcore.c:750\n mtd_add_partition+0x300/0x650 drivers/mtd/mtdpart.c:279\n\
+  \ mtdchar_blkpg_ioctl+0x20d/0x250 drivers/mtd/mtdchar.c:562\n mtdchar_ioctl+0xbbe/0x2050\
+  \ drivers/mtd/mtdchar.c:1216\n mtdchar_unlocked_ioctl+0xb0/0xf0 drivers/mtd/mtdchar.c:1239\n\
+  \ vfs_ioctl fs/ioctl.c:51 [inline]\n __do_sys_ioctl fs/ioctl.c:906 [inline]\n __se_sys_ioctl\
+  \ fs/ioctl.c:892 [inline]\n __x64_sys_ioctl+0x190/0x200 fs/ioctl.c:892\n do_syscall_x64\
+  \ arch/x86/entry/common.c:52 [inline]\n do_syscall_64+0xcd/0x250 arch/x86/entry/common.c:83\n\
+  \ entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\nReported-by: syzbot+074732af3fc6c528f8a0@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=074732af3fc6c528f8a0\nTested-by:\
+  \ syzbot+074732af3fc6c528f8a0@syzkaller.appspotmail.com\nSigned-off-by: Edward Adam\
+  \ Davis <eadavis@qq.com>\nSigned-off-by: Miquel Raynal <miquel.raynal@bootlin.com>\n"
+submodule:
+- drivers/mtd
+hunk_count: 2
+covered_count: 2

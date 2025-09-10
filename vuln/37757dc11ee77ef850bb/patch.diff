@@ -1,0 +1,21 @@
+diff --git a/drivers/ata/libata-scsi.c b/drivers/ata/libata-scsi.c
+index 061fe63497bf..97c84b0ec472 100644
+--- a/drivers/ata/libata-scsi.c
++++ b/drivers/ata/libata-scsi.c
+@@ -2245,10 +2245,15 @@ static inline u16 ata_xlat_cdl_limit(u8 *buf)
+ static unsigned int ata_msense_control_spgt2(struct ata_device *dev, u8 *buf,
+ 					     u8 spg)
+ {
+-	u8 *b, *cdl = dev->cdl->desc_log_buf, *desc;
++	u8 *b, *cdl, *desc;
+ 	u32 policy;
+ 	int i;
+ 
++	if (!(dev->flags & ATA_DFLAG_CDL) || !dev->cdl)
++		return 0;
++
++	cdl = dev->cdl->desc_log_buf;
++
+ 	/*
+ 	 * Fill the subpage. The first four bytes of the T2A/T2B mode pages
+ 	 * are a header. The PAGE LENGTH field is the size of the page

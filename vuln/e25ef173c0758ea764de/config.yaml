@@ -1,0 +1,97 @@
+id: e25ef173c0758ea764de
+bug_link: https://syzkaller.appspot.com/bug?extid=e25ef173c0758ea764de
+title: WARNING in stashed_dentry_prune (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ce0c1c92656e3ea3840c4a5c748aa352285cae9c
+fix_commit: 9d9539db8638cfe053fcd1f441746f0e2c8c2d32
+datetime: '2024-03-13T12:53:53-07:00'
+fix_commit_message: 'pidfs: remove config option
+
+
+  As Linus suggested this enables pidfs unconditionally. A key property to
+
+  retain is the ability to compare pidfds by inode number (cf. [1]).
+
+  That''s extremely helpful just as comparing namespace file descriptors by
+
+  inode number is. They are used in a variety of scenarios where they need
+
+  to be compared, e.g., when receiving a pidfd via SO_PEERPIDFD from a
+
+  socket to trivially authenticate a the sender and various other
+
+  use-cases.
+
+
+  For 64bit systems this is pretty trivial to do. For 32bit it''s slightly
+
+  more annoying as we discussed but we simply add a dumb ida based
+
+  allocator that gets used on 32bit. This gives the same guarantees about
+
+  inode numbers on 64bit without any overflow risk. Practically, we''ll
+
+  never run into overflow issues because we''re constrained by the number
+
+  of processes that can exist on 32bit and by the number of open files
+
+  that can exist on a 32bit system. On 64bit none of this matters and
+
+  things are very simple.
+
+
+  If 32bit also needs the uniqueness guarantee they can simply parse the
+
+  contents of /proc/<pid>/fd/<nr>. The uniqueness guarantees have a
+
+  variety of use-cases. One of the most obvious ones is that they will
+
+  make pidfiles (or "pidfdfiles", I guess) reliable as the unique
+
+  identifier can be placed into there that won''t be reycled. Also a
+
+  frequent request.
+
+
+  Note, I took the chance and simplified path_from_stashed() even further.
+
+  Instead of passing the inode number explicitly to path_from_stashed() we
+
+  let the filesystem handle that internally. So path_from_stashed() ends
+
+  up even simpler than it is now. This is also a good solution allowing
+
+  the cleanup code to be clean and consistent between 32bit and 64bit. The
+
+  cleanup path in prepare_anon_dentry() is also switched around so we put
+
+  the inode before the dentry allocation. This means we only have to call
+
+  the cleanup handler for the filesystem''s inode data once and can rely
+
+  ->evict_inode() otherwise.
+
+
+  Aside from having to have a bit of extra code for 32bit it actually ends
+
+  up a nice cleanup for path_from_stashed() imho.
+
+
+  Tested on both 32 and 64bit including error injection.
+
+
+  Link: https://github.com/systemd/systemd/pull/31713 [1]
+
+  Link: https://lore.kernel.org/r/20240312-dingo-sehnlich-b3ecc35c6de7@brauner
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+
+  '
+submodule:
+- fs
+- include/linux
+- kernel
+hunk_count: 22
+covered_count: 4

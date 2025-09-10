@@ -1,0 +1,81 @@
+diff --git a/include/linux/sched/task.h b/include/linux/sched/task.h
+index 357e0068497c..32c9f01af0a6 100644
+--- a/include/linux/sched/task.h
++++ b/include/linux/sched/task.h
+@@ -23,6 +23,7 @@ struct kernel_clone_args {
+ 	int __user *pidfd;
+ 	int __user *child_tid;
+ 	int __user *parent_tid;
++	const char *name;
+ 	int exit_signal;
+ 	unsigned long stack;
+ 	unsigned long stack_size;
+@@ -91,7 +92,8 @@ extern void exit_itimers(struct task_struct *);
+ extern pid_t kernel_clone(struct kernel_clone_args *kargs);
+ struct task_struct *create_io_thread(int (*fn)(void *), void *arg, int node);
+ struct task_struct *fork_idle(int);
+-extern pid_t kernel_thread(int (*fn)(void *), void *arg, unsigned long flags);
++extern pid_t kernel_thread(int (*fn)(void *), void *arg, const char *name,
++			    unsigned long flags);
+ extern pid_t user_mode_thread(int (*fn)(void *), void *arg, unsigned long flags);
+ extern long kernel_wait4(pid_t, int __user *, int, struct rusage *);
+ int kernel_wait(pid_t pid, int *stat);
+diff --git a/init/main.c b/init/main.c
+index 4425d1783d5c..49b5e1ef53f0 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -707,7 +707,7 @@ noinline void __ref rest_init(void)
+ 	rcu_read_unlock();
+ 
+ 	numa_default_policy();
+-	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
++	pid = kernel_thread(kthreadd, NULL, NULL, CLONE_FS | CLONE_FILES);
+ 	rcu_read_lock();
+ 	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);
+ 	rcu_read_unlock();
+diff --git a/kernel/fork.c b/kernel/fork.c
+index f68954d05e89..81dfb2532148 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -2112,6 +2112,9 @@ static __latent_entropy struct task_struct *copy_process(
+ 		siginitsetinv(&p->blocked, sigmask(SIGKILL)|sigmask(SIGSTOP));
+ 	}
+ 
++	if (args->name)
++		strscpy_pad(p->comm, args->name, sizeof(p->comm));
++
+ 	p->set_child_tid = (clone_flags & CLONE_CHILD_SETTID) ? args->child_tid : NULL;
+ 	/*
+ 	 * Clear TID on mm_release()?
+@@ -2730,7 +2733,8 @@ pid_t kernel_clone(struct kernel_clone_args *args)
+ /*
+  * Create a kernel thread.
+  */
+-pid_t kernel_thread(int (*fn)(void *), void *arg, unsigned long flags)
++pid_t kernel_thread(int (*fn)(void *), void *arg, const char *name,
++		    unsigned long flags)
+ {
+ 	struct kernel_clone_args args = {
+ 		.flags		= ((lower_32_bits(flags) | CLONE_VM |
+@@ -2738,6 +2742,7 @@ pid_t kernel_thread(int (*fn)(void *), void *arg, unsigned long flags)
+ 		.exit_signal	= (lower_32_bits(flags) & CSIGNAL),
+ 		.fn		= fn,
+ 		.fn_arg		= arg,
++		.name		= name,
+ 		.kthread	= 1,
+ 	};
+ 
+diff --git a/kernel/kthread.c b/kernel/kthread.c
+index 7e6751b29101..fa4a12ddf7fb 100644
+--- a/kernel/kthread.c
++++ b/kernel/kthread.c
+@@ -396,7 +396,8 @@ static void create_kthread(struct kthread_create_info *create)
+ 	current->pref_node_fork = create->node;
+ #endif
+ 	/* We want our own signal handler (we take no signals by default). */
+-	pid = kernel_thread(kthread, create, CLONE_FS | CLONE_FILES | SIGCHLD);
++	pid = kernel_thread(kthread, create, NULL,
++			    CLONE_FS | CLONE_FILES | SIGCHLD);
+ 	if (pid < 0) {
+ 		/* Release the structure when caller killed by a fatal signal. */
+ 		struct completion *done = xchg(&create->done, NULL);

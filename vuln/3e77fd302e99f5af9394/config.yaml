@@ -1,0 +1,37 @@
+id: 3e77fd302e99f5af9394
+bug_link: https://syzkaller.appspot.com/bug?extid=3e77fd302e99f5af9394
+title: 'KCSAN: data-race in io_submit_sqes / io_uring_show_fdinfo'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: edd43f4d6f50ec3de55a0c9e9df6348d1da51965
+fix_commit: f024d3a8ded0d8d2129ae123d7a5305c29ca44ce
+datetime: '2025-04-30T07:17:17-06:00'
+fix_commit_message: 'io_uring/fdinfo: annotate racy sq/cq head/tail reads
+
+
+  syzbot complains about the cached sq head read, and it''s totally right.
+
+  But we don''t need to care, it''s just reading fdinfo, and reading the
+
+  CQ or SQ tail/head entries are known racy in that they are just a view
+
+  into that very instant and may of course be outdated by the time they
+
+  are reported.
+
+
+  Annotate both the SQ head and CQ tail read with data_race() to avoid
+
+  this syzbot complaint.
+
+
+  Link: https://lore.kernel.org/io-uring/6811f6dc.050a0220.39e3a1.0d0e.GAE@google.com/
+
+  Reported-by: syzbot+3e77fd302e99f5af9394@syzkaller.appspotmail.com
+
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>
+
+  '
+submodule:
+- io_uring
+hunk_count: 1
+covered_count: 1

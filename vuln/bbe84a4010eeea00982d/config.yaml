@@ -1,0 +1,34 @@
+id: bbe84a4010eeea00982d
+bug_link: https://syzkaller.appspot.com/bug?extid=bbe84a4010eeea00982d
+title: 'KASAN: slab-use-after-free Read in nfc_alloc_send_skb'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7c5e046bdcb2513f9decb3765d8bf92d604279cf
+fix_commit: c95f919567d6f1914f13350af61a1b044ac85014
+datetime: '2023-12-25T07:29:04+00:00'
+fix_commit_message: "nfc: llcp_core: Hold a ref to llcp_local->dev when holding a\
+  \ ref to llcp_local\n\nllcp_sock_sendmsg() calls nfc_llcp_send_ui_frame() which\
+  \ in turn calls\nnfc_alloc_send_skb(), which accesses the nfc_dev from the llcp_sock\
+  \ for\ngetting the headroom and tailroom needed for skb allocation.\n\nParallelly\
+  \ the nfc_dev can be freed, as the refcount is decreased via\nnfc_free_device(),\
+  \ leading to a UAF reported by Syzkaller, which can\nbe summarized as follows:\n\
+  \n(1) llcp_sock_sendmsg() -> nfc_llcp_send_ui_frame()\n\t-> nfc_alloc_send_skb()\
+  \ -> Dereference *nfc_dev\n(2) virtual_ncidev_close() -> nci_free_device() -> nfc_free_device()\n\
+  \t-> put_device() -> nfc_release() -> Free *nfc_dev\n\nWhen a reference to llcp_local\
+  \ is acquired, we do not acquire the same\nfor the nfc_dev. This leads to freeing\
+  \ even when the llcp_local is in\nuse, and this is the case with the UAF described\
+  \ above too.\n\nThus, when we acquire a reference to llcp_local, we should acquire\
+  \ a\nreference to nfc_dev, and release the references appropriately later.\n\nReferences\
+  \ for llcp_local is initialized in nfc_llcp_register_device()\n(which is called\
+  \ by nfc_register_device()). Thus, we should acquire a\nreference to nfc_dev there.\n\
+  \nnfc_unregister_device() calls nfc_llcp_unregister_device() which in\nturn calls\
+  \ nfc_llcp_local_put(). Thus, the reference to nfc_dev is\nappropriately released\
+  \ later.\n\nReported-and-tested-by: syzbot+bbe84a4010eeea00982d@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=bbe84a4010eeea00982d\nFixes: c7aa12252f51\
+  \ (\"NFC: Take a reference on the LLCP local pointer when creating a socket\")\n\
+  Reviewed-by: Suman Ghosh <sumang@marvell.com>\nSigned-off-by: Siddh Raman Pant <code@siddh.me>\n\
+  Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>\nSigned-off-by:\
+  \ David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/nfc
+hunk_count: 4
+covered_count: 0

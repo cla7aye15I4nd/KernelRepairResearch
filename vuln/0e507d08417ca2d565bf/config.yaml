@@ -1,0 +1,44 @@
+id: 0e507d08417ca2d565bf
+bug_link: https://syzkaller.appspot.com/bug?extid=0e507d08417ca2d565bf
+title: 'WARNING: suspicious RCU usage in kernfs_iop_permission'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f2b00be488730522d0fb7a8a5de663febdcefe0a
+fix_commit: b854cc659dcb80f172cb35dbedc15d39d49c383f
+datetime: '2021-01-28T10:22:48+01:00'
+fix_commit_message: 'ovl: avoid deadlock on directory ioctl
+
+
+  The function ovl_dir_real_file() currently uses the inode lock to serialize
+
+  writes to the od->upperfile field.
+
+
+  However, this function will get called by ovl_ioctl_set_flags(), which
+
+  utilizes the inode lock too.  In this case ovl_dir_real_file() will try to
+
+  claim a lock that is owned by a function in its call stack, which won''t get
+
+  released before ovl_dir_real_file() returns.
+
+
+  Fix by replacing the open coded compare and exchange by an explicit atomic
+
+  op.
+
+
+  Fixes: 61536bed2149 ("ovl: support [S|G]ETFLAGS and FS[S|G]ETXATTR ioctls for directories")
+
+  Cc: stable@vger.kernel.org # v5.10
+
+  Reported-by: Icenowy Zheng <icenowy@aosc.io>
+
+  Tested-by: Icenowy Zheng <icenowy@aosc.io>
+
+  Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
+
+  '
+submodule:
+- fs/overlayfs
+hunk_count: 2
+covered_count: 0

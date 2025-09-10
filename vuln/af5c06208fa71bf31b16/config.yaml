@@ -1,0 +1,80 @@
+id: af5c06208fa71bf31b16
+bug_link: https://syzkaller.appspot.com/bug?extid=af5c06208fa71bf31b16
+title: general protection fault in netfs_write_collection_worker
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3c49e529e1c6aa71cb9b874fd60b72c97dae7ede
+fix_commit: 794d8cf3a87a6b958d520a7c32d142f7ec30cb92
+datetime: '2024-12-20T22:34:10+01:00'
+fix_commit_message: 'netfs: Report on NULL folioq in netfs_writeback_unlock_folios()
+
+
+  It seems that it''s possible to get to netfs_writeback_unlock_folios() with
+
+  an empty rolling buffer during buffered writes.  This should not be
+
+  possible as the rolling buffer is initialised as the write request is set
+
+  up and thereafter maintains at least one folio_queue struct therein until
+
+  it gets destroyed.  This allows lockless addition and removal of
+
+  folio_queue structs in the buffer because, unlike with a ring buffer, the
+
+  producer and consumer each only need to look at and alter one pointer into
+
+  the buffer.
+
+
+  Now, the rolling buffer is only used for buffered I/O operations as
+
+  netfs_collect_write_results() should only call
+
+  netfs_writeback_unlock_folios() if the request is of origin type
+
+  NETFS_WRITEBACK, NETFS_WRITETHROUGH or NETFS_PGPRIV2_COPY_TO_CACHE.
+
+
+  So it would seem that one of the following occurred: (1) I/O started before
+
+  the request was fully initialised, (2) the origin got switched mid-flow or
+
+  (3) the request has already been freed and this is a UAF error.  I think
+
+  the last is the most likely.
+
+
+  Make netfs_writeback_unlock_folios() report information about the request
+
+  and subrequests if folioq is seen to be NULL to try and help debug this,
+
+  throw a warning and return.
+
+
+  Note that this does not try to fix the problem.
+
+
+  Reported-by: syzbot+af5c06208fa71bf31b16@syzkaller.appspotmail.com
+
+  Link: https://syzkaller.appspot.com/bug?extid=af5c06208fa71bf31b16
+
+  Signed-off-by: David Howells <dhowells@redhat.com>
+
+  Link: https://lore.kernel.org/r/ZxshMEW4U7MTgQYa@gmail.com/
+
+  Link: https://lore.kernel.org/r/20241216204124.3752367-33-dhowells@redhat.com
+
+  cc: Chang Yu <marcus.yu.56@gmail.com>
+
+  cc: Jeff Layton <jlayton@kernel.org>
+
+  cc: netfs@lists.linux.dev
+
+  cc: linux-fsdevel@vger.kernel.org
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs/netfs
+hunk_count: 2
+covered_count: 2

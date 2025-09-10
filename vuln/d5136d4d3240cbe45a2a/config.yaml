@@ -1,0 +1,25 @@
+id: d5136d4d3240cbe45a2a
+bug_link: https://syzkaller.appspot.com/bug?extid=d5136d4d3240cbe45a2a
+title: 'KASAN: use-after-free Read in snd_seq_timer_interrupt'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a7588c896b05444929ecb3d0115481988720abf6
+fix_commit: fe1b26c93d430400ac37d820425e2468218ae8b2
+datetime: '2019-03-27T17:02:40+01:00'
+fix_commit_message: "ALSA: timer: Make snd_timer_close() really kill pending actions\n\
+  \nsnd_timer_close() is supposed to close the timer instance and sync\nwith the deactivation\
+  \ of pending actions.  However, there are still\nsome overlooked cases:\n\n- It\
+  \ calls snd_timer_stop() at the beginning, but some other might\n  re-trigger the\
+  \ timer right after that.\n\n- snd_timer_stop() calls del_timer_sync() only when\
+  \ all belonging\n  instances are closed.  If multiple instances were assigned to\
+  \ a\n  timer object and one is closed, the timer is still running.  Then\n  the\
+  \ pending action assigned to this timer might be left.\n\nActually either of the\
+  \ above is the likely cause of the reported\nsyzkaller UAF.\n\nThis patch plug these\
+  \ holes by introducing SNDRV_TIMER_IFLG_DEAD\nflag.  This is set at the beginning\
+  \ of snd_timer_close(), and the flag\nis checked at snd_timer_start*() and else,\
+  \ so that no longer new\naction is left after snd_timer_close().\n\nReported-by:\
+  \ syzbot+d5136d4d3240cbe45a2a@syzkaller.appspotmail.com\nSigned-off-by: Takashi\
+  \ Iwai <tiwai@suse.de>\n"
+submodule:
+- sound/core
+hunk_count: 7
+covered_count: 2

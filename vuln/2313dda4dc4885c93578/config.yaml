@@ -1,0 +1,61 @@
+id: 2313dda4dc4885c93578
+bug_link: https://syzkaller.appspot.com/bug?extid=2313dda4dc4885c93578
+title: 'KASAN: use-after-free Read in ocfs2_search_extent_list'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e420460ba443e8ad1cd71568c50b6e09d13fb106
+fix_commit: 34bb50c42335b9316cbdb9506c2c4126a66a52ee
+datetime: '2025-01-24T22:47:23-08:00'
+fix_commit_message: 'ocfs2: check el->l_next_free_rec in ocfs2_get_clusters_nocache
+
+
+  Recently syzbot reported a use-after-free issue[1].
+
+
+  The root cause of the problem is that the journal inode recorded in this
+
+  file system image is corrupted.  The value of
+
+  "di->id2.i_list.l_next_free_rec" is 8193, which is greater than the value
+
+  of "di->id2.i_list.l_count" (19).
+
+
+  To solve this problem, an additional check should be added within
+
+  ocfs2_get_clusters_nocache().  If the check fails, an error will be
+
+  returned and the file system will be set to read-only.
+
+
+  [1]: https://lore.kernel.org/all/67577778.050a0220.a30f1.01bc.GAE@google.com/T/
+
+
+  Link: https://lkml.kernel.org/r/20250106023432.1320904-1-sunjunchao2870@gmail.com
+
+  Signed-off-by: Julian Sun <sunjunchao2870@gmail.com>
+
+  Reported-by: syzbot+2313dda4dc4885c93578@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=2313dda4dc4885c93578
+
+  Tested-by: syzbot+2313dda4dc4885c93578@syzkaller.appspotmail.com
+
+  Reviewed-by: Joseph Qi <joseph.qi@linux.alibaba.com>
+
+  Cc: Changwei Ge <gechangwei@live.cn>
+
+  Cc: Joel Becker <jlbec@evilplan.org>
+
+  Cc: Jun Piao <piaojun@huawei.com>
+
+  Cc: Junxiao Bi <junxiao.bi@oracle.com>
+
+  Cc: Mark Fasheh <mark@fasheh.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/ocfs2
+hunk_count: 1
+covered_count: 1

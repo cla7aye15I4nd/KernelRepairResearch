@@ -1,0 +1,98 @@
+REISERFS (device loop0): checking transaction log (loop0)
+REISERFS (device loop0): Using tea hash to sort names
+REISERFS (device loop0): using 3.5.x disk format
+==================================================================
+BUG: KASAN: use-after-free in set_de_name_and_namelen+0x592/0x6a0 fs/reiserfs/namei.c:81
+Read of size 1 at addr ffff88806aefef83 by task syz-executor239/5068
+
+CPU: 1 PID: 5068 Comm: syz-executor239 Not tainted 6.7.0-rc2-syzkaller-00029-g9b6de136b5f0 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/10/2023
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x1b0 lib/dump_stack.c:106
+ print_address_description mm/kasan/report.c:364 [inline]
+ print_report+0xc4/0x620 mm/kasan/report.c:475
+ kasan_report+0xda/0x110 mm/kasan/report.c:588
+ set_de_name_and_namelen+0x592/0x6a0 fs/reiserfs/namei.c:81
+ linear_search_in_dir_item fs/reiserfs/namei.c:262 [inline]
+ reiserfs_find_entry+0x481/0xe70 fs/reiserfs/namei.c:331
+ reiserfs_lookup+0x1f5/0x690 fs/reiserfs/namei.c:368
+ __lookup_slow+0x24d/0x450 fs/namei.c:1694
+ lookup_one_len+0x17d/0x1b0 fs/namei.c:2746
+ reiserfs_lookup_privroot+0x94/0x200 fs/reiserfs/xattr.c:977
+ reiserfs_fill_super+0x20f9/0x3160 fs/reiserfs/super.c:2174
+ mount_bdev+0x1f3/0x2e0 fs/super.c:1650
+ legacy_get_tree+0x109/0x220 fs/fs_context.c:662
+ vfs_get_tree+0x8c/0x370 fs/super.c:1771
+ do_new_mount fs/namespace.c:3337 [inline]
+ path_mount+0x1492/0x1ed0 fs/namespace.c:3664
+ do_mount fs/namespace.c:3677 [inline]
+ __do_sys_mount fs/namespace.c:3886 [inline]
+ __se_sys_mount fs/namespace.c:3863 [inline]
+ __x64_sys_mount+0x293/0x310 fs/namespace.c:3863
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x40/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+RIP: 0033:0x7f0a88ac7a7a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 1e 09 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffea62a5648 EFLAGS: 00000286 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffea62a5660 RCX: 00007f0a88ac7a7a
+RDX: 0000000020000000 RSI: 0000000020000040 RDI: 00007ffea62a5660
+RBP: 0000000000000004 R08: 00007ffea62a56a0 R09: 0000000000001117
+R10: 0000000000000000 R11: 0000000000000286 R12: 0000000000000000
+R13: 00007ffea62a56a0 R14: 0000000000000003 R15: 0000000000400000
+ </TASK>
+
+The buggy address belongs to the physical page:
+page:ffffea0001abbf80 refcount:0 mapcount:0 mapping:0000000000000000 index:0x1 pfn:0x6aefe
+flags: 0xfff00000000000(node=0|zone=1|lastcpupid=0x7ff)
+page_type: 0xffffffff()
+raw: 00fff00000000000 ffffea0001abbfc8 ffffea0001abbf48 0000000000000000
+raw: 0000000000000001 0000000000000000 00000000ffffffff 0000000000000000
+page dumped because: kasan: bad access detected
+page_owner tracks the page as freed
+page last allocated via order 0, migratetype Movable, gfp_mask 0x8(__GFP_MOVABLE), pid 1, tgid 1 (swapper/0), ts 11699634504, free_ts 12916778652
+ set_page_owner include/linux/page_owner.h:31 [inline]
+ post_alloc_hook+0x2d0/0x350 mm/page_alloc.c:1537
+ split_map_pages+0x1ff/0x520 mm/compaction.c:97
+ isolate_freepages_range+0x318/0x370 mm/compaction.c:774
+ alloc_contig_range+0x32e/0x510 mm/page_alloc.c:6411
+ __alloc_contig_pages mm/page_alloc.c:6434 [inline]
+ alloc_contig_pages+0x31a/0x610 mm/page_alloc.c:6514
+ debug_vm_pgtable_alloc_huge_page mm/debug_vm_pgtable.c:1095 [inline]
+ init_args mm/debug_vm_pgtable.c:1277 [inline]
+ debug_vm_pgtable+0x5d8/0x3250 mm/debug_vm_pgtable.c:1315
+ do_one_initcall+0x11c/0x650 init/main.c:1236
+ do_initcall_level init/main.c:1298 [inline]
+ do_initcalls init/main.c:1314 [inline]
+ do_basic_setup init/main.c:1333 [inline]
+ kernel_init_freeable+0x687/0xc10 init/main.c:1551
+ kernel_init+0x1c/0x2a0 init/main.c:1441
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+page last free stack trace:
+ reset_page_owner include/linux/page_owner.h:24 [inline]
+ free_pages_prepare mm/page_alloc.c:1137 [inline]
+ free_unref_page_prepare+0x4fa/0xaa0 mm/page_alloc.c:2347
+ free_unref_page+0x33/0x3b0 mm/page_alloc.c:2487
+ free_contig_range+0xb6/0x190 mm/page_alloc.c:6536
+ destroy_args+0xa69/0xe40 mm/debug_vm_pgtable.c:1028
+ debug_vm_pgtable+0x16fe/0x3250 mm/debug_vm_pgtable.c:1408
+ do_one_initcall+0x11c/0x650 init/main.c:1236
+ do_initcall_level init/main.c:1298 [inline]
+ do_initcalls init/main.c:1314 [inline]
+ do_basic_setup init/main.c:1333 [inline]
+ kernel_init_freeable+0x687/0xc10 init/main.c:1551
+ kernel_init+0x1c/0x2a0 init/main.c:1441
+ ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:242
+
+Memory state around the buggy address:
+ ffff88806aefee80: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff88806aefef00: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+>ffff88806aefef80: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+                   ^
+ ffff88806aeff000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ ffff88806aeff080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+==================================================================

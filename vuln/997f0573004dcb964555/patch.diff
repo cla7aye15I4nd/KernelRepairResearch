@@ -1,0 +1,32 @@
+diff --git a/fs/bcachefs/backpointers.c b/fs/bcachefs/backpointers.c
+index ff08afd667a0..702bf62d7fa7 100644
+--- a/fs/bcachefs/backpointers.c
++++ b/fs/bcachefs/backpointers.c
+@@ -249,9 +249,12 @@ struct bkey_s_c bch2_backpointer_get_key(struct btree_trans *trans,
+ 					 struct btree_iter *iter,
+ 					 unsigned iter_flags)
+ {
+-	if (likely(!bp.v->level)) {
+-		struct bch_fs *c = trans->c;
++	struct bch_fs *c = trans->c;
+ 
++	if (unlikely(bp.v->btree_id >= btree_id_nr_alive(c)))
++		return bkey_s_c_null;
++
++	if (likely(!bp.v->level)) {
+ 		bch2_trans_node_iter_init(trans, iter,
+ 					  bp.v->btree_id,
+ 					  bp.v->pos,
+diff --git a/fs/bcachefs/sb-errors_format.h b/fs/bcachefs/sb-errors_format.h
+index 917ef6aa4a23..e73d1c60198e 100644
+--- a/fs/bcachefs/sb-errors_format.h
++++ b/fs/bcachefs/sb-errors_format.h
+@@ -67,7 +67,7 @@ enum bch_fsck_flags {
+ 	x(btree_node_bkey_past_bset_end,			 54,	0)		\
+ 	x(btree_node_bkey_bad_format,				 55,	0)		\
+ 	x(btree_node_bad_bkey,					 56,	0)		\
+-	x(btree_node_bkey_out_of_order,				 57,	0)		\
++	x(btree_node_bkey_out_of_order,				 57,	FSCK_AUTOFIX)	\
+ 	x(btree_root_bkey_invalid,				 58,	FSCK_AUTOFIX)	\
+ 	x(btree_root_read_error,				 59,	FSCK_AUTOFIX)	\
+ 	x(btree_root_bad_min_key,				 60,	0)		\

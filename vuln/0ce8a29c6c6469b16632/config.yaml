@@ -1,0 +1,22 @@
+id: 0ce8a29c6c6469b16632
+bug_link: https://syzkaller.appspot.com/bug?extid=0ce8a29c6c6469b16632
+title: 'WARNING: ODEBUG bug in bt_host_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9204ff94868496f2d9b8b173af52ec455160c364
+fix_commit: e2cb6b891ad2b8caa9131e3be70f45243df82a80
+datetime: '2021-04-23T13:25:04+02:00'
+fix_commit_message: "bluetooth: eliminate the potential race condition when removing\
+  \ the HCI controller\n\nThere is a possible race condition vulnerability between\
+  \ issuing a HCI\ncommand and removing the cont.  Specifically, functions hci_req_sync()\n\
+  and hci_dev_do_close() can race each other like below:\n\nthread-A in hci_req_sync()\
+  \      |   thread-B in hci_dev_do_close()\n                                |   hci_req_sync_lock(hdev);\n\
+  test_bit(HCI_UP, &hdev->flags); |\n...                             |   test_and_clear_bit(HCI_UP,\
+  \ &hdev->flags)\nhci_req_sync_lock(hdev);        |\n                           \
+  \     |\nIn this commit we alter the sequence in function hci_req_sync(). Hence,\n\
+  the thread-A cannot issue th.\n\nSigned-off-by: Lin Ma <linma@zju.edu.cn>\nCc: Marcel\
+  \ Holtmann <marcel@holtmann.org>\nFixes: 7c6a329e4447 (\"[Bluetooth] Fix regression\
+  \ from using default link policy\")\nSigned-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- net/bluetooth
+hunk_count: 1
+covered_count: 0

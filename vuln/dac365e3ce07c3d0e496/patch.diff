@@ -1,0 +1,36 @@
+diff --git a/tools/objtool/check.c b/tools/objtool/check.c
+index b0b467d9608a..5822de376d9a 100644
+--- a/tools/objtool/check.c
++++ b/tools/objtool/check.c
+@@ -2330,6 +2330,7 @@ static int read_unwind_hints(struct objtool_file *file)
+ 
+ 		cfi.cfa.offset = bswap_if_needed(file->elf, hint->sp_offset);
+ 		cfi.type = hint->type;
++		cfi.signal = hint->signal;
+ 		cfi.end = hint->end;
+ 
+ 		insn->cfi = cfi_hash_find_or_add(&cfi);
+diff --git a/tools/objtool/include/objtool/cfi.h b/tools/objtool/include/objtool/cfi.h
+index f11d1ac1dadf..b1258e79a1b7 100644
+--- a/tools/objtool/include/objtool/cfi.h
++++ b/tools/objtool/include/objtool/cfi.h
+@@ -34,6 +34,7 @@ struct cfi_state {
+ 	unsigned char type;
+ 	bool bp_scratch;
+ 	bool drap;
++	bool signal;
+ 	bool end;
+ };
+ 
+diff --git a/tools/objtool/orc_gen.c b/tools/objtool/orc_gen.c
+index 1f22b7ebae58..57a4527d5988 100644
+--- a/tools/objtool/orc_gen.c
++++ b/tools/objtool/orc_gen.c
+@@ -27,6 +27,7 @@ static int init_orc_entry(struct orc_entry *orc, struct cfi_state *cfi,
+ 	}
+ 
+ 	orc->end = cfi->end;
++	orc->signal = cfi->signal;
+ 
+ 	if (cfi->cfa.base == CFI_UNDEFINED) {
+ 		orc->sp_reg = ORC_REG_UNDEFINED;

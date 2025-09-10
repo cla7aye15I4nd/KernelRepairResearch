@@ -1,0 +1,50 @@
+diff --git a/drivers/nfc/st-nci/se.c b/drivers/nfc/st-nci/se.c
+index ec87dd21e054..b2f1ced8e6dd 100644
+--- a/drivers/nfc/st-nci/se.c
++++ b/drivers/nfc/st-nci/se.c
+@@ -672,6 +672,12 @@ int st_nci_se_io(struct nci_dev *ndev, u32 se_idx,
+ 					ST_NCI_EVT_TRANSMIT_DATA, apdu,
+ 					apdu_length);
+ 	default:
++		/* Need to free cb_context here as at the moment we can't
++		 * clearly indicate to the caller if the callback function
++		 * would be called (and free it) or not. In both cases a
++		 * negative value may be returned to the caller.
++		 */
++		kfree(cb_context);
+ 		return -ENODEV;
+ 	}
+ }
+diff --git a/drivers/nfc/st21nfca/se.c b/drivers/nfc/st21nfca/se.c
+index df8d27cf2956..dae288bebcb5 100644
+--- a/drivers/nfc/st21nfca/se.c
++++ b/drivers/nfc/st21nfca/se.c
+@@ -236,6 +236,12 @@ int st21nfca_hci_se_io(struct nfc_hci_dev *hdev, u32 se_idx,
+ 					ST21NFCA_EVT_TRANSMIT_DATA,
+ 					apdu, apdu_length);
+ 	default:
++		/* Need to free cb_context here as at the moment we can't
++		 * clearly indicate to the caller if the callback function
++		 * would be called (and free it) or not. In both cases a
++		 * negative value may be returned to the caller.
++		 */
++		kfree(cb_context);
+ 		return -ENODEV;
+ 	}
+ }
+diff --git a/net/nfc/netlink.c b/net/nfc/netlink.c
+index 1fc339084d89..348bf561bc9f 100644
+--- a/net/nfc/netlink.c
++++ b/net/nfc/netlink.c
+@@ -1442,7 +1442,11 @@ static int nfc_se_io(struct nfc_dev *dev, u32 se_idx,
+ 	rc = dev->ops->se_io(dev, se_idx, apdu,
+ 			apdu_length, cb, cb_context);
+ 
++	device_unlock(&dev->dev);
++	return rc;
++
+ error:
++	kfree(cb_context);
+ 	device_unlock(&dev->dev);
+ 	return rc;
+ }

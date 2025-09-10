@@ -1,0 +1,49 @@
+id: 7634edaea4d0b341c625
+bug_link: https://syzkaller.appspot.com/bug?extid=7634edaea4d0b341c625
+title: WARNING in usb_submit_urb (4)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fc834e607ae3d18e1a20bca3f9a2d7f52ea7a2be
+fix_commit: c2b71462d294cf517a0bc6e4fd6424d7cee5596f
+datetime: '2019-04-19T21:15:13+02:00'
+fix_commit_message: "USB: core: Fix bug caused by duplicate interface PM usage counter\n\
+  \nThe syzkaller fuzzer reported a bug in the USB hub driver which turned\nout to\
+  \ be caused by a negative runtime-PM usage counter.  This allowed\na hub to be runtime\
+  \ suspended at a time when the driver did not expect\nit.  The symptom is a WARNING\
+  \ issued because the hub's status URB is\nsubmitted while it is already active:\n\
+  \n\tURB 0000000031fb463e submitted while active\n\tWARNING: CPU: 0 PID: 2917 at\
+  \ drivers/usb/core/urb.c:363\n\nThe negative runtime-PM usage count was caused by\
+  \ an unfortunate\ndesign decision made when runtime PM was first implemented for\
+  \ USB.\nAt that time, USB class drivers were allowed to unbind from their\ninterfaces\
+  \ without balancing the usage counter (i.e., leaving it with\na positive count).\
+  \  The core code would take care of setting the\ncounter back to 0 before allowing\
+  \ another driver to bind to the\ninterface.\n\nLater on when runtime PM was implemented\
+  \ for the entire kernel, the\nopposite decision was made: Drivers were required\
+  \ to balance their\nruntime-PM get and put calls.  In order to maintain backward\n\
+  compatibility, however, the USB subsystem adapted to the new\nimplementation by\
+  \ keeping an independent usage counter for each\ninterface and using it to automatically\
+  \ adjust the normal usage\ncounter back to 0 whenever a driver was unbound.\n\n\
+  This approach involves duplicating information, but what is worse, it\ndoesn't work\
+  \ properly in cases where a USB class driver delays\ndecrementing the usage counter\
+  \ until after the driver's disconnect()\nroutine has returned and the counter has\
+  \ been adjusted back to 0.\nDoing so would cause the usage counter to become negative.\
+  \  There's\neven a warning about this in the USB power management documentation!\n\
+  \nAs it happens, this is exactly what the hub driver does.  The\nkick_hub_wq() routine\
+  \ increments the runtime-PM usage counter, and the\ncorresponding decrement is carried\
+  \ out by hub_event() in the context\nof the hub_wq work-queue thread.  This work\
+  \ routine may sometimes run\nafter the driver has been unbound from its interface,\
+  \ and when it does\nit causes the usage counter to go negative.\n\nIt is not possible\
+  \ for hub_disconnect() to wait for a pending\nhub_event() call to finish, because\
+  \ hub_disconnect() is called with\nthe device lock held and hub_event() acquires\
+  \ that lock.  The only\nfeasible fix is to reverse the original design decision:\
+  \ remove the\nduplicate interface-specific usage counter and require USB drivers\
+  \ to\nbalance their runtime PM gets and puts.  As far as I know, all\nexisting drivers\
+  \ currently do this.\n\nSigned-off-by: Alan Stern <stern@rowland.harvard.edu>\n\
+  Reported-and-tested-by: syzbot+7634edaea4d0b341c625@syzkaller.appspotmail.com\n\
+  CC: <stable@vger.kernel.org>\nSigned-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- Documentation/driver-api/usb
+- drivers/usb/core
+- drivers/usb/storage
+- include/linux
+hunk_count: 12
+covered_count: 0

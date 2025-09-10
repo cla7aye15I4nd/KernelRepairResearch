@@ -1,0 +1,32 @@
+id: f02fb9e43bd85c6c66ae
+bug_link: https://syzkaller.appspot.com/bug?extid=f02fb9e43bd85c6c66ae
+title: WARNING in ip_mr_output
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f22e6fdf7b3395a627a1ad06ab70835015f7ff17
+fix_commit: beead7eea896e5bc803027d1f3e0d0f9c3b9d196
+datetime: '2025-06-28T10:44:21+01:00'
+fix_commit_message: "net: ipv4: guard ip_mr_output() with rcu\n\nsyzbot found at least\
+  \ one path leads to an ip_mr_output()\nwithout RCU being held.\n\nAdd guard(rcu)()\
+  \ to fix this in a concise way.\n\nWARNING: CPU: 0 PID: 0 at net/ipv4/ipmr.c:2302\
+  \ ip_mr_output+0xbb1/0xe70 net/ipv4/ipmr.c:2302\nCall Trace:\n <IRQ>\n  igmp_send_report+0x89e/0xdb0\
+  \ net/ipv4/igmp.c:799\n igmp_timer_expire+0x204/0x510 net/ipv4/igmp.c:-1\n  call_timer_fn+0x17e/0x5f0\
+  \ kernel/time/timer.c:1747\n  expire_timers kernel/time/timer.c:1798 [inline]\n\
+  \  __run_timers kernel/time/timer.c:2372 [inline]\n  __run_timer_base+0x61a/0x860\
+  \ kernel/time/timer.c:2384\n  run_timer_base kernel/time/timer.c:2393 [inline]\n\
+  \  run_timer_softirq+0xb7/0x180 kernel/time/timer.c:2403\n  handle_softirqs+0x286/0x870\
+  \ kernel/softirq.c:579\n  __do_softirq kernel/softirq.c:613 [inline]\n  invoke_softirq\
+  \ kernel/softirq.c:453 [inline]\n  __irq_exit_rcu+0xca/0x1f0 kernel/softirq.c:680\n\
+  \  irq_exit_rcu+0x9/0x30 kernel/softirq.c:696\n  instr_sysvec_apic_timer_interrupt\
+  \ arch/x86/kernel/apic/apic.c:1050 [inline]\n  sysvec_apic_timer_interrupt+0xa6/0xc0\
+  \ arch/x86/kernel/apic/apic.c:1050\n\nFixes: 35bec72a24ac (\"net: ipv4: Add ip_mr_output()\"\
+  )\nReported-by: syzbot+f02fb9e43bd85c6c66ae@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/netdev/685e841a.a00a0220.129264.0002.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nCc: Petr Machata <petrm@nvidia.com>\n\
+  Cc: Roopa Prabhu <roopa@nvidia.com>\nCc: Nikolay Aleksandrov <razor@blackwall.org>\n\
+  Cc: Benjamin Poirier <bpoirier@nvidia.com>\nCc: Ido Schimmel <idosch@nvidia.com>\n\
+  Reviewed-by: Neal Cardwell <ncardwell@google.com>\nReviewed-by: Nikolay Aleksandrov\
+  \ <razor@blackwall.org>\nReviewed-by: Petr Machata <petrm@nvidia.com>\nSigned-off-by:\
+  \ David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/ipv4
+hunk_count: 2
+covered_count: 2

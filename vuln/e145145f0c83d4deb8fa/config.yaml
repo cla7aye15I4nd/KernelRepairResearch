@@ -1,0 +1,26 @@
+id: e145145f0c83d4deb8fa
+bug_link: https://syzkaller.appspot.com/bug?extid=e145145f0c83d4deb8fa
+title: WARNING in unmap_page_range (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4cece764965020c22cff7665b18a012006359095
+fix_commit: f8572367eaff6739e3bc238ba93b86cd7881c0ff
+datetime: '2024-03-26T11:07:19-07:00'
+fix_commit_message: "mm/memory: fix missing pte marker for !page on pte zaps\n\nCommit\
+  \ 0cf18e839f64 of large folio zap work broke uffd-wp.  Now mm's uffd\nunit test\
+  \ \"wp-unpopulated\" will trigger this WARN_ON_ONCE().\n\nThe WARN_ON_ONCE() asserts\
+  \ that an VMA cannot be registered with\nuserfaultfd-wp if it contains a !normal\
+  \ page, but it's actually possible. \nOne example is an anonymous vma, register\
+  \ with uffd-wp, read anything will\ninstall a zero page.  Then when zap on it, this\
+  \ should trigger.\n\nWhat's more, removing that WARN_ON_ONCE may not be enough either,\
+  \ because\nwe should also not rely on \"whether it's a normal page\" to decide whether\n\
+  pte marker is needed.  For example, one can register wr-protect over some\nDAX regions\
+  \ to track writes when UFFD_FEATURE_WP_ASYNC enabled, in which\ncase it can have\
+  \ page==NULL for a devmap but we may want to keep the\nmarker around.\n\nLink: https://lkml.kernel.org/r/20240313213107.235067-1-peterx@redhat.com\n\
+  Fixes: 0cf18e839f64 (\"mm/memory: handle !page case in zap_present_pte() separately\"\
+  )\nSigned-off-by: Peter Xu <peterx@redhat.com>\nAcked-by: David Hildenbrand <david@redhat.com>\n\
+  Cc: Muhammad Usama Anjum <usama.anjum@collabora.com>\nSigned-off-by: Andrew Morton\
+  \ <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

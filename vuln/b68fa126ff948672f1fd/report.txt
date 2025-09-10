@@ -1,0 +1,46 @@
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 35 at fs/bcachefs/buckets.c:108 bch2_fs_usage_read_one+0x638/0x6a0 fs/bcachefs/buckets.c:108
+Modules linked in:
+CPU: 0 PID: 35 Comm: kworker/u8:2 Not tainted 6.9.0-rc7-next-20240506-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024
+Workqueue: writeback wb_workfn (flush-bcachefs-1)
+RIP: 0010:bch2_fs_usage_read_one+0x638/0x6a0 fs/bcachefs/buckets.c:108
+Code: 24 38 49 01 c7 4d 01 fc 4d 01 e5 4c 89 e8 48 81 c4 a0 00 00 00 5b 41 5c 41 5d 41 5e 41 5f 5d c3 cc cc cc cc e8 f9 9a 78 fd 90 <0f> 0b 90 e9 ba fa ff ff 89 d9 80 e1 07 80 c1 03 38 c1 0f 8c 32 fa
+RSP: 0018:ffffc90000ab6308 EFLAGS: 00010293
+RAX: ffffffff841d7e37 RBX: 0000000000000000 RCX: ffff88801b685a00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: ffffc90000ab64f0 R08: ffffffff841d78e6 R09: 0000000000000000
+R10: ffffc90000ab6440 R11: fffff52000156c8d R12: ffff888075cf8500
+R13: dffffc0000000000 R14: ffff88806b180000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff8880b9400000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fb172fff000 CR3: 0000000079a6e000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ bch2_fs_alloc_debug_to_text+0x181/0x630 fs/bcachefs/alloc_foreground.c:1634
+ bch2_print_allocator_stuck+0xc9/0x180 fs/bcachefs/alloc_foreground.c:1657
+ __bch2_write+0x5471/0x5c40 fs/bcachefs/io_write.c:1493
+ bch2_write+0x947/0x1670 fs/bcachefs/io_write.c:1622
+ closure_queue include/linux/closure.h:269 [inline]
+ closure_call include/linux/closure.h:402 [inline]
+ bch2_writepage_do_io fs/bcachefs/fs-io-buffered.c:460 [inline]
+ __bch2_writepage+0x1416/0x2b50 fs/bcachefs/fs-io-buffered.c:607
+ write_cache_pages+0xd0/0x230 mm/page-writeback.c:2591
+ bch2_writepages+0x14f/0x380 fs/bcachefs/fs-io-buffered.c:650
+ do_writepages+0x359/0x870 mm/page-writeback.c:2634
+ __writeback_single_inode+0x165/0x10b0 fs/fs-writeback.c:1651
+ writeback_sb_inodes+0x99c/0x1380 fs/fs-writeback.c:1947
+ __writeback_inodes_wb+0x11b/0x260 fs/fs-writeback.c:2018
+ wb_writeback+0x495/0xd40 fs/fs-writeback.c:2129
+ wb_check_background_flush fs/fs-writeback.c:2199 [inline]
+ wb_do_writeback fs/fs-writeback.c:2287 [inline]
+ wb_workfn+0xc58/0x1090 fs/fs-writeback.c:2314
+ process_one_work kernel/workqueue.c:3231 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3312
+ worker_thread+0x86d/0xd70 kernel/workqueue.c:3393
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>

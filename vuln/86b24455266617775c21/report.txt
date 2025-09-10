@@ -1,0 +1,60 @@
+------------[ cut here ]------------
+kernel BUG at arch/x86/mm/physaddr.c:28!
+Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5622 Comm: kworker/0:8 Not tainted 6.15.0-rc2-syzkaller-00400-g3088d26962e8 #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: events nsim_fib_event_work
+RIP: 0010:__phys_addr+0x15a/0x170 arch/x86/mm/physaddr.c:28
+Code: c2 bd 00 e9 3d ff ff ff e8 63 84 53 00 48 c7 c7 10 c3 ba 8e 4c 89 f6 4c 89 fa e8 41 b2 d0 03 e9 45 ff ff ff e8 47 84 53 00 90 <0f> 0b e8 3f 84 53 00 90 0f 0b e8 37 84 53 00 90 0f 0b 0f 1f 40 00
+RSP: 0018:ffffc90002d6f548 EFLAGS: 00010293
+RAX: ffffffff816f37b9 RBX: bbd437f6c36cef34 RCX: ffff88801f554880
+RDX: 0000000000000000 RSI: bbd437f6c36cef34 RDI: bbd4af76436cef34
+RBP: 0000000000000000 R08: ffffffff816f36ab R09: 1ffffffff20bfc8e
+R10: dffffc0000000000 R11: fffffbfff20bfc8f R12: bbd437f6436cef34
+R13: ffffea0000000000 R14: bbd4af76436cef34 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff88808c59a000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f5cf70cd628 CR3: 0000000040ada000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ virt_to_folio include/linux/mm.h:1385 [inline]
+ virt_to_slab mm/slab.h:211 [inline]
+ qlink_to_cache mm/kasan/quarantine.c:131 [inline]
+ qlist_free_all+0x3d/0x140 mm/kasan/quarantine.c:176
+ kasan_quarantine_reduce+0x14f/0x170 mm/kasan/quarantine.c:286
+ __kasan_slab_alloc+0x23/0x80 mm/kasan/common.c:329
+ kasan_slab_alloc include/linux/kasan.h:250 [inline]
+ slab_post_alloc_hook mm/slub.c:4161 [inline]
+ slab_alloc_node mm/slub.c:4210 [inline]
+ __kmalloc_cache_noprof+0x1c8/0x370 mm/slub.c:4367
+ kmalloc_noprof include/linux/slab.h:905 [inline]
+ kzalloc_noprof include/linux/slab.h:1039 [inline]
+ nsim_fib6_rt_create drivers/net/netdevsim/fib.c:547 [inline]
+ nsim_fib6_rt_insert drivers/net/netdevsim/fib.c:752 [inline]
+ nsim_fib6_event drivers/net/netdevsim/fib.c:856 [inline]
+ nsim_fib_event drivers/net/netdevsim/fib.c:889 [inline]
+ nsim_fib_event_work+0x17db/0x3f10 drivers/net/netdevsim/fib.c:1493
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xac3/0x18e0 kernel/workqueue.c:3319
+ worker_thread+0x870/0xd50 kernel/workqueue.c:3400
+ kthread+0x7b7/0x940 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:__phys_addr+0x15a/0x170 arch/x86/mm/physaddr.c:28
+Code: c2 bd 00 e9 3d ff ff ff e8 63 84 53 00 48 c7 c7 10 c3 ba 8e 4c 89 f6 4c 89 fa e8 41 b2 d0 03 e9 45 ff ff ff e8 47 84 53 00 90 <0f> 0b e8 3f 84 53 00 90 0f 0b e8 37 84 53 00 90 0f 0b 0f 1f 40 00
+RSP: 0018:ffffc90002d6f548 EFLAGS: 00010293
+RAX: ffffffff816f37b9 RBX: bbd437f6c36cef34 RCX: ffff88801f554880
+RDX: 0000000000000000 RSI: bbd437f6c36cef34 RDI: bbd4af76436cef34
+RBP: 0000000000000000 R08: ffffffff816f36ab R09: 1ffffffff20bfc8e
+R10: dffffc0000000000 R11: fffffbfff20bfc8f R12: bbd437f6436cef34
+R13: ffffea0000000000 R14: bbd4af76436cef34 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff88808c59a000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f5cf70cd628 CR3: 0000000040ada000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

@@ -1,0 +1,66 @@
+=====================================================
+BUG: KMSAN: kernel-infoleak in instrument_copy_to_user include/linux/instrumented.h:114 [inline]
+BUG: KMSAN: kernel-infoleak in copy_to_user_iter lib/iov_iter.c:24 [inline]
+BUG: KMSAN: kernel-infoleak in iterate_ubuf include/linux/iov_iter.h:29 [inline]
+BUG: KMSAN: kernel-infoleak in iterate_and_advance2 include/linux/iov_iter.h:245 [inline]
+BUG: KMSAN: kernel-infoleak in iterate_and_advance include/linux/iov_iter.h:271 [inline]
+BUG: KMSAN: kernel-infoleak in _copy_to_iter+0x364/0x2520 lib/iov_iter.c:186
+ instrument_copy_to_user include/linux/instrumented.h:114 [inline]
+ copy_to_user_iter lib/iov_iter.c:24 [inline]
+ iterate_ubuf include/linux/iov_iter.h:29 [inline]
+ iterate_and_advance2 include/linux/iov_iter.h:245 [inline]
+ iterate_and_advance include/linux/iov_iter.h:271 [inline]
+ _copy_to_iter+0x364/0x2520 lib/iov_iter.c:186
+ copy_to_iter include/linux/uio.h:197 [inline]
+ simple_copy_to_iter+0x68/0xa0 net/core/datagram.c:532
+ __skb_datagram_iter+0x123/0xdc0 net/core/datagram.c:420
+ skb_copy_datagram_iter+0x5c/0x200 net/core/datagram.c:546
+ skb_copy_datagram_msg include/linux/skbuff.h:3960 [inline]
+ netlink_recvmsg+0x432/0x1600 net/netlink/af_netlink.c:1967
+ sock_recvmsg_nosec net/socket.c:1044 [inline]
+ sock_recvmsg net/socket.c:1066 [inline]
+ __sys_recvfrom+0x505/0x810 net/socket.c:2246
+ __do_sys_recvfrom net/socket.c:2264 [inline]
+ __se_sys_recvfrom net/socket.c:2260 [inline]
+ __x64_sys_recvfrom+0x126/0x1d0 net/socket.c:2260
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Uninit was created at:
+ slab_post_alloc_hook+0x129/0xa70 mm/slab.h:768
+ slab_alloc_node mm/slub.c:3478 [inline]
+ kmem_cache_alloc_node+0x5e9/0xb10 mm/slub.c:3523
+ kmalloc_reserve+0x13d/0x4a0 net/core/skbuff.c:560
+ __alloc_skb+0x318/0x740 net/core/skbuff.c:651
+ alloc_skb include/linux/skbuff.h:1286 [inline]
+ tipc_tlv_alloc net/tipc/netlink_compat.c:156 [inline]
+ tipc_get_err_tlv+0x83/0x5a0 net/tipc/netlink_compat.c:170
+ tipc_nl_compat_recv+0x1035/0x15f0 net/tipc/netlink_compat.c:1324
+ genl_family_rcv_msg_doit net/netlink/genetlink.c:972 [inline]
+ genl_family_rcv_msg net/netlink/genetlink.c:1052 [inline]
+ genl_rcv_msg+0x11ec/0x1290 net/netlink/genetlink.c:1067
+ netlink_rcv_skb+0x371/0x650 net/netlink/af_netlink.c:2545
+ genl_rcv+0x40/0x60 net/netlink/genetlink.c:1076
+ netlink_unicast_kernel net/netlink/af_netlink.c:1342 [inline]
+ netlink_unicast+0xf47/0x1250 net/netlink/af_netlink.c:1368
+ netlink_sendmsg+0x1238/0x13d0 net/netlink/af_netlink.c:1910
+ sock_sendmsg_nosec net/socket.c:730 [inline]
+ __sock_sendmsg net/socket.c:745 [inline]
+ ____sys_sendmsg+0x9c2/0xd60 net/socket.c:2588
+ ___sys_sendmsg+0x28d/0x3c0 net/socket.c:2642
+ __sys_sendmsg net/socket.c:2671 [inline]
+ __do_sys_sendmsg net/socket.c:2680 [inline]
+ __se_sys_sendmsg net/socket.c:2678 [inline]
+ __x64_sys_sendmsg+0x307/0x490 net/socket.c:2678
+ do_syscall_x64 arch/x86/entry/common.c:51 [inline]
+ do_syscall_64+0x44/0x110 arch/x86/entry/common.c:82
+ entry_SYSCALL_64_after_hwframe+0x63/0x6b
+
+Bytes 34-35 of 36 are uninitialized
+Memory access of size 36 starts at ffff8881152e5680
+Data copied to user address 00007ffc9a4a12a0
+
+CPU: 0 PID: 5006 Comm: syz-executor286 Not tainted 6.6.0-syzkaller-12401-g8f6f76a6a29f #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/09/2023
+=====================================================

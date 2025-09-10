@@ -1,0 +1,35 @@
+diff --git a/fs/ocfs2/aops.h b/fs/ocfs2/aops.h
+index 45db1781ea73..1d1b4b7edba0 100644
+--- a/fs/ocfs2/aops.h
++++ b/fs/ocfs2/aops.h
+@@ -70,6 +70,8 @@ enum ocfs2_iocb_lock_bits {
+ 	OCFS2_IOCB_NUM_LOCKS
+ };
+ 
++#define ocfs2_iocb_init_rw_locked(iocb) \
++	(iocb->private = NULL)
+ #define ocfs2_iocb_clear_rw_locked(iocb) \
+ 	clear_bit(OCFS2_IOCB_RW_LOCK, (unsigned long *)&iocb->private)
+ #define ocfs2_iocb_rw_locked_level(iocb) \
+diff --git a/fs/ocfs2/file.c b/fs/ocfs2/file.c
+index 06af21982c16..cb09330a0861 100644
+--- a/fs/ocfs2/file.c
++++ b/fs/ocfs2/file.c
+@@ -2398,6 +2398,8 @@ static ssize_t ocfs2_file_write_iter(struct kiocb *iocb,
+ 	} else
+ 		inode_lock(inode);
+ 
++	ocfs2_iocb_init_rw_locked(iocb);
++
+ 	/*
+ 	 * Concurrent O_DIRECT writes are allowed with
+ 	 * mount_option "coherency=buffered".
+@@ -2544,6 +2546,8 @@ static ssize_t ocfs2_file_read_iter(struct kiocb *iocb,
+ 	if (!direct_io && nowait)
+ 		return -EOPNOTSUPP;
+ 
++	ocfs2_iocb_init_rw_locked(iocb);
++
+ 	/*
+ 	 * buffered reads protect themselves in ->read_folio().  O_DIRECT reads
+ 	 * need locks to protect pending reads from racing with truncate.

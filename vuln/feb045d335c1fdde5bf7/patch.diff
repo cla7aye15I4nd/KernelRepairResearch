@@ -1,0 +1,24 @@
+diff --git a/drivers/usb/gadget/legacy/raw_gadget.c b/drivers/usb/gadget/legacy/raw_gadget.c
+index 2acece16b890..e549022642e5 100644
+--- a/drivers/usb/gadget/legacy/raw_gadget.c
++++ b/drivers/usb/gadget/legacy/raw_gadget.c
+@@ -310,13 +310,15 @@ static int gadget_bind(struct usb_gadget *gadget,
+ 	dev->eps_num = i;
+ 	spin_unlock_irqrestore(&dev->lock, flags);
+ 
+-	/* Matches kref_put() in gadget_unbind(). */
+-	kref_get(&dev->count);
+-
+ 	ret = raw_queue_event(dev, USB_RAW_EVENT_CONNECT, 0, NULL);
+-	if (ret < 0)
++	if (ret < 0) {
+ 		dev_err(&gadget->dev, "failed to queue event\n");
++		set_gadget_data(gadget, NULL);
++		return ret;
++	}
+ 
++	/* Matches kref_put() in gadget_unbind(). */
++	kref_get(&dev->count);
+ 	return ret;
+ }
+ 

@@ -1,0 +1,128 @@
+================================
+WARNING: inconsistent lock state
+6.9.0-syzkaller-00967-gcd97950cbcab #0 Not tainted
+--------------------------------
+inconsistent {HARDIRQ-ON-W} -> {IN-HARDIRQ-W} usage.
+syz-executor823/5102 [HC1[1]:SC0[0]:HE0:SE1] takes:
+ffffffff8ecb94f8 (sync_timeline_list_lock){?.+.}-{2:2}, at: sync_timeline_debug_remove+0x2c/0x150 drivers/dma-buf/sync_debug.c:31
+{HARDIRQ-ON-W} state was registered at:
+  trace_hardirqs_on+0x28/0x40 kernel/trace/trace_preemptirq.c:61
+  __raw_spin_unlock_irq include/linux/spinlock_api_smp.h:159 [inline]
+  _raw_spin_unlock_irq+0x23/0x50 kernel/locking/spinlock.c:202
+  spin_unlock_irq include/linux/spinlock.h:401 [inline]
+  sync_print_obj drivers/dma-buf/sync_debug.c:118 [inline]
+  sync_info_debugfs_show+0x158/0x4d0 drivers/dma-buf/sync_debug.c:153
+  seq_read_iter+0x445/0xd60 fs/seq_file.c:230
+  seq_read+0x3a4/0x4f0 fs/seq_file.c:162
+  vfs_read+0x204/0xb70 fs/read_write.c:474
+  ksys_read+0x1a0/0x2c0 fs/read_write.c:619
+  do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+  do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+irq event stamp: 4984
+hardirqs last  enabled at (4983): [<ffffffff8b8b1e93>] __raw_spin_unlock_irq include/linux/spinlock_api_smp.h:159 [inline]
+hardirqs last  enabled at (4983): [<ffffffff8b8b1e93>] _raw_spin_unlock_irq+0x23/0x50 kernel/locking/spinlock.c:202
+hardirqs last disabled at (4984): [<ffffffff8b801b6e>] sysvec_irq_work+0xe/0xc0 arch/x86/kernel/irq_work.c:17
+softirqs last  enabled at (4868): [<ffffffff8663e484>] spin_unlock_bh include/linux/spinlock.h:396 [inline]
+softirqs last  enabled at (4868): [<ffffffff8663e484>] __tun_set_ebpf+0x124/0x1c0 drivers/net/tun.c:2302
+softirqs last disabled at (4866): [<ffffffff8663e400>] spin_lock_bh include/linux/spinlock.h:356 [inline]
+softirqs last disabled at (4866): [<ffffffff8663e400>] __tun_set_ebpf+0xa0/0x1c0 drivers/net/tun.c:2298
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(sync_timeline_list_lock);
+  <Interrupt>
+    lock(sync_timeline_list_lock);
+
+ *** DEADLOCK ***
+
+no locks held by syz-executor823/5102.
+
+stack backtrace:
+CPU: 0 PID: 5102 Comm: syz-executor823 Not tainted 6.9.0-syzkaller-00967-gcd97950cbcab #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Call Trace:
+ <IRQ>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ valid_state+0x13a/0x1c0 kernel/locking/lockdep.c:4013
+ mark_lock_irq+0xbb/0xc20 kernel/locking/lockdep.c:4216
+ mark_lock+0x223/0x350 kernel/locking/lockdep.c:4678
+ mark_usage kernel/locking/lockdep.c:4564 [inline]
+ __lock_acquire+0xb8e/0x1fd0 kernel/locking/lockdep.c:5091
+ lock_acquire+0x1ed/0x550 kernel/locking/lockdep.c:5754
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:110 [inline]
+ _raw_spin_lock_irqsave+0xd5/0x120 kernel/locking/spinlock.c:162
+ sync_timeline_debug_remove+0x2c/0x150 drivers/dma-buf/sync_debug.c:31
+ sync_timeline_free drivers/dma-buf/sw_sync.c:125 [inline]
+ kref_put include/linux/kref.h:65 [inline]
+ sync_timeline_put drivers/dma-buf/sw_sync.c:137 [inline]
+ timeline_fence_release+0x204/0x250 drivers/dma-buf/sw_sync.c:165
+ kref_put include/linux/kref.h:65 [inline]
+ dma_fence_put include/linux/dma-fence.h:297 [inline]
+ dma_fence_array_release+0x13e/0x240 drivers/dma-buf/dma-fence-array.c:120
+ irq_work_single+0xe2/0x240 kernel/irq_work.c:221
+ irq_work_run_list kernel/irq_work.c:252 [inline]
+ irq_work_run+0x18b/0x350 kernel/irq_work.c:261
+ __sysvec_irq_work+0xb8/0x430 arch/x86/kernel/irq_work.c:22
+ instr_sysvec_irq_work arch/x86/kernel/irq_work.c:17 [inline]
+ sysvec_irq_work+0x9e/0xc0 arch/x86/kernel/irq_work.c:17
+ </IRQ>
+ <TASK>
+ asm_sysvec_irq_work+0x1a/0x20 arch/x86/include/asm/idtentry.h:738
+RIP: 0010:__raw_spin_unlock_irq include/linux/spinlock_api_smp.h:160 [inline]
+RIP: 0010:_raw_spin_unlock_irq+0x29/0x50 kernel/locking/spinlock.c:202
+Code: 90 f3 0f 1e fa 53 48 89 fb 48 83 c7 18 48 8b 74 24 08 e8 6a 8c e7 f5 48 89 df e8 82 cc e8 f5 e8 6d 32 12 f6 fb bf 01 00 00 00 <e8> 72 91 da f5 65 8b 05 23 b5 78 74 85 c0 74 06 5b c3 cc cc cc cc
+RSP: 0018:ffffc9000340fbf0 EFLAGS: 00000286
+RAX: 7493d02eb864ba00 RBX: ffff888020f8b850 RCX: ffffffff9472d603
+RDX: dffffc0000000000 RSI: ffffffff8bcab8a0 RDI: 0000000000000001
+RBP: ffff88802cf6293c R08: ffffffff8fa8fc2f R09: 1ffffffff1f51f85
+R10: dffffc0000000000 R11: fffffbfff1f51f86 R12: ffff888020f8b840
+R13: ffff88802cf62900 R14: dffffc0000000000 R15: ffff888020f8b800
+ spin_unlock_irq include/linux/spinlock.h:401 [inline]
+ sw_sync_debugfs_release+0x14b/0x1d0 drivers/dma-buf/sw_sync.c:359
+ __fput+0x429/0x8a0 fs/file_table.c:422
+ task_work_run+0x24f/0x310 kernel/task_work.c:180
+ ptrace_notify+0x2d2/0x380 kernel/signal.c:2404
+ ptrace_report_syscall include/linux/ptrace.h:415 [inline]
+ ptrace_report_syscall_exit include/linux/ptrace.h:477 [inline]
+ syscall_exit_work+0xc6/0x190 kernel/entry/common.c:173
+ syscall_exit_to_user_mode_prepare kernel/entry/common.c:200 [inline]
+ __syscall_exit_to_user_mode_work kernel/entry/common.c:205 [inline]
+ syscall_exit_to_user_mode+0x273/0x370 kernel/entry/common.c:218
+ do_syscall_64+0x102/0x240 arch/x86/entry/common.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f0eb98565d9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 61 1a 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b0 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f0eb97ec238 EFLAGS: 00000246 ORIG_RAX: 00000000000001b4
+RAX: 0000000000000000 RBX: 00007f0eb98e1438 RCX: 00007f0eb98565d9
+RDX: 0000000000000000 RSI: 00000000ffffffff RDI: 0000000000000003
+RBP: 00007f0eb98e1430 R08: 00007ffcadb9c3a7 R09: 00007f0eb97ec6c0
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007f0eb98ad4c8
+----------------
+Code disassembly (best guess):
+   0:	90                   	nop
+   1:	f3 0f 1e fa          	endbr64
+   5:	53                   	push   %rbx
+   6:	48 89 fb             	mov    %rdi,%rbx
+   9:	48 83 c7 18          	add    $0x18,%rdi
+   d:	48 8b 74 24 08       	mov    0x8(%rsp),%rsi
+  12:	e8 6a 8c e7 f5       	call   0xf5e78c81
+  17:	48 89 df             	mov    %rbx,%rdi
+  1a:	e8 82 cc e8 f5       	call   0xf5e8cca1
+  1f:	e8 6d 32 12 f6       	call   0xf6123291
+  24:	fb                   	sti
+  25:	bf 01 00 00 00       	mov    $0x1,%edi
+* 2a:	e8 72 91 da f5       	call   0xf5da91a1 <-- trapping instruction
+  2f:	65 8b 05 23 b5 78 74 	mov    %gs:0x7478b523(%rip),%eax        # 0x7478b559
+  36:	85 c0                	test   %eax,%eax
+  38:	74 06                	je     0x40
+  3a:	5b                   	pop    %rbx
+  3b:	c3                   	ret
+  3c:	cc                   	int3
+  3d:	cc                   	int3
+  3e:	cc                   	int3
+  3f:	cc                   	int3

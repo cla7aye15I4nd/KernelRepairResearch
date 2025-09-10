@@ -1,0 +1,77 @@
+=====================================
+WARNING: bad unlock balance detected!
+6.3.0-syzkaller-04626-g0cfd8703e7da #0 Not tainted
+-------------------------------------
+kworker/u5:2/5022 is trying to release lock (&conn->chan_lock) at:
+[<ffffffff8915e1a8>] l2cap_disconnect_rsp net/bluetooth/l2cap_core.c:4697 [inline]
+[<ffffffff8915e1a8>] l2cap_bredr_sig_cmd net/bluetooth/l2cap_core.c:5748 [inline]
+[<ffffffff8915e1a8>] l2cap_sig_channel net/bluetooth/l2cap_core.c:6507 [inline]
+[<ffffffff8915e1a8>] l2cap_recv_frame+0x4ad8/0x9390 net/bluetooth/l2cap_core.c:7786
+but there are no more locks to release!
+
+other info that might help us debug this:
+2 locks held by kworker/u5:2/5022:
+ #0: ffff888146f5e938 ((wq_completion)hci1#2){+.+.}-{0:0}, at: arch_atomic64_set arch/x86/include/asm/atomic64_64.h:34 [inline]
+ #0: ffff888146f5e938 ((wq_completion)hci1#2){+.+.}-{0:0}, at: arch_atomic_long_set include/linux/atomic/atomic-long.h:41 [inline]
+ #0: ffff888146f5e938 ((wq_completion)hci1#2){+.+.}-{0:0}, at: atomic_long_set include/linux/atomic/atomic-instrumented.h:1280 [inline]
+ #0: ffff888146f5e938 ((wq_completion)hci1#2){+.+.}-{0:0}, at: set_work_data kernel/workqueue.c:639 [inline]
+ #0: ffff888146f5e938 ((wq_completion)hci1#2){+.+.}-{0:0}, at: set_work_pool_and_clear_pending kernel/workqueue.c:666 [inline]
+ #0: ffff888146f5e938 ((wq_completion)hci1#2){+.+.}-{0:0}, at: process_one_work+0x87a/0x15c0 kernel/workqueue.c:2361
+ #1: ffffc90003cafda8 ((work_completion)(&hdev->rx_work)){+.+.}-{0:0}, at: process_one_work+0x8ae/0x15c0 kernel/workqueue.c:2365
+
+stack backtrace:
+CPU: 0 PID: 5022 Comm: kworker/u5:2 Not tainted 6.3.0-syzkaller-04626-g0cfd8703e7da #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/14/2023
+Workqueue: hci1 hci_rx_work
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0xd9/0x150 lib/dump_stack.c:106
+ __lock_release kernel/locking/lockdep.c:5368 [inline]
+ lock_release+0x4f1/0x670 kernel/locking/lockdep.c:5711
+ __mutex_unlock_slowpath+0x99/0x5e0 kernel/locking/mutex.c:907
+ l2cap_disconnect_rsp net/bluetooth/l2cap_core.c:4697 [inline]
+ l2cap_bredr_sig_cmd net/bluetooth/l2cap_core.c:5748 [inline]
+ l2cap_sig_channel net/bluetooth/l2cap_core.c:6507 [inline]
+ l2cap_recv_frame+0x4ad8/0x9390 net/bluetooth/l2cap_core.c:7786
+ l2cap_recv_acldata+0xa80/0xbf0 net/bluetooth/l2cap_core.c:8504
+ hci_acldata_packet net/bluetooth/hci_core.c:3828 [inline]
+ hci_rx_work+0x709/0x1340 net/bluetooth/hci_core.c:4063
+ process_one_work+0x991/0x15c0 kernel/workqueue.c:2390
+ worker_thread+0x669/0x1090 kernel/workqueue.c:2537
+ kthread+0x33e/0x440 kernel/kthread.c:379
+ ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308
+ </TASK>
+Bluetooth: Wrong link type (-22)
+Bluetooth: Wrong link type (-22)
+Bluetooth: hci1: link tx timeout
+Bluetooth: hci1: killing stalled connection 11:aa:aa:aa:aa:aa
+Bluetooth: hci4: ACL packet for unknown connection handle 0
+Bluetooth: hci4: ACL packet for unknown connection handle 0
+Bluetooth: Wrong link type (-22)
+Bluetooth: Wrong link type (-22)
+Bluetooth: hci1: link tx timeout
+Bluetooth: hci1: killing stalled connection 11:aa:aa:aa:aa:aa
+Bluetooth: Wrong link type (-22)
+Bluetooth: Wrong link type (-22)
+Bluetooth: hci1: link tx timeout
+Bluetooth: hci1: killing stalled connection 11:aa:aa:aa:aa:aa
+Bluetooth: hci4: ACL packet for unknown connection handle 0
+Bluetooth: Wrong link type (-22)
+Bluetooth: Wrong link type (-22)
+Bluetooth: Wrong link type (-22)
+Bluetooth: Wrong link type (-22)
+Bluetooth: hci1: link tx timeout
+Bluetooth: hci1: killing stalled connection 11:aa:aa:aa:aa:aa
+Bluetooth: hci1: ISO packet for unknown connection handle 2048
+Bluetooth: hci1: command 0x0406 tx timeout
+Bluetooth: Wrong link type (-71)
+Bluetooth: Wrong link type (-71)
+Bluetooth: hci2: link tx timeout
+Bluetooth: hci2: killing stalled connection 10:aa:aa:aa:aa:aa
+Bluetooth: Wrong link type (-71)
+Bluetooth: hci2: link tx timeout
+Bluetooth: hci2: killing stalled connection 10:aa:aa:aa:aa:aa
+Bluetooth: Wrong link type (-71)
+Bluetooth: hci2: link tx timeout
+Bluetooth: hci2: killing stalled connection 10:aa:aa:aa:aa:aa

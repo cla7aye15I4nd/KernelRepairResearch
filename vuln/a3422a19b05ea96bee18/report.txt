@@ -1,0 +1,72 @@
+------------[ cut here ]------------
+kernel BUG at net/sched/sch_skbprio.c:127!
+Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 1037 Comm: kworker/u4:6 Not tainted 6.14.0-syzkaller-03565-gf6e0150b2003 #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Workqueue: ipv6_addrconf addrconf_dad_work
+RIP: 0010:skbprio_enqueue+0x1123/0x1150 net/sched/sch_skbprio.c:127
+Code: 4c 89 fe e8 df 18 28 fb 4c 8b 6c 24 10 48 ba 00 00 00 00 00 fc ff df e9 87 f5 ff ff e8 76 2c b6 f7 90 0f 0b e8 6e 2c b6 f7 90 <0f> 0b 89 f9 80 e1 07 80 c1 03 38 c1 7c 88 e8 aa 58 1e f8 eb 81 89
+RSP: 0000:ffffc9000252e780 EFLAGS: 00010293
+RAX: ffffffff8a0d4a22 RBX: 0000000000000002 RCX: ffff8880003c8000
+RDX: 0000000000000000 RSI: 0000000000000002 RDI: 0000000000000001
+RBP: 0000000000000000 R08: ffffffff8a0d41e8 R09: 0000000000000000
+R10: ffff8880436a9640 R11: ffffed10086d52ca R12: ffff8880361458c0
+R13: ffff888036144000 R14: 0000000000000088 R15: ffff888036145dc0
+FS:  0000000000000000(0000) GS:ffff88808c824000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f19a898ff38 CR3: 0000000000d22000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ qdisc_enqueue include/net/sch_generic.h:850 [inline]
+ tbf_enqueue+0x362/0x6e0 net/sched/sch_tbf.c:258
+ dev_qdisc_enqueue+0x4b/0x290 net/core/dev.c:4008
+ __dev_xmit_skb net/core/dev.c:4104 [inline]
+ __dev_queue_xmit+0xf13/0x3f60 net/core/dev.c:4618
+ dev_queue_xmit include/linux/netdevice.h:3313 [inline]
+ neigh_hh_output include/net/neighbour.h:523 [inline]
+ neigh_output include/net/neighbour.h:537 [inline]
+ ip_finish_output2+0xcd5/0x12e0 net/ipv4/ip_output.c:236
+ iptunnel_xmit+0x560/0x9c0 net/ipv4/ip_tunnel_core.c:82
+ udp_tunnel_xmit_skb+0x264/0x3c0 net/ipv4/udp_tunnel_core.c:173
+ geneve_xmit_skb drivers/net/geneve.c:916 [inline]
+ geneve_xmit+0x2119/0x2c30 drivers/net/geneve.c:1039
+ __netdev_start_xmit include/linux/netdevice.h:5151 [inline]
+ netdev_start_xmit include/linux/netdevice.h:5160 [inline]
+ xmit_one net/core/dev.c:3800 [inline]
+ dev_hard_start_xmit+0x27a/0x7d0 net/core/dev.c:3816
+ __dev_queue_xmit+0x1b80/0x3f60 net/core/dev.c:4652
+ dev_queue_xmit include/linux/netdevice.h:3313 [inline]
+ neigh_hh_output include/net/neighbour.h:523 [inline]
+ neigh_output include/net/neighbour.h:537 [inline]
+ ip6_finish_output2+0x128c/0x17e0 net/ipv6/ip6_output.c:141
+ __ip6_finish_output net/ipv6/ip6_output.c:-1 [inline]
+ ip6_finish_output+0x421/0x840 net/ipv6/ip6_output.c:226
+ NF_HOOK+0xa0/0x440 include/linux/netfilter.h:314
+ mld_sendpack+0x84a/0xdb0 net/ipv6/mcast.c:1868
+ ipv6_mc_dad_complete+0x88/0x490 net/ipv6/mcast.c:2293
+ addrconf_dad_completed+0x714/0xcd0 net/ipv6/addrconf.c:4336
+ addrconf_dad_work+0xdbe/0x16a0 net/ipv6/addrconf.c:-1
+ process_one_work kernel/workqueue.c:3238 [inline]
+ process_scheduled_works+0xac3/0x18e0 kernel/workqueue.c:3319
+ worker_thread+0x870/0xd30 kernel/workqueue.c:3400
+ kthread+0x7a9/0x920 kernel/kthread.c:464
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:153
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:skbprio_enqueue+0x1123/0x1150 net/sched/sch_skbprio.c:127
+Code: 4c 89 fe e8 df 18 28 fb 4c 8b 6c 24 10 48 ba 00 00 00 00 00 fc ff df e9 87 f5 ff ff e8 76 2c b6 f7 90 0f 0b e8 6e 2c b6 f7 90 <0f> 0b 89 f9 80 e1 07 80 c1 03 38 c1 7c 88 e8 aa 58 1e f8 eb 81 89
+RSP: 0000:ffffc9000252e780 EFLAGS: 00010293
+RAX: ffffffff8a0d4a22 RBX: 0000000000000002 RCX: ffff8880003c8000
+RDX: 0000000000000000 RSI: 0000000000000002 RDI: 0000000000000001
+RBP: 0000000000000000 R08: ffffffff8a0d41e8 R09: 0000000000000000
+R10: ffff8880436a9640 R11: ffffed10086d52ca R12: ffff8880361458c0
+R13: ffff888036144000 R14: 0000000000000088 R15: ffff888036145dc0
+FS:  0000000000000000(0000) GS:ffff88808c824000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f19a898ff38 CR3: 0000000000d22000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400

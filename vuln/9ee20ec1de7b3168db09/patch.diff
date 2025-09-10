@@ -1,0 +1,66 @@
+diff --git a/drivers/net/geneve.c b/drivers/net/geneve.c
+index 2f6739fe78af..6c2835086b57 100644
+--- a/drivers/net/geneve.c
++++ b/drivers/net/geneve.c
+@@ -822,7 +822,7 @@ static int geneve_xmit_skb(struct sk_buff *skb, struct net_device *dev,
+ 	__be16 sport;
+ 	int err;
+ 
+-	if (!pskb_inet_may_pull(skb))
++	if (!skb_vlan_inet_prepare(skb))
+ 		return -EINVAL;
+ 
+ 	if (!gs4)
+@@ -929,7 +929,7 @@ static int geneve6_xmit_skb(struct sk_buff *skb, struct net_device *dev,
+ 	__be16 sport;
+ 	int err;
+ 
+-	if (!pskb_inet_may_pull(skb))
++	if (!skb_vlan_inet_prepare(skb))
+ 		return -EINVAL;
+ 
+ 	if (!gs6)
+diff --git a/include/net/ip_tunnels.h b/include/net/ip_tunnels.h
+index 5cd64bb2104d..c286cc2e766e 100644
+--- a/include/net/ip_tunnels.h
++++ b/include/net/ip_tunnels.h
+@@ -361,6 +361,39 @@ static inline bool pskb_inet_may_pull(struct sk_buff *skb)
+ 	return pskb_network_may_pull(skb, nhlen);
+ }
+ 
++/* Variant of pskb_inet_may_pull().
++ */
++static inline bool skb_vlan_inet_prepare(struct sk_buff *skb)
++{
++	int nhlen = 0, maclen = ETH_HLEN;
++	__be16 type = skb->protocol;
++
++	/* Essentially this is skb_protocol(skb, true)
++	 * And we get MAC len.
++	 */
++	if (eth_type_vlan(type))
++		type = __vlan_get_protocol(skb, type, &maclen);
++
++	switch (type) {
++#if IS_ENABLED(CONFIG_IPV6)
++	case htons(ETH_P_IPV6):
++		nhlen = sizeof(struct ipv6hdr);
++		break;
++#endif
++	case htons(ETH_P_IP):
++		nhlen = sizeof(struct iphdr);
++		break;
++	}
++	/* For ETH_P_IPV6/ETH_P_IP we make sure to pull
++	 * a base network header in skb->head.
++	 */
++	if (!pskb_may_pull(skb, maclen + nhlen))
++		return false;
++
++	skb_set_network_header(skb, maclen);
++	return true;
++}
++
+ static inline int ip_encap_hlen(struct ip_tunnel_encap *e)
+ {
+ 	const struct ip_tunnel_encap_ops *ops;

@@ -1,0 +1,35 @@
+id: 7f3b6b106be8dcdcdeec
+bug_link: https://syzkaller.appspot.com/bug?extid=7f3b6b106be8dcdcdeec
+title: memory leak in sctp_stream_init_ext
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e4f8e513c3d353c134ad4eef9fd0bba12406c7c8
+fix_commit: 3c52b0af059e11a063970aed1ad143b9284a79c7
+datetime: '2019-10-14T15:04:00-07:00'
+fix_commit_message: "lib/generic-radix-tree.c: add kmemleak annotations\n\nKmemleak\
+  \ is falsely reporting a leak of the slab allocation in\nsctp_stream_init_ext():\n\
+  \n  BUG: memory leak\n  unreferenced object 0xffff8881114f5d80 (size 96):\n   comm\
+  \ \"syz-executor934\", pid 7160, jiffies 4294993058 (age 31.950s)\n   hex dump (first\
+  \ 32 bytes):\n     00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n\
+  \     00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n   backtrace:\n\
+  \     [<00000000ce7a1326>] kmemleak_alloc_recursive  include/linux/kmemleak.h:55\
+  \ [inline]\n     [<00000000ce7a1326>] slab_post_alloc_hook mm/slab.h:439 [inline]\n\
+  \     [<00000000ce7a1326>] slab_alloc mm/slab.c:3326 [inline]\n     [<00000000ce7a1326>]\
+  \ kmem_cache_alloc_trace+0x13d/0x280 mm/slab.c:3553\n     [<000000007abb7ac9>] kmalloc\
+  \ include/linux/slab.h:547 [inline]\n     [<000000007abb7ac9>] kzalloc include/linux/slab.h:742\
+  \ [inline]\n     [<000000007abb7ac9>] sctp_stream_init_ext+0x2b/0xa0  net/sctp/stream.c:157\n\
+  \     [<0000000048ecb9c1>] sctp_sendmsg_to_asoc+0x946/0xa00  net/sctp/socket.c:1882\n\
+  \     [<000000004483ca2b>] sctp_sendmsg+0x2a8/0x990 net/sctp/socket.c:2102\n   \
+  \  [...]\n\nBut it's freed later.  Kmemleak misses the allocation because its\n\
+  pointer is stored in the generic radix tree sctp_stream::out, and the\ngeneric radix\
+  \ tree uses raw pages which aren't tracked by kmemleak.\n\nFix this by adding the\
+  \ kmemleak hooks to the generic radix tree code.\n\nLink: http://lkml.kernel.org/r/20191004065039.727564-1-ebiggers@kernel.org\n\
+  Signed-off-by: Eric Biggers <ebiggers@google.com>\nReported-by: <syzbot+7f3b6b106be8dcdcdeec@syzkaller.appspotmail.com>\n\
+  Reviewed-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>\nAcked-by: Neil\
+  \ Horman <nhorman@tuxdriver.com>\nReviewed-by: Catalin Marinas <catalin.marinas@arm.com>\n\
+  Cc: Kent Overstreet <kent.overstreet@gmail.com>\nCc: Vlad Yasevich <vyasevich@gmail.com>\n\
+  Cc: Xin Long <lucien.xin@gmail.com>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- lib
+hunk_count: 6
+covered_count: 0

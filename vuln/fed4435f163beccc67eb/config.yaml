@@ -1,0 +1,29 @@
+id: fed4435f163beccc67eb
+bug_link: https://syzkaller.appspot.com/bug?extid=fed4435f163beccc67eb
+title: 'KMSAN: uninit-value in vcs_read'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bc6cf3669d22371f573ab0305b3abf13887c0786
+fix_commit: 21eff69aaaa0e766ca0ce445b477698dc6a9f55a
+datetime: '2018-06-28T21:34:39+09:00'
+fix_commit_message: "vt: prevent leaking uninitialized data to userspace via /dev/vcs*\n\
+  \nKMSAN reported an infoleak when reading from /dev/vcs*:\n\n  BUG: KMSAN: kernel-infoleak\
+  \ in vcs_read+0x18ba/0x1cc0\n  Call Trace:\n  ...\n   kmsan_copy_to_user+0x7a/0x160\
+  \ mm/kmsan/kmsan.c:1253\n   copy_to_user ./include/linux/uaccess.h:184\n   vcs_read+0x18ba/0x1cc0\
+  \ drivers/tty/vt/vc_screen.c:352\n   __vfs_read+0x1b2/0x9d0 fs/read_write.c:416\n\
+  \   vfs_read+0x36c/0x6b0 fs/read_write.c:452\n  ...\n  Uninit was created at:\n\
+  \   kmsan_save_stack_with_flags mm/kmsan/kmsan.c:279\n   kmsan_internal_poison_shadow+0xb8/0x1b0\
+  \ mm/kmsan/kmsan.c:189\n   kmsan_kmalloc+0x94/0x100 mm/kmsan/kmsan.c:315\n   __kmalloc+0x13a/0x350\
+  \ mm/slub.c:3818\n   kmalloc ./include/linux/slab.h:517\n   vc_allocate+0x438/0x800\
+  \ drivers/tty/vt/vt.c:787\n   con_install+0x8c/0x640 drivers/tty/vt/vt.c:2880\n\
+  \   tty_driver_install_tty drivers/tty/tty_io.c:1224\n   tty_init_dev+0x1b5/0x1020\
+  \ drivers/tty/tty_io.c:1324\n   tty_open_by_driver drivers/tty/tty_io.c:1959\n \
+  \  tty_open+0x17b4/0x2ed0 drivers/tty/tty_io.c:2007\n   chrdev_open+0xc25/0xd90\
+  \ fs/char_dev.c:417\n   do_dentry_open+0xccc/0x1440 fs/open.c:794\n   vfs_open+0x1b6/0x2f0\
+  \ fs/open.c:908\n  ...\n  Bytes 0-79 of 240 are uninitialized\n\nConsistently allocating\
+  \ |vc_screenbuf| with kzalloc() fixes the problem\n\nReported-by: syzbot+17a8efdf800000@syzkaller.appspotmail.com\n\
+  Signed-off-by: Alexander Potapenko <glider@google.com>\nCc: stable <stable@vger.kernel.org>\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/tty/vt
+hunk_count: 2
+covered_count: 1

@@ -1,0 +1,59 @@
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index b39b339fbf96..a9543f01184c 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -113,6 +113,22 @@ noinline void btrfs_release_path(struct btrfs_path *p)
+ 	}
+ }
+ 
++/*
++ * We want the transaction abort to print stack trace only for errors where the
++ * cause could be a bug, eg. due to ENOSPC, and not for common errors that are
++ * caused by external factors.
++ */
++bool __cold abort_should_print_stack(int errno)
++{
++	switch (errno) {
++	case -EIO:
++	case -EROFS:
++	case -ENOMEM:
++		return false;
++	}
++	return true;
++}
++
+ /*
+  * safely gets a reference on the root node of a tree.  A lock
+  * is not taken, so a concurrent writer may put a different node
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index f677b49df8ae..9e6d48ff4597 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3796,9 +3796,11 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 			       const char *function,
+ 			       unsigned int line, int errno, bool first_hit);
+ 
++bool __cold abort_should_print_stack(int errno);
++
+ /*
+  * Call btrfs_abort_transaction as early as possible when an error condition is
+- * detected, that way the exact line number is reported.
++ * detected, that way the exact stack trace is reported for some errors.
+  */
+ #define btrfs_abort_transaction(trans, errno)		\
+ do {								\
+@@ -3807,10 +3809,11 @@ do {								\
+ 	if (!test_and_set_bit(BTRFS_FS_STATE_TRANS_ABORTED,	\
+ 			&((trans)->fs_info->fs_state))) {	\
+ 		first = true;					\
+-		if ((errno) != -EIO && (errno) != -EROFS) {		\
+-			WARN(1, KERN_DEBUG				\
++		if (WARN(abort_should_print_stack(errno), 	\
++			KERN_DEBUG				\
+ 			"BTRFS: Transaction aborted (error %d)\n",	\
+-			(errno));					\
++			(errno))) {					\
++			/* Stack trace printed. */			\
+ 		} else {						\
+ 			btrfs_debug((trans)->fs_info,			\
+ 				    "Transaction aborted (error %d)", \

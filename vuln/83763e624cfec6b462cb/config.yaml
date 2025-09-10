@@ -1,0 +1,57 @@
+id: 83763e624cfec6b462cb
+bug_link: https://syzkaller.appspot.com/bug?extid=83763e624cfec6b462cb
+title: memory leak in _r8712_init_xmit_priv (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8bcb9afc5de366d7c3e572582ff0da8b155e7e01
+fix_commit: 9ed3e0a0e1b1e1336f3b3979aa478e1f5312da4d
+datetime: '2024-06-04T13:35:01+02:00'
+fix_commit_message: 'staging: rtl8712: remove unnecessary alignment of pxmitpriv->pxmitbuf
+
+
+  This driver wants pxmitpriv->pxmitbuf to be 4-byte aligned. This is ensured
+
+  by allocating 4 more bytes than required with kmalloc(), then do the
+
+  p = p + 4 - (p & 3) trick to make sure the pointer is 4-byte aligned.
+
+
+  This is unnecessary. Pointers from kmalloc() are already at least
+
+  8-byte-aligned.
+
+
+  Remove this alignment trick to simplify the code, and also to stop wasting
+
+  4 extra bytes of dynamic memory allocator.
+
+
+  This also gets rid of a (false) warning from kmemleak. This 4-byte-aligned
+
+  buffer is used to store pointers from kmalloc(). For 64-bit platforms,
+
+  pointer size is 8 bytes and kmemleak only scans for pointers in 8-byte
+
+  blocks, thus it misses the pointers stored in this 4-byte-aligned buffer
+
+  and thinks that these pointers have been leaked. This is just a false
+
+  warning, not a real problem. But still, it would be nice to get rid of
+
+  these warnings.
+
+
+  Reported-and-tested-by: syzbot+83763e624cfec6b462cb@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/linux-staging/000000000000809328060a8a4c1c@google.com
+
+  Signed-off-by: Nam Cao <namcao@linutronix.de>
+
+  Link: https://lore.kernel.org/r/20240525073229.4144612-1-namcao@linutronix.de
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/staging/rtl8712
+hunk_count: 4
+covered_count: 2

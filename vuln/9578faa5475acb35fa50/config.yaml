@@ -1,0 +1,49 @@
+id: 9578faa5475acb35fa50
+bug_link: https://syzkaller.appspot.com/bug?extid=9578faa5475acb35fa50
+title: kernel BUG in hpage_collapse_scan_file
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 90fd833609c82487a0eca1581becde7ab54d9429
+fix_commit: 2ce0bdfebc74f6cbd4e97a4e767d505a81c38cf2
+datetime: '2023-04-18T16:29:43-07:00'
+fix_commit_message: "mm: khugepaged: fix kernel BUG in hpage_collapse_scan_file()\n\
+  \nSyzkaller reported the following issue:\n\nkernel BUG at mm/khugepaged.c:1823!\n\
+  invalid opcode: 0000 [#1] PREEMPT SMP KASAN\nCPU: 1 PID: 5097 Comm: syz-executor220\
+  \ Not tainted 6.2.0-syzkaller-13154-g857f1268a591 #0\nHardware name: Google Google\
+  \ Compute Engine/Google Compute Engine, BIOS Google 02/16/2023\nRIP: 0010:collapse_file\
+  \ mm/khugepaged.c:1823 [inline]\nRIP: 0010:hpage_collapse_scan_file+0x67c8/0x7580\
+  \ mm/khugepaged.c:2233\nCode: 00 00 89 de e8 c9 66 a3 ff 31 ff 89 de e8 c0 66 a3\
+  \ ff 45 84 f6 0f 85 28 0d 00 00 e8 22 64 a3 ff e9 dc f7 ff ff e8 18 64 a3 ff <0f>\
+  \ 0b f3 0f 1e fa e8 0d 64 a3 ff e9 93 f6 ff ff f3 0f 1e fa 4c 89\nRSP: 0018:ffffc90003dff4e0\
+  \ EFLAGS: 00010093\nRAX: ffffffff81e95988 RBX: 00000000000001c1 RCX: ffff8880205b3a80\n\
+  RDX: 0000000000000000 RSI: 00000000000001c0 RDI: 00000000000001c1\nRBP: ffffc90003dff830\
+  \ R08: ffffffff81e90e67 R09: fffffbfff1a433c3\nR10: 0000000000000000 R11: dffffc0000000001\
+  \ R12: 0000000000000000\nR13: ffffc90003dff6c0 R14: 00000000000001c0 R15: 0000000000000000\n\
+  FS:  00007fdbae5ee700(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000\nCS:\
+  \  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 00007fdbae6901e0 CR3: 000000007b2dd000\
+  \ CR4: 00000000003506e0\nDR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400\nCall Trace:\n\
+  \ <TASK>\n madvise_collapse+0x721/0xf50 mm/khugepaged.c:2693\n madvise_vma_behavior\
+  \ mm/madvise.c:1086 [inline]\n madvise_walk_vmas mm/madvise.c:1260 [inline]\n do_madvise+0x9e5/0x4680\
+  \ mm/madvise.c:1439\n __do_sys_madvise mm/madvise.c:1452 [inline]\n __se_sys_madvise\
+  \ mm/madvise.c:1450 [inline]\n __x64_sys_madvise+0xa5/0xb0 mm/madvise.c:1450\n do_syscall_x64\
+  \ arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x41/0xc0 arch/x86/entry/common.c:80\n\
+  \ entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nThe xas_store() call during page cache\
+  \ scanning can potentially translate\n'xas' into the error state (with the reproducer\
+  \ provided by the syzkaller\nthe error code is -ENOMEM).  However, there are no\
+  \ further checks after\nthe 'xas_store', and the next call of 'xas_next' at the\
+  \ start of the\nscanning cycle doesn't increase the xa_index, and the issue occurs.\n\
+  \nThis patch will add the xarray state error checking after the xas_store()\nand\
+  \ the corresponding result error code.\n\nTested via syzbot.\n\n[akpm@linux-foundation.org:\
+  \ update include/trace/events/huge_memory.h's SCAN_STATUS]\nLink: https://lkml.kernel.org/r/20230329145330.23191-1-ivan.orlov0322@gmail.com\n\
+  Link: https://syzkaller.appspot.com/bug?id=7d6bb3760e026ece7524500fe44fb024a0e959fc\n\
+  Signed-off-by: Ivan Orlov <ivan.orlov0322@gmail.com>\nReported-by: syzbot+9578faa5475acb35fa50@syzkaller.appspotmail.com\n\
+  Tested-by: Zach O'Keefe <zokeefe@google.com>\nCc: Yang Shi <shy828301@gmail.com>\n\
+  Cc: Himadri Pandya <himadrispandya@gmail.com>\nCc: Ivan Orlov <ivan.orlov0322@gmail.com>\n\
+  Cc: Shuah Khan <skhan@linuxfoundation.org>\nCc: Song Liu <songliubraving@fb.com>\n\
+  Cc: Rik van Riel <riel@surriel.com>\nCc: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>\n\
+  Cc: Johannes Weiner <hannes@cmpxchg.org>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- include/trace/events
+- mm
+hunk_count: 5
+covered_count: 2

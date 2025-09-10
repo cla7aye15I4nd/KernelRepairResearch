@@ -1,0 +1,33 @@
+id: 644848628d5e12d5438c
+bug_link: https://syzkaller.appspot.com/bug?extid=644848628d5e12d5438c
+title: kernel BUG in workingset_activation (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 7b32040f6d7f885ffc09a6df7c17992d56d2eab8
+fix_commit: 0143d148d1e882fb1538dc9974c94d63961719b9
+datetime: '2023-05-29T16:14:28+01:00'
+fix_commit_message: "usb: usbfs: Enforce page requirements for mmap\n\nThe current\
+  \ implementation of usbdev_mmap uses usb_alloc_coherent to\nallocate memory pages\
+  \ that will later be mapped into the user space.\nMeanwhile, usb_alloc_coherent\
+  \ employs three different methods to\nallocate memory, as outlined below:\n * If\
+  \ hcd->localmem_pool is non-null, it uses gen_pool_dma_alloc to\n   allocate memory;\n\
+  \ * If DMA is not available, it uses kmalloc to allocate memory;\n * Otherwise,\
+  \ it uses dma_alloc_coherent.\n\nHowever, it should be noted that gen_pool_dma_alloc\
+  \ does not guarantee\nthat the resulting memory will be page-aligned. Furthermore,\
+  \ trying to\nmap slab pages (i.e., memory allocated by kmalloc) into the user space\n\
+  is not resonable and can lead to problems, such as a type confusion bug\nwhen PAGE_TABLE_CHECK=y\
+  \ [1].\n\nTo address these issues, this patch introduces hcd_alloc_coherent_pages,\n\
+  which addresses the above two problems. Specifically,\nhcd_alloc_coherent_pages\
+  \ uses gen_pool_dma_alloc_align instead of\ngen_pool_dma_alloc to ensure that the\
+  \ memory is page-aligned. To replace\nkmalloc, hcd_alloc_coherent_pages directly\
+  \ allocates pages by calling\n__get_free_pages.\n\nReported-by: syzbot+fcf1a817ceb50935ce99@syzkaller.appspotmail.comm\n\
+  Closes: https://lore.kernel.org/lkml/000000000000258e5e05fae79fc1@google.com/ [1]\n\
+  Fixes: f7d34b445abc (\"USB: Add support for usbfs zerocopy.\")\nFixes: ff2437befd8f\
+  \ (\"usb: host: Fix excessive alignment restriction for local memory allocations\"\
+  )\nCc: stable@vger.kernel.org\nSigned-off-by: Ruihan Li <lrh2000@pku.edu.cn>\nAcked-by:\
+  \ Alan Stern <stern@rowland.harvard.edu>\nLink: https://lore.kernel.org/r/20230515130958.32471-2-lrh2000@pku.edu.cn\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/usb/core
+- include/linux/usb
+hunk_count: 5
+covered_count: 0

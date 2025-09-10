@@ -1,0 +1,57 @@
+id: 915f3e317adb0e85835f
+bug_link: https://syzkaller.appspot.com/bug?extid=915f3e317adb0e85835f
+title: 'BUG: Bad page map (5)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6d751329e761338faa9c24c2c9736f27bc54282b
+fix_commit: 4d24de9425f75fe489ab651113b97f3f7b4dea62
+datetime: '2022-09-26T19:46:03-07:00'
+fix_commit_message: "mm: MADV_COLLAPSE: refetch vm_end after reacquiring mmap_lock\n\
+  \nThe syzbot reported the below problem:\n\nBUG: Bad page map in process syz-executor198\
+  \  pte:8000000071c00227 pmd:74b30067\naddr:0000000020563000 vm_flags:08100077 anon_vma:ffff8880547d2200\
+  \ mapping:0000000000000000 index:20563\nfile:(null) fault:0x0 mmap:0x0 read_folio:0x0\n\
+  CPU: 1 PID: 3614 Comm: syz-executor198 Not tainted 6.0.0-rc3-next-20220901-syzkaller\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 08/26/2022\nCall Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:88 [inline]\n\
+  \ dump_stack_lvl+0xcd/0x134 lib/dump_stack.c:106\n print_bad_pte.cold+0x2a7/0x2d0\
+  \ mm/memory.c:565\n vm_normal_page+0x10c/0x2a0 mm/memory.c:636\n hpage_collapse_scan_pmd+0x729/0x1da0\
+  \ mm/khugepaged.c:1199\n madvise_collapse+0x481/0x910 mm/khugepaged.c:2433\n madvise_vma_behavior+0xd0a/0x1cc0\
+  \ mm/madvise.c:1062\n madvise_walk_vmas+0x1c7/0x2b0 mm/madvise.c:1236\n do_madvise.part.0+0x24a/0x340\
+  \ mm/madvise.c:1415\n do_madvise mm/madvise.c:1428 [inline]\n __do_sys_madvise mm/madvise.c:1428\
+  \ [inline]\n __se_sys_madvise mm/madvise.c:1426 [inline]\n __x64_sys_madvise+0x113/0x150\
+  \ mm/madvise.c:1426\n do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x35/0xb0\
+  \ arch/x86/entry/common.c:80\n entry_SYSCALL_64_after_hwframe+0x63/0xcd\nRIP: 0033:0x7f770ba87929\n\
+  Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 11 15 00 00 90 48 89 f8 48 89 f7 48 89\
+  \ d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3\
+  \ 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48\nRSP: 002b:00007f770ba18308 EFLAGS: 00000246\
+  \ ORIG_RAX: 000000000000001c\nRAX: ffffffffffffffda RBX: 00007f770bb0f3f8 RCX: 00007f770ba87929\n\
+  RDX: 0000000000000019 RSI: 0000000000600003 RDI: 0000000020000000\nRBP: 00007f770bb0f3f0\
+  \ R08: 00007f770ba18700 R09: 0000000000000000\nR10: 00007f770ba18700 R11: 0000000000000246\
+  \ R12: 00007f770bb0f3fc\nR13: 00007ffc2d8b62ef R14: 00007f770ba18400 R15: 0000000000022000\n\
+  \nBasically the test program does the below conceptually:\n1. mmap 0x2000000 - 0x21000000\
+  \ as anonymous region\n2. mmap io_uring SQ stuff at 0x20563000 with MAP_FIXED, io_uring_mmap()\n\
+  \   actually remaps the pages with special PTEs\n3. call MADV_COLLAPSE for 0x20000000\
+  \ - 0x21000000\n\nIt actually triggered the below race:\n\n             CPU A  \
+  \                                        CPU B\nmmap 0x20000000 - 0x21000000 as\
+  \ anon\n                                           madvise_collapse is called on\
+  \ this area\n                                             Retrieve start and end\
+  \ address from the vma (NEVER updated later!)\n                                \
+  \             Collapsed the first 2M area and dropped mmap_lock\nAcquire mmap_lock\n\
+  mmap io_uring file at 0x20563000\nRelease mmap_lock\n                          \
+  \                   Reacquire mmap_lock\n                                      \
+  \       revalidate vma pass since 0x20200000 + 0x200000 > 0x20563000\n         \
+  \                                    scan the next 2M (0x20200000 - 0x20400000),\
+  \ but due to whatever reason it didn't release mmap_lock\n                     \
+  \                        scan the 3rd 2M area (start from 0x20400000)\n        \
+  \                                       get into the vma created by io_uring\n\n\
+  The hend should be updated after MADV_COLLAPSE reacquire mmap_lock since\nthe vma\
+  \ may be shrunk.  We don't have to worry about shink from the other\ndirection since\
+  \ it could be caught by hugepage_vma_revalidate().  Either\nno valid vma is found\
+  \ or the vma doesn't fit anymore.\n\nLink: https://lkml.kernel.org/r/20220914162220.787703-1-shy828301@gmail.com\n\
+  Fixes: 7d8faaf155454f8 (\"mm/madvise: introduce MADV_COLLAPSE sync hugepage collapse\"\
+  )\nReported-by: syzbot+915f3e317adb0e85835f@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Yang Shi <shy828301@gmail.com>\nReviewed-by: Zach O'Keefe <zokeefe@google.com>\n\
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

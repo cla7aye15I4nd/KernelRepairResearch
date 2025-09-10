@@ -1,0 +1,80 @@
+id: 1134d3a5b062e9665a7a
+bug_link: https://syzkaller.appspot.com/bug?extid=1134d3a5b062e9665a7a
+title: 'VFS: Busy inodes after unmount (use-after-free) (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: ad0039db42179064f9b60eab67c797f7359fdefc
+fix_commit: d0118d7d20bbf9a76f75840bc3b0da0f4d092da9
+datetime: '2025-07-09T22:57:57-07:00'
+fix_commit_message: 'ocfs2: update d_splice_alias() return code checking
+
+
+  When commit d3556babd7fa ("ocfs2: fix d_splice_alias() return code
+
+  checking") was merged into v3.18-rc3, d_splice_alias() was returning one
+
+  of a valid dentry, NULL or an ERR_PTR.
+
+
+  When commit b5ae6b15bd73 ("merge d_materialise_unique() into
+
+  d_splice_alias()") was merged into v3.19-rc1, d_splice_alias() started
+
+  returning -ELOOP as one of ERR_PTR values.
+
+
+  Now, when syzkaller mounts a crafted ocfs2 filesystem image that hits
+
+  d_splice_alias() == -ELOOP case from ocfs2_lookup(), ocfs2_lookup() fails
+
+  to handle -ELOOP case and generic_shutdown_super() hits "VFS: Busy inodes
+
+  after unmount" message.
+
+
+  Instead of calling ocfs2_dentry_attach_lock() or ocfs2_dentry_attach_gen()
+
+  when d_splice_alias() returned an ERR_PTR value, change ocfs2_lookup() to
+
+  bail out immediately.
+
+
+  Also, ocfs2_lookup() needs to call dupt() when ocfs2_dentry_attach_lock()
+
+  returned an ERR_PTR value.
+
+
+  Link: https://lkml.kernel.org/r/da5be67d-2a0b-4b93-85d6-42f3b7440135@I-love.SAKURA.ne.jp
+
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+
+  Reported-by: syzbot <syzbot+1134d3a5b062e9665a7a@syzkaller.appspotmail.com>
+
+  Closes: https://syzkaller.appspot.com/bug?extid=1134d3a5b062e9665a7a
+
+  Suggested-by: Al Viro <viro@zeniv.linux.org.uk>
+
+  Reviewed-by: Joseph Qi <joseph.qi@linux.alibaba.com>
+
+  Cc: Al Viro <viro@zeniv.linux.org.uk>
+
+  Cc: Joel Becker <jlbec@evilplan.org>
+
+  Cc: Mark Fasheh <mark@fasheh.com>
+
+  Cc: Richard Weinberger <richard@nod.at>
+
+  Cc: Tetsuo Handa <penguin-kernel@i-love-sakura.ne.jp>
+
+  Cc: Junxiao Bi <junxiao.bi@oracle.com>
+
+  Cc: Changwei Ge <gechangwei@live.cn>
+
+  Cc: Jun Piao <piaojun@huawei.com>
+
+  Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+
+  '
+submodule:
+- fs/ocfs2
+hunk_count: 2
+covered_count: 0

@@ -1,0 +1,59 @@
+id: 7d917f67c05066cec295
+bug_link: https://syzkaller.appspot.com/bug?extid=7d917f67c05066cec295
+title: WARNING in folio_walk_start
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 81983758430957d9a5cb3333fe324fd70cf63e7e
+fix_commit: 7c18d4811000945677a8531e89de3e17582e8a36
+datetime: '2024-10-28T21:40:38-07:00'
+fix_commit_message: "mm/pagewalk: fix usage of pmd_leaf()/pud_leaf() without present\
+  \ check\n\npmd_leaf()/pud_leaf() only implies a pmd_present()/pud_present() check\
+  \ on\nsome architectures.  We really should check for\npmd_present()/pud_present()\
+  \ first.\n\nThis should explain the report we got on ppc64 (which has\nCONFIG_PGTABLE_HAS_HUGE_LEAVES\
+  \ set in the config) that triggered:\n\tVM_WARN_ON_ONCE(pmd_leaf(pmdp_get_lockless(pmdp)));\n\
+  \nLikely we had a PMD migration entry for which pmd_leaf() did not trigger. \nWe\
+  \ raced with restoring the PMD migration entry, and suddenly saw a\npmd_leaf().\
+  \  In this case, pte_offset_map_lock() saved us from more\ntrouble, because it rechecks\
+  \ the PMD value, but we would not have\nprocessed the migration entry -- which is\
+  \ not too bad because the only\nuser of FW_MIGRATION is KSM for unsharing, and KSM\
+  \ only applies to small\nfolios.\n\nFurther, we shouldn't re-read the PMD/PUD value\
+  \ for our warning, the\nprimary purpose of the VM_WARN_ON_ONCE() is to find spurious\
+  \ use of\npmd_leaf()/pud_leaf() without CONFIG_PGTABLE_HAS_HUGE_LEAVES.\n\nAs a\
+  \ side note, we are currently not implementing FW_MIGRATION support for\nPUD migration\
+  \ entries, which likely should exist due to hugetlb.  Add a\nTODO so this won't\
+  \ fall through the cracks if more FW_MIGRATION users get\nadded.\n\nWas able to\
+  \ write a quick reproducer and verify that the issue no longer triggers with this\
+  \ fix.\n\nhttps://gitlab.com/davidhildenbrand/scratchspace/-/blob/main/reproducers/move-pages-pmd-leaf.c\n\
+  \nWithout this fix after a couple of seconds in a VM with 2 NUMA nodes:\n\n[   54.333753]\
+  \ ------------[ cut here ]------------\n[   54.334901] WARNING: CPU: 20 PID: 1704\
+  \ at mm/pagewalk.c:815 folio_walk_start+0x48f/0x6e0\n[   54.336455] Modules linked\
+  \ in: ...\n[   54.345009] CPU: 20 UID: 0 PID: 1704 Comm: move-pages-pmd- Not tainted\
+  \ 6.12.0-rc2+ #81\n[   54.346529] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009),\
+  \ BIOS 1.16.3-2.fc40 04/01/2014\n[   54.348191] RIP: 0010:folio_walk_start+0x48f/0x6e0\n\
+  [   54.349134] Code: b5 ad 48 8d 35 00 00 00 00 e8 6d 59 d7 ff e8 08 74 da ff e9\
+  \ 9c fe ff ff 4c 8b 7c 24 08 4c 89 ff e8 26 2b be 00 e9 8a fe ff ff <0f> 0b e9 ec\
+  \ fe ff ff f7 c2 ff 0f 00 00 0f 85 81 fe ff ff 48 8b 02\n[   54.352660] RSP: 0018:ffffb7e4c430bc78\
+  \ EFLAGS: 00010282\n[   54.353679] RAX: 80000002a3e008e7 RBX: ffff9946039aa580 RCX:\
+  \ ffff994380000000\n[   54.355056] RDX: ffff994606aec000 RSI: 00007f004b000000 RDI:\
+  \ 0000000000000000\n[   54.356440] RBP: 00007f004b000000 R08: 0000000000000591 R09:\
+  \ 0000000000000001\n[   54.357820] R10: 0000000000000200 R11: 0000000000000001 R12:\
+  \ ffffb7e4c430bd10\n[   54.359198] R13: ffff994606aec2c0 R14: 0000000000000002 R15:\
+  \ ffff994604a89b00\n[   54.360564] FS:  00007f004ae006c0(0000) GS:ffff9947f7400000(0000)\
+  \ knlGS:0000000000000000\n[   54.362111] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n\
+  [   54.363242] CR2: 00007f004adffe58 CR3: 0000000281e12005 CR4: 0000000000770ef0\n\
+  [   54.364615] PKRU: 55555554\n[   54.365153] Call Trace:\n[   54.365646]  <TASK>\n\
+  [   54.366073]  ? __warn.cold+0xb7/0x14d\n[   54.366796]  ? folio_walk_start+0x48f/0x6e0\n\
+  [   54.367628]  ? report_bug+0xff/0x140\n[   54.368324]  ? handle_bug+0x58/0x90\n\
+  [   54.369019]  ? exc_invalid_op+0x17/0x70\n[   54.369771]  ? asm_exc_invalid_op+0x1a/0x20\n\
+  [   54.370606]  ? folio_walk_start+0x48f/0x6e0\n[   54.371415]  ? folio_walk_start+0x9e/0x6e0\n\
+  [   54.372227]  do_pages_move+0x1c5/0x680\n[   54.372972]  kernel_move_pages+0x1a1/0x2b0\n\
+  [   54.373804]  __x64_sys_move_pages+0x25/0x30\n\nLink: https://lkml.kernel.org/r/20241015111236.1290921-1-david@redhat.com\n\
+  Fixes: aa39ca6940f1 (\"mm/pagewalk: introduce folio_walk_start() + folio_walk_end()\"\
+  )\nSigned-off-by: David Hildenbrand <david@redhat.com>\nReported-by: syzbot+7d917f67c05066cec295@syzkaller.appspotmail.com\n\
+  Closes: https://lkml.kernel.org/r/670d3248.050a0220.3e960.0064.GAE@google.com\n\
+  Acked-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>\nAcked-by: Qi Zheng\
+  \ <zhengqi.arch@bytedance.com>\nCc: Jann Horn <jannh@google.com>\nSigned-off-by:\
+  \ Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 5
+covered_count: 3

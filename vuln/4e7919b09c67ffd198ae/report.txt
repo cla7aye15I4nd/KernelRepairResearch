@@ -1,0 +1,107 @@
+usb 5-1: Quirk or no altset; falling back to MIDI 1.0
+FAULT_INJECTION: forcing a failure.
+name failslab, interval 1, probability 0, space 0, times 1
+CPU: 0 UID: 0 PID: 5314 Comm: syz.0.0 Not tainted 6.13.0-rc1-syzkaller-00025-gfeffde684ac2 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ fail_dump lib/fault-inject.c:53 [inline]
+ should_fail_ex+0x3b0/0x4e0 lib/fault-inject.c:154
+ should_failslab+0xac/0x100 mm/failslab.c:46
+ slab_pre_alloc_hook mm/slub.c:4057 [inline]
+ slab_alloc_node mm/slub.c:4133 [inline]
+ __do_kmalloc_node mm/slub.c:4282 [inline]
+ __kmalloc_node_track_caller_noprof+0xdc/0x4c0 mm/slub.c:4302
+ __kmemdup_nul mm/util.c:61 [inline]
+ kstrdup+0x39/0xb0 mm/util.c:81
+ __kernfs_new_node+0x9d/0x870 fs/kernfs/dir.c:620
+ kernfs_new_node+0x137/0x240 fs/kernfs/dir.c:700
+ kernfs_create_link+0xa5/0x1f0 fs/kernfs/symlink.c:39
+ sysfs_do_create_link_sd+0x85/0x110 fs/sysfs/symlink.c:44
+ snd_ctl_led_sysfs_add sound/core/control_led.c:671 [inline]
+ snd_ctl_led_register+0x5a2/0x8c0 sound/core/control_led.c:347
+ snd_ctl_dev_register+0xcb/0x140 sound/core/control.c:2300
+ __snd_device_register sound/core/device.c:149 [inline]
+ snd_device_register_all+0xc9/0x1a0 sound/core/device.c:197
+ snd_card_register+0x1d9/0x6e0 sound/core/init.c:895
+ try_to_register_card+0x2f9/0x3d0 sound/usb/card.c:766
+ usb_audio_probe+0x1ae2/0x2100 sound/usb/card.c:931
+ usb_probe_interface+0x641/0xbb0 drivers/usb/core/driver.c:396
+ really_probe+0x2b8/0xad0 drivers/base/dd.c:658
+ __driver_probe_device+0x1a2/0x390 drivers/base/dd.c:800
+ driver_probe_device+0x50/0x430 drivers/base/dd.c:830
+ __device_attach_driver+0x2d6/0x530 drivers/base/dd.c:958
+ bus_for_each_drv+0x24e/0x2e0 drivers/base/bus.c:459
+ __device_attach+0x333/0x520 drivers/base/dd.c:1030
+ proc_ioctl+0x463/0x650 drivers/usb/core/devio.c:2368
+ usbdev_ioctl+0x2cf8/0x6120 drivers/usb/core/devio.c:2827
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl+0xf5/0x170 fs/ioctl.c:892
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f8215d7ff19
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f8216ad8058 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007f8215f45fa0 RCX: 00007f8215d7ff19
+RDX: 0000000020000200 RSI: 00000000c0105512 RDI: 0000000000000004
+RBP: 00007f8216ad80a0 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000002
+R13: 0000000000000000 R14: 00007f8215f45fa0 R15: 00007fff8889e228
+ </TASK>
+------------[ cut here ]------------
+can't create symlink to controlC3 device
+WARNING: CPU: 0 PID: 5314 at sound/core/control_led.c:672 snd_ctl_led_sysfs_add sound/core/control_led.c:671 [inline]
+WARNING: CPU: 0 PID: 5314 at sound/core/control_led.c:672 snd_ctl_led_register+0x6b6/0x8c0 sound/core/control_led.c:347
+Modules linked in:
+CPU: 0 UID: 0 PID: 5314 Comm: syz.0.0 Not tainted 6.13.0-rc1-syzkaller-00025-gfeffde684ac2 #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2~bpo12+1 04/01/2014
+RIP: 0010:snd_ctl_led_sysfs_add sound/core/control_led.c:671 [inline]
+RIP: 0010:snd_ctl_led_register+0x6b6/0x8c0 sound/core/control_led.c:347
+Code: b8 00 00 00 00 00 fc ff df 48 8b 4c 24 28 0f b6 04 01 84 c0 0f 85 01 01 00 00 41 8b 37 48 c7 c7 c0 76 00 8d e8 3b fc 0e f8 90 <0f> 0b 90 90 e9 fb fe ff ff e8 dc 54 4e f8 90 48 b8 00 00 00 00 00
+RSP: 0018:ffffc9000d506ec0 EFLAGS: 00010246
+RAX: 65b6d429077b2500 RBX: 00000000fffffff4 RCX: ffff888000a64880
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffffc9000d506fd0 R08: ffffffff81601c02 R09: fffffbfff1cfa210
+R10: dffffc0000000000 R11: fffffbfff1cfa210 R12: ffff88801e30c1b0
+R13: ffff888012157000 R14: 0000000000000001 R15: ffff88801e30c000
+FS:  00007f8216ad86c0(0000) GS:ffff88801fc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000557104264490 CR3: 0000000043c40000 CR4: 0000000000352ef0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ snd_ctl_dev_register+0xcb/0x140 sound/core/control.c:2300
+ __snd_device_register sound/core/device.c:149 [inline]
+ snd_device_register_all+0xc9/0x1a0 sound/core/device.c:197
+ snd_card_register+0x1d9/0x6e0 sound/core/init.c:895
+ try_to_register_card+0x2f9/0x3d0 sound/usb/card.c:766
+ usb_audio_probe+0x1ae2/0x2100 sound/usb/card.c:931
+ usb_probe_interface+0x641/0xbb0 drivers/usb/core/driver.c:396
+ really_probe+0x2b8/0xad0 drivers/base/dd.c:658
+ __driver_probe_device+0x1a2/0x390 drivers/base/dd.c:800
+ driver_probe_device+0x50/0x430 drivers/base/dd.c:830
+ __device_attach_driver+0x2d6/0x530 drivers/base/dd.c:958
+ bus_for_each_drv+0x24e/0x2e0 drivers/base/bus.c:459
+ __device_attach+0x333/0x520 drivers/base/dd.c:1030
+ proc_ioctl+0x463/0x650 drivers/usb/core/devio.c:2368
+ usbdev_ioctl+0x2cf8/0x6120 drivers/usb/core/devio.c:2827
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:906 [inline]
+ __se_sys_ioctl+0xf5/0x170 fs/ioctl.c:892
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f8215d7ff19
+Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 a8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f8216ad8058 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007f8215f45fa0 RCX: 00007f8215d7ff19
+RDX: 0000000020000200 RSI: 00000000c0105512 RDI: 0000000000000004
+RBP: 00007f8216ad80a0 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000002
+R13: 0000000000000000 R14: 00007f8215f45fa0 R15: 00007fff8889e228
+ </TASK>

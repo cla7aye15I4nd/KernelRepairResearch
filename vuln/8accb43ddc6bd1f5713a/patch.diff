@@ -1,0 +1,13 @@
+diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
+index 7713420abab0..45017576ad5e 100644
+--- a/arch/x86/kvm/x86.c
++++ b/arch/x86/kvm/x86.c
+@@ -8903,6 +8903,8 @@ int x86_emulate_instruction(struct kvm_vcpu *vcpu, gpa_t cr2_or_gpa,
+ 	}
+ 
+ 	if (ctxt->have_exception) {
++		WARN_ON_ONCE(vcpu->mmio_needed && !vcpu->mmio_is_write);
++		vcpu->mmio_needed = false;
+ 		r = 1;
+ 		inject_emulated_exception(vcpu);
+ 	} else if (vcpu->arch.pio.count) {

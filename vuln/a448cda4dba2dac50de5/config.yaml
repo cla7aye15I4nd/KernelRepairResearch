@@ -1,0 +1,22 @@
+id: a448cda4dba2dac50de5
+bug_link: https://syzkaller.appspot.com/bug?extid=a448cda4dba2dac50de5
+title: 'linux-next test error: WARNING in set_peer'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 8e25c02b8cce7063ae9f08cad51d246a60370bc9
+fix_commit: 26c013108c12b94bc023bf19198a4300596c98b1
+datetime: '2022-09-20T11:26:14-07:00'
+fix_commit_message: "wireguard: netlink: avoid variable-sized memcpy on sockaddr\n\
+  \nDoing a variable-sized memcpy is slower, and the compiler isn't smart\nenough\
+  \ to turn this into a constant-size assignment.\n\nFurther, Kees' latest fortified\
+  \ memcpy will actually bark, because the\ndestination pointer is type sockaddr,\
+  \ not explicitly sockaddr_in or\nsockaddr_in6, so it thinks there's an overflow:\n\
+  \n    memcpy: detected field-spanning write (size 28) of single field\n    \"&endpoint.addr\"\
+  \ at drivers/net/wireguard/netlink.c:446 (size 16)\n\nFix this by just assigning\
+  \ by using explicit casts for each checked\ncase.\n\nFixes: e7096c131e51 (\"net:\
+  \ WireGuard secure network tunnel\")\nSigned-off-by: Jason A. Donenfeld <Jason@zx2c4.com>\n\
+  Reviewed-by: Kees Cook <keescook@chromium.org>\nReported-by: syzbot+a448cda4dba2dac50de5@syzkaller.appspotmail.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- drivers/net/wireguard
+hunk_count: 1
+covered_count: 1

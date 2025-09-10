@@ -1,0 +1,146 @@
+==================================================================
+BUG: KASAN: out-of-bounds in instrument_memcpy_before include/linux/instrumented.h:163 [inline]
+BUG: KASAN: out-of-bounds in copy_from_kernel_nofault+0x7a/0x2f0 mm/maccess.c:35
+Read of size 6 at addr fffffffffffffffd by task syz-executor100/5228
+
+CPU: 0 UID: 0 PID: 5228 Comm: syz-executor100 Not tainted 6.12.0-rc1-next-20240930-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ print_address_description mm/kasan/report.c:377 [inline]
+ print_report+0x169/0x550 mm/kasan/report.c:488
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ kasan_check_range+0x282/0x290 mm/kasan/generic.c:189
+ instrument_memcpy_before include/linux/instrumented.h:163 [inline]
+ copy_from_kernel_nofault+0x7a/0x2f0 mm/maccess.c:35
+ bpf_probe_read_kernel_common include/linux/bpf.h:2960 [inline]
+ ____bpf_probe_read_kernel kernel/trace/bpf_trace.c:239 [inline]
+ bpf_probe_read_kernel+0x2a/0x70 kernel/trace/bpf_trace.c:236
+ bpf_prog_fe7b69aea4fa28bf+0x43/0x45
+ __bpf_prog_run include/linux/filter.h:701 [inline]
+ bpf_prog_run_xdp include/net/xdp.h:514 [inline]
+ bpf_test_run+0x4b1/0xa90 net/bpf/test_run.c:431
+ bpf_prog_test_run_xdp+0x7da/0x11e0 net/bpf/test_run.c:1319
+ bpf_prog_test_run+0x2e4/0x360 kernel/bpf/syscall.c:4247
+ __sys_bpf+0x48d/0x810 kernel/bpf/syscall.c:5652
+ __do_sys_bpf kernel/bpf/syscall.c:5741 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5739 [inline]
+ __x64_sys_bpf+0x7c/0x90 kernel/bpf/syscall.c:5739
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f56177654e9
+Code: 48 83 c4 28 c3 e8 37 17 00 00 0f 1f 80 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe0d6b0b28 EFLAGS: 00000246 ORIG_RAX: 0000000000000141
+RAX: ffffffffffffffda RBX: 00007ffe0d6b0cf8 RCX: 00007f56177654e9
+RDX: 000000000000003b RSI: 0000000020000240 RDI: 000000000000000a
+RBP: 00007f56177d8610 R08: 0000000000000000 R09: 00007ffe0d6b0cf8
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffe0d6b0ce8 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+
+Memory state around the buggy address:
+ fffffffffffffe80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ ffffffffffffff00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+>ffffffffffffff80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
+CPU: 0 UID: 0 PID: 5228 Comm: syz-executor100 Not tainted 6.12.0-rc1-next-20240930-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024
+RIP: 0010:kasan_metadata_fetch_row+0x12/0x30 mm/kasan/report_generic.c:186
+Code: 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 66 0f 1f 00 48 c1 ee 03 48 b8 00 00 00 00 00 fc ff df <48> 8b 0c 06 48 8b 44 06 08 48 89 47 08 48 89 0f c3 cc cc cc cc 66
+RSP: 0018:ffffc90003ef76d8 EFLAGS: 00010046
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: c6ed900456943a00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffffc90003ef7710
+RBP: ffffc90003ef7758 R08: ffffffff8bc0f2d3 R09: 0000000000000020
+R10: dffffc0000000000 R11: fffff520007deee1 R12: ffffc90003ef7710
+R13: 0000000000000080 R14: ffffffffffffff80 R15: ffffc90003ef76f0
+FS:  0000555592643380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000056143cbc1000 CR3: 0000000079f80000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ print_memory_metadata mm/kasan/report.c:464 [inline]
+ print_report+0x4df/0x550 mm/kasan/report.c:489
+ kasan_report+0x143/0x180 mm/kasan/report.c:601
+ kasan_check_range+0x282/0x290 mm/kasan/generic.c:189
+ instrument_memcpy_before include/linux/instrumented.h:163 [inline]
+ copy_from_kernel_nofault+0x7a/0x2f0 mm/maccess.c:35
+ bpf_probe_read_kernel_common include/linux/bpf.h:2960 [inline]
+ ____bpf_probe_read_kernel kernel/trace/bpf_trace.c:239 [inline]
+ bpf_probe_read_kernel+0x2a/0x70 kernel/trace/bpf_trace.c:236
+ bpf_prog_fe7b69aea4fa28bf+0x43/0x45
+ __bpf_prog_run include/linux/filter.h:701 [inline]
+ bpf_prog_run_xdp include/net/xdp.h:514 [inline]
+ bpf_test_run+0x4b1/0xa90 net/bpf/test_run.c:431
+ bpf_prog_test_run_xdp+0x7da/0x11e0 net/bpf/test_run.c:1319
+ bpf_prog_test_run+0x2e4/0x360 kernel/bpf/syscall.c:4247
+ __sys_bpf+0x48d/0x810 kernel/bpf/syscall.c:5652
+ __do_sys_bpf kernel/bpf/syscall.c:5741 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5739 [inline]
+ __x64_sys_bpf+0x7c/0x90 kernel/bpf/syscall.c:5739
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f56177654e9
+Code: 48 83 c4 28 c3 e8 37 17 00 00 0f 1f 80 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe0d6b0b28 EFLAGS: 00000246 ORIG_RAX: 0000000000000141
+RAX: ffffffffffffffda RBX: 00007ffe0d6b0cf8 RCX: 00007f56177654e9
+RDX: 000000000000003b RSI: 0000000020000240 RDI: 000000000000000a
+RBP: 00007f56177d8610 R08: 0000000000000000 R09: 00007ffe0d6b0cf8
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007ffe0d6b0ce8 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:kasan_metadata_fetch_row+0x12/0x30 mm/kasan/report_generic.c:186
+Code: 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 66 0f 1f 00 48 c1 ee 03 48 b8 00 00 00 00 00 fc ff df <48> 8b 0c 06 48 8b 44 06 08 48 89 47 08 48 89 0f c3 cc cc cc cc 66
+RSP: 0018:ffffc90003ef76d8 EFLAGS: 00010046
+RAX: dffffc0000000000 RBX: 0000000000000000 RCX: c6ed900456943a00
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffffc90003ef7710
+RBP: ffffc90003ef7758 R08: ffffffff8bc0f2d3 R09: 0000000000000020
+R10: dffffc0000000000 R11: fffff520007deee1 R12: ffffc90003ef7710
+R13: 0000000000000080 R14: ffffffffffffff80 R15: ffffc90003ef76f0
+FS:  0000555592643380(0000) GS:ffff8880b8600000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000056143cbc1000 CR3: 0000000079f80000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	0f 1f 84 00 00 00 00 	nopl   0x0(%rax,%rax,1)
+   7:	00
+   8:	90                   	nop
+   9:	90                   	nop
+   a:	90                   	nop
+   b:	90                   	nop
+   c:	90                   	nop
+   d:	90                   	nop
+   e:	90                   	nop
+   f:	90                   	nop
+  10:	90                   	nop
+  11:	90                   	nop
+  12:	90                   	nop
+  13:	90                   	nop
+  14:	90                   	nop
+  15:	90                   	nop
+  16:	90                   	nop
+  17:	90                   	nop
+  18:	66 0f 1f 00          	nopw   (%rax)
+  1c:	48 c1 ee 03          	shr    $0x3,%rsi
+  20:	48 b8 00 00 00 00 00 	movabs $0xdffffc0000000000,%rax
+  27:	fc ff df
+* 2a:	48 8b 0c 06          	mov    (%rsi,%rax,1),%rcx <-- trapping instruction
+  2e:	48 8b 44 06 08       	mov    0x8(%rsi,%rax,1),%rax
+  33:	48 89 47 08          	mov    %rax,0x8(%rdi)
+  37:	48 89 0f             	mov    %rcx,(%rdi)
+  3a:	c3                   	ret
+  3b:	cc                   	int3
+  3c:	cc                   	int3
+  3d:	cc                   	int3
+  3e:	cc                   	int3
+  3f:	66                   	data16

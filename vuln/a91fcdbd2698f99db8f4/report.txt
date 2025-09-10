@@ -1,0 +1,151 @@
+======================================================
+WARNING: possible circular locking dependency detected
+6.15.0-syzkaller-11802-g1af80d00e1e0 #0 Not tainted
+------------------------------------------------------
+syz-executor165/5834 is trying to acquire lock:
+ffff88803293c0e0 (&mm->mmap_lock){++++}-{4:4}, at: mmap_write_lock_killable include/linux/mmap_lock.h:374 [inline]
+ffff88803293c0e0 (&mm->mmap_lock){++++}-{4:4}, at: upgrade_mmap_lock_carefully+0xba/0x1c0 mm/mmap_lock.c:221
+
+but task is already holding lock:
+ffff88807816e310 (&sb->s_type->i_mutex_key#14){+.+.}-{4:4}, at: inode_trylock include/linux/fs.h:897 [inline]
+ffff88807816e310 (&sb->s_type->i_mutex_key#14){+.+.}-{4:4}, at: ntfs_file_write_iter+0x78/0x820 fs/ntfs3/file.c:1160
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (&sb->s_type->i_mutex_key#14){+.+.}-{4:4}:
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5871
+       down_write+0x96/0x1f0 kernel/locking/rwsem.c:1577
+       inode_lock include/linux/fs.h:867 [inline]
+       ntfs_file_mmap+0x525/0x730 fs/ntfs3/file.c:313
+       call_mmap include/linux/fs.h:2282 [inline]
+       mmap_file mm/internal.h:167 [inline]
+       __mmap_new_file_vma mm/vma.c:2398 [inline]
+       __mmap_new_vma mm/vma.c:2460 [inline]
+       __mmap_region mm/vma.c:2615 [inline]
+       mmap_region+0x1221/0x1f30 mm/vma.c:2685
+       do_mmap+0xc45/0x10d0 mm/mmap.c:561
+       vm_mmap_pgoff+0x31b/0x4c0 mm/util.c:579
+       ksys_mmap_pgoff+0x51f/0x760 mm/mmap.c:607
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+-> #0 (&mm->mmap_lock){++++}-{4:4}:
+       check_prev_add kernel/locking/lockdep.c:3168 [inline]
+       check_prevs_add kernel/locking/lockdep.c:3287 [inline]
+       validate_chain+0xb9b/0x2140 kernel/locking/lockdep.c:3911
+       __lock_acquire+0xab9/0xd20 kernel/locking/lockdep.c:5240
+       lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5871
+       down_write_killable+0xa7/0x230 kernel/locking/rwsem.c:1588
+       mmap_write_lock_killable include/linux/mmap_lock.h:374 [inline]
+       upgrade_mmap_lock_carefully+0xba/0x1c0 mm/mmap_lock.c:221
+       lock_mm_and_find_vma+0x10a/0x300 mm/mmap_lock.c:274
+       do_user_addr_fault+0x331/0x1390 arch/x86/mm/fault.c:1359
+       handle_page_fault arch/x86/mm/fault.c:1476 [inline]
+       exc_page_fault+0x76/0xf0 arch/x86/mm/fault.c:1532
+       asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+       fault_in_readable+0x8e/0x130 mm/gup.c:-1
+       fault_in_iov_iter_readable+0x1b4/0x2f0 lib/iov_iter.c:94
+       generic_perform_write+0x7cc/0x910 mm/filemap.c:4161
+       ntfs_file_write_iter+0x71c/0x820 fs/ntfs3/file.c:1197
+       new_sync_write fs/read_write.c:593 [inline]
+       vfs_write+0x548/0xa90 fs/read_write.c:686
+       ksys_pwrite64 fs/read_write.c:793 [inline]
+       __do_sys_pwrite64 fs/read_write.c:801 [inline]
+       __se_sys_pwrite64 fs/read_write.c:798 [inline]
+       __x64_sys_pwrite64+0x193/0x220 fs/read_write.c:798
+       do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+       do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+       entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&sb->s_type->i_mutex_key#14);
+                               lock(&mm->mmap_lock);
+                               lock(&sb->s_type->i_mutex_key#14);
+  lock(&mm->mmap_lock);
+
+ *** DEADLOCK ***
+
+2 locks held by syz-executor165/5834:
+ #0: ffff888034c60428 (sb_writers#8){.+.+}-{0:0}, at: file_start_write include/linux/fs.h:3092 [inline]
+ #0: ffff888034c60428 (sb_writers#8){.+.+}-{0:0}, at: vfs_write+0x211/0xa90 fs/read_write.c:682
+ #1: ffff88807816e310 (&sb->s_type->i_mutex_key#14){+.+.}-{4:4}, at: inode_trylock include/linux/fs.h:897 [inline]
+ #1: ffff88807816e310 (&sb->s_type->i_mutex_key#14){+.+.}-{4:4}, at: ntfs_file_write_iter+0x78/0x820 fs/ntfs3/file.c:1160
+
+stack backtrace:
+CPU: 0 UID: 0 PID: 5834 Comm: syz-executor165 Not tainted 6.15.0-syzkaller-11802-g1af80d00e1e0 #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x189/0x250 lib/dump_stack.c:120
+ print_circular_bug+0x2ee/0x310 kernel/locking/lockdep.c:2046
+ check_noncircular+0x134/0x160 kernel/locking/lockdep.c:2178
+ check_prev_add kernel/locking/lockdep.c:3168 [inline]
+ check_prevs_add kernel/locking/lockdep.c:3287 [inline]
+ validate_chain+0xb9b/0x2140 kernel/locking/lockdep.c:3911
+ __lock_acquire+0xab9/0xd20 kernel/locking/lockdep.c:5240
+ lock_acquire+0x120/0x360 kernel/locking/lockdep.c:5871
+ down_write_killable+0xa7/0x230 kernel/locking/rwsem.c:1588
+ mmap_write_lock_killable include/linux/mmap_lock.h:374 [inline]
+ upgrade_mmap_lock_carefully+0xba/0x1c0 mm/mmap_lock.c:221
+ lock_mm_and_find_vma+0x10a/0x300 mm/mmap_lock.c:274
+ do_user_addr_fault+0x331/0x1390 arch/x86/mm/fault.c:1359
+ handle_page_fault arch/x86/mm/fault.c:1476 [inline]
+ exc_page_fault+0x76/0xf0 arch/x86/mm/fault.c:1532
+ asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:623
+RIP: 0010:fault_in_readable+0x8e/0x130 mm/gup.c:2227
+Code: a9 00 00 00 0f 01 cb 0f ae e8 4d 85 f6 40 0f 95 c5 4c 89 ff 4c 89 f6 e8 40 e5 b9 ff 4d 39 f7 0f 97 c0 40 84 c5 74 43 4d 89 f5 <41> 8a 45 00 88 44 24 07 49 81 e5 00 f0 ff ff 4d 8d a5 00 10 00 00
+RSP: 0018:ffffc900044efa88 EFLAGS: 00050202
+RAX: ffffffff82066801 RBX: 0000000000000140 RCX: ffff88802bed5a00
+RDX: 0000000000000000 RSI: 0000200000002000 RDI: 0000200000002140
+RBP: dffffc0000000001 R08: ffff88802bed5a00 R09: 0000000000000002
+R10: 0000000000000001 R11: 0000000000000000 R12: 00007ffffffff000
+R13: 0000200000002000 R14: 0000200000002000 R15: 0000200000002140
+ fault_in_iov_iter_readable+0x1b4/0x2f0 lib/iov_iter.c:94
+ generic_perform_write+0x7cc/0x910 mm/filemap.c:4161
+ ntfs_file_write_iter+0x71c/0x820 fs/ntfs3/file.c:1197
+ new_sync_write fs/read_write.c:593 [inline]
+ vfs_write+0x548/0xa90 fs/read_write.c:686
+ ksys_pwrite64 fs/read_write.c:793 [inline]
+ __do_sys_pwrite64 fs/read_write.c:801 [inline]
+ __se_sys_pwrite64 fs/read_write.c:798 [inline]
+ __x64_sys_pwrite64+0x193/0x220 fs/read_write.c:798
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0xfa/0x3b0 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7effea34b459
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 17 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fffba5c42c8 EFLAGS: 00000246 ORIG_RAX: 0000000000000012
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007effea34b459
+RDX: 000000000000fdef RSI: 0000200000000140 RDI: 0000000000000006
+RBP: 0000000000000000 R08: 0000000000000000 R09: 00007fffba5c4300
+R10: 000000000000fecc R11: 0000000000000246 R12: 00007fffba5c4300
+R13: 00007fffba5c4588 R14: 431bde82d7b634db R15: 00007effea39403b
+ </TASK>
+----------------
+Code disassembly (best guess):
+   0:	a9 00 00 00 0f       	test   $0xf000000,%eax
+   5:	01 cb                	add    %ecx,%ebx
+   7:	0f ae e8             	lfence
+   a:	4d 85 f6             	test   %r14,%r14
+   d:	40 0f 95 c5          	setne  %bpl
+  11:	4c 89 ff             	mov    %r15,%rdi
+  14:	4c 89 f6             	mov    %r14,%rsi
+  17:	e8 40 e5 b9 ff       	call   0xffb9e55c
+  1c:	4d 39 f7             	cmp    %r14,%r15
+  1f:	0f 97 c0             	seta   %al
+  22:	40 84 c5             	test   %al,%bpl
+  25:	74 43                	je     0x6a
+  27:	4d 89 f5             	mov    %r14,%r13
+* 2a:	41 8a 45 00          	mov    0x0(%r13),%al <-- trapping instruction
+  2e:	88 44 24 07          	mov    %al,0x7(%rsp)
+  32:	49 81 e5 00 f0 ff ff 	and    $0xfffffffffffff000,%r13
+  39:	4d 8d a5 00 10 00 00 	lea    0x1000(%r13),%r12

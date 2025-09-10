@@ -1,0 +1,54 @@
+diff --git a/include/net/ip6_fib.h b/include/net/ip6_fib.h
+index 5cba71d2dc44..71b9043aa0e7 100644
+--- a/include/net/ip6_fib.h
++++ b/include/net/ip6_fib.h
+@@ -170,6 +170,7 @@ struct fib6_info {
+ 					unused:3;
+ 
+ 	struct fib6_nh			fib6_nh;
++	struct rcu_head			rcu;
+ };
+ 
+ struct rt6_info {
+@@ -273,7 +274,7 @@ static inline void ip6_rt_put(struct rt6_info *rt)
+ }
+ 
+ struct fib6_info *fib6_info_alloc(gfp_t gfp_flags);
+-void fib6_info_destroy(struct fib6_info *f6i);
++void fib6_info_destroy_rcu(struct rcu_head *head);
+ 
+ static inline void fib6_info_hold(struct fib6_info *f6i)
+ {
+@@ -283,7 +284,7 @@ static inline void fib6_info_hold(struct fib6_info *f6i)
+ static inline void fib6_info_release(struct fib6_info *f6i)
+ {
+ 	if (f6i && atomic_dec_and_test(&f6i->fib6_ref))
+-		fib6_info_destroy(f6i);
++		call_rcu(&f6i->rcu, fib6_info_destroy_rcu);
+ }
+ 
+ enum fib6_walk_state {
+diff --git a/net/ipv6/ip6_fib.c b/net/ipv6/ip6_fib.c
+index 39d1d487eca2..1fb2f3118d60 100644
+--- a/net/ipv6/ip6_fib.c
++++ b/net/ipv6/ip6_fib.c
+@@ -167,8 +167,9 @@ struct fib6_info *fib6_info_alloc(gfp_t gfp_flags)
+ 	return f6i;
+ }
+ 
+-void fib6_info_destroy(struct fib6_info *f6i)
++void fib6_info_destroy_rcu(struct rcu_head *head)
+ {
++	struct fib6_info *f6i = container_of(head, struct fib6_info, rcu);
+ 	struct rt6_exception_bucket *bucket;
+ 	struct dst_metrics *m;
+ 
+@@ -206,7 +207,7 @@ void fib6_info_destroy(struct fib6_info *f6i)
+ 
+ 	kfree(f6i);
+ }
+-EXPORT_SYMBOL_GPL(fib6_info_destroy);
++EXPORT_SYMBOL_GPL(fib6_info_destroy_rcu);
+ 
+ static struct fib6_node *node_alloc(struct net *net)
+ {

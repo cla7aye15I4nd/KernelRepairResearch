@@ -1,0 +1,44 @@
+id: 0333a6f4b88bcd68a62f
+bug_link: https://syzkaller.appspot.com/bug?extid=0333a6f4b88bcd68a62f
+title: possible deadlock in udf_setsize
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c1f1b25a6089eb93a11a147e8de766c0d6ad29ac
+fix_commit: 8832fc1e502687869606bb0a7b79848ed3bf036f
+datetime: '2024-06-05T10:36:46+02:00'
+fix_commit_message: 'udf: Fix lock ordering in udf_evict_inode()
+
+
+  udf_evict_inode() calls udf_setsize() to truncate deleted inode.
+
+  However inode deletion through udf_evict_inode() can happen from inode
+
+  reclaim context and udf_setsize() grabs mapping->invalidate_lock which
+
+  isn''t generally safe to acquire from fs reclaim context since we
+
+  allocate pages under mapping->invalidate_lock for example in a page
+
+  fault path.  This is however not a real deadlock possibility as by the
+
+  time udf_evict_inode() is called, nobody can be accessing the inode,
+
+  even less work with its page cache. So this is just a lockdep triggering
+
+  false positive. Fix the problem by moving mapping->invalidate_lock
+
+  locking outsize of udf_setsize() into udf_setattr() as grabbing
+
+  mapping->invalidate_lock from udf_evict_inode() is pointless.
+
+
+  Reported-by: syzbot+0333a6f4b88bcd68a62f@syzkaller.appspotmail.com
+
+  Fixes: b9a861fd527a ("udf: Protect truncate and file type conversion with invalidate_lock")
+
+  Signed-off-by: Jan Kara <jack@suse.cz>
+
+  '
+submodule:
+- fs/udf
+hunk_count: 5
+covered_count: 4

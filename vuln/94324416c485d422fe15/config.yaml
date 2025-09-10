@@ -1,0 +1,47 @@
+id: 94324416c485d422fe15
+bug_link: https://syzkaller.appspot.com/bug?extid=94324416c485d422fe15
+title: 'INFO: task hung in io_uring_release'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: aa1fa28fc73ea6b740ee7b62bf3b07141883dbb8
+fix_commit: a4c0b3decb33fb4a2b5ecc6234a50680f0b21e7d
+datetime: '2019-07-09T14:32:05-06:00'
+fix_commit_message: "io_uring: fix io_sq_thread_stop running in front of io_sq_thread\n\
+  \nINFO: task syz-executor.5:8634 blocked for more than 143 seconds.\n       Not\
+  \ tainted 5.2.0-rc5+ #3\n\"echo 0 > /proc/sys/kernel/hung_task_timeout_secs\" disables\
+  \ this message.\nsyz-executor.5  D25632  8634   8224 0x00004004\nCall Trace:\n \
+  \ context_switch kernel/sched/core.c:2818 [inline]\n  __schedule+0x658/0x9e0 kernel/sched/core.c:3445\n\
+  \  schedule+0x131/0x1d0 kernel/sched/core.c:3509\n  schedule_timeout+0x9a/0x2b0\
+  \ kernel/time/timer.c:1783\n  do_wait_for_common+0x35e/0x5a0 kernel/sched/completion.c:83\n\
+  \  __wait_for_common kernel/sched/completion.c:104 [inline]\n  wait_for_common kernel/sched/completion.c:115\
+  \ [inline]\n  wait_for_completion+0x47/0x60 kernel/sched/completion.c:136\n  kthread_stop+0xb4/0x150\
+  \ kernel/kthread.c:559\n  io_sq_thread_stop fs/io_uring.c:2252 [inline]\n  io_finish_async\
+  \ fs/io_uring.c:2259 [inline]\n  io_ring_ctx_free fs/io_uring.c:2770 [inline]\n\
+  \  io_ring_ctx_wait_and_kill+0x268/0x880 fs/io_uring.c:2834\n  io_uring_release+0x5d/0x70\
+  \ fs/io_uring.c:2842\n  __fput+0x2e4/0x740 fs/file_table.c:280\n  ____fput+0x15/0x20\
+  \ fs/file_table.c:313\n  task_work_run+0x17e/0x1b0 kernel/task_work.c:113\n  tracehook_notify_resume\
+  \ include/linux/tracehook.h:185 [inline]\n  exit_to_usermode_loop arch/x86/entry/common.c:168\
+  \ [inline]\n  prepare_exit_to_usermode+0x402/0x4f0 arch/x86/entry/common.c:199\n\
+  \  syscall_return_slowpath+0x110/0x440 arch/x86/entry/common.c:279\n  do_syscall_64+0x126/0x140\
+  \ arch/x86/entry/common.c:304\n  entry_SYSCALL_64_after_hwframe+0x49/0xbe\nRIP:\
+  \ 0033:0x412fb1\nCode: 80 3b 7c 0f 84 c7 02 00 00 c7 85 d0 00 00 00 00 00 00 00\
+  \ 48 8b 05 cf\na6 24 00 49 8b 14 24 41 b9 cb 2a 44 00 48 89 ee 48 89 df <48> 85\
+  \ c0 4c 0f\n45 c8 45 31 c0 31 c9 e8 0e 5b 00 00 85 c0 41 89 c7\nRSP: 002b:00007ffe7ee6a180\
+  \ EFLAGS: 00000293 ORIG_RAX: 0000000000000003\nRAX: 0000000000000000 RBX: 0000000000000004\
+  \ RCX: 0000000000412fb1\nRDX: 0000001b2d920000 RSI: 0000000000000000 RDI: 0000000000000003\n\
+  RBP: 0000000000000001 R08: 00000000f3a3e1f8 R09: 00000000f3a3e1fc\nR10: 00007ffe7ee6a260\
+  \ R11: 0000000000000293 R12: 000000000075c9a0\nR13: 000000000075c9a0 R14: 0000000000024c00\
+  \ R15: 000000000075bf2c\n\n=============================================\n\nThere\
+  \ is an wrong logic, when kthread_park running\nin front of io_sq_thread.\n\nCPU#0\t\
+  \t\t\t\tCPU#1\n\nio_sq_thread_stop:\t\t\tint kthread(void *_create):\n\nkthread_park()\n\
+  \t\t\t\t\t__kthread_parkme(self);\t <<< Wrong\nkthread_stop()\n    << wait for self->exited\n\
+  \    << clear_bit KTHREAD_SHOULD_PARK\n\n\t\t\t\t\tret = threadfn(data);\n\t\t\t\
+  \t\t   |\n\t\t\t\t\t   |- io_sq_thread\n\t\t\t\t\t       |- kthread_should_park()\t\
+  << false\n\t\t\t\t\t       |- schedule() <<< nobody wake up\n\nstuck CPU#0\t\t\t\
+  \tstuck CPU#1\n\nSo, use a new variable sqo_thread_started to ensure that io_sq_thread\n\
+  run first, then io_sq_thread_stop.\n\nReported-by: syzbot+94324416c485d422fe15@syzkaller.appspotmail.com\n\
+  Suggested-by: Jens Axboe <axboe@kernel.dk>\nSigned-off-by: Jackie Liu <liuyun01@kylinos.cn>\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- fs
+hunk_count: 4
+covered_count: 2

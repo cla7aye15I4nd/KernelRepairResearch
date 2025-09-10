@@ -1,0 +1,55 @@
+id: bab86ea70f6f74bd9199
+bug_link: https://syzkaller.appspot.com/bug?extid=bab86ea70f6f74bd9199
+title: general protection fault in account_system_index_time
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a9645b273e22662ebea563eae334eb3e4fc6614e
+fix_commit: ae4745730cf8e693d354ccd4dbaf59ea440c09a9
+datetime: '2018-03-30T12:36:27-04:00'
+fix_commit_message: "net: Fix untag for vlan packets without ethernet header\n\nIn\
+  \ some situation vlan packets do not have ethernet headers. One example\nis packets\
+  \ from tun devices. Users can specify vlan protocol in tun_pi\nfield instead of\
+  \ IP protocol, and skb_vlan_untag() attempts to untag such\npackets.\n\nskb_vlan_untag()\
+  \ (more precisely, skb_reorder_vlan_header() called by it)\nhowever did not expect\
+  \ packets without ethernet headers, so in such a case\nsize argument for memmove()\
+  \ underflowed and triggered crash.\n\n====\nBUG: unable to handle kernel paging\
+  \ request at ffff8801cccb8000\nIP: __memmove+0x24/0x1a0 arch/x86/lib/memmove_64.S:43\n\
+  PGD 9cee067 P4D 9cee067 PUD 1d9401063 PMD 1cccb7063 PTE 2810100028101\nOops: 000b\
+  \ [#1] SMP KASAN\nDumping ftrace buffer:\n   (ftrace buffer empty)\nModules linked\
+  \ in:\nCPU: 1 PID: 17663 Comm: syz-executor2 Not tainted 4.16.0-rc7+ #368\nHardware\
+  \ name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011\n\
+  RIP: 0010:__memmove+0x24/0x1a0 arch/x86/lib/memmove_64.S:43\nRSP: 0018:ffff8801cc046e28\
+  \ EFLAGS: 00010287\nRAX: ffff8801ccc244c4 RBX: fffffffffffffffe RCX: fffffffffff6c4c2\n\
+  RDX: fffffffffffffffe RSI: ffff8801cccb7ffc RDI: ffff8801cccb8000\nRBP: ffff8801cc046e48\
+  \ R08: ffff8801ccc244be R09: ffffed0039984899\nR10: 0000000000000001 R11: ffffed0039984898\
+  \ R12: ffff8801ccc244c4\nR13: ffff8801ccc244c0 R14: ffff8801d96b7c06 R15: ffff8801d96b7b40\n\
+  FS:  00007febd562d700(0000) GS:ffff8801db300000(0000) knlGS:0000000000000000\nCS:\
+  \  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: ffff8801cccb8000 CR3: 00000001ccb2f006\
+  \ CR4: 00000000001606e0\nDR0: 0000000020000000 DR1: 0000000020000000 DR2: 0000000000000000\n\
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000600\nCall Trace:\n\
+  \ memmove include/linux/string.h:360 [inline]\n skb_reorder_vlan_header net/core/skbuff.c:5031\
+  \ [inline]\n skb_vlan_untag+0x470/0xc40 net/core/skbuff.c:5061\n __netif_receive_skb_core+0x119c/0x3460\
+  \ net/core/dev.c:4460\n __netif_receive_skb+0x2c/0x1b0 net/core/dev.c:4627\n netif_receive_skb_internal+0x10b/0x670\
+  \ net/core/dev.c:4701\n netif_receive_skb+0xae/0x390 net/core/dev.c:4725\n tun_rx_batched.isra.50+0x5ee/0x870\
+  \ drivers/net/tun.c:1555\n tun_get_user+0x299e/0x3c20 drivers/net/tun.c:1962\n tun_chr_write_iter+0xb9/0x160\
+  \ drivers/net/tun.c:1990\n call_write_iter include/linux/fs.h:1782 [inline]\n new_sync_write\
+  \ fs/read_write.c:469 [inline]\n __vfs_write+0x684/0x970 fs/read_write.c:482\n vfs_write+0x189/0x510\
+  \ fs/read_write.c:544\n SYSC_write fs/read_write.c:589 [inline]\n SyS_write+0xef/0x220\
+  \ fs/read_write.c:581\n do_syscall_64+0x281/0x940 arch/x86/entry/common.c:287\n\
+  \ entry_SYSCALL_64_after_hwframe+0x42/0xb7\nRIP: 0033:0x454879\nRSP: 002b:00007febd562cc68\
+  \ EFLAGS: 00000246 ORIG_RAX: 0000000000000001\nRAX: ffffffffffffffda RBX: 00007febd562d6d4\
+  \ RCX: 0000000000454879\nRDX: 0000000000000157 RSI: 0000000020000180 RDI: 0000000000000014\n\
+  RBP: 000000000072bea0 R08: 0000000000000000 R09: 0000000000000000\nR10: 0000000000000000\
+  \ R11: 0000000000000246 R12: 00000000ffffffff\nR13: 00000000000006b0 R14: 00000000006fc120\
+  \ R15: 0000000000000000\nCode: 90 90 90 90 90 90 90 48 89 f8 48 83 fa 20 0f 82 03\
+  \ 01 00 00 48 39 fe 7d 0f 49 89 f0 49 01 d0 49 39 f8 0f 8f 9f 00 00 00 48 89 d1\
+  \ <f3> a4 c3 48 81 fa a8 02 00 00 72 05 40 38 fe 74 3b 48 83 ea 20\nRIP: __memmove+0x24/0x1a0\
+  \ arch/x86/lib/memmove_64.S:43 RSP: ffff8801cc046e28\nCR2: ffff8801cccb8000\n====\n\
+  \nWe don't need to copy headers for packets which do not have preceding\nheaders\
+  \ of vlan headers, so skip memmove() in that case.\n\nFixes: 4bbb3e0e8239 (\"net:\
+  \ Fix vlan untag for bridge and vlan_dev with reorder_hdr off\")\nReported-by: Eric\
+  \ Dumazet <eric.dumazet@gmail.com>\nSigned-off-by: Toshiaki Makita <makita.toshiaki@lab.ntt.co.jp>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/core
+hunk_count: 1
+covered_count: 0

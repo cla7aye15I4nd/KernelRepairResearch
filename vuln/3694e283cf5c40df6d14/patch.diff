@@ -1,0 +1,17 @@
+diff --git a/fs/f2fs/inode.c b/fs/f2fs/inode.c
+index d7a5a88a1a5e..7968b14d49f4 100644
+--- a/fs/f2fs/inode.c
++++ b/fs/f2fs/inode.c
+@@ -362,6 +362,12 @@ static bool sanity_check_inode(struct inode *inode, struct page *node_page)
+ 		return false;
+ 	}
+ 
++	if (fi->i_xattr_nid && f2fs_check_nid_range(sbi, fi->i_xattr_nid)) {
++		f2fs_warn(sbi, "%s: inode (ino=%lx) has corrupted i_xattr_nid: %u, run fsck to fix.",
++			  __func__, inode->i_ino, fi->i_xattr_nid);
++		return false;
++	}
++
+ 	return true;
+ }
+ 

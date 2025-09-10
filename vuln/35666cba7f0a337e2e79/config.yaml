@@ -1,0 +1,34 @@
+id: 35666cba7f0a337e2e79
+bug_link: https://syzkaller.appspot.com/bug?extid=35666cba7f0a337e2e79
+title: WARNING in __mutex_unlock_slowpath
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3373de209cb123462954740f41c324d03ecfb6d0
+fix_commit: 7a4deea1aa8bddfed4ef1b35fc2b6732563d8ad5
+datetime: '2018-05-25T18:12:10-07:00'
+fix_commit_message: "idr: fix invalid ptr dereference on item delete\n\nIf the radix\
+  \ tree underlying the IDR happens to be full and we attempt\nto remove an id which\
+  \ is larger than any id in the IDR, we will call\n__radix_tree_delete() with an\
+  \ uninitialised 'slot' pointer, at which\npoint anything could happen.  This was\
+  \ easiest to hit with a single\nentry at id 0 and attempting to remove a non-0 id,\
+  \ but it could have\nhappened with 64 entries and attempting to remove an id >=\
+  \ 64.\n\nRoman said:\n\n  The syzcaller test boils down to opening /dev/kvm, creating\
+  \ an\n  eventfd, and calling a couple of KVM ioctls. None of this requires\n  superuser.\
+  \ And the result is dereferencing an uninitialized pointer\n  which is likely a\
+  \ crash. The specific path caught by syzbot is via\n  KVM_HYPERV_EVENTD ioctl which\
+  \ is new in 4.17. But I guess there are\n  other user-triggerable paths, so cc:stable\
+  \ is probably justified.\n\nMatthew added:\n\n  We have around 250 calls to idr_remove()\
+  \ in the kernel today. Many of\n  them pass an ID which is embedded in the object\
+  \ they're removing, so\n  they're safe. Picking a few likely candidates:\n\n  drivers/firewire/core-cdev.c\
+  \ looks unsafe; the ID comes from an ioctl.\n  drivers/gpu/drm/amd/amdgpu/amdgpu_ctx.c\
+  \ is similar\n  drivers/atm/nicstar.c could be taken down by a handcrafted packet\n\
+  \nLink: http://lkml.kernel.org/r/20180518175025.GD6361@bombadil.infradead.org\n\
+  Fixes: 0a835c4f090a (\"Reimplement IDR and IDA using the radix tree\")\nReported-by:\
+  \ <syzbot+35666cba7f0a337e2e79@syzkaller.appspotmail.com>\nDebugged-by: Roman Kagan\
+  \ <rkagan@virtuozzo.com>\nSigned-off-by: Matthew Wilcox <mawilcox@microsoft.com>\n\
+  Cc: <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- lib
+- tools/testing/radix-tree
+hunk_count: 2
+covered_count: 0

@@ -1,0 +1,30 @@
+id: 9120834fc227768625ba
+bug_link: https://syzkaller.appspot.com/bug?extid=9120834fc227768625ba
+title: 'UBSAN: array-index-out-of-bounds in dtReadFirst (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0d250b1c52484d489e31df2cf9118b7c4bd49d31
+fix_commit: a8dfb2168906944ea61acfc87846b816eeab882d
+datetime: '2025-03-11T11:53:40-05:00'
+fix_commit_message: "jfs: add index corruption check to DT_GETPAGE()\n\nIf the file\
+  \ system is corrupted, the header.stblindex variable\nmay become greater than 127.\
+  \ Because of this, an array access out\nof bounds may occur:\n\n------------[ cut\
+  \ here ]------------\nUBSAN: array-index-out-of-bounds in fs/jfs/jfs_dtree.c:3096:10\n\
+  index 237 is out of range for type 'struct dtslot[128]'\nCPU: 0 UID: 0 PID: 5822\
+  \ Comm: syz-executor740 Not tainted 6.13.0-rc4-syzkaller-00110-g4099a71718b0 #0\n\
+  Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 09/13/2024\n\
+  Call Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:94 [inline]\n dump_stack_lvl+0x241/0x360\
+  \ lib/dump_stack.c:120\n ubsan_epilogue lib/ubsan.c:231 [inline]\n __ubsan_handle_out_of_bounds+0x121/0x150\
+  \ lib/ubsan.c:429\n dtReadFirst+0x622/0xc50 fs/jfs/jfs_dtree.c:3096\n dtReadNext\
+  \ fs/jfs/jfs_dtree.c:3147 [inline]\n jfs_readdir+0x9aa/0x3c50 fs/jfs/jfs_dtree.c:2862\n\
+  \ wrap_directory_iterator+0x91/0xd0 fs/readdir.c:65\n iterate_dir+0x571/0x800 fs/readdir.c:108\n\
+  \ __do_sys_getdents64 fs/readdir.c:403 [inline]\n __se_sys_getdents64+0x1e2/0x4b0\
+  \ fs/readdir.c:389\n do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n do_syscall_64+0xf3/0x230\
+  \ arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n </TASK>\n\
+  ---[ end trace ]---\n\nAdd a stblindex check for corruption.\n\nReported-by: syzbot\
+  \ <syzbot+9120834fc227768625ba@syzkaller.appspotmail.com>\nCloses: https://syzkaller.appspot.com/bug?extid=9120834fc227768625ba\n\
+  Fixes: 1da177e4c3f4 (\"Linux-2.6.12-rc2\")\nCc: stable@vger.kernel.org\nSigned-off-by:\
+  \ Roman Smirnov <r.smirnov@omp.ru>\nSigned-off-by: Dave Kleikamp <dave.kleikamp@oracle.com>\n"
+submodule:
+- fs/jfs
+hunk_count: 1
+covered_count: 0

@@ -1,0 +1,40 @@
+id: 300755e8da6fa5e5edec
+bug_link: https://syzkaller.appspot.com/bug?extid=300755e8da6fa5e5edec
+title: kernel BUG in bch2_sort_keys
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5ad1f33c29c311787943a92c56903da74f19fd5d
+fix_commit: 5dfd3746b6c486db18bc75de89c7abce41c7826c
+datetime: '2024-05-08T14:56:09-04:00'
+fix_commit_message: "bcachefs: Fix needs_whiteout BUG_ON() in bkey_sort()\n\nBtree\
+  \ nodes are log structured; thus, we need to emit whiteouts when\nwe're deleting\
+  \ a key that's been written out to disk.\n\nk->needs_whiteout tracks whether a key\
+  \ will need a whiteout when it's\ndeleted, and this requires some careful handling;\
+  \ e.g. the key we're\ndeleting may not have been written out to disk, but it may\
+  \ have\noverwritten a key that was - thus we need to carry this flag around on\n\
+  overwrites.\n\nInvariants:\nThere may be multiple key for the same position in a\
+  \ given node (because\nof overwrites), but only one of them will be a live (non\
+  \ deleted) key,\nand only one key for a given position will have the needs_whiteout\
+  \ flag\nset.\n\nAdditionally, we don't want to carry around whiteouts that need\
+  \ to be\nwritten in the main searchable part of a btree node - btree_iter_peek()\n\
+  will have to skip past them, and this can lead to an O(n^2) issues when\ndoing sequential\
+  \ deletions (e.g. inode rm/truncate). So there's a\nseparate region in the btree\
+  \ node buffer for unwritten whiteouts; these\nare merge sorted with the rest of\
+  \ the keys we're writing in the btree\nnode write path.\n\nThe unwritten whiteouts\
+  \ was a later optimization that bch2_sort_keys()\ndidn't take into account; the\
+  \ unwritten whiteouts area means that we\nnever have deleted keys with needs_whiteout\
+  \ set in the main searchable\npart of a btree node.\n\nThat means we can simplify\
+  \ and optimize some sort paths, and eliminate\nan assertion that syzbot found:\n\
+  \n- Unless we're in the btree node write path, it's always ok to drop\n  whiteouts\
+  \ when sorting\n- When sorting for a btree node write, we drop the whiteout if it's\
+  \ not\n  from the unwritten whiteouts area, or if it's overwritten by a real\n \
+  \ key at the same position.\n\nThis completely eliminates some tricky logic for\
+  \ propagating the\nneeds_whiteout flag: syzbot was able to hit the assertion that\
+  \ checked\nthat there shouldn't be more than one key at the same pos with\nneeds_whiteout\
+  \ set, likely due to a combination of flipping on\nneeds_whiteout on all written\
+  \ keys (they need whiteouts if overwritten),\ncombined with not always dropping\
+  \ unneeded whiteouts, and the tricky\nlogic in the sort path for preserving needs_whiteout\
+  \ that wasn't really\nneeded.\n\nSigned-off-by: Kent Overstreet <kent.overstreet@linux.dev>\n"
+submodule:
+- fs/bcachefs
+hunk_count: 9
+covered_count: 5

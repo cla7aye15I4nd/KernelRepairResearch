@@ -1,0 +1,77 @@
+id: 2d9f5f948c31dcb7745e
+bug_link: https://syzkaller.appspot.com/bug?extid=2d9f5f948c31dcb7745e
+title: 'KASAN: slab-out-of-bounds Read in selinux_ip_output'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1596a135e3180c92e42dd1fbcad321f4fb3e3b17
+fix_commit: eedcad2f2a371786f8a32d0046794103dadcedf3
+datetime: '2024-11-30T13:24:33-08:00'
+fix_commit_message: "selinux: use sk_to_full_sk() in selinux_ip_output()\n\nIn blamed\
+  \ commit, TCP started to attach timewait sockets to\nsome skbs.\n\nsyzbot reported\
+  \ that selinux_ip_output() was not expecting them yet.\n\nNote that using sk_to_full_sk()\
+  \ is still allowing the\nfollowing sk_listener() check to work as before.\n\nBUG:\
+  \ KASAN: slab-out-of-bounds in selinux_sock security/selinux/include/objsec.h:207\
+  \ [inline]\nBUG: KASAN: slab-out-of-bounds in selinux_ip_output+0x1e0/0x1f0 security/selinux/hooks.c:5761\n\
+  Read of size 8 at addr ffff88804e86e758 by task syz-executor347/5894\n\nCPU: 0 UID:\
+  \ 0 PID: 5894 Comm: syz-executor347 Not tainted 6.12.0-syzkaller-05480-gfcc79e1714e8\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 10/30/2024\nCall Trace:\n <IRQ>\n  __dump_stack lib/dump_stack.c:94 [inline]\n\
+  \  dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120\n  print_address_description\
+  \ mm/kasan/report.c:377 [inline]\n  print_report+0xc3/0x620 mm/kasan/report.c:488\n\
+  \  kasan_report+0xd9/0x110 mm/kasan/report.c:601\n  selinux_sock security/selinux/include/objsec.h:207\
+  \ [inline]\n  selinux_ip_output+0x1e0/0x1f0 security/selinux/hooks.c:5761\n  nf_hook_entry_hookfn\
+  \ include/linux/netfilter.h:154 [inline]\n  nf_hook_slow+0xbb/0x200 net/netfilter/core.c:626\n\
+  \  nf_hook+0x386/0x6d0 include/linux/netfilter.h:269\n  __ip_local_out+0x339/0x640\
+  \ net/ipv4/ip_output.c:119\n  ip_local_out net/ipv4/ip_output.c:128 [inline]\n \
+  \ ip_send_skb net/ipv4/ip_output.c:1505 [inline]\n  ip_push_pending_frames+0xa0/0x5b0\
+  \ net/ipv4/ip_output.c:1525\n  ip_send_unicast_reply+0xd0e/0x1650 net/ipv4/ip_output.c:1672\n\
+  \  tcp_v4_send_ack+0x976/0x13f0 net/ipv4/tcp_ipv4.c:1024\n  tcp_v4_timewait_ack\
+  \ net/ipv4/tcp_ipv4.c:1077 [inline]\n  tcp_v4_rcv+0x2f96/0x4390 net/ipv4/tcp_ipv4.c:2428\n\
+  \  ip_protocol_deliver_rcu+0xba/0x4c0 net/ipv4/ip_input.c:205\n  ip_local_deliver_finish+0x316/0x570\
+  \ net/ipv4/ip_input.c:233\n  NF_HOOK include/linux/netfilter.h:314 [inline]\n  NF_HOOK\
+  \ include/linux/netfilter.h:308 [inline]\n  ip_local_deliver+0x18e/0x1f0 net/ipv4/ip_input.c:254\n\
+  \  dst_input include/net/dst.h:460 [inline]\n  ip_rcv_finish net/ipv4/ip_input.c:447\
+  \ [inline]\n  NF_HOOK include/linux/netfilter.h:314 [inline]\n  NF_HOOK include/linux/netfilter.h:308\
+  \ [inline]\n  ip_rcv+0x2c3/0x5d0 net/ipv4/ip_input.c:567\n  __netif_receive_skb_one_core+0x199/0x1e0\
+  \ net/core/dev.c:5672\n  __netif_receive_skb+0x1d/0x160 net/core/dev.c:5785\n  process_backlog+0x443/0x15f0\
+  \ net/core/dev.c:6117\n  __napi_poll.constprop.0+0xb7/0x550 net/core/dev.c:6877\n\
+  \  napi_poll net/core/dev.c:6946 [inline]\n  net_rx_action+0xa94/0x1010 net/core/dev.c:7068\n\
+  \  handle_softirqs+0x213/0x8f0 kernel/softirq.c:554\n  do_softirq kernel/softirq.c:455\
+  \ [inline]\n  do_softirq+0xb2/0xf0 kernel/softirq.c:442\n </IRQ>\n <TASK>\n  __local_bh_enable_ip+0x100/0x120\
+  \ kernel/softirq.c:382\n  local_bh_enable include/linux/bottom_half.h:33 [inline]\n\
+  \  rcu_read_unlock_bh include/linux/rcupdate.h:919 [inline]\n  __dev_queue_xmit+0x8af/0x43e0\
+  \ net/core/dev.c:4461\n  dev_queue_xmit include/linux/netdevice.h:3168 [inline]\n\
+  \  neigh_hh_output include/net/neighbour.h:523 [inline]\n  neigh_output include/net/neighbour.h:537\
+  \ [inline]\n  ip_finish_output2+0xc6c/0x2150 net/ipv4/ip_output.c:236\n  __ip_finish_output\
+  \ net/ipv4/ip_output.c:314 [inline]\n  __ip_finish_output+0x49e/0x950 net/ipv4/ip_output.c:296\n\
+  \  ip_finish_output+0x35/0x380 net/ipv4/ip_output.c:324\n  NF_HOOK_COND include/linux/netfilter.h:303\
+  \ [inline]\n  ip_output+0x13b/0x2a0 net/ipv4/ip_output.c:434\n  dst_output include/net/dst.h:450\
+  \ [inline]\n  ip_local_out+0x33e/0x4a0 net/ipv4/ip_output.c:130\n  __ip_queue_xmit+0x777/0x1970\
+  \ net/ipv4/ip_output.c:536\n  __tcp_transmit_skb+0x2b39/0x3df0 net/ipv4/tcp_output.c:1466\n\
+  \  tcp_transmit_skb net/ipv4/tcp_output.c:1484 [inline]\n  tcp_write_xmit+0x12b1/0x8560\
+  \ net/ipv4/tcp_output.c:2827\n  __tcp_push_pending_frames+0xaf/0x390 net/ipv4/tcp_output.c:3010\n\
+  \  tcp_send_fin+0x154/0xc70 net/ipv4/tcp_output.c:3616\n  __tcp_close+0x96b/0xff0\
+  \ net/ipv4/tcp.c:3130\n  tcp_close+0x28/0x120 net/ipv4/tcp.c:3221\n  inet_release+0x13c/0x280\
+  \ net/ipv4/af_inet.c:435\n  __sock_release net/socket.c:640 [inline]\n  sock_release+0x8e/0x1d0\
+  \ net/socket.c:668\n  smc_clcsock_release+0xb7/0xe0 net/smc/smc_close.c:34\n  __smc_release+0x5c2/0x880\
+  \ net/smc/af_smc.c:301\n  smc_release+0x1fc/0x5f0 net/smc/af_smc.c:344\n  __sock_release+0xb0/0x270\
+  \ net/socket.c:640\n  sock_close+0x1c/0x30 net/socket.c:1408\n  __fput+0x3f8/0xb60\
+  \ fs/file_table.c:450\n  __fput_sync+0xa1/0xc0 fs/file_table.c:535\n  __do_sys_close\
+  \ fs/open.c:1550 [inline]\n  __se_sys_close fs/open.c:1535 [inline]\n  __x64_sys_close+0x86/0x100\
+  \ fs/open.c:1535\n  do_syscall_x64 arch/x86/entry/common.c:52 [inline]\n  do_syscall_64+0xcd/0x250\
+  \ arch/x86/entry/common.c:83\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\nRIP: 0033:0x7f6814c9ae10\n\
+  Code: ff f7 d8 64 89 02 48 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 66\
+  \ 90 80 3d b1 e2 07 00 00 74 17 b8 03 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 48 c3\
+  \ 0f 1f 80 00 00 00 00 48 83 ec 18 89 7c\nRSP: 002b:00007fffb2389758 EFLAGS: 00000202\
+  \ ORIG_RAX: 0000000000000003\nRAX: ffffffffffffffda RBX: 0000000000000004 RCX: 00007f6814c9ae10\n\
+  RDX: 0000000000000010 RSI: 0000000020000000 RDI: 0000000000000003\nRBP: 00000000000f4240\
+  \ R08: 0000000000000001 R09: 0000000000000001\nR10: 0000000000000001 R11: 0000000000000202\
+  \ R12: 00007fffb23897b0\nR13: 00000000000141c3 R14: 00007fffb238977c R15: 00007fffb2389790\n\
+  \ </TASK>\n\nFixes: 79636038d37e (\"ipv4: tcp: give socket pointer to control skbs\"\
+  )\nReported-by: syzbot+2d9f5f948c31dcb7745e@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/lkml/6745e1a2.050a0220.1286eb.001c.GAE@google.com/T/#u\n\
+  Signed-off-by: Eric Dumazet <edumazet@google.com>\nAcked-by: Paul Moore <paul@paul-moore.com>\n\
+  Reviewed-by: Kuniyuki Iwashima <kuniyu@amazon.com>\nLink: https://patch.msgid.link/20241126145911.4187198-1-edumazet@google.com\n\
+  Signed-off-by: Jakub Kicinski <kuba@kernel.org>\n"
+submodule:
+- security/selinux
+hunk_count: 1
+covered_count: 1

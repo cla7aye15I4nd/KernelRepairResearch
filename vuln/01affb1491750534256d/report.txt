@@ -1,0 +1,24 @@
+==================================================================
+BUG: KCSAN: data-race in process_one_work / process_one_work
+
+read-write to 0xffff888104a443a0 of 8 bytes by task 3108 on cpu 0:
+ process_one_work+0x45f/0x860 kernel/workqueue.c:2606
+ worker_thread+0x5f2/0xa10 kernel/workqueue.c:2751
+ kthread+0x1d7/0x210 kernel/kthread.c:389
+ ret_from_fork+0x2e/0x40 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+
+read-write to 0xffff888104a443a0 of 8 bytes by task 10 on cpu 1:
+ process_one_work+0x45f/0x860 kernel/workqueue.c:2606
+ worker_thread+0x5f2/0xa10 kernel/workqueue.c:2751
+ kthread+0x1d7/0x210 kernel/kthread.c:389
+ ret_from_fork+0x2e/0x40 arch/x86/kernel/process.c:145
+ ret_from_fork_asm+0x11/0x20 arch/x86/entry/entry_64.S:304
+
+value changed: 0x0000000000000000 -> 0x0000000000000001
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 1 PID: 10 Comm: kworker/u4:0 Not tainted 6.5.0-rc5-syzkaller-00182-g25aa0bebba72 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/26/2023
+Workqueue: wg-kex-wg2 wg_packet_handshake_send_worker
+==================================================================

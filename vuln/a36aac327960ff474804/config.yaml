@@ -1,0 +1,22 @@
+id: a36aac327960ff474804
+bug_link: https://syzkaller.appspot.com/bug?extid=a36aac327960ff474804
+title: WARNING in do_check
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e4c8f96adeb29a98f7848ee793085765cdede64c
+fix_commit: 3157f7e2999616ac91f4d559a8566214f74000a5
+datetime: '2025-06-13T11:51:19-07:00'
+fix_commit_message: "bpf: handle jset (if a & b ...) as a jump in CFG computation\n\
+  \nBPF_JSET is a conditional jump and currently verifier.c:can_jump()\ndoes not know\
+  \ about that. This can lead to incorrect live registers\nand SCC computation.\n\n\
+  E.g. in the following example:\n\n   1: r0 = 1;\n   2: r2 = 2;\n   3: if r1 & 0x7\
+  \ goto +1;\n   4: exit;\n   5: r0 = r2;\n   6: exit;\n\nW/o this fix insn_successors(3)\
+  \ will return only (4), a jump to (5)\nwould be missed and r2 won't be marked as\
+  \ alive at (3).\n\nFixes: 14c8552db644 (\"bpf: simple DFA-based live registers analysis\"\
+  )\nReported-by: syzbot+a36aac327960ff474804@syzkaller.appspotmail.com\nSuggested-by:\
+  \ Alexei Starovoitov <alexei.starovoitov@gmail.com>\nSigned-off-by: Eduard Zingerman\
+  \ <eddyz87@gmail.com>\nLink: https://lore.kernel.org/r/20250613175331.3238739-1-eddyz87@gmail.com\n\
+  Signed-off-by: Alexei Starovoitov <ast@kernel.org>\n"
+submodule:
+- kernel/bpf
+hunk_count: 1
+covered_count: 0

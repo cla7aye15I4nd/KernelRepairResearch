@@ -1,0 +1,33 @@
+id: 09b349b3066c2e0b1e96
+bug_link: https://syzkaller.appspot.com/bug?extid=09b349b3066c2e0b1e96
+title: 'KMSAN: kernel-infoleak in sys_name_to_handle_at (4)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 12f7900c575679af411aaa89340bfe3dc68b46b3
+fix_commit: 3948abaa4e2be938ccdfc289385a27342fb13d43
+datetime: '2024-01-22T15:33:38+01:00'
+fix_commit_message: "do_sys_name_to_handle(): use kzalloc() to fix kernel-infoleak\n\
+  \nsyzbot identified a kernel information leak vulnerability in\ndo_sys_name_to_handle()\
+  \ and issued the following report [1].\n\n[1]\n\"BUG: KMSAN: kernel-infoleak in\
+  \ instrument_copy_to_user include/linux/instrumented.h:114 [inline]\nBUG: KMSAN:\
+  \ kernel-infoleak in _copy_to_user+0xbc/0x100 lib/usercopy.c:40\n instrument_copy_to_user\
+  \ include/linux/instrumented.h:114 [inline]\n _copy_to_user+0xbc/0x100 lib/usercopy.c:40\n\
+  \ copy_to_user include/linux/uaccess.h:191 [inline]\n do_sys_name_to_handle fs/fhandle.c:73\
+  \ [inline]\n __do_sys_name_to_handle_at fs/fhandle.c:112 [inline]\n __se_sys_name_to_handle_at+0x949/0xb10\
+  \ fs/fhandle.c:94\n __x64_sys_name_to_handle_at+0xe4/0x140 fs/fhandle.c:94\n ...\n\
+  \nUninit was created at:\n slab_post_alloc_hook+0x129/0xa70 mm/slab.h:768\n slab_alloc_node\
+  \ mm/slub.c:3478 [inline]\n __kmem_cache_alloc_node+0x5c9/0x970 mm/slub.c:3517\n\
+  \ __do_kmalloc_node mm/slab_common.c:1006 [inline]\n __kmalloc+0x121/0x3c0 mm/slab_common.c:1020\n\
+  \ kmalloc include/linux/slab.h:604 [inline]\n do_sys_name_to_handle fs/fhandle.c:39\
+  \ [inline]\n __do_sys_name_to_handle_at fs/fhandle.c:112 [inline]\n __se_sys_name_to_handle_at+0x441/0xb10\
+  \ fs/fhandle.c:94\n __x64_sys_name_to_handle_at+0xe4/0x140 fs/fhandle.c:94\n ...\n\
+  \nBytes 18-19 of 20 are uninitialized\nMemory access of size 20 starts at ffff888128a46380\n\
+  Data copied to user address 0000000020000240\"\n\nPer Chuck Lever's suggestion,\
+  \ use kzalloc() instead of kmalloc() to\nsolve the problem.\n\nFixes: 990d6c2d7aee\
+  \ (\"vfs: Add name to file handle conversion support\")\nSuggested-by: Chuck Lever\
+  \ III <chuck.lever@oracle.com>\nReported-and-tested-by: <syzbot+09b349b3066c2e0b1e96@syzkaller.appspotmail.com>\n\
+  Signed-off-by: Nikita Zhandarovich <n.zhandarovich@fintech.ru>\nLink: https://lore.kernel.org/r/20240119153906.4367-1-n.zhandarovich@fintech.ru\n\
+  Reviewed-by: Jan Kara <jack@suse.cz>\nSigned-off-by: Christian Brauner <brauner@kernel.org>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

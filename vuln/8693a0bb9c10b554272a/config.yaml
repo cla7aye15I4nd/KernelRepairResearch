@@ -1,0 +1,62 @@
+id: 8693a0bb9c10b554272a
+bug_link: https://syzkaller.appspot.com/bug?extid=8693a0bb9c10b554272a
+title: WARNING in btusb_submit_intr_urb/usb_submit_urb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 79989bd4ab86404743953fa382af0a22900050cf
+fix_commit: a368ecde8a5055b627749b09c6218ef793043e47
+datetime: '2024-07-03T16:03:25+02:00'
+fix_commit_message: 'USB: core: Fix duplicate endpoint bug by clearing reserved bits
+  in the descriptor
+
+
+  Syzbot has identified a bug in usbcore (see the Closes: tag below)
+
+  caused by our assumption that the reserved bits in an endpoint
+
+  descriptor''s bEndpointAddress field will always be 0.  As a result of
+
+  the bug, the endpoint_is_duplicate() routine in config.c (and possibly
+
+  other routines as well) may believe that two descriptors are for
+
+  distinct endpoints, even though they have the same direction and
+
+  endpoint number.  This can lead to confusion, including the bug
+
+  identified by syzbot (two descriptors with matching endpoint numbers
+
+  and directions, where one was interrupt and the other was bulk).
+
+
+  To fix the bug, we will clear the reserved bits in bEndpointAddress
+
+  when we parse the descriptor.  (Note that both the USB-2.0 and USB-3.1
+
+  specs say these bits are "Reserved, reset to zero".)  This requires us
+
+  to make a copy of the descriptor earlier in usb_parse_endpoint() and
+
+  use the copy instead of the original when checking for duplicates.
+
+
+  Signed-off-by: Alan Stern <stern@rowland.harvard.edu>
+
+  Reported-and-tested-by: syzbot+8693a0bb9c10b554272a@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/linux-usb/0000000000003d868e061bc0f554@google.com/
+
+  Fixes: 0a8fd1346254 ("USB: fix problems with duplicate endpoint addresses")
+
+  CC: Oliver Neukum <oneukum@suse.com>
+
+  CC: stable@vger.kernel.org
+
+  Link: https://lore.kernel.org/r/205a5edc-7fef-4159-b64a-80374b6b101a@rowland.harvard.edu
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/core
+hunk_count: 2
+covered_count: 0

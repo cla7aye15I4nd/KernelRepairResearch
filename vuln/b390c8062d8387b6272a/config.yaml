@@ -1,0 +1,87 @@
+id: b390c8062d8387b6272a
+bug_link: https://syzkaller.appspot.com/bug?extid=b390c8062d8387b6272a
+title: 'KASAN: slab-use-after-free Read in bpf_trace_run2 (2)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 654ced4a13774e5aec4d9466c97d22df7cb1e60b
+fix_commit: 2e8a12b82c40466204a832cf1a3ae9e9080710dc
+datetime: '2024-11-01T14:37:31-04:00'
+fix_commit_message: 'tracing: Fix syscall tracepoint use-after-free
+
+
+  The grace period used internally within tracepoint.c:release_probes()
+
+  uses call_rcu() to batch waiting for quiescence of old probe arrays,
+
+  rather than using the tracepoint_synchronize_unregister() which blocks
+
+  while waiting for quiescence.
+
+
+  With the introduction of faultable syscall tracepoints, this causes
+
+  use-after-free issues reproduced with syzkaller.
+
+
+  Fix this by using the appropriate call_rcu() or call_rcu_tasks_trace()
+
+  before invoking the rcu_free_old_probes callback. This can be chosen
+
+  using the tracepoint_is_faultable() API.
+
+
+  A similar issue exists in bpf use of call_rcu(). Fixing this is left to
+
+  a separate change.
+
+
+  Reported-by: syzbot+b390c8062d8387b6272a@syzkaller.appspotmail.com
+
+  Fixes: a363d27cdbc2 ("tracing: Allow system call tracepoints to handle page faults")
+
+  Tested-by: Jordan Rife <jrife@google.com>
+
+  Cc: Michael Jeanson <mjeanson@efficios.com>
+
+  Cc: Thomas Gleixner <tglx@linutronix.de>
+
+  Cc: Masami Hiramatsu <mhiramat@kernel.org>
+
+  Cc: Peter Zijlstra <peterz@infradead.org>
+
+  Cc: Alexei Starovoitov <ast@kernel.org>
+
+  Cc: Yonghong Song <yhs@fb.com>
+
+  Cc: Paul E. McKenney <paulmck@kernel.org>
+
+  Cc: Ingo Molnar <mingo@redhat.com>
+
+  Cc: Arnaldo Carvalho de Melo <acme@kernel.org>
+
+  Cc: Mark Rutland <mark.rutland@arm.com>
+
+  Cc: Alexander Shishkin <alexander.shishkin@linux.intel.com>
+
+  Cc: Namhyung Kim <namhyung@kernel.org>
+
+  Cc: Andrii Nakryiko <andrii.nakryiko@gmail.com>
+
+  Cc: bpf@vger.kernel.org
+
+  Cc: Joel Fernandes <joel@joelfernandes.org>
+
+  Cc: Jordan Rife <jrife@google.com>
+
+  Cc: linux-trace-kernel@vger.kernel.org
+
+  Link: https://lore.kernel.org/20241031152056.744137-4-mathieu.desnoyers@efficios.com
+
+  Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+
+  Signed-off-by: Steven Rostedt (Google) <rostedt@goodmis.org>
+
+  '
+submodule:
+- kernel
+hunk_count: 3
+covered_count: 0

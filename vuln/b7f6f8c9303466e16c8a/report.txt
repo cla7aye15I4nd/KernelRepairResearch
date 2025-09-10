@@ -1,0 +1,66 @@
+Oops: general protection fault, probably for non-canonical address 0xdffffc000000002e: 0000 [#1] PREEMPT SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000170-0x0000000000000177]
+CPU: 1 PID: 4478 Comm: kworker/u9:1 Not tainted 6.10.0-rc5-syzkaller-00282-g8282d5af7be8 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+Workqueue: hci0 hci_rx_work
+RIP: 0010:l2cap_publish_rx_avail net/bluetooth/l2cap_sock.c:1137 [inline]
+RIP: 0010:l2cap_sock_recv_cb+0x1af/0x4f0 net/bluetooth/l2cap_sock.c:1509
+Code: 80 3c 07 00 74 08 4c 89 ef e8 bd 66 7c f7 4d 8b 7d 00 49 8d bf 74 01 00 00 48 89 f8 48 c1 e8 03 49 bd 00 00 00 00 00 fc ff df <42> 0f b6 04 28 84 c0 0f 85 b5 02 00 00 41 8b 9f 74 01 00 00 49 81
+RSP: 0018:ffffc9000d0373c8 EFLAGS: 00010207
+RAX: 000000000000002e RBX: ffff88802ccb2000 RCX: ffff888030103c00
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000174
+RBP: ffff88802ccb3000 R08: ffffffff8944f610 R09: 1ffff1100599640c
+R10: dffffc0000000000 R11: ffffed100599640d R12: 1ffff11005996605
+R13: dffffc0000000000 R14: 0000000000000000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f7a647b1440 CR3: 000000007b026000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ l2cap_conless_channel net/bluetooth/l2cap_core.c:6774 [inline]
+ l2cap_recv_frame+0x8d47/0x107d0 net/bluetooth/l2cap_core.c:6827
+ hci_acldata_packet net/bluetooth/hci_core.c:3842 [inline]
+ hci_rx_work+0x50f/0xca0 net/bluetooth/hci_core.c:4079
+ process_one_work kernel/workqueue.c:3248 [inline]
+ process_scheduled_works+0xa2c/0x1830 kernel/workqueue.c:3329
+ worker_thread+0x86d/0xd50 kernel/workqueue.c:3409
+ kthread+0x2f0/0x390 kernel/kthread.c:389
+ ret_from_fork+0x4b/0x80 arch/x86/kernel/process.c:147
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:244
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:l2cap_publish_rx_avail net/bluetooth/l2cap_sock.c:1137 [inline]
+RIP: 0010:l2cap_sock_recv_cb+0x1af/0x4f0 net/bluetooth/l2cap_sock.c:1509
+Code: 80 3c 07 00 74 08 4c 89 ef e8 bd 66 7c f7 4d 8b 7d 00 49 8d bf 74 01 00 00 48 89 f8 48 c1 e8 03 49 bd 00 00 00 00 00 fc ff df <42> 0f b6 04 28 84 c0 0f 85 b5 02 00 00 41 8b 9f 74 01 00 00 49 81
+RSP: 0018:ffffc9000d0373c8 EFLAGS: 00010207
+RAX: 000000000000002e RBX: ffff88802ccb2000 RCX: ffff888030103c00
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000174
+RBP: ffff88802ccb3000 R08: ffffffff8944f610 R09: 1ffff1100599640c
+R10: dffffc0000000000 R11: ffffed100599640d R12: 1ffff11005996605
+R13: dffffc0000000000 R14: 0000000000000000 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff8880b9500000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f7a647b1440 CR3: 000000000e132000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+----------------
+Code disassembly (best guess):
+   0:	80 3c 07 00          	cmpb   $0x0,(%rdi,%rax,1)
+   4:	74 08                	je     0xe
+   6:	4c 89 ef             	mov    %r13,%rdi
+   9:	e8 bd 66 7c f7       	call   0xf77c66cb
+   e:	4d 8b 7d 00          	mov    0x0(%r13),%r15
+  12:	49 8d bf 74 01 00 00 	lea    0x174(%r15),%rdi
+  19:	48 89 f8             	mov    %rdi,%rax
+  1c:	48 c1 e8 03          	shr    $0x3,%rax
+  20:	49 bd 00 00 00 00 00 	movabs $0xdffffc0000000000,%r13
+  27:	fc ff df
+* 2a:	42 0f b6 04 28       	movzbl (%rax,%r13,1),%eax <-- trapping instruction
+  2f:	84 c0                	test   %al,%al
+  31:	0f 85 b5 02 00 00    	jne    0x2ec
+  37:	41 8b 9f 74 01 00 00 	mov    0x174(%r15),%ebx
+  3e:	49                   	rex.WB
+  3f:	81                   	.byte 0x81

@@ -1,0 +1,56 @@
+id: f93d183bc91522d90de9
+bug_link: https://syzkaller.appspot.com/bug?extid=f93d183bc91522d90de9
+title: possible deadlock in hci_rfkill_set_block
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f67eabffb57d0bee379994a18ec5f462b2cbdf86
+fix_commit: 769bf60e17ee1a56a81e7c031192c3928312c52e
+datetime: '2023-12-15T11:29:16-05:00'
+fix_commit_message: "Bluetooth: Fix deadlock in vhci_send_frame\n\nsyzbot found a\
+  \ potential circular dependency leading to a deadlock:\n    -> #3 (&hdev->req_lock){+.+.}-{3:3}:\n\
+  \    __mutex_lock_common+0x1b6/0x1bc2 kernel/locking/mutex.c:599\n    __mutex_lock\
+  \ kernel/locking/mutex.c:732 [inline]\n    mutex_lock_nested+0x17/0x1c kernel/locking/mutex.c:784\n\
+  \    hci_dev_do_close+0x3f/0x9f net/bluetooth/hci_core.c:551\n    hci_rfkill_set_block+0x130/0x1ac\
+  \ net/bluetooth/hci_core.c:935\n    rfkill_set_block+0x1e6/0x3b8 net/rfkill/core.c:345\n\
+  \    rfkill_fop_write+0x2d8/0x672 net/rfkill/core.c:1274\n    vfs_write+0x277/0xcf5\
+  \ fs/read_write.c:594\n    ksys_write+0x19b/0x2bd fs/read_write.c:650\n    do_syscall_x64\
+  \ arch/x86/entry/common.c:55 [inline]\n    do_syscall_64+0x51/0xba arch/x86/entry/common.c:93\n\
+  \    entry_SYSCALL_64_after_hwframe+0x61/0xcb\n\n    -> #2 (rfkill_global_mutex){+.+.}-{3:3}:\n\
+  \    __mutex_lock_common+0x1b6/0x1bc2 kernel/locking/mutex.c:599\n    __mutex_lock\
+  \ kernel/locking/mutex.c:732 [inline]\n    mutex_lock_nested+0x17/0x1c kernel/locking/mutex.c:784\n\
+  \    rfkill_register+0x30/0x7e3 net/rfkill/core.c:1045\n    hci_register_dev+0x48f/0x96d\
+  \ net/bluetooth/hci_core.c:2622\n    __vhci_create_device drivers/bluetooth/hci_vhci.c:341\
+  \ [inline]\n    vhci_create_device+0x3ad/0x68f drivers/bluetooth/hci_vhci.c:374\n\
+  \    vhci_get_user drivers/bluetooth/hci_vhci.c:431 [inline]\n    vhci_write+0x37b/0x429\
+  \ drivers/bluetooth/hci_vhci.c:511\n    call_write_iter include/linux/fs.h:2109\
+  \ [inline]\n    new_sync_write fs/read_write.c:509 [inline]\n    vfs_write+0xaa8/0xcf5\
+  \ fs/read_write.c:596\n    ksys_write+0x19b/0x2bd fs/read_write.c:650\n    do_syscall_x64\
+  \ arch/x86/entry/common.c:55 [inline]\n    do_syscall_64+0x51/0xba arch/x86/entry/common.c:93\n\
+  \    entry_SYSCALL_64_after_hwframe+0x61/0xcb\n\n    -> #1 (&data->open_mutex){+.+.}-{3:3}:\n\
+  \    __mutex_lock_common+0x1b6/0x1bc2 kernel/locking/mutex.c:599\n    __mutex_lock\
+  \ kernel/locking/mutex.c:732 [inline]\n    mutex_lock_nested+0x17/0x1c kernel/locking/mutex.c:784\n\
+  \    vhci_send_frame+0x68/0x9c drivers/bluetooth/hci_vhci.c:75\n    hci_send_frame+0x1cc/0x2ff\
+  \ net/bluetooth/hci_core.c:2989\n    hci_sched_acl_pkt net/bluetooth/hci_core.c:3498\
+  \ [inline]\n    hci_sched_acl net/bluetooth/hci_core.c:3583 [inline]\n    hci_tx_work+0xb94/0x1a60\
+  \ net/bluetooth/hci_core.c:3654\n    process_one_work+0x901/0xfb8 kernel/workqueue.c:2310\n\
+  \    worker_thread+0xa67/0x1003 kernel/workqueue.c:2457\n    kthread+0x36a/0x430\
+  \ kernel/kthread.c:319\n    ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:298\n\
+  \n    -> #0 ((work_completion)(&hdev->tx_work)){+.+.}-{0:0}:\n    check_prev_add\
+  \ kernel/locking/lockdep.c:3053 [inline]\n    check_prevs_add kernel/locking/lockdep.c:3172\
+  \ [inline]\n    validate_chain kernel/locking/lockdep.c:3787 [inline]\n    __lock_acquire+0x2d32/0x77fa\
+  \ kernel/locking/lockdep.c:5011\n    lock_acquire+0x273/0x4d5 kernel/locking/lockdep.c:5622\n\
+  \    __flush_work+0xee/0x19f kernel/workqueue.c:3090\n    hci_dev_close_sync+0x32f/0x1113\
+  \ net/bluetooth/hci_sync.c:4352\n    hci_dev_do_close+0x47/0x9f net/bluetooth/hci_core.c:553\n\
+  \    hci_rfkill_set_block+0x130/0x1ac net/bluetooth/hci_core.c:935\n    rfkill_set_block+0x1e6/0x3b8\
+  \ net/rfkill/core.c:345\n    rfkill_fop_write+0x2d8/0x672 net/rfkill/core.c:1274\n\
+  \    vfs_write+0x277/0xcf5 fs/read_write.c:594\n    ksys_write+0x19b/0x2bd fs/read_write.c:650\n\
+  \    do_syscall_x64 arch/x86/entry/common.c:55 [inline]\n    do_syscall_64+0x51/0xba\
+  \ arch/x86/entry/common.c:93\n    entry_SYSCALL_64_after_hwframe+0x61/0xcb\n\nThis\
+  \ change removes the need for acquiring the open_mutex in\nvhci_send_frame, thus\
+  \ eliminating the potential deadlock while\nmaintaining the required packet ordering.\n\
+  \nFixes: 92d4abd66f70 (\"Bluetooth: vhci: Fix race when opening vhci device\")\n\
+  Signed-off-by: Ying Hsu <yinghsu@chromium.org>\nSigned-off-by: Luiz Augusto von\
+  \ Dentz <luiz.von.dentz@intel.com>\n"
+submodule:
+- drivers/bluetooth
+hunk_count: 4
+covered_count: 4

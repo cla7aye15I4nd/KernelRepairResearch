@@ -1,0 +1,68 @@
+id: e54f930ed78eb0f85281
+bug_link: https://syzkaller.appspot.com/bug?extid=e54f930ed78eb0f85281
+title: 'WARNING: ODEBUG bug in kvm_xen_vcpu_set_attr'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 0c29397ac1fdd64ae59941a477511a05e61a4754
+fix_commit: af735db31285fa699384c649be72a9f32ecbb665
+datetime: '2022-08-10T15:08:25-04:00'
+fix_commit_message: 'KVM: x86/xen: Initialize Xen timer only once
+
+
+  Add a check for existing xen timers before initializing a new one.
+
+
+  Currently kvm_xen_init_timer() is called on every
+
+  KVM_XEN_VCPU_ATTR_TYPE_TIMER, which is causing the following ODEBUG
+
+  crash when vcpu->arch.xen.timer is already set.
+
+
+  ODEBUG: init active (active state 0)
+
+  object type: hrtimer hint: xen_timer_callbac0
+
+  RIP: 0010:debug_print_object+0x16e/0x250 lib/debugobjects.c:502
+
+  Call Trace:
+
+  __debug_object_init
+
+  debug_hrtimer_init
+
+  debug_init
+
+  hrtimer_init
+
+  kvm_xen_init_timer
+
+  kvm_xen_vcpu_set_attr
+
+  kvm_arch_vcpu_ioctl
+
+  kvm_vcpu_ioctl
+
+  vfs_ioctl
+
+
+  Fixes: 536395260582 ("KVM: x86/xen: handle PV timers oneshot mode")
+
+  Cc: stable@vger.kernel.org
+
+  Link: https://syzkaller.appspot.com/bug?id=8234a9dfd3aafbf092cc5a7cd9842e3ebc45fc42
+
+  Reported-by: syzbot+e54f930ed78eb0f85281@syzkaller.appspotmail.com
+
+  Signed-off-by: Coleman Dietsch <dietschc@csp.edu>
+
+  Reviewed-by: Sean Christopherson <seanjc@google.com>
+
+  Message-Id: <20220808190607.323899-2-dietschc@csp.edu>
+
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+  '
+submodule:
+- arch/x86/kvm
+hunk_count: 1
+covered_count: 1

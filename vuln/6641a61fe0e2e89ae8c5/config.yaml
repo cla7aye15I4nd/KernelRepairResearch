@@ -1,0 +1,49 @@
+id: 6641a61fe0e2e89ae8c5
+bug_link: https://syzkaller.appspot.com/bug?extid=6641a61fe0e2e89ae8c5
+title: WARNING in xfrm_state_fini (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: d942fe13f72bec92f6c689fbd74c5ec38228c16a
+fix_commit: 42e42562c9cfcdacf000f1b42284a4fad24f8546
+datetime: '2025-08-06T09:23:38+02:00'
+fix_commit_message: 'xfrm: flush all states in xfrm_state_fini
+
+
+  While reverting commit f75a2804da39 ("xfrm: destroy xfrm_state
+
+  synchronously on net exit path"), I incorrectly changed
+
+  xfrm_state_flush''s "proto" argument back to IPSEC_PROTO_ANY. This
+
+  reverts some of the changes in commit dbb2483b2a46 ("xfrm: clean up
+
+  xfrm protocol checks"), and leads to some states not being removed
+
+  when we exit the netns.
+
+
+  Pass 0 instead of IPSEC_PROTO_ANY from both xfrm_state_fini
+
+  xfrm6_tunnel_net_exit, so that xfrm_state_flush deletes all states.
+
+
+  Fixes: 2a198bbec691 ("Revert "xfrm: destroy xfrm_state synchronously on net exit
+  path"")
+
+  Reported-by: syzbot+6641a61fe0e2e89ae8c5@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=6641a61fe0e2e89ae8c5
+
+  Tested-by: syzbot+6641a61fe0e2e89ae8c5@syzkaller.appspotmail.com
+
+  Signed-off-by: Sabrina Dubroca <sd@queasysnail.net>
+
+  Reviewed-by: Simon Horman <horms@kernel.org>
+
+  Signed-off-by: Steffen Klassert <steffen.klassert@secunet.com>
+
+  '
+submodule:
+- net/ipv6
+- net/xfrm
+hunk_count: 2
+covered_count: 1

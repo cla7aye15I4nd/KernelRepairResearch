@@ -1,0 +1,61 @@
+bcachefs (loop0): recovering from clean shutdown, journal seq 8
+bcachefs (loop0): Doing compatible version upgrade from 1.7: mi_btree_bitmap to 1.11: disk_accounting_inum
+  running recovery passes: check_allocations
+=====================================================
+BUG: KMSAN: uninit-value in alloc_data_type fs/bcachefs/alloc_background.h:135 [inline]
+BUG: KMSAN: uninit-value in bch2_alloc_v4_validate+0x80a/0x1c10 fs/bcachefs/alloc_background.c:256
+ alloc_data_type fs/bcachefs/alloc_background.h:135 [inline]
+ bch2_alloc_v4_validate+0x80a/0x1c10 fs/bcachefs/alloc_background.c:256
+ bch2_bkey_val_validate+0x2ac/0x470 fs/bcachefs/bkey_methods.c:143
+ bch2_btree_node_read_done+0x5be1/0x7790 fs/bcachefs/btree_io.c:1219
+ btree_node_read_work+0x973/0x1960 fs/bcachefs/btree_io.c:1323
+ bch2_btree_node_read+0x2e6b/0x36e0
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1749 [inline]
+ bch2_btree_root_read+0xa81/0x13f0 fs/bcachefs/btree_io.c:1773
+ read_btree_roots+0x51c/0x1250 fs/bcachefs/recovery.c:516
+ bch2_fs_recovery+0x422c/0x5c60 fs/bcachefs/recovery.c:844
+ bch2_fs_start+0x7b2/0xbd0 fs/bcachefs/super.c:1036
+ bch2_fs_get_tree+0x13e8/0x22d0 fs/bcachefs/fs.c:1946
+ vfs_get_tree+0xa7/0x570 fs/super.c:1800
+ do_new_mount+0x71f/0x15e0 fs/namespace.c:3472
+ path_mount+0x742/0x1f10 fs/namespace.c:3799
+ do_mount fs/namespace.c:3812 [inline]
+ __do_sys_mount fs/namespace.c:4020 [inline]
+ __se_sys_mount+0x722/0x810 fs/namespace.c:3997
+ __x64_sys_mount+0xe4/0x150 fs/namespace.c:3997
+ x64_sys_call+0x255a/0x3ba0 arch/x86/include/generated/asm/syscalls_64.h:166
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Uninit was created at:
+ ___kmalloc_large_node+0x22c/0x370 mm/slub.c:4113
+ __kmalloc_large_node_noprof+0x3f/0x1e0 mm/slub.c:4130
+ __do_kmalloc_node mm/slub.c:4146 [inline]
+ __kmalloc_node_noprof+0x9d6/0xf50 mm/slub.c:4164
+ __kvmalloc_node_noprof+0xc0/0x2d0 mm/util.c:650
+ btree_bounce_alloc fs/bcachefs/btree_io.c:124 [inline]
+ bch2_btree_node_read_done+0x52a9/0x7790 fs/bcachefs/btree_io.c:1192
+ btree_node_read_work+0x973/0x1960 fs/bcachefs/btree_io.c:1323
+ bch2_btree_node_read+0x2e6b/0x36e0
+ __bch2_btree_root_read fs/bcachefs/btree_io.c:1749 [inline]
+ bch2_btree_root_read+0xa81/0x13f0 fs/bcachefs/btree_io.c:1773
+ read_btree_roots+0x51c/0x1250 fs/bcachefs/recovery.c:516
+ bch2_fs_recovery+0x422c/0x5c60 fs/bcachefs/recovery.c:844
+ bch2_fs_start+0x7b2/0xbd0 fs/bcachefs/super.c:1036
+ bch2_fs_get_tree+0x13e8/0x22d0 fs/bcachefs/fs.c:1946
+ vfs_get_tree+0xa7/0x570 fs/super.c:1800
+ do_new_mount+0x71f/0x15e0 fs/namespace.c:3472
+ path_mount+0x742/0x1f10 fs/namespace.c:3799
+ do_mount fs/namespace.c:3812 [inline]
+ __do_sys_mount fs/namespace.c:4020 [inline]
+ __se_sys_mount+0x722/0x810 fs/namespace.c:3997
+ __x64_sys_mount+0xe4/0x150 fs/namespace.c:3997
+ x64_sys_call+0x255a/0x3ba0 arch/x86/include/generated/asm/syscalls_64.h:166
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcd/0x1e0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+CPU: 1 UID: 0 PID: 5177 Comm: syz-executor142 Not tainted 6.11.0-rc4-syzkaller-00008-g6e4436539ae1 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 08/06/2024
+=====================================================

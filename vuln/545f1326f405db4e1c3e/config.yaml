@@ -1,0 +1,41 @@
+id: 545f1326f405db4e1c3e
+bug_link: https://syzkaller.appspot.com/bug?extid=545f1326f405db4e1c3e
+title: WARNING in kvm_recalculate_apic_map
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 15e1c3d65975524c5c792fcd59f7d89f00402261
+fix_commit: 4b7c3f6d04bd53f2e5b228b6821fb8f5d1ba3071
+datetime: '2024-08-13T12:01:46-04:00'
+fix_commit_message: "KVM: x86: Make x2APIC ID 100% readonly\n\nIgnore the userspace\
+  \ provided x2APIC ID when fixing up APIC state for\nKVM_SET_LAPIC, i.e. make the\
+  \ x2APIC fully readonly in KVM.  Commit\na92e2543d6a8 (\"KVM: x86: use hardware-compatible\
+  \ format for APIC ID\nregister\"), which added the fixup, didn't intend to allow\
+  \ userspace to\nmodify the x2APIC ID.  In fact, that commit is when KVM first started\n\
+  treating the x2APIC ID as readonly, apparently to fix some race:\n\n static inline\
+  \ u32 kvm_apic_id(struct kvm_lapic *apic)\n {\n-       return (kvm_lapic_get_reg(apic,\
+  \ APIC_ID) >> 24) & 0xff;\n+       /* To avoid a race between apic_base and following\
+  \ APIC_ID update when\n+        * switching to x2apic_mode, the x2apic mode returns\
+  \ initial x2apic id.\n+        */\n+       if (apic_x2apic_mode(apic))\n+      \
+  \         return apic->vcpu->vcpu_id;\n+\n+       return kvm_lapic_get_reg(apic,\
+  \ APIC_ID) >> 24;\n }\n\nFurthermore, KVM doesn't support delivering interrupts\
+  \ to vCPUs with a\nmodified x2APIC ID, but KVM *does* return the modified value\
+  \ on a guest\nRDMSR and for KVM_GET_LAPIC.  I.e. no remotely sane setup can actually\n\
+  work with a modified x2APIC ID.\n\nMaking the x2APIC ID fully readonly fixes a WARN\
+  \ in KVM's optimized map\ncalculation, which expects the LDR to align with the x2APIC\
+  \ ID.\n\n  WARNING: CPU: 2 PID: 958 at arch/x86/kvm/lapic.c:331 kvm_recalculate_apic_map+0x609/0xa00\
+  \ [kvm]\n  CPU: 2 PID: 958 Comm: recalc_apic_map Not tainted 6.4.0-rc3-vanilla+\
+  \ #35\n  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Arch Linux\
+  \ 1.16.2-1-1 04/01/2014\n  RIP: 0010:kvm_recalculate_apic_map+0x609/0xa00 [kvm]\n\
+  \  Call Trace:\n   <TASK>\n   kvm_apic_set_state+0x1cf/0x5b0 [kvm]\n   kvm_arch_vcpu_ioctl+0x1806/0x2100\
+  \ [kvm]\n   kvm_vcpu_ioctl+0x663/0x8a0 [kvm]\n   __x64_sys_ioctl+0xb8/0xf0\n   do_syscall_64+0x56/0x80\n\
+  \   entry_SYSCALL_64_after_hwframe+0x46/0xb0\n  RIP: 0033:0x7fade8b9dd6f\n\nUnfortunately,\
+  \ the WARN can still trigger for other CPUs than the current\none by racing against\
+  \ KVM_SET_LAPIC, so remove it completely.\n\nReported-by: Michal Luczaj <mhal@rbox.co>\n\
+  Closes: https://lore.kernel.org/all/814baa0c-1eaa-4503-129f-059917365e80@rbox.co\n\
+  Reported-by: Haoyu Wu <haoyuwu254@gmail.com>\nCloses: https://lore.kernel.org/all/20240126161633.62529-1-haoyuwu254@gmail.com\n\
+  Reported-by: syzbot+545f1326f405db4e1c3e@syzkaller.appspotmail.com\nCloses: https://lore.kernel.org/all/000000000000c2a6b9061cbca3c3@google.com\n\
+  Signed-off-by: Sean Christopherson <seanjc@google.com>\nMessage-ID: <20240802202941.344889-2-seanjc@google.com>\n\
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 3
+covered_count: 3

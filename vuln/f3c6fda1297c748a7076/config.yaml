@@ -1,0 +1,75 @@
+id: f3c6fda1297c748a7076
+bug_link: https://syzkaller.appspot.com/bug?extid=f3c6fda1297c748a7076
+title: 'BUG: sleeping function called from invalid context in folio_mc_copy'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6e8f57fd09c9fb569d10b2ccc3878155b702591a
+fix_commit: 2d900efff915fe24c3948d28eef9078953d87fec
+datetime: '2025-04-22T18:16:08+02:00'
+fix_commit_message: 'mm/migrate: fix sleep in atomic for large folios and buffer heads
+
+
+  The large folio + buffer head noref migration scenarios are
+
+  being naughty and blocking while holding a spinlock.
+
+
+  As a consequence of the pagecache lookup path taking the
+
+  folio lock this serializes against migration paths, so
+
+  they can wait for each other. For the private_lock
+
+  atomic case, a new BH_Migrate flag is introduced which
+
+  enables the lookup to bail.
+
+
+  This allows the critical region of the private_lock on
+
+  the migration path to be reduced to the way it was before
+
+  ebdf4de5642fb6 ("mm: migrate: fix reference  check race
+
+  between __find_get_block() and migration"), that is covering
+
+  the count checks.
+
+
+  The scope is always noref migration.
+
+
+  Reported-by: kernel test robot <oliver.sang@intel.com>
+
+  Reported-by: syzbot+f3c6fda1297c748a7076@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/oe-lkp/202503101536.27099c77-lkp@intel.com
+
+  Fixes: 3c20917120ce61 ("block/bdev: enable large folio support for large logical
+  block sizes")
+
+  Reviewed-by: Jan Kara <jack@suse.cz>
+
+  Co-developed-by: Luis Chamberlain <mcgrof@kernel.org>
+
+  Signed-off-by: Davidlohr Bueso <dave@stgolabs.net>
+
+  Link: https://kdevops.org/ext4/v6.15-rc2.html # [0]
+
+  Link: https://lore.kernel.org/all/aAAEvcrmREWa1SKF@bombadil.infradead.org/ # [1]
+
+  Link: https://lore.kernel.org/20250418015921.132400-8-dave@stgolabs.net
+
+  Tested-by: kdevops@lists.linux.dev # [0] [1]
+
+  Reviewed-by: Luis Chamberlain <mcgrof@kernel.org>
+
+  Signed-off-by: Christian Brauner <brauner@kernel.org>
+
+  '
+submodule:
+- fs
+- fs/ext4
+- include/linux
+- mm
+hunk_count: 7
+covered_count: 3

@@ -1,0 +1,33 @@
+id: 4af454407ec393de51d6
+bug_link: https://syzkaller.appspot.com/bug?extid=4af454407ec393de51d6
+title: 'KASAN: slab-use-after-free Write in binder_remove_device'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1b56e7d465cec2ac753f7aec281f7f949446ffcb
+fix_commit: 9857af0fcff385c75433f2162c30c62eb912ef6d
+datetime: '2025-05-25T11:25:07+02:00'
+fix_commit_message: "binder: fix yet another UAF in binder_devices\n\nCommit e77aff5528a18\
+  \ (\"binderfs: fix use-after-free in binder_devices\")\naddressed a use-after-free\
+  \ where devices could be released without first\nbeing removed from the binder_devices\
+  \ list. However, there is a similar\npath in binder_free_proc() that was missed:\n\
+  \n  ==================================================================\n  BUG: KASAN:\
+  \ slab-use-after-free in binder_remove_device+0xd4/0x100\n  Write of size 8 at addr\
+  \ ffff0000c773b900 by task umount/467\n  CPU: 12 UID: 0 PID: 467 Comm: umount Not\
+  \ tainted 6.15.0-rc7-00138-g57483a362741 #9 PREEMPT\n  Hardware name: linux,dummy-virt\
+  \ (DT)\n  Call trace:\n   binder_remove_device+0xd4/0x100\n   binderfs_evict_inode+0x230/0x2f0\n\
+  \   evict+0x25c/0x5dc\n   iput+0x304/0x480\n   dentry_unlink_inode+0x208/0x46c\n\
+  \   __dentry_kill+0x154/0x530\n   [...]\n\n  Allocated by task 463:\n   __kmalloc_cache_noprof+0x13c/0x324\n\
+  \   binderfs_binder_device_create.isra.0+0x138/0xa60\n   binder_ctl_ioctl+0x1ac/0x230\n\
+  \  [...]\n\n  Freed by task 215:\n   kfree+0x184/0x31c\n   binder_proc_dec_tmpref+0x33c/0x4ac\n\
+  \   binder_deferred_func+0xc10/0x1108\n   process_one_work+0x520/0xba4\n  [...]\n\
+  \  ==================================================================\n\nCall binder_remove_device()\
+  \ within binder_free_proc() to ensure the\ndevice is removed from the binder_devices\
+  \ list before being kfreed.\n\nCc: stable@vger.kernel.org\nFixes: 12d909cac1e1 (\"\
+  binderfs: add new binder devices to binder_devices\")\nReported-by: syzbot+4af454407ec393de51d6@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=4af454407ec393de51d6\nTested-by:\
+  \ syzbot+4af454407ec393de51d6@syzkaller.appspotmail.com\nSigned-off-by: Carlos Llamas\
+  \ <cmllamas@google.com>\nLink: https://lore.kernel.org/r/20250524220758.915028-1-cmllamas@google.com\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/android
+hunk_count: 1
+covered_count: 1

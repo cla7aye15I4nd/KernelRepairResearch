@@ -1,0 +1,29 @@
+id: ab09454bf4b7a7f8ce7e5e8d97e644d3314a0799
+bug_link: https://syzkaller.appspot.com/bug?extid=ab09454bf4b7a7f8ce7e5e8d97e644d3314a0799
+title: general protection fault in native_write_cr4
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 829ee279aed43faa5cb1e4d65c0cad52f2426c53
+fix_commit: 8eb3f87d903168bdbd1222776a6b1e281f50513e
+datetime: '2017-10-12T13:54:56+02:00'
+fix_commit_message: "KVM: nVMX: fix guest CR4 loading when emulating L2 to L1 exit\n\
+  \nWhen KVM emulates an exit from L2 to L1, it loads L1 CR4 into the\nguest CR4.\
+  \ Before this CR4 loading, the guest CR4 refers to L2\nCR4. Because these two CR4's\
+  \ are in different levels of guest, we\nshould vmx_set_cr4() rather than kvm_set_cr4()\
+  \ here. The latter, which\nis used to handle guest writes to its CR4, checks the\
+  \ guest change to\nCR4 and may fail if the change is invalid.\n\nThe failure may\
+  \ cause trouble. Consider we start\n  a L1 guest with non-zero L1 PCID in use,\n\
+  \     (i.e. L1 CR4.PCIDE == 1 && L1 CR3.PCID != 0)\nand\n  a L2 guest with L2 PCID\
+  \ disabled,\n     (i.e. L2 CR4.PCIDE == 0)\nand following events may happen:\n\n\
+  1. If kvm_set_cr4() is used in load_vmcs12_host_state() to load L1 CR4\n   into\
+  \ guest CR4 (in VMCS01) for L2 to L1 exit, it will fail because\n   of PCID check.\
+  \ As a result, the guest CR4 recorded in L0 KVM (i.e.\n   vcpu->arch.cr4) is left\
+  \ to the value of L2 CR4.\n\n2. Later, if L1 attempts to change its CR4, e.g., clearing\
+  \ VMXE bit,\n   kvm_set_cr4() in L0 KVM will think L1 also wants to enable PCID,\n\
+  \   because the wrong L2 CR4 is used by L0 KVM as L1 CR4. As L1\n   CR3.PCID !=\
+  \ 0, L0 KVM will inject GP to L1 guest.\n\nFixes: 4704d0befb072 (\"KVM: nVMX: Exiting\
+  \ from L2 to L1\")\nCc: qemu-stable@nongnu.org\nSigned-off-by: Haozhong Zhang <haozhong.zhang@intel.com>\n\
+  Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>\n"
+submodule:
+- arch/x86/kvm
+hunk_count: 1
+covered_count: 0

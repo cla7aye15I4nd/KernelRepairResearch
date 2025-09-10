@@ -1,0 +1,49 @@
+id: dc308fcfcd53f987de73
+bug_link: https://syzkaller.appspot.com/bug?extid=dc308fcfcd53f987de73
+title: WARNING in mmu_free_root_page
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: bb9dc859086df369f1fd34578dd5ca82d6321d21
+fix_commit: 1bc26cb9090246190e8c540f5aa201cea2f895a1
+datetime: '2024-04-11T12:58:49-07:00'
+fix_commit_message: 'KVM: x86/mmu: Precisely invalidate MMU root_role during CPUID
+  update
+
+
+  Set kvm_mmu_page_role.invalid to mark the various MMU root_roles invalid
+
+  during CPUID update in order to force a refresh, instead of zeroing out
+
+  the entire role.  This fixes a bug where kvm_mmu_free_roots() incorrectly
+
+  thinks a root is indirect, i.e. not a TDP MMU, due to "direct" being
+
+  zeroed, which in turn causes KVM to take mmu_lock for write instead of
+
+  read.
+
+
+  Note, paving over the entire role was largely unintentional, commit
+
+  7a458f0e1ba1 ("KVM: x86/mmu: remove extended bits from mmu_role, rename
+
+  field") simply missed that "invalid" could be set.
+
+
+  Fixes: 576a15de8d29 ("KVM: x86/mmu: Free TDP MMU roots while holding mmy_lock for
+  read")
+
+  Reported-by: syzbot+dc308fcfcd53f987de73@syzkaller.appspotmail.com
+
+  Closes: https://lore.kernel.org/all/0000000000009b38080614c49bdb@google.com
+
+  Cc: Phi Nguyen <phind.uet@gmail.com>
+
+  Link: https://lore.kernel.org/r/20240408231115.1387279-1-seanjc@google.com
+
+  Signed-off-by: Sean Christopherson <seanjc@google.com>
+
+  '
+submodule:
+- arch/x86/kvm/mmu
+hunk_count: 1
+covered_count: 1

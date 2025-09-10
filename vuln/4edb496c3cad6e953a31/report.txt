@@ -1,0 +1,84 @@
+INFO: trying to register non-static key.
+The code is fine but needs lockdep annotation, or maybe
+you didn't initialize this object before use?
+turning off the locking correctness validator.
+CPU: 0 UID: 0 PID: 11367 Comm: kworker/u8:0 Not tainted 6.15.0-syzkaller-08297-ge0797d3b91de #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Workqueue: rdma_cm cma_work_handler
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:120
+ assign_lock_key kernel/locking/lockdep.c:987 [inline]
+ register_lock_class+0x4a3/0x4c0 kernel/locking/lockdep.c:1302
+ __lock_acquire+0xa6/0x1c90 kernel/locking/lockdep.c:5115
+ lock_acquire kernel/locking/lockdep.c:5871 [inline]
+ lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5828
+ __timer_delete_sync+0x152/0x1b0 kernel/time/timer.c:1602
+ rxe_qp_do_cleanup+0x5c3/0x7e0 drivers/infiniband/sw/rxe/rxe_qp.c:815
+ execute_in_process_context+0x3d/0x160 kernel/workqueue.c:4598
+ __rxe_cleanup+0x267/0x3c0 drivers/infiniband/sw/rxe/rxe_pool.c:232
+ rxe_create_qp+0x3f7/0x5f0 drivers/infiniband/sw/rxe/rxe_verbs.c:604
+ create_qp+0x630/0xa80 drivers/infiniband/core/verbs.c:1250
+ ib_create_qp_kernel+0x9f/0x310 drivers/infiniband/core/verbs.c:1361
+ ib_create_qp include/rdma/ib_verbs.h:3803 [inline]
+ rdma_create_qp+0x10c/0x340 drivers/infiniband/core/cma.c:1147
+ rds_ib_setup_qp+0xc86/0x19a0 net/rds/ib_cm.c:600
+ rds_ib_cm_initiate_connect+0x1e8/0x3d0 net/rds/ib_cm.c:944
+ rds_rdma_cm_event_handler_cmn+0x61f/0x8c0 net/rds/rdma_transport.c:109
+ cma_cm_event_handler+0x94/0x300 drivers/infiniband/core/cma.c:2187
+ cma_work_handler+0x15b/0x230 drivers/infiniband/core/cma.c:3045
+ process_one_work+0x9cc/0x1b70 kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3321 [inline]
+ worker_thread+0x6c8/0xf10 kernel/workqueue.c:3402
+ kthread+0x3c2/0x780 kernel/kthread.c:464
+ ret_from_fork+0x5d4/0x6f0 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+------------[ cut here ]------------
+ODEBUG: assert_init not available (active state 0) object: ffff88807b73aa58 object type: timer_list hint: 0x0
+WARNING: CPU: 0 PID: 11367 at lib/debugobjects.c:612 debug_print_object+0x1a2/0x2b0 lib/debugobjects.c:612
+Modules linked in:
+CPU: 0 UID: 0 PID: 11367 Comm: kworker/u8:0 Not tainted 6.15.0-syzkaller-08297-ge0797d3b91de #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/07/2025
+Workqueue: rdma_cm cma_work_handler
+RIP: 0010:debug_print_object+0x1a2/0x2b0 lib/debugobjects.c:612
+Code: fc ff df 48 89 fa 48 c1 ea 03 80 3c 02 00 75 54 41 56 48 8b 14 dd a0 3f f5 8b 4c 89 e6 48 c7 c7 20 34 f5 8b e8 9f 6b 9c fc 90 <0f> 0b 90 90 58 83 05 76 4d a9 0b 01 48 83 c4 18 5b 5d 41 5c 41 5d
+RSP: 0018:ffffc9001cb1f3e8 EFLAGS: 00010282
+RAX: 0000000000000000 RBX: 0000000000000005 RCX: ffffffff817ad908
+RDX: ffff888062460000 RSI: ffffffff817ad915 RDI: 0000000000000001
+RBP: 0000000000000001 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000001 R11: 000000000005e208 R12: ffffffff8bf53b00
+R13: ffffffff8b8fde00 R14: 0000000000000000 R15: ffffc9001cb1f4a8
+FS:  0000000000000000(0000) GS:ffff888124970000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000001b32bf5ff8 CR3: 000000000e182000 CR4: 00000000003526f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 3a810b1eb6134bdc DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ debug_object_assert_init+0x1ec/0x2f0 lib/debugobjects.c:1020
+ debug_timer_assert_init kernel/time/timer.c:803 [inline]
+ debug_assert_init kernel/time/timer.c:848 [inline]
+ __try_to_del_timer_sync+0x7f/0x170 kernel/time/timer.c:1457
+ __timer_delete_sync+0xf4/0x1b0 kernel/time/timer.c:1620
+ rxe_qp_do_cleanup+0x5c3/0x7e0 drivers/infiniband/sw/rxe/rxe_qp.c:815
+ execute_in_process_context+0x3d/0x160 kernel/workqueue.c:4598
+ __rxe_cleanup+0x267/0x3c0 drivers/infiniband/sw/rxe/rxe_pool.c:232
+ rxe_create_qp+0x3f7/0x5f0 drivers/infiniband/sw/rxe/rxe_verbs.c:604
+ create_qp+0x630/0xa80 drivers/infiniband/core/verbs.c:1250
+ ib_create_qp_kernel+0x9f/0x310 drivers/infiniband/core/verbs.c:1361
+ ib_create_qp include/rdma/ib_verbs.h:3803 [inline]
+ rdma_create_qp+0x10c/0x340 drivers/infiniband/core/cma.c:1147
+ rds_ib_setup_qp+0xc86/0x19a0 net/rds/ib_cm.c:600
+ rds_ib_cm_initiate_connect+0x1e8/0x3d0 net/rds/ib_cm.c:944
+ rds_rdma_cm_event_handler_cmn+0x61f/0x8c0 net/rds/rdma_transport.c:109
+ cma_cm_event_handler+0x94/0x300 drivers/infiniband/core/cma.c:2187
+ cma_work_handler+0x15b/0x230 drivers/infiniband/core/cma.c:3045
+ process_one_work+0x9cc/0x1b70 kernel/workqueue.c:3238
+ process_scheduled_works kernel/workqueue.c:3321 [inline]
+ worker_thread+0x6c8/0xf10 kernel/workqueue.c:3402
+ kthread+0x3c2/0x780 kernel/kthread.c:464
+ ret_from_fork+0x5d4/0x6f0 arch/x86/kernel/process.c:148
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>

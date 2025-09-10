@@ -1,0 +1,48 @@
+bcachefs (loop0): mounting version 1.7: mi_btree_bitmap opts=metadata_checksum=none,data_checksum=none,nojournal_transaction_names
+bcachefs (loop0): recovering from clean shutdown, journal seq 8
+bcachefs (loop0): alloc_read... done
+bcachefs (loop0): stripes_read... done
+bcachefs (loop0): snapshots_read... done
+bucket 0:4 gen 0 different types of data in same bucket: btree, sb
+while marking sb, shutting down
+bcachefs (loop0): inconsistency detected - emergency read only at journal seq 8
+bcachefs (loop0): bch2_trans_mark_dev_sb(): error EIO
+Kernel panic - not syncing: bch_dev->ref underflow, last put: __bch2_dev_put fs/bcachefs/sb-members.h:110 [inline]
+Kernel panic - not syncing: bch_dev->ref underflow, last put: bch2_dev_put fs/bcachefs/sb-members.h:121 [inline]
+Kernel panic - not syncing: bch_dev->ref underflow, last put: bch2_trigger_alloc+0x2934/0x3b90 fs/bcachefs/alloc_background.c:913
+CPU: 1 PID: 5093 Comm: syz-executor498 Not tainted 6.9.0-rc7-next-20240510-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/02/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114
+ panic+0x349/0x860 kernel/panic.c:347
+ __bch2_dev_put fs/bcachefs/sb-members.h:109 [inline]
+ bch2_dev_put fs/bcachefs/sb-members.h:121 [inline]
+ bch2_trans_mark_dev_sbs_flags+0xaa7/0xab0 fs/bcachefs/buckets.c:1467
+ bch2_run_recovery_pass+0xf0/0x1e0 fs/bcachefs/recovery_passes.c:182
+ bch2_run_recovery_passes+0x19e/0x820 fs/bcachefs/recovery_passes.c:225
+ bch2_fs_recovery+0x2370/0x3700 fs/bcachefs/recovery.c:804
+ bch2_fs_start+0x356/0x5b0 fs/bcachefs/super.c:1031
+ bch2_fs_open+0xa8d/0xdf0 fs/bcachefs/super.c:2123
+ bch2_mount+0x71d/0x1320 fs/bcachefs/fs.c:1917
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2a0 fs/super.c:1780
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3352
+ do_mount fs/namespace.c:3692 [inline]
+ __do_sys_mount fs/namespace.c:3898 [inline]
+ __se_sys_mount+0x2d9/0x3c0 fs/namespace.c:3875
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf5/0x240 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7facf885c8fa
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe54cb8d38 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffe54cb8d50 RCX: 00007facf885c8fa
+RDX: 0000000020005b00 RSI: 0000000020005b40 RDI: 00007ffe54cb8d50
+RBP: 0000000000000004 R08: 00007ffe54cb8d90 R09: 0000000000005b4c
+R10: 0000000000000000 R11: 0000000000000282 R12: 0000000000000000
+R13: 00007ffe54cb8d90 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+Kernel Offset: disabled
+Rebooting in 86400 seconds..

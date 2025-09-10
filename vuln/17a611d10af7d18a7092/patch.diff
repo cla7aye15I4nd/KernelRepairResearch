@@ -1,0 +1,48 @@
+diff --git a/mm/swap_state.c b/mm/swap_state.c
+index e671266ad772..7255c01a1e4e 100644
+--- a/mm/swap_state.c
++++ b/mm/swap_state.c
+@@ -680,9 +680,10 @@ struct folio *swap_cluster_readahead(swp_entry_t entry, gfp_t gfp_mask,
+ 	/* The page was likely read above, so no need for plugging here */
+ 	folio = __read_swap_cache_async(entry, gfp_mask, mpol, ilx,
+ 					&page_allocated, false);
+-	if (unlikely(page_allocated))
++	if (unlikely(page_allocated)) {
++		zswap_folio_swapin(folio);
+ 		swap_read_folio(folio, false, NULL);
+-	zswap_folio_swapin(folio);
++	}
+ 	return folio;
+ }
+ 
+@@ -855,9 +856,10 @@ static struct folio *swap_vma_readahead(swp_entry_t targ_entry, gfp_t gfp_mask,
+ 	/* The folio was likely read above, so no need for plugging here */
+ 	folio = __read_swap_cache_async(targ_entry, gfp_mask, mpol, targ_ilx,
+ 					&page_allocated, false);
+-	if (unlikely(page_allocated))
++	if (unlikely(page_allocated)) {
++		zswap_folio_swapin(folio);
+ 		swap_read_folio(folio, false, NULL);
+-	zswap_folio_swapin(folio);
++	}
+ 	return folio;
+ }
+ 
+diff --git a/mm/zswap.c b/mm/zswap.c
+index d2423247acfd..36903d938c15 100644
+--- a/mm/zswap.c
++++ b/mm/zswap.c
+@@ -377,10 +377,9 @@ void zswap_folio_swapin(struct folio *folio)
+ {
+ 	struct lruvec *lruvec;
+ 
+-	if (folio) {
+-		lruvec = folio_lruvec(folio);
+-		atomic_long_inc(&lruvec->zswap_lruvec_state.nr_zswap_protected);
+-	}
++	VM_WARN_ON_ONCE(!folio_test_locked(folio));
++	lruvec = folio_lruvec(folio);
++	atomic_long_inc(&lruvec->zswap_lruvec_state.nr_zswap_protected);
+ }
+ 
+ /*********************************

@@ -1,0 +1,38 @@
+diff --git a/net/rxrpc/ar-internal.h b/net/rxrpc/ar-internal.h
+index 0c0a3c89dba3..718193df9d2e 100644
+--- a/net/rxrpc/ar-internal.h
++++ b/net/rxrpc/ar-internal.h
+@@ -571,6 +571,7 @@ enum rxrpc_call_flag {
+ 	RXRPC_CALL_RX_LAST,		/* Received the last packet (at rxtx_top) */
+ 	RXRPC_CALL_TX_LAST,		/* Last packet in Tx buffer (at rxtx_top) */
+ 	RXRPC_CALL_TX_ALL_ACKED,	/* Last packet has been hard-acked */
++	RXRPC_CALL_TX_NO_MORE,		/* No more data to transmit (MSG_MORE deasserted) */
+ 	RXRPC_CALL_SEND_PING,		/* A ping will need to be sent */
+ 	RXRPC_CALL_RETRANS_TIMEOUT,	/* Retransmission due to timeout occurred */
+ 	RXRPC_CALL_BEGAN_RX_TIMER,	/* We began the expect_rx_by timer */
+diff --git a/net/rxrpc/sendmsg.c b/net/rxrpc/sendmsg.c
+index c4c8b718cafa..0e8da909d4f2 100644
+--- a/net/rxrpc/sendmsg.c
++++ b/net/rxrpc/sendmsg.c
+@@ -266,6 +266,7 @@ static void rxrpc_queue_packet(struct rxrpc_sock *rx, struct rxrpc_call *call,
+ 	/* Order send_top after the queue->next pointer and txb content. */
+ 	smp_store_release(&call->send_top, seq);
+ 	if (last) {
++		set_bit(RXRPC_CALL_TX_NO_MORE, &call->flags);
+ 		rxrpc_notify_end_tx(rx, call, notify_end_tx);
+ 		call->send_queue = NULL;
+ 	}
+@@ -329,6 +330,13 @@ static int rxrpc_send_data(struct rxrpc_sock *rx,
+ 	bool more = msg->msg_flags & MSG_MORE;
+ 	int ret, copied = 0;
+ 
++	if (test_bit(RXRPC_CALL_TX_NO_MORE, &call->flags)) {
++		trace_rxrpc_abort(call->debug_id, rxrpc_sendmsg_late_send,
++				  call->cid, call->call_id, call->rx_consumed,
++				  0, -EPROTO);
++		return -EPROTO;
++	}
++
+ 	timeo = sock_sndtimeo(sk, msg->msg_flags & MSG_DONTWAIT);
+ 
+ 	ret = rxrpc_wait_to_be_connected(call, &timeo);

@@ -1,0 +1,46 @@
+id: 6ca9f7867b77c2d316ac
+bug_link: https://syzkaller.appspot.com/bug?extid=6ca9f7867b77c2d316ac
+title: 'KMSAN: uninit-value in ax88178_reset'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: b845bac8edb10365efd4d37ed644f3f1edc23964
+fix_commit: 920a9fa27e7805499cfe78491b36fed2322c02ec
+datetime: '2022-02-07T12:28:36+00:00'
+fix_commit_message: 'net: asix: add proper error handling of usb read errors
+
+
+  Syzbot once again hit uninit value in asix driver. The problem still the
+
+  same -- asix_read_cmd() reads less bytes, than was requested by caller.
+
+
+  Since all read requests are performed via asix_read_cmd() let''s catch
+
+  usb related error there and add __must_check notation to be sure all
+
+  callers actually check return value.
+
+
+  So, this patch adds sanity check inside asix_read_cmd(), that simply
+
+  checks if bytes read are not less, than was requested and adds missing
+
+  error handling of asix_read_cmd() all across the driver code.
+
+
+  Fixes: d9fe64e51114 ("net: asix: Add in_pm parameter")
+
+  Reported-and-tested-by: syzbot+6ca9f7867b77c2d316ac@syzkaller.appspotmail.com
+
+  Signed-off-by: Pavel Skripkin <paskripkin@gmail.com>
+
+  Tested-by: Oleksij Rempel <o.rempel@pengutronix.de>
+
+  Reviewed-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  Signed-off-by: David S. Miller <davem@davemloft.net>
+
+  '
+submodule:
+- drivers/net/usb
+hunk_count: 7
+covered_count: 1

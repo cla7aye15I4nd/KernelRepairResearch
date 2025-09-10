@@ -1,0 +1,23 @@
+id: 4b8077a5fccc61c385a1
+bug_link: https://syzkaller.appspot.com/bug?extid=4b8077a5fccc61c385a1
+title: WARNING in __hugetlb_cgroup_uncharge_folio
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 6db7412c142006985a15765785cf6c0c0dd75374
+fix_commit: b76b46902c2d0395488c8412e1116c2486cdfcb2
+datetime: '2024-04-24T19:34:25-07:00'
+fix_commit_message: "mm/hugetlb: fix missing hugetlb_lock for resv uncharge\n\nThere\
+  \ is a recent report on UFFDIO_COPY over hugetlb:\n\nhttps://lore.kernel.org/all/000000000000ee06de0616177560@google.com/\n\
+  \n350:\tlockdep_assert_held(&hugetlb_lock);\n\nShould be an issue in hugetlb but\
+  \ triggered in an userfault context, where\nit goes into the unlikely path where\
+  \ two threads modifying the resv map\ntogether.  Mike has a fix in that path for\
+  \ resv uncharge but it looks like\nthe locking criteria was overlooked: hugetlb_cgroup_uncharge_folio_rsvd()\n\
+  will update the cgroup pointer, so it requires to be called with the lock\nheld.\n\
+  \nLink: https://lkml.kernel.org/r/20240417211836.2742593-3-peterx@redhat.com\nFixes:\
+  \ 79aa925bf239 (\"hugetlb_cgroup: fix reservation accounting\")\nSigned-off-by:\
+  \ Peter Xu <peterx@redhat.com>\nReported-by: syzbot+4b8077a5fccc61c385a1@syzkaller.appspotmail.com\n\
+  Reviewed-by: Mina Almasry <almasrymina@google.com>\nCc: David Hildenbrand <david@redhat.com>\n\
+  Cc: <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- mm
+hunk_count: 1
+covered_count: 1

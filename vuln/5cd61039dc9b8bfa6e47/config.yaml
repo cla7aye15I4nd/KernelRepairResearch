@@ -1,0 +1,23 @@
+id: 5cd61039dc9b8bfa6e47
+bug_link: https://syzkaller.appspot.com/bug?extid=5cd61039dc9b8bfa6e47
+title: 'BUG: unable to handle kernel paging request in smc_ib_remember_port_attr'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 57f6f99fdad9984801cde05c1db68fe39b474a10
+fix_commit: d49baa7e12ee70c0a7b821d088a770c94c02e494
+datetime: '2018-05-14T16:40:45-04:00'
+fix_commit_message: "net/smc: check for missing nlattrs in SMC_PNETID messages\n\n\
+  It's possible to crash the kernel in several different ways by sending\nmessages\
+  \ to the SMC_PNETID generic netlink family that are missing the\nexpected attributes:\n\
+  \n- Missing SMC_PNETID_NAME => null pointer dereference when comparing\n  names.\n\
+  - Missing SMC_PNETID_ETHNAME => null pointer dereference accessing\n  smc_pnetentry::ndev.\n\
+  - Missing SMC_PNETID_IBNAME => null pointer dereference accessing\n  smc_pnetentry::smcibdev.\n\
+  - Missing SMC_PNETID_IBPORT => out of bounds array access to\n  smc_ib_device::pattr[-1].\n\
+  \nFix it by validating that all expected attributes are present and that\nSMC_PNETID_IBPORT\
+  \ is nonzero.\n\nReported-by: syzbot+5cd61039dc9b8bfa6e47@syzkaller.appspotmail.com\n\
+  Fixes: 6812baabf24d (\"smc: establish pnet table management\")\nCc: <stable@vger.kernel.org>\
+  \ # v4.11+\nSigned-off-by: Eric Biggers <ebiggers@google.com>\nSigned-off-by: David\
+  \ S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/smc
+hunk_count: 3
+covered_count: 2

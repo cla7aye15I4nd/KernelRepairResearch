@@ -1,0 +1,49 @@
+------------[ cut here ]------------
+UBSAN: array-index-out-of-bounds in ./include/net/ipv6.h:616:34
+index 20 is out of range for type '__u8 [16]'
+CPU: 1 UID: 0 PID: 4161 Comm: syz.0.90 Not tainted 6.16.0-rc1-syzkaller-gfda589c28604 #0 PREEMPT 
+Hardware name: riscv-virtio,qemu (DT)
+Call Trace:
+[<ffffffff80078bbe>] dump_backtrace+0x2e/0x3c arch/riscv/kernel/stacktrace.c:132
+[<ffffffff8000327a>] show_stack+0x30/0x3c arch/riscv/kernel/stacktrace.c:138
+[<ffffffff8006103e>] __dump_stack lib/dump_stack.c:94 [inline]
+[<ffffffff8006103e>] dump_stack_lvl+0x12e/0x1a6 lib/dump_stack.c:120
+[<ffffffff800610d2>] dump_stack+0x1c/0x24 lib/dump_stack.c:129
+[<ffffffff8001c15e>] ubsan_epilogue+0x14/0x46 lib/ubsan.c:233
+[<ffffffff81a1cf78>] __ubsan_handle_out_of_bounds+0xf6/0xf8 lib/ubsan.c:455
+[<ffffffff85bcb220>] ipv6_addr_prefix include/net/ipv6.h:616 [inline]
+[<ffffffff85bcb220>] ip6_route_info_create+0x8f8/0x96e net/ipv6/route.c:3793
+[<ffffffff85bf8456>] ip6_route_add+0x2a/0x1aa net/ipv6/route.c:3889
+[<ffffffff85b97c3c>] addrconf_prefix_route+0x2c4/0x4e8 net/ipv6/addrconf.c:2487
+[<ffffffff85bb89e6>] addrconf_prefix_rcv+0x1720/0x1e62 net/ipv6/addrconf.c:2878
+[<ffffffff85c274e0>] ndisc_router_discovery+0x1a06/0x3504 net/ipv6/ndisc.c:1570
+[<ffffffff85c2deb4>] ndisc_rcv+0x500/0x600 net/ipv6/ndisc.c:1874
+[<ffffffff85c57a94>] icmpv6_rcv+0x145e/0x1e0a net/ipv6/icmp.c:988
+[<ffffffff85b8b5cc>] ip6_protocol_deliver_rcu+0x18a/0x1976 net/ipv6/ip6_input.c:436
+[<ffffffff85b8ceac>] ip6_input_finish+0xf4/0x174 net/ipv6/ip6_input.c:480
+[<ffffffff85b8d096>] NF_HOOK include/linux/netfilter.h:317 [inline]
+[<ffffffff85b8d096>] NF_HOOK include/linux/netfilter.h:311 [inline]
+[<ffffffff85b8d096>] ip6_input+0x16a/0x70c net/ipv6/ip6_input.c:491
+[<ffffffff85b8dc00>] ip6_mc_input+0x5c8/0x1268 net/ipv6/ip6_input.c:588
+[<ffffffff85b8af46>] dst_input include/net/dst.h:469 [inline]
+[<ffffffff85b8af46>] ip6_rcv_finish net/ipv6/ip6_input.c:79 [inline]
+[<ffffffff85b8af46>] NF_HOOK include/linux/netfilter.h:317 [inline]
+[<ffffffff85b8af46>] NF_HOOK include/linux/netfilter.h:311 [inline]
+[<ffffffff85b8af46>] ipv6_rcv+0x5ae/0x6e0 net/ipv6/ip6_input.c:309
+[<ffffffff8511db78>] __netif_receive_skb_one_core+0x106/0x16e net/core/dev.c:5977
+[<ffffffff8511ddf8>] __netif_receive_skb+0x2c/0x144 net/core/dev.c:6090
+[<ffffffff8511e0ba>] netif_receive_skb_internal net/core/dev.c:6176 [inline]
+[<ffffffff8511e0ba>] netif_receive_skb+0x1aa/0xbf2 net/core/dev.c:6235
+[<ffffffff832f029a>] tun_rx_batched.isra.0+0x430/0x686 drivers/net/tun.c:1485
+[<ffffffff83308a66>] tun_get_user+0x2952/0x3d6c drivers/net/tun.c:1938
+[<ffffffff8330bf0c>] tun_chr_write_iter+0xc4/0x21c drivers/net/tun.c:1984
+[<ffffffff80bf5822>] new_sync_write fs/read_write.c:593 [inline]
+[<ffffffff80bf5822>] vfs_write+0x56c/0xb12 fs/read_write.c:686
+[<ffffffff80bf61c2>] ksys_write+0x126/0x234 fs/read_write.c:738
+[<ffffffff80bf633e>] __do_sys_write fs/read_write.c:749 [inline]
+[<ffffffff80bf633e>] __se_sys_write fs/read_write.c:746 [inline]
+[<ffffffff80bf633e>] __riscv_sys_write+0x6e/0xa0 fs/read_write.c:746
+[<ffffffff800769ae>] syscall_handler+0x94/0x118 arch/riscv/include/asm/syscall.h:112
+[<ffffffff86323342>] do_trap_ecall_u+0x396/0x530 arch/riscv/kernel/traps.c:341
+[<ffffffff8634b7da>] handle_exception+0x146/0x152 arch/riscv/kernel/entry.S:197
+---[ end trace ]---

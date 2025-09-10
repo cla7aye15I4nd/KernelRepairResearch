@@ -1,0 +1,43 @@
+id: 65daf4c780913c8a66e29f92f9fa9dc97a700038
+bug_link: https://syzkaller.appspot.com/bug?extid=65daf4c780913c8a66e29f92f9fa9dc97a700038
+title: kernel BUG at arch/x86/kvm/mmu.c:LINE!
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 103c763c72dd2df3e8c91f2d7ec88f98ed391111
+fix_commit: b28676bb8ae4569cced423dc2a88f7cb319d5379
+datetime: '2018-02-24T01:43:36+01:00'
+fix_commit_message: "KVM: mmu: Fix overlap between public and private memslots\n\n\
+  Reported by syzkaller:\n\n    pte_list_remove: ffff9714eb1f8078 0->BUG\n    ------------[\
+  \ cut here ]------------\n    kernel BUG at arch/x86/kvm/mmu.c:1157!\n    invalid\
+  \ opcode: 0000 [#1] SMP\n    RIP: 0010:pte_list_remove+0x11b/0x120 [kvm]\n    Call\
+  \ Trace:\n     drop_spte+0x83/0xb0 [kvm]\n     mmu_page_zap_pte+0xcc/0xe0 [kvm]\n\
+  \     kvm_mmu_prepare_zap_page+0x81/0x4a0 [kvm]\n     kvm_mmu_invalidate_zap_all_pages+0x159/0x220\
+  \ [kvm]\n     kvm_arch_flush_shadow_all+0xe/0x10 [kvm]\n     kvm_mmu_notifier_release+0x6c/0xa0\
+  \ [kvm]\n     ? kvm_mmu_notifier_release+0x5/0xa0 [kvm]\n     __mmu_notifier_release+0x79/0x110\n\
+  \     ? __mmu_notifier_release+0x5/0x110\n     exit_mmap+0x15a/0x170\n     ? do_exit+0x281/0xcb0\n\
+  \     mmput+0x66/0x160\n     do_exit+0x2c9/0xcb0\n     ? __context_tracking_exit.part.5+0x4a/0x150\n\
+  \     do_group_exit+0x50/0xd0\n     SyS_exit_group+0x14/0x20\n     do_syscall_64+0x73/0x1f0\n\
+  \     entry_SYSCALL64_slow_path+0x25/0x25\n\nThe reason is that when creates new\
+  \ memslot, there is no guarantee for new\nmemslot not overlap with private memslots.\
+  \ This can be triggered by the\nfollowing program:\n\n   #include <fcntl.h>\n  \
+  \ #include <pthread.h>\n   #include <setjmp.h>\n   #include <signal.h>\n   #include\
+  \ <stddef.h>\n   #include <stdint.h>\n   #include <stdio.h>\n   #include <stdlib.h>\n\
+  \   #include <string.h>\n   #include <sys/ioctl.h>\n   #include <sys/stat.h>\n \
+  \  #include <sys/syscall.h>\n   #include <sys/types.h>\n   #include <unistd.h>\n\
+  \   #include <linux/kvm.h>\n\n   long r[16];\n\n   int main()\n   {\n\tvoid *p =\
+  \ valloc(0x4000);\n\n\tr[2] = open(\"/dev/kvm\", 0);\n\tr[3] = ioctl(r[2], KVM_CREATE_VM,\
+  \ 0x0ul);\n\n\tuint64_t addr = 0xf000;\n\tioctl(r[3], KVM_SET_IDENTITY_MAP_ADDR,\
+  \ &addr);\n\tr[6] = ioctl(r[3], KVM_CREATE_VCPU, 0x0ul);\n\tioctl(r[3], KVM_SET_TSS_ADDR,\
+  \ 0x0ul);\n\tioctl(r[6], KVM_RUN, 0);\n\tioctl(r[6], KVM_RUN, 0);\n\n\tstruct kvm_userspace_memory_region\
+  \ mr = {\n\t\t.slot = 0,\n\t\t.flags = KVM_MEM_LOG_DIRTY_PAGES,\n\t\t.guest_phys_addr\
+  \ = 0xf000,\n\t\t.memory_size = 0x4000,\n\t\t.userspace_addr = (uintptr_t) p\n\t\
+  };\n\tioctl(r[3], KVM_SET_USER_MEMORY_REGION, &mr);\n\treturn 0;\n   }\n\nThis patch\
+  \ fixes the bug by not adding a new memslot even if it\noverlaps with private memslots.\n\
+  \nReported-by: Dmitry Vyukov <dvyukov@google.com>\nCc: Paolo Bonzini <pbonzini@redhat.com>\n\
+  Cc: Radim Krčmář <rkrcmar@redhat.com>\nCc: Dmitry Vyukov <dvyukov@google.com>\n\
+  Cc: Eric Biggers <ebiggers3@gmail.com>\nCc: stable@vger.kernel.org\nSigned-off-by:\
+  \ Wanpeng Li <wanpeng.li@hotmail.com>\n---\n virt/kvm/kvm_main.c | 3 +--\n 1 file\
+  \ changed, 1 insertion(+), 2 deletions(-)\n"
+submodule:
+- virt/kvm
+hunk_count: 1
+covered_count: 0

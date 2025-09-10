@@ -1,0 +1,59 @@
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 1124 at kernel/locking/lockdep.c:1232 lockdep_register_key+0x2a4/0x410 kernel/locking/lockdep.c:1232
+Modules linked in:
+CPU: 0 PID: 1124 Comm: kworker/0:2 Not tainted 6.3.0-rc4-next-20230330-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/02/2023
+Workqueue: usb_hub_wq hub_event
+RIP: 0010:lockdep_register_key+0x2a4/0x410 kernel/locking/lockdep.c:1232
+Code: 5c 41 5d 41 5e 41 5f c3 48 89 d8 48 c1 e8 03 80 3c 10 00 0f 85 fb 00 00 00 48 8b 1b 48 85 db 0f 84 fb fe ff ff 48 39 dd 75 de <0f> 0b eb 87 9c 58 f6 c4 02 0f 84 0f fe ff ff e8 78 c3 aa 02 85 c0
+RSP: 0018:ffffc90005c9ee98 EFLAGS: 00010046
+RAX: dffffc0000000000 RBX: ffff88807b2f2360 RCX: 1ffffffff1cf16e6
+RDX: dffffc0000000000 RSI: 0000000000000004 RDI: ffffc90005c9eec0
+RBP: ffff88807b2f2360 R08: 0000000000000001 R09: 0000000000000003
+R10: fffff52000b93dd8 R11: 0000000000094001 R12: 0000000000000e14
+R13: 1ffff92000b93dd4 R14: ffffffff916801e0 R15: 0000000000000a06
+FS:  0000000000000000(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f74cd4db01d CR3: 000000001de67000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ class_register+0xed/0x530 drivers/base/class.c:172
+ class_create+0x99/0x100 drivers/base/class.c:249
+ init_usb_class drivers/usb/core/file.c:91 [inline]
+ usb_register_dev+0x4e7/0x860 drivers/usb/core/file.c:179
+ usblp_probe+0xc91/0x16d0 drivers/usb/class/usblp.c:1208
+ usb_probe_interface+0x30f/0x960 drivers/usb/core/driver.c:396
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x240/0xca0 drivers/base/dd.c:658
+ __driver_probe_device+0x1df/0x4d0 drivers/base/dd.c:795
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:825
+ __device_attach_driver+0x1d4/0x2e0 drivers/base/dd.c:953
+ bus_for_each_drv+0x149/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1025
+ bus_probe_device+0x17c/0x1c0 drivers/base/bus.c:532
+ device_add+0x11c4/0x1c50 drivers/base/core.c:3616
+ usb_set_configuration+0x10ee/0x1af0 drivers/usb/core/message.c:2171
+ usb_generic_driver_probe+0xcf/0x130 drivers/usb/core/generic.c:238
+ usb_probe_device+0xd8/0x2c0 drivers/usb/core/driver.c:293
+ call_driver_probe drivers/base/dd.c:579 [inline]
+ really_probe+0x240/0xca0 drivers/base/dd.c:658
+ __driver_probe_device+0x1df/0x4d0 drivers/base/dd.c:795
+ driver_probe_device+0x4c/0x1a0 drivers/base/dd.c:825
+ __device_attach_driver+0x1d4/0x2e0 drivers/base/dd.c:953
+ bus_for_each_drv+0x149/0x1d0 drivers/base/bus.c:457
+ __device_attach+0x1e4/0x4b0 drivers/base/dd.c:1025
+ bus_probe_device+0x17c/0x1c0 drivers/base/bus.c:532
+ device_add+0x11c4/0x1c50 drivers/base/core.c:3616
+ usb_new_device+0xcb2/0x19d0 drivers/usb/core/hub.c:2575
+ hub_port_connect drivers/usb/core/hub.c:5407 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5551 [inline]
+ port_event drivers/usb/core/hub.c:5711 [inline]
+ hub_event+0x2d9e/0x4e40 drivers/usb/core/hub.c:5793
+ process_one_work+0x99a/0x15e0 kernel/workqueue.c:2405
+ process_scheduled_works kernel/workqueue.c:2468 [inline]
+ worker_thread+0x881/0x10c0 kernel/workqueue.c:2554
+ kthread+0x33e/0x440 kernel/kthread.c:379
+ ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308
+ </TASK>

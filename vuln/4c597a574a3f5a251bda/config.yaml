@@ -1,0 +1,34 @@
+id: 4c597a574a3f5a251bda
+bug_link: https://syzkaller.appspot.com/bug?extid=4c597a574a3f5a251bda
+title: 'KASAN: use-after-free Write in io_sendrecv_fail'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 4781185da411c0b51ef9b1db557c1ea28ac11de4
+fix_commit: a75155faef4efcb9791f77e2652e29ce8906e05a
+datetime: '2022-09-23T14:57:38-06:00'
+fix_commit_message: "io_uring/net: fix UAF in io_sendrecv_fail()\n\nWe should not\
+  \ assume anything about ->free_iov just from\nREQ_F_ASYNC_DATA but rather rely on\
+  \ REQ_F_NEED_CLEANUP, as we may\nallocate ->async_data but failed init would leave\
+  \ the field in not\nconsistent state. The easiest solution is to remove removing\n\
+  REQ_F_NEED_CLEANUP and so ->async_data dealloc from io_sendrecv_fail()\nand let\
+  \ io_send_zc_cleanup() do the job. The catch here is that we also\nneed to prevent\
+  \ double notif flushing, just test it for NULL and zero\nwhere it's needed.\n\n\
+  BUG: KASAN: use-after-free in io_sendrecv_fail+0x3b0/0x3e0 io_uring/net.c:1221\n\
+  Write of size 8 at addr ffff8880771b4080 by task syz-executor.3/30199\n\nCPU: 1\
+  \ PID: 30199 Comm: syz-executor.3 Not tainted 6.0.0-rc6-next-20220923-syzkaller\
+  \ #0\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google\
+  \ 08/26/2022\nCall Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:88 [inline]\n\
+  \ dump_stack_lvl+0xcd/0x134 lib/dump_stack.c:106\n print_address_description mm/kasan/report.c:284\
+  \ [inline]\n print_report+0x15e/0x45d mm/kasan/report.c:395\n kasan_report+0xbb/0x1f0\
+  \ mm/kasan/report.c:495\n io_sendrecv_fail+0x3b0/0x3e0 io_uring/net.c:1221\n io_req_complete_failed+0x155/0x1b0\
+  \ io_uring/io_uring.c:873\n io_drain_req io_uring/io_uring.c:1648 [inline]\n io_queue_sqe_fallback.cold+0x29f/0x788\
+  \ io_uring/io_uring.c:1931\n io_submit_sqe io_uring/io_uring.c:2160 [inline]\n io_submit_sqes+0x1180/0x1df0\
+  \ io_uring/io_uring.c:2276\n __do_sys_io_uring_enter+0xac6/0x2410 io_uring/io_uring.c:3216\n\
+  \ do_syscall_x64 arch/x86/entry/common.c:50 [inline]\n do_syscall_64+0x35/0xb0 arch/x86/entry/common.c:80\n\
+  \ entry_SYSCALL_64_after_hwframe+0x63/0xcd\n\nFixes: c4c0009e0b56e (\"io_uring/net:\
+  \ combine fail handlers\")\nReported-by: syzbot+4c597a574a3f5a251bda@syzkaller.appspotmail.com\n\
+  Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>\nLink: https://lore.kernel.org/r/23ab8346e407ea50b1198a172c8a97e1cf22915b.1663945875.git.asml.silence@gmail.com\n\
+  Signed-off-by: Jens Axboe <axboe@kernel.dk>\n"
+submodule:
+- io_uring
+hunk_count: 3
+covered_count: 2

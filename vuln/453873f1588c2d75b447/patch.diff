@@ -1,0 +1,13 @@
+diff --git a/fs/ocfs2/resize.c b/fs/ocfs2/resize.c
+index c4a4016d3866..b0733c08ed13 100644
+--- a/fs/ocfs2/resize.c
++++ b/fs/ocfs2/resize.c
+@@ -574,6 +574,8 @@ int ocfs2_group_add(struct inode *inode, struct ocfs2_new_group_input *input)
+ 	ocfs2_commit_trans(osb, handle);
+ 
+ out_free_group_bh:
++	if (ret < 0)
++		ocfs2_remove_from_cache(INODE_CACHE(inode), group_bh);
+ 	brelse(group_bh);
+ 
+ out_unlock:

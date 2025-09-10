@@ -1,0 +1,90 @@
+diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
+index d9b977c0f38d..2798fbe8d001 100644
+--- a/fs/fuse/dir.c
++++ b/fs/fuse/dir.c
+@@ -738,11 +738,19 @@ static int fuse_symlink(struct user_namespace *mnt_userns, struct inode *dir,
+ 	return create_new_entry(fm, &args, dir, entry, S_IFLNK);
+ }
+ 
++void fuse_flush_time_update(struct inode *inode)
++{
++	int err = sync_inode_metadata(inode, 1);
++
++	mapping_set_error(inode->i_mapping, err);
++}
++
+ void fuse_update_ctime(struct inode *inode)
+ {
+ 	if (!IS_NOCMTIME(inode)) {
+ 		inode->i_ctime = current_time(inode);
+ 		mark_inode_dirty_sync(inode);
++		fuse_flush_time_update(inode);
+ 	}
+ }
+ 
+diff --git a/fs/fuse/file.c b/fs/fuse/file.c
+index 11404f8c21c7..5c5ed58d91a7 100644
+--- a/fs/fuse/file.c
++++ b/fs/fuse/file.c
+@@ -1848,6 +1848,17 @@ int fuse_write_inode(struct inode *inode, struct writeback_control *wbc)
+ 	struct fuse_file *ff;
+ 	int err;
+ 
++	/*
++	 * Inode is always written before the last reference is dropped and
++	 * hence this should not be reached from reclaim.
++	 *
++	 * Writing back the inode from reclaim can deadlock if the request
++	 * processing itself needs an allocation.  Allocations triggering
++	 * reclaim while serving a request can't be prevented, because it can
++	 * involve any number of unrelated userspace processes.
++	 */
++	WARN_ON(wbc->for_reclaim);
++
+ 	ff = __fuse_write_file_get(fi);
+ 	err = fuse_flush_times(inode, ff);
+ 	if (ff)
+@@ -3002,6 +3013,8 @@ static long fuse_file_fallocate(struct file *file, int mode, loff_t offset,
+ 	if (lock_inode)
+ 		inode_unlock(inode);
+ 
++	fuse_flush_time_update(inode);
++
+ 	return err;
+ }
+ 
+@@ -3111,6 +3124,8 @@ static ssize_t __fuse_copy_file_range(struct file *file_in, loff_t pos_in,
+ 	inode_unlock(inode_out);
+ 	file_accessed(file_in);
+ 
++	fuse_flush_time_update(inode_out);
++
+ 	return err;
+ }
+ 
+diff --git a/fs/fuse/fuse_i.h b/fs/fuse/fuse_i.h
+index f55f9f94b1a4..a59e36c7deae 100644
+--- a/fs/fuse/fuse_i.h
++++ b/fs/fuse/fuse_i.h
+@@ -1148,6 +1148,7 @@ int fuse_allow_current_process(struct fuse_conn *fc);
+ 
+ u64 fuse_lock_owner_id(struct fuse_conn *fc, fl_owner_t id);
+ 
++void fuse_flush_time_update(struct inode *inode);
+ void fuse_update_ctime(struct inode *inode);
+ 
+ int fuse_update_attributes(struct inode *inode, struct file *file);
+diff --git a/fs/fuse/inode.c b/fs/fuse/inode.c
+index 12d49a1914e8..2f999d38c9b4 100644
+--- a/fs/fuse/inode.c
++++ b/fs/fuse/inode.c
+@@ -118,6 +118,9 @@ static void fuse_evict_inode(struct inode *inode)
+ {
+ 	struct fuse_inode *fi = get_fuse_inode(inode);
+ 
++	/* Will write inode on close/munmap and in all other dirtiers */
++	WARN_ON(inode->i_state & I_DIRTY_INODE);
++
+ 	truncate_inode_pages_final(&inode->i_data);
+ 	clear_inode(inode);
+ 	if (inode->i_sb->s_flags & SB_ACTIVE) {

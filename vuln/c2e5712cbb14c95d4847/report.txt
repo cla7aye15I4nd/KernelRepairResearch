@@ -1,0 +1,40 @@
+==================================================================
+BUG: KCSAN: data-race in mprotect_fixup / try_to_migrate_one
+
+write to 0xffff888114b41700 of 8 bytes by task 6432 on cpu 1:
+ vm_flags_init include/linux/mm.h:875 [inline]
+ vm_flags_reset include/linux/mm.h:887 [inline]
+ mprotect_fixup+0x419/0x5e0 mm/mprotect.c:679
+ do_mprotect_pkey+0x6cc/0x9a0 mm/mprotect.c:840
+ __do_sys_mprotect mm/mprotect.c:861 [inline]
+ __se_sys_mprotect mm/mprotect.c:858 [inline]
+ __x64_sys_mprotect+0x48/0x60 mm/mprotect.c:858
+ x64_sys_call+0x2770/0x2dc0 arch/x86/include/generated/asm/syscalls_64.h:11
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+read to 0xffff888114b41700 of 8 bytes by task 6418 on cpu 0:
+ try_to_migrate_one+0xb5a/0x12e0 mm/rmap.c:2321
+ rmap_walk_anon+0x28f/0x440 mm/rmap.c:2646
+ try_to_migrate+0x11f/0x150
+ migrate_folio_unmap mm/migrate.c:1320 [inline]
+ migrate_pages_batch+0x786/0x1930 mm/migrate.c:1866
+ migrate_pages_sync mm/migrate.c:1989 [inline]
+ migrate_pages+0xf02/0x1840 mm/migrate.c:2098
+ do_mbind mm/mempolicy.c:1394 [inline]
+ kernel_mbind mm/mempolicy.c:1537 [inline]
+ __do_sys_mbind mm/mempolicy.c:1611 [inline]
+ __se_sys_mbind+0xfd1/0x11c0 mm/mempolicy.c:1607
+ __x64_sys_mbind+0x78/0x90 mm/mempolicy.c:1607
+ x64_sys_call+0x2662/0x2dc0 arch/x86/include/generated/asm/syscalls_64.h:238
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xc9/0x1c0 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+value changed: 0x0000000000102077 -> 0x0000000000102071
+
+Reported by Kernel Concurrency Sanitizer on:
+CPU: 0 UID: 0 PID: 6418 Comm: syz.0.1339 Not tainted 6.14.0-rc1-syzkaller-00026-gd009de7d5428 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 12/27/2024
+==================================================================

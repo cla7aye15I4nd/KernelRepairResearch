@@ -1,0 +1,88 @@
+diff --git a/sound/usb/mixer.c b/sound/usb/mixer.c
+index 15769f266790..eab0fd4fd7c3 100644
+--- a/sound/usb/mixer.c
++++ b/sound/usb/mixer.c
+@@ -581,8 +581,9 @@ static int check_matrix_bitmap(unsigned char *bmap,
+  * if failed, give up and free the control instance.
+  */
+ 
+-int snd_usb_mixer_add_control(struct usb_mixer_elem_list *list,
+-			      struct snd_kcontrol *kctl)
++int snd_usb_mixer_add_list(struct usb_mixer_elem_list *list,
++			   struct snd_kcontrol *kctl,
++			   bool is_std_info)
+ {
+ 	struct usb_mixer_interface *mixer = list->mixer;
+ 	int err;
+@@ -596,6 +597,7 @@ int snd_usb_mixer_add_control(struct usb_mixer_elem_list *list,
+ 		return err;
+ 	}
+ 	list->kctl = kctl;
++	list->is_std_info = is_std_info;
+ 	list->next_id_elem = mixer->id_elems[list->id];
+ 	mixer->id_elems[list->id] = list;
+ 	return 0;
+@@ -3234,8 +3236,11 @@ void snd_usb_mixer_notify_id(struct usb_mixer_interface *mixer, int unitid)
+ 	unitid = delegate_notify(mixer, unitid, NULL, NULL);
+ 
+ 	for_each_mixer_elem(list, mixer, unitid) {
+-		struct usb_mixer_elem_info *info =
+-			mixer_elem_list_to_info(list);
++		struct usb_mixer_elem_info *info;
++
++		if (!list->is_std_info)
++			continue;
++		info = mixer_elem_list_to_info(list);
+ 		/* invalidate cache, so the value is read from the device */
+ 		info->cached = 0;
+ 		snd_ctl_notify(mixer->chip->card, SNDRV_CTL_EVENT_MASK_VALUE,
+@@ -3315,6 +3320,8 @@ static void snd_usb_mixer_interrupt_v2(struct usb_mixer_interface *mixer,
+ 
+ 		if (!list->kctl)
+ 			continue;
++		if (!list->is_std_info)
++			continue;
+ 
+ 		info = mixer_elem_list_to_info(list);
+ 		if (count > 1 && info->control != control)
+diff --git a/sound/usb/mixer.h b/sound/usb/mixer.h
+index 41ec9dc4139b..c29e27ac43a7 100644
+--- a/sound/usb/mixer.h
++++ b/sound/usb/mixer.h
+@@ -66,6 +66,7 @@ struct usb_mixer_elem_list {
+ 	struct usb_mixer_elem_list *next_id_elem; /* list of controls with same id */
+ 	struct snd_kcontrol *kctl;
+ 	unsigned int id;
++	bool is_std_info;
+ 	usb_mixer_elem_dump_func_t dump;
+ 	usb_mixer_elem_resume_func_t resume;
+ };
+@@ -103,8 +104,12 @@ void snd_usb_mixer_notify_id(struct usb_mixer_interface *mixer, int unitid);
+ int snd_usb_mixer_set_ctl_value(struct usb_mixer_elem_info *cval,
+ 				int request, int validx, int value_set);
+ 
+-int snd_usb_mixer_add_control(struct usb_mixer_elem_list *list,
+-			      struct snd_kcontrol *kctl);
++int snd_usb_mixer_add_list(struct usb_mixer_elem_list *list,
++			   struct snd_kcontrol *kctl,
++			   bool is_std_info);
++
++#define snd_usb_mixer_add_control(list, kctl) \
++	snd_usb_mixer_add_list(list, kctl, true)
+ 
+ void snd_usb_mixer_elem_init_std(struct usb_mixer_elem_list *list,
+ 				 struct usb_mixer_interface *mixer,
+diff --git a/sound/usb/mixer_quirks.c b/sound/usb/mixer_quirks.c
+index b6bcf2f92383..cec1cfd7edb7 100644
+--- a/sound/usb/mixer_quirks.c
++++ b/sound/usb/mixer_quirks.c
+@@ -158,7 +158,8 @@ static int add_single_ctl_with_resume(struct usb_mixer_interface *mixer,
+ 		return -ENOMEM;
+ 	}
+ 	kctl->private_free = snd_usb_mixer_elem_free;
+-	return snd_usb_mixer_add_control(list, kctl);
++	/* don't use snd_usb_mixer_add_control() here, this is a special list element */
++	return snd_usb_mixer_add_list(list, kctl, false);
+ }
+ 
+ /*

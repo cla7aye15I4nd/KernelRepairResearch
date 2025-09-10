@@ -1,0 +1,29 @@
+id: b7f13b2d0cc156edf61a
+bug_link: https://syzkaller.appspot.com/bug?extid=b7f13b2d0cc156edf61a
+title: 'BUG: sleeping function called from invalid context in cgroup_rstat_flush'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 9fd154ba926b34c833b7bfc4c14ee2e931b3d743
+fix_commit: 5a4d8944d6b1e1aaaa83ea42c116b520b4ed0394
+datetime: '2024-07-03T22:40:37-07:00'
+fix_commit_message: "cachestat: do not flush stats in recency check\n\nsyzbot detects\
+  \ that cachestat() is flushing stats, which can sleep, in its\nRCU read section\
+  \ (see [1]).  This is done in the workingset_test_recent()\nstep (which checks if\
+  \ the folio's eviction is recent).\n\nMove the stat flushing step to before the\
+  \ RCU read section of cachestat,\nand skip stat flushing during the recency check.\n\
+  \n[1]: https://lore.kernel.org/cgroups/000000000000f71227061bdf97e0@google.com/\n\
+  \nLink: https://lkml.kernel.org/r/20240627201737.3506959-1-nphamcs@gmail.com\nFixes:\
+  \ b00684722262 (\"mm: workingset: move the stats flush into workingset_test_recent()\"\
+  )\nSigned-off-by: Nhat Pham <nphamcs@gmail.com>\nReported-by: syzbot+b7f13b2d0cc156edf61a@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/cgroups/000000000000f71227061bdf97e0@google.com/\n\
+  Debugged-by: Johannes Weiner <hannes@cmpxchg.org>\nSuggested-by: Johannes Weiner\
+  \ <hannes@cmpxchg.org>\nAcked-by: Johannes Weiner <hannes@cmpxchg.org>\nAcked-by:\
+  \ Shakeel Butt <shakeel.butt@linux.dev>\nCc: Al Viro <viro@zeniv.linux.org.uk>\n\
+  Cc: David Hildenbrand <david@redhat.com>\nCc: \"Huang, Ying\" <ying.huang@intel.com>\n\
+  Cc: Kairui Song <kasong@tencent.com>\nCc: Matthew Wilcox (Oracle) <willy@infradead.org>\n\
+  Cc: Ryan Roberts <ryan.roberts@arm.com>\nCc: Yosry Ahmed <yosryahmed@google.com>\n\
+  Cc: <stable@vger.kernel.org>\t[6.8+]\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n"
+submodule:
+- include/linux
+- mm
+hunk_count: 6
+covered_count: 3

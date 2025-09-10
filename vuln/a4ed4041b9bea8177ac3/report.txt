@@ -1,0 +1,91 @@
+============================================
+WARNING: possible recursive locking detected
+6.9.0-rc5-syzkaller #0 Not tainted
+--------------------------------------------
+syz-executor381/5177 is trying to acquire lock:
+ffff888027aca200 (&stab->lock){+...}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ffff888027aca200 (&stab->lock){+...}-{2:2}, at: __sock_map_delete+0x43/0xe0 net/core/sock_map.c:417
+
+but task is already holding lock:
+ffff888027acaa00 (&stab->lock){+...}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ffff888027acaa00 (&stab->lock){+...}-{2:2}, at: sock_map_update_common+0x197/0x870 net/core/sock_map.c:493
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&stab->lock);
+  lock(&stab->lock);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+5 locks held by syz-executor381/5177:
+ #0: ffff88802f6ad258 (sk_lock-AF_UNIX){+.+.}-{0:0}, at: lock_sock include/net/sock.h:1671 [inline]
+ #0: ffff88802f6ad258 (sk_lock-AF_UNIX){+.+.}-{0:0}, at: sock_map_sk_acquire net/core/sock_map.c:117 [inline]
+ #0: ffff88802f6ad258 (sk_lock-AF_UNIX){+.+.}-{0:0}, at: sock_map_update_elem_sys+0x1b6/0x570 net/core/sock_map.c:578
+ #1: ffffffff8d7b0e20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #1: ffffffff8d7b0e20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #1: ffffffff8d7b0e20 (rcu_read_lock){....}-{1:2}, at: sock_map_sk_acquire net/core/sock_map.c:118 [inline]
+ #1: ffffffff8d7b0e20 (rcu_read_lock){....}-{1:2}, at: sock_map_update_elem_sys+0x1d8/0x570 net/core/sock_map.c:578
+ #2: ffff888027acaa00 (&stab->lock){+...}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ #2: ffff888027acaa00 (&stab->lock){+...}-{2:2}, at: sock_map_update_common+0x197/0x870 net/core/sock_map.c:493
+ #3: ffff88801a940290 (&psock->link_lock){+...}-{2:2}, at: spin_lock_bh include/linux/spinlock.h:356 [inline]
+ #3: ffff88801a940290 (&psock->link_lock){+...}-{2:2}, at: sock_map_del_link net/core/sock_map.c:145 [inline]
+ #3: ffff88801a940290 (&psock->link_lock){+...}-{2:2}, at: sock_map_unref+0xbf/0x6e0 net/core/sock_map.c:180
+ #4: ffffffff8d7b0e20 (rcu_read_lock){....}-{1:2}, at: rcu_lock_acquire include/linux/rcupdate.h:329 [inline]
+ #4: ffffffff8d7b0e20 (rcu_read_lock){....}-{1:2}, at: rcu_read_lock include/linux/rcupdate.h:781 [inline]
+ #4: ffffffff8d7b0e20 (rcu_read_lock){....}-{1:2}, at: __bpf_trace_run kernel/trace/bpf_trace.c:2380 [inline]
+ #4: ffffffff8d7b0e20 (rcu_read_lock){....}-{1:2}, at: bpf_trace_run2+0xe4/0x420 kernel/trace/bpf_trace.c:2420
+
+stack backtrace:
+CPU: 3 PID: 5177 Comm: syz-executor381 Not tainted 6.9.0-rc5-syzkaller #0
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:88 [inline]
+ dump_stack_lvl+0x116/0x1f0 lib/dump_stack.c:114
+ check_deadlock kernel/locking/lockdep.c:3062 [inline]
+ validate_chain kernel/locking/lockdep.c:3856 [inline]
+ __lock_acquire+0x20e6/0x3b30 kernel/locking/lockdep.c:5137
+ lock_acquire kernel/locking/lockdep.c:5754 [inline]
+ lock_acquire+0x1b1/0x560 kernel/locking/lockdep.c:5719
+ __raw_spin_lock_bh include/linux/spinlock_api_smp.h:126 [inline]
+ _raw_spin_lock_bh+0x33/0x40 kernel/locking/spinlock.c:178
+ spin_lock_bh include/linux/spinlock.h:356 [inline]
+ __sock_map_delete+0x43/0xe0 net/core/sock_map.c:417
+ sock_map_delete_elem+0xb5/0x100 net/core/sock_map.c:449
+ ___bpf_prog_run+0x3e51/0xabd0 kernel/bpf/core.c:1997
+ __bpf_prog_run32+0xc1/0x100 kernel/bpf/core.c:2236
+ bpf_dispatcher_nop_func include/linux/bpf.h:1234 [inline]
+ __bpf_prog_run include/linux/filter.h:657 [inline]
+ bpf_prog_run include/linux/filter.h:664 [inline]
+ __bpf_trace_run kernel/trace/bpf_trace.c:2381 [inline]
+ bpf_trace_run2+0x151/0x420 kernel/trace/bpf_trace.c:2420
+ trace_kfree include/trace/events/kmem.h:94 [inline]
+ kfree+0x225/0x390 mm/slub.c:4377
+ sk_psock_free_link include/linux/skmsg.h:421 [inline]
+ sock_map_del_link net/core/sock_map.c:158 [inline]
+ sock_map_unref+0x392/0x6e0 net/core/sock_map.c:180
+ sock_map_update_common+0x4f3/0x870 net/core/sock_map.c:506
+ sock_map_update_elem_sys+0x3bb/0x570 net/core/sock_map.c:582
+ bpf_map_update_value+0x36c/0x6c0 kernel/bpf/syscall.c:172
+ map_update_elem+0x623/0x910 kernel/bpf/syscall.c:1641
+ __sys_bpf+0xab9/0x4b40 kernel/bpf/syscall.c:5648
+ __do_sys_bpf kernel/bpf/syscall.c:5767 [inline]
+ __se_sys_bpf kernel/bpf/syscall.c:5765 [inline]
+ __x64_sys_bpf+0x78/0xc0 kernel/bpf/syscall.c:5765
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xcf/0x260 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f6bcc5b7729
+Code: 48 83 c4 28 c3 e8 37 17 00 00 0f 1f 80 00 00 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fff751f0718 EFLAGS: 00000246 ORIG_RAX: 0000000000000141
+RAX: ffffffffffffffda RBX: 00007fff751f08e8 RCX: 00007f6bcc5b7729
+RDX: 0000000000000020 RSI: 0000000020000680 RDI: 0000000000000002
+RBP: 00007f6bcc62a610 R08: 00007fff751f08e8 R09: 00007fff751f08e8
+R10: 00007fff751f08e8 R11: 0000000000000246 R12: 0000000000000001
+R13: 00007fff751f08d8 R14: 0000000000000001 R15: 0000000000000001
+ </TASK>

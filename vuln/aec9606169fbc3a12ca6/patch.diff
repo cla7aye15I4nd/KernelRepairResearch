@@ -1,0 +1,14 @@
+diff --git a/fs/bcachefs/super.c b/fs/bcachefs/super.c
+index b79e80a435e0..788e870bfef6 100644
+--- a/fs/bcachefs/super.c
++++ b/fs/bcachefs/super.c
+@@ -1757,7 +1757,8 @@ int bch2_dev_remove(struct bch_fs *c, struct bch_dev *ca, int flags)
+ 	up_write(&c->state_lock);
+ 	return 0;
+ err:
+-	if (ca->mi.state == BCH_MEMBER_STATE_rw &&
++	if (test_bit(BCH_FS_rw, &c->flags) &&
++	    ca->mi.state == BCH_MEMBER_STATE_rw &&
+ 	    !percpu_ref_is_zero(&ca->io_ref[READ]))
+ 		__bch2_dev_read_write(c, ca);
+ 	up_write(&c->state_lock);

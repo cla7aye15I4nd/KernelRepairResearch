@@ -1,0 +1,79 @@
+id: ab17848fe269b573eb71
+bug_link: https://syzkaller.appspot.com/bug?extid=ab17848fe269b573eb71
+title: memory leak in do_seccomp (2)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: fc1e3980044f0f812252f5f164a8350376d62eb7
+fix_commit: a1140cb215fa13dcec06d12ba0c3ee105633b7c4
+datetime: '2022-12-02T11:32:53-08:00'
+fix_commit_message: "seccomp: Move copy_seccomp() to no failure path.\n\nOur syzbot\
+  \ instance reported memory leaks in do_seccomp() [0], similar\nto the report [1].\
+  \  It shows that we miss freeing struct seccomp_filter\nand some objects included\
+  \ in it.\n\nWe can reproduce the issue with the program below [2] which calls one\n\
+  seccomp() and two clone() syscalls.\n\nThe first clone()d child exits earlier than\
+  \ its parent and sends a\nsignal to kill it during the second clone(), more precisely\
+  \ before the\nfatal_signal_pending() test in copy_process().  When the parent receives\n\
+  the signal, it has to destroy the embryonic process and return -EINTR to\nuser space.\
+  \  In the failure path, we have to call seccomp_filter_release()\nto decrement the\
+  \ filter's refcount.\n\nInitially, we called it in free_task() called from the failure\
+  \ path, but\nthe commit 3a15fb6ed92c (\"seccomp: release filter after task is fully\n\
+  dead\") moved it to release_task() to notify user space as early as possible\nthat\
+  \ the filter is no longer used.\n\nTo keep the change and current seccomp refcount\
+  \ semantics, let's move\ncopy_seccomp() just after the signal check and add a WARN_ON_ONCE()\
+  \ in\nfree_task() for future debugging.\n\n[0]:\nunreferenced object 0xffff8880063add00\
+  \ (size 256):\n  comm \"repro_seccomp\", pid 230, jiffies 4294687090 (age 9.914s)\n\
+  \  hex dump (first 32 bytes):\n    01 00 00 00 01 00 00 00 00 00 00 00 00 00 00\
+  \ 00  ................\n    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ................\n\
+  \  backtrace:\n    do_seccomp (./include/linux/slab.h:600 ./include/linux/slab.h:733\
+  \ kernel/seccomp.c:666 kernel/seccomp.c:708 kernel/seccomp.c:1871 kernel/seccomp.c:1991)\n\
+  \    do_syscall_64 (arch/x86/entry/common.c:50 arch/x86/entry/common.c:80)\n   \
+  \ entry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:120)\nunreferenced object\
+  \ 0xffffc90000035000 (size 4096):\n  comm \"repro_seccomp\", pid 230, jiffies 4294687090\
+  \ (age 9.915s)\n  hex dump (first 32 bytes):\n    01 00 00 00 00 00 00 00 00 00\
+  \ 00 00 05 00 00 00  ................\n    00 00 00 00 00 00 00 00 00 00 00 00 00\
+  \ 00 00 00  ................\n  backtrace:\n    __vmalloc_node_range (mm/vmalloc.c:3226)\n\
+  \    __vmalloc_node (mm/vmalloc.c:3261 (discriminator 4))\n    bpf_prog_alloc_no_stats\
+  \ (kernel/bpf/core.c:91)\n    bpf_prog_alloc (kernel/bpf/core.c:129)\n    bpf_prog_create_from_user\
+  \ (net/core/filter.c:1414)\n    do_seccomp (kernel/seccomp.c:671 kernel/seccomp.c:708\
+  \ kernel/seccomp.c:1871 kernel/seccomp.c:1991)\n    do_syscall_64 (arch/x86/entry/common.c:50\
+  \ arch/x86/entry/common.c:80)\n    entry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:120)\n\
+  unreferenced object 0xffff888003fa1000 (size 1024):\n  comm \"repro_seccomp\", pid\
+  \ 230, jiffies 4294687090 (age 9.915s)\n  hex dump (first 32 bytes):\n    00 00\
+  \ 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................\n    00 00 00 00 00\
+  \ 00 00 00 00 00 00 00 00 00 00 00  ................\n  backtrace:\n    bpf_prog_alloc_no_stats\
+  \ (./include/linux/slab.h:600 ./include/linux/slab.h:733 kernel/bpf/core.c:95)\n\
+  \    bpf_prog_alloc (kernel/bpf/core.c:129)\n    bpf_prog_create_from_user (net/core/filter.c:1414)\n\
+  \    do_seccomp (kernel/seccomp.c:671 kernel/seccomp.c:708 kernel/seccomp.c:1871\
+  \ kernel/seccomp.c:1991)\n    do_syscall_64 (arch/x86/entry/common.c:50 arch/x86/entry/common.c:80)\n\
+  \    entry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:120)\nunreferenced\
+  \ object 0xffff888006360240 (size 16):\n  comm \"repro_seccomp\", pid 230, jiffies\
+  \ 4294687090 (age 9.915s)\n  hex dump (first 16 bytes):\n    01 00 37 00 76 65 72\
+  \ 6c e0 83 01 06 80 88 ff ff  ..7.verl........\n  backtrace:\n    bpf_prog_store_orig_filter\
+  \ (net/core/filter.c:1137)\n    bpf_prog_create_from_user (net/core/filter.c:1428)\n\
+  \    do_seccomp (kernel/seccomp.c:671 kernel/seccomp.c:708 kernel/seccomp.c:1871\
+  \ kernel/seccomp.c:1991)\n    do_syscall_64 (arch/x86/entry/common.c:50 arch/x86/entry/common.c:80)\n\
+  \    entry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:120)\nunreferenced\
+  \ object 0xffff8880060183e0 (size 8):\n  comm \"repro_seccomp\", pid 230, jiffies\
+  \ 4294687090 (age 9.915s)\n  hex dump (first 8 bytes):\n    06 00 00 00 00 00 ff\
+  \ 7f                          ........\n  backtrace:\n    kmemdup (mm/util.c:129)\n\
+  \    bpf_prog_store_orig_filter (net/core/filter.c:1144)\n    bpf_prog_create_from_user\
+  \ (net/core/filter.c:1428)\n    do_seccomp (kernel/seccomp.c:671 kernel/seccomp.c:708\
+  \ kernel/seccomp.c:1871 kernel/seccomp.c:1991)\n    do_syscall_64 (arch/x86/entry/common.c:50\
+  \ arch/x86/entry/common.c:80)\n    entry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:120)\n\
+  \n[1]: https://syzkaller.appspot.com/bug?id=2809bb0ac77ad9aa3f4afe42d6a610aba594a987\n\
+  \n[2]:\n#define _GNU_SOURCE\n#include <sched.h>\n#include <signal.h>\n#include <unistd.h>\n\
+  #include <sys/syscall.h>\n#include <linux/filter.h>\n#include <linux/seccomp.h>\n\
+  \nvoid main(void)\n{\n\tstruct sock_filter filter[] = {\n\t\tBPF_STMT(BPF_RET |\
+  \ BPF_K, SECCOMP_RET_ALLOW),\n\t};\n\tstruct sock_fprog fprog = {\n\t\t.len = sizeof(filter)\
+  \ / sizeof(filter[0]),\n\t\t.filter = filter,\n\t};\n\tlong i, pid;\n\n\tsyscall(__NR_seccomp,\
+  \ SECCOMP_SET_MODE_FILTER, 0, &fprog);\n\n\tfor (i = 0; i < 2; i++) {\n\t\tpid =\
+  \ syscall(__NR_clone, CLONE_NEWNET | SIGKILL, NULL, NULL, 0);\n\t\tif (pid == 0)\n\
+  \t\t\treturn;\n\t}\n}\n\nFixes: 3a15fb6ed92c (\"seccomp: release filter after task\
+  \ is fully dead\")\nReported-by: syzbot+ab17848fe269b573eb71@syzkaller.appspotmail.com\n\
+  Reported-by: Ayushman Dutta <ayudutta@amazon.com>\nSuggested-by: Kees Cook <keescook@chromium.org>\n\
+  Signed-off-by: Kuniyuki Iwashima <kuniyu@amazon.com>\nReviewed-by: Christian Brauner\
+  \ (Microsoft) <brauner@kernel.org>\nSigned-off-by: Kees Cook <keescook@chromium.org>\n\
+  Link: https://lore.kernel.org/r/20220823154532.82913-1-kuniyu@amazon.com\n"
+submodule:
+- kernel
+hunk_count: 3
+covered_count: 0

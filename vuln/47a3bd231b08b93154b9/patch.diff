@@ -1,0 +1,39 @@
+diff --git a/include/linux/wait_bit.h b/include/linux/wait_bit.h
+index 9318b2166439..2b0072fa5e92 100644
+--- a/include/linux/wait_bit.h
++++ b/include/linux/wait_bit.h
+@@ -305,4 +305,21 @@ do {									\
+ 	__ret;								\
+ })
+ 
++/**
++ * clear_and_wake_up_bit - clear a bit and wake up anyone waiting on that bit
++ *
++ * @bit: the bit of the word being waited on
++ * @word: the word being waited on, a kernel virtual address
++ *
++ * You can use this helper if bitflags are manipulated atomically rather than
++ * non-atomically under a lock.
++ */
++static inline void clear_and_wake_up_bit(int bit, void *word)
++{
++	clear_bit_unlock(bit, word);
++	/* See wake_up_bit() for which memory barrier you need to use. */
++	smp_mb__after_atomic();
++	wake_up_bit(word, bit);
++}
++
+ #endif /* _LINUX_WAIT_BIT_H */
+diff --git a/mm/backing-dev.c b/mm/backing-dev.c
+index 023190c69dce..fa5e6d7406d1 100644
+--- a/mm/backing-dev.c
++++ b/mm/backing-dev.c
+@@ -383,7 +383,7 @@ static void wb_shutdown(struct bdi_writeback *wb)
+ 	 * the barrier provided by test_and_clear_bit() above.
+ 	 */
+ 	smp_wmb();
+-	clear_bit(WB_shutting_down, &wb->state);
++	clear_and_wake_up_bit(WB_shutting_down, &wb->state);
+ }
+ 
+ static void wb_exit(struct bdi_writeback *wb)

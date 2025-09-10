@@ -1,0 +1,36 @@
+diff --git a/fs/nilfs2/inode.c b/fs/nilfs2/inode.c
+index cf9ba481ae37..b7d4105f37bf 100644
+--- a/fs/nilfs2/inode.c
++++ b/fs/nilfs2/inode.c
+@@ -544,8 +544,14 @@ struct inode *nilfs_iget(struct super_block *sb, struct nilfs_root *root,
+ 	inode = nilfs_iget_locked(sb, root, ino);
+ 	if (unlikely(!inode))
+ 		return ERR_PTR(-ENOMEM);
+-	if (!(inode->i_state & I_NEW))
++
++	if (!(inode->i_state & I_NEW)) {
++		if (!inode->i_nlink) {
++			iput(inode);
++			return ERR_PTR(-ESTALE);
++		}
+ 		return inode;
++	}
+ 
+ 	err = __nilfs_read_inode(sb, root, ino, inode);
+ 	if (unlikely(err)) {
+diff --git a/fs/nilfs2/namei.c b/fs/nilfs2/namei.c
+index 9b108052d9f7..1d836a5540f3 100644
+--- a/fs/nilfs2/namei.c
++++ b/fs/nilfs2/namei.c
+@@ -67,6 +67,11 @@ nilfs_lookup(struct inode *dir, struct dentry *dentry, unsigned int flags)
+ 		inode = NULL;
+ 	} else {
+ 		inode = nilfs_iget(dir->i_sb, NILFS_I(dir)->i_root, ino);
++		if (inode == ERR_PTR(-ESTALE)) {
++			nilfs_error(dir->i_sb,
++					"deleted inode referenced: %lu", ino);
++			return ERR_PTR(-EIO);
++		}
+ 	}
+ 
+ 	return d_splice_alias(inode, dentry);

@@ -1,0 +1,26 @@
+id: 07144c543a5c002c7305
+bug_link: https://syzkaller.appspot.com/bug?extid=07144c543a5c002c7305
+title: WARNING in perf_event_open
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: a39b6ac3781d46ba18193c9dbb2110f31e9bffe9
+fix_commit: 7e2c1e4b34f07d9aa8937fab88359d4a0fce468e
+datetime: '2023-12-15T12:33:23+01:00'
+fix_commit_message: "perf: Fix perf_event_validate_size() lockdep splat\n\nWhen lockdep\
+  \ is enabled, the for_each_sibling_event(sibling, event)\nmacro checks that event->ctx->mutex\
+  \ is held. When creating a new group\nleader event, we call perf_event_validate_size()\
+  \ on a partially\ninitialized event where event->ctx is NULL, and so when\nfor_each_sibling_event()\
+  \ attempts to check event->ctx->mutex, we get a\nsplat, as reported by Lucas De\
+  \ Marchi:\n\n  WARNING: CPU: 8 PID: 1471 at kernel/events/core.c:1950 __do_sys_perf_event_open+0xf37/0x1080\n\
+  \nThis only happens for a new event which is its own group_leader, and in\nthis\
+  \ case there cannot be any sibling events. Thus it's safe to skip the\ncheck for\
+  \ siblings, which avoids having to make invasive and ugly\nchanges to for_each_sibling_event().\n\
+  \nAvoid the splat by bailing out early when the new event is its own\ngroup_leader.\n\
+  \nFixes: 382c27f4ed28f803 (\"perf: Fix perf_event_validate_size()\")\nCloses: https://lore.kernel.org/lkml/20231214000620.3081018-1-lucas.demarchi@intel.com/\n\
+  Closes: https://lore.kernel.org/lkml/ZXpm6gQ%2Fd59jGsuW@xpf.sh.intel.com/\nReported-by:\
+  \ Lucas De Marchi <lucas.demarchi@intel.com>\nReported-by: Pengfei Xu <pengfei.xu@intel.com>\n\
+  Signed-off-by: Mark Rutland <mark.rutland@arm.com>\nSigned-off-by: Peter Zijlstra\
+  \ (Intel) <peterz@infradead.org>\nLink: https://lkml.kernel.org/r/20231215112450.3972309-1-mark.rutland@arm.com\n"
+submodule:
+- kernel/events
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,43 @@
+id: cbb52e396df3e565ab02
+bug_link: https://syzkaller.appspot.com/bug?extid=cbb52e396df3e565ab02
+title: 'KASAN: use-after-free Read in get_mem_cgroup_from_mm'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: acb2ec3dd003b50b6fb5772057a08ec0dc45d42a
+fix_commit: c3f3ce049f7d97cc7ec9c01cb51d9ec74e0f37c2
+datetime: '2019-05-14T19:52:47-07:00'
+fix_commit_message: "userfaultfd: use RCU to free the task struct when fork fails\n\
+  \nThe task structure is freed while get_mem_cgroup_from_mm() holds\nrcu_read_lock()\
+  \ and dereferences mm->owner.\n\n  get_mem_cgroup_from_mm()                failing\
+  \ fork()\n  ----                                    ---\n  task = mm->owner\n  \
+  \                                        mm->owner = NULL;\n                   \
+  \                       free(task)\n  if (task) *task; /* use after free */\n\n\
+  The fix consists in freeing the task with RCU also in the fork failure\ncase, exactly\
+  \ like it always happens for the regular exit(2) path.  That\nis enough to make\
+  \ the rcu_read_lock hold in get_mem_cgroup_from_mm()\n(left side above) effective\
+  \ to avoid a use after free when dereferencing\nthe task structure.\n\nAn alternate\
+  \ possible fix would be to defer the delivery of the\nuserfaultfd contexts to the\
+  \ monitor until after fork() is guaranteed to\nsucceed.  Such a change would require\
+  \ more changes because it would\ncreate a strict ordering dependency where the uffd\
+  \ methods would need to\nbe called beyond the last potentially failing branch in\
+  \ order to be\nsafe.  This solution as opposed only adds the dependency to common\
+  \ code\nto set mm->owner to NULL and to free the task struct that was pointed by\n\
+  mm->owner with RCU, if fork ends up failing.  The userfaultfd methods\ncan still\
+  \ be called anywhere during the fork runtime and the monitor\nwill keep discarding\
+  \ orphaned \"mm\" coming from failed forks in userland.\n\nThis race condition couldn't\
+  \ trigger if CONFIG_MEMCG was set =n at build\ntime.\n\n[aarcange@redhat.com: improve\
+  \ changelog, reduce #ifdefs per Michal]\n  Link: http://lkml.kernel.org/r/20190429035752.4508-1-aarcange@redhat.com\n\
+  Link: http://lkml.kernel.org/r/20190325225636.11635-2-aarcange@redhat.com\nFixes:\
+  \ 893e26e61d04 (\"userfaultfd: non-cooperative: Add fork() event\")\nSigned-off-by:\
+  \ Andrea Arcangeli <aarcange@redhat.com>\nTested-by: zhong jiang <zhongjiang@huawei.com>\n\
+  Reported-by: syzbot+cbb52e396df3e565ab02@syzkaller.appspotmail.com\nCc: Oleg Nesterov\
+  \ <oleg@redhat.com>\nCc: Jann Horn <jannh@google.com>\nCc: Hugh Dickins <hughd@google.com>\n\
+  Cc: Mike Rapoport <rppt@linux.vnet.ibm.com>\nCc: Mike Kravetz <mike.kravetz@oracle.com>\n\
+  Cc: Peter Xu <peterx@redhat.com>\nCc: Jason Gunthorpe <jgg@mellanox.com>\nCc: \"\
+  Kirill A . Shutemov\" <kirill.shutemov@linux.intel.com>\nCc: Michal Hocko <mhocko@suse.com>\n\
+  Cc: zhong jiang <zhongjiang@huawei.com>\nCc: syzbot+cbb52e396df3e565ab02@syzkaller.appspotmail.com\n\
+  Cc: <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- kernel
+hunk_count: 5
+covered_count: 3

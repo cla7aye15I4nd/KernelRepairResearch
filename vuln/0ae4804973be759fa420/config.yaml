@@ -1,0 +1,34 @@
+id: 0ae4804973be759fa420
+bug_link: https://syzkaller.appspot.com/bug?extid=0ae4804973be759fa420
+title: WARNING in carl9170_usb_send_rx_irq_urb/usb_submit_urb
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 3ebae49bbc127e83c75210eadfdf9f137750119a
+fix_commit: b6dd09b3dac89b45d1ea3e3bd035a3859c0369a0
+datetime: '2024-04-29T20:06:47+03:00'
+fix_commit_message: "wifi: carl9170: add a proper sanity check for endpoints\n\nSyzkaller\
+  \ reports [1] hitting a warning which is caused by presence\nof a wrong endpoint\
+  \ type at the URB sumbitting stage. While there\nwas a check for a specific 4th\
+  \ endpoint, since it can switch types\nbetween bulk and interrupt, other endpoints\
+  \ are trusted implicitly.\nSimilar warning is triggered in a couple of other syzbot\
+  \ issues [2].\n\nFix the issue by doing a comprehensive check of all endpoints\n\
+  taking into account difference between high- and full-speed\nconfiguration.\n\n\
+  [1] Syzkaller report:\n...\nWARNING: CPU: 0 PID: 4721 at drivers/usb/core/urb.c:504\
+  \ usb_submit_urb+0xed6/0x1880 drivers/usb/core/urb.c:504\n...\nCall Trace:\n <TASK>\n\
+  \ carl9170_usb_send_rx_irq_urb+0x273/0x340 drivers/net/wireless/ath/carl9170/usb.c:504\n\
+  \ carl9170_usb_init_device drivers/net/wireless/ath/carl9170/usb.c:939 [inline]\n\
+  \ carl9170_usb_firmware_finish drivers/net/wireless/ath/carl9170/usb.c:999 [inline]\n\
+  \ carl9170_usb_firmware_step2+0x175/0x240 drivers/net/wireless/ath/carl9170/usb.c:1028\n\
+  \ request_firmware_work_func+0x130/0x240 drivers/base/firmware_loader/main.c:1107\n\
+  \ process_one_work+0x9bf/0x1710 kernel/workqueue.c:2289\n worker_thread+0x669/0x1090\
+  \ kernel/workqueue.c:2436\n kthread+0x2e8/0x3a0 kernel/kthread.c:376\n ret_from_fork+0x1f/0x30\
+  \ arch/x86/entry/entry_64.S:308\n </TASK>\n\n[2] Related syzkaller crashes:\nLink:\
+  \ https://syzkaller.appspot.com/bug?extid=e394db78ae0b0032cb4d\nLink: https://syzkaller.appspot.com/bug?extid=9468df99cb63a4a4c4e1\n\
+  \nReported-and-tested-by: syzbot+0ae4804973be759fa420@syzkaller.appspotmail.com\n\
+  Fixes: a84fab3cbfdc (\"carl9170: 802.11 rx/tx processing and usb backend\")\nSigned-off-by:\
+  \ Nikita Zhandarovich <n.zhandarovich@fintech.ru>\nAcked-By: Christian Lamparter\
+  \ <chunkeey@gmail.com>\nSigned-off-by: Kalle Valo <quic_kvalo@quicinc.com>\nLink:\
+  \ https://msgid.link/20240422183355.3785-1-n.zhandarovich@fintech.ru\n"
+submodule:
+- drivers/net/wireless/ath/carl9170
+hunk_count: 1
+covered_count: 1

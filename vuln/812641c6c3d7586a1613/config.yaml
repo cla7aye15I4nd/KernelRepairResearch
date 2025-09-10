@@ -1,0 +1,44 @@
+id: 812641c6c3d7586a1613
+bug_link: https://syzkaller.appspot.com/bug?extid=812641c6c3d7586a1613
+title: 'KMSAN: uninit-value in isofs_readdir'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 09fbf3d502050282bf47ab3babe1d4ed54dd1fd8
+fix_commit: 81a82e8f33880793029cd6f8a766fb13b737e6a7
+datetime: '2025-02-12T14:25:19+01:00'
+fix_commit_message: "isofs: fix KMSAN uninit-value bug in do_isofs_readdir()\n\nIn\
+  \ do_isofs_readdir() when assigning the variable\n\"struct iso_directory_record\
+  \ *de\" the b_data field of the buffer_head\nis accessed and an offset is added\
+  \ to it, the size of b_data is 2048\nand the offset size is 2047, meaning\n\"de\
+  \ = (struct iso_directory_record *) (bh->b_data + offset);\"\nyields the final byte\
+  \ of the 2048 sized b_data block.\n\nThe first byte of the directory record (de_len)\
+  \ is then read and\nfound to be 31, meaning the directory record size is 31 bytes\
+  \ long.\nThe directory record is defined by the structure:\n\n\tstruct iso_directory_record\
+  \ {\n\t\t__u8 length;                     // 1 byte\n\t\t__u8 ext_attr_length; \
+  \           // 1 byte\n\t\t__u8 extent[8];                  // 8 bytes\n\t\t__u8\
+  \ size[8];                    // 8 bytes\n\t\t__u8 date[7];                    //\
+  \ 7 bytes\n\t\t__u8 flags;                      // 1 byte\n\t\t__u8 file_unit_size;\
+  \             // 1 byte\n\t\t__u8 interleave;                 // 1 byte\n\t\t__u8\
+  \ volume_sequence_number[4];  // 4 bytes\n\t\t__u8 name_len;                   //\
+  \ 1 byte\n\t\tchar name[];                     // variable size\n\t} __attribute__((packed));\n\
+  \nThe fixed portion of this structure occupies 33 bytes. Therefore, a\nvalid directory\
+  \ record must be at least 33 bytes long\n(even without considering the variable-length\
+  \ name field).\nSince de_len is only 31, it is insufficient to contain\nthe complete\
+  \ fixed header.\n\nThe code later hits the following sanity check that\ncompares\
+  \ de_len against the sum of de->name_len and\nsizeof(struct iso_directory_record):\n\
+  \n\tif (de_len < de->name_len[0] + sizeof(struct iso_directory_record)) {\n\t\t\
+  ...\n\t}\n\nSince the fixed portion of the structure is\n33 bytes (up to and including\
+  \ name_len member),\na valid record should have de_len of at least 33 bytes;\nhere,\
+  \ however, de_len is too short, and the field de->name_len\n(located at offset 32)\
+  \ is accessed even though it lies beyond\nthe available 31 bytes.\n\nThis access\
+  \ on the corrupted isofs data triggers a KASAN uninitialized\nmemory warning. The\
+  \ fix would be to first verify that de_len is at least\nsizeof(struct iso_directory_record)\
+  \ before accessing any\nfields like de->name_len.\n\nReported-by: syzbot <syzbot+812641c6c3d7586a1613@syzkaller.appspotmail.com>\n\
+  Tested-by: syzbot <syzbot+812641c6c3d7586a1613@syzkaller.appspotmail.com>\nCloses:\
+  \ https://syzkaller.appspot.com/bug?extid=812641c6c3d7586a1613\nFixes: 2deb1acc653c\
+  \ (\"isofs: fix access to unallocated memory when reading corrupted filesystem\"\
+  )\nSigned-off-by: Qasim Ijaz <qasdev00@gmail.com>\nSigned-off-by: Jan Kara <jack@suse.cz>\n\
+  Link: https://patch.msgid.link/20250211195900.42406-1-qasdev00@gmail.com\n"
+submodule:
+- fs/isofs
+hunk_count: 1
+covered_count: 1

@@ -1,0 +1,39 @@
+id: 6b825a6494a04cc0e3f7
+bug_link: https://syzkaller.appspot.com/bug?extid=6b825a6494a04cc0e3f7
+title: memory leak in llc_conn_ac_send_sabme_cmd_p_set_x
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: c6ee11c39fcc1fb55130748990a8f199e76263b4
+fix_commit: b74555de21acd791f12c4a1aeaf653dd7ac21133
+datetime: '2019-10-08T13:23:05-07:00'
+fix_commit_message: "llc: fix sk_buff leak in llc_conn_service()\n\nsyzbot reported:\n\
+  \n    BUG: memory leak\n    unreferenced object 0xffff88811eb3de00 (size 224):\n\
+  \       comm \"syz-executor559\", pid 7315, jiffies 4294943019 (age 10.300s)\n \
+  \      hex dump (first 32 bytes):\n         00 00 00 00 00 00 00 00 00 00 00 00\
+  \ 00 00 00 00  ................\n         00 a0 38 24 81 88 ff ff 00 c0 f2 15 81\
+  \ 88 ff ff  ..8$............\n       backtrace:\n         [<000000008d1c66a1>] kmemleak_alloc_recursive\
+  \  include/linux/kmemleak.h:55 [inline]\n         [<000000008d1c66a1>] slab_post_alloc_hook\
+  \ mm/slab.h:439 [inline]\n         [<000000008d1c66a1>] slab_alloc_node mm/slab.c:3269\
+  \ [inline]\n         [<000000008d1c66a1>] kmem_cache_alloc_node+0x153/0x2a0 mm/slab.c:3579\n\
+  \         [<00000000447d9496>] __alloc_skb+0x6e/0x210 net/core/skbuff.c:198\n  \
+  \       [<000000000cdbf82f>] alloc_skb include/linux/skbuff.h:1058 [inline]\n  \
+  \       [<000000000cdbf82f>] llc_alloc_frame+0x66/0x110 net/llc/llc_sap.c:54\n \
+  \        [<000000002418b52e>] llc_conn_ac_send_sabme_cmd_p_set_x+0x2f/0x140  net/llc/llc_c_ac.c:777\n\
+  \         [<000000001372ae17>] llc_exec_conn_trans_actions net/llc/llc_conn.c:475\
+  \  [inline]\n         [<000000001372ae17>] llc_conn_service net/llc/llc_conn.c:400\
+  \ [inline]\n         [<000000001372ae17>] llc_conn_state_process+0x1ac/0x640  net/llc/llc_conn.c:75\n\
+  \         [<00000000f27e53c1>] llc_establish_connection+0x110/0x170  net/llc/llc_if.c:109\n\
+  \         [<00000000291b2ca0>] llc_ui_connect+0x10e/0x370 net/llc/af_llc.c:477\n\
+  \         [<000000000f9c740b>] __sys_connect+0x11d/0x170 net/socket.c:1840\n   \
+  \      [...]\n\nThe bug is that most callers of llc_conn_send_pdu() assume it consumes\
+  \ a\nreference to the skb, when actually due to commit b85ab56c3f81 (\"llc:\nproperly\
+  \ handle dev_queue_xmit() return value\") it doesn't.\n\nRevert most of that commit,\
+  \ and instead make the few places that need\nllc_conn_send_pdu() to *not* consume\
+  \ a reference call skb_get() before.\n\nFixes: b85ab56c3f81 (\"llc: properly handle\
+  \ dev_queue_xmit() return value\")\nReported-by: syzbot+6b825a6494a04cc0e3f7@syzkaller.appspotmail.com\n\
+  Signed-off-by: Eric Biggers <ebiggers@google.com>\nSigned-off-by: Jakub Kicinski\
+  \ <jakub.kicinski@netronome.com>\n"
+submodule:
+- include/net
+- net/llc
+hunk_count: 11
+covered_count: 3

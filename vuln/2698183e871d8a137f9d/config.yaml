@@ -1,0 +1,28 @@
+id: 2698183e871d8a137f9d
+bug_link: https://syzkaller.appspot.com/bug?extid=2698183e871d8a137f9d
+title: WARNING in emulate_vsyscall
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: e4e737bb5c170df6135a127739a9e6148ee3da82
+fix_commit: d4ffd5df9d18031b6a53f934388726775b4452d3
+datetime: '2021-09-20T22:28:47+02:00'
+fix_commit_message: "x86/fault: Fix wrong signal when vsyscall fails with pkey\n\n\
+  The function __bad_area_nosemaphore() calls kernelmode_fixup_or_oops()\nwith the\
+  \ parameter @signal being actually @pkey, which will send a\nsignal numbered with\
+  \ the argument in @pkey.\n\nThis bug can be triggered when the kernel fails to access\
+  \ user-given\nmemory pages that are protected by a pkey, so it can go down the\n\
+  do_user_addr_fault() path and pass the !user_mode() check in\n__bad_area_nosemaphore().\n\
+  \nMost cases will simply run the kernel fixup code to make an -EFAULT. But\nwhen\
+  \ another condition current->thread.sig_on_uaccess_err is met, which\nis only used\
+  \ to emulate vsyscall, the kernel will generate the wrong\nsignal.\n\nAdd a new\
+  \ parameter @pkey to kernelmode_fixup_or_oops() to fix this.\n\n [ bp: Massage commit\
+  \ message, fix build error as reported by the 0day\n   bot: https://lkml.kernel.org/r/202109202245.APvuT8BX-lkp@intel.com\
+  \ ]\n\nFixes: 5042d40a264c (\"x86/fault: Bypass no_context() for implicit kernel\
+  \ faults from usermode\")\nReported-by: kernel test robot <lkp@intel.com>\nSigned-off-by:\
+  \ Jiashuo Liang <liangjs@pku.edu.cn>\nSigned-off-by: Borislav Petkov <bp@suse.de>\n\
+  Acked-by: Dave Hansen <dave.hansen@linux.intel.com>\nLink: https://lkml.kernel.org/r/20210730030152.249106-1-liangjs@pku.edu.cn\n"
+submodule:
+- arch/x86/include/asm
+- arch/x86/mm
+- include/linux
+hunk_count: 9
+covered_count: 1

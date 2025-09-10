@@ -1,0 +1,43 @@
+id: 4edb496c3cad6e953a31
+bug_link: https://syzkaller.appspot.com/bug?extid=4edb496c3cad6e953a31
+title: 'INFO: trying to register non-static key in rxe_qp_do_cleanup'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 04039390cc3cb3d1e6ce6bb1680cbdfe117d6473
+fix_commit: 1c7eec4d5f3b39cdea2153abaebf1b7229a47072
+datetime: '2025-04-20T11:25:37-04:00'
+fix_commit_message: "RDMA/rxe: Fix \"trying to register non-static key in rxe_qp_do_cleanup\"\
+  \ bug\n\nCall Trace:\n <TASK>\n __dump_stack lib/dump_stack.c:94 [inline]\n dump_stack_lvl+0x116/0x1f0\
+  \ lib/dump_stack.c:120\n assign_lock_key kernel/locking/lockdep.c:986 [inline]\n\
+  \ register_lock_class+0x4a3/0x4c0 kernel/locking/lockdep.c:1300\n __lock_acquire+0x99/0x1ba0\
+  \ kernel/locking/lockdep.c:5110\n lock_acquire kernel/locking/lockdep.c:5866 [inline]\n\
+  \ lock_acquire+0x179/0x350 kernel/locking/lockdep.c:5823\n __timer_delete_sync+0x152/0x1b0\
+  \ kernel/time/timer.c:1644\n rxe_qp_do_cleanup+0x5c3/0x7e0 drivers/infiniband/sw/rxe/rxe_qp.c:815\n\
+  \ execute_in_process_context+0x3a/0x160 kernel/workqueue.c:4596\n __rxe_cleanup+0x267/0x3c0\
+  \ drivers/infiniband/sw/rxe/rxe_pool.c:232\n rxe_create_qp+0x3f7/0x5f0 drivers/infiniband/sw/rxe/rxe_verbs.c:604\n\
+  \ create_qp+0x62d/0xa80 drivers/infiniband/core/verbs.c:1250\n ib_create_qp_kernel+0x9f/0x310\
+  \ drivers/infiniband/core/verbs.c:1361\n ib_create_qp include/rdma/ib_verbs.h:3803\
+  \ [inline]\n rdma_create_qp+0x10c/0x340 drivers/infiniband/core/cma.c:1144\n rds_ib_setup_qp+0xc86/0x19a0\
+  \ net/rds/ib_cm.c:600\n rds_ib_cm_initiate_connect+0x1e8/0x3d0 net/rds/ib_cm.c:944\n\
+  \ rds_rdma_cm_event_handler_cmn+0x61f/0x8c0 net/rds/rdma_transport.c:109\n cma_cm_event_handler+0x94/0x300\
+  \ drivers/infiniband/core/cma.c:2184\n cma_work_handler+0x15b/0x230 drivers/infiniband/core/cma.c:3042\n\
+  \ process_one_work+0x9cc/0x1b70 kernel/workqueue.c:3238\n process_scheduled_works\
+  \ kernel/workqueue.c:3319 [inline]\n worker_thread+0x6c8/0xf10 kernel/workqueue.c:3400\n\
+  \ kthread+0x3c2/0x780 kernel/kthread.c:464\n ret_from_fork+0x45/0x80 arch/x86/kernel/process.c:153\n\
+  \ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245\n </TASK>\n\nThe root\
+  \ cause is as below:\n\nIn the function rxe_create_qp, the function rxe_qp_from_init\
+  \ is called\nto create qp, if this function rxe_qp_from_init fails, rxe_cleanup\
+  \ will\nbe called to handle all the allocated resources, including the timers:\n\
+  retrans_timer and rnr_nak_timer.\n\nThe function rxe_qp_from_init calls the function\
+  \ rxe_qp_init_req to\ninitialize the timers: retrans_timer and rnr_nak_timer.\n\n\
+  But these timers are initialized in the end of rxe_qp_init_req.\nIf some errors\
+  \ occur before the initialization of these timers, this\nproblem will occur.\n\n\
+  The solution is to check whether these timers are initialized or not.\nIf these\
+  \ timers are not initialized, ignore these timers.\n\nFixes: 8700e3e7c485 (\"Soft\
+  \ RoCE driver\")\nReported-by: syzbot+4edb496c3cad6e953a31@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=4edb496c3cad6e953a31\nSigned-off-by:\
+  \ Zhu Yanjun <yanjun.zhu@linux.dev>\nLink: https://patch.msgid.link/20250419080741.1515231-1-yanjun.zhu@linux.dev\n\
+  Signed-off-by: Leon Romanovsky <leon@kernel.org>\n"
+submodule:
+- drivers/infiniband/sw/rxe
+hunk_count: 1
+covered_count: 1

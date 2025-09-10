@@ -1,0 +1,52 @@
+id: ec9fab8b7f0386b98a17
+bug_link: https://syzkaller.appspot.com/bug?extid=ec9fab8b7f0386b98a17
+title: WARNING in shmem_unlink
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 5f1c8965e748c150d580a2ea8fbee1bd80d07a24
+fix_commit: e8bd877fb76bb9f35253e8f41ce0c772269934dd
+datetime: '2025-08-18T13:16:49+02:00'
+fix_commit_message: 'ovl: fix possible double unlink
+
+
+  commit 9d23967b18c6 ("ovl: simplify an error path in
+
+  ovl_copy_up_workdir()") introduced the helper ovl_cleanup_unlocked(),
+
+  which is later used in several following patches to re-acquire the parent
+
+  inode lock and unlink a dentry that was earlier found using lookup.
+
+  This helper was eventually renamed to ovl_cleanup().
+
+
+  The helper ovl_parent_lock() is used to re-acquire the parent inode lock.
+
+  After acquiring the parent inode lock, the helper verifies that the
+
+  dentry has not since been moved to another parent, but it failed to
+
+  verify that the dentry wasn''t unlinked from the parent.
+
+
+  This means that now every call to ovl_cleanup() could potentially
+
+  race with another thread, unlinking the dentry to be cleaned up
+
+  underneath overlayfs and trigger a vfs assertion.
+
+
+  Reported-by: syzbot+ec9fab8b7f0386b98a17@syzkaller.appspotmail.com
+
+  Tested-by: syzbot+ec9fab8b7f0386b98a17@syzkaller.appspotmail.com
+
+  Fixes: 9d23967b18c6 ("ovl: simplify an error path in ovl_copy_up_workdir()")
+
+  Suggested-by: NeilBrown <neil@brown.name>
+
+  Signed-off-by: Amir Goldstein <amir73il@gmail.com>
+
+  '
+submodule:
+- fs/overlayfs
+hunk_count: 1
+covered_count: 0

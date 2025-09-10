@@ -1,0 +1,23 @@
+id: b039f5699bd82e1fb011
+bug_link: https://syzkaller.appspot.com/bug?extid=b039f5699bd82e1fb011
+title: memory leak in kcm_sendmsg
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 261ba78cc364ad595cead555a7d2a61471eac165
+fix_commit: c47cc304990a2813995b1a92bbc11d0bb9a19ea9
+datetime: '2021-06-03T14:13:26-07:00'
+fix_commit_message: "net: kcm: fix memory leak in kcm_sendmsg\n\nSyzbot reported memory\
+  \ leak in kcm_sendmsg()[1].\nThe problem was in non-freed frag_list in case of error.\n\
+  \nIn the while loop:\n\n\tif (head == skb)\n\t\tskb_shinfo(head)->frag_list = tskb;\n\
+  \telse\n\t\tskb->next = tskb;\n\nfrag_list filled with skbs, but nothing was freeing\
+  \ them.\n\nbacktrace:\n  [<0000000094c02615>] __alloc_skb+0x5e/0x250 net/core/skbuff.c:198\n\
+  \  [<00000000e5386cbd>] alloc_skb include/linux/skbuff.h:1083 [inline]\n  [<00000000e5386cbd>]\
+  \ kcm_sendmsg+0x3b6/0xa50 net/kcm/kcmsock.c:967 [1]\n  [<00000000f1613a8a>] sock_sendmsg_nosec\
+  \ net/socket.c:652 [inline]\n  [<00000000f1613a8a>] sock_sendmsg+0x4c/0x60 net/socket.c:672\n\
+  \nReported-and-tested-by: syzbot+b039f5699bd82e1fb011@syzkaller.appspotmail.com\n\
+  Fixes: ab7ac4eb9832 (\"kcm: Kernel Connection Multiplexor module\")\nCc: stable@vger.kernel.org\n\
+  Signed-off-by: Pavel Skripkin <paskripkin@gmail.com>\nSigned-off-by: David S. Miller\
+  \ <davem@davemloft.net>\n"
+submodule:
+- net/kcm
+hunk_count: 1
+covered_count: 0

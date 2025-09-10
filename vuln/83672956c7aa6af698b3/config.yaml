@@ -1,0 +1,31 @@
+id: 83672956c7aa6af698b3
+bug_link: https://syzkaller.appspot.com/bug?extid=83672956c7aa6af698b3
+title: 'WARNING: ODEBUG bug in __cancel_work'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 812e92b824c1db16c9519f8624d48a9901a0d38f
+fix_commit: 2d2cb3066f2c90cd8ca540b36ba7a55e7f2406e0
+datetime: '2022-09-19T09:59:33-07:00'
+fix_commit_message: "Bluetooth: L2CAP: initialize delayed works at l2cap_chan_create()\n\
+  \nsyzbot is reporting cancel_delayed_work() without INIT_DELAYED_WORK() at\nl2cap_chan_del()\
+  \ [1], for CONF_NOT_COMPLETE flag (which meant to prevent\nl2cap_chan_del() from\
+  \ calling cancel_delayed_work()) is cleared by timer\nwhich fires before l2cap_chan_del()\
+  \ is called by closing file descriptor\ncreated by socket(AF_BLUETOOTH, SOCK_STREAM,\
+  \ BTPROTO_L2CAP).\n\nl2cap_bredr_sig_cmd(L2CAP_CONF_REQ) and l2cap_bredr_sig_cmd(L2CAP_CONF_RSP)\n\
+  are calling l2cap_ertm_init(chan), and they call l2cap_chan_ready() (which\nclears\
+  \ CONF_NOT_COMPLETE flag) only when l2cap_ertm_init(chan) succeeded.\n\nl2cap_sock_init()\
+  \ does not call l2cap_ertm_init(chan), and it instead sets\nCONF_NOT_COMPLETE flag\
+  \ by calling l2cap_chan_set_defaults(). However, when\nconnect() is requested, \"\
+  command 0x0409 tx timeout\" happens after 2 seconds\n from connect() request, and\
+  \ CONF_NOT_COMPLETE flag is cleared after 4\nseconds from connect() request, for\
+  \ l2cap_conn_start() from\nl2cap_info_timeout() callback scheduled by\n\n  schedule_delayed_work(&conn->info_timer,\
+  \ L2CAP_INFO_TIMEOUT);\n\nin l2cap_connect() is calling l2cap_chan_ready().\n\n\
+  Fix this problem by initializing delayed works used by L2CAP_MODE_ERTM\nmode as\
+  \ soon as l2cap_chan_create() allocates a channel, like I did in\ncommit be8597239379f0f5\
+  \ (\"Bluetooth: initialize skb_queue_head at\nl2cap_chan_create()\").\n\nLink: https://syzkaller.appspot.com/bug?extid=83672956c7aa6af698b3\
+  \ [1]\nReported-by: syzbot <syzbot+83672956c7aa6af698b3@syzkaller.appspotmail.com>\n\
+  Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>\nSigned-off-by:\
+  \ Luiz Augusto von Dentz <luiz.von.dentz@intel.com>\n"
+submodule:
+- net/bluetooth
+hunk_count: 3
+covered_count: 1

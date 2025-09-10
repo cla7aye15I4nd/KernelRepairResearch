@@ -1,0 +1,81 @@
+diff --git a/net/tipc/netlink_compat.c b/net/tipc/netlink_compat.c
+index a2f76743c73a..82f665728382 100644
+--- a/net/tipc/netlink_compat.c
++++ b/net/tipc/netlink_compat.c
+@@ -185,6 +185,7 @@ static int __tipc_nl_compat_dumpit(struct tipc_nl_compat_cmd_dump *cmd,
+ 		return -ENOMEM;
+ 
+ 	buf->sk = msg->dst_sk;
++	__tipc_dump_start(&cb, msg->net);
+ 
+ 	do {
+ 		int rem;
+@@ -216,6 +217,7 @@ static int __tipc_nl_compat_dumpit(struct tipc_nl_compat_cmd_dump *cmd,
+ 	err = 0;
+ 
+ err_out:
++	tipc_dump_done(&cb);
+ 	kfree_skb(buf);
+ 
+ 	if (err == -EMSGSIZE) {
+diff --git a/net/tipc/socket.c b/net/tipc/socket.c
+index a0ff8bffc96b..3f03ddd0e35b 100644
+--- a/net/tipc/socket.c
++++ b/net/tipc/socket.c
+@@ -3230,7 +3230,7 @@ int tipc_nl_sk_walk(struct sk_buff *skb, struct netlink_callback *cb,
+ 				       struct netlink_callback *cb,
+ 				       struct tipc_sock *tsk))
+ {
+-	struct rhashtable_iter *iter = (void *)cb->args[0];
++	struct rhashtable_iter *iter = (void *)cb->args[4];
+ 	struct tipc_sock *tsk;
+ 	int err;
+ 
+@@ -3266,8 +3266,14 @@ EXPORT_SYMBOL(tipc_nl_sk_walk);
+ 
+ int tipc_dump_start(struct netlink_callback *cb)
+ {
+-	struct rhashtable_iter *iter = (void *)cb->args[0];
+-	struct net *net = sock_net(cb->skb->sk);
++	return __tipc_dump_start(cb, sock_net(cb->skb->sk));
++}
++EXPORT_SYMBOL(tipc_dump_start);
++
++int __tipc_dump_start(struct netlink_callback *cb, struct net *net)
++{
++	/* tipc_nl_name_table_dump() uses cb->args[0...3]. */
++	struct rhashtable_iter *iter = (void *)cb->args[4];
+ 	struct tipc_net *tn = tipc_net(net);
+ 
+ 	if (!iter) {
+@@ -3275,17 +3281,16 @@ int tipc_dump_start(struct netlink_callback *cb)
+ 		if (!iter)
+ 			return -ENOMEM;
+ 
+-		cb->args[0] = (long)iter;
++		cb->args[4] = (long)iter;
+ 	}
+ 
+ 	rhashtable_walk_enter(&tn->sk_rht, iter);
+ 	return 0;
+ }
+-EXPORT_SYMBOL(tipc_dump_start);
+ 
+ int tipc_dump_done(struct netlink_callback *cb)
+ {
+-	struct rhashtable_iter *hti = (void *)cb->args[0];
++	struct rhashtable_iter *hti = (void *)cb->args[4];
+ 
+ 	rhashtable_walk_exit(hti);
+ 	kfree(hti);
+diff --git a/net/tipc/socket.h b/net/tipc/socket.h
+index d43032e26532..5e575f205afe 100644
+--- a/net/tipc/socket.h
++++ b/net/tipc/socket.h
+@@ -69,5 +69,6 @@ int tipc_nl_sk_walk(struct sk_buff *skb, struct netlink_callback *cb,
+ 				       struct netlink_callback *cb,
+ 				       struct tipc_sock *tsk));
+ int tipc_dump_start(struct netlink_callback *cb);
++int __tipc_dump_start(struct netlink_callback *cb, struct net *net);
+ int tipc_dump_done(struct netlink_callback *cb);
+ #endif

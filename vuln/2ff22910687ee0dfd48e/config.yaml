@@ -1,0 +1,28 @@
+id: 2ff22910687ee0dfd48e
+bug_link: https://syzkaller.appspot.com/bug?extid=2ff22910687ee0dfd48e
+title: 'KASAN: slab-use-after-free Read in software_node_notify_remove'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 1ae5e4c0626d6954114d9725990ac9c498f3b1ab
+fix_commit: bc2c46426f2d95e58c82f394531afdd034c8706c
+datetime: '2025-04-15T18:15:14+02:00'
+fix_commit_message: "software node: Prevent link creation failure from causing kobj\
+  \ reference count imbalance\n\nsyzbot reported a uaf in software_node_notify_remove.\
+  \ [1]\n\nWhen any of the two sysfs_create_link() in software_node_notify() fails,\n\
+  the swnode->kobj reference count will not increase normally, which will\ncause swnode\
+  \ to be released incorrectly due to the imbalance of kobj reference\ncount when\
+  \ executing software_node_notify_remove().\n\nIncrease the reference count of kobj\
+  \ before creating the link to avoid uaf.\n\n[1]\nBUG: KASAN: slab-use-after-free\
+  \ in software_node_notify_remove+0x1bc/0x1c0 drivers/base/swnode.c:1108\nRead of\
+  \ size 1 at addr ffff888033c08908 by task syz-executor105/5844\nFreed by task 5844:\n\
+  \ software_node_notify_remove+0x159/0x1c0 drivers/base/swnode.c:1106\n device_platform_notify_remove\
+  \ drivers/base/core.c:2387 [inline]\n\nFixes: 9eb59204d519 (\"iommufd/selftest:\
+  \ Add set_dev_pasid in mock iommu\")\nReported-by: syzbot+2ff22910687ee0dfd48e@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=2ff22910687ee0dfd48e\nTested-by:\
+  \ syzbot+2ff22910687ee0dfd48e@syzkaller.appspotmail.com\nSigned-off-by: Lizhi Xu\
+  \ <lizhi.xu@windriver.com>\nReviewed-by: Sakari Ailus <sakari.ailus@linux.intel.com>\n\
+  Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>\nLink: https://lore.kernel.org/r/20250414071123.1228331-1-lizhi.xu@windriver.com\n\
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>\n"
+submodule:
+- drivers/base
+hunk_count: 2
+covered_count: 2

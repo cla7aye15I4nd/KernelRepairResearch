@@ -1,0 +1,155 @@
+diff --git a/include/linux/filter.h b/include/linux/filter.h
+index 20f2659dd829..300baad62c88 100644
+--- a/include/linux/filter.h
++++ b/include/linux/filter.h
+@@ -470,9 +470,7 @@ struct sock_fprog_kern {
+ };
+ 
+ struct bpf_binary_header {
+-	u16 pages;
+-	u16 locked:1;
+-
++	u32 pages;
+ 	/* Some arches need word alignment for their instructions */
+ 	u8 image[] __aligned(4);
+ };
+@@ -481,7 +479,7 @@ struct bpf_prog {
+ 	u16			pages;		/* Number of allocated pages */
+ 	u16			jited:1,	/* Is our filter JIT'ed? */
+ 				jit_requested:1,/* archs need to JIT the prog */
+-				locked:1,	/* Program image locked? */
++				undo_set_mem:1,	/* Passed set_memory_ro() checkpoint */
+ 				gpl_compatible:1, /* Is filter GPL compatible? */
+ 				cb_access:1,	/* Is control block accessed? */
+ 				dst_needed:1,	/* Do we need dst entry? */
+@@ -677,46 +675,24 @@ bpf_ctx_narrow_access_ok(u32 off, u32 size, u32 size_default)
+ 
+ static inline void bpf_prog_lock_ro(struct bpf_prog *fp)
+ {
+-#ifdef CONFIG_ARCH_HAS_SET_MEMORY
+-	fp->locked = 1;
+-	if (set_memory_ro((unsigned long)fp, fp->pages))
+-		fp->locked = 0;
+-#endif
++	fp->undo_set_mem = 1;
++	set_memory_ro((unsigned long)fp, fp->pages);
+ }
+ 
+ static inline void bpf_prog_unlock_ro(struct bpf_prog *fp)
+ {
+-#ifdef CONFIG_ARCH_HAS_SET_MEMORY
+-	if (fp->locked) {
+-		WARN_ON_ONCE(set_memory_rw((unsigned long)fp, fp->pages));
+-		/* In case set_memory_rw() fails, we want to be the first
+-		 * to crash here instead of some random place later on.
+-		 */
+-		fp->locked = 0;
+-	}
+-#endif
++	if (fp->undo_set_mem)
++		set_memory_rw((unsigned long)fp, fp->pages);
+ }
+ 
+ static inline void bpf_jit_binary_lock_ro(struct bpf_binary_header *hdr)
+ {
+-#ifdef CONFIG_ARCH_HAS_SET_MEMORY
+-	hdr->locked = 1;
+-	if (set_memory_ro((unsigned long)hdr, hdr->pages))
+-		hdr->locked = 0;
+-#endif
++	set_memory_ro((unsigned long)hdr, hdr->pages);
+ }
+ 
+ static inline void bpf_jit_binary_unlock_ro(struct bpf_binary_header *hdr)
+ {
+-#ifdef CONFIG_ARCH_HAS_SET_MEMORY
+-	if (hdr->locked) {
+-		WARN_ON_ONCE(set_memory_rw((unsigned long)hdr, hdr->pages));
+-		/* In case set_memory_rw() fails, we want to be the first
+-		 * to crash here instead of some random place later on.
+-		 */
+-		hdr->locked = 0;
+-	}
+-#endif
++	set_memory_rw((unsigned long)hdr, hdr->pages);
+ }
+ 
+ static inline struct bpf_binary_header *
+@@ -728,22 +704,6 @@ bpf_jit_binary_hdr(const struct bpf_prog *fp)
+ 	return (void *)addr;
+ }
+ 
+-#ifdef CONFIG_ARCH_HAS_SET_MEMORY
+-static inline int bpf_prog_check_pages_ro_single(const struct bpf_prog *fp)
+-{
+-	if (!fp->locked)
+-		return -ENOLCK;
+-	if (fp->jited) {
+-		const struct bpf_binary_header *hdr = bpf_jit_binary_hdr(fp);
+-
+-		if (!hdr->locked)
+-			return -ENOLCK;
+-	}
+-
+-	return 0;
+-}
+-#endif
+-
+ int sk_filter_trim_cap(struct sock *sk, struct sk_buff *skb, unsigned int cap);
+ static inline int sk_filter(struct sock *sk, struct sk_buff *skb)
+ {
+diff --git a/kernel/bpf/core.c b/kernel/bpf/core.c
+index a9e6c04d0f4a..1e5625d46414 100644
+--- a/kernel/bpf/core.c
++++ b/kernel/bpf/core.c
+@@ -598,8 +598,6 @@ bpf_jit_binary_alloc(unsigned int proglen, u8 **image_ptr,
+ 	bpf_fill_ill_insns(hdr, size);
+ 
+ 	hdr->pages = size / PAGE_SIZE;
+-	hdr->locked = 0;
+-
+ 	hole = min_t(unsigned int, size - (proglen + sizeof(*hdr)),
+ 		     PAGE_SIZE - sizeof(*hdr));
+ 	start = (get_random_int() % hole) & ~(alignment - 1);
+@@ -1450,22 +1448,6 @@ static int bpf_check_tail_call(const struct bpf_prog *fp)
+ 	return 0;
+ }
+ 
+-static int bpf_prog_check_pages_ro_locked(const struct bpf_prog *fp)
+-{
+-#ifdef CONFIG_ARCH_HAS_SET_MEMORY
+-	int i, err;
+-
+-	for (i = 0; i < fp->aux->func_cnt; i++) {
+-		err = bpf_prog_check_pages_ro_single(fp->aux->func[i]);
+-		if (err)
+-			return err;
+-	}
+-
+-	return bpf_prog_check_pages_ro_single(fp);
+-#endif
+-	return 0;
+-}
+-
+ static void bpf_prog_select_func(struct bpf_prog *fp)
+ {
+ #ifndef CONFIG_BPF_JIT_ALWAYS_ON
+@@ -1524,17 +1506,7 @@ struct bpf_prog *bpf_prog_select_runtime(struct bpf_prog *fp, int *err)
+ 	 * all eBPF JITs might immediately support all features.
+ 	 */
+ 	*err = bpf_check_tail_call(fp);
+-	if (*err)
+-		return fp;
+-
+-	/* Checkpoint: at this point onwards any cBPF -> eBPF or
+-	 * native eBPF program is read-only. If we failed to change
+-	 * the page attributes (e.g. allocation failure from
+-	 * splitting large pages), then reject the whole program
+-	 * in order to guarantee not ending up with any W+X pages
+-	 * from BPF side in kernel.
+-	 */
+-	*err = bpf_prog_check_pages_ro_locked(fp);
++
+ 	return fp;
+ }
+ EXPORT_SYMBOL_GPL(bpf_prog_select_runtime);

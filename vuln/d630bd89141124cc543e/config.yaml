@@ -1,0 +1,58 @@
+id: d630bd89141124cc543e
+bug_link: https://syzkaller.appspot.com/bug?extid=d630bd89141124cc543e
+title: 'INFO: task hung in hub_activate (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: efe3e3ae5a66cb38ef29c909e951b4039044bae9
+fix_commit: 9bd9c8026341f75f25c53104eb7e656e357ca1a2
+datetime: '2025-06-30T15:36:00+02:00'
+fix_commit_message: 'usb: hub: Fix flushing of delayed work used for post resume purposes
+
+
+  Delayed work that prevents USB3 hubs from runtime-suspending too early
+
+  needed to be flushed in hub_quiesce() to resolve issues detected on
+
+  QC SC8280XP CRD board during suspend resume testing.
+
+
+  This flushing did however trigger new issues on Raspberry Pi 3B+, which
+
+  doesn''t have USB3 ports, and doesn''t queue any post resume delayed work.
+
+
+  The flushed ''hub->init_work'' item is used for several purposes, and
+
+  is originally initialized with a ''NULL'' work function. The work function
+
+  is also changed on the fly, which may contribute to the issue.
+
+
+  Solve this by creating a dedicated delayed work item for post resume work,
+
+  and flush that delayed work in hub_quiesce()
+
+
+  Cc: stable <stable@kernel.org>
+
+  Fixes: a49e1e2e785f ("usb: hub: Fix flushing and scheduling of delayed work that
+  tunes runtime pm")
+
+  Reported-by: Mark Brown <broonie@kernel.org>
+
+  Closes: https://lore.kernel.org/linux-usb/aF5rNp1l0LWITnEB@finisterre.sirena.org.uk
+
+  Signed-off-by: Mathias Nyman <mathias.nyman@linux.intel.com>
+
+  Tested-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com> # SC8280XP CRD
+
+  Tested-by: Mark Brown <broonie@kernel.org>
+
+  Link: https://lore.kernel.org/r/20250627164348.3982628-2-mathias.nyman@linux.intel.com
+
+  Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+  '
+submodule:
+- drivers/usb/core
+hunk_count: 7
+covered_count: 4

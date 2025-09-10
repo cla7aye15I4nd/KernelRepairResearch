@@ -1,0 +1,33 @@
+id: d44f7bbebdea49dbc84a
+bug_link: https://syzkaller.appspot.com/bug?extid=d44f7bbebdea49dbc84a
+title: memory leak in sctp_get_port_local (3)
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 28aa7c86c2b49f659c8460a89e53b506c45979bb
+fix_commit: 63dfb7938b13fa2c2fbcb45f34d065769eb09414
+datetime: '2019-10-15T20:37:51-07:00'
+fix_commit_message: "sctp: change sctp_prot .no_autobind with true\n\nsyzbot reported\
+  \ a memory leak:\n\n  BUG: memory leak, unreferenced object 0xffff888120b3d380 (size\
+  \ 64):\n  backtrace:\n\n    [...] slab_alloc mm/slab.c:3319 [inline]\n    [...]\
+  \ kmem_cache_alloc+0x13f/0x2c0 mm/slab.c:3483\n    [...] sctp_bucket_create net/sctp/socket.c:8523\
+  \ [inline]\n    [...] sctp_get_port_local+0x189/0x5a0 net/sctp/socket.c:8270\n \
+  \   [...] sctp_do_bind+0xcc/0x200 net/sctp/socket.c:402\n    [...] sctp_bindx_add+0x4b/0xd0\
+  \ net/sctp/socket.c:497\n    [...] sctp_setsockopt_bindx+0x156/0x1b0 net/sctp/socket.c:1022\n\
+  \    [...] sctp_setsockopt net/sctp/socket.c:4641 [inline]\n    [...] sctp_setsockopt+0xaea/0x2dc0\
+  \ net/sctp/socket.c:4611\n    [...] sock_common_setsockopt+0x38/0x50 net/core/sock.c:3147\n\
+  \    [...] __sys_setsockopt+0x10f/0x220 net/socket.c:2084\n    [...] __do_sys_setsockopt\
+  \ net/socket.c:2100 [inline]\n\nIt was caused by when sending msgs without binding\
+  \ a port, in the path:\ninet_sendmsg() -> inet_send_prepare() -> inet_autobind()\
+  \ ->\n.get_port/sctp_get_port(), sp->bind_hash will be set while bp->port is\nnot.\
+  \ Later when binding another port by sctp_setsockopt_bindx(), a new\nbucket will\
+  \ be created as bp->port is not set.\n\nsctp's autobind is supposed to call sctp_autobind()\
+  \ where it does all\nthings including setting bp->port. Since sctp_autobind() is\
+  \ called in\nsctp_sendmsg() if the sk is not yet bound, it should have skipped the\n\
+  auto bind.\n\nTHis patch is to avoid calling inet_autobind() in inet_send_prepare()\n\
+  by changing sctp_prot .no_autobind with true, also remove the unused\n.get_port.\n\
+  \nReported-by: syzbot+d44f7bbebdea49dbc84a@syzkaller.appspotmail.com\nSigned-off-by:\
+  \ Xin Long <lucien.xin@gmail.com>\nAcked-by: Marcelo Ricardo Leitner <marcelo.leitner@gmail.com>\n\
+  Signed-off-by: David S. Miller <davem@davemloft.net>\n"
+submodule:
+- net/sctp
+hunk_count: 2
+covered_count: 0

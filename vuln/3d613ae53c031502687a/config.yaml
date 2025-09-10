@@ -1,0 +1,31 @@
+id: 3d613ae53c031502687a
+bug_link: https://syzkaller.appspot.com/bug?extid=3d613ae53c031502687a
+title: 'BUG: unable to handle kernel NULL pointer dereference in fbcon_putcs (3)'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: abf2050f51fdca0fd146388f83cddd95a57a008d
+fix_commit: 5b97eebcce1b4f3f07a71f635d6aa3af96c236e7
+datetime: '2024-09-26T18:20:27+02:00'
+fix_commit_message: "fbcon: Fix a NULL pointer dereference issue in fbcon_putcs\n\n\
+  syzbot has found a NULL pointer dereference bug in fbcon.\nHere is the simplified\
+  \ C reproducer:\n\nstruct param {\n\tuint8_t type;\n\tstruct tiocl_selection ts;\n\
+  };\n\nint main()\n{\n\tstruct fb_con2fbmap con2fb;\n\tstruct param param;\n\n\t\
+  int fd = open(\"/dev/fb1\", 0, 0);\n\n\tcon2fb.console = 0x19;\n\tcon2fb.framebuffer\
+  \ = 0;\n\tioctl(fd, FBIOPUT_CON2FBMAP, &con2fb);\n\n\tparam.type = 2;\n\tparam.ts.xs\
+  \ = 0; param.ts.ys = 0;\n\tparam.ts.xe = 0; param.ts.ye = 0;\n\tparam.ts.sel_mode\
+  \ = 0;\n\n\tint fd1 = open(\"/dev/tty1\", O_RDWR, 0);\n\tioctl(fd1, TIOCLINUX, &param);\n\
+  \n\tcon2fb.console = 1;\n\tcon2fb.framebuffer = 0;\n\tioctl(fd, FBIOPUT_CON2FBMAP,\
+  \ &con2fb);\n\n\treturn 0;\n}\n\nAfter calling ioctl(fd1, TIOCLINUX, &param), the\
+  \ subsequent ioctl(fd, FBIOPUT_CON2FBMAP, &con2fb)\ncauses the kernel to follow\
+  \ a different execution path:\n\n set_con2fb_map\n  -> con2fb_init_display\n   ->\
+  \ fbcon_set_disp\n    -> redraw_screen\n     -> hide_cursor\n      -> clear_selection\n\
+  \       -> highlight\n        -> invert_screen\n         -> do_update_region\n \
+  \         -> fbcon_putcs\n           -> ops->putcs\n\nSince ops->putcs is a NULL\
+  \ pointer, this leads to a kernel panic.\nTo prevent this, we need to call set_blitting_type()\
+  \ within set_con2fb_map()\nto properly initialize ops->putcs.\n\nReported-by: syzbot+3d613ae53c031502687a@syzkaller.appspotmail.com\n\
+  Closes: https://syzkaller.appspot.com/bug?extid=3d613ae53c031502687a\nTested-by:\
+  \ syzbot+3d613ae53c031502687a@syzkaller.appspotmail.com\nSigned-off-by: Qianqiang\
+  \ Liu <qianqiang.liu@163.com>\nSigned-off-by: Helge Deller <deller@gmx.de>\n"
+submodule:
+- drivers/video/fbdev/core
+hunk_count: 1
+covered_count: 1

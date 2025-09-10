@@ -1,0 +1,68 @@
+id: b53a9c0d1ea4ad62da8b
+bug_link: https://syzkaller.appspot.com/bug?extid=b53a9c0d1ea4ad62da8b
+title: 'KASAN: slab-use-after-free Write in mini_qdisc_pair_swap'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 2d5f6a8d7aef7852a9ecc555f88c673a1c91754f
+fix_commit: 84ad0af0bccd3691cb951c2974c5cb2c10594d4a
+datetime: '2023-06-14T10:31:39+02:00'
+fix_commit_message: "net/sched: qdisc_destroy() old ingress and clsact Qdiscs before\
+  \ grafting\n\nmini_Qdisc_pair::p_miniq is a double pointer to mini_Qdisc, initialized\n\
+  in ingress_init() to point to net_device::miniq_ingress.  ingress Qdiscs\naccess\
+  \ this per-net_device pointer in mini_qdisc_pair_swap().  Similar\nfor clsact Qdiscs\
+  \ and miniq_egress.\n\nUnfortunately, after introducing RTNL-unlocked RTM_{NEW,DEL,GET}TFILTER\n\
+  requests (thanks Hillf Danton for the hint), when replacing ingress or\nclsact Qdiscs,\
+  \ for example, the old Qdisc (\"@old\") could access the same\nminiq_{in,e}gress\
+  \ pointer(s) concurrently with the new Qdisc (\"@new\"),\ncausing race conditions\
+  \ [1] including a use-after-free bug in\nmini_qdisc_pair_swap() reported by syzbot:\n\
+  \n BUG: KASAN: slab-use-after-free in mini_qdisc_pair_swap+0x1c2/0x1f0 net/sched/sch_generic.c:1573\n\
+  \ Write of size 8 at addr ffff888045b31308 by task syz-executor690/14901\n...\n\
+  \ Call Trace:\n  <TASK>\n  __dump_stack lib/dump_stack.c:88 [inline]\n  dump_stack_lvl+0xd9/0x150\
+  \ lib/dump_stack.c:106\n  print_address_description.constprop.0+0x2c/0x3c0 mm/kasan/report.c:319\n\
+  \  print_report mm/kasan/report.c:430 [inline]\n  kasan_report+0x11c/0x130 mm/kasan/report.c:536\n\
+  \  mini_qdisc_pair_swap+0x1c2/0x1f0 net/sched/sch_generic.c:1573\n  tcf_chain_head_change_item\
+  \ net/sched/cls_api.c:495 [inline]\n  tcf_chain0_head_change.isra.0+0xb9/0x120 net/sched/cls_api.c:509\n\
+  \  tcf_chain_tp_insert net/sched/cls_api.c:1826 [inline]\n  tcf_chain_tp_insert_unique\
+  \ net/sched/cls_api.c:1875 [inline]\n  tc_new_tfilter+0x1de6/0x2290 net/sched/cls_api.c:2266\n\
+  ...\n\n@old and @new should not affect each other.  In other words, @old should\n\
+  never modify miniq_{in,e}gress after @new, and @new should not update\n@old's RCU\
+  \ state.\n\nFixing without changing sch_api.c turned out to be difficult (please\n\
+  refer to Closes: for discussions).  Instead, make sure @new's first call\nalways\
+  \ happen after @old's last call (in {ingress,clsact}_destroy()) has\nfinished:\n\
+  \nIn qdisc_graft(), return -EBUSY if @old has any ongoing filter requests,\nand\
+  \ call qdisc_destroy() for @old before grafting @new.\n\nIntroduce qdisc_refcount_dec_if_one()\
+  \ as the counterpart of\nqdisc_refcount_inc_nz() used for filter requests.  Introduce\
+  \ a\nnon-static version of qdisc_destroy() that does a TCQ_F_BUILTIN check,\njust\
+  \ like qdisc_put() etc.\n\nDepends on patch \"net/sched: Refactor qdisc_graft()\
+  \ for ingress and\nclsact Qdiscs\".\n\n[1] To illustrate, the syzkaller reproducer\
+  \ adds ingress Qdiscs under\nTC_H_ROOT (no longer possible after commit c7cfbd115001\
+  \ (\"net/sched:\nsch_ingress: Only create under TC_H_INGRESS\")) on eth0 that has\
+  \ 8\ntransmission queues:\n\n  Thread 1 creates ingress Qdisc A (containing mini\
+  \ Qdisc a1 and a2),\n  then adds a flower filter X to A.\n\n  Thread 2 creates another\
+  \ ingress Qdisc B (containing mini Qdisc b1 and\n  b2) to replace A, then adds a\
+  \ flower filter Y to B.\n\n Thread 1               A's refcnt   Thread 2\n  RTM_NEWQDISC\
+  \ (A, RTNL-locked)\n   qdisc_create(A)               1\n   qdisc_graft(A)      \
+  \          9\n\n  RTM_NEWTFILTER (X, RTNL-unlocked)\n   __tcf_qdisc_find(A)    \
+  \      10\n   tcf_chain0_head_change(A)\n   mini_qdisc_pair_swap(A) (1st)\n    \
+  \        |\n            |                         RTM_NEWQDISC (B, RTNL-locked)\n\
+  \         RCU sync                2     qdisc_graft(B)\n            |          \
+  \          1     notify_and_destroy(A)\n            |\n   tcf_block_release(A) \
+  \         0    RTM_NEWTFILTER (Y, RTNL-unlocked)\n   qdisc_destroy(A)          \
+  \          tcf_chain0_head_change(B)\n   tcf_chain0_head_change_cb_del(A)    mini_qdisc_pair_swap(B)\
+  \ (2nd)\n   mini_qdisc_pair_swap(A) (3rd)                |\n           ...     \
+  \                            ...\n\nHere, B calls mini_qdisc_pair_swap(), pointing\
+  \ eth0->miniq_ingress to\nits mini Qdisc, b1.  Then, A calls mini_qdisc_pair_swap()\
+  \ again during\ningress_destroy(), setting eth0->miniq_ingress to NULL, so ingress\n\
+  packets on eth0 will not find filter Y in sch_handle_ingress().\n\nThis is just\
+  \ one of the possible consequences of concurrently accessing\nminiq_{in,e}gress\
+  \ pointers.\n\nFixes: 7a096d579e8e (\"net: sched: ingress: set 'unlocked' flag for\
+  \ Qdisc ops\")\nFixes: 87f373921c4e (\"net: sched: ingress: set 'unlocked' flag\
+  \ for clsact Qdisc ops\")\nReported-by: syzbot+b53a9c0d1ea4ad62da8b@syzkaller.appspotmail.com\n\
+  Closes: https://lore.kernel.org/r/0000000000006cf87705f79acf1a@google.com/\nCc:\
+  \ Hillf Danton <hdanton@sina.com>\nCc: Vlad Buslov <vladbu@mellanox.com>\nSigned-off-by:\
+  \ Peilin Ye <peilin.ye@bytedance.com>\nAcked-by: Jamal Hadi Salim <jhs@mojatatu.com>\n\
+  Signed-off-by: Paolo Abeni <pabeni@redhat.com>\n"
+submodule:
+- include/net
+- net/sched
+hunk_count: 9
+covered_count: 4

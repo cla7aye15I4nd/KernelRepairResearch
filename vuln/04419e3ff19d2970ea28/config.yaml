@@ -1,0 +1,28 @@
+id: 04419e3ff19d2970ea28
+bug_link: https://syzkaller.appspot.com/bug?extid=04419e3ff19d2970ea28
+title: 'KASAN: slab-out-of-bounds Read in squashfs_export_iget'
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: f37aa4c7366e23f91b81d00bafd6a7ab54e4a381
+fix_commit: eabac19e40c095543def79cb6ffeb3a8588aaff4
+datetime: '2021-02-09T17:26:44-08:00'
+fix_commit_message: "squashfs: add more sanity checks in inode lookup\n\nSysbot has\
+  \ reported an \"slab-out-of-bounds read\" error which has been\nidentified as being\
+  \ caused by a corrupted \"ino_num\" value read from the\ninode.  This could be because\
+  \ the metadata block is uncompressed, or\nbecause the \"compression\" bit has been\
+  \ corrupted (turning a compressed\nblock into an uncompressed block).\n\nThis patch\
+  \ adds additional sanity checks to detect this, and the\nfollowing corruption.\n\
+  \n1. It checks against corruption of the inodes count.  This can either\n   lead\
+  \ to a larger table to be read, or a smaller than expected\n   table to be read.\n\
+  \n   In the case of a too large inodes count, this would often have been\n   trapped\
+  \ by the existing sanity checks, but this patch introduces\n   a more exact check,\
+  \ which can identify too small values.\n\n2. It checks the contents of the index\
+  \ table for corruption.\n\n[phillip@squashfs.org.uk: fix checkpatch issue]\n  Link:\
+  \ https://lkml.kernel.org/r/527909353.754618.1612769948607@webmail.123-reg.co.uk\n\
+  \nLink: https://lkml.kernel.org/r/20210204130249.4495-4-phillip@squashfs.org.uk\n\
+  Signed-off-by: Phillip Lougher <phillip@squashfs.org.uk>\nReported-by: syzbot+04419e3ff19d2970ea28@syzkaller.appspotmail.com\n\
+  Cc: <stable@vger.kernel.org>\nSigned-off-by: Andrew Morton <akpm@linux-foundation.org>\n\
+  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs/squashfs
+hunk_count: 3
+covered_count: 3

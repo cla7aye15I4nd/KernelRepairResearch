@@ -1,0 +1,37 @@
+         and is ignored by this kernel. Remove the mand
+         option from the mount to silence this warning.
+=======================================================
+------------[ cut here ]------------
+UBSAN: shift-out-of-bounds in fs/ocfs2/super.c:2336:10
+shift exponent 777 is too large for 32-bit type 'int'
+CPU: 0 UID: 0 PID: 5829 Comm: syz-executor606 Not tainted 6.12.0-rc6-syzkaller-00318-ga9cda7c0ffed #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/30/2024
+Call Trace:
+ <TASK>
+ __dump_stack lib/dump_stack.c:94 [inline]
+ dump_stack_lvl+0x241/0x360 lib/dump_stack.c:120
+ ubsan_epilogue lib/ubsan.c:231 [inline]
+ __ubsan_handle_shift_out_of_bounds+0x3c8/0x420 lib/ubsan.c:468
+ ocfs2_verify_volume fs/ocfs2/super.c:2336 [inline]
+ ocfs2_sb_probe fs/ocfs2/super.c:792 [inline]
+ ocfs2_fill_super+0xf9c/0x5750 fs/ocfs2/super.c:988
+ mount_bdev+0x20a/0x2d0 fs/super.c:1693
+ legacy_get_tree+0xee/0x190 fs/fs_context.c:662
+ vfs_get_tree+0x90/0x2b0 fs/super.c:1814
+ do_new_mount+0x2be/0xb40 fs/namespace.c:3507
+ do_mount fs/namespace.c:3847 [inline]
+ __do_sys_mount fs/namespace.c:4057 [inline]
+ __se_sys_mount+0x2d6/0x3c0 fs/namespace.c:4034
+ do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+ do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fc12d4cbc7a
+Code: d8 64 89 02 48 c7 c0 ff ff ff ff eb a6 e8 5e 04 00 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffe44ce23e8 EFLAGS: 00000282 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007ffe44ce2400 RCX: 00007fc12d4cbc7a
+RDX: 0000000020004440 RSI: 0000000020000040 RDI: 00007ffe44ce2400
+RBP: 0000000000000004 R08: 00007ffe44ce2440 R09: 000000000000443a
+R10: 00000000000008c0 R11: 0000000000000282 R12: 00000000000008c0
+R13: 00007ffe44ce2440 R14: 0000000000000003 R15: 0000000001000000
+ </TASK>
+---[ end trace ]---

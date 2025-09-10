@@ -1,0 +1,32 @@
+id: 190005201ced78a74ad6
+bug_link: https://syzkaller.appspot.com/bug?extid=190005201ced78a74ad6
+title: general protection fault in path_openat
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 14cd0bd04907df79b36a31e55f18768172230987
+fix_commit: 6404674acd596de41fd3ad5f267b4525494a891a
+datetime: '2020-02-01T10:36:49-08:00'
+fix_commit_message: "vfs: fix do_last() regression\n\nBrown paperbag time: fetching\
+  \ ->i_uid/->i_mode really should've been\ndone from nd->inode.  I even suggested\
+  \ that, but the reason for that has\nslipped through the cracks and I went for dir->d_inode\
+  \ instead - made\nfor more \"obvious\" patch.\n\nAnalysis:\n\n - at the entry into\
+  \ do_last() and all the way to step_into(): dir (aka\n   nd->path.dentry) is known\
+  \ not to have been freed; so's nd->inode and\n   it's equal to dir->d_inode unless\
+  \ we are already doomed to -ECHILD.\n   inode of the file to get opened is not known.\n\
+  \n - after step_into(): inode of the file to get opened is known; dir\n   might\
+  \ be pointing to freed memory/be negative/etc.\n\n - at the call of may_create_in_sticky():\
+  \ guaranteed to be out of RCU\n   mode; inode of the file to get opened is known\
+  \ and pinned; dir might\n   be garbage.\n\nThe last was the reason for the original\
+  \ patch.  Except that at the\ndo_last() entry we can be in RCU mode and it is possible\
+  \ that\nnd->path.dentry->d_inode has already changed under us.\n\nIn that case we\
+  \ are going to fail with -ECHILD, but we need to be\ncareful; nd->inode is pointing\
+  \ to valid struct inode and it's the same\nas nd->path.dentry->d_inode in \"won't\
+  \ fail with -ECHILD\" case, so we\nshould use that.\n\nReported-by: \"Rantala, Tommi\
+  \ T. (Nokia - FI/Espoo)\" <tommi.t.rantala@nokia.com>\nReported-by: syzbot+190005201ced78a74ad6@syzkaller.appspotmail.com\n\
+  Wearing-brown-paperbag: Al Viro <viro@zeniv.linux.org.uk>\nCc: stable@kernel.org\n\
+  Fixes: d0cb50185ae9 (\"do_last(): fetch directory ->i_mode and ->i_uid before it's\
+  \ too late\")\nSigned-off-by: Al Viro <viro@zeniv.linux.org.uk>\nSigned-off-by:\
+  \ Linus Torvalds <torvalds@linux-foundation.org>\n"
+submodule:
+- fs
+hunk_count: 1
+covered_count: 1

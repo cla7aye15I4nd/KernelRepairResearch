@@ -1,0 +1,54 @@
+id: d7ce59b06b3eb14fd218
+bug_link: https://syzkaller.appspot.com/bug?extid=d7ce59b06b3eb14fd218
+title: possible deadlock in rfcomm_sk_state_change
+source_page: https://syzkaller.appspot.com/upstream/fixed
+trigger_commit: 500257db81d067c1ad5a202501a085a8ffea10f1
+fix_commit: 08d1914293dae38350b8088980e59fbc699a72fe
+datetime: '2024-10-04T16:54:10-04:00'
+fix_commit_message: 'Bluetooth: RFCOMM: FIX possible deadlock in rfcomm_sk_state_change
+
+
+  rfcomm_sk_state_change attempts to use sock_lock so it must never be
+
+  called with it locked but rfcomm_sock_ioctl always attempt to lock it
+
+  causing the following trace:
+
+
+  ======================================================
+
+  WARNING: possible circular locking dependency detected
+
+  6.8.0-syzkaller-08951-gfe46a7dd189e #0 Not tainted
+
+  ------------------------------------------------------
+
+  syz-executor386/5093 is trying to acquire lock:
+
+  ffff88807c396258 (sk_lock-AF_BLUETOOTH-BTPROTO_RFCOMM){+.+.}-{0:0}, at: lock_sock
+  include/net/sock.h:1671 [inline]
+
+  ffff88807c396258 (sk_lock-AF_BLUETOOTH-BTPROTO_RFCOMM){+.+.}-{0:0}, at: rfcomm_sk_state_change+0x5b/0x310
+  net/bluetooth/rfcomm/sock.c:73
+
+
+  but task is already holding lock:
+
+  ffff88807badfd28 (&d->lock){+.+.}-{3:3}, at: __rfcomm_dlc_close+0x226/0x6a0 net/bluetooth/rfcomm/core.c:491
+
+
+  Reported-by: syzbot+d7ce59b06b3eb14fd218@syzkaller.appspotmail.com
+
+  Tested-by: syzbot+d7ce59b06b3eb14fd218@syzkaller.appspotmail.com
+
+  Closes: https://syzkaller.appspot.com/bug?extid=d7ce59b06b3eb14fd218
+
+  Fixes: 3241ad820dbb ("[Bluetooth] Add timestamp support to L2CAP, RFCOMM and SCO")
+
+  Signed-off-by: Luiz Augusto von Dentz <luiz.von.dentz@intel.com>
+
+  '
+submodule:
+- net/bluetooth
+hunk_count: 1
+covered_count: 1

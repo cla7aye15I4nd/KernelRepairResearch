@@ -1,0 +1,19 @@
+diff --git a/io_uring/zcrx.c b/io_uring/zcrx.c
+index 9a568d049204..0c5b7d8f8d67 100644
+--- a/io_uring/zcrx.c
++++ b/io_uring/zcrx.c
+@@ -630,12 +630,13 @@ int io_register_zcrx_ifq(struct io_ring_ctx *ctx,
+ void io_unregister_zcrx_ifqs(struct io_ring_ctx *ctx)
+ {
+ 	struct io_zcrx_ifq *ifq;
+-	unsigned long id;
+ 
+ 	lockdep_assert_held(&ctx->uring_lock);
+ 
+ 	while (1) {
+ 		scoped_guard(mutex, &ctx->mmap_lock) {
++			unsigned long id = 0;
++
+ 			ifq = xa_find(&ctx->zcrx_ctxs, &id, ULONG_MAX, XA_PRESENT);
+ 			if (ifq)
+ 				xa_erase(&ctx->zcrx_ctxs, id);

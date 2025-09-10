@@ -1,0 +1,15 @@
+diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
+index 5b41e2321209..d032eb5fa6df 100644
+--- a/net/unix/af_unix.c
++++ b/net/unix/af_unix.c
+@@ -2665,7 +2665,9 @@ static struct sk_buff *manage_oob(struct sk_buff *skb, struct sock *sk,
+ 				}
+ 			} else if (!(flags & MSG_PEEK)) {
+ 				skb_unlink(skb, &sk->sk_receive_queue);
+-				consume_skb(skb);
++				WRITE_ONCE(u->oob_skb, NULL);
++				if (!WARN_ON_ONCE(skb_unref(skb)))
++					kfree_skb(skb);
+ 				skb = skb_peek(&sk->sk_receive_queue);
+ 			}
+ 		}

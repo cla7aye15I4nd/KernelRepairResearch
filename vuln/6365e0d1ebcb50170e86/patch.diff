@@ -1,0 +1,355 @@
+diff --git a/fs/bcachefs/bcachefs.h b/fs/bcachefs/bcachefs.h
+index 89ffe38b6bfe..50937f6aec0a 100644
+--- a/fs/bcachefs/bcachefs.h
++++ b/fs/bcachefs/bcachefs.h
+@@ -891,8 +891,7 @@ struct bch_fs {
+ 	struct percpu_rw_semaphore	mark_lock;
+ 
+ 	seqcount_t			usage_lock;
+-	struct bch_fs_usage		*usage_base;
+-	struct bch_fs_usage __percpu	*usage[JOURNAL_BUF_NR];
++	struct bch_fs_usage_base __percpu *usage;
+ 	struct bch_fs_usage __percpu	*usage_gc;
+ 	u64 __percpu		*online_reserved;
+ 
+diff --git a/fs/bcachefs/btree_gc.c b/fs/bcachefs/btree_gc.c
+index fe7293166e37..c79258e3e69c 100644
+--- a/fs/bcachefs/btree_gc.c
++++ b/fs/bcachefs/btree_gc.c
+@@ -769,10 +769,8 @@ static int bch2_gc_done(struct bch_fs *c)
+ #define copy_fs_field(_err, _f, _msg, ...)					\
+ 	copy_field(_err, _f, "fs has wrong " _msg, ##__VA_ARGS__)
+ 
+-	for (i = 0; i < ARRAY_SIZE(c->usage); i++)
+-		bch2_fs_usage_acc_to_base(c, i);
+-
+ 	__for_each_member_device(c, ca) {
++		/* XXX */
+ 		struct bch_dev_usage *dst = this_cpu_ptr(ca->usage);
+ 		struct bch_dev_usage *src = (void *)
+ 			bch2_acc_percpu_u64s((u64 __percpu *) ca->usage_gc,
+@@ -789,8 +787,10 @@ static int bch2_gc_done(struct bch_fs *c)
+ 	}
+ 
+ 	{
++#if 0
+ 		unsigned nr = fs_usage_u64s(c);
+-		struct bch_fs_usage *dst = c->usage_base;
++		/* XX: */
++		struct bch_fs_usage *dst = this_cpu_ptr(c->usage);
+ 		struct bch_fs_usage *src = (void *)
+ 			bch2_acc_percpu_u64s((u64 __percpu *) c->usage_gc, nr);
+ 
+@@ -823,6 +823,7 @@ static int bch2_gc_done(struct bch_fs *c)
+ 			copy_fs_field(fs_usage_replicas_wrong,
+ 				      replicas[i], "%s", buf.buf);
+ 		}
++#endif
+ 	}
+ 
+ #undef copy_fs_field
+diff --git a/fs/bcachefs/buckets.c b/fs/bcachefs/buckets.c
+index 07cdb4299918..240fc8185d4f 100644
+--- a/fs/bcachefs/buckets.c
++++ b/fs/bcachefs/buckets.c
+@@ -26,61 +26,12 @@
+ 
+ #include <linux/preempt.h>
+ 
+-static inline struct bch_fs_usage *fs_usage_ptr(struct bch_fs *c,
+-						unsigned journal_seq,
+-						bool gc)
+-{
+-	percpu_rwsem_assert_held(&c->mark_lock);
+-	BUG_ON(!gc && !journal_seq);
+-
+-	return this_cpu_ptr(gc
+-			    ? c->usage_gc
+-			    : c->usage[journal_seq & JOURNAL_BUF_MASK]);
+-}
+-
+ void bch2_dev_usage_read_fast(struct bch_dev *ca, struct bch_dev_usage *usage)
+ {
+ 	memset(usage, 0, sizeof(*usage));
+ 	acc_u64s_percpu((u64 *) usage, (u64 __percpu *) ca->usage, dev_usage_u64s());
+ }
+ 
+-u64 bch2_fs_usage_read_one(struct bch_fs *c, u64 *v)
+-{
+-	ssize_t offset = v - (u64 *) c->usage_base;
+-	unsigned i, seq;
+-	u64 ret;
+-
+-	BUG_ON(offset < 0 || offset >= fs_usage_u64s(c));
+-	percpu_rwsem_assert_held(&c->mark_lock);
+-
+-	do {
+-		seq = read_seqcount_begin(&c->usage_lock);
+-		ret = *v;
+-
+-		for (i = 0; i < ARRAY_SIZE(c->usage); i++)
+-			ret += percpu_u64_get((u64 __percpu *) c->usage[i] + offset);
+-	} while (read_seqcount_retry(&c->usage_lock, seq));
+-
+-	return ret;
+-}
+-
+-void bch2_fs_usage_acc_to_base(struct bch_fs *c, unsigned idx)
+-{
+-	unsigned u64s = fs_usage_u64s(c);
+-
+-	BUG_ON(idx >= ARRAY_SIZE(c->usage));
+-
+-	preempt_disable();
+-	write_seqcount_begin(&c->usage_lock);
+-
+-	acc_u64s_percpu((u64 *) c->usage_base,
+-			(u64 __percpu *) c->usage[idx], u64s);
+-	percpu_memset(c->usage[idx], 0, u64s * sizeof(u64));
+-
+-	write_seqcount_end(&c->usage_lock);
+-	preempt_enable();
+-}
+-
+ void bch2_fs_usage_to_text(struct printbuf *out,
+ 			   struct bch_fs *c,
+ 			   struct bch_fs_usage_online *fs_usage)
+@@ -142,17 +93,17 @@ __bch2_fs_usage_read_short(struct bch_fs *c)
+ 	u64 data, reserved;
+ 
+ 	ret.capacity = c->capacity -
+-		bch2_fs_usage_read_one(c, &c->usage_base->b.hidden);
++		percpu_u64_get(&c->usage->hidden);
+ 
+-	data		= bch2_fs_usage_read_one(c, &c->usage_base->b.data) +
+-		bch2_fs_usage_read_one(c, &c->usage_base->b.btree);
+-	reserved	= bch2_fs_usage_read_one(c, &c->usage_base->b.reserved) +
++	data		= percpu_u64_get(&c->usage->data) +
++		percpu_u64_get(&c->usage->btree);
++	reserved	= percpu_u64_get(&c->usage->reserved) +
+ 		percpu_u64_get(c->online_reserved);
+ 
+ 	ret.used	= min(ret.capacity, data + reserve_factor(reserved));
+ 	ret.free	= ret.capacity - ret.used;
+ 
+-	ret.nr_inodes	= bch2_fs_usage_read_one(c, &c->usage_base->b.nr_inodes);
++	ret.nr_inodes	= percpu_u64_get(&c->usage->nr_inodes);
+ 
+ 	return ret;
+ }
+@@ -673,7 +624,7 @@ void bch2_trans_account_disk_usage_change(struct btree_trans *trans)
+ 
+ 	percpu_down_read(&c->mark_lock);
+ 	preempt_disable();
+-	struct bch_fs_usage_base *dst = &fs_usage_ptr(c, trans->journal_res.seq, false)->b;
++	struct bch_fs_usage_base *dst = this_cpu_ptr(c->usage);
+ 	struct bch_fs_usage_base *src = &trans->fs_usage_delta;
+ 
+ 	s64 added = src->btree + src->data + src->reserved;
+diff --git a/fs/bcachefs/buckets.h b/fs/bcachefs/buckets.h
+index df73a47a4123..711c85e24f6d 100644
+--- a/fs/bcachefs/buckets.h
++++ b/fs/bcachefs/buckets.h
+@@ -298,10 +298,6 @@ static inline unsigned dev_usage_u64s(void)
+ 	return sizeof(struct bch_dev_usage) / sizeof(u64);
+ }
+ 
+-u64 bch2_fs_usage_read_one(struct bch_fs *, u64 *);
+-
+-void bch2_fs_usage_acc_to_base(struct bch_fs *, unsigned);
+-
+ void bch2_fs_usage_to_text(struct printbuf *,
+ 			   struct bch_fs *, struct bch_fs_usage_online *);
+ 
+diff --git a/fs/bcachefs/disk_accounting.c b/fs/bcachefs/disk_accounting.c
+index eadf4f6392bf..f5b5d896979e 100644
+--- a/fs/bcachefs/disk_accounting.c
++++ b/fs/bcachefs/disk_accounting.c
+@@ -384,7 +384,7 @@ int bch2_accounting_read(struct bch_fs *c)
+ 
+ 	percpu_down_read(&c->mark_lock);
+ 	preempt_disable();
+-	struct bch_fs_usage_base *usage = &c->usage_base->b;
++	struct bch_fs_usage_base *usage = this_cpu_ptr(c->usage);
+ 
+ 	for (unsigned i = 0; i < acc->k.nr; i++) {
+ 		struct disk_accounting_pos k;
+diff --git a/fs/bcachefs/recovery.c b/fs/bcachefs/recovery.c
+index abdb26d45068..4006b8ec4fe8 100644
+--- a/fs/bcachefs/recovery.c
++++ b/fs/bcachefs/recovery.c
+@@ -427,28 +427,10 @@ static int journal_replay_entry_early(struct bch_fs *c,
+ 			container_of(entry, struct jset_entry_usage, entry);
+ 
+ 		switch (entry->btree_id) {
+-		case BCH_FS_USAGE_reserved:
+-			if (entry->level < BCH_REPLICAS_MAX)
+-				c->usage_base->persistent_reserved[entry->level] =
+-					le64_to_cpu(u->v);
+-			break;
+-		case BCH_FS_USAGE_inodes:
+-			c->usage_base->b.nr_inodes = le64_to_cpu(u->v);
+-			break;
+ 		case BCH_FS_USAGE_key_version:
+-			atomic64_set(&c->key_version,
+-				     le64_to_cpu(u->v));
++			atomic64_set(&c->key_version, le64_to_cpu(u->v));
+ 			break;
+ 		}
+-
+-		break;
+-	}
+-	case BCH_JSET_ENTRY_data_usage: {
+-		struct jset_entry_data_usage *u =
+-			container_of(entry, struct jset_entry_data_usage, entry);
+-
+-		ret = bch2_replicas_set_usage(c, &u->r,
+-					      le64_to_cpu(u->v));
+ 		break;
+ 	}
+ 	case BCH_JSET_ENTRY_blacklist: {
+diff --git a/fs/bcachefs/replicas.c b/fs/bcachefs/replicas.c
+index 06783f357f8d..05214ad2ad35 100644
+--- a/fs/bcachefs/replicas.c
++++ b/fs/bcachefs/replicas.c
+@@ -307,46 +307,23 @@ static void __replicas_table_update_pcpu(struct bch_fs_usage __percpu *dst_p,
+ static int replicas_table_update(struct bch_fs *c,
+ 				 struct bch_replicas_cpu *new_r)
+ {
+-	struct bch_fs_usage __percpu *new_usage[JOURNAL_BUF_NR];
+ 	struct bch_fs_usage __percpu *new_gc = NULL;
+-	struct bch_fs_usage *new_base = NULL;
+-	unsigned i, bytes = sizeof(struct bch_fs_usage) +
++	unsigned bytes = sizeof(struct bch_fs_usage) +
+ 		sizeof(u64) * new_r->nr;
+ 	int ret = 0;
+ 
+-	memset(new_usage, 0, sizeof(new_usage));
+-
+-	for (i = 0; i < ARRAY_SIZE(new_usage); i++)
+-		if (!(new_usage[i] = __alloc_percpu_gfp(bytes,
+-					sizeof(u64), GFP_KERNEL)))
+-			goto err;
+-
+-	if (!(new_base = kzalloc(bytes, GFP_KERNEL)) ||
+-	    (c->usage_gc &&
++	if ((c->usage_gc &&
+ 	     !(new_gc = __alloc_percpu_gfp(bytes, sizeof(u64), GFP_KERNEL))))
+ 		goto err;
+ 
+-	for (i = 0; i < ARRAY_SIZE(new_usage); i++)
+-		if (c->usage[i])
+-			__replicas_table_update_pcpu(new_usage[i], new_r,
+-						     c->usage[i], &c->replicas);
+-	if (c->usage_base)
+-		__replicas_table_update(new_base,		new_r,
+-					c->usage_base,		&c->replicas);
+ 	if (c->usage_gc)
+ 		__replicas_table_update_pcpu(new_gc,		new_r,
+ 					     c->usage_gc,	&c->replicas);
+ 
+-	for (i = 0; i < ARRAY_SIZE(new_usage); i++)
+-		swap(c->usage[i],	new_usage[i]);
+-	swap(c->usage_base,	new_base);
+ 	swap(c->usage_gc,	new_gc);
+ 	swap(c->replicas,	*new_r);
+ out:
+ 	free_percpu(new_gc);
+-	for (i = 0; i < ARRAY_SIZE(new_usage); i++)
+-		free_percpu(new_usage[i]);
+-	kfree(new_base);
+ 	return ret;
+ err:
+ 	bch_err(c, "error updating replicas table: memory allocation failure");
+@@ -537,6 +514,8 @@ int bch2_replicas_gc_start(struct bch_fs *c, unsigned typemask)
+  */
+ int bch2_replicas_gc2(struct bch_fs *c)
+ {
++	return 0;
++#if 0
+ 	struct bch_replicas_cpu new = { 0 };
+ 	unsigned i, nr;
+ 	int ret = 0;
+@@ -591,34 +570,7 @@ int bch2_replicas_gc2(struct bch_fs *c)
+ 	mutex_unlock(&c->sb_lock);
+ 
+ 	return ret;
+-}
+-
+-int bch2_replicas_set_usage(struct bch_fs *c,
+-			    struct bch_replicas_entry_v1 *r,
+-			    u64 sectors)
+-{
+-	int ret, idx = bch2_replicas_entry_idx(c, r);
+-
+-	if (idx < 0) {
+-		struct bch_replicas_cpu n;
+-
+-		n = cpu_replicas_add_entry(c, &c->replicas, r);
+-		if (!n.entries)
+-			return -BCH_ERR_ENOMEM_cpu_replicas;
+-
+-		ret = replicas_table_update(c, &n);
+-		if (ret)
+-			return ret;
+-
+-		kfree(n.entries);
+-
+-		idx = bch2_replicas_entry_idx(c, r);
+-		BUG_ON(ret < 0);
+-	}
+-
+-	c->usage_base->replicas[idx] = sectors;
+-
+-	return 0;
++#endif
+ }
+ 
+ /* Replicas tracking - superblock: */
+@@ -1020,11 +972,6 @@ unsigned bch2_dev_has_data(struct bch_fs *c, struct bch_dev *ca)
+ 
+ void bch2_fs_replicas_exit(struct bch_fs *c)
+ {
+-	unsigned i;
+-
+-	for (i = 0; i < ARRAY_SIZE(c->usage); i++)
+-		free_percpu(c->usage[i]);
+-	kfree(c->usage_base);
+ 	kfree(c->replicas.entries);
+ 	kfree(c->replicas_gc.entries);
+ }
+diff --git a/fs/bcachefs/replicas.h b/fs/bcachefs/replicas.h
+index 0a24ebcf71bd..eade75ed4839 100644
+--- a/fs/bcachefs/replicas.h
++++ b/fs/bcachefs/replicas.h
+@@ -53,10 +53,6 @@ int bch2_replicas_gc_end(struct bch_fs *, int);
+ int bch2_replicas_gc_start(struct bch_fs *, unsigned);
+ int bch2_replicas_gc2(struct bch_fs *);
+ 
+-int bch2_replicas_set_usage(struct bch_fs *,
+-			    struct bch_replicas_entry_v1 *,
+-			    u64);
+-
+ #define for_each_cpu_replicas_entry(_r, _i)				\
+ 	for (_i = (_r)->entries;					\
+ 	     (void *) (_i) < (void *) (_r)->entries + (_r)->nr * (_r)->entry_size;\
+diff --git a/fs/bcachefs/super.c b/fs/bcachefs/super.c
+index e7a17179f741..01f8c7dd45a5 100644
+--- a/fs/bcachefs/super.c
++++ b/fs/bcachefs/super.c
+@@ -573,6 +573,7 @@ static void __bch2_fs_free(struct bch_fs *c)
+ 
+ 	darray_exit(&c->btree_roots_extra);
+ 	free_percpu(c->pcpu);
++	free_percpu(c->usage);
+ 	mempool_exit(&c->large_bkey_pool);
+ 	mempool_exit(&c->btree_bounce_pool);
+ 	bioset_exit(&c->btree_bio);
+@@ -898,6 +899,7 @@ static struct bch_fs *bch2_fs_alloc(struct bch_sb *sb, struct bch_opts opts)
+ 			    offsetof(struct btree_write_bio, wbio.bio)),
+ 			BIOSET_NEED_BVECS) ||
+ 	    !(c->pcpu = alloc_percpu(struct bch_fs_pcpu)) ||
++	    !(c->usage = alloc_percpu(struct bch_fs_usage_base)) ||
+ 	    !(c->online_reserved = alloc_percpu(u64)) ||
+ 	    mempool_init_kvmalloc_pool(&c->btree_bounce_pool, 1,
+ 				       c->opts.btree_node_size) ||
