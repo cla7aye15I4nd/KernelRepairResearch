@@ -1,4 +1,4 @@
-FROM nvidia/cuda:13.0.1-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:12.9.0-cudnn-devel-ubuntu24.04
 
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
@@ -74,6 +74,6 @@ RUN pip install --upgrade pip && \
     tqdm \
     transformers \
     unidiff && \
-    pip install torch --index-url https://download.pytorch.org/whl/cu130 && \
-    pip install torchaudio --index-url https://download.pytorch.org/whl/cu130 && \
-    pip install torchvision --index-url https://download.pytorch.org/whl/cu130
+    pip install torch --index-url https://download.pytorch.org/whl/cu129 && \
+    pip install torchaudio --index-url https://download.pytorch.org/whl/cu129 && \
+    pip install torchvision --index-url https://download.pytorch.org/whl/cu129
