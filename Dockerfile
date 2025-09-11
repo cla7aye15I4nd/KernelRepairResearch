@@ -1,4 +1,10 @@
-FROM ubuntu:24.04
+FROM nvidia/cuda:13.0.1-cudnn-devel-ubuntu24.04
+
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+ENV CUDA_HOME=/usr/local/cuda
+ENV PATH=${CUDA_HOME}/bin:${PATH}
+ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 
 RUN DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
@@ -25,7 +31,10 @@ RUN DEBIAN_FRONTEND=noninteractive && \
     ssh \
     sudo \
     tmux \
-    wget && \
+    wget \
+    ca-certificates \
+    gnupg && \
+    # Install Docker
     install -m 0755 -d /etc/apt/keyrings && \
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
     chmod a+r /etc/apt/keyrings/docker.asc && \
@@ -38,7 +47,9 @@ RUN DEBIAN_FRONTEND=noninteractive && \
     containerd.io \
     docker-buildx-plugin \
     docker-compose-plugin && \
+    # Create Python virtual environment
     python3 -m venv /opt/venv && \
+    # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -55,26 +66,14 @@ RUN cd /tmp && \
     cd / && \
     rm -rf /tmp/universal-ctags-6.2.0*
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    ca-certificates \
-    gnupg && \
-    curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg && \
-    curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-    tee /etc/apt/sources.list.d/nvidia-container-toolkit.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-    nvidia-container-toolkit && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
-
-RUN pip install \
+RUN pip install --upgrade pip && \
+    pip install \
     bs4 \
-    torch \
-    torchaudio \
-    torchvision \
-    unidiff
+    numpy \
+    scikit-learn \
+    tqdm \
+    transformers \
+    unidiff && \
+    pip install torch --index-url https://download.pytorch.org/whl/cu130 && \
+    pip install torchaudio --index-url https://download.pytorch.org/whl/cu130 && \
+    pip install torchvision --index-url https://download.pytorch.org/whl/cu130
