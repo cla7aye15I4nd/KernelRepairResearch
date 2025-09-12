@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import torch
+import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from torch.optim import AdamW
 from transformers import (
@@ -8,16 +9,13 @@ from transformers import (
     RobertaForSequenceClassification,
     get_linear_schedule_with_warmup,
 )
-from sklearn.metrics import (
-    accuracy_score,
-    precision_recall_fscore_support,
-    classification_report,
-)
+from sklearn.metrics import accuracy_score
 from pathlib import Path
 from typing import List, Tuple
 import yaml
 from tqdm import tqdm
 import argparse
+import os
 
 VULN_DIR = Path(__file__).parent.parent / "vuln"
 
@@ -92,11 +90,12 @@ def train_model(
     val_data,
     model_name="roberta-base",
     epochs=3,
-    batch_size=16,
+    batch_size=64,  # Larger batch size since we're using single GPU more efficiently
     learning_rate=2e-5,
     output_dir="./roberta_vuln_model",
+    num_workers=8,
 ):
-    """Train RoBERTa model for vulnerability classification"""
+    """Train RoBERTa model with optimizations but without DataParallel complexity"""
 
     # Initialize tokenizer and model
     tokenizer = RobertaTokenizer.from_pretrained(model_name)
@@ -104,31 +103,55 @@ def train_model(
         model_name, num_labels=2, output_attentions=False, output_hidden_states=False
     )
 
+    # Setup device - use first GPU only for simplicity
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    print(f"Using device: {device}")
+    print(f"Batch size: {batch_size}")
+
     # Create datasets
     train_dataset = VulnerabilityDataset(train_data, tokenizer)
     val_dataset = VulnerabilityDataset(val_data, tokenizer) if val_data else None
 
-    # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    # Create data loaders with optimizations
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=batch_size, 
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=True if num_workers > 0 else False,
+    )
     val_loader = (
-        DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+        DataLoader(
+            val_dataset, 
+            batch_size=batch_size, 
+            shuffle=False,
+            num_workers=num_workers,
+            pin_memory=True,
+            persistent_workers=True if num_workers > 0 else False,
+        )
         if val_dataset
         else None
     )
 
-    # Setup device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    print(f"Using device: {device}")
-
-    # Setup optimizer and scheduler
-    optimizer = AdamW(model.parameters(), lr=learning_rate, eps=1e-8)
+    # Setup optimizer with weight decay
+    optimizer = AdamW(
+        model.parameters(), 
+        lr=learning_rate, 
+        eps=1e-8,
+        weight_decay=0.01
+    )
+    
     total_steps = len(train_loader) * epochs
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=int(0.1 * total_steps),
         num_training_steps=total_steps,
     )
+
+    # Enable mixed precision training
+    scaler = torch.amp.GradScaler()
 
     # Training loop
     model.train()
@@ -143,18 +166,25 @@ def train_model(
         for batch in progress_bar:
             optimizer.zero_grad()
 
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["label"].to(device)
+            input_ids = batch["input_ids"].to(device, non_blocking=True)
+            attention_mask = batch["attention_mask"].to(device, non_blocking=True)
+            labels = batch["label"].to(device, non_blocking=True)
 
-            outputs = model(
-                input_ids=input_ids, attention_mask=attention_mask, labels=labels
-            )
-            loss = outputs.loss
+            # Mixed precision forward pass
+            with torch.amp.autocast('cuda'):
+                outputs = model(
+                    input_ids=input_ids, 
+                    attention_mask=attention_mask, 
+                    labels=labels
+                )
+                loss = outputs.loss
 
-            loss.backward()
+            # Mixed precision backward pass
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            optimizer.step()
+            scaler.step(optimizer)
+            scaler.update()
             scheduler.step()
 
             total_loss += loss.item()
@@ -189,7 +219,7 @@ def train_model(
 
 
 def evaluate_model(model, data_loader, device):
-    """Evaluate model on given data"""
+    """Evaluate model on given data with mixed precision"""
     model.eval()
     total_loss = 0
     predictions = []
@@ -197,15 +227,18 @@ def evaluate_model(model, data_loader, device):
 
     with torch.no_grad():
         for batch in tqdm(data_loader, desc="Evaluating"):
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["label"].to(device)
+            input_ids = batch["input_ids"].to(device, non_blocking=True)
+            attention_mask = batch["attention_mask"].to(device, non_blocking=True)
+            labels = batch["label"].to(device, non_blocking=True)
 
-            outputs = model(
-                input_ids=input_ids, attention_mask=attention_mask, labels=labels
-            )
-            loss = outputs.loss
-            logits = outputs.logits
+            with torch.amp.autocast('cuda'):
+                outputs = model(
+                    input_ids=input_ids, 
+                    attention_mask=attention_mask, 
+                    labels=labels
+                )
+                loss = outputs.loss
+                logits = outputs.logits
 
             total_loss += loss.item()
 
@@ -221,110 +254,8 @@ def evaluate_model(model, data_loader, device):
     return accuracy, avg_loss
 
 
-def inference(model_path, text_input, tokenizer_path=None):
-    """Run inference on a single text input"""
-    if tokenizer_path is None:
-        tokenizer_path = model_path
-
-    # Load model and tokenizer
-    model = RobertaForSequenceClassification.from_pretrained(model_path)
-    tokenizer = RobertaTokenizer.from_pretrained(tokenizer_path)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    model.eval()
-
-    # Tokenize input
-    encoding = tokenizer(
-        text_input,
-        truncation=True,
-        padding="max_length",
-        max_length=512,
-        return_tensors="pt",
-    )
-
-    input_ids = encoding["input_ids"].to(device)
-    attention_mask = encoding["attention_mask"].to(device)
-
-    # Make prediction
-    with torch.no_grad():
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-        logits = outputs.logits
-        probabilities = torch.softmax(logits, dim=1)
-        prediction = torch.argmax(logits, dim=1).item()
-
-    return {
-        "prediction": prediction,
-        "confidence": probabilities[0][prediction].item(),
-        "probabilities": {
-            "negative": probabilities[0][0].item(),
-            "positive": probabilities[0][1].item(),
-        },
-    }
-
-
-def test_model(model_path, test_data):
-    """Test the trained model on test data"""
-    tokenizer = RobertaTokenizer.from_pretrained(model_path)
-    model = RobertaForSequenceClassification.from_pretrained(model_path)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-
-    test_dataset = VulnerabilityDataset(test_data, tokenizer)
-    test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
-
-    # Evaluate
-    accuracy, avg_loss = evaluate_model(model, test_loader, device)
-
-    # Get detailed metrics
-    model.eval()
-    predictions = []
-    true_labels = []
-
-    with torch.no_grad():
-        for batch in tqdm(test_loader, desc="Testing"):
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["label"].to(device)
-
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-            logits = outputs.logits
-
-            preds = torch.argmax(logits, dim=1).cpu().numpy()
-            predictions.extend(preds)
-            true_labels.extend(labels.cpu().numpy())
-
-    # Print detailed results
-    print(f"\nTest Results:")
-    print(f"Accuracy: {accuracy:.4f}")
-    print(f"Average Loss: {avg_loss:.4f}")
-
-    precision, recall, f1, support = precision_recall_fscore_support(
-        true_labels, predictions, average="weighted"
-    )
-    print(f"Precision: {precision:.4f}")
-    print(f"Recall: {recall:.4f}")
-    print(f"F1 Score: {f1:.4f}")
-
-    print("\nDetailed Classification Report:")
-    print(
-        classification_report(
-            true_labels, predictions, target_names=["Negative", "Positive"]
-        )
-    )
-
-    return accuracy, predictions, true_labels
-
-
 def main():
     parser = argparse.ArgumentParser(description="RoBERTa Vulnerability Classification")
-    parser.add_argument(
-        "--mode",
-        choices=["train", "test", "inference"],
-        required=True,
-        help="Mode: train, test, or inference",
-    )
     parser.add_argument(
         "--model-path",
         default=Path(__file__).parent / "roberta_vuln_model",
@@ -334,65 +265,41 @@ def main():
         "--epochs", type=int, default=3, help="Number of training epochs"
     )
     parser.add_argument(
-        "--batch-size", type=int, default=16, help="Batch size for training"
+        "--batch-size", type=int, default=64, help="Batch size for training"
     )
     parser.add_argument(
         "--learning-rate", type=float, default=2e-5, help="Learning rate"
+    )
+    parser.add_argument(
+        "--num-workers", type=int, default=8, help="Number of data loading workers"
     )
     parser.add_argument("--text", type=str, help="Text for inference mode")
     parser.add_argument("--file", type=str, help="File path for inference mode")
 
     args = parser.parse_args()
 
-    if args.mode == "train":
-        print("Preparing data...")
-        train_data, test_data = prepare_data()
+    # Set environment variables for better performance
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    
+    print("Preparing data...")
+    train_data, test_data = prepare_data()
 
-        if not train_data:
-            print("No training data found!")
-            return
+    if not train_data:
+        print("No training data found!")
+        return
 
-        val_data = test_data
-        print("Starting training...")
-        model, tokenizer = train_model(
-            train_data,
-            val_data,
-            epochs=args.epochs,
-            batch_size=args.batch_size,
-            learning_rate=args.learning_rate,
-            output_dir=args.model_path,
-        )
-        print("Training completed!")
-
-    elif args.mode == "test":
-        print("Preparing test data...")
-        _, test_data = prepare_data()
-
-        if not test_data:
-            print("No test data found!")
-            return
-
-        print("Testing model...")
-        test_model(args.model_path, test_data)
-
-    elif args.mode == "inference":
-        if args.text:
-            text_input = args.text
-        elif args.file:
-            text_input = Path(args.file).read_text()
-        else:
-            print("Please provide either --text or --file for inference")
-            return
-
-        print("Running inference...")
-        result = inference(args.model_path, text_input)
-
-        print(f"Prediction: {'Positive' if result['prediction'] == 1 else 'Negative'}")
-        print(f"Confidence: {result['confidence']:.4f}")
-        print(
-            f"Probabilities: Negative={result['probabilities']['negative']:.4f}, "
-            f"Positive={result['probabilities']['positive']:.4f}"
-        )
+    val_data = test_data
+    print("Starting training...")
+    model, tokenizer = train_model(
+        train_data,
+        val_data,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        learning_rate=args.learning_rate,
+        output_dir=args.model_path,
+        num_workers=args.num_workers,
+    )
+    print("Training completed!")
 
 
 if __name__ == "__main__":
