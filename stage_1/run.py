@@ -1,38 +1,39 @@
 #!/usr/bin/env python3
 
+import argparse
+import json
+import os
+import time
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+import yaml
+from sklearn.metrics import accuracy_score
 from torch.optim import AdamW
+from torch.utils.data import DataLoader, Dataset
+from tqdm import tqdm
 from transformers import (
-    LongformerTokenizer,
-    LongformerForSequenceClassification,
     LongformerConfig,
+    LongformerForSequenceClassification,
+    LongformerTokenizer,
     get_linear_schedule_with_warmup,
 )
-from sklearn.metrics import accuracy_score
-from pathlib import Path
-from typing import List, Tuple, Dict, Any, Optional
-import yaml
-from tqdm import tqdm
-import argparse
-import os
-import json
-import time
 
 VULN_DIR = Path(__file__).parent.parent / "vuln"
 
 
 class VulnerabilityDataset(Dataset):
-    def __init__(self, data: List[Tuple[Path, bool]], tokenizer, max_length=4096):
+    def __init__(self, data: List[Tuple[Path, bool]], tokenizer: LongformerTokenizer, max_length: int = 4096) -> None:
         self.data = data
         self.tokenizer = tokenizer
         self.max_length = max_length
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         report_path, label = self.data[idx]
         text = report_path.read_text(encoding="utf-8")
 
@@ -43,15 +44,17 @@ class VulnerabilityDataset(Dataset):
             padding="max_length",
             max_length=self.max_length,
             return_tensors="pt",
-            add_special_tokens=True,  # Ensure special tokens are added
+            add_special_tokens=True,
         )
 
         # Ensure input_ids don't exceed vocab size
         input_ids = encoding["input_ids"].flatten()
         vocab_size = self.tokenizer.vocab_size
 
-        # Clamp any out-of-bounds token IDs
-        input_ids = torch.clamp(input_ids, 0, vocab_size - 1)
+        # print a warning if out-of-bounds indices are found
+        if input_ids.max() >= vocab_size:
+            print(f"Warning: Found token ID {input_ids.max()} >= vocab_size {vocab_size}")
+            input_ids = torch.clamp(input_ids, 0, vocab_size - 1)
 
         return {
             "input_ids": input_ids,
@@ -60,7 +63,9 @@ class VulnerabilityDataset(Dataset):
         }
 
 
-def create_extended_longformer_model(base_model_name="allenai/longformer-base-4096", max_pos=4096):
+def create_extended_longformer_model(
+    base_model_name: str = "allenai/longformer-base-4096", max_pos: int = 4096
+) -> Tuple[LongformerForSequenceClassification, LongformerTokenizer]:
     """Create a Longformer model extended to support longer sequences"""
 
     # Load the tokenizer first to check vocab size
@@ -121,9 +126,9 @@ def create_extended_longformer_model(base_model_name="allenai/longformer-base-40
 
 def save_checkpoint(
     model: nn.Module,
-    tokenizer,
+    tokenizer: LongformerTokenizer,
     optimizer: torch.optim.Optimizer,
-    scheduler,
+    scheduler: Any,
     scaler: torch.amp.GradScaler,
     epoch: int,
     step: int,
@@ -184,9 +189,8 @@ def save_checkpoint(
 def load_checkpoint(
     checkpoint_path: Path,
     model: nn.Module,
-    tokenizer,
     optimizer: torch.optim.Optimizer,
-    scheduler,
+    scheduler: Any,
     scaler: torch.amp.GradScaler,
     device: torch.device,
 ) -> Tuple[int, int, float, List[float], List[float], List[float]]:
@@ -234,28 +238,24 @@ def prepare_data() -> Tuple[List[Tuple[Path, bool]], List[Tuple[Path, bool]]]:
         report_txt = vuln_dir / "report.txt"
 
         if config_yaml.exists() and report_txt.exists():
-            try:
-                config_data = yaml.safe_load(config_yaml.read_text())
+            config_data = yaml.safe_load(config_yaml.read_text())
 
-                # Validate required keys exist
-                if not all(key in config_data for key in ["hunk_count", "covered_count", "datetime"]):
-                    print(f"Skipping {vuln_dir}: missing required keys in config.yaml")
-                    continue
-
-                hunk_count = config_data["hunk_count"]
-                covered_count = config_data["covered_count"]
-
-                label = (hunk_count == 1) and (covered_count == 1)
-                data = (report_txt, label)
-
-                year = int(config_data["datetime"][:4])
-                if year < 2024:
-                    train_data.append(data)
-                else:
-                    test_data.append(data)
-            except Exception as e:
-                print(f"Error processing {vuln_dir}: {e}")
+            # Validate required keys exist
+            if not all(key in config_data for key in ["hunk_count", "covered_count", "datetime"]):
+                print(f"Skipping {vuln_dir}: missing required keys in config.yaml")
                 continue
+
+            hunk_count = config_data["hunk_count"]
+            covered_count = config_data["covered_count"]
+
+            label = (hunk_count == 1) and (covered_count == 1)
+            data = (report_txt, label)
+
+            year = int(config_data["datetime"][:4])
+            if year < 2024:
+                train_data.append(data)
+            else:
+                test_data.append(data)
 
     train_labels = [label for _, label in train_data]
     test_labels = [label for _, label in test_data]
@@ -269,21 +269,20 @@ def prepare_data() -> Tuple[List[Tuple[Path, bool]], List[Tuple[Path, bool]]]:
 
 
 def train_model(
-    train_data,
-    val_data,
-    base_model_name="allenai/longformer-base-4096",
-    epochs=3,
-    batch_size=2,  # Reduced further for 4096 tokens
-    learning_rate=2e-5,
-    output_dir="./longformer_vuln_model",
-    num_workers=4,  # Reduced workers
-    resume_from_checkpoint=None,
-    save_every_n_epochs=1,
-    max_length=4096,
-):
+    train_data: List[Tuple[Path, bool]],
+    val_data: Optional[List[Tuple[Path, bool]]],
+    base_model_name: str = "allenai/longformer-base-4096",
+    epochs: int = 3,
+    batch_size: int = 2,
+    learning_rate: float = 2e-5,
+    output_dir: Path = Path("./longformer_vuln_model"),
+    num_workers: int = 4,
+    resume_from_checkpoint: Optional[str] = None,
+    save_every_n_epochs: int = 1,
+    max_length: int = 4096,
+) -> Tuple[LongformerForSequenceClassification, LongformerTokenizer]:
     """Train extended Longformer model with checkpoint support"""
 
-    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Creating extended Longformer model with {max_length} max tokens...")
@@ -341,10 +340,10 @@ def train_model(
     # Initialize training state
     start_epoch = 0
     global_step = 0
-    best_val_acc = 0
-    train_losses = []
-    val_accuracies = []
-    val_losses = []
+    best_val_acc = 0.0
+    train_losses: List[float] = []
+    val_accuracies: List[float] = []
+    val_losses: List[float] = []
 
     # Load checkpoint if specified
     if resume_from_checkpoint:
@@ -356,9 +355,8 @@ def train_model(
             val_accuracies,
             val_losses,
         ) = load_checkpoint(
-            resume_from_checkpoint,
+            Path(resume_from_checkpoint),
             model,
-            tokenizer,
             optimizer,
             scheduler,
             scaler,
@@ -407,6 +405,8 @@ def train_model(
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 scaler.step(optimizer)
                 scaler.update()
+
+                # FIXED: Move scheduler.step() after optimizer.step()
                 scheduler.step()
 
                 epoch_loss += loss.item()
@@ -469,7 +469,7 @@ def train_model(
     return model, tokenizer
 
 
-def evaluate_model(model, data_loader, device):
+def evaluate_model(model: nn.Module, data_loader: DataLoader, device: torch.device) -> Tuple[float, float]:
     """Evaluate model on given data with mixed precision"""
     model.eval()
     total_loss = 0
@@ -510,7 +510,7 @@ def evaluate_model(model, data_loader, device):
     return accuracy, avg_loss
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Extended Longformer Vulnerability Classification with 4096 tokens")
     parser.add_argument(
         "--model-path",
@@ -563,7 +563,7 @@ def main():
         epochs=args.epochs,
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,
-        output_dir=args.model_path,
+        output_dir=Path(args.model_path),
         num_workers=args.num_workers,
         resume_from_checkpoint=args.resume_from_checkpoint,
         save_every_n_epochs=args.save_every_n_epochs,
