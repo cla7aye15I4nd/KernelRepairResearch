@@ -470,11 +470,15 @@ def train_model(
 
 
 def evaluate_model(model: nn.Module, data_loader: DataLoader, device: torch.device) -> Tuple[float, float]:
-    """Evaluate model on given data with mixed precision"""
+    """Evaluate model on given data with mixed precision and detailed metrics"""
+    import numpy as np
+    from sklearn.metrics import classification_report, confusion_matrix
+
     model.eval()
     total_loss = 0
     predictions = []
     true_labels = []
+    prediction_probabilities = []
 
     with torch.no_grad():
         for batch in tqdm(data_loader, desc="Evaluating"):
@@ -494,10 +498,12 @@ def evaluate_model(model: nn.Module, data_loader: DataLoader, device: torch.devi
 
                 total_loss += loss.item()
 
-                # Get predictions
+                # Get predictions and probabilities
+                probabilities = torch.softmax(logits, dim=1)
                 preds = torch.argmax(logits, dim=1).cpu().numpy()
                 predictions.extend(preds)
                 true_labels.extend(labels.cpu().numpy())
+                prediction_probabilities.extend(probabilities.cpu().numpy())
 
             except Exception as e:
                 print(f"Error in evaluation: {e}")
@@ -505,6 +511,74 @@ def evaluate_model(model: nn.Module, data_loader: DataLoader, device: torch.devi
 
     avg_loss = total_loss / len(data_loader) if len(data_loader) > 0 else 0
     accuracy = accuracy_score(true_labels, predictions) if predictions else 0
+
+    # Detailed analysis
+    if predictions:
+        print("\n" + "=" * 80)
+        print("DETAILED EVALUATION REPORT")
+        print("=" * 80)
+
+        # Basic stats
+        unique_preds, pred_counts = np.unique(predictions, return_counts=True)
+        unique_true, true_counts = np.unique(true_labels, return_counts=True)
+
+        print("\nPrediction Distribution:")
+        for pred, count in zip(unique_preds, pred_counts):
+            percentage = count / len(predictions) * 100
+            print(f"  Class {pred}: {count:4d} samples ({percentage:5.1f}%)")
+
+        print("\nTrue Label Distribution:")
+        for true, count in zip(unique_true, true_counts):
+            percentage = count / len(true_labels) * 100
+            print(f"  Class {true}: {count:4d} samples ({percentage:5.1f}%)")
+
+        # Check if model is predicting only one class
+        if len(unique_preds) == 1:
+            print(f"\n⚠️  WARNING: Model is predicting ONLY class {unique_preds[0]}!")
+            print("This suggests the model has not learned to distinguish between classes.")
+
+        # Confusion Matrix
+        print("\nConfusion Matrix:")
+        cm = confusion_matrix(true_labels, predictions)
+        print("     Predicted")
+        print("    ", end="")
+        for i in range(len(np.unique(true_labels))):
+            print(f"{i:6d}", end="")
+        print()
+        for i, row in enumerate(cm):
+            if i == 0:
+                print("T", end="")
+            else:
+                print(" ", end="")
+            print(f"{i} ", end="")
+            for val in row:
+                print(f"{val:6d}", end="")
+            print()
+
+        # Classification Report
+        print("\nClassification Report:")
+        target_names = ["Negative (0)", "Positive (1)"]
+        print(classification_report(true_labels, predictions, target_names=target_names, digits=4))
+
+        # Prediction confidence analysis
+        probs_array = np.array(prediction_probabilities)
+        max_probs = np.max(probs_array, axis=1)
+        print("\nPrediction Confidence Analysis:")
+        print(f"  Mean confidence: {np.mean(max_probs):.4f}")
+        print(f"  Std confidence:  {np.std(max_probs):.4f}")
+        print(f"  Min confidence:  {np.min(max_probs):.4f}")
+        print(f"  Max confidence:  {np.max(max_probs):.4f}")
+
+        # Check if confidences are too extreme
+        very_confident = np.sum(max_probs > 0.95)
+        very_unconfident = np.sum(max_probs < 0.55)
+        print(f"  Very confident predictions (>95%): {very_confident} ({very_confident/len(max_probs)*100:.1f}%)")
+        print(f"  Low confidence predictions (<55%):  {very_unconfident} ({very_unconfident/len(max_probs)*100:.1f}%)")
+
+        if very_confident / len(max_probs) > 0.9:
+            print("  ⚠️  WARNING: Most predictions are very confident - model might be overconfident!")
+
+        print("=" * 80)
 
     model.train()
     return accuracy, avg_loss
