@@ -522,7 +522,7 @@ def main():
         default="allenai/longformer-base-4096",
         help="Base Longformer model to extend",
     )
-    parser.add_argument("--epochs", type=int, default=10000, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     parser.add_argument(
         "--batch-size",
         type=int,
@@ -536,7 +536,7 @@ def main():
     parser.add_argument(
         "--save-every-n-epochs",
         type=int,
-        default=10,
+        default=5,
         help="Save checkpoint every N epochs",
     )
     parser.add_argument("--text", type=str, help="Text for inference mode")
