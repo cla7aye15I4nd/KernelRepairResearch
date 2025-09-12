@@ -70,6 +70,7 @@ RUN pip install --upgrade pip && \
     pip install \
     bs4 \
     numpy \
+    protobuf \
     scikit-learn \
     tqdm \
     transformers \
