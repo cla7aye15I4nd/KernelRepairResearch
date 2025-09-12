@@ -33,14 +33,8 @@ class VulnerabilityDataset(Dataset):
 
     def __getitem__(self, idx):
         report_path, label = self.data[idx]
+        text = report_path.read_text()
 
-        # Read the report text
-        try:
-            text = report_path.read_text(encoding="utf-8", errors="ignore")
-        except:
-            text = ""
-
-        # Tokenize
         encoding = self.tokenizer(
             text,
             truncation=True,
@@ -69,37 +63,26 @@ def prepare_data() -> Tuple[List[Tuple[Path, bool]], List[Tuple[Path, bool]]]:
         report_txt = vuln_dir / "report.txt"
 
         if config_yaml.exists() and report_txt.exists():
-            try:
-                config_data = yaml.safe_load(config_yaml.read_text())
-                hunk_count = config_data["hunk_count"]
-                covered_count = config_data["covered_count"]
+            config_data = yaml.safe_load(config_yaml.read_text())
+            hunk_count = config_data["hunk_count"]
+            covered_count = config_data["covered_count"]
 
-                # Label is True if both hunk_count and covered_count are exactly 1
-                label = (hunk_count == 1) and (covered_count == 1)
-                data = (report_txt, label)
+            label = (hunk_count == 1) and (covered_count == 1)
+            data = (report_txt, label)
 
-                year = int(config_data["datetime"][:4])
-                if year < 2024:
-                    train_data.append(data)
-                else:
-                    test_data.append(data)
-            except Exception as e:
-                print(f"Error processing {vuln_dir}: {e}")
-                continue
+            year = int(config_data["datetime"][:4])
+            if year < 2024:
+                train_data.append(data)
+            else:
+                test_data.append(data)
+
+    train_labels = [label for _, label in train_data]
+    test_labels = [label for _, label in test_data]
 
     print(f"Train data size: {len(train_data)}")
     print(f"Test data size: {len(test_data)}")
-
-    # Print label distribution
-    train_labels = [label for _, label in train_data]
-    test_labels = [label for _, label in test_data]
-    print(
-        f"Train positive samples: {sum(train_labels)}/{len(train_labels)} ({sum(train_labels)/len(train_labels):.2%})"
-    )
-    if test_data:
-        print(
-            f"Test positive samples: {sum(test_labels)}/{len(test_labels)} ({sum(test_labels)/len(test_labels):.2%})"
-        )
+    print(f"Train positive samples: {sum(train_labels)/len(train_labels):.2%})")
+    print(f"Test positive samples: {sum(test_labels)/len(test_labels):.2%})")
 
     return train_data, test_data
 
