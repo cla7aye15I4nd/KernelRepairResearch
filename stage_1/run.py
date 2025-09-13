@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import time
+import random
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -76,9 +77,9 @@ def create_extended_longformer_model(
     original_max_pos = config.max_position_embeddings
 
     # Only extend if we need more positions than the base model supports
-    if max_pos <= original_max_pos:
-        print(f"Using base model max positions: {original_max_pos}")
-        max_pos = original_max_pos
+    assert max_pos <= original_max_pos
+    print(f"Using base model max positions: {original_max_pos}")
+    max_pos = original_max_pos
 
     config.max_position_embeddings = max_pos
     config.num_labels = 2
@@ -92,34 +93,6 @@ def create_extended_longformer_model(
 
     # Load the base model with updated config
     model = LongformerForSequenceClassification.from_pretrained(base_model_name, config=config, ignore_mismatched_sizes=True)
-
-    # Only extend position embeddings if needed
-    if max_pos > original_max_pos:
-        print(f"Extending position embeddings from {original_max_pos} to {max_pos}")
-
-        old_pos_emb = model.longformer.embeddings.position_embeddings
-        old_max_pos = old_pos_emb.weight.size(0)
-
-        # Create new position embeddings with proper initialization
-        new_pos_emb = nn.Embedding(max_pos, config.hidden_size)
-
-        with torch.no_grad():
-            # Copy existing embeddings
-            new_pos_emb.weight[:old_max_pos] = old_pos_emb.weight
-
-            # Initialize new positions using interpolation instead of repetition
-            if max_pos > old_max_pos:
-                # Use the last position embedding for new positions initially
-                last_pos_emb = old_pos_emb.weight[-1:].clone()
-                for i in range(old_max_pos, max_pos):
-                    new_pos_emb.weight[i] = last_pos_emb.squeeze(0)
-
-        # Replace the embedding layer
-        model.longformer.embeddings.position_embeddings = new_pos_emb
-
-        # Update the model's position_ids buffer to handle the new max length
-        if hasattr(model.longformer.embeddings, "position_ids"):
-            model.longformer.embeddings.register_buffer("position_ids", torch.arange(max_pos).expand((1, -1)), persistent=False)
 
     return model, tokenizer
 
@@ -248,7 +221,7 @@ def prepare_data() -> Tuple[List[Tuple[Path, bool]], List[Tuple[Path, bool]]]:
             hunk_count = config_data["hunk_count"]
             covered_count = config_data["covered_count"]
 
-            label = (hunk_count == 1) and (covered_count == 1)
+            label = not ((hunk_count == 1) and (covered_count == 1))
             data = (report_txt, label)
 
             year = int(config_data["datetime"][:4])
@@ -274,7 +247,6 @@ def prepare_data() -> Tuple[List[Tuple[Path, bool]], List[Tuple[Path, bool]]]:
         else:
             pos_train_data = pos_train_data * (len(neg_train_data) // len(pos_train_data)) + pos_train_data[: len(neg_train_data) % len(pos_train_data)]
         train_data = pos_train_data + neg_train_data
-        import random
 
         random.shuffle(train_data)
         train_labels = [label for _, label in train_data]
@@ -641,6 +613,7 @@ def main() -> None:
 
     # Set environment variables for better performance
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    random.seed(42)
 
     print("Preparing data...")
     train_data, test_data = prepare_data()
