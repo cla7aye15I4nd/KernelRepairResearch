@@ -262,8 +262,23 @@ def prepare_data() -> Tuple[List[Tuple[Path, bool]], List[Tuple[Path, bool]]]:
 
     print(f"Train data size: {len(train_data)}")
     print(f"Test data size: {len(test_data)}")
-    print(f"Train positive samples: {sum(train_labels)/len(train_labels):.2%}")  # Fixed syntax
-    print(f"Test positive samples: {sum(test_labels)/len(test_labels):.2%}")  # Fixed syntax
+    print(f"Train positive samples: {sum(train_labels)/len(train_labels):.2%}")
+    print(f"Test positive samples: {sum(test_labels)/len(test_labels):.2%}")
+
+    ## random repeat some training data so that we have balanced classes
+    pos_train_data = [d for d in train_data if d[1]]
+    neg_train_data = [d for d in train_data if not d[1]]
+    if len(pos_train_data) > 0 and len(neg_train_data) > 0:
+        if len(pos_train_data) > len(neg_train_data):
+            neg_train_data = neg_train_data * (len(pos_train_data) // len(neg_train_data)) + neg_train_data[: len(pos_train_data) % len(neg_train_data)]
+        else:
+            pos_train_data = pos_train_data * (len(neg_train_data) // len(pos_train_data)) + pos_train_data[: len(neg_train_data) % len(pos_train_data)]
+        train_data = pos_train_data + neg_train_data
+        import random
+
+        random.shuffle(train_data)
+        train_labels = [label for _, label in train_data]
+        print(f"After balancing, train positive samples: {sum(train_labels)/len(train_labels):.2%}")
 
     return train_data, test_data
 
@@ -362,6 +377,12 @@ def train_model(
             scaler,
             device,
         )
+
+    # Evaluate model before training starts
+    if val_loader:
+        print("\nEvaluating model before training (epoch 0)...")
+        val_acc, val_loss = evaluate_model(model, val_loader, device)
+        print(f"Initial validation accuracy: {val_acc:.4f}, Initial validation loss: {val_loss:.4f}")
 
     # Training loop
     model.train()
