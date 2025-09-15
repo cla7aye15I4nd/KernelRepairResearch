@@ -3,11 +3,12 @@
 import argparse
 import json
 import os
-import time
 import random
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
 import torch.nn as nn
 import yaml
@@ -267,6 +268,7 @@ def train_model(
     resume_from_checkpoint: Optional[str] = None,
     save_every_n_epochs: int = 1,
     max_length: int = 4096,
+    gpu_id: int = 0,
 ) -> Tuple[LongformerForSequenceClassification, LongformerTokenizer]:
     """Train extended Longformer model with checkpoint support"""
 
@@ -277,7 +279,9 @@ def train_model(
     model, tokenizer = create_extended_longformer_model(base_model_name=base_model_name, max_pos=max_length)
 
     # Setup device
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    assert torch.cuda.is_available(), "CUDA is not available. A GPU is required for training."
+    device = torch.device(f"cuda:{gpu_id}")
+
     model.to(device)
     print(f"Using device: {device}")
     print(f"Base model: {base_model_name}")
@@ -464,7 +468,6 @@ def train_model(
 
 def evaluate_model(model: nn.Module, data_loader: DataLoader, device: torch.device) -> Tuple[float, float]:
     """Evaluate model on given data with mixed precision and detailed metrics"""
-    import numpy as np
     from sklearn.metrics import classification_report, confusion_matrix
 
     model.eval()
@@ -596,6 +599,8 @@ def main() -> None:
         default=2,
         help="Batch size for training (small for 4096 tokens)",
     )
+    parser.add_argument("--seed", type=int, default=19260817, help="Random seed for reproducibility")
+    parser.add_argument("--gpu-id", type=int, default=0, help="GPU ID to use for training")
     parser.add_argument("--learning-rate", type=float, default=2e-5, help="Learning rate")
     parser.add_argument("--num-workers", type=int, default=4, help="Number of data loading workers")
     parser.add_argument("--max-length", type=int, default=4096, help="Maximum sequence length")
@@ -613,7 +618,10 @@ def main() -> None:
 
     # Set environment variables for better performance
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    random.seed(42)
+
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
 
     print("Preparing data...")
     train_data, test_data = prepare_data()
@@ -624,18 +632,23 @@ def main() -> None:
 
     val_data = test_data  # Using test as validation - consider splitting train data instead
     print("Starting training...")
-    model, tokenizer = train_model(
+
+    model_path = Path(args.model_path)
+    model_path = model_path / f"seed_{args.seed}"
+
+    train_model(
         train_data,
         val_data,
         base_model_name=args.base_model,
         epochs=args.epochs,
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,
-        output_dir=Path(args.model_path),
+        output_dir=model_path,
         num_workers=args.num_workers,
         resume_from_checkpoint=args.resume_from_checkpoint,
         save_every_n_epochs=args.save_every_n_epochs,
         max_length=args.max_length,
+        gpu_id=args.gpu_id,
     )
     print("Training completed!")
 
